@@ -6,6 +6,10 @@ Editar y eliminar permanecen en la cabecera de la ficha. Aplicar, cancelar y gua
 
 La búsqueda conserva la consulta por nombre, descripción y contenido, e informa cuando no hay resultados. Se mantienen los cuatro accesos rápidos, los iconos personalizados y la configuración de cada prompt. El borrado conserva la confirmación existente; Escape vuelve a la ficha y el foco del teclado permanece en la confirmación mientras está abierta.
 
+La estrella de un acceso rápido marcado se muestra rellena tanto en la lista como en el pie de la ficha; al desmarcarlo vuelve al contorno. El estado permanece visible al seleccionar otro prompt y funciona en ambos temas. `node --test scripts/test-study-improve-ui.mjs` verifica los estilos calculados del SVG en el componente real, los cambios con ratón y teclado, la reapertura y el límite de cuatro accesos rápidos. La prueba reproduce el fallo antes de aplicar la corrección.
+
+[Antes, tema claro](screenshots/scriptor/prompt-stars/before-light.png) · [Después, tema claro](screenshots/scriptor/prompt-stars/after-light.png) · [Después, tema oscuro](screenshots/scriptor/prompt-stars/after-dark.png). Las capturas usan datos sintéticos y el componente real con los estilos de la aplicación.
+
 ## Verificación
 
 - `node scripts/e2e-scriptor-prompts.mjs`: lectura y edición con un prompt de más de 7.000 caracteres en 1280×800, 1440×900, 1920×1080, 900×700 y 600×800, con temas claro y oscuro. Comprueba que búsqueda, editar, eliminar y aplicar mantienen su posición y reciben clics tras desplazar ambas zonas. Sin desbordamiento horizontal.

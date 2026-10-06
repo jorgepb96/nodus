@@ -17,7 +17,7 @@ import {
   tokenizeForMatch,
   type ExtractedManuscriptClaim,
 } from '../../shared/manuscriptVerifier';
-import { completeJson, embed } from './aiClient';
+import { completeJson, embedQuery } from './aiClient';
 import { manuscriptVerifierPrompt } from '@shared/manuscriptVerifierPromptPacks';
 import { normalizePromptLanguage } from '@shared/promptLanguageOptions';
 import { getSettings } from '../db/settingsRepo';
@@ -140,7 +140,7 @@ async function gatherEvidence(
 ): Promise<{ candidates: ManuscriptEvidenceCandidate[]; embeddingUsed: boolean }> {
   const candidates = new Map<string, ManuscriptEvidenceCandidate>();
   let embeddingUsed = false;
-  const vector = await embed(claim.excerpt);
+  const vector = await embedQuery(claim.excerpt);
   if (vector) {
     embeddingUsed = true;
     for (const hit of findSimilarIdeas(vector, SEMANTIC_IDEA_THRESHOLD, 5)) {

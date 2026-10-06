@@ -180,7 +180,18 @@
     "build:apple-calendar": "node scripts/build-apple-calendar.cjs",
     "build:presenter-native": "node scripts/build-presenter-native.cjs",
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
-    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs"
+    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs",
+    "test:embeddinggemma:contracts": "node --test scripts/test-embeddinggemma2.mjs scripts/test-embeddinggemma-host.mjs scripts/test-embeddinggemma-execution.mjs scripts/test-research-notebook-status.mjs scripts/test-strict-embeddings.mjs scripts/test-embedding-contract.mjs scripts/test-research-provider-proxy.mjs scripts/test-research-isolation.mjs",
+    "test:embeddinggemma:runtime": "node scripts/embeddinggemma-qa.mjs runtime",
+    "audit:embeddinggemma": "node scripts/embeddinggemma-qa.mjs audit",
+    "test:e2e:embeddinggemma": "node scripts/e2e-embeddinggemma.mjs",
+    "audit:embeddinggemma:product": "node scripts/embeddinggemma-product-campaign.mjs",
+    "test:embeddinggemma:package": "node scripts/embeddinggemma-package-smoke.mjs",
+    "test:embeddinggemma:server": "node --test scripts/test-server-vectors.mjs scripts/test-embeddinggemma-server.mjs",
+    "test:embeddinggemma:capacity": "node scripts/embeddinggemma-desktop-capacity.mjs",
+    "report:embeddinggemma": "node scripts/embeddinggemma-report.mjs",
+    "test:embeddinggemma:restart": "node scripts/embeddinggemma-restart-preparation.mjs",
+    "test:embeddinggemma:server:native": "node scripts/embeddinggemma-native-server.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -197,6 +208,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/canvas": "^0.1.65",
+    "@nodus/embeddinggemma-transformers": "npm:@huggingface/transformers@4.3.1",
     "@openai/codex": "0.144.6",
     "@pdf-lib/fontkit": "^1.1.1",
     "@xmldom/xmldom": "0.9.12",
@@ -380,7 +392,10 @@
       "node_modules/libheif-js/**/*",
       "node_modules/sharp/**/*",
       "node_modules/@img/sharp-*/**/*",
-      "node_modules/@img/sharp-libvips-*/**/*"
+      "node_modules/@img/sharp-libvips-*/**/*",
+      "node_modules/@nodus/embeddinggemma-transformers/**/*",
+      "node_modules/onnxruntime-node/**/*",
+      "node_modules/@huggingface/transformers/node_modules/onnxruntime-node/**/*"
     ],
     "mac": {
       "extraFiles": [

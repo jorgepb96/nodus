@@ -23,7 +23,7 @@ try {
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: skill.builtin === 'svg', nodi: false } });
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const calls = [], executions = [];
   load('skill-capabilities/registry/main.ts').executeRegisteredChatSkills = async (answer, execution) => { executions.push(execution); return answer; };
   ai.completeTextStream = async (options, delta, model, signal) => {

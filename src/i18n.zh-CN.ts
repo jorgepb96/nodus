@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -113,6 +114,7 @@ export const ZH_CN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS['zh-CN'],
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS['zh-CN'],
   ...MODEL_SETTINGS_TRANSLATIONS['zh-CN'],
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['zh-CN'],
   ...DICTIONARY_TRANSLATIONS['zh-CN'],
   ...PAGE_TRANSLATIONS['zh-CN'],
   ...DATABASE_PROPERTY_TRANSLATIONS['zh-CN'],

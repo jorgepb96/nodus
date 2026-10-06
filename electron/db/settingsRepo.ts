@@ -36,6 +36,9 @@ const DEFAULT_LOCAL_PROVIDERS: AppSettings['localProviders'] = {
   lmstudio: { baseUrl: DEFAULT_LOCAL_BASE_URLS.lmstudio, contextMode: 'auto' },
 };
 
+const embeddingRevisions = new Map<string, number>();
+export function embeddingSettingsRevision(): number { return embeddingRevisions.get(getDb().name) ?? 0; }
+
 /** No default endpoint exists for someone else's gateway: unconfigured means off. */
 const DEFAULT_CUSTOM_PROVIDER: AppSettings['customProvider'] = { baseUrl: '', models: [] };
 
@@ -688,5 +691,12 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
     }
   }
   writeRaw('app', JSON.stringify(rest));
-  return getSettings();
+  const updated = getSettings();
+  if (updated.embeddingProvider !== previous.embeddingProvider || updated.embeddingModel !== previous.embeddingModel
+    || JSON.stringify(updated.localProviders) !== JSON.stringify(previous.localProviders)
+    || JSON.stringify(updated.customProvider) !== JSON.stringify(previous.customProvider)) {
+    const name = getDb().name;
+    embeddingRevisions.set(name, (embeddingRevisions.get(name) ?? 0) + 1);
+  }
+  return updated;
 }

@@ -60,7 +60,7 @@ try {
   }
   const ai = load('electron/ai/aiClient.ts');
   let vector = null;
-  ai.embed = async () => vector;
+  ai.embedQuery = async () => vector;
   const textReads = [];
   load('electron/zotero/zoteroClient.ts').getItem = async () => null;
   load('electron/extraction/textExtractor.ts').resolveWorkText = async (_user, id) => { textReads.push(id); return { text: id.startsWith('a') ? `Selected document ${id}` : 'OUTSIDE_ONLY full text', sourceType: 'text' }; };

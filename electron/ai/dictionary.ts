@@ -17,7 +17,7 @@ import type {
   PromptLanguage,
   WritingWorkshopSnapshot,
 } from "@shared/types";
-import { completeJson, embed, embedMany, resolveModelRef } from "./aiClient";
+import { completeJson, embedQuery, embedMany, effectiveEmbeddingConfig, resolveModelRef } from "./aiClient";
 import { aiVerifyCitations } from "./deepResearch";
 import {
   applyCitationPolicy,
@@ -621,7 +621,7 @@ export async function retrieveDictionaryEvidence(
   let ideaHits: Array<{ global_id: string; similarity: number }> = [];
   let passageHits: SimilarPassage[] = [];
   try {
-    const vector = await embed(query);
+    const vector = await embedQuery(query);
     if (!vector) throw new Error("No hay un modelo de embeddings disponible.");
     [ideaHits, passageHits] = await Promise.all([
       findSimilarIdeasPaged(vector, -1, DICTIONARY_RETRIEVAL_LIMITS.ideas, {
@@ -1857,10 +1857,14 @@ export async function detectDictionaryDuplicatesSemantic(
   }).items.filter((entry) => !exactIds.has(entry.id));
   if (!name.trim() || !entries.length) return exact;
   try {
-    const vectors = await embedMany([
+    const texts = [
       [name, ...aliases].join(". "),
       ...entries.map((entry) => [entry.name, ...entry.aliases].join(". ")),
-    ]);
+    ];
+    const config = effectiveEmbeddingConfig();
+    const vectors = config.provider === 'nodus' && config.modelId.startsWith('embeddinggemma-2-')
+      ? await Promise.all([embedQuery(texts[0], undefined, { config }), embedMany(texts.slice(1), undefined, { config, role: 'document' })]).then(([query, documents]) => [query, ...documents])
+      : await embedMany(texts);
     const query = vectors[0];
     if (!query) return exact;
     return [

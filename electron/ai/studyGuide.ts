@@ -25,7 +25,7 @@ import { findSimilarPassages } from '../db/passagesRepo';
 import { findSimilarWorks } from '../db/workSummariesRepo';
 import { studyProgressMap } from '../db/studyProgressRepo';
 import { buildAuthorDossier, listAuthors } from './authorDossier';
-import { completeJson, embed } from './aiClient';
+import { completeJson, embedQuery } from './aiClient';
 
 const MAX_KEY_IDEAS_PER_AUTHOR = 16;
 const MAX_PASSAGES_FOR_SESSION = 8;
@@ -70,7 +70,7 @@ async function semanticBoosts(objective: string | undefined, enabled: boolean, l
   if (!enabled || clean.length < 3) {
     return { available: false, summary: null, authorBoosts: new Map(), workBoosts: new Map() };
   }
-  const vector = await embed(clean);
+  const vector = await embedQuery(clean);
   if (!vector) {
     return { available: false, summary: studyGuidePromptPack(language).noEmbeddings, authorBoosts: new Map(), workBoosts: new Map() };
   }
@@ -348,7 +348,7 @@ async function loadSessionPassages(
   const untitled = studyGuidePromptPack(language).session.untitled;
   if (!useFullText || works.length === 0) return [];
   const workIds = works.map((w) => w.nodusId);
-  const vector = objective.trim().length >= 3 ? await embed(objective) : null;
+  const vector = objective.trim().length >= 3 ? await embedQuery(objective) : null;
   if (vector) {
     return findSimilarPassages(vector, 0.18, MAX_PASSAGES_FOR_SESSION, { nodusIds: workIds }).map((p) => ({
       passageId: p.passage_id,

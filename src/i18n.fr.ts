@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -114,6 +115,7 @@ export const FR: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.fr,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.fr,
   ...MODEL_SETTINGS_TRANSLATIONS.fr,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['fr'],
   ...DICTIONARY_TRANSLATIONS.fr,
   'Tamaño de Nodi': 'Taille de Nodi',
   'El 100 % conserva el tamaño original de Nodi y es el máximo. Puedes reducirlo hasta el 40 %.': '100 % conserve la taille d’origine de Nodi et constitue le maximum. Vous pouvez la réduire jusqu’à 40 %.',

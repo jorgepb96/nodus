@@ -1301,8 +1301,8 @@ try {
   );
   setEmbedding.run(ideasRepo.encodeEmbedding([1, 0]), embedConfig.provider, embedConfig.model, 2, 'passage-1');
   setEmbedding.run(ideasRepo.encodeEmbedding([0, 1]), embedConfig.provider, embedConfig.model, 2, 'passage-2');
-  const originalEmbed = aiClient.embed;
-  aiClient.embed = async () => [1, 0];
+  const originalEmbed = aiClient.embedQuery;
+  aiClient.embedQuery = async () => [1, 0];
   try {
     const semantic = await callTool(server, 'nodus_search_passages', {
       query: 'turismo visual',
@@ -1382,7 +1382,7 @@ try {
     assert.ok(afterModelChange.warning, 'and the empty result is flagged rather than read as absence');
     stale.run(embedConfig.model);
   } finally {
-    aiClient.embed = originalEmbed;
+    aiClient.embedQuery = originalEmbed;
   }
 
   // A tool that writes before calling the AI must not leave the write behind when the

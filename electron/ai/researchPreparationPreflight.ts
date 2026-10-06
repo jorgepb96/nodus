@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { isDocumentaryTextMime } from '@shared/documentaryFormats';
 import type { ResearchPreparationInventory, ResearchPreparationPreview } from '@shared/researchCorpus';
 import { getGlobalLibraryItem, globalLibraryAttachmentPath } from '../library/libraryService';
 import { inspectResearchOriginalInWorker } from '../library/libraryExtractionWorkerHost';
@@ -16,7 +17,7 @@ export async function preparationPreflight(documents: ResearchPreparationInvento
         const item = getGlobalLibraryItem(document.libraryItemId);
         if (!item || item.deletedAt) throw new Error('research_source_not_authorized');
         for (const attachment of item.attachments) {
-          if (!/^(application\/(pdf|epub\+zip|vnd.openxmlformats-officedocument.wordprocessingml.document)|text\/)/.test(attachment.mimeType ?? '')) continue;
+          if (!isDocumentaryTextMime(attachment.mimeType)) continue;
           let file: string | null = null;
           try { file = globalLibraryAttachmentPath(item.id, attachment.id); } catch { /* Report inaccessible. */ }
           files.push({ file, mime: attachment.mimeType!, sha256: attachment.sha256 });
@@ -26,7 +27,7 @@ export async function preparationPreflight(documents: ResearchPreparationInvento
         const signal = AbortSignal.timeout(15000);
         const key = origin.libraryType === 'group' ? `groups:${origin.libraryId}:${origin.itemKey}` : origin.itemKey;
         for (const attachment of await itemChildren(origin.libraryId, key, signal)) {
-          if (!/^(application\/(pdf|epub\+zip|vnd.openxmlformats-officedocument.wordprocessingml.document)|text\/)/.test(attachment.contentType ?? '')) continue;
+          if (!isDocumentaryTextMime(attachment.contentType)) continue;
           files.push({ file: await attachmentFilePath(origin.libraryId, attachment.key, attachment.library, signal), mime: attachment.contentType! });
         }
       }

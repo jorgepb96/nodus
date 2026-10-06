@@ -24,7 +24,7 @@ const STUBS = {
   '../capabilities/registry': `export const capabilityRegistry = () => ({ providers: new Map(globalThis.__ord.provider ? [['nodus:chemistry', globalThis.__ord.provider]] : []) });`,
   '../reactionIndex': `export const reactionIndexService = () => ({ localDirectory: async () => globalThis.__ord.indexDir });`,
   './moleculeInspection': `export const chemistryRunner = () => ({ runner: { invoke: async (request) => { globalThis.__ord.calls += 1; return globalThis.__ord.invoke(request); } }, dispose: async () => {} });`,
-  './aiClient': `export const embed = async () => null;`,
+  './aiClient': `export const embedQuery = async () => null;`,
   // No stock lists imported: disconnections are requested without a stock directory.
   './chemistryStock': `export const chemistryStockDirectory = () => null; export const chemistryStockLists = () => [];`,
   // No textbook-scheme index unless a scenario sets one.

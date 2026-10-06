@@ -53,7 +53,7 @@ import { buildAuthorGraph, buildIdeaGraph, buildReadingPath, getContradictions }
 import { getItem, LOCAL_USER_ID } from '../zotero/zoteroClient';
 import { resolveWorkText } from '../extraction/textExtractor';
 import { AiError, completeText, completeTextStream, resolveModelRef, localModelContextWindow } from './aiClient';
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 import { retryOnceWhenCutOff } from './cutOffRetry';
 import { enforceContextBudget, humanizeCitationLabels } from './researchContextFit';
 import { ResearchWebGrant, webDepth } from './researchWebStep';
@@ -827,7 +827,7 @@ async function buildRelevanceScope(selection: ResearchContextSelection, question
   let queryEmbedding: number[] | null = null;
   if (needsRelevance && question.trim()) {
     try {
-      queryEmbedding = await embed(question.trim());
+      queryEmbedding = await embedQuery(question.trim());
     } catch (error) {
       // Semantic retrieval is an evidence layer, not a reason to block an answer
       // when the user has not configured an embedding provider yet. Sections then

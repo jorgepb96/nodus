@@ -29,7 +29,7 @@ try {
   load('electron/db/settingsRepo.ts').updateSettings({ chatModel: model, synthesisModel: model, researchWebSearch: 'off' });
   const ai = load('electron/ai/aiClient.ts');
   const captured = [];
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.completeTextStream = async (options, onDelta) => { captured.push(options.system); onDelta('Synthetic response.'); return 'Synthetic response.'; };
   const database = load('electron/db/databasesRepo.ts').createDatabase('Synthetic measurements');
   const article = load('electron/db/worldEncyclopediaRepo.ts').createWorldArticle({ title: 'Synthetic tower', body: 'Three windows.' });

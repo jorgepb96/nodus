@@ -25,19 +25,20 @@ export function orderedEmbeddingEntries(
 
 export async function requestEmbeddingBatchWithBisection(
   texts: string[],
-  request: (texts: string[]) => Promise<number[][]>,
+  request: (texts: string[], offset: number) => Promise<number[][]>,
   signal?: AbortSignal,
   shouldBisect: (error: unknown) => boolean = () => true,
+  offset = 0,
 ): Promise<number[][]> {
   try {
-    return validateEmbeddingVectors(await request(texts), texts.length, 'configured');
+    return validateEmbeddingVectors(await request(texts, offset), texts.length, 'configured');
   } catch (error) {
     signal?.throwIfAborted();
     if (texts.length <= 1 || !shouldBisect(error)) throw error;
     const middle = Math.ceil(texts.length / 2);
     const [left, right] = await Promise.all([
-      requestEmbeddingBatchWithBisection(texts.slice(0, middle), request, signal, shouldBisect),
-      requestEmbeddingBatchWithBisection(texts.slice(middle), request, signal, shouldBisect),
+      requestEmbeddingBatchWithBisection(texts.slice(0, middle), request, signal, shouldBisect, offset),
+      requestEmbeddingBatchWithBisection(texts.slice(middle), request, signal, shouldBisect, offset + middle),
     ]);
     return [...left, ...right];
   }

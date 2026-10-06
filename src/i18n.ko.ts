@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -166,6 +167,7 @@ export const KO: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ko,
   ...TEXT_PROVENANCE_TRANSLATIONS.ko,
   ...MODEL_SETTINGS_TRANSLATIONS.ko,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['ko'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ko,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ko,
   ...ACADEMIC_TOUR_TRANSLATIONS.ko,

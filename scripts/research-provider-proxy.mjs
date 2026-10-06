@@ -13,13 +13,16 @@ const ENDPOINTS = {
 // Peak/cache-miss prices verified 2026-09-23. Reservation adds 25% and $0.002.
 // https://api-docs.deepseek.com/quick_start/pricing/
 // https://openrouter.ai/baai/bge-m3
-export async function startResearchProviderProxy(root, { dispatch = fetch, catalogDispatch = dispatch === fetch ? fetch : null, port = 0 } = {}) {
+export async function startResearchProviderProxy(root, { dispatch = fetch, catalogDispatch = dispatch === fetch ? fetch : null, port = 0, limitUsd, allowedProviders = ['deepseek', 'openrouter'] } = {}) {
   const canonical = fs.realpathSync(root);
   const marker = JSON.parse(fs.readFileSync(path.join(canonical, 'isolation.json'), 'utf8'));
   if (marker.format !== 'nodus.isolated-research-profile/1' || marker.root !== canonical) throw new Error('Invalid campaign root');
-  const ledger = new ResearchCostLedger(path.join(canonical, 'artifacts/cost-ledger.json'));
+  if (!Array.isArray(allowedProviders) || !allowedProviders.length || allowedProviders.some(provider => !Object.hasOwn(ENDPOINTS, provider))) throw new Error('Invalid QA providers');
+  const ledger = new ResearchCostLedger(path.join(canonical, 'artifacts/cost-ledger.json'), limitUsd);
   const log = path.join(canonical, 'artifacts/provider-metrics.jsonl');
   const nonce = randomUUID();
+  const slotDirectory = path.join(canonical, 'artifacts/provider-slots');
+  fs.mkdirSync(slotDirectory, { recursive: true });
   let stopped = false, running = 0;
   const controllers = new Set();
   // At most two paid calls in flight. Further calls wait for a slot rather than being
@@ -33,15 +36,54 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
     if (stopped) throw new Error('research_dispatch_not_authorized');
     running++;
   };
+  const acquireCampaignSlot = async signal => {
+    while (!stopped && !signal.aborted) {
+      for (let index = 0; index < 2; index++) {
+        const file = path.join(slotDirectory, `${index}.json`), id = randomUUID();
+        const temporary = path.join(slotDirectory, `${id}.tmp`);
+        fs.writeFileSync(temporary, JSON.stringify({ pid: process.pid, id }), { mode: 0o600 });
+        try {
+          // Hard-link publication is exclusive and exposes a fully written owner.
+          fs.linkSync(temporary, file);
+          return () => { if (JSON.parse(fs.readFileSync(file, 'utf8')).id === id) fs.unlinkSync(file); };
+        } catch (error) {
+          if (error.code !== 'EEXIST') throw error;
+          // Serialize stale-owner cleanup so two reclaimers cannot remove a new owner.
+          const reclaim = `${file}.reclaim`;
+          try {
+            fs.mkdirSync(reclaim);
+            try { const owner = JSON.parse(fs.readFileSync(file, 'utf8'));
+              try { process.kill(owner.pid, 0); }
+              catch (missing) { if (missing.code === 'ESRCH') fs.unlinkSync(file); else throw missing; }
+            } finally { fs.rmdirSync(reclaim); }
+          } catch (cleanup) { if (!['EEXIST', 'ENOENT'].includes(cleanup.code)) throw cleanup; }
+        } finally { fs.rmSync(temporary, { force: true }); }
+      }
+      await new Promise(resolve => setTimeout(resolve, 25));
+    }
+    throw new Error('research_dispatch_not_authorized');
+  };
+  const ledgerOperation = async work => {
+    const deadline = Date.now() + 5000;
+    for (;;) {
+      try { return work(); }
+      catch (error) {
+        if (error.code !== 'EEXIST' || error.path !== `${ledger.file}.lock`) throw error;
+        if (Date.now() >= deadline) throw new Error('research_accounting_lock_unavailable');
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+    }
+  };
   const server = http.createServer(async (request, response) => {
     let reservation, provider, started, firstByteMs;
     const controller = new AbortController();
-    let admitted = false;
+    let admitted = false, releaseCampaignSlot;
     try {
       const url = new URL(request.url, 'http://127.0.0.1');
       const match = new RegExp(`^/${nonce}/(deepseek|openrouter)(/.*)$`).exec(url.pathname);
       if (stopped || !match || url.search) throw new Error('research_dispatch_not_authorized');
       provider = match[1];
+      if (!allowedProviders.includes(provider)) throw new Error('research_dispatch_not_authorized');
       const target = ENDPOINTS[provider];
       if (request.method === 'GET' && provider === 'deepseek' && match[2] === '/models' && catalogDispatch) {
         if (!request.headers.authorization?.startsWith('Bearer ')) throw new Error('research_credential_missing');
@@ -58,6 +100,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       if (request.method !== 'POST' || match[2] !== target.route) throw new Error('research_dispatch_not_authorized');
       if (!request.headers.authorization?.startsWith('Bearer ')) throw new Error('research_credential_missing');
       await acquireSlot(); admitted = true; controllers.add(controller);
+      releaseCampaignSlot = await acquireCampaignSlot(controller.signal);
       const chunks = []; let size = 0;
       for await (const chunk of request) { size += chunk.length; if (size > 512000) throw new Error('research_request_too_large'); chunks.push(chunk); }
       const bytes = Buffer.concat(chunks);
@@ -69,7 +112,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       if (provider === 'deepseek' && (!Array.isArray(body.messages) || body.messages.some(message => typeof message.content !== 'string'))) throw new Error('research_text_only');
       if (provider === 'openrouter' && !(typeof body.input === 'string' || (Array.isArray(body.input) && body.input.length && body.input.every(input => typeof input === 'string')))) throw new Error('research_text_only');
       const maximumUsd = ((bytes.length * target.input + output * target.output) / 1e6) * 1.25 + .002;
-      reservation = ledger.reserve({ provider, model: target.model, maximumUsd });
+      reservation = await ledgerOperation(() => ledger.reserve({ provider, model: target.model, maximumUsd }));
       started = performance.now();
       response.once('close', () => { if (!response.writableFinished) controller.abort(); });
       const upstream = await dispatch(target.url, { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json', Authorization: request.headers.authorization },
@@ -94,7 +137,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       if (upstream.ok && [inputTokens, outputTokens].every(value => Number.isSafeInteger(value) && value >= 0)) {
         accountedUsd = typeof usage.cost === 'number' ? usage.cost : (inputTokens * target.input + outputTokens * target.output) / 1e6;
         accounting = typeof usage.cost === 'number' ? 'provider_cost' : 'peak_price_upper_bound';
-        try { ledger.settle(reservation, { actualUsd: accountedUsd, inputTokens, outputTokens }); }
+        try { await ledgerOperation(() => ledger.settle(reservation, { actualUsd: accountedUsd, inputTokens, outputTokens })); }
         catch { stopped = true; throw new Error('research_accounting_bound_exceeded'); }
       } else if (upstream.status >= 400 && upstream.status < 500) {
         // A 4xx is a refusal, not a completed generation: the request was rejected before
@@ -107,7 +150,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
         // accepted request still keeps the full reservation.
         accountedUsd = 0;
         accounting = 'refused_unbilled';
-        try { ledger.settle(reservation, { actualUsd: 0, inputTokens: 0, outputTokens: 0 }); }
+        try { await ledgerOperation(() => ledger.settle(reservation, { actualUsd: 0, inputTokens: 0, outputTokens: 0 })); }
         catch { /* A refusal has nothing to account for. */ }
       }
       fs.appendFileSync(log, JSON.stringify({ reservation, provider, model: target.model, requestHash: createHash('sha256').update(bytes).digest('hex'),
@@ -123,8 +166,9 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       }
       if (reservation) fs.appendFileSync(log, JSON.stringify({ reservation, provider, failed: true, reservationRetained: true, latencyMs: performance.now() - started }) + '\n', { mode: 0o600 });
       if (!response.headersSent) response.writeHead(403, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify({ error: { message: error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked' } }));
-    } finally { if (admitted) { running--; waiting.shift()?.(); } controllers.delete(controller); }
+      response.end(JSON.stringify({ error: { message: error instanceof Error && /budget.*exhausted/i.test(error.message) ? 'research_budget_exhausted'
+        : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked' } }));
+    } finally { releaseCampaignSlot?.(); if (admitted) { running--; waiting.shift()?.(); } controllers.delete(controller); }
   });
   await new Promise(resolve => server.listen(port, '127.0.0.1', resolve));
   return { url: `http://127.0.0.1:${server.address().port}/${nonce}`, ledger, close: async () => {

@@ -4,7 +4,7 @@ import { literalRelevance, mergeHybridResults } from '@shared/hybridSearch';
 import { cosineStudySearch } from '@shared/studySearch';
 import { getDb } from '../db/database';
 import { currentEmbeddingConfig } from '../db/ideasRepo';
-import { embed, embedMany } from './aiClient';
+import { embedQuery, embedMany } from './aiClient';
 
 // Derived, in-memory cache scoped to the DB connection, provider, model and content.
 // Deleted/restricted entities are never read from the cache: only current candidates enter retrieval.
@@ -21,7 +21,7 @@ export async function searchHybridCorpus<T extends SearchableHit>(query: string,
   const cache = caches.get(db) ?? new Map<string, Promise<number[] | null>>();
   caches.set(db, cache);
   try {
-    const vector = queryVector ?? await embed(query);
+    const vector = queryVector ?? await embedQuery(query);
     if (!vector) return fallback;
     const chunks = semanticCandidates.flatMap((hit) => {
       const text = `${hit.title}\n${hit.subtitle ?? ''}\n${hit.snippet ?? ''}`;

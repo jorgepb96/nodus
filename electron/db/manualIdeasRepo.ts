@@ -120,7 +120,7 @@ export async function autoIndexManualIdea(input: {
   }
   let vector: number[] | null = null;
   try {
-    vector = await embed(text);
+    vector = await embed(text, undefined, { role: 'document' });
   } catch (e) {
     return { indexed: false, message: e instanceof Error ? e.message : String(e), suggestions: [] };
   }

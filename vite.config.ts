@@ -43,6 +43,7 @@ const mainExternals = [
   '@anthropic-ai/sdk',
   '@google/genai',
   '@huggingface/transformers',
+  '@nodus/embeddinggemma-transformers',
   // ws (pulled in by the SDKs above) optionally requires these native addons via
   // try/catch; keep them external so that fallback works instead of the bundler
   // hard-failing to resolve an uninstalled optional dependency.
@@ -352,6 +353,12 @@ export default defineConfig({
       databaseAggregateWorkerBuild,
       databaseDeepResearchWorkerBuild,
       vectorScanWorkerBuild,
+      { ...vectorScanWorkerBuild, vite: { ...vectorScanWorkerBuild.vite, build: { ...vectorScanWorkerBuild.vite.build,
+        rollupOptions: { ...vectorScanWorkerBuild.vite.build.rollupOptions,
+          input: path.join(__dirname, 'electron/workers/embeddingGemma2Worker.ts'),
+          output: { format: 'cjs' as const, entryFileNames: 'embeddingGemma2Worker.cjs', inlineDynamicImports: true },
+        },
+      } } },
       utilityBuild('backupUtilityWorker', 'electron/export/backupUtilityWorker.ts'),
       // One bootstrap for every trusted capability: a plugin ships a module, not a process.
       utilityBuild('capabilityWorkerBootstrap', 'electron/capabilities/workerBootstrap.ts'),

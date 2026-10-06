@@ -21,13 +21,16 @@ parentPort?.once('message', (input: { filename: string; query: string; lexicalKe
     if (input.vector) activity('semantic', 'semantic', 'active');
     const semantic = input.vector ? store.semanticSearch(input.vector, input.vectorKeys, input.settings.candidates, input.threshold) : [];
     if (input.vector) activity('semantic', 'semantic', 'completed', semantic.length);
-    const fused = new Map<string, { score: number; passage: typeof lexical[number] }>();
-    for (const lane of [lexical, semantic]) lane.forEach((passage, index) => {
+    const fused = new Map<string, { score: number; passage: typeof lexical[number]; lexicalIds: string[]; semanticIds: string[] }>();
+    const evidenceKey = (passage: typeof lexical[number]) => JSON.stringify([passage.document_id, passage.text, passage.locator_json]);
+    for (const [laneIndex, lane] of [lexical, semantic].entries()) lane.forEach((passage, index) => {
       // The same text can have separate lexical/vector index keys. Deduplicate
       // evidence by document, text and locator rather than raw index identity.
-      const key = JSON.stringify([passage.document_id, passage.text, passage.locator_json]);
+      const key = evidenceKey(passage);
       const prior = fused.get(key);
-      fused.set(key, { score: (prior?.score ?? 0) + 1 / (60 + index + 1), passage: prior?.passage ?? passage });
+      fused.set(key, { score: (prior?.score ?? 0) + 1 / (60 + index + 1), passage: prior?.passage ?? passage,
+        lexicalIds: [...(prior?.lexicalIds ?? []), ...(laneIndex === 0 ? [passage.id] : [])],
+        semanticIds: [...(prior?.semanticIds ?? []), ...(laneIndex === 1 ? [passage.id] : [])] });
     });
     budget.candidates = fused.size;
     const ranked = [...fused.values()].sort((a, b) => b.score - a.score);
@@ -53,7 +56,12 @@ parentPort?.once('message', (input: { filename: string; query: string; lexicalKe
       chosen.push(...next);
       frontier = next;
     }
-    parentPort!.postMessage({ passages: chosen, traversal: { rounds: budget.rounds, candidates: budget.candidates, evidenceTokens: budget.usedEvidenceTokens,
+    parentPort!.postMessage({ passages: chosen, retrievalTrace: {
+      semantic: semantic.map(passage => ({ id: passage.id, documentId: passage.document_id })),
+      lexical: lexical.map(passage => ({ id: passage.id, documentId: passage.document_id })),
+      selected: chosen.map(passage => ({ id: passage.id, documentId: passage.document_id,
+        lexicalIds: fused.get(evidenceKey(passage))?.lexicalIds ?? [], semanticIds: fused.get(evidenceKey(passage))?.semanticIds ?? [] })),
+    }, traversal: { rounds: budget.rounds, candidates: budget.candidates, evidenceTokens: budget.usedEvidenceTokens,
       partial: budget.partial || chosen.length < ranked.length || lexical.length >= input.settings.candidates || semantic.length >= input.settings.candidates,
       visited: [...budget.visited] } });
   } catch (error) { parentPort!.postMessage({ error: error instanceof Error ? error.message : 'documentary_retrieval_failed' }); }

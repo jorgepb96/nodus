@@ -362,6 +362,8 @@ export interface ZoteroMcpStatus {
 
 export interface ResearchPreparationInventory {
   enabled: boolean;
+  /** Readiness requires compatible vectors while the selected embedding model can run. */
+  embeddingsExpected?: boolean;
   embeddingSpaces?: Array<{ id: string; provider: string; model: string; dimensions: number; metric: 'cosine' }>;
   documents: Array<ResearchCorpusDocument & { preparation: DocumentPreparationState }>;
 }

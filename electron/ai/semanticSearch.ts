@@ -19,7 +19,7 @@ import { getDb } from '../db/database';
 import { currentEmbeddingConfig, findSimilarIdeas, getIdea } from '../db/ideasRepo';
 import { findSimilarPassages } from '../db/passagesRepo';
 import { findSimilarWorks } from '../db/workSummariesRepo';
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 import { retrieveHierarchical } from './hierarchicalRetrieval';
 import { getSettings } from '../db/settingsRepo';
 
@@ -161,7 +161,7 @@ export async function semanticSearch(
   const kinds = new Set<SearchResultKind>(requested);
   const limit = options.limit ?? DEFAULT_LIMIT;
   const threshold = options.minSimilarity ?? DEFAULT_MIN_SIMILARITY;
-  const vector = await embed(q);
+  const vector = await embedQuery(q);
   if (!vector || getDb() !== db || !db.open || JSON.stringify(currentEmbeddingConfig()) !== config) return { available: false, results: [] };
 
   const language = interfaceLanguage();

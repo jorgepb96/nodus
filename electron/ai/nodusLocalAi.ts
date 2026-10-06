@@ -29,6 +29,8 @@ import {
   type NodusLocalRuntimeDevice,
 } from '@shared/localAiRuntime';
 import type { ModelInfo } from '@shared/types';
+import { isEmbeddingGemma2, type EmbeddingRole } from '@shared/embeddingGemma2';
+import { embedEmbeddingGemma2, closeEmbeddingGemma2Worker, embeddingGemma2Busy } from './embeddingGemma2Host';
 
 export { LLAMA_CPP_VERSION };
 
@@ -85,8 +87,10 @@ function modelsDirectory(): string {
 }
 
 function modelDirectory(modelId: string): string {
-  return path.join(modelsDirectory(), modelId);
+  return path.join(modelsDirectory(), getNodusLocalModel(modelId)?.assetFamily ?? modelId);
 }
+
+function downloadKey(modelId: string): string { return getNodusLocalModel(modelId)?.assetFamily ?? modelId; }
 
 function runtimeDirectory(): string {
   return path.join(rootDirectory(), 'runtime', LLAMA_CPP_VERSION);
@@ -324,8 +328,9 @@ async function modelStatus(model: NodusLocalModelDefinition) {
       ? Math.min(stat.size, asset.bytes)
       : partial?.isFile() ? Math.min(partial.size, asset.bytes) : 0;
     if (!stat?.isFile() || stat.size !== asset.bytes) downloaded = false;
+    else if (model.assetFamily && (!asset.sha256 || await sha256Path(path.join(directory, asset.file)) !== asset.sha256)) downloaded = false;
   }
-  const active = activeDownloads.get(model.id);
+  const active = activeDownloads.get(downloadKey(model.id));
   return {
     id: model.id,
     downloaded,
@@ -528,6 +533,19 @@ async function downloadFile(
   onBytes: (bytes: number) => void,
   signal?: AbortSignal
 ): Promise<void> {
+  const qaProxy = process.env.NODUS_LOCAL_AI_QA_ASSET_PROXY;
+  if (qaProxy) {
+    const root = process.env.NODUS_ISOLATED_ROOT;
+    if (!root || !path.isAbsolute(root)) throw new Error('El proxy de recursos exige un perfil aislado.');
+    const canonical = fs.realpathSync(root);
+    const marker = JSON.parse(fs.readFileSync(path.join(canonical, 'isolation.json'), 'utf8'));
+    const base = new URL(qaProxy);
+    if (marker.root !== canonical || marker.format !== 'nodus.isolated-research-profile/1'
+      || !app.getPath('userData').startsWith(canonical + path.sep)
+      || base.protocol !== 'http:' || base.hostname !== '127.0.0.1' || Number(base.port) < 1024
+      || base.username || base.password || base.search || base.hash || !/^\/[a-f0-9-]{36}$/.test(base.pathname)) throw new Error('Proxy de recursos QA inválido.');
+    url = `${base.href}/asset?url=${encodeURIComponent(url)}`;
+  }
   throwIfDownloadCancelled(signal);
   await fsp.mkdir(path.dirname(target), { recursive: true });
   const completed = await fsp.stat(target).catch(() => null);
@@ -860,7 +878,8 @@ export async function downloadNodusLocalModel(
 ): Promise<NodusLocalAiStatus> {
   const model = getNodusLocalModel(modelId);
   if (!model) throw new Error(`Modelo local no soportado: ${modelId}`);
-  const running = activeDownloads.get(modelId);
+  const family = downloadKey(modelId);
+  const running = activeDownloads.get(family);
   if (running) return followDownload(running, onProgress);
   const job: ActiveLocalAiDownload = {
     progress: 0,
@@ -868,7 +887,7 @@ export async function downloadNodusLocalModel(
     listeners: new Set(),
     controller: new AbortController(),
   };
-  activeDownloads.set(modelId, job);
+  activeDownloads.set(family, job);
   job.promise = (async () => {
     // The runtime is a dependency of every llama.cpp model: install it first, and
     // let the installer decide whether the installed build still fits this machine
@@ -880,7 +899,7 @@ export async function downloadNodusLocalModel(
     }
     return downloadModelAssets(model, (fraction) => reportDownloadProgress(job, fraction), job.controller.signal);
   })().finally(() => {
-    if (activeDownloads.get(modelId) === job) activeDownloads.delete(modelId);
+    if (activeDownloads.get(family) === job) activeDownloads.delete(family);
   }).then(() => getNodusLocalAiStatus());
   return followDownload(job, onProgress);
 }
@@ -907,7 +926,11 @@ export async function cancelNodusLocalDownloads(): Promise<NodusLocalAiStatus> {
 export async function deleteNodusLocalModel(modelId: string): Promise<NodusLocalAiStatus> {
   const model = getNodusLocalModel(modelId);
   if (!model) throw new Error(`Modelo local no soportado: ${modelId}`);
-  if (activeDownloads.has(modelId)) throw new Error('Espera a que termine la descarga antes de eliminar el modelo.');
+  if (activeDownloads.has(downloadKey(modelId))) throw new Error('Espera a que termine la descarga antes de eliminar el modelo.');
+  if (isEmbeddingGemma2(modelId)) {
+    if (embeddingGemma2Busy()) throw new Error('EmbeddingGemma tiene solicitudes en curso.');
+    closeEmbeddingGemma2Worker();
+  }
   if (activeServer?.modelId === modelId && activeServer.leases > 0) {
     throw new Error('El modelo tiene solicitudes en curso. Espera a que terminen antes de eliminarlo.');
   }
@@ -943,6 +966,11 @@ export function listNodusLocalEmbeddingModels(): ModelInfo[] {
 }
 
 export async function freePort(): Promise<number> {
+  if (process.env.NODUS_LOCAL_AI_QA_PORT) {
+    const port = Number(process.env.NODUS_LOCAL_AI_QA_PORT);
+    if (!process.env.NODUS_ISOLATED_ROOT || !Number.isInteger(port) || port < 1024 || port > 65535 || port === 23119) throw new Error('Puerto de runtime QA inválido.');
+    return port;
+  }
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.unref();
@@ -1550,11 +1578,15 @@ async function transformersPipeline(model: NodusLocalModelDefinition): Promise<a
   return pending;
 }
 
-export async function embedWithNodusLocal(modelId: string, input: string | string[], signal?: AbortSignal): Promise<number[][]> {
+export async function embedWithNodusLocal(modelId: string, input: string | string[], signal?: AbortSignal, options: { role?: EmbeddingRole; title?: string; titles?: (string | undefined)[] } = {}): Promise<number[][]> {
   signal?.throwIfAborted();
   const model = getNodusLocalModel(modelId);
   if (!model || model.kind !== 'embedding') throw new Error(`Modelo de embeddings local no soportado: ${modelId}`);
   const texts = Array.isArray(input) ? input : [input];
+  if (isEmbeddingGemma2(modelId)) {
+    if (!await verifyNodusLocalModel(modelId)) throw new Error(`Descarga y verifica «${model.label}» desde Ajustes → Modelos IA.`);
+    return embedEmbeddingGemma2(modelId, modelDirectory(modelId), texts, options, signal);
+  }
   if (model.runtime === 'llama_cpp') {
     return withNodusLocalServerLease(modelId, 'embedding', async (baseUrl) => {
       const response = await fetch(`${baseUrl}/embeddings`, {
@@ -1571,8 +1603,24 @@ export async function embedWithNodusLocal(modelId: string, input: string | strin
     });
   }
   const extractor = await transformersPipeline(model);
-  const output = await extractor(texts, { pooling: 'mean', normalize: true });
-  const values = output.tolist() as number[][];
+  // A large padded CPU batch can exceed Electron's native allocator limit and
+  // terminate the application before JavaScript can report the failure. Bound
+  // dispatch without changing historical text, pooling or normalization.
+  const values: number[][] = [];
+  const tokenLengths = texts.map(text => extractor.tokenizer(text, { truncation: true, return_tensor: false }).input_ids.length as number);
+  for (let offset = 0; offset < texts.length;) {
+    signal?.throwIfAborted();
+    let end = offset + 1, maximum = tokenLengths[offset];
+    while (end < texts.length && end - offset < 8) {
+      const nextMaximum = Math.max(maximum, tokenLengths[end]);
+      if (nextMaximum * (end - offset + 1) > 2048) break;
+      maximum = nextMaximum; end++;
+    }
+    const output = await extractor(texts.slice(offset, end), { pooling: 'mean', normalize: true });
+    values.push(...output.tolist() as number[][]);
+    offset = end;
+  }
+  signal?.throwIfAborted();
   return values;
 }
 
@@ -1580,4 +1628,4 @@ export async function embedWithNodusLocal(modelId: string, input: string | strin
 // Electron mock. The real Electron app always exposes EventEmitter methods, but
 // guarding registration keeps the local-model module import-safe in workers and
 // test harnesses that do not own the application lifecycle.
-if (typeof app.once === 'function') app.once('before-quit', stopNodusLocalServer);
+if (typeof app.once === 'function') app.once('before-quit', () => { stopNodusLocalServer(); closeEmbeddingGemma2Worker(); });

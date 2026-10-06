@@ -4,7 +4,7 @@
 // symmetric counterpart of the per-chapter relation analysis, reusing the same
 // candidate retrieval + relation typing as electron/ai/chapterIdeas.ts.
 import type { EdgeDetail, Idea, LiveRelation, LiveRelationsResult, ModelRef, PromptLanguage } from '@shared/types';
-import { completeText, embed } from './aiClient';
+import { completeText, embedQuery } from './aiClient';
 import {
   clamp01,
   gatherCandidates,
@@ -627,7 +627,7 @@ export async function searchCopilotIdeas(query: string, limit = 30): Promise<Cop
 
   const trimmed = query.trim();
   if (trimmed.length >= 8) {
-    const vector = await embed(trimmed);
+    const vector = await embedQuery(trimmed);
     if (vector) {
       for (const hit of findSimilarIdeas(vector, LIVE_IDEA_MIN_SIMILARITY, cleanLimit)) {
         if (!ids.includes(hit.global_id)) ids.push(hit.global_id);
@@ -785,7 +785,7 @@ export async function analyzeText(text: string, model?: ModelRef | null, languag
   const trimmed = text.trim();
   if (trimmed.length < 12) return { available: true, relations: [] };
 
-  const vector = await embed(trimmed);
+  const vector = await embedQuery(trimmed);
   if (!vector) return { available: false, relations: [] };
 
   const candidates = gatherLiveCandidates(trimmed, vector);
@@ -850,7 +850,7 @@ export interface CopilotPassageSearchResult {
 }
 
 export interface CopilotPassageSearchResponse {
-  /** False when no embedding provider/key is configured (cannot embed the query). */
+  /** False when no embedding provider/key is configured (cannot embedQuery the query). */
   available: boolean;
   /** False when the corpus has no embedded passages for the current model. */
   indexed: boolean;
@@ -878,7 +878,7 @@ export async function searchCopilotPassages(query: string, limit = 20): Promise<
 
   // Embed first: with no provider we can report "not available" without touching
   // the passage tables, which keeps the branch cheap and side-effect free.
-  const vector = await embed(trimmed);
+  const vector = await embedQuery(trimmed);
   if (!vector) return { available: false, indexed: false, passages: [] };
 
   const indexed = embeddedPassageCount() > 0;

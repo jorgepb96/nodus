@@ -2,7 +2,7 @@ import type { ModelRef, ResearchWebSearchMode, ResearchWebSearchStats, ResearchW
 import type { ResearchWebIntent } from '@shared/researchActions';
 import type { RetrievalSettings } from '@shared/researchCorpus';
 import { webTerms } from '@shared/webResearchRanking';
-import { completeJson, embedMany } from './aiClient';
+import { completeJson, embedMany, embedQuery, effectiveEmbeddingConfig } from './aiClient';
 import { startResearchActivity } from './researchActivity';
 import { runWebResearch, type WebDepth, type WebEvidence, type WebResearchDeps, type WebResearchOutcome } from '../websearch/webResearch';
 import { searchSearxng } from '../websearch/searxngService';
@@ -79,7 +79,11 @@ export class ResearchWebGrant {
       ratePassages: async (input, stepSignal) => (await completeJson({ system: RATE_SYSTEM, user: JSON.stringify(input), maxTokens: 60 + input.passages.length * 16,
         temperature: 0, noRetry: true, signal: stepSignal, timeoutMs: 25_000 }, validRatings, model)).ratings,
       embed: async (texts, stepSignal) => {
-        const vectors = await embedMany(texts, stepSignal).catch(() => null);
+        const config = effectiveEmbeddingConfig();
+        const vectors = config.provider === 'nodus' && config.modelId.startsWith('embeddinggemma-2-')
+          ? await Promise.all([embedQuery(texts[0], stepSignal, { config }), embedMany(texts.slice(1), stepSignal, { config, role: 'document' })])
+            .then(([query, documents]) => [query, ...documents]).catch(() => null)
+          : await embedMany(texts, stepSignal).catch(() => null);
         return vectors && vectors.every(vector => Array.isArray(vector)) ? vectors as number[][] : null;
       },
       now: () => Date.now(),

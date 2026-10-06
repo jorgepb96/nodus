@@ -45,7 +45,7 @@ try {
     traversal: { rounds: 1, candidates: 1, partial: false } };
   };
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const { validResearchAction } = load('shared/researchActions.ts');
   assert.equal(validResearchAction({ action: 'catalog', author: 'Alburquerque' }), false, 'only the chat agent is offered the catalogue');
   assert.equal(validResearchAction({ action: 'catalog', author: 'Alburquerque' }, false, true), true);

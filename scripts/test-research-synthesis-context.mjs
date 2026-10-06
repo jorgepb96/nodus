@@ -25,7 +25,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
   const dbModule = load('electron/db/database.ts');
   const db = dbModule.getDb();
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.localModelContextWindow = async () => null;
   const molecule = load('electron/ai/moleculeInspection.ts');
   molecule.inspectResearchMolecules = async () => [];
@@ -124,7 +124,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     const controller = new AbortController();
     let started;
     const ready = new Promise(resolve => { started = resolve; });
-    ai.embed = async (_query, signal) => {
+    ai.embedQuery = async (_query, signal) => {
       assert.equal(signal, controller.signal);
       started();
       return new Promise((_resolve, reject) => {
@@ -140,7 +140,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
       } finally { clearTimeout(timer); }
       controller.abort();
       await assert.rejects(pending, { name: 'AbortError' });
-    } finally { ai.embed = async () => null; }
+    } finally { ai.embedQuery = async () => null; }
   });
 
   test('cancellation reaches concurrent route tools and disposes every runner', async () => {

@@ -14,8 +14,9 @@ import { resolveResearchNotebook, resolveAcademicResearchScope } from './researc
 import { assertResearchDocument, assertResearchDocumentPermission, researchFingerprint } from './researchCorpusScope';
 import { resolveResearchSourceScope, scopedIdeaEvidencePassages } from './researchSourceScope';
 import { getResearchPreparationInventory, retrieveSharedDocumentaryEvidence } from './documentaryPreparation';
+import { recordEmbeddingTrace } from '../qa/embeddingTrace';
 import { retrieveHierarchical, selectPassageEvidence } from './hierarchicalRetrieval';
-import { embed, resolveModelRef, researchModelContextWindow } from './aiClient';
+import { embedQuery, resolveModelRef, researchModelContextWindow } from './aiClient';
 import { createResearchSectionCoverage } from './researchSectionCoverage';
 import { withResearchValidationThinking } from './thinkingEffort';
 import { withResearchRequestBudget } from './researchRequestBudget';
@@ -158,7 +159,7 @@ export class ResearchCorpusRun {
     if (!this.scope.documents.length) return;
     const { ideas: readIdeas, documents: readDocuments } = this.layers;
     if (!readIdeas && !readDocuments) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
-    const vector = await researchActivityStep('scope', 'embed', () => embed(query, this.signal)).catch(() => {
+    const vector = await researchActivityStep('scope', 'embed', () => embedQuery(query, this.signal)).catch(() => {
       this.limitations.add('embedding_provider_unavailable'); return null;
     });
     this.validate();
@@ -220,6 +221,11 @@ export class ResearchCorpusRun {
     this.budget.candidates += hierarchy.passages.length + separable.length + shared.traversal.candidates;
     this.budget.partial ||= shared.traversal.partial;
     this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: hierarchy.passages.length + separable.length + shared.traversal.candidates, partial: this.budget.partial });
+    recordEmbeddingTrace({ type: 'research-evidence-selection', query, scopeId: this.scope.id,
+      sharedCandidates: shared.evidence.map(item => ({ id: item.id, documentId: item.documentId, provenance: item.provenance })),
+      legacyCandidates: legacy.map(item => ({ id: item.id, reason: item.reason })),
+      selectedPassages: [...this.evidence.keys()], selectedIdeas: [...this.ideas.keys()],
+      limitations: [...this.limitations], partial: this.budget.partial });
   }
   async readDocument(documentId: string, operation: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
     this.validate();

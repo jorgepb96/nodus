@@ -1,0 +1,526 @@
+{
+  "name": "conversation-attachment",
+  "repetition": 0,
+  "question": "¿Cuántos minutos reserva Arco para su ventana de calibración ámbar? Cita el archivo adjunto.",
+  "scope": "limited-with-attachment",
+  "started": 1791324609544,
+  "finished": 1791324620105,
+  "request": {
+    "attachmentIds": [
+      "9be9cb93-ca60-4d24-95a6-d85d068d63a8"
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Cuántos minutos reserva Arco para su ventana de calibración ámbar? Cita el archivo adjunto.",
+        "attachments": [
+          {
+            "id": "9be9cb93-ca60-4d24-95a6-d85d068d63a8",
+            "name": "conversation-only.txt",
+            "size": 173,
+            "kind": "text",
+            "textChars": 173,
+            "imageCount": 0
+          }
+        ]
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "71a4226d-2f8a-4bb4-b3fe-4fd1534613c8"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "c68ac58b-c076-442f-a847-5ac660acac09",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "La respuesta es que **el archivo adjunto no contiene ningún dato sobre un «Arco», ni sobre una «ventana de calibración ámbar», ni sobre minutos reservados para ella**. Es un hueco de evidencia real: la única información del corpus seleccionado sobre calibración se refiere a otro dispositivo y a otra unidad de tiempo.\n\nLo que sí respalda la fuente es lo siguiente:\n\n- El texto adjunto describe el **sensor Alba**, que mide turbidez mediante luz verde a 530 nm y debe calibrarse **cada 30 días** ([fuente](nodus://passage/documentary%3Af0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7%3Adca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e%3A0)).\n- Esa misma fuente señala además que el sensor **no mide concentración de oxígeno** ([fuente](nodus://passage/documentary%3Af0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7%3Adca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e%3A0)).\n- La idea registrada en la biblioteca repite ese método y su periodicidad: luz verde a 530 nm y **calibración cada 30 días** ([fuente](nodus://idea/g-0001)).\n\nEn resumen: no puedo indicar cuántos minutos reserva Arco para una ventana de calibración ámbar porque ni «Arco» ni esa ventana ni ninguna duración en minutos aparecen en el material consultado. Lo único documentado es el intervalo de calibración de 30 días del sensor Alba, que es un dato distinto del que preguntas. Si dispones de otro anexo donde se describa el procedimiento de Arco, puedo buscarlo y responder entonces con precisión.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 1,
+      "documents": 1,
+      "summaries": 0,
+      "passages": 1,
+      "contextChars": 4522,
+      "truncated": false,
+      "researchTraversal": {
+        "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+        "sourceCount": 1,
+        "rounds": 5,
+        "evidenceTokens": 262,
+        "decisionTokens": 14084,
+        "matchedDocumentIds": [
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "title": "fixture 13",
+            "reasons": []
+          }
+        ],
+        "limitations": [],
+        "partial": false,
+        "queries": [
+          {
+            "query": "¿Cuántos minutos reserva Arco para su ventana de calibración ámbar?",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "Arco ventana de calibración ámbar minutos",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "calibración ámbar Arco duración",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "Arco ventana de calibración ámbar minutos",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "Arco calibración ámbar minutos",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+        "nodus_id": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "libraryItemId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "attachmentId": "local:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "revision": "cba44dfd81dd7fee7cc28b8c8cb89850c36e6df9a87172c2226e88ca369423a4",
+        "historical": false,
+        "provenance": "source",
+        "text": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus-library:nodus%3Acb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 13",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:10:11.120Z",
+      "type": "documentary-retrieval",
+      "query": "¿Cuántos minutos reserva Arco para su ventana de calibración ámbar?",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:10:11.193Z",
+      "type": "research-evidence-selection",
+      "query": "¿Cuántos minutos reserva Arco para su ventana de calibración ámbar?",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:10:11.609Z",
+      "type": "documentary-retrieval",
+      "query": "Arco ventana de calibración ámbar minutos",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:10:11.675Z",
+      "type": "research-evidence-selection",
+      "query": "Arco ventana de calibración ámbar minutos",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:10:12.197Z",
+      "type": "documentary-retrieval",
+      "query": "calibración ámbar Arco duración",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [],
+        "selected": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:10:12.266Z",
+      "type": "research-evidence-selection",
+      "query": "calibración ámbar Arco duración",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:10:13.571Z",
+      "type": "documentary-retrieval",
+      "query": "Arco ventana de calibración ámbar minutos",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:10:13.642Z",
+      "type": "research-evidence-selection",
+      "query": "Arco ventana de calibración ámbar minutos",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:10:15.083Z",
+      "type": "documentary-retrieval",
+      "query": "Arco calibración ámbar minutos",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [],
+        "selected": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:10:15.153Z",
+      "type": "research-evidence-selection",
+      "query": "Arco calibración ámbar minutos",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    },
+    {
+      "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-xoTdoN/artifacts/chat-0-conversation-attachment.png"
+}

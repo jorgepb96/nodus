@@ -1,0 +1,168 @@
+{
+  "format": "nodus.embedding-verification/1",
+  "checks": [
+    {
+      "name": "contracts",
+      "result": "35 tests pass, including contracts, runtime validation, readiness, licensing and translated nested worker failures",
+      "logSha256": "bda565139e91bb5452390a86d2a967399d40b14fd23e228cdce677bd942b4b25",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-contracts.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/contracts.log",
+      "status": "passed",
+      "command": "npm run test:embeddinggemma:contracts",
+      "observedExitCode": 0
+    },
+    {
+      "name": "typecheck",
+      "result": "Renderer typecheck passes; the final Desktop production build also passes renderer and Electron typechecks",
+      "logSha256": "a057d123e87a4a020bf5a247d992b6f46559fb809b8531fff06cf6ee629d7d98",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-typecheck.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/typecheck.log",
+      "status": "passed",
+      "command": "npm run typecheck",
+      "observedExitCode": 0
+    },
+    {
+      "name": "build",
+      "result": "Final Desktop production build and renderer/Electron typechecks pass",
+      "logSha256": "391b903c968f2057483bda9fd8c89fa6a47323f954cd8bad451c20ecfa9f300d",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-build.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/build.log",
+      "status": "passed",
+      "command": "npm run build",
+      "observedExitCode": 0
+    },
+    {
+      "name": "throughput",
+      "result": "Real provider endpoint guard and documentary throughput regression pass",
+      "logSha256": "8db85936a7af50f858e45c21dd16a86a0c2ebf2484d0aa0dc90fd9fdeed4484e",
+      "logFile": "/private/tmp/nodus-embeddinggemma-throughput-fixed.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/throughput.log"
+    },
+    {
+      "name": "server-and-legal",
+      "result": "Six contract/server and legal packaging tests pass",
+      "logSha256": "487780ed759be48bd456ce5035d83665c08cbb5bfcccbf8071aed0043872543d",
+      "logFile": "/private/tmp/nodus-embeddinggemma-combined-final.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/server-and-legal.log"
+    },
+    {
+      "name": "native-server",
+      "result": "Actual Desktop vector export and native query pass against disposable server",
+      "logSha256": "ac5fcc2885e41fe09b5d46d7ca6d8d35ef3588e1fc1f423f33f74bcde8dea49b",
+      "logFile": "/private/tmp/nodus-embeddinggemma-native-server.log",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/native-server.log"
+    },
+    {
+      "name": "readiness",
+      "result": "Six notebook readiness tests pass, including partial and incompatible vectors",
+      "logFile": "/private/tmp/nodus-embeddinggemma-readiness.log",
+      "logSha256": "91b268b23f2a19804fd6b635408ae78ec2aeee7d850017bfedeef0259a418ca6",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/readiness.log"
+    },
+    {
+      "name": "package",
+      "result": "Final macOS ARM64 ASAR smoke passes both profiles offline, explicit rebuild readiness, packaged Apache/policy notices and localized shared-family Settings/deletion checks",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-package-smoke.log",
+      "logSha256": "6a79f54d2a82dc092afb985cba66662b6a654267801094af58920fc28c1dd856",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/package.log",
+      "status": "passed",
+      "command": "npm run test:embeddinggemma:package -- --executable=/private/tmp/nodus-research-EkjNvg/packages-final/mac-arm64/Nodus.app/Contents/MacOS/Nodus --model-root=/private/tmp/nodus-research-Rfuk56",
+      "observedExitCode": 0
+    },
+    {
+      "name": "desktop-capacity",
+      "result": "Actual isolated Desktop semantic search passes at 1,000 and 10,000 real generated vectors; exact query token counts are recorded",
+      "logFile": "/private/tmp/nodus-embeddinggemma-desktop-capacity-quiet.log",
+      "logSha256": "373785de2aac79b7a731939ba7ea113237cb0ebdc41b4538522f0aaf38d4c0bb",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/desktop-capacity.log"
+    },
+    {
+      "name": "lint",
+      "result": "ESLint passes",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-lint.log",
+      "logSha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/lint.log",
+      "status": "passed",
+      "command": "npm run lint",
+      "observedExitCode": 0
+    },
+    {
+      "name": "api-and-translations",
+      "result": "106 focused role/API, catalog, translated error, i18n and documentary regression tests pass",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-api-regressions.log",
+      "logSha256": "9eed13d3d5365c21c698660c1939b971390baddc102c760542b7cf487effb0ab",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/api-and-translations.log",
+      "status": "passed",
+      "observedExitCode": 0
+    },
+    {
+      "name": "server-web-build",
+      "result": "Server Web production build passes",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-server-build.log",
+      "logSha256": "3b499c054d8366866cf2b3d012ca6bef16b32a43d007be1bb82fe266b9438556",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/server-web-build.log",
+      "status": "passed",
+      "command": "npm run build:server-web",
+      "observedExitCode": 0
+    },
+    {
+      "name": "server-web-regressions",
+      "result": "3 real Electron Server Web native-vault/security regression tests pass",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-server-regressions.log",
+      "logSha256": "33e834186b91849681554a9ecb988ccf14d7a2f0aa9c25f73b1a9f47fe742270",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/server-web-regressions.log",
+      "status": "passed",
+      "observedExitCode": 0
+    },
+    {
+      "name": "electron-e2e",
+      "result": "General real Electron E2E passes, including the shared download card and all existing main UI flows",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-e2e-smoke.log",
+      "logSha256": "5e19914053d742d5b0f00460f99bfe208e56134d81314c816b445a9a57d90c60",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/electron-e2e.log",
+      "status": "passed",
+      "command": "npm run test:e2e",
+      "observedExitCode": 0
+    },
+    {
+      "name": "package-build",
+      "result": "Final local ad-hoc macOS ARM64 application package builds; release Developer ID signing is not validated",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-package-build.log",
+      "logSha256": "fe5be2c0251b04ad72364bbb3666b108b826ca48a8bb696e1ae4a1d923b7c22f",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/package-build.log",
+      "status": "passed",
+      "command": "CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac --arm64 --dir --config.directories.output=/private/tmp/nodus-research-EkjNvg/packages-final --config.mac.identity=null --config.npmRebuild=false",
+      "observedExitCode": 0
+    },
+    {
+      "name": "full-regression",
+      "result": "Full test inventory completes: 4637 tests, 4634 pass, 2 skipped, 1 stale generated sitemap failure. That failure is resolved by regeneration and the three passing sitemap regressions recorded below. The retained full-run log predates this repair.",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-tests-green.log",
+      "logSha256": "72f706bc34510d292f98c1c824ac89afbb7079affe36bd11a2be6a799b9ed5e2",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/full-regression.log",
+      "status": "completed-with-repaired-failure",
+      "command": "npm run test:ci",
+      "observedExitCode": 1,
+      "resolutionCheck": "sitemap-repair",
+      "tests": 4637,
+      "passed": 4634,
+      "skipped": 2,
+      "failedBeforeRepair": 1
+    },
+    {
+      "name": "sitemap-repair",
+      "result": "All 3 sitemap regressions pass after regenerating source-derived dates following the package dependency commit",
+      "logFile": "/private/tmp/nodus-embeddinggemma-final-sitemap.log",
+      "logSha256": "5f15815af3821288eccf846902b9f4e5943f26a294eb3e44582d4fff66d4424d",
+      "archivedLogFile": "audit/embeddinggemma-2/verification/sitemap-repair.log",
+      "status": "passed",
+      "command": "npm run site:sitemap; node --test scripts/test-site-sitemap.mjs",
+      "observedExitCode": 0
+    }
+  ],
+  "relatedRegression": "Focused regressions and the complete scripts/test-*.mjs inventory were exercised. Preserve the single source-date sitemap failure from the complete run; the regenerated sitemap and all three focused checks pass. The previous role-aware mock and catalog regressions are repaired.",
+  "sourceCommit": "0c94b57c618f661b6e68788d8858e0ba8e18c375",
+  "runtimePackageSourceCommit": "0432f28c8f87f2135e882e5b9e2a938f63c1e53e",
+  "sourceAfterPackage": "Only .gitattributes (exact-byte QA evidence preservation) and regenerated site/sitemap.xml changed after the packaged runtime smoke; no runtime or UI source changed.",
+  "updatedAt": "2026-10-06T23:41:05.064973+00:00"
+}

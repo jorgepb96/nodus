@@ -1,0 +1,365 @@
+{
+  "name": "insufficient-evidence",
+  "repetition": 0,
+  "question": "¿Cuánto cuesta el sensor Alba en euros?",
+  "scope": "limited",
+  "started": 1791324206072,
+  "finished": 1791324215533,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Cuánto cuesta el sensor Alba en euros?",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "71a4226d-2f8a-4bb4-b3fe-4fd1534613c8"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "2f4c47c0-a8e1-4b63-88ab-5719255dd10d",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "**No hay dato de precio en las fuentes seleccionadas.**\n\nLo que sí consta en el material disponible sobre el sensor Alba es su funcionamiento y mantenimiento, no su coste:\n\n- El sensor Alba mide turbidez mediante luz verde a 530 nm y requiere calibración cada 30 días ([fuente](nodus://idea/g-0001)).\n- El texto literal de la obra lo confirma y añade una precisión relevante: «El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.» ([fuente](nodus://passage/documentary%3Af0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7%3Adca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e%3A0))\n\n**Hueco de evidencia:** ni la idea registrada ni el pasaje recuperado mencionan precio, moneda, proveedor ni condiciones comerciales. La búsqueda se limitó a «fixture 13» y ese documento no cubre la dimensión económica; por tanto, no puedo dar una cifra en euros sin inventarla. Si necesitas ese dato, habría que buscar en fuentes de catálogo, presupuesto o proveedor, que no están entre las consultadas.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 1,
+      "documents": 1,
+      "summaries": 0,
+      "passages": 1,
+      "contextChars": 4494,
+      "truncated": false,
+      "researchTraversal": {
+        "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+        "sourceCount": 1,
+        "rounds": 3,
+        "evidenceTokens": 262,
+        "decisionTokens": 4530,
+        "matchedDocumentIds": [
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "title": "fixture 13",
+            "reasons": []
+          }
+        ],
+        "limitations": [],
+        "partial": false,
+        "queries": [
+          {
+            "query": "¿Cuánto cuesta el sensor Alba en euros?",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "precio sensor Alba euros",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "coste sensor Alba",
+            "sources": [
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+            ],
+            "candidates": 2,
+            "partial": false
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+        "nodus_id": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "libraryItemId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "attachmentId": "local:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "revision": "cba44dfd81dd7fee7cc28b8c8cb89850c36e6df9a87172c2226e88ca369423a4",
+        "historical": false,
+        "provenance": "source",
+        "text": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus-library:nodus%3Acb14f5a9-f41e-4f2a-bf3c-f23618821596",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 13",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:03:28.434Z",
+      "type": "documentary-retrieval",
+      "query": "¿Cuánto cuesta el sensor Alba en euros?",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:03:28.519Z",
+      "type": "research-evidence-selection",
+      "query": "¿Cuánto cuesta el sensor Alba en euros?",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:03:30.126Z",
+      "type": "documentary-retrieval",
+      "query": "precio sensor Alba euros",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:03:30.256Z",
+      "type": "research-evidence-selection",
+      "query": "precio sensor Alba euros",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:03:31.521Z",
+      "type": "documentary-retrieval",
+      "query": "coste sensor Alba",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "vectorKeys": [
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          }
+        ],
+        "selected": [
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": [
+              "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:03:31.624Z",
+      "type": "research-evidence-selection",
+      "query": "coste sensor Alba",
+      "scopeId": "f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7",
+      "sharedCandidates": [
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-xoTdoN/artifacts/chat-0-insufficient-evidence.png"
+}

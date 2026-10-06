@@ -8,3 +8,8 @@ runtime/zotero-mcp/licenses/** -text
 
 # Manuals are generated binary artifacts; never diff or normalise them as text.
 *.pdf -text -diff
+
+# Hash-pinned QA evidence must retain its exact bytes on every platform.
+audit/embeddinggemma-2/** -text
+# The archived long-document fixture includes a tested terminal blank line.
+audit/embeddinggemma-2/fixtures/fixture-19.md whitespace=-blank-at-eof

@@ -7,7 +7,7 @@ existing indexes remain unchanged; no index rebuild is needed for this change.
 
 The writer first answers the actual question at an appropriate length, preserves
 attributions, quantities, negations and corrections, and distinguishes source
-facts from calculations. For drafts with more than three prose statements, or a citation outside the
+facts from calculations. For drafts with more than three prose statements, more than sixty words, or a citation outside the
 frozen original evidence, a source-only writer produces a concise fresh draft
 from the question and original excerpts. It does not receive the previous prose,
 generated orientation, council opinions or chat history as evidence, so invented
@@ -44,7 +44,7 @@ distinctions; derived interpretations need their own labelled sentence. Unsuppor
 are removed; empty headings and broken table citation placement are cleaned up.
 An additional coverage check catches supported but irrelevant background and
 omitted requested facts. It can request one further repair, which is audited
-again. An incomplete-coverage verdict is independently confirmed before acting:
+again. Both positive coverage judgements and incomplete-coverage verdicts need independent exact-span proof before acting. The full-question proof receives neither the original positive verdict nor retired-claim diagnoses. A positive judgement is checked against the entire question, including its requested conclusions and comparisons; one correct value or a factual inventory cannot substitute for the other facets. A comparison derived from literal measurement qualifications may be requested as the answer's own labelled reasoning even when the source never uses the word limit; its premises still need the full prose audit. For the confirmation:
 each dismissed complaint needs an exact meaningful span of the verified answer;
 each omitted available fact needs an exact authorized source quote, while an
 unaddressed evidence gap asks only for a scoped acknowledgement. Fabricated spans,

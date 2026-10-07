@@ -25,6 +25,7 @@ const installVerdicts = judge => {
   ai.completeJson = async (options, validate, selected) => {
     assert.deepEqual(selected, model, 'the selected writer model also audits; no model substitution');
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     if (!input.sentences) { const result = { complete: true, missing: [] }; assert(validate(result)); return result; }
     const result = { claims: input.sentences.map((sentence, index) => judge(sentence.text, index, input)) };
     assert(validate(result)); return result;
@@ -83,6 +84,7 @@ test('a contradictory inference classification needs a fresh consistent verdict,
   let calls = 0;
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     if (!input.sentences) return { complete: true, missing: [] };
     calls++;
     const verdict = { ...accepted(0), kind: calls === 1 ? 'fact' : 'inference', explicitInference: true,
@@ -161,6 +163,7 @@ test('a malformed premise reference gets a bounded schema repair, not an uncheck
   let calls = 0;
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     if (!input.sentences) return { complete: true, missing: [] };
     calls++;
     const verdict = accepted(0);
@@ -218,6 +221,7 @@ test('verified but irrelevant background is repaired when the requested fact exi
   const valid = { complete: true, missing: [] };
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, 'The flow rate was not measured.')) }
       : input.coverageComplaint ? { complete: false, missing: input.coverageComplaint.missing, addressed: [], omissions: input.coverageComplaint.missing.map(complaint =>
         ({ complaint, kind: 'available-fact', requiredFact: 'Give the requested river level of 18 metres.', sourceId: passage.id, quote: passage.summary })) }
@@ -233,6 +237,7 @@ test('coverage outages and persistently incomplete repairs cannot become success
   for (const outage of [false, true]) {
     ai.completeJson = async (options, validate) => {
       const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
       if (!input.sentences && outage) throw new Error('simulated coverage outage');
       const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index)) }
         : input.coverageComplaint ? { complete: false, missing: input.coverageComplaint.missing, addressed: [], omissions: input.coverageComplaint.missing.map(complaint =>
@@ -249,6 +254,7 @@ test('a verified evidence gap retains the requested facet even without a factual
   const gap = 'I cannot establish the purchase price of this sensor from the available evidence.';
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     const result = input.sentences ? { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'A limitation of this answer, not a claim of absence from the corpus' }] }
       : { complete: true, missing: [] };
     if (!input.sentences) assert.equal(input.answer, gap, 'coverage sees the specific verified gap, not a generic fallback');
@@ -263,6 +269,7 @@ test('coverage cannot demand a corpus-absence assertion instead of an already ve
   let confirmations = 0;
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     let result;
     if (input.sentences) result = { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'Specific epistemic limit' }] };
     else if (input.coverageComplaint) {
@@ -282,6 +289,7 @@ test('an interpretation complaint is checked against the precise verified distri
   const sentence = 'I cannot establish the shape of the distribution from these excerpts.';
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     const result = input.sentences ? { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'Precise interpretation limit' }] }
       : input.coverageComplaint ? { complete: true, missing: [], omissions: [], addressed: input.coverageComplaint.missing.map(complaint => ({ complaint, answerQuote: sentence })) }
       : { complete: false, missing: ['The requested distribution interpretation is omitted.'] };
@@ -295,6 +303,7 @@ test('coverage confirmation cannot invent answer spans or supporting source quot
   for (const invalidKind of ['answer', 'source', 'format-only']) {
     ai.completeJson = async (options, validate) => {
       const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
       if (input.sentences) return { claims: input.sentences.map((_row, index) => accepted(index)) };
       if (!input.coverageComplaint) return { complete: false, missing: ['The requested facet is omitted.'] };
       const complaint = input.coverageComplaint.missing[0];
@@ -313,6 +322,7 @@ test('a malformed coverage proof gets one identical retry and completeness is de
   let attempts = 0, frozen;
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     if (input.sentences) return { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped epistemic limit', premises: [], unsupportedParts: [], explicitInference: false })) };
     if (!input.coverageComplaint) return { complete: false, missing: ['The requested purchase price is not supplied.'] };
     attempts++;
@@ -335,6 +345,7 @@ test('coverage proof retries are bounded and transport failures are never replay
     let attempts = 0;
     ai.completeJson = async options => {
       const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
       if (input.sentences) return { claims: input.sentences.map((_row, index) => accepted(index)) };
       if (!input.coverageComplaint) return { complete: false, missing: ['The requested facet is omitted.'] };
       attempts++; throw new ai.AiError('Cannot confirm proof', false, false, code);
@@ -348,7 +359,8 @@ test('a confirmed missing limit is compared with the exact already verified ackn
   const gap = 'I cannot establish the distribution shape from the authorized excerpts.';
   const draft = `The river level is 18 metres.\n\n${gap}`; let comparisons = 0;
   ai.completeJson = async (options, validate) => {
-    const input = JSON.parse(options.user); let result;
+    const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] }; let result;
     if (input.sentences) result = { claims: input.sentences.map((row, index) => row.text === gap
       ? { index, kind: 'nonfactual', supported: true, reason: 'Exact epistemic scope', premises: [], unsupportedParts: [], explicitInference: false } : accepted(index)) };
     else if (input.requiredLimits) {
@@ -370,6 +382,7 @@ test('limit comparison cannot invent quotes, indices or a verified statement', a
   for (const mode of ['quote', 'index', 'duplicate']) {
     ai.completeJson = async (options, validate) => {
       const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
       if (input.sentences) return { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped gap', premises: [], unsupportedParts: [], explicitInference: false })) };
       if (input.requiredLimits) {
         const row = { omissionIndex: 0, limitIndex: mode === 'index' ? 99 : 0, answerQuote: mode === 'quote' ? 'An invented verified sentence.' : gap };
@@ -386,7 +399,8 @@ test('limit comparison cannot invent quotes, indices or a verified statement', a
 test('an unrelated verified limitation cannot satisfy the missing requested facet', async () => {
   const gap = 'I cannot establish the flow rate from these excerpts.'; let comparisons = 0;
   ai.completeJson = async (options, validate) => {
-    const input = JSON.parse(options.user); let result;
+    const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] }; let result;
     if (input.sentences) result = { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped gap', premises: [], unsupportedParts: [], explicitInference: false })) };
     else if (input.requiredLimits) { comparisons++; result = { equivalent: [], distinct: [{ omissionIndex: 0 }] }; }
     else if (input.coverageComplaint) result = { addressed: [], omissions: [{ complaint: input.coverageComplaint.missing[0], kind: 'unaddressed-limit', requiredFact: 'Acknowledge inability to establish the restoration deadline.', sourceId: null, quote: null }] };
@@ -405,6 +419,7 @@ test('broad drafts are redrafted from original excerpts without passing invented
   ai.completeText = async (options, selected) => {
     assert.deepEqual(selected, model); assert.equal(options.signal, undefined);
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     assert.equal(input.question, 'What level is reported and was flow measured?');
     assert.equal(input.sources.length, 1);
     assert.match(input.sources[0].text, /18 metres/);
@@ -413,6 +428,7 @@ test('broad drafts are redrafted from original excerpts without passing invented
   };
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) } : { complete: true, missing: [] };
     if (input.sentences) { assert(drafted); assert.equal(input.sentences.length, 1); assert.equal(input.sentences[0].text, fact); audited = true; }
     else assert(audited);
@@ -428,6 +444,7 @@ test('a source-only redraft table still needs separate quantity and negation evi
   ai.completeText = async () => table;
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
     if (input.sentences) {
       assert(input.sentences.some(row => row.text === '| Flow rate | Not measured |'));
       assert(input.sentences.some(row => row.text === '| River level | 18 metres |'));
@@ -466,6 +483,69 @@ test('empty, unavailable and cancelled source redrafts cannot publish unchecked 
   await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en', controller.signal), { name: 'AbortError' });
 });
 
+test('a positive coverage boolean cannot bypass independent proof or publish invented answer spans', async () => {
+  for (const mode of ['boolean-only', 'invented-span', 'transport']) {
+    let confirmations = 0;
+    ai.completeJson = async (options, validate) => {
+      const input = JSON.parse(options.user);
+      if (input.sentences) return { claims: input.sentences.map((_row, index) => accepted(index)) };
+      if (!input.fullQuestionProof) return { complete: true, missing: [] };
+      confirmations++;
+      if (mode === 'transport') throw new ai.AiError('Transport unavailable', false, false, 'provider_http_error');
+      const proof = mode === 'boolean-only' ? { complete: true, missing: [] }
+        : { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: 'A conclusion absent from the actual answer.' }], omissions: [] };
+      assert.equal(validate(proof), false);
+      throw new ai.AiError('Invalid positive proof', false, false, 'schema_mismatch');
+    };
+    ai.completeText = async () => { throw new Error('Unavailable proof cannot buy a speculative repair'); };
+    await assert.rejects(groundResearchChatAnswer('The river level is 18 metres.', sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
+    assert.equal(confirmations, mode === 'transport' ? 1 : 2);
+  }
+});
+
+test('independent positive proof repairs refused reasoning from literal premises and audits the comparison anew', async () => {
+  let confirmations = 0, repairs = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user); let verdict;
+    if (input.sentences) verdict = { claims: input.sentences.map((row, index) => row.text.startsWith('My inference:')
+      ? { ...accepted(index, passage.summary), kind: 'inference', explicitInference: true,
+        premises: [...accepted(index, passage.summary).premises, { text: 'Flow was not measured', type: 'fact', entailed: true, evidence: [{ id: passage.id, quote: passage.summary }], from: [] },
+          { text: 'The level has a measured result while flow does not', type: 'inference', entailed: true, evidence: [], from: [0, 1] }] }
+      : row.text.includes('cannot compare') ? { index, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'Scoped inability, not factual approval' }
+        : accepted(index)) };
+    else if (input.fullQuestionProof) {
+      confirmations++;
+      assert.match(options.system, /inspect every facet/);
+      assert.equal(input.rejectedClaims, undefined, 'a full-question proof sees no retired-claim diagnoses or original positive verdict');
+      const complaint = input.coverageComplaint.missing[0];
+      verdict = input.answer.includes('My inference:') ? { addressed: [{ complaint, answerQuote: input.answer }], omissions: [] }
+        : { addressed: [], omissions: [{ complaint, kind: 'available-fact', requiredFact: 'Compare the measured level with the unmeasured flow as your own labelled reasoning from those premises.', sourceId: passage.id, quote: passage.summary }] };
+    } else verdict = { complete: true, missing: [] };
+    assert(validate(verdict)); return verdict;
+  };
+  ai.completeText = async options => {
+    repairs++;
+    assert.match(JSON.parse(options.user).missing[0], /Compare the measured level/);
+    return 'My inference: the level has a measured value of 18 metres, whereas flow has no measured result; these stated premises support that comparison.';
+  };
+  const answer = await groundResearchChatAnswer('The river level is 18 metres. I cannot compare the level and flow.', sourceContext, 'Compare what is known about the level and flow.', model, 'en');
+  assert.match(answer, /My inference:/); assert.doesNotMatch(answer, /cannot compare/);
+  assert.equal(confirmations, 2); assert.equal(repairs, 1);
+});
+
+test('a long draft with few compound sentences still redrafts from original excerpts', async () => {
+  const draft = 'The river level is 99 metres, ' + 'according to an invented orientation claim '.repeat(12) + '.';
+  installVerdicts((_text, index) => accepted(index));
+  ai.completeText = async options => {
+    const request = JSON.parse(options.user);
+    assert.deepEqual(Object.keys(request), ['question', 'sources']);
+    assert.doesNotMatch(options.user, /99 metres|invented orientation/);
+    return 'The river level is 18 metres.';
+  };
+  const answer = await groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en');
+  assert.match(answer, /18 metres/); assert.doesNotMatch(answer, /99 metres/);
+});
+
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: false, nodi: false } });
@@ -484,6 +564,7 @@ test('the real chat stream holds draft content, cancels safely and rechecks scop
   const plannerOrAudit = verdict => {
     ai.completeJson = async (options, validate) => {
       const input = JSON.parse(options.user);
+    if (input.fullQuestionProof) return { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: input.answer }], omissions: [] };
       const result = input.sources && !input.sentences ? { complete: true, missing: [] } : input.sentences ? { claims: input.sentences.map((row, index) => verdict(row.text, index)) }
         : { goal: 'What is the river level?', queries: ['river level'], authors: [], titles: [], explicitLibrary: false, kind: 'fact', answerMode: 'documentary' };
       assert(validate(result)); return result;

@@ -1,4 +1,6 @@
-// A user-triggered stop must keep what the model already produced.
+// A user-triggered stop keeps published text on ordinary chat surfaces.
+// Documentary Research Chat holds its draft until verification and therefore
+// returns no unchecked partial text on stop.
 //
 // The transport resolves with the partial text once its signal aborts (that contract is
 // covered by the provider tests); these orchestrators must then return that partial text
@@ -114,10 +116,11 @@ try {
     aborter = new AbortController();
     const result = await surface.run(aborter.signal);
     check(`${surface.name}: the stop reaches the provider`, aborter.signal.aborted);
-    check(`${surface.name}: keeps the partial answer`, result.text.includes('Partial answer kept'));
+    if (surface.name === 'research assistant') check(`${surface.name}: withholds the unverified documentary draft`, result.text === '');
+    else check(`${surface.name}: keeps the partial answer`, result.text.includes('Partial answer kept'));
     check(`${surface.name}: never replaces the answer with the abort error`, !/AbortError|aborted a request/i.test(result.text));
     if (result.aborted !== null) check(`${surface.name}: reports the turn as aborted`, result.aborted === true);
-    console.log(`${surface.name}: the partial answer survives the stop`);
+    console.log(`${surface.name}: cancellation preserves its publication contract`);
   }
 
   // The owner registry must exist for the surfaces that key their assets by conversation.

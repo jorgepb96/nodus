@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
+import { constants } from 'node:fs';
 import path from 'node:path';
 import { createResearchApp, waitFor } from './lib/research-app-harness.mjs';
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
@@ -12,7 +13,9 @@ const harness = await createResearchApp({ executablePath, appArgs: [], extraEnv:
 const report = { format: 'nodus.embedding-package-smoke/1', root: harness.root, executablePath, platform: process.platform, architecture: process.arch, isolation: harness.proof, completed: false };
 try {
   const target = path.join(harness.root, 'profile/local-ai/models/embeddinggemma-2-text-q8-v1');
-  for (const asset of model.assets) { const file = path.join(target, asset.file); await fs.mkdir(path.dirname(file), { recursive: true }); await fs.copyFile(path.join(model.directory, asset.file), file); }
+  // APFS/reflink copies keep independent paths and copy-on-write file contents;
+  // the sandbox still forbids access to the source profile. No shared symlinks.
+  for (const asset of model.assets) { const file = path.join(target, asset.file); await fs.mkdir(path.dirname(file), { recursive: true }); await fs.copyFile(path.join(model.directory, asset.file), file, constants.COPYFILE_FICLONE); }
   const { app, page } = await harness.launch();
   report.package = await app.evaluate(({ app }) => ({ packaged: app.isPackaged, appPath: app.getAppPath(), metrics: app.getAppMetrics() }));
   assert(report.package.packaged); assert(report.package.appPath.endsWith('.asar'));

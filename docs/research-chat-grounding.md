@@ -25,8 +25,12 @@ sentence must not permanently retire its true premises. Unsupported assertions
 are removed; empty headings and broken table citation placement are cleaned up.
 An additional coverage check catches supported but irrelevant background and
 omitted requested facts. It can request one further repair, which is audited
-again. If no substantive supported answer remains, the response states that
-evidence is insufficient. If verification is unavailable or an answer still
+again. A verified epistemic limitation retains the exact requested facet even
+when there are no supported factual claims. Repairs receive the deterministic
+failure code as well as the semantic reason, so a true but unqualified inference
+can be labelled and a translated direct quote can become a paraphrase. If no
+verified answer remains, the response states that evidence is insufficient.
+If verification is unavailable or an answer still
 omits requested facts available in its excerpts, the turn reports an availability
 error instead of recording an apparently successful absence answer.
 
@@ -77,6 +81,18 @@ as correct refusals. Citation resolution and actual UI citation dialogs are
 checked independently. Auditor approval is not the campaign's quality score.
 After inspecting the first attempted evaluation, repetitions against revised code
 are identified as regression evaluation, not an untouched held-out estimate.
+
+Collect an audit with independently inspected answer/source hashes:
+
+```sh
+node scripts/collect-research-grounding-audit.mjs --revision=MEASURED_COMMIT --reviews=/path/to/reviews.json
+```
+
+The collector separates earlier runtimes, rejects stale answer/evidence reviews,
+and cannot approve a candidate whose source/runtime differs from the measured
+campaign. Published-answer reviews and failure triage are recorded separately.
+The shared proxy's budget admission can stop a campaign before every repetition;
+those cases stay pending and never count as successful absence responses.
 
 `completed` reports execution completion only. Releasing a validated embedding
 profile still requires its retrieval, quality, isolation, performance and native

@@ -141,6 +141,36 @@ test('a malformed premise reference gets a bounded schema repair, not an uncheck
   assert.equal(calls, 2);
 });
 
+test('repair receives the deterministic cause even when the semantic reason approves the premises', async () => {
+  const correction = { ...passage, summary: 'The preliminary count was 31. The final correction records 32; the preliminary total is superseded.' };
+  const context = JSON.stringify({ contexto_modular_seleccionado: { pasajes_relevantes: [correction] } });
+  installVerdicts((sentence, index) => ({ index, kind: 'inference', supported: true, reason: 'All literal premises and the relation are entailed', unsupportedParts: [], explicitInference: sentence.includes('My inference'),
+    premises: [
+      { text: 'The preliminary count was 31', type: 'fact', entailed: true, evidence: [{ id: passage.id, quote: 'The preliminary count was 31.' }], from: [] },
+      { text: 'The final correction records 32', type: 'fact', entailed: true, evidence: [{ id: passage.id, quote: 'The final correction records 32; the preliminary total is superseded.' }], from: [] },
+      { text: '32 replaces 31', type: 'inference', entailed: true, evidence: [], from: [0, 1] },
+    ] }));
+  ai.completeText = async options => {
+    const rejected = JSON.parse(options.user).rejected;
+    assert.equal(rejected[0].failure, 'unqualified_inference');
+    assert.match(rejected[0].reason, /entailed/);
+    assert.match(options.system, /failure code is authoritative/);
+    return 'My inference from the final correction is that 32 replaces 31.';
+  };
+  assert.match(await groundResearchChatAnswer('32 replaces 31.', context, 'Which count replaces the preliminary total?', model, 'en'), /My inference.*32 replaces 31/);
+});
+
+test('a rejected translated direct quote is repaired without deleting its supported value', async () => {
+  installVerdicts((_sentence, index) => accepted(index));
+  ai.completeText = async options => {
+    assert.equal(JSON.parse(options.user).rejected[0].failure, 'premise_without_literal_evidence');
+    assert.match(options.system, /explicitly label a translation/);
+    return 'Traducción: «El nivel del río es de 18 metros». ';
+  };
+  const result = await groundResearchChatAnswer('El texto dice «El nivel del río es de 18 metros».', sourceContext, '¿Qué nivel tiene el río?', model, 'es');
+  assert.match(result, /Traducción.*18 metros/);
+});
+
 test('a supported premise survives a fresh review after an unsupported compound claim is repaired', async () => {
   installVerdicts((text, index, input) => {
     assert.equal(input.previouslyRejected, undefined, 'repair is judged by its evidence, not overlapping retired wording');
@@ -176,6 +206,19 @@ test('coverage outages and persistently incomplete repairs cannot become success
     ai.completeText = async () => 'The flow rate was not measured.';
     await assert.rejects(() => groundResearchChatAnswer('The flow rate was not measured.', sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
   }
+});
+
+test('a verified evidence gap retains the requested facet even without a factual claim', async () => {
+  const gap = 'I cannot establish the purchase price of this sensor from the available evidence.';
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    const result = input.sentences ? { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'A limitation of this answer, not a claim of absence from the corpus' }] }
+      : { complete: true, missing: [] };
+    if (!input.sentences) assert.equal(input.answer, gap, 'coverage sees the specific verified gap, not a generic fallback');
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('A supported specific limitation needs no rewrite'); };
+  assert.equal(await groundResearchChatAnswer(gap, sourceContext, 'What is the purchase price of this sensor?', model, 'en'), gap);
 });
 
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {

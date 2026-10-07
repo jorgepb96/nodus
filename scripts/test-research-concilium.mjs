@@ -24,6 +24,11 @@ try {
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: skill.builtin === 'svg', nodi: false } });
   const ai = load('electron/ai/aiClient.ts');
   ai.embedQuery = async () => null;
+  let answerMode = 'constructive';
+  ai.completeJson = async (_options, validate) => {
+    const plan = { goal: 'Compose a fictional debate', queries: ['fictional debate'], authors: [], titles: [], explicitLibrary: false, kind: 'fact', answerMode };
+    assert(validate(plan)); return plan;
+  };
   const calls = [], executions = [];
   load('skill-capabilities/registry/main.ts').executeRegisteredChatSkills = async (answer, execution) => { executions.push(execution); return answer; };
   ai.completeTextStream = async (options, delta, model, signal) => {
@@ -39,7 +44,7 @@ try {
     delta(answer); return answer;
   };
   const research = load('electron/ai/researchAssistant.ts');
-  const request = { messages: [{ role: 'user', content: 'Compare the evidence.' }], selection, model: models[0], concilium: { models, chairman: 1 } };
+  const request = { messages: [{ role: 'user', content: 'Compose a fictional debate.' }], selection, model: models[0], concilium: { models, chairman: 1 } };
   const snapshots = [], chat = [], activity = [];
   const response = await research.streamResearchChat(request, delta => chat.push(delta), undefined, update => snapshots.push(update), event => activity.push(event));
   assert.equal(response.concilium.status, 'complete');
@@ -87,6 +92,14 @@ try {
   assert.equal(activity.length, activityCount, 'a subsequent request without an observer cannot reach the previous observer');
   assert.equal(calls.length, 1, 'ordinary chat still makes one model call');
   assert.equal(executions.length, 1);
+  // A documentary chairman cannot publish the members' opinions or its own
+  // draft as factual evidence when the frozen corpus contains no passages.
+  answerMode = 'documentary';
+  const documentaryChat = [];
+  const gap = await research.streamResearchChat({ ...request, messages: [{ role: 'user', content: 'Compare the evidence.' }] }, delta => documentaryChat.push(delta));
+  assert.match(gap.answer, /cannot support an answer with the available excerpts/);
+  assert.doesNotMatch(gap.answer, /Verified consensus|Assessment from/);
+  assert(documentaryChat.every(delta => !delta.includes('Verified consensus')));
   const { academicApi } = load('electron/preload/academic.ts');
   const received = [];
   ipc.invoke = async (channel, id) => {

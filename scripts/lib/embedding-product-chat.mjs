@@ -26,8 +26,11 @@ export async function checkEmbeddingProductChat(harness, report, save, shot, opt
     if (scope === 'corpus') await page.getByTestId('research-new-conversation').click();
     else {
       const notebook = scope === 'limited' ? report.checks.semanticOnlySource.notebook : notebooks[scope];
+      // Fixture campaigns accumulate many notebooks. Locate an older one through
+      // the real history search so virtualisation cannot hide its row forever.
+      await page.getByTestId('research-chat-search').fill(notebook.name);
       // The main row expands its chats; the explicit action opens the notebook.
-      await page.getByTestId(`research-notebook-${notebook.id}`).getByRole('button', { name: `Abrir ${notebook.name}`, exact: true }).click();
+      await page.getByTestId(`research-search-notebook-${notebook.id}`).getByRole('button', { name: `Abrir ${notebook.name}`, exact: true }).click();
       await page.getByTestId('research-notebook-home').waitFor();
     }
   };
@@ -46,9 +49,10 @@ export async function checkEmbeddingProductChat(harness, report, save, shot, opt
     const traces = fs.readFileSync(traceFile).subarray(offset).toString('utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
     const row = { name, repetition, question, scope, ...answer, citations, traces, manualReview: 'pending' };
     report.answers.push(row); save();
-    if (answer.error && /budget|presupuesto/i.test(answer.error)) {
+    if (answer.error && (/budget|presupuesto/i.test(answer.error) || options.budgetExhausted?.())) {
       report.budgetExhausted = true; report.pending.push('Remaining Research Chat repetitions: campaign budget exhausted'); save(); return null;
     }
+    if (answer.error && options.continueFailures) return row;
     assert(!answer.error, answer.error); assert(citations.every(citation => citation.resolvable), 'all cited passages resolve');
     // The last rendered message is the returned assistant turn, after persistence.
     await waitFor(() => page.getByRole('button', { name: 'Añadir archivos', exact: true }).isEnabled(), { timeoutMs: 30000 });

@@ -53,12 +53,13 @@ export async function auditResearchProse(markdown: string, sources: ResearchAudi
   // Reasoning audits expand each sentence into atomic premises. Keep their initial
   // batches smaller instead of assuming that an effort level caps reasoning tokens.
   const batchSize = effort && effort !== 'standard' ? Math.min(4, RESEARCH_AUDIT_BATCH) : RESEARCH_AUDIT_BATCH;
-  const auditBatch = async (indices: number[], retries = 1): Promise<void> => {
+  const auditBatch = async (indices: number[], retries = 1, schemaErrors: string[] = []): Promise<void> => {
     signal?.throwIfAborted();
     try {
       const result = await completeJson({ system: additionalRules ? `${SYSTEM}\n${additionalRules}` : SYSTEM, user: JSON.stringify({
         sentences: indices.map((original, index) => ({ index, text: spans[original].text, context: original > 0 ? researchPlainSentence(spans[original - 1].text).slice(0, 400) : '' })),
-        ...(previouslyRejected.length ? { previouslyRejected } : {}), sources }),
+        ...(previouslyRejected.length ? { previouslyRejected } : {}), sources,
+        ...(schemaErrors.length ? { verdictSchemaRepair: { errors: schemaErrors, instruction: 'Return a fresh verdict for each supplied index. Each from array refers ONLY to lower zero-based premise positions within that SAME claim, never sentence or source indices. At most 12 premises per claim and 6 literal evidence quotes per premise. Use the exact schema and enum values.' } } : {}) }),
         maxTokens: 6000, temperature: 0, noRetry: true, corpusContext: true, signal }, validResearchProseVerdicts, model);
       // Missing, duplicated or malformed items stay unverified and are removed.
       const normalized = normalizeResearchProseVerdicts(result, indices.length);
@@ -80,7 +81,7 @@ export async function auditResearchProse(markdown: string, sources: ResearchAudi
       }
     }
     const pending = indices.filter(index => !verdicts[index]);
-    if (pending.length && retries > 0) await auditBatch(pending, retries - 1);
+    if (pending.length && retries > 0) await auditBatch(pending, retries - 1, pending.map(index => malformed.get(index) ?? 'missing_or_unavailable_verdict'));
   };
   for (let offset = 0; offset < spans.length; offset += batchSize) {
     await auditBatch(spans.slice(offset, offset + batchSize).map((_, index) => offset + index));

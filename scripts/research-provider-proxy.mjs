@@ -14,6 +14,7 @@ const ENDPOINTS = {
 // https://api-docs.deepseek.com/quick_start/pricing/
 // https://openrouter.ai/baai/bge-m3
 export async function startResearchProviderProxy(root, { dispatch = fetch, catalogDispatch = dispatch === fetch ? fetch : null, port = 0, limitUsd, allowedProviders = ['deepseek', 'openrouter'] } = {}) {
+  const blocked = [];
   const canonical = fs.realpathSync(root);
   const marker = JSON.parse(fs.readFileSync(path.join(canonical, 'isolation.json'), 'utf8'));
   if (marker.format !== 'nodus.isolated-research-profile/1' || marker.root !== canonical) throw new Error('Invalid campaign root');
@@ -166,12 +167,14 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       }
       if (reservation) fs.appendFileSync(log, JSON.stringify({ reservation, provider, failed: true, reservationRetained: true, latencyMs: performance.now() - started }) + '\n', { mode: 0o600 });
       if (!response.headersSent) response.writeHead(403, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify({ error: { message: error instanceof Error && /budget.*exhausted/i.test(error.message) ? 'research_budget_exhausted'
-        : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked' } }));
+      const message = error instanceof Error && /budget.*exhausted/i.test(error.message) ? 'research_budget_exhausted'
+        : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked';
+      blocked.push({ provider, message, at: new Date().toISOString() });
+      response.end(JSON.stringify({ error: { message } }));
     } finally { releaseCampaignSlot?.(); if (admitted) { running--; waiting.shift()?.(); } controllers.delete(controller); }
   });
   await new Promise(resolve => server.listen(port, '127.0.0.1', resolve));
-  return { url: `http://127.0.0.1:${server.address().port}/${nonce}`, ledger, close: async () => {
+  return { url: `http://127.0.0.1:${server.address().port}/${nonce}`, ledger, blocked, close: async () => {
     stopped = true; for (const controller of controllers) controller.abort();
     for (const resolve of waiting.splice(0)) resolve();
     server.closeAllConnections(); await new Promise(resolve => server.close(resolve));

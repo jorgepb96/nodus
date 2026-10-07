@@ -114,6 +114,33 @@ test('a semantically correct paraphrase cannot masquerade as a direct quote', ()
   assert.equal(pure.researchChatLiteralQuotes({ ...review, markdown: literal, claims: [{ ...review.claims[0], sentence: literal }] }, sources).markdown, literal);
 });
 
+test('simple calculated equations and table values are checked despite an approving semantic judge', () => {
+  const check = (sentence, kind = 'inference') => pure.researchChatCalculations({ markdown: sentence, claims: [{ sentence, kind, status: 'supported', evidence: [], reason: 'Judge approved' }] });
+  for (const sentence of ['Calculation: 83 − 47 = 40.', 'Calcul : 8 × 7 = 55.', 'Calculated: 6 / 0 = 0.', '| Difference | **25 points** | calculation from 72 − 51 |']) {
+    const result = check(sentence);
+    assert.equal(result.markdown, ''); assert.equal(result.claims[0].failure, 'premise_not_entailed');
+    assert.match(result.claims[0].reason, /Arithmetic verification failed/);
+  }
+  for (const sentence of ['Calculation: 83 − 47 = 36.', 'Calcul : 2,5 + 1,2 = 3,7.', 'Calculation: 1 / 3 = 0.33.', 'Calculation: 7*8 = 56.', 'Calculation: -5 + 10 = 5.', 'Calculation: 5 − 10 = −5.', '| Difference | **21 points** | calculation from 72 − 51 |', 'The survey ran from 2012–2013.', 'The source says “72 − 51 = 25”.']) assert.equal(check(sentence).markdown, sentence);
+  assert.equal(check('The source reports 72 − 51 = 25.', 'attributed').claims[0].status, 'supported', 'checking our calculations does not silently rewrite an attributed source');
+});
+
+test('a malformed premise reference gets a bounded schema repair, not an unchecked answer', async () => {
+  let calls = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    if (!input.sentences) return { complete: true, missing: [] };
+    calls++;
+    const verdict = accepted(0);
+    if (calls === 1) verdict.premises[0].from = [0];
+    else { assert.deepEqual(input.verdictSchemaRepair.errors, ['premise_from']); assert.match(input.verdictSchemaRepair.instruction, /SAME claim/); }
+    const result = { claims: [verdict] }; assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('Schema repair needs no answer rewrite'); };
+  assert.match(await groundResearchChatAnswer('The river level is 18 metres.', sourceContext, 'What is the level?', model, 'en'), /18 metres/);
+  assert.equal(calls, 2);
+});
+
 test('a supported premise survives a fresh review after an unsupported compound claim is repaired', async () => {
   installVerdicts((text, index, input) => {
     assert.equal(input.previouslyRejected, undefined, 'repair is judged by its evidence, not overlapping retired wording');

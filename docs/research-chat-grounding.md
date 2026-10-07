@@ -12,7 +12,12 @@ premises. A verdict needs known source IDs, literal evidence and consistent
 premises; a positive model judgement alone cannot approve invented quotes. Source
 metadata are labelled separately from the excerpt. An additional deterministic
 check rejects unlabelled direct quotations that do not occur in their verified
-source. A labelled translation may differ from the original wording.
+source. A labelled translation may differ from the original wording. Simple binary
+equations and single-result arithmetic table rows are also checked in code, so a
+positive semantic judgement cannot approve a wrong subtraction. This check covers
+explicit arithmetic, not arbitrary mathematical reasoning or symbolic algebra.
+Malformed verdicts get one bounded retry with precise schema diagnostics; missing
+or invalid verdicts still cannot approve a claim.
 
 When claims are removed, one repair uses the same frozen evidence and selected
 generative model. The repair is audited afresh: rejecting an unsupported compound
@@ -70,6 +75,8 @@ question and have its factual content supported; a refusal is a failure when
 evidence exists. Availability failures are recorded separately and never count
 as correct refusals. Citation resolution and actual UI citation dialogs are
 checked independently. Auditor approval is not the campaign's quality score.
+After inspecting the first attempted evaluation, repetitions against revised code
+are identified as regression evaluation, not an untouched held-out estimate.
 
 `completed` reports execution completion only. Releasing a validated embedding
 profile still requires its retrieval, quality, isolation, performance and native

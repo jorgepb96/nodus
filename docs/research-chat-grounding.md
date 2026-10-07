@@ -7,13 +7,15 @@ existing indexes remain unchanged; no index rebuild is needed for this change.
 
 The writer first answers the actual question at an appropriate length, preserves
 attributions, quantities, negations and corrections, and distinguishes source
-facts from calculations. For drafts with more than six prose statements, a
-relevance selector first retains whole statements needed for the requested facets
-and evidence limits, dropping unrequested background and duplicate exposition.
-It cannot rewrite a claim or cut away its negation or qualification. Table rows
-and headings are preserved; the retained content still needs the full source
-audit and coverage check. Invalid selections fail as availability errors. QA
-traces retain the original draft, selected indices and focused draft separately.
+facts from calculations. For drafts with more than three prose statements, or a citation outside the
+frozen original evidence, a source-only writer produces a concise fresh draft
+from the question and original excerpts. It does not receive the previous prose,
+generated orientation, council opinions or chat history as evidence, so invented
+counts and source relationships in that draft cannot become its premises. Simple
+answers keep their initial drafting path. Fresh prose and every table cell still
+require the full claim audit and coverage proof; an empty, unavailable or cancelled
+redraft cannot publish. QA traces retain the original draft, `sourceRedraft` flag
+and `focusedDraft` replacement, with `sourceDraftMs` separate from auditing.
 The existing Deep Research auditor then checks atomic
 premises. A verdict needs known source IDs, literal evidence and consistent
 premises; a positive model judgement alone cannot approve invented quotes. Evidence

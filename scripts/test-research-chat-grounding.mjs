@@ -398,63 +398,71 @@ test('an unrelated verified limitation cannot satisfy the missing requested face
   assert.equal(comparisons, 2);
 });
 
-test('long documentary drafts discard unrequested commentary before the source judge sees it', async () => {
+test('broad drafts are redrafted from original excerpts without passing invented prose to the writer or judge', async () => {
   const fact = 'The river level is 18 metres and the flow rate was not measured.';
-  const extras = ['This report is available in several languages.', 'It contains an introduction.', 'There is also a methods section.',
-    'Future work will perform the flow analysis.', 'The bibliography lists other surveys.', 'The appendices contain extra background.'];
-  const draft = [fact, ...extras].join('\n\n'); let selected = false, audited = false;
+  const draft = [fact, ...Array.from({ length: 6 }, (_, i) => `Invented background ${i} says the level is 99 metres.`)].join('\n\n');
+  let drafted = false, audited = false;
+  ai.completeText = async (options, selected) => {
+    assert.deepEqual(selected, model); assert.equal(options.signal, undefined);
+    const input = JSON.parse(options.user);
+    assert.equal(input.question, 'What level is reported and was flow measured?');
+    assert.equal(input.sources.length, 1);
+    assert.match(input.sources[0].text, /18 metres/);
+    assert.doesNotMatch(options.user, /Invented|99 metres|orientation|council/);
+    drafted = true; return fact;
+  };
   ai.completeJson = async (options, validate) => {
-    const input = JSON.parse(options.user); let result;
-    if (input.statements) {
-      assert.equal(input.statements.length, 7); assert.equal(input.statements[0].text, fact);
-      result = { keep: [0] }; selected = true;
-    } else if (input.sentences) {
-      assert(selected); assert.equal(input.sentences.length, 1);
-      assert.equal(input.sentences[0].text, fact, 'selection preserves the whole quantity/negation statement');
-      result = { claims: [accepted(0, passage.summary)] }; audited = true;
-    } else { assert(audited); assert.match(input.answer, /18 metres and the flow rate was not measured/); result = { complete: true, missing: [] }; }
+    const input = JSON.parse(options.user);
+    const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) } : { complete: true, missing: [] };
+    if (input.sentences) { assert(drafted); assert.equal(input.sentences.length, 1); assert.equal(input.sentences[0].text, fact); audited = true; }
+    else assert(audited);
     assert(validate(result)); return result;
   };
-  ai.completeText = async () => { throw new Error('A complete verified answer needs no rewrite'); };
   const answer = await groundResearchChatAnswer(draft, sourceContext, 'What level is reported and was flow measured?', model, 'en');
-  assert.match(answer, /18 metres and the flow rate was not measured/);
-  assert.doesNotMatch(answer, /Future work|bibliography|methods|languages/);
+  assert.match(answer, /18 metres and the flow rate was not measured/); assert.doesNotMatch(answer, /Invented|99 metres/);
 });
 
-test('draft relevance selection preserves entire table rows for separate evidence auditing', async () => {
-  const table = '## Measurements\n\n| Quantity | Finding |\n| --- | --- |\n| River level | 18 metres |\n| Flow rate | Not measured |';
-  const fact = 'The river level is 18 metres and the flow rate was not measured.';
-  const draft = [table, fact, ...Array.from({ length: 6 }, (_, i) => `Unrequested background item ${i}.`)].join('\n\n');
+test('a source-only redraft table still needs separate quantity and negation evidence', async () => {
+  const table = '| Quantity | Finding |\n| --- | --- |\n| River level | 18 metres |\n| Flow rate | Not measured |';
+  const draft = Array.from({ length: 7 }, (_, i) => `Unrequested background ${i}.`).join('\n\n');
+  ai.completeText = async () => table;
   ai.completeJson = async (options, validate) => {
-    const input = JSON.parse(options.user); let result;
-    if (input.statements) {
-      assert.equal(input.statements.length, 7);
-      assert(input.statements.every(row => !row.text.startsWith('|') && !row.text.startsWith('#')));
-      result = { keep: [0] };
-    } else if (input.sentences) {
+    const input = JSON.parse(options.user);
+    if (input.sentences) {
       assert(input.sentences.some(row => row.text === '| Flow rate | Not measured |'));
       assert(input.sentences.some(row => row.text === '| River level | 18 metres |'));
       assert(!input.sentences.some(row => row.text.includes('Unrequested')));
-      result = { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) };
-    } else result = { complete: true, missing: [] };
+    }
+    const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) } : { complete: true, missing: [] };
     assert(validate(result)); return result;
   };
   const answer = await groundResearchChatAnswer(draft, sourceContext, 'Tabulate the level and whether flow was measured.', model, 'en');
   assert.match(answer, /\| Flow rate \| Not measured/); assert.match(answer, /\| River level \| 18 metres/);
 });
 
-test('invalid or cancelled focus selections cannot publish a long unchecked draft', async () => {
+test('a short draft citing generated orientation is redrafted and a fabricated replacement still cannot publish', async () => {
+  const draft = 'The river level is 99 metres. [Generated idea](nodus://idea/g-0001)';
+  let calls = 0;
+  ai.completeText = async options => {
+    calls++;
+    if (calls === 1) assert.doesNotMatch(options.user, /99 metres|g-0001/);
+    else assert.equal(JSON.parse(options.user).rejected.length, 1);
+    return calls === 1 ? 'The river level is 99 metres.' : 'The river level is 18 metres.';
+  };
+  installVerdicts((text, index) => accepted(index, text.includes('99') ? 'The river level is 99 metres.' : passage.summary));
+  const answer = await groundResearchChatAnswer(draft, sourceContext, 'What level is reported?', model, 'en');
+  assert.equal(calls, 2); assert.match(answer, /18 metres/); assert.doesNotMatch(answer, /99 metres|g-0001/);
+});
+
+test('empty, unavailable and cancelled source redrafts cannot publish unchecked prose', async () => {
   const draft = Array.from({ length: 7 }, (_, i) => `Unchecked assertion ${i}.`).join('\n\n');
-  for (const keep of [[], [7], [-1], [0, 0], [0.5], ['0']]) {
-    ai.completeJson = async (options, validate) => {
-      assert(JSON.parse(options.user).statements); assert.equal(validate({ keep }), false);
-      throw new Error('Invalid selection');
-    };
-    ai.completeText = async () => { throw new Error('No rewrite may bypass a failed selection'); };
+  for (const response of ['', '   ', null]) {
+    ai.completeJson = async () => { throw new Error('A failed redraft cannot reach the auditor'); };
+    ai.completeText = async () => { if (response === null) throw new Error('Provider unavailable'); return response; };
     await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
   }
   const controller = new AbortController();
-  ai.completeJson = async () => { controller.abort(); throw controller.signal.reason; };
+  ai.completeText = async options => { assert.equal(options.signal, controller.signal); controller.abort(); return 'An unchecked replacement.'; };
   await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en', controller.signal), { name: 'AbortError' });
 });
 

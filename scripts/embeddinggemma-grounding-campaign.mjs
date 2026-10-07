@@ -10,7 +10,7 @@ import { checkEmbeddingProductChat } from './lib/embedding-product-chat.mjs';
 
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
 const stage = argument('stage') ?? 'development';
-assert(['development', 'repair', 'evaluation'].includes(stage));
+assert(['development', 'repair', 'coverage', 'evaluation'].includes(stage));
 const baseline = JSON.parse(fs.readFileSync('audit/embeddinggemma-2/campaign.json', 'utf8'));
 const selected = argument('profiles')?.split(',') ?? baseline.products.map(product => product.profile);
 assert(selected.every(profile => baseline.products.some(product => product.profile === profile)));
@@ -24,7 +24,7 @@ const scenarioDefinition = source => {
   const visit = node => {
     if (ts.isVariableDeclaration(node) && node.name.getText(file) === 'scenarios') {
       assert(ts.isConditionalExpression(node.initializer));
-      const array = stage === 'evaluation' ? node.initializer.whenFalse : node.initializer.whenTrue;
+      const array = ['evaluation', 'coverage'].includes(stage) ? node.initializer.whenFalse : node.initializer.whenTrue;
       assert(ts.isArrayLiteralExpression(array));
       definition = array.elements.map(tuple => { assert(ts.isArrayLiteralExpression(tuple)); return tuple.elements.map(value => { assert(ts.isStringLiteral(value)); return value.text; }); });
     }
@@ -97,7 +97,7 @@ if (!childRoot) {
     const file = path.join(childRoot, 'artifacts', `grounding-${stage}-${name}.png`);
     await harness.page.screenshot({ path: file, animations: 'disabled' }); return file;
   };
-  const scenarios = stage !== 'evaluation' ? [
+  const scenarios = ['development', 'repair'].includes(stage) ? [
     ['technical', '¿Puede /restore de Linde recuperar una cuenta cerrada?', 'dynamic'],
     ['method', 'Explica la diferencia entre media y mediana en Bruma sin inventar datos.', 'corpus'],
     ['table', 'Presenta una tabla comparando los porcentajes de recuerdo de recuperación espaciada y relectura.', 'fixed'],
@@ -118,7 +118,8 @@ if (!childRoot) {
     ['heldout-absent-funding', '¿Qué organización financió el ensayo Vega?', 'fixed'],
     ['heldout-absent-data', '¿Qué valores individuales de cada encuestado ofrece Bruma para recalcular su media?', 'dynamic'],
   ];
-  report.evaluation = { factual: stage === 'evaluation' ? 8 : 6, insufficientEvidence: stage === 'evaluation' ? 4 : 0, repetitions: stage === 'evaluation' ? 2 : 1,
+  const cases = stage === 'coverage' ? scenarios.filter(([name]) => ['heldout-statistics', 'heldout-absent-price', 'heldout-absent-data'].includes(name)) : scenarios;
+  report.evaluation = { factual: cases.filter(([name]) => !name.includes('absent')).length, insufficientEvidence: cases.filter(([name]) => name.includes('absent')).length, repetitions: stage === 'evaluation' ? 2 : 1,
     requirements: { factualSupportAndAnswerAdequacy: 0.95, insufficientEvidence: 0.9, resolvableCitations: 1 },
     note: 'Expected answers never enter the indexed content or model context. These questions were previously attempted against 69f4fe88; subsequent revisions are repeated regression evaluation, not a new untouched holdout. Every final answer needs independent source review; auditor approval alone is not the quality score.' };
   try {
@@ -130,8 +131,8 @@ if (!childRoot) {
     await page.evaluate(() => window.nodus.updateSettings({ chatModel: { provider: 'deepseek', model: 'deepseek-flash' }, chatReasoning: 'off', researchWebSearch: 'off' }));
     await page.reload();
     const repetitions = stage === 'evaluation' ? 2 : 1;
-    await checkEmbeddingProductChat(harness, report, save, shot, { scenarios, repetitions, attachments: false, captureName: `qa-grounding-${stage}.jsonl`,
-      continueFailures: stage === 'evaluation', budgetExhausted: () => harness.proxy.blocked.some(row => row.message === 'research_budget_exhausted') });
+    await checkEmbeddingProductChat(harness, report, save, shot, { scenarios: cases, repetitions, attachments: false, captureName: `qa-grounding-${stage}.jsonl`,
+      continueFailures: ['evaluation', 'coverage'].includes(stage), budgetExhausted: () => harness.proxy.blocked.some(row => row.message === 'research_budget_exhausted') });
     const databaseLog = fs.readFileSync(path.join(childRoot, 'profile/database-access.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
     assert(databaseLog.every(row => row.path.startsWith(path.join(childRoot, 'profile') + path.sep)));
     report.databaseIsolation = { escaped: 0, opened: databaseLog.length };
@@ -141,7 +142,7 @@ if (!childRoot) {
       answerSha256: createHash('sha256').update(answer.response?.answer ?? '').digest('hex') }));
     assert(report.grounding.filter((_row, index) => !report.answers[index].error).every(answer => answer.audits > 0), 'every published documentary answer actually passes through the new verification');
     if (stage === 'evaluation') assert(report.grounding.filter(answer => !answer.name.includes('absent')).every(answer => answer.semanticSelection), 'positive evaluations actually select semantic candidates');
-    report.completed = !report.budgetExhausted && report.answers.length === scenarios.length * repetitions;
+    report.completed = !report.budgetExhausted && report.answers.length === cases.length * repetitions;
     report.executionErrors = report.answers.filter(answer => answer.error).length;
     if (report.executionErrors || report.budgetExhausted) process.exitCode = 1;
   } catch (error) { report.failure = { message: error.message, stack: error.stack }; process.exitCode = 1; }

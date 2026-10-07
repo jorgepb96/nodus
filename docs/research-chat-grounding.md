@@ -68,6 +68,7 @@ npm run test:research:grounding
 npm run build
 npm run audit:research:grounding -- --stage=development
 npm run audit:research:grounding -- --stage=repair --profiles=embeddinggemma-2-text-q8-512-v1
+npm run audit:research:grounding -- --stage=coverage
 npm run audit:research:grounding -- --stage=evaluation
 ```
 
@@ -99,6 +100,9 @@ as correct refusals. Citation resolution and actual UI citation dialogs are
 checked independently. Auditor approval is not the campaign's quality score.
 After inspecting the first attempted evaluation, repetitions against revised code
 are identified as regression evaluation, not an untouched held-out estimate.
+The coverage probe repeats the distribution, price and individual-data failures
+once per profile before purchasing a full evaluation. Its separate report is a
+diagnostic, never a substitute for the 120-case acceptance campaign.
 
 Collect an audit with independently inspected answer/source hashes:
 

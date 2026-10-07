@@ -11,6 +11,8 @@ import { checkEmbeddingProductChat } from './lib/embedding-product-chat.mjs';
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
 const stage = argument('stage') ?? 'development';
 assert(['development', 'repair', 'coverage', 'evaluation'].includes(stage));
+const budgetUsd = Number(argument('budget-usd') ?? 5);
+assert([5, 8].includes(budgetUsd), 'use only the original or explicitly authorized campaign limit');
 const baseline = JSON.parse(fs.readFileSync('audit/embeddinggemma-2/campaign.json', 'utf8'));
 const selected = argument('profiles')?.split(',') ?? baseline.products.map(product => product.profile);
 assert(selected.every(profile => baseline.products.some(product => product.profile === profile)));
@@ -39,17 +41,18 @@ const sourceVersion = { gitHead: execFileSync('git', ['rev-parse', 'HEAD'], { en
   files: Object.fromEntries(runtimeFiles.map(file => [file, hash(file)])),
   applicationEntry: hash('dist-electron/application.js'), campaignDefinition: hash('scripts/embeddinggemma-grounding-campaign.mjs'),
   chatHarness: hash('scripts/lib/embedding-product-chat.mjs'),
-  providerProxy: hash('scripts/research-provider-proxy.mjs'), tariff: hash('scripts/research-deepseek-tariff.mjs'), node: process.version };
+  providerProxy: hash('scripts/research-provider-proxy.mjs'), tariff: hash('scripts/research-deepseek-tariff.mjs'),
+  costLedger: hash('scripts/research-cost-ledger.mjs'), node: process.version };
 if (!childRoot) {
   // Processes and embedding spaces remain separate; the shared proxy admits only
-  // two paid calls at once and retains the original campaign-wide $5 ledger.
+  // two paid calls at once and retains every reservation in the shared ledger.
   const runs = [];
   for (let offset = 0; offset < selected.length; offset += 2) {
     runs.push(...await Promise.all(selected.slice(offset, offset + 2).map(async profile => {
       const product = baseline.products.find(product => product.profile === profile);
       const log = path.join(product.root, 'artifacts', `grounding-${stage}.log`);
       const fd = fs.openSync(log, 'a');
-      const child = spawn(process.execPath, ['scripts/embeddinggemma-grounding-campaign.mjs', `--stage=${stage}`, `--root=${product.root}`, `--profiles=${profile}`, ...(resume ? ['--resume'] : []), ...(harnessRepair ? ['--resume-harness-repair'] : [])], { stdio: ['ignore', fd, fd] });
+      const child = spawn(process.execPath, ['scripts/embeddinggemma-grounding-campaign.mjs', `--stage=${stage}`, `--root=${product.root}`, `--profiles=${profile}`, `--budget-usd=${budgetUsd}`, ...(resume ? ['--resume'] : []), ...(harnessRepair ? ['--resume-harness-repair'] : [])], { stdio: ['ignore', fd, fd] });
       let code;
       try { code = await new Promise((resolve, reject) => { child.once('error', reject); child.once('exit', resolve); }); }
       finally { fs.closeSync(fd); }
@@ -65,10 +68,14 @@ if (!childRoot) {
   const previous = JSON.parse(fs.readFileSync(path.join(childRoot, 'artifacts/product-report.json'), 'utf8'));
   assert(previous.completed && previous.profile === profile);
   const localPort = await reserveLoopbackPort();
-  const harness = await createResearchApp({ root: childRoot, realProvider: { campaignRoot: previous.campaignRoot, proxyOptions: { limitUsd: 5, allowedProviders: ['deepseek'] } },
+  // The caller cannot raise a ledger by choosing a larger proxy limit. Admission
+  // remains bounded by the ledger's existing, explicit authorization.
+  const ledgerLimit = JSON.parse(fs.readFileSync(path.join(previous.campaignRoot, 'artifacts/cost-ledger.json'), 'utf8')).limitUsd;
+  assert(budgetUsd <= ledgerLimit, 'requested budget must already be authorized in the campaign ledger');
+  const harness = await createResearchApp({ root: childRoot, realProvider: { campaignRoot: previous.campaignRoot, proxyOptions: { limitUsd: budgetUsd, allowedProviders: ['deepseek'] } },
     extraPorts: [localPort], extraEnv: { NODUS_EMBEDDING_QA_TRACE: '1', NODUS_LOCAL_AI_QA_PORT: String(localPort) } });
   const report = { format: 'nodus.research-chat-grounding/1', root: childRoot, campaignRoot: previous.campaignRoot, stage, profile,
-    baselineSourceCommit: baseline.versions.gitHead, sourceVersion, isolation: harness.proof, completed: false, answers: [], pending: [],
+    baselineSourceCommit: baseline.versions.gitHead, sourceVersion, budgetUsd, isolation: harness.proof, completed: false, answers: [], pending: [],
     notebooks: previous.notebooks, checks: { semanticOnlySource: previous.checks.semanticOnlySource }, startedAt: new Date().toISOString() };
   const output = path.join(childRoot, 'artifacts', `grounding-${stage}.json`);
   if (fs.existsSync(output)) {

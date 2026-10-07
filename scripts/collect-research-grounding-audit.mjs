@@ -108,7 +108,7 @@ const summary = {
   cost: { campaignRoot: original.campaignRoot, ledgerSha256: hash(ledgerBytes), limitUsd: ledger.limitUsd,
     cumulativeAccountedUsd: ledger.calls.reduce((sum, call) => sum + (call.actualUsd ?? 0), 0),
     cumulativeCommittedUsd: ledger.calls.reduce((sum, call) => sum + (call.actualUsd ?? call.maximumUsd), 0), calls: ledger.calls.length,
-    note: 'Cumulative proxy accounting for the original campaign, including prior stages, using peak-price upper bounds where the provider supplies no cost. This is not a billing invoice. Unknown usage retains its full reservation. This collector never resets or changes the budget.' },
+    note: 'Cumulative proxy accounting for the original campaign, including prior stages, using verified tariff/cache-miss upper bounds where the provider supplies no cost. Reconciled historical peak estimates retain their original ledger and method. This is not a billing invoice. Unknown usage retains its full reservation. This collector never resets or changes the budget.' },
   hardware: baseline.hardware ?? null, products: products.map(({ answers: _answers, ...product }) => product), artifacts,
   release: { validatedProfiles: [], note: 'Grounding acceptance alone cannot validate an embedding profile. Original native Windows/Linux/macOS Intel EmbeddingGemma execution and remaining capacity gates stay pending.' },
 };

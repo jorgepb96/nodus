@@ -71,6 +71,17 @@ calls go through the original shared DeepSeek Flash proxy, with two concurrent
 calls and the original global USD 5 budget; running another stage does not reset
 the ledger. The runner refuses missing or mismatched completed product fixtures.
 
+Budget reservations always use peak/cache-miss prices. Known DeepSeek usage may
+settle at the verified off-peak cache-miss upper bound only when the entire UTC
+request interval is outside weekday peak hours. Boundary crossings, invalid dates
+and dates outside the tariff's verified window retain peak accounting. Unknown
+usage keeps its full reservation. Historical peak estimates can be reconciled
+with `node scripts/reconcile-research-tariff.mjs --root=/absolute/marked/campaign-root`
+only when the proxy's exact reservation/usage evidence agrees. Reconciliation
+preserves every call, the original ledger and the campaign's unchanged limit;
+provider-reported invoice costs are never discounted. These figures remain upper
+bounds, not billing invoices. [Tariff source](https://api-docs.deepseek.com/quick_start/pricing/).
+
 Development repeats six earlier failure scenarios. The separate evaluation has
 eight positive and four insufficient-evidence questions per profile, each twice,
 across E5, GTE, BGE-M3 and both EmbeddingGemma profiles. Evaluation expectations

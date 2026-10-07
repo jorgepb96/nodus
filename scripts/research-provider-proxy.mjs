@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { ResearchCostLedger } from './research-cost-ledger.mjs';
+import { DEEPSEEK_QA_TARIFF, deepseekUsageUpperBound } from './research-deepseek-tariff.mjs';
 
 const ENDPOINTS = {
   deepseek: { model: 'deepseek-flash', route: '/chat/completions', url: 'https://api.deepseek.com/chat/completions', input: .3, output: 1.2 },
@@ -113,6 +114,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       if (provider === 'deepseek' && (!Array.isArray(body.messages) || body.messages.some(message => typeof message.content !== 'string'))) throw new Error('research_text_only');
       if (provider === 'openrouter' && !(typeof body.input === 'string' || (Array.isArray(body.input) && body.input.length && body.input.every(input => typeof input === 'string')))) throw new Error('research_text_only');
       const maximumUsd = ((bytes.length * target.input + output * target.output) / 1e6) * 1.25 + .002;
+      const tariffStartedAt = new Date().toISOString();
       reservation = await ledgerOperation(() => ledger.reserve({ provider, model: target.model, maximumUsd }));
       started = performance.now();
       response.once('close', () => { if (!response.writableFinished) controller.abort(); });
@@ -135,9 +137,13 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
       const outputTokens = usage?.completion_tokens ?? usage?.output_tokens ?? (provider === 'openrouter' ? 0 : undefined);
       let accountedUsd = null;
       let accounting = 'reservation_retained';
+      let tariffFinishedAt;
       if (upstream.ok && [inputTokens, outputTokens].every(value => Number.isSafeInteger(value) && value >= 0)) {
-        accountedUsd = typeof usage.cost === 'number' ? usage.cost : (inputTokens * target.input + outputTokens * target.output) / 1e6;
-        accounting = typeof usage.cost === 'number' ? 'provider_cost' : 'peak_price_upper_bound';
+        tariffFinishedAt = new Date().toISOString();
+        accountedUsd = typeof usage.cost === 'number' ? usage.cost : provider === 'deepseek'
+          ? deepseekUsageUpperBound(inputTokens, outputTokens, tariffStartedAt, tariffFinishedAt).usd
+          : (inputTokens * target.input + outputTokens * target.output) / 1e6;
+        accounting = typeof usage.cost === 'number' ? 'provider_cost' : provider === 'deepseek' ? 'verified_tariff_upper_bound' : 'peak_price_upper_bound';
         try { await ledgerOperation(() => ledger.settle(reservation, { actualUsd: accountedUsd, inputTokens, outputTokens })); }
         catch { stopped = true; throw new Error('research_accounting_bound_exceeded'); }
       } else if (upstream.status >= 400 && upstream.status < 500) {
@@ -155,7 +161,8 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
         catch { /* A refusal has nothing to account for. */ }
       }
       fs.appendFileSync(log, JSON.stringify({ reservation, provider, model: target.model, requestHash: createHash('sha256').update(bytes).digest('hex'),
-        status: upstream.status, latencyMs: performance.now() - started, firstByteMs, inputTokens, outputTokens, accountedUsd, maximumUsd, accounting }) + '\n', { mode: 0o600 });
+        status: upstream.status, latencyMs: performance.now() - started, firstByteMs, inputTokens, outputTokens, accountedUsd, maximumUsd, accounting,
+        ...(accounting === 'verified_tariff_upper_bound' ? { tariff: DEEPSEEK_QA_TARIFF.version, tariffStartedAt, tariffFinishedAt } : {}) }) + '\n', { mode: 0o600 });
       response.end();
     } catch (error) {
       // Test-only simulated upstreams can ask for a real connection reset instead

@@ -38,7 +38,8 @@ const runtimeFiles = ['electron/ai/researchAssistant.ts', 'electron/ai/researchC
 const sourceVersion = { gitHead: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
   files: Object.fromEntries(runtimeFiles.map(file => [file, hash(file)])),
   applicationEntry: hash('dist-electron/application.js'), campaignDefinition: hash('scripts/embeddinggemma-grounding-campaign.mjs'),
-  chatHarness: hash('scripts/lib/embedding-product-chat.mjs'), node: process.version };
+  chatHarness: hash('scripts/lib/embedding-product-chat.mjs'),
+  providerProxy: hash('scripts/research-provider-proxy.mjs'), tariff: hash('scripts/research-deepseek-tariff.mjs'), node: process.version };
 if (!childRoot) {
   // Processes and embedding spaces remain separate; the shared proxy admits only
   // two paid calls at once and retains the original campaign-wide $5 ledger.

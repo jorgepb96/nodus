@@ -17,12 +17,15 @@ if (process.argv.includes('--install-fixture')) {
   const require = createRequire(import.meta.url), { DocumentaryStore } = require(path.join(repoRoot, 'electron/db/documentaryStore.ts'));
   const store = new DocumentaryStore(path.join(root, 'profile/documentary/store.sqlite'));
   const fixture = JSON.parse(fs.readFileSync(path.join(root, 'artifacts/desktop-capacity-fixture.json'), 'utf8'));
+  assert([256, 512].includes(fixture.dimensions));
   const buffer = fs.readFileSync(path.join(root, `artifacts/capacity-${fixture.count}.f32`));
   const array = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 4);
-  assert.equal(array.length, fixture.count * 512);
-  const vectors = Array.from({ length: fixture.count }, (_, index) => Array.from(array.subarray(index * 512, (index + 1) * 512)));
+  assert.equal(array.length, fixture.count * fixture.dimensions);
+  const vectors = Array.from({ length: fixture.count }, (_, index) => Array.from(array.subarray(index * fixture.dimensions, (index + 1) * fixture.dimensions)));
   assert(vectors.every(vector => Math.abs(Math.hypot(...vector) - 1) < 1e-5));
   const previous = JSON.parse(store.db.prepare('SELECT identity_json FROM documentary_revisions WHERE embedding_ready=1 LIMIT 1').get().identity_json);
+  assert.equal(previous.embedding?.model, fixture.profile, 'capacity vectors must match the seeded profile');
+  assert.equal(previous.embedding.dimensions, fixture.dimensions);
   store.removeDocument(fixture.document.id); store.setPreference('paused', false);
   const text = fixture.texts.join('\n\n'), identity = { ...previous, documentId: fixture.document.id, revision: fixture.document.revision,
     textFingerprint: createHash('sha256').update(text).digest('hex'), processingVersion: 'qa-fixed-capacity-chunks/1' };
@@ -46,7 +49,10 @@ const source = fs.realpathSync(argument('capacity-root') ?? '');
 const marker = JSON.parse(fs.readFileSync(path.join(source, 'isolation.json'), 'utf8'));
 assert.equal(marker.root, source); assert.equal(marker.format, 'nodus.isolated-research-profile/1');
 const model = JSON.parse(fs.readFileSync(path.join(source, 'artifacts/model-manifest.json'), 'utf8'));
-assert.equal(model.testedProfile, 'embeddinggemma-2-text-q8-512-v1');
+const modelDirectory = fs.realpathSync(model.directory);
+assert(modelDirectory.startsWith(source + path.sep), 'weights must belong to the isolated capacity root');
+assert(['embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1'].includes(model.testedProfile));
+assert.equal(model.dimensions, Number(model.testedProfile.match(/-(256|512)-/)[1]));
 const texts = fs.readFileSync(path.join(source, 'artifacts/capacity-texts.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
 const counts = [1000, 10000].filter(count => fs.existsSync(path.join(source, `artifacts/capacity-${count}.f32`)));
 assert(counts.length, 'First run native capacity with --persist-capacity');
@@ -56,7 +62,7 @@ const report = { format: 'nodus.embedding-desktop-capacity/1', profile: model.te
   note: 'Capacity only: real ONNX vectors are loaded into the production store with explicit QA chunks; extraction and quality are evaluated in the product corpus lane. RSS can fall under memory compression; per-process peaks are also recorded and must not be treated as concurrent resident totals.' };
 try {
   const target = path.join(harness.root, 'profile/local-ai/models/embeddinggemma-2-text-q8-v1');
-  fs.cpSync(model.directory, target, { recursive: true });
+  fs.cpSync(modelDirectory, target, { recursive: true, mode: fs.constants.COPYFILE_FICLONE });
   let { app, page } = await harness.launch();
   await harness.prepareProfile(page, { embeddingProvider: 'nodus', embeddingModel: model.testedProfile });
   const item = await page.evaluate(() => window.nodus.createGlobalLibraryItem({ title: 'none', itemType: 'report', creators: [], abstract: 'QA seed record for the capacity store.' }, []));
@@ -69,7 +75,7 @@ try {
     const document = (await page.evaluate(() => window.nodus.getResearchPreparationInventory())).documents.find(document => document.id === item.id);
     await harness.closeApp();
     fs.copyFileSync(path.join(source, `artifacts/capacity-${count}.f32`), path.join(harness.root, `artifacts/capacity-${count}.f32`));
-    fs.writeFileSync(path.join(harness.root, 'artifacts/desktop-capacity-fixture.json'), JSON.stringify({ document, count, texts: texts.slice(0, count), questions }));
+    fs.writeFileSync(path.join(harness.root, 'artifacts/desktop-capacity-fixture.json'), JSON.stringify({ document, count, dimensions: model.dimensions, profile: model.testedProfile, texts: texts.slice(0, count), questions }));
     const installed = spawnSync(path.join(harness.root, 'electron-isolated'), [fileURLToPath(import.meta.url), '--install-fixture', `--root=${harness.root}`],
       { env: { ...researchTestEnvironment(harness.root), ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8' });
     assert.equal(installed.status, 0, installed.stderr);

@@ -12,6 +12,7 @@ assert(!revision || /^[a-f0-9]{8,40}$/.test(revision));
 assert(Array.isArray(reviews));
 const hash = value => createHash('sha256').update(value).digest('hex');
 const baselineFile = 'audit/embeddinggemma-2/campaign.json';
+const relativeToOutput = file => path.relative(destination, path.resolve(file)).split(path.sep).join('/');
 const baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
 fs.mkdirSync(destination, { recursive: true });
 const artifacts = [];
@@ -93,7 +94,7 @@ const gatesPassed = allReviewed && candidateMatchesMeasured && versions.length =
   && products.every(product => product.databaseIsolation?.escaped === 0 && Object.values(product.isolation).filter(value => typeof value === 'boolean').every(Boolean));
 const summary = {
   format: 'nodus.research-chat-grounding-campaign/1', collectedAt: new Date().toISOString(),
-  baseline: { file: '../embeddinggemma-2/campaign.json', sha256: hash(fs.readFileSync(baselineFile)), directedReviewedFactual: { passed: 19, reviewed: 42 },
+  baseline: { file: relativeToOutput(baselineFile), sha256: hash(fs.readFileSync(baselineFile)), directedReviewedFactual: { passed: 19, reviewed: 42 },
     comparisonLimit: 'The original directed failure review and revised questions are different samples. No population accuracy or paired percentage improvement is claimed.' },
   evaluation: { design: '12 scenarios × 2 repetitions × 5 isolated embedding profiles; previously attempted questions, repeated regression evaluation after fixes.',
     planned: { total: 120, factual: 80, insufficientEvidence: 40 }, executed: all.length, reviewed: all.filter(row => row.review).length,
@@ -121,5 +122,5 @@ write('README.md', `# Research Chat accuracy regression campaign\n\n${gatesPasse
   `Measured revision: ${revision ?? 'see profile reports'}. Candidate matches measured runtime: **${candidateMatchesMeasured}**. Subsequent fixes need another paid application run; unit tests do not establish the quality thresholds.\n\n` +
   `Review records bind to exact answer and cited-source SHA-256 values. Codex inspected source evidence independently of the application's own model judgement; no external human review is claimed. Reports retain literal sources, semantic retrieval selection, contracts, drafts, verdicts, repairs, coverage checks, resolved citations, UI screenshots and failed earlier attempts.\n\n` +
   `The shared campaign ledger records an accounted upper bound of USD ${summary.cost.cumulativeAccountedUsd.toFixed(4)} for calls with known usage and USD ${summary.cost.cumulativeCommittedUsd.toFixed(4)} including unresolved reservations, within its USD ${ledger.limitUsd} global limit. This is proxy accounting, not a provider billing invoice. Embeddings run locally; the generative provider is direct DeepSeek Flash. Source versions and actual request settings are in each profile report.\n\n` +
-  `Generic grounding rules do not change vector contracts or require rebuilding indexes. Verification adds generative calls and latency; its stage timings are distinct from local embedding/search latency. Creative exercises, skills and direct multimodal attachment paths retain their existing behaviour. See [implementation notes](../../docs/research-chat-grounding.md). Native EmbeddingGemma execution on Windows, Linux and macOS Intel remains pending.\n`);
+  `Generic grounding rules do not change vector contracts or require rebuilding indexes. Verification adds generative calls and latency; its stage timings are distinct from local embedding/search latency. Creative exercises, skills and direct multimodal attachment paths retain their existing behaviour. See [implementation notes](${relativeToOutput('docs/research-chat-grounding.md')}). Native EmbeddingGemma execution on Windows, Linux and macOS Intel remains pending.\n`);
 console.log(JSON.stringify({ destination, executed: all.length, reviewed: summary.evaluation.reviewed, gatesPassed, cost: summary.cost.cumulativeCommittedUsd }));

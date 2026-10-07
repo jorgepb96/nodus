@@ -4,13 +4,13 @@ import path from 'node:path';
 import { waitFor } from './research-app-harness.mjs';
 
 /** Actual UI requests and citation dialogs, with observational IPC capture only. */
-export async function checkEmbeddingProductChat(harness, report, save, shot) {
+export async function checkEmbeddingProductChat(harness, report, save, shot, options = {}) {
   const { app, page } = harness, notebooks = report.notebooks;
   await page.evaluate(() => window.nodus.updateSettings({ researchWebSearch: 'off' }));
   await page.getByRole('button', { name: 'Research chat', exact: true }).first().click();
   await page.locator('.research-assistant-header').waitFor();
   if (!(await page.getByTestId('research-history-sidebar').isVisible())) await page.getByTestId('research-history-toggle').click();
-  const capturedFile = path.join(harness.root, 'profile/qa-chat-answers.jsonl');
+  const capturedFile = path.join(harness.root, 'profile', options.captureName ?? 'qa-chat-answers.jsonl');
   fs.writeFileSync(capturedFile, '');
   await app.evaluate(({ ipcMain }, file) => {
     const append = row => process.getBuiltinModule('node:fs').appendFileSync(file, JSON.stringify(row) + '\n');
@@ -64,7 +64,7 @@ export async function checkEmbeddingProductChat(harness, report, save, shot) {
     }
     row.screenshot = await shot(`chat-${repetition}-${name}`); save(); return row;
   };
-  const scenarios = [
+  const scenarios = options.scenarios ?? [
     ['single-source', '¿En qué año se abrió la biblioteca de Puerto Claro? Cita la fuente.', 'corpus'],
     ['follow-up', '¿Qué fecha corresponde entonces al laboratorio?', 'follow-up'],
     ['cross-language', 'Which apparatus determines how cloudy a liquid is using a visible beam? Cite the Spanish source.', 'limited'],
@@ -78,7 +78,7 @@ export async function checkEmbeddingProductChat(harness, report, save, shot) {
     ['insufficient-evidence', '¿Cuánto cuesta el sensor Alba en euros?', 'limited'],
     ['insufficient-evidence-2', '¿Quién donó los libros de Puerto Claro?', 'corpus'],
   ];
-  chatScenarios: for (let repetition = 0; repetition < 2; repetition++) for (const [name, question, scope] of scenarios) {
+  chatScenarios: for (let repetition = 0; repetition < (options.repetitions ?? 2); repetition++) for (const [name, question, scope] of scenarios) {
     if (report.answers.some(row => row.name === name && row.repetition === repetition && !row.error)) {
       // A skipped first turn cannot provide follow-up history after a restart.
       if (name === 'single-source' && !report.answers.some(row => row.name === 'follow-up' && row.repetition === repetition && !row.error)) {
@@ -92,7 +92,7 @@ export async function checkEmbeddingProductChat(harness, report, save, shot) {
       assert(row.traces.some(trace => trace.retrieval?.semantic?.some(candidate => trace.retrieval.selected?.some(selected => selected.semanticIds?.includes(candidate.id)))), 'the cross-language chat actually selects semantic candidates');
     }
   }
-  if (!report.budgetExhausted && !report.checks.conversationAttachment) {
+  if (options.attachments !== false && !report.budgetExhausted && !report.checks.conversationAttachment) {
     // Notebook membership intentionally excludes unpromoted conversation files.
     // A whole-library conversation authorizes its own attachments explicitly.
     await open('corpus');

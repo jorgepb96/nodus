@@ -191,7 +191,9 @@
     "test:embeddinggemma:capacity": "node scripts/embeddinggemma-desktop-capacity.mjs",
     "report:embeddinggemma": "node scripts/embeddinggemma-report.mjs",
     "test:embeddinggemma:restart": "node scripts/embeddinggemma-restart-preparation.mjs",
-    "test:embeddinggemma:server:native": "node scripts/embeddinggemma-native-server.mjs"
+    "test:embeddinggemma:server:native": "node scripts/embeddinggemma-native-server.mjs",
+    "test:research:grounding": "node --test scripts/test-research-chat-grounding.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs",
+    "audit:research:grounding": "node scripts/embeddinggemma-grounding-campaign.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

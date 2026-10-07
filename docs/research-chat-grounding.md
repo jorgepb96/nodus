@@ -115,6 +115,7 @@ Collect an audit with independently inspected answer/source hashes:
 
 ```sh
 node scripts/collect-research-grounding-audit.mjs --revision=MEASURED_COMMIT --reviews=/path/to/reviews.json
+node scripts/collect-research-grounding-audit.mjs --stage=coverage --revision=MEASURED_COMMIT --reviews=/path/to/probe-reviews.json
 ```
 
 The collector separates earlier runtimes, rejects stale answer/evidence reviews,
@@ -122,6 +123,8 @@ and cannot approve a candidate whose source/runtime differs from the measured
 campaign. Published-answer reviews and failure triage are recorded separately.
 The shared proxy's budget admission can stop a campaign before every repetition;
 those cases stay pending and never count as successful absence responses.
+The coverage collector expects all twenty probe cases, computes diagnostic rates
+separately and always leaves the acceptance gate false, even if every probe passes.
 
 `completed` reports execution completion only. Releasing a validated embedding
 profile still requires its retrieval, quality, isolation, performance and native

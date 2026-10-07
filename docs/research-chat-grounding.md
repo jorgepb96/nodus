@@ -42,7 +42,13 @@ A malformed proof gets one retry of the identical frozen request; provider and
 transport failures are never replayed. This resolves coverage
 complaints that demand an unsupported absence assertion or speculative conclusion
 without restoring rejected prose. The original critic and confirmation are both
-retained in QA traces. A verified epistemic limitation retains the exact requested facet even
+retained in QA traces. When a confirmed missing acknowledgement has already
+verified nonfactual limits, a narrow equivalence check compares only those limits
+with the requested acknowledgement, without the source exposition or original
+critic. Every equivalence needs an exact meaningful quote from a known verified
+statement; unknown indices, invented spans and unrelated limits cannot satisfy
+the proof. It neither restores rejected facts nor removes available-fact
+omissions. Its decisions are also retained in QA traces. A verified epistemic limitation retains the exact requested facet even
 when there are no supported factual claims. Repairs receive the deterministic
 failure code as well as the semantic reason, so a true but unqualified inference
 can be labelled and a translated direct quote can become a paraphrase. If no
@@ -79,15 +85,19 @@ npm run build
 npm run audit:research:grounding -- --stage=development
 npm run audit:research:grounding -- --stage=repair --profiles=embeddinggemma-2-text-q8-512-v1
 npm run audit:research:grounding -- --stage=coverage
-npm run audit:research:grounding -- --stage=evaluation
+npm run audit:research:grounding -- --stage=evaluation --budget-usd=8
 ```
 
 The paid UI campaign requires the completed disposable product roots recorded in
 `audit/embeddinggemma-2/campaign.json`. It never opens or imports a real profile or
 vault. Each model reuses only its own isolated corpus/index/profile. All paid
 calls go through the original shared DeepSeek Flash proxy, with two concurrent
-calls and the original global USD 5 budget; running another stage does not reset
-the ledger. The runner refuses missing or mismatched completed product fixtures.
+calls and one shared campaign ledger; running another stage does not reset it.
+The original authorization was USD 5. On 7 October 2026 the user explicitly
+authorized a final cumulative USD 8 ceiling, with no further increase. Preserve
+all calls, unknown reservations and the before/after ledger evidence. The runner
+default remains USD 5; `--budget-usd=8` requires the ledger to already record that
+authorization and cannot raise it by itself. The runner refuses missing or mismatched completed product fixtures.
 
 Budget reservations always use peak/cache-miss prices. Known DeepSeek usage may
 settle at the verified off-peak cache-miss upper bound only when the entire UTC

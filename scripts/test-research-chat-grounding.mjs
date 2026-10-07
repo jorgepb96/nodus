@@ -315,6 +315,60 @@ test('coverage proof retries are bounded and transport failures are never replay
   }
 });
 
+test('a confirmed missing limit is compared with the exact already verified acknowledgement before another repair', async () => {
+  const gap = 'I cannot establish the distribution shape from the authorized excerpts.';
+  const draft = `The river level is 18 metres.\n\n${gap}`; let comparisons = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user); let result;
+    if (input.sentences) result = { claims: input.sentences.map((row, index) => row.text === gap
+      ? { index, kind: 'nonfactual', supported: true, reason: 'Exact epistemic scope', premises: [], unsupportedParts: [], explicitInference: false } : accepted(index)) };
+    else if (input.requiredLimits) {
+      assert.equal(input.sources, undefined, 'the comparison is isolated from source exposition and the critic');
+      assert.equal(input.coverageComplaint, undefined);
+      assert.deepEqual(input.verifiedLimits, [{ index: 0, text: gap }]); comparisons++;
+      result = { equivalent: [{ omissionIndex: 0, limitIndex: 0, answerQuote: gap }], distinct: [] };
+    } else if (input.coverageComplaint) result = { addressed: [], omissions: [{ complaint: input.coverageComplaint.missing[0], kind: 'unaddressed-limit', requiredFact: 'Acknowledge inability to establish the distribution shape from these excerpts.', sourceId: null, quote: null }] };
+    else result = { complete: false, missing: ['The distribution shape needs a precise evidentiary limit.'] };
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('Do not rewrite an already verified equivalent limitation'); };
+  const answer = await groundResearchChatAnswer(draft, sourceContext, 'What is the level and what distribution shape can be established?', model, 'en');
+  assert.match(answer, /18 metres/); assert.match(answer, /cannot establish the distribution shape/); assert.equal(comparisons, 1);
+});
+
+test('limit comparison cannot invent quotes, indices or a verified statement', async () => {
+  const gap = 'I cannot establish the flow rate from these excerpts.';
+  for (const mode of ['quote', 'index', 'duplicate']) {
+    ai.completeJson = async (options, validate) => {
+      const input = JSON.parse(options.user);
+      if (input.sentences) return { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped gap', premises: [], unsupportedParts: [], explicitInference: false })) };
+      if (input.requiredLimits) {
+        const row = { omissionIndex: 0, limitIndex: mode === 'index' ? 99 : 0, answerQuote: mode === 'quote' ? 'An invented verified sentence.' : gap };
+        const result = { equivalent: mode === 'duplicate' ? [row, row] : [row], distinct: [] };
+        assert.equal(validate(result), false); throw new Error('Invalid equivalence proof');
+      }
+      if (input.coverageComplaint) return { addressed: [], omissions: [{ complaint: input.coverageComplaint.missing[0], kind: 'unaddressed-limit', requiredFact: 'Acknowledge inability to establish the requested flow rate.', sourceId: null, quote: null }] };
+      return { complete: false, missing: ['The flow rate needs a precise evidentiary limit.'] };
+    };
+    await assert.rejects(groundResearchChatAnswer(gap, sourceContext, 'What is the flow rate?', model, 'en'), /No se pudo verificar/);
+  }
+});
+
+test('an unrelated verified limitation cannot satisfy the missing requested facet', async () => {
+  const gap = 'I cannot establish the flow rate from these excerpts.'; let comparisons = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user); let result;
+    if (input.sentences) result = { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped gap', premises: [], unsupportedParts: [], explicitInference: false })) };
+    else if (input.requiredLimits) { comparisons++; result = { equivalent: [], distinct: [{ omissionIndex: 0 }] }; }
+    else if (input.coverageComplaint) result = { addressed: [], omissions: [{ complaint: input.coverageComplaint.missing[0], kind: 'unaddressed-limit', requiredFact: 'Acknowledge inability to establish the restoration deadline.', sourceId: null, quote: null }] };
+    else result = { complete: false, missing: ['The restoration deadline needs an acknowledgement.'] };
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => gap;
+  await assert.rejects(groundResearchChatAnswer(gap, sourceContext, 'What restoration deadline can be established?', model, 'en'), /No se pudo verificar/);
+  assert.equal(comparisons, 2);
+});
+
 test('long documentary drafts discard unrequested commentary before the source judge sees it', async () => {
   const fact = 'The river level is 18 metres and the flow rate was not measured.';
   const extras = ['This report is available in several languages.', 'It contains an introduction.', 'There is also a methods section.',

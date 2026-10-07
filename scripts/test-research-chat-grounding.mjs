@@ -79,6 +79,35 @@ test('an unavailable verifier is an availability failure, never a successful abs
   await assert.rejects(() => groundResearchChatAnswer('The river level is 31 metres.', sourceContext, 'What is the river level?', model, 'en'), /No se pudo verificar/);
 });
 
+test('a contradictory inference classification needs a fresh consistent verdict, not automatic approval', async () => {
+  let calls = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    if (!input.sentences) return { complete: true, missing: [] };
+    calls++;
+    const verdict = { ...accepted(0), kind: calls === 1 ? 'fact' : 'inference', explicitInference: true,
+      premises: [...accepted(0).premises, { text: 'The level exceeds 10 metres', type: 'inference', entailed: true, evidence: [], from: [0] }] };
+    if (calls === 2) assert.deepEqual(input.verdictSchemaRepair.errors, ['inference_kind']);
+    const result = { claims: [verdict] }; assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('Consistent evidence needs no prose rewrite'); };
+  const result = await groundResearchChatAnswer('The source records a level of 18 metres; my inference is that the level exceeds 10 metres.', sourceContext, 'Does the recorded level exceed 10 metres?', model, 'en');
+  assert.equal(calls, 2); assert.match(result, /my inference/); assert.match(result, /18 metres/);
+});
+
+test('repeated contradictory inference classifications stay unavailable after one retry', async () => {
+  let calls = 0;
+  ai.completeJson = async (options, validate) => {
+    calls++;
+    const result = { claims: [{ ...accepted(0), kind: 'fact', explicitInference: true,
+      premises: [...accepted(0).premises, { text: 'The level exceeds 10 metres', type: 'inference', entailed: true, evidence: [], from: [0] }] }] };
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('Unverified verdicts cannot buy a successful repair'); };
+  await assert.rejects(() => groundResearchChatAnswer('The source records a level of 18 metres; my inference is that the level exceeds 10 metres.', sourceContext, 'Does it exceed 10 metres?', model, 'en'), /No se pudo verificar/);
+  assert.equal(calls, 2);
+});
+
 test('cancellation during verification never returns the unchecked draft', async () => {
   const controller = new AbortController();
   ai.completeJson = async () => { controller.abort(); return { claims: [accepted(0)] }; };

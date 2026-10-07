@@ -59,11 +59,22 @@ export async function auditResearchProse(markdown: string, sources: ResearchAudi
       const result = await completeJson({ system: additionalRules ? `${SYSTEM}\n${additionalRules}` : SYSTEM, user: JSON.stringify({
         sentences: indices.map((original, index) => ({ index, text: spans[original].text, context: original > 0 ? researchPlainSentence(spans[original - 1].text).slice(0, 400) : '' })),
         ...(previouslyRejected.length ? { previouslyRejected } : {}), sources,
-        ...(schemaErrors.length ? { verdictSchemaRepair: { errors: schemaErrors, instruction: 'Return a fresh verdict for each supplied index. Each from array refers ONLY to lower zero-based premise positions within that SAME claim, never sentence or source indices. At most 12 premises per claim and 6 literal evidence quotes per premise. Use the exact schema and enum values.' } } : {}) }),
+        ...(schemaErrors.length ? { verdictSchemaRepair: { errors: schemaErrors, instruction: 'Return a fresh verdict for each supplied index. Each from array refers ONLY to lower zero-based premise positions within that SAME claim, never sentence or source indices. At most 12 premises per claim and 6 literal evidence quotes per premise. An inference_kind diagnostic means a positive verdict recognized an explicitly labelled inferred premise but classified the sentence as fact or attributed; independently reassess the full sentence and use kind=inference only if it actually contains a derivation, with the correct premise dependencies and explicitInference flag. Do not approve a claim merely to fix its schema. Use the exact schema and enum values.' } } : {}) }),
         maxTokens: 6000, temperature: 0, noRetry: true, corpusContext: true, signal }, validResearchProseVerdicts, model);
       // Missing, duplicated or malformed items stay unverified and are removed.
       const normalized = normalizeResearchProseVerdicts(result, indices.length);
-      normalized.forEach((claim, index) => { if (claim) { verdicts[indices[index]] = claim; malformed.delete(indices[index]); } });
+      normalized.forEach((claim, index) => {
+        if (!claim) return;
+        // A positive verdict that explicitly recognizes a derivation cannot also
+        // classify the sentence as a fact. Ask for a consistent fresh verdict;
+        // never infer a corrected kind or approve it from the prose reason.
+        if (claim.supported && claim.explicitInference && claim.kind !== 'inference'
+          && claim.premises.some(premise => premise.type === 'inference') && claim.premises.every(premise => premise.entailed)) {
+          malformed.set(indices[index], 'inference_kind');
+          return;
+        }
+        verdicts[indices[index]] = claim; malformed.delete(indices[index]);
+      });
       normalized.malformed?.forEach((field, index) => { if (!verdicts[indices[index]]) malformed.set(indices[index], field); });
     } catch (error) {
       signal?.throwIfAborted();

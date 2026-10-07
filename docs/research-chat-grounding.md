@@ -16,7 +16,14 @@ audit and coverage check. Invalid selections fail as availability errors. QA
 traces retain the original draft, selected indices and focused draft separately.
 The existing Deep Research auditor then checks atomic
 premises. A verdict needs known source IDs, literal evidence and consistent
-premises; a positive model judgement alone cannot approve invented quotes. Source
+premises; a positive model judgement alone cannot approve invented quotes. Evidence
+entailment permits faithful paraphrases, while preserving the subject, action,
+object and temporal scope. A directly stated negation can be described as
+explicit without the source calling itself explicit. This does not permit adding
+unstated facts or inferring absence from an entire corpus. A positive verdict
+that recognizes an explicitly labelled derivation but classifies it as a fact
+gets one request for a fresh consistent verdict; code never repairs the verdict
+or approves it automatically. Repeated inconsistencies remain unverified. Source
 metadata are labelled separately from the excerpt. An additional deterministic
 check rejects unlabelled direct quotations that do not occur in their verified
 source. A labelled translation may differ from the original wording. Simple binary
@@ -28,7 +35,10 @@ or invalid verdicts still cannot approve a claim.
 
 When claims are removed, one repair uses the same frozen evidence and selected
 generative model. The repair is audited afresh: rejecting an unsupported compound
-sentence must not permanently retire its true premises. Unsupported assertions
+sentence must not permanently retire its true premises. Salvageable facts
+are kept in separate short sentences. Repairs do not narrate
+the audit diagnosis or add evidence-gap acknowledgements about unrequested
+distinctions; derived interpretations need their own labelled sentence. Unsupported assertions
 are removed; empty headings and broken table citation placement are cleaned up.
 An additional coverage check catches supported but irrelevant background and
 omitted requested facts. It can request one further repair, which is audited

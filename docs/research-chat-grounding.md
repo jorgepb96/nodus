@@ -36,7 +36,10 @@ again. An incomplete-coverage verdict is independently confirmed before acting:
 each dismissed complaint needs an exact meaningful span of the verified answer;
 each omitted available fact needs an exact authorized source quote, while an
 unaddressed evidence gap asks only for a scoped acknowledgement. Fabricated spans,
-empty formatting and unknown source IDs fail validation. This resolves coverage
+empty formatting and unknown source IDs fail validation. The application derives
+completeness from the validated proof instead of trusting redundant model fields.
+A malformed proof gets one retry of the identical frozen request; provider and
+transport failures are never replayed. This resolves coverage
 complaints that demand an unsupported absence assertion or speculative conclusion
 without restoring rejected prose. The original critic and confirmation are both
 retained in QA traces. A verified epistemic limitation retains the exact requested facet even

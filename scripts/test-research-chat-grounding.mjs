@@ -278,6 +278,43 @@ test('coverage confirmation cannot invent answer spans or supporting source quot
   }
 });
 
+test('a malformed coverage proof gets one identical retry and completeness is derived from validated proof', async () => {
+  const gap = 'I cannot establish the documented purchase price of Alba from the authorized excerpts.';
+  const context = JSON.stringify({ contexto_modular_seleccionado: { pasajes_relevantes: [{ ...passage, summary: 'Alba measures turbidity with green light.' }] } });
+  let attempts = 0, frozen;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    if (input.sentences) return { claims: input.sentences.map((_row, index) => ({ index, kind: 'nonfactual', supported: true, reason: 'Scoped epistemic limit', premises: [], unsupportedParts: [], explicitInference: false })) };
+    if (!input.coverageComplaint) return { complete: false, missing: ['The requested purchase price is not supplied.'] };
+    attempts++;
+    if (attempts === 1) {
+      frozen = options; assert.equal(validate({ addressed: [], omissions: [] }), false);
+      throw new ai.AiError('Malformed proof', false, false, 'schema_mismatch');
+    }
+    assert.deepEqual(options, frozen, 'schema retry preserves question, evidence, answer, model settings and output budget');
+    const proof = { addressed: [{ complaint: input.coverageComplaint.missing[0], answerQuote: gap }], omissions: [],
+      complete: false, missing: ['These extraneous model fields cannot override the validated proof.'] };
+    assert(validate(proof)); return proof;
+  };
+  ai.completeText = async () => { throw new Error('An addressed evidence gap needs no rewrite'); };
+  assert.equal(await groundResearchChatAnswer(gap, context, 'What is the purchase price of Alba?', model, 'en'), gap);
+  assert.equal(attempts, 2);
+});
+
+test('coverage proof retries are bounded and transport failures are never replayed', async () => {
+  for (const code of ['schema_mismatch', 'provider_http_error']) {
+    let attempts = 0;
+    ai.completeJson = async options => {
+      const input = JSON.parse(options.user);
+      if (input.sentences) return { claims: input.sentences.map((_row, index) => accepted(index)) };
+      if (!input.coverageComplaint) return { complete: false, missing: ['The requested facet is omitted.'] };
+      attempts++; throw new ai.AiError('Cannot confirm proof', false, false, code);
+    };
+    await assert.rejects(groundResearchChatAnswer('The river level is 18 metres.', sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
+    assert.equal(attempts, code === 'schema_mismatch' ? 2 : 1);
+  }
+});
+
 test('long documentary drafts discard unrequested commentary before the source judge sees it', async () => {
   const fact = 'The river level is 18 metres and the flow rate was not measured.';
   const extras = ['This report is available in several languages.', 'It contains an introduction.', 'There is also a methods section.',

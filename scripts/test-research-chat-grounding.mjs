@@ -278,6 +278,66 @@ test('coverage confirmation cannot invent answer spans or supporting source quot
   }
 });
 
+test('long documentary drafts discard unrequested commentary before the source judge sees it', async () => {
+  const fact = 'The river level is 18 metres and the flow rate was not measured.';
+  const extras = ['This report is available in several languages.', 'It contains an introduction.', 'There is also a methods section.',
+    'Future work will perform the flow analysis.', 'The bibliography lists other surveys.', 'The appendices contain extra background.'];
+  const draft = [fact, ...extras].join('\n\n'); let selected = false, audited = false;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user); let result;
+    if (input.statements) {
+      assert.equal(input.statements.length, 7); assert.equal(input.statements[0].text, fact);
+      result = { keep: [0] }; selected = true;
+    } else if (input.sentences) {
+      assert(selected); assert.equal(input.sentences.length, 1);
+      assert.equal(input.sentences[0].text, fact, 'selection preserves the whole quantity/negation statement');
+      result = { claims: [accepted(0, passage.summary)] }; audited = true;
+    } else { assert(audited); assert.match(input.answer, /18 metres and the flow rate was not measured/); result = { complete: true, missing: [] }; }
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('A complete verified answer needs no rewrite'); };
+  const answer = await groundResearchChatAnswer(draft, sourceContext, 'What level is reported and was flow measured?', model, 'en');
+  assert.match(answer, /18 metres and the flow rate was not measured/);
+  assert.doesNotMatch(answer, /Future work|bibliography|methods|languages/);
+});
+
+test('draft relevance selection preserves entire table rows for separate evidence auditing', async () => {
+  const table = '## Measurements\n\n| Quantity | Finding |\n| --- | --- |\n| River level | 18 metres |\n| Flow rate | Not measured |';
+  const fact = 'The river level is 18 metres and the flow rate was not measured.';
+  const draft = [table, fact, ...Array.from({ length: 6 }, (_, i) => `Unrequested background item ${i}.`)].join('\n\n');
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user); let result;
+    if (input.statements) {
+      assert.equal(input.statements.length, 7);
+      assert(input.statements.every(row => !row.text.startsWith('|') && !row.text.startsWith('#')));
+      result = { keep: [0] };
+    } else if (input.sentences) {
+      assert(input.sentences.some(row => row.text === '| Flow rate | Not measured |'));
+      assert(input.sentences.some(row => row.text === '| River level | 18 metres |'));
+      assert(!input.sentences.some(row => row.text.includes('Unrequested')));
+      result = { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) };
+    } else result = { complete: true, missing: [] };
+    assert(validate(result)); return result;
+  };
+  const answer = await groundResearchChatAnswer(draft, sourceContext, 'Tabulate the level and whether flow was measured.', model, 'en');
+  assert.match(answer, /\| Flow rate \| Not measured/); assert.match(answer, /\| River level \| 18 metres/);
+});
+
+test('invalid or cancelled focus selections cannot publish a long unchecked draft', async () => {
+  const draft = Array.from({ length: 7 }, (_, i) => `Unchecked assertion ${i}.`).join('\n\n');
+  for (const keep of [[], [7], [-1], [0, 0], [0.5], ['0']]) {
+    ai.completeJson = async (options, validate) => {
+      assert(JSON.parse(options.user).statements); assert.equal(validate({ keep }), false);
+      throw new Error('Invalid selection');
+    };
+    ai.completeText = async () => { throw new Error('No rewrite may bypass a failed selection'); };
+    await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
+  }
+  const controller = new AbortController();
+  ai.completeJson = async () => { controller.abort(); throw controller.signal.reason; };
+  await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is the level?', model, 'en', controller.signal), { name: 'AbortError' });
+});
+
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: false, nodi: false } });

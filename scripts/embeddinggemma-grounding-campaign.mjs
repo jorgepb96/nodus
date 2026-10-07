@@ -118,7 +118,7 @@ if (!childRoot) {
     ['heldout-absent-funding', '¿Qué organización financió el ensayo Vega?', 'fixed'],
     ['heldout-absent-data', '¿Qué valores individuales de cada encuestado ofrece Bruma para recalcular su media?', 'dynamic'],
   ];
-  const cases = stage === 'coverage' ? scenarios.filter(([name]) => ['heldout-statistics', 'heldout-absent-price', 'heldout-absent-data'].includes(name)) : scenarios;
+  const cases = stage === 'coverage' ? scenarios.filter(([name]) => ['heldout-statistics', 'heldout-paper', 'heldout-absent-price', 'heldout-absent-data'].includes(name)) : scenarios;
   report.evaluation = { factual: cases.filter(([name]) => !name.includes('absent')).length, insufficientEvidence: cases.filter(([name]) => name.includes('absent')).length, repetitions: stage === 'evaluation' ? 2 : 1,
     requirements: { factualSupportAndAnswerAdequacy: 0.95, insufficientEvidence: 0.9, resolvableCitations: 1 },
     note: 'Expected answers never enter the indexed content or model context. These questions were previously attempted against 69f4fe88; subsequent revisions are repeated regression evaluation, not a new untouched holdout. Every final answer needs independent source review; auditor approval alone is not the quality score.' };

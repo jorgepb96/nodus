@@ -7,7 +7,14 @@ existing indexes remain unchanged; no index rebuild is needed for this change.
 
 The writer first answers the actual question at an appropriate length, preserves
 attributions, quantities, negations and corrections, and distinguishes source
-facts from calculations. The existing Deep Research auditor then checks atomic
+facts from calculations. For drafts with more than six prose statements, a
+relevance selector first retains whole statements needed for the requested facets
+and evidence limits, dropping unrequested background and duplicate exposition.
+It cannot rewrite a claim or cut away its negation or qualification. Table rows
+and headings are preserved; the retained content still needs the full source
+audit and coverage check. Invalid selections fail as availability errors. QA
+traces retain the original draft, selected indices and focused draft separately.
+The existing Deep Research auditor then checks atomic
 premises. A verdict needs known source IDs, literal evidence and consistent
 premises; a positive model judgement alone cannot approve invented quotes. Source
 metadata are labelled separately from the excerpt. An additional deterministic
@@ -100,7 +107,7 @@ as correct refusals. Citation resolution and actual UI citation dialogs are
 checked independently. Auditor approval is not the campaign's quality score.
 After inspecting the first attempted evaluation, repetitions against revised code
 are identified as regression evaluation, not an untouched held-out estimate.
-The coverage probe repeats the distribution, price and individual-data failures
+The coverage probe repeats the distribution, QLoRA, price and individual-data failures
 once per profile before purchasing a full evaluation. Its separate report is a
 diagnostic, never a substitute for the 120-case acceptance campaign.
 

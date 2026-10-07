@@ -46,7 +46,7 @@ npm run test:e2e:embeddinggemma
 
 Commands create marked roots under the OS temporary directory and retain artifacts for inspection. Every model uses its own process, profile, library, caches and stores. The macOS sandbox proves outside writes, descendant writes, external network and unauthorized loopback denial before launch. The sentinel is deliberately created outside QA’s inherited TMPDIR. Other operating systems require a native disposable environment with equivalent enforcement; they are not inferred from macOS results.
 
-The product runner copies only the authorized **encrypted DeepSeek credential**, before Electron starts. It never loads a real registry, settings database, vault or secrets migration code. Only `deepseek-flash` is allowed by its paid proxy, at most two paid calls in flight across all proxies/processes of the campaign, with a shared **USD 5 campaign ledger**. An atomic two-slot file gate and reserved upper-bound costs enforce both limits. Pass the same `--campaign-root` to subsequent profile runs. No OpenRouter credential or remote embedding route is admitted. Model downloads are byte-forwarded from an allowlist of pinned upstream URLs through a disposable loopback proxy; the proxy does not publish or retain weights.
+The product runner copies only the authorized **encrypted DeepSeek credential**, before Electron starts. It never loads a real registry, settings database, vault or secrets migration code. Only `deepseek-flash` is allowed by its paid proxy, at most two paid calls in flight across all proxies/processes of the campaign, with an originally **USD 5 campaign ledger**. The precision follow-up received explicit authorization for a final cumulative USD 8 ceiling, preserving every earlier call and unknown reservation; that campaign is now closed at USD 7.9559 committed. See [the closure record](../audit/research-chat-grounding/cost/closed-campaign.json). An atomic two-slot file gate and reserved upper-bound costs enforce the limits. Pass the same `--campaign-root` to subsequent authorized profile runs; a stage or larger caller limit cannot reset or raise the ledger. No OpenRouter credential or remote embedding route is admitted. Model downloads are byte-forwarded from an allowlist of pinned upstream URLs through a disposable loopback proxy; the proxy does not publish or retain weights.
 
 ```sh
 node scripts/embeddinggemma-qa.mjs corpus
@@ -79,6 +79,8 @@ npm run report:embeddinggemma -- --controlled-root=/absolute/marked/controlled-r
 ```
 
 Reports preserve individual answers, citations, traces, rankings, screenshots, cost bounds and classified failures. Manual reviews identify the reviewer, answer/source hashes and specific unsupported claims. A reviewed sample is not generalized to unreviewed answers.
+
+The [model-independent Research Chat follow-up](research-chat-grounding.md) adds frozen-source redrafting, claim/quotation/arithmetic checks and exact coverage proof without rebuilding vectors. Its [final recorded regression](../audit/research-chat-grounding/README.md) remains below the required joint fidelity/adequacy threshold; the PR stays a draft. Separate native 256-dimensional Desktop capacity now records hot p95 447 ms against 10,000 chunks on the M2/16 GB reference, with approximately 1 GiB sampled runtime resident-memory growth. Fixture generation was contended and is not a quiet indexing-throughput measurement. Other native operating systems remain pending.
 
 ## Release gates
 

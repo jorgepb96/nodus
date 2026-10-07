@@ -1,0 +1,63 @@
+TAP version 13
+# ✔ only authorized literal passages from the frozen turn enter verification (0.937125ms)
+# ✔ an explicit constructed exercise retains its writing mode; untrusted source text cannot disable verification (0.110167ms)
+# ✔ a supported answer retains the literal fact and a canonical source attribution (2.489459ms)
+# ✔ a fabricated quote cannot approve a claim even when the judge returns supported (0.352209ms)
+# ✔ an unavailable verifier is an availability failure, never a successful absence answer (0.583ms)
+# ✔ a contradictory inference classification needs a fresh consistent verdict, not automatic approval (0.417958ms)
+# ✔ repeated contradictory inference classifications stay unavailable after one retry (0.166458ms)
+# ✔ cancellation during verification never returns the unchecked draft (0.155208ms)
+# ✔ general answers without documentary excerpts do not trigger paid audits (0.120125ms)
+# ✔ verified citations remain inside table cells and web evidence keeps its own target (0.116375ms)
+# ✔ a semantically correct paraphrase cannot masquerade as a direct quote (0.640542ms)
+# ✔ simple calculated equations and table values are checked despite an approving semantic judge (1.206334ms)
+# ✔ a malformed premise reference gets a bounded schema repair, not an unchecked answer (0.198375ms)
+# ✔ repair receives the deterministic cause even when the semantic reason approves the premises (0.222583ms)
+# ✔ a rejected translated direct quote is repaired without deleting its supported value (0.996375ms)
+# ✔ a supported premise survives a fresh review after an unsupported compound claim is repaired (0.154959ms)
+# ✔ verified but irrelevant background is repaired when the requested fact exists (0.348083ms)
+# ✔ coverage outages and persistently incomplete repairs cannot become successful refusals (0.265208ms)
+# ✔ a verified evidence gap retains the requested facet even without a factual claim (0.129166ms)
+# ✔ coverage cannot demand a corpus-absence assertion instead of an already verified price limitation (0.14575ms)
+# ✔ an interpretation complaint is checked against the precise verified distribution limit (0.099792ms)
+# ✔ coverage confirmation cannot invent answer spans or supporting source quotes (0.275167ms)
+# ✔ a malformed coverage proof gets one identical retry and completeness is derived from validated proof (0.203875ms)
+# ✔ coverage proof retries are bounded and transport failures are never replayed (0.1845ms)
+# ✔ a confirmed missing limit is compared with the exact already verified acknowledgement before another repair (0.251167ms)
+# ✔ limit comparison cannot invent quotes, indices or a verified statement (0.26025ms)
+# ✔ an unrelated verified limitation cannot satisfy the missing requested facet (0.17425ms)
+# ✔ broad drafts are redrafted from original excerpts without passing invented prose to the writer or judge (0.181708ms)
+# ✔ a source-only redraft table still needs separate quantity and negation evidence (0.169834ms)
+# ✔ a short draft citing generated orientation is redrafted and a fabricated replacement still cannot publish (0.125667ms)
+# ✔ empty, unavailable and cancelled source redrafts cannot publish unchecked prose (0.165042ms)
+# ✔ the real chat stream holds draft content, cancels safely and rechecks scope after verification (3254.111083ms)
+# ℹ tests 32
+# ℹ suites 0
+# ℹ pass 32
+# ℹ fail 0
+# ℹ cancelled 0
+# ℹ skipped 0
+# ℹ todo 0
+# ℹ duration_ms 3277.529291
+# Subtest: scripts/test-research-chat-grounding.mjs
+ok 1 - scripts/test-research-chat-grounding.mjs
+  ---
+  duration_ms: 4137.470167
+  type: 'test'
+  ...
+# Claim ledger: atomic premises, verdict agreement, silence, qualified inference, retired-claim carry-over, whole-report contradictions and orchestration passed.
+# Subtest: scripts/test-research-claim-audit.mjs
+ok 2 - scripts/test-research-claim-audit.mjs
+  ---
+  duration_ms: 411.313042
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4142.017833

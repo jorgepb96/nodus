@@ -1,0 +1,6 @@
+{
+  "page": 4,
+  "method": "pdftotext -f 4 -l 4 -layout on original isolated public QLORA001 PDF; independently inspected against frozen retrieved passages.",
+  "textSha256": "5b4f2af06423632f15c551d68a200a46338ee62f9f48a128e3c313f007150c89",
+  "failure": "The answer invented 2^k quantiles. The paper specifies 2^k+1 quantiles and 2^k resulting values. An extra unsupported technical assertion fails factual fidelity even when requested mechanisms are answered."
+}

@@ -1,0 +1,7 @@
+{
+  "pausedAt": "2026-10-07T20:58:51.355Z",
+  "pid": 16846,
+  "note": "Fixture generation runs alongside regression tests and is paused to free CPU for application validation. Native generation elapsed times are contended, not a quiet performance reference. Desktop query latency will be measured separately.",
+  "resumedAt": "2026-10-07T21:16:41.373Z",
+  "pauseMs": 1070018
+}

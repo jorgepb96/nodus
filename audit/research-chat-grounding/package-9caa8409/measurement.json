@@ -1,0 +1,15 @@
+{
+  "measuredRevision": "9caa8409",
+  "packageEntrySha256": "bc96c4434c3bebefc5acab781f81e4af148e0e9e9663870f8988d3236e1f8ec0",
+  "developmentEntrySha256": "bc96c4434c3bebefc5acab781f81e4af148e0e9e9663870f8988d3236e1f8ec0",
+  "sameRuntime": true,
+  "asarSha256": "4476a86566f6c9262408e8c0cbb8539343522a6bf8ee80e65ddf086095cb85fa",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "completed": true,
+  "weightsBundled": false,
+  "externalNetworkDenied": true,
+  "screenshotReviewed": true,
+  "nativeReleaseSigning": "ad-hoc only; no Developer ID signing or notarization",
+  "otherNativePlatforms": "pending"
+}

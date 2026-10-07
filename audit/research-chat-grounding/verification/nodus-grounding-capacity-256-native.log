@@ -1,0 +1,18 @@
+Preparing embeddinggemma-2-text-q8-256-v1 (/private/tmp/nodus-research-VM32bn)
+2026-10-07 22:37:35.336 node[16846:174504987] NetworkStorageDB:_openDBReadConnections: failed to open read connection to DB @ /Users/jorgepb96/Library/Caches/node/Cache.db.  Error=14. Cause=unable to open database file
+2026-10-07 22:37:35.337 node[16846:174504987] The read-connection to the DB=/Users/jorgepb96/Library/Caches/node/Cache.db is NOT valid.  Unable to determine schema version.
+2026-10-07 22:37:35.337 node[16846:174504987] NetworkStorageDB:_openDBWriteConnections: failed to open write connection to DB @ /Users/jorgepb96/Library/Caches/node/Cache.db.  Error=14. Cause=unable to open database file
+2026-10-07 22:37:35.337 node[16846:174504987] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/node/Cache.db.
+2026-10-07 22:37:35.337 node[16846:174504987] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/node/Cache.db-shm.
+2026-10-07 22:37:35.337 node[16846:174504987] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/node/Cache.db-wal.
+Capacity embeddinggemma-2-text-q8-256-v1: 1000/1000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 2000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 3000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 4000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 5000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 6000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 7000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 8000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 9000/10000 real vectors
+Capacity embeddinggemma-2-text-q8-256-v1: 10000/10000 real vectors
+{"profile":"embeddinggemma-2-text-q8-256-v1","dimensions":256,"coldMs":1107.851166,"warmMs":[103.27504199999998,107.55104200000005,118.15374999999995,148.00075000000015,106.63149999999996],"report":"/private/tmp/nodus-research-VM32bn/artifacts/runtime-report.json"}

@@ -1,0 +1,8 @@
+{
+  "sourceRevision": "7f48ad17",
+  "applicationEntrySha256": "f5e9562e17062410003ab01e9ca698a45faeecd9c87e8e0e679e51f087dffe42",
+  "hardware": "Apple M2 / 16 GB / macOS ARM64",
+  "nativeGeneration": "10,000 freshly inferred 256-dimensional vectors in their own isolated root, weights copied by COW. Generation was contended and paused for 1,070,018 ms; indexing throughput is not a quiet reference.",
+  "desktopMeasurement": "Separate quiet Electron/production SQLite run, 21 distinct queries per size (one cold, twenty hot), prefix/special tokens included. Semantic candidates asserted. No remote embeddings.",
+  "limitation": "50,000-vector scan reuses real generated vectors; it is a capacity scan, not a 50,000-document quality test. Per-process peaks are upper bounds, not simultaneous resident totals. No Windows/Linux/macOS Intel extrapolation."
+}

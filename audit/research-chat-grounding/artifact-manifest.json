@@ -1,0 +1,2751 @@
+{
+  "measuredRevision": "82dac50f",
+  "note": "Complete evidence archive, except this self-referential manifest. Runtime remains byte-identical to the frozen measurement; later documentation and evidence archival do not retest or promote it. No credentials, model weights, real profiles or databases are included.",
+  "files": [
+    {
+      "file": "README.md",
+      "sha256": "a076c28219d8616ecdd77ea32b7b21e92db36255691a00b6247e76a4192cfe5d",
+      "bytes": 9000
+    },
+    {
+      "file": "attempt-2b23d7d7/README.md",
+      "sha256": "60e1c04aae53b6c6e46b8243872d2c1883943b5fd0900e45e6cef8cdcc00aefd",
+      "bytes": 2166
+    },
+    {
+      "file": "attempt-2b23d7d7/campaign.json",
+      "sha256": "782045146d7ab9811cb1f2a484d84461b54ea2af84aa82683617021662903a11",
+      "bytes": 12789
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791412099204.json",
+      "sha256": "b07ad60c75c64690a4e416ef0c95fea45555e0fdb35fd4512768ce5c3a0f63c5",
+      "bytes": 5635021
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791413143002.json",
+      "sha256": "2a2f04bc96e6d4410d39bc68e2da37624366ad725c7ea1d0bc7e2e8025f1d0a3",
+      "bytes": 5775281
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791414178892.json",
+      "sha256": "a6062abbb738e96bb60356a913d9ed4264ac5c8d212438079deb603265e1996f",
+      "bytes": 5320823
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791412099202.json",
+      "sha256": "447c2b117826ad21f8c2d631b8f71ce9145136d493050149dd14255e20b94c91",
+      "bytes": 5018159
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791413142999.json",
+      "sha256": "f07702281ccdb9e6eafdd1fcdeb8efc9f7b2b96bdb6a2b5e8cc368ca8e5ffbf6",
+      "bytes": 5171242
+    },
+    {
+      "file": "attempt-2b23d7d7/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791414178891.json",
+      "sha256": "71041a35c731898072fd2705dbb4d99cd7b8255d92436a8168b809855f33c24c",
+      "bytes": 4791275
+    },
+    {
+      "file": "attempt-2b23d7d7/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "1f2aa81d65c6d87e7892f0bed9f1bbfd328908962115a0f665a9666ea41089f0",
+      "bytes": 1170520
+    },
+    {
+      "file": "attempt-2b23d7d7/manual-reviews.json",
+      "sha256": "e18a68a80ae2ff7a7102123827e4a5b3963412219000d8df0b0418a072740e1c",
+      "bytes": 5759
+    },
+    {
+      "file": "attempt-2b23d7d7/multilingual-e5-small-int8.json",
+      "sha256": "8a85b2448152c35221e2be1a2ddfe4003a6ab7463d2252fd183e96f4e948c4a8",
+      "bytes": 1107368
+    },
+    {
+      "file": "attempt-2b23d7d7/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "2d26f60ba669ead87149d03debae19c8fdc7a92e95dbceaf11cfb6ec31fc2aee",
+      "bytes": 438724
+    },
+    {
+      "file": "attempt-2b23d7d7/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "cdcd52b94002443919b5b81b03abfe3f1d7629e7e95b1954703205ff59d61851",
+      "bytes": 467984
+    },
+    {
+      "file": "attempt-2b23d7d7/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "3485bbf95bc905d03992f0a5d7ab49180d82a76057b5e5bc4c38ea31a38d9b7b",
+      "bytes": 440968
+    },
+    {
+      "file": "attempt-2b23d7d7/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "7144969fb5c397f30ff6f10369f33adc6f81eaaa4485575c9257436151f0841f",
+      "bytes": 519140
+    },
+    {
+      "file": "attempt-2b23d7d7/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "9c38afbfa7345e50ff262882312d455410090462f596bce5ceb07f9759ed6b56",
+      "bytes": 403499
+    },
+    {
+      "file": "attempt-2b23d7d7/stop-reason.json",
+      "sha256": "839f7612690da3a3f2928b9df77c66b25aa53ca66a0bd955c4624d3489e07f49",
+      "bytes": 770
+    },
+    {
+      "file": "attempt-7555e230/README.md",
+      "sha256": "9ce6e5ed1acb7c7342320346e5fc67f63db4f6623e239542d21d1cae4123b052",
+      "bytes": 2145
+    },
+    {
+      "file": "attempt-7555e230/campaign.json",
+      "sha256": "f36862fd4ebc9832717135716e45215a7cf9b7240012bc73e2f4287271f54102",
+      "bytes": 12009
+    },
+    {
+      "file": "attempt-7555e230/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-7555e230/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-7555e230/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-7555e230/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-7555e230/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "66b69265f8773e0ecebfd8f984fb0c6f3b2085afbdf03b4f0b3bc7dddee17579",
+      "bytes": 2671378
+    },
+    {
+      "file": "attempt-7555e230/manual-reviews.json",
+      "sha256": "48371424cd6a56bfb832d2a83206ddaec444e352fcec3d6335f50d91108dd8ff",
+      "bytes": 18687
+    },
+    {
+      "file": "attempt-7555e230/multilingual-e5-small-int8.json",
+      "sha256": "cfc7d0d1bfabd8cedc2476c3b4ad407bdbfce0c351c074743c2d2a2472b1ff87",
+      "bytes": 2533467
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "5bd443c831ba3539359504a9b1372d6e7a28f49221e0031b723575a3c9daff3f",
+      "bytes": 453558
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "0bfd33ef162c95c94c724fb80f41a5b4d7470e776b0ee8e1599e6c47f0792a8a",
+      "bytes": 576440
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "68ae0c8108de3582c0ffbd1e03400ea17f652fb7aa484732807f443528ece31c",
+      "bytes": 437993
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "2e71587b7c7a9c58e1c4d97777c7c9b886a1a3a17874cbe024e7719bad7d36e6",
+      "bytes": 407963
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "1fcc7f514304cd840c1c4b20b1d0519dc38b2e2653cd024ccc140f03118b1724",
+      "bytes": 552107
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "4a923f4da272b00ee5a5a2babfe443b2090709adf3fa48ab754cd9414a0af8f0",
+      "bytes": 710139
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "4927fe7b384a04f4ed9b961bc42d6d2b66ea079e213b83b0d76a50b5a7bd5c05",
+      "bytes": 487187
+    },
+    {
+      "file": "attempt-7555e230/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "8b3b6a280ca45a2e4de0d2e24d92ec7ca8bbf2f909a165432ab76aec1d551fc4",
+      "bytes": 425716
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "4f5e30c5c44c6bdea229ee95d5c8ca1d3a2cda4e8b22bf0ccc4070484e8386fe",
+      "bytes": 430768
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "8e8c824da99c54834130b4f8678c99427ced05a6965dd46d4e04a4f952d365c2",
+      "bytes": 627923
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "05328f1816c54591d84d73ef27d3eab3478c4e71c8bc194e6d14f2a7270785e5",
+      "bytes": 711903
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "66a567c39aa4b7d5a3e94ef6ab7df935faeab2d178874b3cec65545cd6c367c7",
+      "bytes": 569262
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "6a21e15ac329c79942732cdc5d820eeb27d21d89dbb065b726738e56b3c022d9",
+      "bytes": 422446
+    },
+    {
+      "file": "attempt-7555e230/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "7bdf4c48b08350010d185d9bb3ae00bc09e5b9631e3f59a5ae4f7931c0ed9f52",
+      "bytes": 487615
+    },
+    {
+      "file": "attempt-9caa8409/README.md",
+      "sha256": "d915779f6a5e5055e1f1acec5eb7eb925ac15dbf383ee10b76e9ddd221e301a3",
+      "bytes": 2168
+    },
+    {
+      "file": "attempt-9caa8409/campaign.json",
+      "sha256": "3ab6517ccdfd528477f97af4e793f041d253963ed71d29728fa44ed06cf7c6fe",
+      "bytes": 20257
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "attempt-9caa8409/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "attempt-9caa8409/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "14349e076ba0098024f6eb59878392678fdbb2202cfd2d42795ca99087a4e902",
+      "bytes": 5659437
+    },
+    {
+      "file": "attempt-9caa8409/manual-reviews.json",
+      "sha256": "4bfaaebd1dd3d5235cc5f90858020f4bda27b4b5f70aae66ff8f4efbf7403295",
+      "bytes": 30197
+    },
+    {
+      "file": "attempt-9caa8409/multilingual-e5-small-int8.json",
+      "sha256": "255f69e403d06a52906c82fc37eb555d70063b1e6c36313845e1bb7c9b63e94d",
+      "bytes": 5042248
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "a79fdd80df850d3da5f7c7823e24d3446171a1eec9965899ab7438e51fcf3486",
+      "bytes": 457680
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "487b387a76122141093931dc2c1a8ace9870cbe7344f7a74b54fdf251919617c",
+      "bytes": 392278
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "b7cd31d7c20cf9b8a90ae96884acba0cde8880fa9f960c6c205e52fb693aa21b",
+      "bytes": 391546
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "26a30f65537fab34c3c8576c2052a7b8322c45e2f343a5a96189c2b2d4e97c41",
+      "bytes": 386217
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "f6ea24ef220589c1f2ba794c4774665b459817ddbb28f3f1d55eedce9bc9e8d4",
+      "bytes": 497648
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "58183f8ea0eeae8dfa01b92fbd5e7c088d0b7a3d34a55744be76032aeee6ab42",
+      "bytes": 416020
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "603674a9fc9685aa6a9bae173d53c951598e72f390266cc8c82565e2f9459f06",
+      "bytes": 430812
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "c7c99a7687527b0ce252187b77f0d69e95c45938f9517cb7ee67278a55c47105",
+      "bytes": 613731
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "78390e0e70a050c427301b0a9cbae597df495620e77cad117360e4ad7bb61fd8",
+      "bytes": 653708
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "e1e4f414d6cfbc8f94fb555cbcb4af973804df0a8c122d654ad3bdcc154fff39",
+      "bytes": 491086
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "35572551e6419b4b2bfb70af3b3596fd5b834cfa0ccf62b96c1cda8c8c7d1504",
+      "bytes": 418629
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "4fca9c8d68afcaf6eb9ada03e27e382d1f570c8193c4bacbb30e19767749c2a4",
+      "bytes": 434810
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "3af87d7b00bdae47b041542865ffb185b6a58f5569ee5dfe6edcf79b2f4e74bc",
+      "bytes": 448036
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "1590bc87d60268d92f57aee5fa7c43a88b4751c33585070005bb625a004e4edf",
+      "bytes": 392265
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "973ddfc40c00bef3d7e2dc447af6f0c9496184a7072c4f7c2d66921cecb3ad90",
+      "bytes": 391534
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "14f7f4835e31e5a5617edd1b86b4fbb0a92023e66b51aeafe48e6389e016a90d",
+      "bytes": 392510
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "d9652c9ea9f356faf8810bd12afd0efa6c52945815894e1a3d64bbb680eab02a",
+      "bytes": 434758
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "8b5de162e277f527c34278cb9be8e24f4b9a254c0898a9142c029f0d3199ceaa",
+      "bytes": 404380
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "e1b700c98efff17b6fc77611056615bf447d4df2c9115418e54cada7f610c6f8",
+      "bytes": 570886
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "ef465d2e1b9e9f7e25f63095ec28e0f870c0d341f08cfae01e229f42ffd10ffd",
+      "bytes": 705279
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "7452f1956e39d484876329ef41f6574e172afc0328a31d721be416bf2e10fe18",
+      "bytes": 495505
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "e64fdca39c9436f5b1fd402a8ddf26972f72766c6a53571eabe79a9879115a5a",
+      "bytes": 453057
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "2304201fc8368b42c60b20b766d9afcdc424e81651ffc59cf9c5f04f2bdf0c7d",
+      "bytes": 418818
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "035e4ebc8c15d9e424616a3c7f4cb88067086cfdcac2323cdc2ec1a5680b586b",
+      "bytes": 393972
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "6c841d1c2597f67f109fef1d9cd7f075e2218dea37e3ee6ec0e75a6bc7b2c70f",
+      "bytes": 404230
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "dfc556344e3283018e3cb65a499d1f959176500e84d75306edc17f12053b8159",
+      "bytes": 525200
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "c2af1078f0623d7b7f0cfdf31de8d6b4da9843e38df53979a75576212364c538",
+      "bytes": 445804
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "7b2cea0d861d208322b35fba6a94e3550ff80677daafa14366791a67836b5b67",
+      "bytes": 402911
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "d9e6f0846f7f0e4765a84772a6d8a20a5d9ca049925053a2a4b83afbe4d40a63",
+      "bytes": 722418
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "03dba3dc2457a4e91b5397ce1bcc238a4cb34bd44796d31d6c784472559e68f8",
+      "bytes": 444088
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "773bee78010d64f231c0ade161159fd026ba884448cf85563676db95e810b180",
+      "bytes": 405185
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "c569cb0c7ca616a33ddd3a4fc429ff235c3614c30c5afd6bda5d3a2b695aaa27",
+      "bytes": 453836
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "d5a3d3c16be3b9019b9b1e1a691e0e565fbea8c449d11a775d2d1218de5d4e05",
+      "bytes": 434203
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "bbc2cbabd77e45b75ba4f207b9fbf1e7308cb20b40c12e73ddb41cb2a9a6247f",
+      "bytes": 393468
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "3f3f9c246d0f7f66d3c459ed1bb26f2a6b3043bcb7120e470345ad64ba71b08a",
+      "bytes": 395921
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "020099a63a8db62303d1a43e6e35abfe6ec943dacb189f0d24f16087454af9a8",
+      "bytes": 387727
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "464ec64088e779dd30b6784cdc5e916685b06645b4f56ac8f58ba5d050091a79",
+      "bytes": 517728
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "50ea1fe04489fbf1a27d3aaaa68e59111f17ebb83d76f71476ed49aa28053c67",
+      "bytes": 453999
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "384534dfdb525938d14878704a0e562e4b926f8e9da967b959ade29024122f0b",
+      "bytes": 402021
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "dd2467b7e58afff15887ceff7bc8a6d93b6fcc1acdc0d88bca750d6e18c69038",
+      "bytes": 637092
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "f38515c7ab648405a7bc259a8c4b25619327ac7c157187b8098e7f5d3b235cbb",
+      "bytes": 713661
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "83a4a77f9acc8485d56017918d209d2f37f1ba185e90d54b69bd08f93802b9c7",
+      "bytes": 415482
+    },
+    {
+      "file": "attempt-9caa8409/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "50e5bc6cba47127601eeb9007eb6c3e9fe7815dcb4981c9ca008ce2ae9d2e7a1",
+      "bytes": 415743
+    },
+    {
+      "file": "attempt-9caa8409/stop-reason.json",
+      "sha256": "9064258c6635b83ecd0290c4c3f98bead009a4626a665562856cf5e4483c6e78",
+      "bytes": 686
+    },
+    {
+      "file": "attempt-b0fb6662/README.md",
+      "sha256": "98f8bbd20016e16f2342c27ca5f238ec382d0576a9431dc6ea77f7f23e100557",
+      "bytes": 2168
+    },
+    {
+      "file": "attempt-b0fb6662/campaign.json",
+      "sha256": "42bedce19d05a67247e3090ea9de58e99ad61929b452d095420fb7d2370a8838",
+      "bytes": 14878
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-b0fb6662/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "attempt-b0fb6662/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "2e8c59b8d72442e8bb0536a9bc0b7360117d755e5a1f988388955232388014c2",
+      "bytes": 3370382
+    },
+    {
+      "file": "attempt-b0fb6662/manual-reviews.json",
+      "sha256": "cb81009dddafbab4136740c35decf2fb9d3893e6dd78c32968bd47626fbd0122",
+      "bytes": 18144
+    },
+    {
+      "file": "attempt-b0fb6662/multilingual-e5-small-int8.json",
+      "sha256": "bd6c06ad1f020c91cf16b3e47a434a436372dfb4b240864d91afc638f7965315",
+      "bytes": 3743373
+    },
+    {
+      "file": "attempt-b0fb6662/pdf-source-check/inspection.json",
+      "sha256": "b210e5bff530257fe5d59cefe0cfb7f4d14d9af513ba46b5a5610ddd1cd329e1",
+      "bytes": 1102
+    },
+    {
+      "file": "attempt-b0fb6662/pdf-source-check/qlora-page5.png",
+      "sha256": "f95b4965ea2b66fbd2989e4670917f90eeb45682ceb18a7c85362b94f170e429",
+      "bytes": 356652
+    },
+    {
+      "file": "attempt-b0fb6662/pdf-source-check/qlora-page6.png",
+      "sha256": "aba3fa6af8df2234b881da4a7e5fbcad780470522b614865b90fa994cf636872",
+      "bytes": 392971
+    },
+    {
+      "file": "attempt-b0fb6662/pdf-source-check/qlora-pages5-6.txt",
+      "sha256": "a99f98be35e95b3ce40e276df6200f2eb13457fecd6afdae2dc12ebdc1c41535",
+      "bytes": 12767
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "4926362375aec63b37c8794d1b1d72ccb9148aefdf9af699f7f597ab621fe63c",
+      "bytes": 395281
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "fec20d583ae1d344ca99a4a1af62b1ee179851e9582ea039c96e0b542ba7a46f",
+      "bytes": 458299
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "170f5758c03df9671f730ac8523736a542ddaa0eb32e221082af9176aedb6888",
+      "bytes": 447355
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "3a9c1feead968ed5997f2932bb9bde70075fdd2f2ddd25f5b348fbdc977862ee",
+      "bytes": 431839
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "1bf17de8aa9038177c4c990bf5a32de206e28af6cfc474b4d21e7e7cb4e95081",
+      "bytes": 473042
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "0b9e3e20b304e000a133bea655e9fc1e95fd2de700e0bc6c979fe78ca771d520",
+      "bytes": 601286
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "d3c45a4788f186ad7e3d98b531419791fbf9c164664cae152701f3198445c787",
+      "bytes": 705844
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "96d9754abbf34d7ad50fb96dd89fa47318eec5fa3b1f0c2de527dc0d88859162",
+      "bytes": 472836
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "916cf33f0632d7ad4ec9800bd912df959fa2a13620d9d76b4e8391af67f2ed32",
+      "bytes": 427358
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "9a94bb1739db04066a4ccd6d1de57920321077581bebb67df92857223602558c",
+      "bytes": 518898
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "f1224d66815c9e70307740673bd46c8b0d64b4809e331ce2e65901279a07ffd2",
+      "bytes": 393485
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "1709757659e2986b492810340eae0382c8f81d40479fcf4c8a404c14d1fedf29",
+      "bytes": 392984
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "9c63d1fb35d69d7d615f0e74aaf1bf567d27bac2afc4c85dbe05e1c321890a3a",
+      "bytes": 521687
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "06ad3b61b810bd0ffcaeaa537d8487b59482bf8a27f730e93c312099c8d2a7a3",
+      "bytes": 470750
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "6ae932e7c8d78f3639c16e1e2f7675adefa1ae17ee296499cc72f929a1f5e297",
+      "bytes": 420115
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "8e3a1c6eecb10758145eb053e4ddc6aacde3d6d22f2a833eb2ba5aa564c8a0b7",
+      "bytes": 672296
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "5aa5cc41669ca6cb784419e43f796ddddc9afb8a7eb4c0bedac02b28a3aad7fa",
+      "bytes": 686240
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "35f8376fb1e795d1d167bcfe9a3ac79363fde4b8180bf113197e029572abcffb",
+      "bytes": 541203
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "795ead3126d75c5fa9a775bcffad65491826c157a38d1ee35a6d78db2c6d6844",
+      "bytes": 405903
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "2770a0a714a7bc6b9f9f8fa3e11030bcdc53c51996f8189be8d691f4c8d596ad",
+      "bytes": 511419
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "7bcd6d6f43561b19eabfa7a0ec10267edf484f08fb01779e8b20fb2a5bff4a43",
+      "bytes": 456448
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "e1ab9f475b0f8dd5fdc73348beff2ed64f6eef10bd934513a2b362b4d42b441b",
+      "bytes": 412372
+    },
+    {
+      "file": "attempt-b0fb6662/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "6c4d1f2d8819bb073ff19dc58fd2ef0b415efdf29a2377fcc4f37e3a1df3faa4",
+      "bytes": 422516
+    },
+    {
+      "file": "attempt-b72d10bf/README.md",
+      "sha256": "f241bb43b96b38ac9f08bd521c0a984dbfc35a96e32662680dc8295d536e3677",
+      "bytes": 2168
+    },
+    {
+      "file": "attempt-b72d10bf/campaign.json",
+      "sha256": "dc6a9eeabc3333abdbfe9fab2e346da767b5a07968b295f7e2310ba42debc054",
+      "bytes": 22067
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791412099204.json",
+      "sha256": "b07ad60c75c64690a4e416ef0c95fea45555e0fdb35fd4512768ce5c3a0f63c5",
+      "bytes": 5635021
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791413143002.json",
+      "sha256": "2a2f04bc96e6d4410d39bc68e2da37624366ad725c7ea1d0bc7e2e8025f1d0a3",
+      "bytes": 5775281
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791412099202.json",
+      "sha256": "447c2b117826ad21f8c2d631b8f71ce9145136d493050149dd14255e20b94c91",
+      "bytes": 5018159
+    },
+    {
+      "file": "attempt-b72d10bf/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791413142999.json",
+      "sha256": "f07702281ccdb9e6eafdd1fcdeb8efc9f7b2b96bdb6a2b5e8cc368ca8e5ffbf6",
+      "bytes": 5171242
+    },
+    {
+      "file": "attempt-b72d10bf/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "955f73bce97abe11740411f4ae43b937f61c04b1d7d8dd9a12625d64960ae3ae",
+      "bytes": 5342259
+    },
+    {
+      "file": "attempt-b72d10bf/manual-reviews.json",
+      "sha256": "7c84a1e9db4e0416210447defaf52480994fd2cc518a0de4a0e016c180c22b7d",
+      "bytes": 24200
+    },
+    {
+      "file": "attempt-b72d10bf/multilingual-e5-small-int8.json",
+      "sha256": "2d4982367909ce92d3ac2401c00d754cb0f75d756107e372dbd55cbe08e6f54d",
+      "bytes": 4812333
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "c7bde37579d7a01060264b2c7686140e644e5ad61fbcd2451d26581cc67dc7a1",
+      "bytes": 397397
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "3d7ebda5569a151d4cdb9c53323acc765c50691a941ac6c209d200ca04c299be",
+      "bytes": 419915
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "839aaab6c84cff2b85fb0b2c42ad556d257e3e0b284e118856654e5f7c99f865",
+      "bytes": 391492
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "5ba44adfcfe3318b4eeb6ff7c54beb4ddec32b89fb4cef256bba23e1b2f69119",
+      "bytes": 418178
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "9312247ea53391ecdd21126aa8cfab5f0d466a68c8e149bb5911081342d3193f",
+      "bytes": 448954
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "41a42ff1d517bb05d31c67e897bc845e1fbecaf77e6f18558e66b1ec79dade77",
+      "bytes": 437501
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "c267b7faedee390a465323333d3cbaba0ad2dbb4ace8cc94b2b11c1ce4f6702c",
+      "bytes": 454622
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "377a74ab7a0b69e6c5cf65c5ce8039645bd30cccb61610ed0b1c4739ce06874b",
+      "bytes": 570213
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "7efa60bb505227cbecd65a91019744de29f6405779fab829c7b78bacb246baa9",
+      "bytes": 571306
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "5629ccda321bd674cfa6b8c17d48b10f8d98b38ec1cc4e32dd867a44e392a90a",
+      "bytes": 432605
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "de76e6465a3fa9a0853c00e57d3f6d6f274ea2dbc32b6708ae3ce439a0d1437d",
+      "bytes": 437715
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "c0ca0ce2f9f676f6e0ada8b5eb4adb555012041167d0e11f8c903bd166030389",
+      "bytes": 438023
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "262ffd4253b07db2f19da63d3bb384c9fa2ff76d805572505867e604940a7716",
+      "bytes": 391930
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "78774557035201f05161fe2dc6b02ef55b28b3c583be3b5c93f9665ad98d4bb1",
+      "bytes": 426345
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "f720e423942155ab59f128808bb48442731b27ab756ccc7228cbc85f946fe933",
+      "bytes": 386071
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "f13aa12b57775df923b76d5258ffb8d01dce5acbe939e6ef7177594774247660",
+      "bytes": 439133
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "a26e3d8cc007015f8dea7e49b736a2e66fdb693e8e57c93a66d1aa44b1531169",
+      "bytes": 467956
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "041d6da1c7305899860b3e96308dfeee63ad1dd7ec43fb56ac0ad6544a20eef9",
+      "bytes": 436439
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "f3ae47d9199f481dc40ac60b46f692c3cf5977bbbc5b5caf7205d40908dcb0ad",
+      "bytes": 512574
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "730f48582f324580136920c6b918dabf4035ac66220b7a304762c9077b751210",
+      "bytes": 618984
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "f104e1a4a023f63e26855840dda168b24d7d34e88e6133f4899bc492bbd2e3c2",
+      "bytes": 431193
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "4dbd4c2c4dc526a68226e19354b359102fa586f4639d77883f13f93a3ee438de",
+      "bytes": 411092
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "f2bef8dce93e1a57086ed44218f5d7bfc3210a805df720d3016efddf0bef38df",
+      "bytes": 471036
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "64621471da7290d6f32764ff436a11b4c34b6fbc36148649d604fbb6d1f8375c",
+      "bytes": 399941
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "f9cab496118fb09502f9f1f711ef982fa526f238ea554e1e5adcb1f51ff6818f",
+      "bytes": 393448
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "bdd35e5d7394f4925d8f6bf584b0bde575d66e7099eb5948633949b91735193d",
+      "bytes": 393848
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "ed41e520ce9e319b835e2c5168f67173d821c8e48d956f890c638cbc4faa6ee7",
+      "bytes": 420166
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "069a5d50df2d6e18e999c8c5490deeb3ff6ba17062af072302ed687fcff3c531",
+      "bytes": 462879
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "4b9f8ac86ad917606f5cfd1c2c1934fae6615bf63de6253cd749942e4d853f98",
+      "bytes": 414698
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "461c9413901cbcd657f57e83c3a9ea9450cc171f025053b7350a604296ab5e75",
+      "bytes": 484362
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "84edcfed27b893e329c82261b64b025fe90d58ee292aefffa2621f88cdc50b13",
+      "bytes": 531561
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "b9e05c0a1ee00bc04a13ffa1c01827b36aedb6dc71bd3faa953a8fff1158e94d",
+      "bytes": 592169
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "b1de0271d5fef239ce42ea5605a027ed72f31f5d612bbd61d6ddccb06946428d",
+      "bytes": 439559
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "762c4bebab5dc2fe3b57e25f65c4cb72ceeb25e0371e44d1a4d4d0b6fa52a735",
+      "bytes": 416476
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "850d6bb245e9bb7a63d37a4f6675095049eeaf0839d284643cd7f2aaef05076b",
+      "bytes": 422380
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "8bfa587720eeb62855a0881cef349f0fc2b569f3bc08a752a515b5f02e2b4d23",
+      "bytes": 399925
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "d99efde6fb18c538e4848b64f23fb02c071dc194f67366b0398e70ba4d67f242",
+      "bytes": 394464
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "4723107b9d78616e4fc75ed2edda178240b60e700778d20b0ac8f6decefdbdc6",
+      "bytes": 426947
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "d07b1f3c2cbde8a2f1f43875090972480e4a3472d071ef602aa9b31618bbd723",
+      "bytes": 388855
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "90ff85d64b5aed985279a321dbdfe2a59eefbd2b699c01a27db9bf1e32bcf59e",
+      "bytes": 451982
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "f34c7502cf90f8f9d3ca4bb5c8ac88f99526acef31307aedde8977d9e6faba85",
+      "bytes": 442116
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "f044e2d82f7f9dbddc07d8f919f8a9051043404b2773908c360aef0ffa42b9e1",
+      "bytes": 408823
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "11901623ef51df7badc5833bb6190c66a99e422b9bb33c50c16fc128c51a1592",
+      "bytes": 512870
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "d9aed312b0012142d41096787edb486bb9e9eb5c224c83a3d34921a2c836d3a3",
+      "bytes": 730781
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "c2cdee85ae0c8f7961b51f4e6c3c35e0119030965023b714ed10f739e46fb594",
+      "bytes": 443997
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "66e347e2fab3684fe65882c9b7433dad39a5b685286fa03f13cd6fc932732305",
+      "bytes": 403411
+    },
+    {
+      "file": "attempt-b72d10bf/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "1e7edc5e7f781cd982190d67c07e775e265e4fe03a7f904baee599c72df9aca4",
+      "bytes": 448674
+    },
+    {
+      "file": "attempt-b72d10bf/stop-reason.json",
+      "sha256": "f473c0909f666cb11d1222af33b7e4c0491461cbcf409d21ff099d52a3a425ef",
+      "bytes": 636
+    },
+    {
+      "file": "attempt-fb68b909/README.md",
+      "sha256": "79c8bec2b5540042d71c8c7415c961bafc54d1204e5ceb0b6a7e18fa9d0831ff",
+      "bytes": 2169
+    },
+    {
+      "file": "attempt-fb68b909/campaign.json",
+      "sha256": "e15e8f6f757882b28c20556e9ecb57eedbd3e37cf0cc8d85cc0ec968ac6d3b60",
+      "bytes": 21618
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791412099204.json",
+      "sha256": "b07ad60c75c64690a4e416ef0c95fea45555e0fdb35fd4512768ce5c3a0f63c5",
+      "bytes": 5635021
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "attempt-fb68b909/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791412099202.json",
+      "sha256": "447c2b117826ad21f8c2d631b8f71ce9145136d493050149dd14255e20b94c91",
+      "bytes": 5018159
+    },
+    {
+      "file": "attempt-fb68b909/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "4fd06297d2317494ac48c12808cc9f056f8d65ec898335e330e9ff0e36bcd7df",
+      "bytes": 5798248
+    },
+    {
+      "file": "attempt-fb68b909/manual-reviews.json",
+      "sha256": "6a4bd71951290d2cf89c8a674c103f17b6fab556ecb16ed618bfe6369f14ee9b",
+      "bytes": 27277
+    },
+    {
+      "file": "attempt-fb68b909/multilingual-e5-small-int8.json",
+      "sha256": "77deae2807c45f46ca052222f2de1a90dd9d1e834858fa315e1c05e8933be0ae",
+      "bytes": 5193846
+    },
+    {
+      "file": "attempt-fb68b909/qlora-page4-layout.txt",
+      "sha256": "5b4f2af06423632f15c551d68a200a46338ee62f9f48a128e3c313f007150c89",
+      "bytes": 4801
+    },
+    {
+      "file": "attempt-fb68b909/qlora-source-check.json",
+      "sha256": "5da15d013ce9a1f89a64a866220daf653ca9d8bdae9ac9947c4fe54ec86dbe7d",
+      "bytes": 466
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "88e56a15baeecc461cd9fa1d8b3a0ff5fec0da69e984b738802acd954f0f6719",
+      "bytes": 422171
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "41b65309f81e5de5f9d2d07a654cf34e721f889ac6d3432dd47c1c28c9bed3e2",
+      "bytes": 391005
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "340114bd7f4bde90216dfbc4e8a41b74c09aba6eb8751c38b610f86b7b8be698",
+      "bytes": 391529
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "ab3a03a951fa98505420970fd9fc8ab2eb845208c6a683371231d8a095645e57",
+      "bytes": 420443
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "f20e6890a2f2d3e0dfe42365e357bf24c385f52bdce69fd375a5efa50335e710",
+      "bytes": 505629
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "7e56b43c4b07496877953746f67bf15077c19fcad7c40371013a12e7b617477d",
+      "bytes": 443100
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "5ab60898e763925dde7960ae1586ffc8e5630aeed03cf9ef406ceb62f2e89474",
+      "bytes": 462098
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "c535b74e407a2bafa1b636d60737b848a9927b8fdf0138682e4885d5fd31d64a",
+      "bytes": 728562
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "9d7b2e3be9e0c8d653272b7fa2ce3b8ec10398806e0965cfe22a971892e94f07",
+      "bytes": 477391
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "4331dc1e1b32c4d93d24bea63f7f1520bcdb50f3ecec518cad8dbddf1b2a461e",
+      "bytes": 424023
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "2eaf8c5975db72afd59d3696edfad4c238f69ceeebade1ab12096f16497a1d80",
+      "bytes": 451909
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "29dbeb3dd0a311e4eca8a06272e65c5c5efc10ae485256c1db696d5763720b42",
+      "bytes": 397693
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "c27bd352a15c860bb70015e8c69d5d1f1a9babbc68726dc8ee6f289977bee9d0",
+      "bytes": 392637
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "9d5c4aa5f8b1c3842f0f82a757fcca45ca121394f5327f7c474ac57cd0b6b430",
+      "bytes": 391529
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "2e774f9157f98f3ae5a01cde32a83599214b85f10ba952795e2e316ffae171ff",
+      "bytes": 388618
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "884c71d7f311b454a33e29d8a3a3a7d75aab63ec677cbb8dd2d2b4de44caad1d",
+      "bytes": 528078
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "03b14bc81c95b301eba115cd6057489431a409a33d5f773242dac8875c6d5358",
+      "bytes": 523594
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "784117184551868891dbab9cd69bedd49b46e6f6d271c58b2b737cf7a9a13b09",
+      "bytes": 418409
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "264e1def35e9dedcf485930bda395920adc2b0df9f5e7fc5fcefb49ed817c9e6",
+      "bytes": 608877
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "56b6755baa0e722153c1c3cd71dcae0b8a18b56c66fbac7d53154c7f2955a8ac",
+      "bytes": 661023
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "f2c57ff6803c72e38e15f73ac9fd8a6fbd5f59746f143a54226c923ebfb39bbd",
+      "bytes": 445217
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "3d3c9e14323cfe7ec8e5042b719082cb9adedc77e8462099079b61580fb09308",
+      "bytes": 426528
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "3ad68f53a9ac890e21cc5262005eb845e99e46a9be6e8e7317046aaf3736a324",
+      "bytes": 497994
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "804bd9a59818d1e3be17b124a8fc44ecdfc33cda663af83cef0ece34f4ecb780",
+      "bytes": 467446
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "8c471c66f5df5275c49fdf6c614438810a97d7d3fe1c06a3cb372d31f3e8cb74",
+      "bytes": 421815
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "cdd49e46bf2f3429e78c194369fef1eb7623455bf5d8a7f35138b87b4e32e870",
+      "bytes": 393870
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "b428a282b5b81d6676f4f9132cbdf2c9e916b7d4310172be0aad833c2babde39",
+      "bytes": 395238
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "97e6dea8edad8324ba4be384d74820a30f113700c0c1afee2717c8d98840c5c7",
+      "bytes": 517157
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "39a64069fa9c04d52d5fcc6ef2bd60337227d0cfa5ee0e27f62c72de9f1872cf",
+      "bytes": 453997
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "67e76a71318f6db09b14ebb9e6224394e225dde73ad35549aec4084a6a5211c7",
+      "bytes": 421052
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "91e000761e85db71b7fb58d0bbd4e940c4fbf1461888964888f2a40bad81ee94",
+      "bytes": 564753
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "bac189f9fc1a07ec39a1072eb6242802e8ed57397c4b9c8e2c4daacbb1f8cd12",
+      "bytes": 710856
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "99aca1a8af94117d2683b0e97670a57186b5aa150ef19426b73d5dac04209c8e",
+      "bytes": 539219
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "06334138da67d798488c18cec7bfee2be406cf7403fe15c00cf35f5cb739891f",
+      "bytes": 428773
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "a71fd96ce6d141ce1495b2b51b9299a4d2097a18083334d42f3fde6cda4f9e54",
+      "bytes": 455654
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "1deab3772c5d170d795bdc0c3f80100deac491d446c1be7eaa2bfb5f048d63ed",
+      "bytes": 399936
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "bebe12ebc6a843ace9ecaad500abf15fe761473f1279daddc019405008a2412f",
+      "bytes": 395198
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "8033eb7a8e0e255a21f9d4db4d8b0152e3f529bcb0058bb5305baa146d37e3e9",
+      "bytes": 393844
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "af740fbb41bde541f0379adf66eb535377f8ada66bca62e7c1e4dfdd2e9f4492",
+      "bytes": 390504
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "5fc8f441d90cb8e46d486636745cdec5da5a61d56662b885f24998aaa0ae2d8d",
+      "bytes": 467335
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "cd1336d69f0d1523df97a2e0c85ec5e28293de596a1fe4742c3af98107ad7b9b",
+      "bytes": 418322
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "d0c1344fabc391aa5b26ddfa5295fc2ea247b8046b89fea9841ae067e2dbc7c4",
+      "bytes": 447839
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "f2da1a997f03d5383a7e5b745ef67b2cb90c9a16d13cd33c63d86f7f52553a2d",
+      "bytes": 570957
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "333605e931867b5785b4d97e654f64d6cdf6a1e79738a15731a2e87f5b32c0c4",
+      "bytes": 683644
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "1c9719aa74011fe18cb2f27fe49fec050beb043fa3466b58ae2fe437512a6e16",
+      "bytes": 446849
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "8843ab973dad14810dbf5ef14e430a9e1a99a86fefd41379206a2ed046eaf651",
+      "bytes": 416746
+    },
+    {
+      "file": "attempt-fb68b909/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "ec8567d748bb54002214618030d59136167ea97db37b4d686db25327431209fc",
+      "bytes": 451441
+    },
+    {
+      "file": "attempt-fb68b909/stop-reason.json",
+      "sha256": "2ed464c26300ff50ff7fe6404f07173aa515d5eb44a9ebffad7caede4d8ad8bd",
+      "bytes": 509
+    },
+    {
+      "file": "capacity-256/capacity-contention.json",
+      "sha256": "b3864d150d00ffc7594b94ad520db22480bd98204d6365f5ad5bfe50b1601431",
+      "bytes": 376
+    },
+    {
+      "file": "capacity-256/capacity-query-tokens.json",
+      "sha256": "09442623d7034ed7f666dc391b5f8dac11f50bf346c9aa9a3c29e31f7ae3d7a8",
+      "bytes": 64
+    },
+    {
+      "file": "capacity-256/capacity-report.json",
+      "sha256": "aee57d3cddec2fb1323b3f08a976ae37996d6320777a73ce82152d1fb7810bba",
+      "bytes": 4138
+    },
+    {
+      "file": "capacity-256/desktop-capacity.json",
+      "sha256": "3af7ed6d4b842dacc80e9998a516636ec140e2870c3001f323a987a298175e30",
+      "bytes": 181603
+    },
+    {
+      "file": "capacity-256/isolation-verification.json",
+      "sha256": "0118b7112c2b9140a131098071f26c4d47c5475ede31179409c86f07b50cfd7f",
+      "bytes": 167
+    },
+    {
+      "file": "capacity-256/measurement.json",
+      "sha256": "3bff1ea20dac02fd6fe21d2a0f0f18c98563f90bd1af5c9ec01ece4a2d22f309",
+      "bytes": 856
+    },
+    {
+      "file": "capacity-256/runtime-report.json",
+      "sha256": "24e8a86d4c0f62524c3bd522617ab6feb0a06f1769f9bfdc7c67d1d42dd0d84e",
+      "bytes": 4536
+    },
+    {
+      "file": "cost/budget-authorization-8.json",
+      "sha256": "f9615169b0c34c627ccd92412bf9c737fb8e009491634d8f70360af84179ff3c",
+      "bytes": 822
+    },
+    {
+      "file": "cost/closed-campaign.json",
+      "sha256": "02b5bed25095a33198ff5d9e6904b8ce520b9b0a2a2120ec209290cbc05e3893",
+      "bytes": 1855
+    },
+    {
+      "file": "cost/cost-ledger-after-first-focused-probe.json",
+      "sha256": "8ce617a8047937e5b8bac7ef1a15707112602d8e8cfd0fec2154d56534289238",
+      "bytes": 1411650
+    },
+    {
+      "file": "cost/cost-ledger-before-budget-8-c931624065f6aabdeab697ea9ce224c080b127a62a6708a24e6f1ed214c5700c.json",
+      "sha256": "c931624065f6aabdeab697ea9ce224c080b127a62a6708a24e6f1ed214c5700c",
+      "bytes": 1503615
+    },
+    {
+      "file": "cost/cost-ledger-before-tariff-32d990a85b46691d01be9e3ab02d62e14bed518618ca9002c3c822b47dc81f14.json",
+      "sha256": "32d990a85b46691d01be9e3ab02d62e14bed518618ca9002c3c822b47dc81f14",
+      "bytes": 783524
+    },
+    {
+      "file": "cost/cost-ledger-closed-82dac50f.json",
+      "sha256": "bf0ce289beb18f089cdde39c69635491654a4e81c46124c4fff0821b9de8b4a5",
+      "bytes": 2653531
+    },
+    {
+      "file": "cost/tariff-reconciliation.json",
+      "sha256": "05d33262ce89468321daa0af12a94ba5de629a5435a58448c5164240023edcef",
+      "bytes": 222886
+    },
+    {
+      "file": "final-82dac50f/README.md",
+      "sha256": "42143e0cb15bf00faeb14eb81da8e50b4a7fdf6fe973b4997b44f704db923795",
+      "bytes": 4613
+    },
+    {
+      "file": "final-82dac50f/analysis-generator.cjs",
+      "sha256": "d005160a097d1a091227d2f1f598cfcda79e7301620d1137e7dbfe0e133cac6d",
+      "bytes": 3409
+    },
+    {
+      "file": "final-82dac50f/analysis-manifest.json",
+      "sha256": "377321d5d89aa036dfbf0ffa175b03e874dac8aff7f6288b87980882e4f7391e",
+      "bytes": 128
+    },
+    {
+      "file": "final-82dac50f/analysis.json",
+      "sha256": "d1b08846033564c0ccf1d2fe6b90ef1d58dc2145ff04ee993972ae9c02ef082e",
+      "bytes": 14466
+    },
+    {
+      "file": "final-82dac50f/bge-m3-q8-0.json",
+      "sha256": "bf96a610d635425497fe70ef0f04c525b6363f0a54727ab4c0ab41f0397829e3",
+      "bytes": 5119341
+    },
+    {
+      "file": "final-82dac50f/campaign.json",
+      "sha256": "6f602514e485fbc6ffaf8d70ecea8101f4349db9471195e78f68dde9ad2d236e",
+      "bytes": 42063
+    },
+    {
+      "file": "final-82dac50f/diagnostic-bge-m3-q8-0-grounding-evaluation-previous-1791415396447.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791412099204.json",
+      "sha256": "b07ad60c75c64690a4e416ef0c95fea45555e0fdb35fd4512768ce5c3a0f63c5",
+      "bytes": 5635021
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791413143002.json",
+      "sha256": "2a2f04bc96e6d4410d39bc68e2da37624366ad725c7ea1d0bc7e2e8025f1d0a3",
+      "bytes": 5775281
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791414178892.json",
+      "sha256": "a6062abbb738e96bb60356a913d9ed4264ac5c8d212438079deb603265e1996f",
+      "bytes": 5320823
+    },
+    {
+      "file": "final-82dac50f/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791414650227.json",
+      "sha256": "5ab9b244b195e4e5e2f4c33e4223e44a18042ad130f3022743a39f455a9bf3a8",
+      "bytes": 1165283
+    },
+    {
+      "file": "final-82dac50f/diagnostic-gte-multilingual-base-int8-grounding-evaluation-previous-1791415396449.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791412099202.json",
+      "sha256": "447c2b117826ad21f8c2d631b8f71ce9145136d493050149dd14255e20b94c91",
+      "bytes": 5018159
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791413142999.json",
+      "sha256": "f07702281ccdb9e6eafdd1fcdeb8efc9f7b2b96bdb6a2b5e8cc368ca8e5ffbf6",
+      "bytes": 5171242
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791414178891.json",
+      "sha256": "71041a35c731898072fd2705dbb4d99cd7b8255d92436a8168b809855f33c24c",
+      "bytes": 4791275
+    },
+    {
+      "file": "final-82dac50f/diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791414650226.json",
+      "sha256": "e5de5a2c2640d98ae06a4ac7b43b2962e75d01d36e8e908d2d42f8fc1baba4f1",
+      "bytes": 1102263
+    },
+    {
+      "file": "final-82dac50f/embeddinggemma-2-text-q8-256-v1.json",
+      "sha256": "f81e6635d92a81461c1bf36433c94a1ffa07f3c9418a90b9e3fb7bafd0073f76",
+      "bytes": 4062543
+    },
+    {
+      "file": "final-82dac50f/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "6efb7e0f81d7d0b68e5d2489d352fffa8746370d424705b6288e7be09f85bcd1",
+      "bytes": 5539245
+    },
+    {
+      "file": "final-82dac50f/gte-multilingual-base-int8.json",
+      "sha256": "8f537d576a7abf87c5165710bb08256322c598d8f3e6bdefc44ebb0370e8623e",
+      "bytes": 5117820
+    },
+    {
+      "file": "final-82dac50f/manual-reviews.json",
+      "sha256": "726b9b32375c73e9e1bf08a7b911a11232605687ad66cce4f5124b0dfdde525f",
+      "bytes": 55627
+    },
+    {
+      "file": "final-82dac50f/multilingual-e5-small-int8.json",
+      "sha256": "879c38640f73f2b5632895b2c8bf6b7353e644d84d5268fb22f0da492517d98c",
+      "bytes": 4897544
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "d67014d6a3bf48505e0059afa77925e62b6bf7bec893023b426c7cc87537c5a1",
+      "bytes": 406215
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "f745e729d7c59af3ccb4b3059275f6c2382356d1b74fb8c5766ac14097f1dbb4",
+      "bytes": 400559
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "b6fb4b8baf58571af3a1c295c66506b2615b82b534d04c00ba77cce0b27e8dc4",
+      "bytes": 399959
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "029593bbafe0ee1200b40aeecc9ab609d6c3892f79ac25ffb03b7e1f09735816",
+      "bytes": 395199
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "f9dae729f3f44635e402fc9a9e09888d02c57a242775dc5db47a167fa8fc51db",
+      "bytes": 430469
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "a1eb41f2466031681b5f3619ccb75c14676a8868234d0b0a23d40838159ee6c0",
+      "bytes": 436704
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "d22bd3acbb657a42d424c1ecbf7ca2081b40a0a227c274e51c7fdeb18e10bc0e",
+      "bytes": 437993
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "b87944fb814b9084b2c90e1b8f8410cf10e711453e98da645a6336fb90b4745b",
+      "bytes": 602519
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "b5aff2883a1495a2ee235e11c342012772fedee72c21e9a566e92a7dd9cbc8c1",
+      "bytes": 431453
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "f8ba21f338274971f7f7338c336f6e8ef77c922209693c2e7365a56b7db6596d",
+      "bytes": 409528
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "d138267cf63fa188628c9f598e35337a5fb16bff446d409bfe322f690ca450be",
+      "bytes": 465899
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "e8600226ce90e1a94befd4c6f74b59f7cc85db7604d0601675d9df283e009cd4",
+      "bytes": 405937
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "824d8535b0512a1cb6e52faf0050adf897ed7e9b2c8e8f3139fd62c08600374a",
+      "bytes": 400867
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "8d2a2961b4599bb550ef685e8cb319748c43d1b7851710b7b343a691358cde36",
+      "bytes": 397583
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "7fd6fe170b2d63ff77652d507b47f0eaa1470b5558161c0fb4e4b2e9b01bb71f",
+      "bytes": 395163
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "be0d6f2d19fffd027215a8d61787dc6b70ce5c6aab76e89ff9ec71c0fade2d88",
+      "bytes": 468265
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "3844034d00b3788d7dc3fd157699fb319c60cbd7db7031f955f031f3bd7a491f",
+      "bytes": 459245
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "43adedc0cb9fb013103829f59b51b95129af52e2da5bec2910ef66058012e828",
+      "bytes": 416063
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "9ef665c4d531e550cb428f86d7a6af159250058bc5e538f6e7082392e671ad06",
+      "bytes": 576420
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "e88f7713833dfc60ff9ecbdda1bea07e95c308348b95bc03266e606e04e62375",
+      "bytes": 658138
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "ef6af1b5221c3fbc268df8b4a59cbe51f66f24c0dc33d749b659004e7836ed19",
+      "bytes": 431418
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "d6321ab2dc332d110535b1cf8e51c5ee93bcfe39a225cf6f3fef462c4764326c",
+      "bytes": 409583
+    },
+    {
+      "file": "final-82dac50f/screenshots/bge-m3-q8-0-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "88cb56fd659dd1cd19a037fcca2690609fae350e0c1a93ed8e1d38b44f885096",
+      "bytes": 431615
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "c848839c623b12a23b4ff04d17d41e100704a0e7421cf53780f972c1413396ff",
+      "bytes": 406497
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "6def0a87e711891c92d9b596b396f4c4ee8f5a062c3ebf6ef53e4b3e0982d5e4",
+      "bytes": 401005
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "55ff221f514506027abd88859e40570e3ae5b0b377d88000d8ff09d664b34f2f",
+      "bytes": 399806
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "76ffa3f2d162473f04e4740b3389d83fa663200e5cfa4758ac160426711162a5",
+      "bytes": 395165
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "ef5e4c243c2112bb2c799839cec4aefeca96e8cee759c0e8ad51483ee93458d3",
+      "bytes": 456558
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "c169f70a7ed7af983971e9cb9c90620a2565d3ee153f6a56c618c8699a2cfb08",
+      "bytes": 449119
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "4280347dc1839de742cea141354ddc148761871875b13746d8625aa0f4649fec",
+      "bytes": 418443
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "7514885c08ce91df8d4a9cbd27c412f33825149f9b994242effdd12eb14a4613",
+      "bytes": 632008
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "846bb6fd803e23f6ffc1d20dc4c35055337b52f4c61949d90201265f1649f662",
+      "bytes": 434672
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "f36ba66c80a1870b311a71b47fda02fcd7ac7cc4ed6d1573768b62d7cf88e9ee",
+      "bytes": 409492
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "03ea8e3227c89c2c7a4697ffa6a669fe1f7a87fe75bb8e84d9e02cf26956e7a1",
+      "bytes": 410888
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "e537aee8c4f623782e440e3fe2975018e06446a97301c98d80a3ea94d0d89873",
+      "bytes": 483000
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "3ddad5b6d29b3965a8256e6c79a7629fb4aa9f512bd83c5720a361d9ed9fc6a1",
+      "bytes": 433869
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "1b486d4252ade44fb9197e66c23cd1c527ee024c65d9fcf181c64d82324b4c0f",
+      "bytes": 415369
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "0da22d93a73e3560df510eb62d59a9e9c50b7af9bb8a822ab952efe7d46ba963",
+      "bytes": 409549
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "446ed06a7bea5b3b21875185f9f230f677e06d7abd405caf489a0fb24b9f9ca6",
+      "bytes": 397666
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "680e3eda4cf50b825270cdbe7bd2980243e56c175b1ea5c9ad96736868617942",
+      "bytes": 392234
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "18133669ef010ebb9b3043a0e144a4550bd4b2447dbd8405287281db2f754f81",
+      "bytes": 391501
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "f22a4d1b53a485d328e8c1281becda34cb76ec379ea10423b285354f2abe4823",
+      "bytes": 386070
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "065d14ec1a6d7d0cdefeda10f3cfabb75418cca5d3e4e744156f64118ef631c7",
+      "bytes": 467514
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "bd91b0bd47195789d60b822bfca5424831a7d390ccd2c6ad197282f3c19e3f0f",
+      "bytes": 438344
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "345b2ea7a10187001f7aded156a4490641d63e41caccb514e3759dccd6b066b0",
+      "bytes": 406696
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "df6a9fc5ee67582609752c304b0c56d480daac83ababc468d6b5f0fc42345438",
+      "bytes": 569268
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "4105d3b7e67861da5db9fce29ad8f1ed2ff0671280ff475c6f97416b5302dad4",
+      "bytes": 603899
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "8182316604ecea5fb8a6b4297311640ca42a9ec574411efd4f110774f3030a76",
+      "bytes": 432942
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "65202fb75c0fdfd2a1f5cb7475252aecca1477d1485625d8ce8ba0b375b3ba42",
+      "bytes": 400784
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "69cc042badbce6a897563c4a7529d6dbdabe300616743e0d32f8df256f963990",
+      "bytes": 418013
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "ecd9c5dd76c49bd94bdf879b85b966915976fcfbf731bacdf8ca132e4a94a884",
+      "bytes": 397694
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "457b1efe3928cfa208fa681c8a0a49a8269a3d3a38841a18c05e8fd4ba101560",
+      "bytes": 392260
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "b55e29225181082ff2fb6ea3dd392d257f08688d0f385c72a754051dea9609c8",
+      "bytes": 391528
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "8c870202643aae3868450957887b1f4c0867633a10761cad2ad567295d37c815",
+      "bytes": 386074
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "154e489ea1110d33a6ac79311e38e4caf338a0664aba0cc7301394c8c9703bde",
+      "bytes": 452286
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "06b122498a11dfd150db83466b9e83ab531850bbf28790ee1b6f95e86113d74d",
+      "bytes": 446691
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "696a0bb585e791f3a02e0b8f3bfdea7c4a1778fdd65cd55d58b1bd6448af72d9",
+      "bytes": 403733
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "569c951035d474b70d4a7660a5cec2371fa620712021cced186e488eabfbc30a",
+      "bytes": 583742
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "dbfe3cf0b14ff6f09aae5ce7742bad047f197b5bc1514cce0c4bf22d29e8a4ae",
+      "bytes": 609527
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "2e0afa6b5c8b9462b62584b0b787c5b6799531cad1cffd77dbaa305b4c3508c2",
+      "bytes": 437696
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "c044e4dabdc79fef255eef181382d0d16bb274dad25867a0268c00216e07d444",
+      "bytes": 437697
+    },
+    {
+      "file": "final-82dac50f/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "3bf3837869ead8ee1b04c957dbbd0440ac2ff7241cadec4c65d9add1d7053548",
+      "bytes": 442127
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "bef85c675dc77299f7d1b304aa1bbc81a4aa41c7632a6238e2a5ba83fb509dd9",
+      "bytes": 403243
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "ef06e7080d331f503922bd8a09fdbf590e5675cbfa5824bb359eeea44eb41183",
+      "bytes": 406616
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "3292e88c077133385b3a6809e76c52092e20b02be77b51be6f8a82adcadb0c99",
+      "bytes": 392563
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "6a23776626dc3e82748b9c3e295fd7e120443bfc22892f08d5d39abae58f8a62",
+      "bytes": 446093
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "b93984b72f9abb906a7e95e389deb9b45322f8eb4b6ed0a0beacef1c5007a419",
+      "bytes": 461360
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "c37f4366af90c32346881818a442353f9f62db424b7fa52f073562efa298c3e6",
+      "bytes": 412558
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "397251d680ec42f84cfac33939fe06c626deaf44bf5e6d2ed2ddf9e9b15dbd2b",
+      "bytes": 624395
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "60a4c740297943b33a8c5fb2e8555e5bea9f9596a5a9ed07a949f5332ca2f75c",
+      "bytes": 592831
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "49cf3f24b19671d31cad7517f83dad64cfe79b5ac835799b6731d56974f7535c",
+      "bytes": 441841
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "7a3a3e0f690bbb5faab1771ce9be75c41768d57909fb2b400a00f7f665588573",
+      "bytes": 413144
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "269b30f3dfbea7416a68d08adccd534319ae78fa50969a7ced4f0c50e766de9b",
+      "bytes": 441295
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "cf53f9bc2df2d71eaed67af3500aeb7b51afd9c3d622a5a9a93c2e1313355131",
+      "bytes": 403223
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "b13d6c1f298f9acd1b288e46e0ccafe32f10bf8f66ce982fca7734df0c14cdf6",
+      "bytes": 398362
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "a9d695edf2a0481a45fc151144a8045d6541187c65c742cd33f201c77f65dd5a",
+      "bytes": 399626
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "07a480aaadd6100e64404749927013efb57c5991df5d96f8b13e264e1054332a",
+      "bytes": 392496
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "c38758661d229df1b14e5d7864710351f487b9e26a9ec5a9b7a604e8c4f70957",
+      "bytes": 460398
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "1f4e0fecf8ae4cf8ca2902c6722da82cd4ceb794488a595b0c9a267ada7aef09",
+      "bytes": 439428
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "14826372a44d9bcfb8d3e1079f075794f220b92b8f4e7b3f8638803099fdc833",
+      "bytes": 409878
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "5ffb7d435ba4c2b38bf345aa2c698befe964aed2389910b21427ca6988f6120d",
+      "bytes": 443628
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "cc4707e0eeca15a70010f39b394da74d140dcee58e732724c6e35a0633b6181c",
+      "bytes": 406809
+    },
+    {
+      "file": "final-82dac50f/screenshots/gte-multilingual-base-int8-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "c59fe71d2fd761e6762901bdacf311d4c6a10d178ace64d0edfbcc16cf4c0e46",
+      "bytes": 433997
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "c0decac1b5b29135022250c4c0e747cd72f2901800da5fcef1db6444946d7ecc",
+      "bytes": 399924
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "0c50c15e97a27c40e3de262b862b286b33f6a8d5df6b80a417ac9e385de753b8",
+      "bytes": 395083
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "3fe75c23b3281d2ae16d0214d0b476309eba2e360c28c4955afc7b53bdc79858",
+      "bytes": 393831
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "5922b837dc6918cb37e1c71ef1ad44fe797e35b4faf6c323d543df63cc33e962",
+      "bytes": 390471
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "df195dee9d5db508e7ecc5164a5d2b56d3ce166d285372df81f0e8f5d0648541",
+      "bytes": 452194
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "068311df1213b8f4690aa6455d61fad23c65064ba812e34a4cb516721925f5fa",
+      "bytes": 437136
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "05c67e177df45e144d2f37eecbf42f28dca3604c06a2dae3d542e5713ae4bb08",
+      "bytes": 401937
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "4d0f6adb4de7956f2c2d1a0f531a8a7efc7a685b2dc9abeface089cb3d5edc6d",
+      "bytes": 583645
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "702c3ecde6ea6a3addddaea49fae53ebcc330ebad6174fcf0325bfedb285fae3",
+      "bytes": 440125
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "f91c4559b15b144acc86c0e29cfc94145b6096e3d19f7989f17fd2b14479448a",
+      "bytes": 403417
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "41356cd086b8ddda62f51045ed68f59aa6515820b623d584e7ba8de90c3f9d74",
+      "bytes": 478731
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "b9c96966698353548b31f592d9102b792b222d5c732a35c34730fac81c676ead",
+      "bytes": 399928
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "6e12b1550886cef8b85513d825c3462d48397d0abe9d0ed15684a1bfe74b6b83",
+      "bytes": 393436
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "0a0b3a651c5d36a797bd346e7da8d06b342eaa7c11ba708a3c8ecb743575d374",
+      "bytes": 393835
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "9d8573560929fc00e46d6013d0b4d13ecee3e6f7cf1e836131ba91bd913c4657",
+      "bytes": 388850
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "e9016cd928c2367ba5a9c0822eb4ad01710046e01e2232c6499b4b5bb2d704e5",
+      "bytes": 447577
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "f00a9be9910007ecfb1a3f857e40772f2e70b97ce3d14bdfdc1935f4afc3a4ad",
+      "bytes": 441758
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "ea156bf76793a541eb5c8c33feda3de0f8b660a2709c5d71e24ad0e4f81ed695",
+      "bytes": 408834
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "4adbcc3046367ec15cd098b0a04e2dd48f83f3be062a917695eafe254a533f98",
+      "bytes": 562644
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "b57498834a9255bbee1756107c8648f25facaee63141b0c055f71478502b21c5",
+      "bytes": 590261
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "3c0a17be03b46d48aefe8abe78151dcdcf22dd4263714f4f7db760a7ec7dd45c",
+      "bytes": 436574
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "6c49789411a14cf040dc8bba2da7fa555487934b413bd9082e8cb853fd1deb17",
+      "bytes": 403417
+    },
+    {
+      "file": "final-82dac50f/screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "4c4646d54f3b32e5ed8f0c3ef75c1cfe5676c4f0c87d5b93f11a147b0c6cce58",
+      "bytes": 457760
+    },
+    {
+      "file": "package-82dac50f/measurement.json",
+      "sha256": "c1a5bc2ac6c65a7a62671ed96fe8f172d5373b2ec01c6075fc0188aa216a8b38",
+      "bytes": 1097
+    },
+    {
+      "file": "package-82dac50f/package-deletion.png",
+      "sha256": "f2663f82a393a15a01d315917f1fea3058638e9f150bf29c82c46c67f4479912",
+      "bytes": 323022
+    },
+    {
+      "file": "package-82dac50f/package-settings.png",
+      "sha256": "a3bfbf338f768fedf197ce4b4c588603a3051a0008a80b5b87661ef9d8d34cee",
+      "bytes": 47300
+    },
+    {
+      "file": "package-82dac50f/package-smoke.json",
+      "sha256": "b99f153b5fac605255114a2fd6de29874c9c565aaf8640d5a151204802af4798",
+      "bytes": 9010
+    },
+    {
+      "file": "package-82dac50f/package.png",
+      "sha256": "30d468fcf9c4bffc452b81295bbcf907a75a8ab2e2e56c521e3a9a4bda7eaeb8",
+      "bytes": 1068050
+    },
+    {
+      "file": "package-9caa8409/measurement.json",
+      "sha256": "0f19b4a5ef843de911361adbfdbc7e11a2b3e4b9453f9d8b29ea84acc39a2952",
+      "bytes": 613
+    },
+    {
+      "file": "package-9caa8409/package-deletion.png",
+      "sha256": "4ada5e48bdbc32e0f864ac9f43c4fd0cb9c0afcf4418eb714ff88963b4d785bc",
+      "bytes": 323311
+    },
+    {
+      "file": "package-9caa8409/package-settings.png",
+      "sha256": "a3bfbf338f768fedf197ce4b4c588603a3051a0008a80b5b87661ef9d8d34cee",
+      "bytes": 47300
+    },
+    {
+      "file": "package-9caa8409/package-smoke.json",
+      "sha256": "a3c76e27304bb23b429b8bef12c0eaa86e86486ace5ed3f8c4a8bbf4270c1ac2",
+      "bytes": 9025
+    },
+    {
+      "file": "package-9caa8409/package.png",
+      "sha256": "30d468fcf9c4bffc452b81295bbcf907a75a8ab2e2e56c521e3a9a4bda7eaeb8",
+      "bytes": 1068050
+    },
+    {
+      "file": "package-b72d10bf/measurement.json",
+      "sha256": "bab3f385dbdde34f90679fa86d135c51e38428580c2f50a5d18c9a454ca9d7ef",
+      "bytes": 869
+    },
+    {
+      "file": "package-b72d10bf/package-deletion.png",
+      "sha256": "f2663f82a393a15a01d315917f1fea3058638e9f150bf29c82c46c67f4479912",
+      "bytes": 323022
+    },
+    {
+      "file": "package-b72d10bf/package-settings.png",
+      "sha256": "a3bfbf338f768fedf197ce4b4c588603a3051a0008a80b5b87661ef9d8d34cee",
+      "bytes": 47300
+    },
+    {
+      "file": "package-b72d10bf/package-smoke.json",
+      "sha256": "4e89b8e2027f2a9c3ebd50eb9ad01a007a56da45215c75d4a5988349f68eeae0",
+      "bytes": 9019
+    },
+    {
+      "file": "package-b72d10bf/package.png",
+      "sha256": "30d468fcf9c4bffc452b81295bbcf907a75a8ab2e2e56c521e3a9a4bda7eaeb8",
+      "bytes": 1068050
+    },
+    {
+      "file": "package-cleanup.json",
+      "sha256": "1f13cf0b5e06747b4eae6400103597a5eac986d629f69d7d7d65fa75e9edd57a",
+      "bytes": 4053
+    },
+    {
+      "file": "package-fb68b909/measurement.json",
+      "sha256": "3245d47eecf069340ae0f658d5623e1263ff290c9bd3f844f32779458ed66566",
+      "bytes": 869
+    },
+    {
+      "file": "package-fb68b909/package-deletion.png",
+      "sha256": "4ada5e48bdbc32e0f864ac9f43c4fd0cb9c0afcf4418eb714ff88963b4d785bc",
+      "bytes": 323311
+    },
+    {
+      "file": "package-fb68b909/package-settings.png",
+      "sha256": "a3bfbf338f768fedf197ce4b4c588603a3051a0008a80b5b87661ef9d8d34cee",
+      "bytes": 47300
+    },
+    {
+      "file": "package-fb68b909/package-smoke.json",
+      "sha256": "747b213c78414d97eb7107fa5a8f09167dfb0326291cc050c88eeff61c68ef2d",
+      "bytes": 9020
+    },
+    {
+      "file": "package-fb68b909/package.png",
+      "sha256": "30d468fcf9c4bffc452b81295bbcf907a75a8ab2e2e56c521e3a9a4bda7eaeb8",
+      "bytes": 1068050
+    },
+    {
+      "file": "probe-7026b2ff/README.md",
+      "sha256": "2f1d4e76252799537603af98c31d53f964d0df4498db1c410919ef975f8a7a28",
+      "bytes": 2221
+    },
+    {
+      "file": "probe-7026b2ff/bge-m3-q8-0.json",
+      "sha256": "5a183468099bf9d9e260ee3d8e2588f1dbe00b45ea2824865d036c8c997320d3",
+      "bytes": 925148
+    },
+    {
+      "file": "probe-7026b2ff/campaign.json",
+      "sha256": "2583f03ecbcf4fa9535f2b4ec638e20f91d406a0ab9eb8e41980a3fd2f45dcb3",
+      "bytes": 18924
+    },
+    {
+      "file": "probe-7026b2ff/diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-coverage-previous-1791410052576.json",
+      "sha256": "0b23a97e2baa23006b480cf7694d786ca791f14ef3c4c03b9e3ea1b4b8dd8297",
+      "bytes": 851423
+    },
+    {
+      "file": "probe-7026b2ff/diagnostic-multilingual-e5-small-int8-grounding-coverage-previous-1791410052575.json",
+      "sha256": "0b8cb9a4815a5f66c244fe0aa0a7ab7fa030472bdda99227fc8504d9332fee70",
+      "bytes": 577839
+    },
+    {
+      "file": "probe-7026b2ff/embeddinggemma-2-text-q8-256-v1.json",
+      "sha256": "d5a7d7c1d54941c3e4503da2d42408aaafa8a59543e1c91062a42d621035890d",
+      "bytes": 866710
+    },
+    {
+      "file": "probe-7026b2ff/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "6b75186984a66b0ea945c5d5aa05b43a39c3f1ccede029ca40cc31990c74c7e3",
+      "bytes": 815025
+    },
+    {
+      "file": "probe-7026b2ff/gte-multilingual-base-int8.json",
+      "sha256": "420737854cce936ef94cea594fec98251960e06260321b36302041474f734df1",
+      "bytes": 757684
+    },
+    {
+      "file": "probe-7026b2ff/manual-reviews.json",
+      "sha256": "14c79477e639e75bb667187ca0c6027e4080ac2bdce9497ab739c403f4a45b1f",
+      "bytes": 14658
+    },
+    {
+      "file": "probe-7026b2ff/multilingual-e5-small-int8.json",
+      "sha256": "757acc2c30fb5c7a45921080fa5864c3cd9e08cfa152ba891fe750c4461161d0",
+      "bytes": 685896
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/bge-m3-q8-0-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "9de112cfe19b8ffda1ae286a2d863e526e1cdbb4098c7b4219710d0dd5bbe4ae",
+      "bytes": 488141
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/bge-m3-q8-0-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "411ac40dccab2088021950ffd0230714c356f6f5656f046991b11f00270e5eff",
+      "bytes": 401338
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/bge-m3-q8-0-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "b126772ee44e1785af0cf03b89269bc2a8fd1500cdf4173d2e8574fc813cee4f",
+      "bytes": 662952
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/bge-m3-q8-0-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "3f7c92862e69576c9e9ca09e7c80527ba13dc46adb7ee92190061b4ee3f6577d",
+      "bytes": 487064
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "2cf08f9d4936d0633d6c5459bbe10d96b0703f11f9b688baea9ad543970f0498",
+      "bytes": 406532
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "f73ad6a63d438a1cc1f251aa12b1c48458f29bb4dab7add607676213aa48f48f",
+      "bytes": 426564
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-256-v1-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "f679aa90063eb3c84b9da08e31a674c74ebce33f9e9087205caedd20c7f40545",
+      "bytes": 705638
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "f2a492bc5a1c2b05cbc63daeff18cc4152d4343d604e50a751510087ded672d8",
+      "bytes": 428555
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "35c9ee1a4e02df303278a90d74a083f82d0c685e67739a89e6acc857e96de730",
+      "bytes": 388655
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "7e7edd8f9b729229aa85377cf1b24fade26f638f31bbd7564efbb74fc3c0a990",
+      "bytes": 679361
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "bc068d387b2225bdbbfc2d8102ea455b3ab4272c1cf11f956bc24f298c0a95ca",
+      "bytes": 488834
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/gte-multilingual-base-int8-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "a346bc1c966dd32f3c2c777f43b134b4541c7983bc0a6add03a458972211dda9",
+      "bytes": 403845
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/gte-multilingual-base-int8-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "048e7ca41ed6755b2d1f6ee44339da9cd784a91885d69d439ebe6f86a2135bdd",
+      "bytes": 400547
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/gte-multilingual-base-int8-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "79f9ec88be0227343c61bc492334fb44cbe33465f486c46ba83e25099682f0af",
+      "bytes": 680691
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/gte-multilingual-base-int8-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "5c7290e72f42a422dd7a08a1c5e3eb3e21902702ca27e8b3e72e771d93233d30",
+      "bytes": 442859
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "362d1ecc60dcb77ff047b69c62b9b0a5ee64a56cefe43542672d04b50d90b721",
+      "bytes": 430013
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "d32e646b4fbb165ea2a5070c65246550da1cff9357ce5adaee481440ddf78905",
+      "bytes": 428439
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "57bc8c6230a4fbf33a7adb1ac4d022b110b2b8fd9f31f32d49095603b4fcb9be",
+      "bytes": 619883
+    },
+    {
+      "file": "probe-7026b2ff/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "8d8635f74e8db5a09b642e9c4f49be621d9a8d2399542ca13c613070f9954005",
+      "bytes": 472495
+    },
+    {
+      "file": "probe-7f48ad17/README.md",
+      "sha256": "d9be467c35da45492274ade58c39f255b5ca42837e073f5a92dbfb6d9ecec898",
+      "bytes": 2223
+    },
+    {
+      "file": "probe-7f48ad17/campaign.json",
+      "sha256": "29b34c6c1d0f8cd1c722f83b915912a84e5040c2a66c6808e83b3abee2d7ddff",
+      "bytes": 9957
+    },
+    {
+      "file": "probe-7f48ad17/embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "bc08398f62a5ddf8a11c9a567acfe3e96d20cbad81a75af208e2a7849ac38f5c",
+      "bytes": 855569
+    },
+    {
+      "file": "probe-7f48ad17/manual-reviews.json",
+      "sha256": "5a20baf052b8887b6257b0a3a59600453a440138ca3bd6aa7bc349e1346e7f4f",
+      "bytes": 5079
+    },
+    {
+      "file": "probe-7f48ad17/multilingual-e5-small-int8.json",
+      "sha256": "dda9a1b9c89340800fd276774ad8ad0efa3c2402505c093955095905932aad90",
+      "bytes": 581827
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "b1b3ae0013189135fd0108ef72d9f26808b4a25820b685a881a5f81f4ca98f66",
+      "bytes": 435046
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "a61b412373e90c9e5b888def613bf6282dcb1a67659ac2b324ae952cc2e8ae7e",
+      "bytes": 398491
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "b44925985cc440fd0bf006dd5df05dccfbc34dc03d359a3862d62a60b01c1d0e",
+      "bytes": 657695
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "0e2ee41cc28a7e5390dd68753aa10c13804d572d92a032b5adc95d9258237b1f",
+      "bytes": 465167
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "4402774b0e365b2b56d6bd14a46eaff1cb9c2c259e19318032c8d238aa0db03c",
+      "bytes": 433461
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "a4aab5645e195998c87c3efa62b1c981b97fb0e9bd657c3c835c1568711494e6",
+      "bytes": 393444
+    },
+    {
+      "file": "probe-7f48ad17/screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "f9027d967ab2abfee2e35d49a937c123b0988de8261c908ac5560698e5aa7495",
+      "bytes": 691288
+    },
+    {
+      "file": "verification/all-log-manifest.json",
+      "sha256": "ebbac0eb1f409ca6ac704437f3256bb99c28da3bbe6e8dd715c23e439890f862",
+      "bytes": 10976
+    },
+    {
+      "file": "verification/current-log-manifest.json",
+      "sha256": "91ca484f73f5ff31b6b88e07c683272edc56035ece73157dd8cc4041fe14a6d6",
+      "bytes": 1229
+    },
+    {
+      "file": "verification/eight-dollar-budget-tests.log",
+      "sha256": "6a0cdcccaa8a1c7da1b7d4f7df129ebd6b2d29ffc08b0c09d9cae7b779d152bb",
+      "bytes": 2255
+    },
+    {
+      "file": "verification/focused-full-tests.log",
+      "sha256": "8203394d5143e659b4d1d81e2a9f09d11a89a997df4056a17ee68b1e23bd078f",
+      "bytes": 1585715
+    },
+    {
+      "file": "verification/historical-log-manifest.json",
+      "sha256": "08d6ac569cbe25b375ef5b6ac6b9b33b76559024502d0d115ec694924de8a10a",
+      "bytes": 3062
+    },
+    {
+      "file": "verification/limit-equivalence-build.log",
+      "sha256": "d8a078f34bceab33c0e7e71ead838233c405a52dcd96c7652e6bbda3bdc79334",
+      "bytes": 63855
+    },
+    {
+      "file": "verification/limit-equivalence-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/limit-equivalence-package-build.log",
+      "sha256": "649bbe20e3b5eaf9e271e147194cbb76e3323184c7ed81e40c8ceb6d4776510d",
+      "bytes": 13261
+    },
+    {
+      "file": "verification/limit-equivalence-package-smoke.log",
+      "sha256": "ae537468fdfd8317e18152f79bc6678c72ee6b3c8c3d30f6391e812f3be0d8d2",
+      "bytes": 80
+    },
+    {
+      "file": "verification/limit-equivalence-tests.log",
+      "sha256": "e145d7a95e3538e4dfc2ec7f5d8fd5fd0994d974ae683ad1e2ddb914f6208910",
+      "bytes": 7312
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-build.log",
+      "sha256": "d622722a1a3292685fa45c18fcef56dbe632b238a469b8ffee788755bd8013bb",
+      "bytes": 63851
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-evaluation.log",
+      "sha256": "74d93165524a9b9e964e6186654ca6119b4fa9aa64d59871771c14bae6c784d4",
+      "bytes": 1374
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-final-build.log",
+      "sha256": "ed263814c646d6e271b8146727332e259d3e8fd75ea8dcdc0c6a04d349227a59",
+      "bytes": 63856
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-final-tests.log",
+      "sha256": "d197c39bbaf3b04a0cc6035f4e072d9f0866de8b260f023f88251fcffd218eee",
+      "bytes": 8218
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-inner-tests.log",
+      "sha256": "b5aa615fb4798f060469adcda15fcded55988120bb6faf792804f31ba0c0d899",
+      "bytes": 4122
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-package-smoke.log",
+      "sha256": "bf192e2583d98fee6e0b5af72345de580529e799084fe8e6cf7920d1cdddd761",
+      "bytes": 340
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-package.log",
+      "sha256": "3cd127c17bedb02cb589e6cb8a682e0e69836d44cd2c00b0eadc1ccad29bc0e0",
+      "bytes": 13225
+    },
+    {
+      "file": "verification/logs/nodus-grounding-facet-proof-tests.log",
+      "sha256": "6ef2c7902e2b8e54aba1f90491f1333998c96317de22fb9e543056e0de588607",
+      "bytes": 7994
+    },
+    {
+      "file": "verification/logs/nodus-grounding-final-budget-tests.log",
+      "sha256": "06cd7d132bb186aac99d478f95cfe3abae05dfb53b799124dcf8cded6e515da4",
+      "bytes": 1514
+    },
+    {
+      "file": "verification/logs/nodus-grounding-focused-full-tests.log",
+      "sha256": "8203394d5143e659b4d1d81e2a9f09d11a89a997df4056a17ee68b1e23bd078f",
+      "bytes": 1585715
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-build.log",
+      "sha256": "7f695b6f993066a2a86e643b00958f1a4077c61f943668d72ff32b465a7a55e9",
+      "bytes": 63852
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-evaluation.log",
+      "sha256": "6e2ed1ad691c9166974e3f08493383c80e56f3d2651cff6e80400c8af11f9fd3",
+      "bytes": 128
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-final-build.log",
+      "sha256": "a7bc221d4cf9e6b2851b9a44d816b8fa2892f4ab449a9c4f8480982f94a9538e",
+      "bytes": 63852
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-final-tests.log",
+      "sha256": "5bb18f4a1298a88a9ed25da8d9f868482033a664666b8741a351679a2af304cf",
+      "bytes": 8007
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-inner-tests.log",
+      "sha256": "c53d00292658e51ada5130fabfcd9ab5d419133f61e944e8cc1979fb4ff29e9d",
+      "bytes": 3916
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-package.log",
+      "sha256": "574fd0dac3f89cb75d2984feac17d3ab533bc155a209d696bcda2b080ab64374",
+      "bytes": 13243
+    },
+    {
+      "file": "verification/logs/nodus-grounding-positive-proof-tests.log",
+      "sha256": "4ac7f81b3dc035af0a7d1f04225b54b297d43ad5d664450537fa8dda188c9ed7",
+      "bytes": 7999
+    },
+    {
+      "file": "verification/logs/nodus-grounding-queue-isolated-rerun.log",
+      "sha256": "c33612042b1b18303cccbf1bcb580c6817658cede19f81a7986eaf98a92bb5d1",
+      "bytes": 6608
+    },
+    {
+      "file": "verification/logs/nodus-grounding-semantic-repair-build.log",
+      "sha256": "dc779874e4e515aee78e0b78ee78730f809aff36aae40bbb6ca416a438756029",
+      "bytes": 63854
+    },
+    {
+      "file": "verification/logs/nodus-grounding-semantic-repair-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-semantic-repair-final-tests.log",
+      "sha256": "a8fde9a515645fd2d0d2c1ea44e52732363e0e92d78eb61c14b9909313b94884",
+      "bytes": 7525
+    },
+    {
+      "file": "verification/logs/nodus-grounding-semantic-repair-package-smoke.log",
+      "sha256": "3ca537018cedf2d57634e464a75a665d2309dac736f725aa57b2547b4b641939",
+      "bytes": 80
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-build.log",
+      "sha256": "73e92c64054d905959deba29cda2a012738cb1d92b9a971fc1d7733fd56347e8",
+      "bytes": 63853
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-final-tests.log",
+      "sha256": "e70d5bee84d31c4a01ec783e6d8363f0aaf5d338ad5878ffe2b0cd6f020ee905",
+      "bytes": 4070
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-inner-tests.log",
+      "sha256": "e6a5191676bf7669371079b4e50d496fff7842da5b8fdfb970d06f798a84f1f0",
+      "bytes": 3585
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-package-smoke.log",
+      "sha256": "fe7d1efb2dd0a211d626763c579e0fb766231811e320e01f58a49ab42b159d27",
+      "bytes": 343
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-package.log",
+      "sha256": "8d7e467afc3c1ec3dced62289a642736eb71d54926e9da3828dffedbddecd625",
+      "bytes": 13243
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-suite.log",
+      "sha256": "813e1b977c74e733b8ffa722f885ac66c8425b9ea1f42ecb164978ed9a1a6a6e",
+      "bytes": 7665
+    },
+    {
+      "file": "verification/logs/nodus-grounding-source-redraft-tests.log",
+      "sha256": "c5006b7d6482408558d80081b1b7ef9593dc1b26652bc80759e7c1eeb52e7e41",
+      "bytes": 10798
+    },
+    {
+      "file": "verification/nodus-grounding-cancellation-concilium-final.log",
+      "sha256": "882930d0d43f6fe340d4899161c7167d0542fffabb8726c74db6da34c60fcecf",
+      "bytes": 1213
+    },
+    {
+      "file": "verification/nodus-grounding-capacity-256-desktop.log",
+      "sha256": "aa98c8c03a22fbda2a872e6434c173b3868fd1bc203abcb77ed16f7a823c8f68",
+      "bytes": 251
+    },
+    {
+      "file": "verification/nodus-grounding-capacity-256-native.log",
+      "sha256": "483a3ea73bdcde74ee287bacc812df5096f0a5e11ae2401b52af9df90d3f0bb1",
+      "bytes": 2034
+    },
+    {
+      "file": "verification/nodus-grounding-delivery-e2e.log",
+      "sha256": "5e19914053d742d5b0f00460f99bfe208e56134d81314c816b445a9a57d90c60",
+      "bytes": 5471
+    },
+    {
+      "file": "verification/nodus-grounding-focus-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/nodus-grounding-focus-tests.log",
+      "sha256": "9a2b100789564dc03fc9f911468a752e4067809cfb4a45b5dc3f4c7f17c05e8f",
+      "bytes": 6782
+    },
+    {
+      "file": "verification/nodus-grounding-focus-types.log",
+      "sha256": "a057d123e87a4a020bf5a247d992b6f46559fb809b8531fff06cf6ee629d7d98",
+      "bytes": 100
+    },
+    {
+      "file": "verification/nodus-grounding-full-final-locale.log",
+      "sha256": "894730af8ec064ea6440954809369c9e130995dfddea86477b6e9b5143980122",
+      "bytes": 1582028
+    },
+    {
+      "file": "verification/nodus-grounding-full-regression.log",
+      "sha256": "ebe6ca07df39a66f29d85e461b77137daa7551baa599b6974cdd1cf86d4e8fec",
+      "bytes": 1591586
+    },
+    {
+      "file": "verification/nodus-grounding-full-typed-repair.log",
+      "sha256": "7f0a211911c8335a01b75120914958e82265c64dfc98e38bb81dfefb1dc754ce",
+      "bytes": 1580394
+    },
+    {
+      "file": "verification/nodus-grounding-package-final-locale-build.log",
+      "sha256": "20b9a570859919a3498ad3316e71227a013baa1170e08ff773bd11a37d0521b4",
+      "bytes": 13231
+    },
+    {
+      "file": "verification/nodus-grounding-package-final-locale-smoke.log",
+      "sha256": "e6d8900698863fa6e1a3838f5764a9a12bc05fa1edcd096deba7277262b8a3fd",
+      "bytes": 341
+    },
+    {
+      "file": "verification/nodus-grounding-proof-schema-final-tests.log",
+      "sha256": "d2e98f99555d4aa6d08a35eac68591a22c3aee0e9d3788b6598af92c9aa52519",
+      "bytes": 7008
+    },
+    {
+      "file": "verification/nodus-grounding-tariff-final-tests.log",
+      "sha256": "5e974b653623d4cff704472176858964f69ee5b8218c797619bce8867e895f23",
+      "bytes": 1991
+    },
+    {
+      "file": "verification/queue-isolated-rerun.log",
+      "sha256": "c33612042b1b18303cccbf1bcb580c6817658cede19f81a7986eaf98a92bb5d1",
+      "bytes": 6608
+    },
+    {
+      "file": "verification/semantic-repair-build.log",
+      "sha256": "dc779874e4e515aee78e0b78ee78730f809aff36aae40bbb6ca416a438756029",
+      "bytes": 63854
+    },
+    {
+      "file": "verification/semantic-repair-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/semantic-repair-final-tests.log",
+      "sha256": "a8fde9a515645fd2d0d2c1ea44e52732363e0e92d78eb61c14b9909313b94884",
+      "bytes": 7525
+    },
+    {
+      "file": "verification/semantic-repair-package-build.log",
+      "sha256": "09704aaa9a90c1afd9e53f24be3f1c68d7a1f0fd45308ae5393a60ef4ee8c989",
+      "bytes": 13249
+    },
+    {
+      "file": "verification/semantic-repair-package-smoke.log",
+      "sha256": "3ca537018cedf2d57634e464a75a665d2309dac736f725aa57b2547b4b641939",
+      "bytes": 80
+    },
+    {
+      "file": "verification/source-redraft-log-manifest.json",
+      "sha256": "d9a2f2dfe28cc94375216e9b8c1b58519aa5553e9573ec05ac89536fcaf7906f",
+      "bytes": 2421
+    },
+    {
+      "file": "verification/verification.json",
+      "sha256": "1253ee8a4516fef6363fb5e4ccfc33064134cf12de6da01cdc8b9a65af32412d",
+      "bytes": 2943
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "writeInsideAllowed": true,
+  "writeOutsideDenied": true,
+  "descendantWriteDenied": true,
+  "externalNetworkDenied": true,
+  "forbiddenLoopbackPortDenied": true
+}

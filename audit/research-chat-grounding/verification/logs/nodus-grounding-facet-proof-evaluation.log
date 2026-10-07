@@ -1,0 +1,7 @@
+
+> nodus@5.8.0 audit:research:grounding
+> node scripts/embeddinggemma-grounding-campaign.mjs --stage=evaluation --budget-usd=8
+
+[{"profile":"embeddinggemma-2-text-q8-512-v1","code":0,"log":"/private/tmp/nodus-research-SG18aD/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-SG18aD/artifacts/grounding-evaluation.json"},{"profile":"multilingual-e5-small-int8","code":1,"log":"/private/tmp/nodus-research-xoTdoN/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-xoTdoN/artifacts/grounding-evaluation.json"}]
+[{"profile":"gte-multilingual-base-int8","code":1,"log":"/private/tmp/nodus-research-EDcyfN/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-EDcyfN/artifacts/grounding-evaluation.json"},{"profile":"bge-m3-q8_0","code":1,"log":"/private/tmp/nodus-research-DFNIdJ/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-DFNIdJ/artifacts/grounding-evaluation.json"}]
+[{"profile":"bge-m3-q8_0","code":1,"log":"/private/tmp/nodus-research-DFNIdJ/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-DFNIdJ/artifacts/grounding-evaluation.json"},{"profile":"embeddinggemma-2-text-q8-256-v1","code":1,"log":"/private/tmp/nodus-research-8PwPuY/artifacts/grounding-evaluation.log","report":"/private/tmp/nodus-research-8PwPuY/artifacts/grounding-evaluation.json"}]

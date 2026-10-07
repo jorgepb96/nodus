@@ -12,5 +12,14 @@ runtime/zotero-mcp/licenses/** -text
 # Hash-pinned QA evidence must retain its exact bytes on every platform.
 audit/embeddinggemma-2/** -text
 audit/research-chat-grounding/** -text
+# Keep generated QA traces out of the default GitHub code-review diff. The
+# evidence remains versioned and its human-readable result pages stay visible.
+audit/embeddinggemma-2/** linguist-generated=true
+audit/research-chat-grounding/** linguist-generated=true
+audit/embeddinggemma-2/README.md linguist-generated=false
+audit/research-chat-grounding/README.md linguist-generated=false
+audit/research-chat-grounding/**/README.md linguist-generated=false
+# Raw command output is byte-hashed evidence, including terminal whitespace.
+audit/research-chat-grounding/**/*.log -whitespace
 # The archived long-document fixture includes a tested terminal blank line.
 audit/embeddinggemma-2/fixtures/fixture-19.md whitespace=-blank-at-eof

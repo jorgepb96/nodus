@@ -1,0 +1,12 @@
+{
+  "revision": "fb68b909",
+  "executed": 48,
+  "reviewed": 48,
+  "positivePassed": 26,
+  "positiveEvaluated": 32,
+  "absencePassed": 16,
+  "absenceEvaluated": 16,
+  "reason": "Coordinator stopped before the remaining 72 cases: six positive failures already make the 95% full-campaign target impossible. First-pair child processes completed; all outputs and failures reviewed. A new source-only redraft candidate uses the remaining final USD 8 budget.",
+  "newCandidate": "b72d10bf",
+  "budgetReset": false
+}

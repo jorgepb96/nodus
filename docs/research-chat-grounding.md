@@ -155,3 +155,35 @@ separately and always leaves the acceptance gate false, even if every probe pass
 profile still requires its retrieval, quality, isolation, performance and native
 packaging gates. Preserve the original failed campaign as a baseline alongside
 any subsequent improvement report.
+
+## Recorded result and limits
+
+The [final regression at `82dac50f`](../audit/research-chat-grounding/final-82dac50f/README.md)
+executed 113/120 cases before the shared proxy refused a reservation. Every
+captured answer/failure was independently inspected: 61/77 executed positive
+cases meet both source fidelity and answer adequacy; 35/36 executed absence
+cases pass; all 113 captured citation targets resolve. Seven cases stay pending,
+and full-campaign rates are not extrapolated. The 95% positive gate is already
+impossible even if all remaining cases pass. The partly synthetic, repeated
+regression sample is not a population or blinded accuracy estimate.
+
+The implementation still permits coverage false positives on omitted requested
+interpretations and mechanisms. Some proof responses concatenate noncontiguous
+quotes with synthetic ellipses and correctly fail the literal-span guard; other
+verifiers reject already-scoped evidence gaps. One unsupported comparison escaped
+the auditor. A malformed three-column/four-separator table also failed the actual
+Electron presentation requirement. These findings remain in the source reviews
+and [failure analysis](../audit/research-chat-grounding/final-82dac50f/analysis.json).
+They are not solved by relaxing evidence validation or changing embedding models.
+
+The final budget-blocked request displayed the provider's generic invalid-key
+error because the QA proxy used HTTP 403. The proxy/report separately identify
+`research_budget_exhausted`; no credential problem is inferred. Availability
+failures never count as correct evidence-gap answers.
+
+The [campaign is closed](../audit/research-chat-grounding/cost/closed-campaign.json)
+at USD 7.9559 committed, including all six unknown reservations, within the
+final cumulative USD 8 authorization. No further paid run is started. The paid
+commands above document reproduction, not permission to restart this campaign.
+Unit/build/package checks pass for the measured runtime, while product-quality,
+other native platforms and resource-terms release gates remain unfinished.

@@ -1,0 +1,26 @@
+{
+  "measuredRevision": "82dac50f",
+  "packageEntrySha256": "1a6a5b75fc3f136a39e349aa4ad60dd551348bf85a8d2ab877f407a21b08afb2",
+  "developmentEntrySha256": "1a6a5b75fc3f136a39e349aa4ad60dd551348bf85a8d2ab877f407a21b08afb2",
+  "importedModulesSha256": {
+    "main-CndrxTjZ.js": "4a6c13a020d4edaa5e1a3b40651d562d9aeffbf0d33a602c07041193267bd8b2",
+    "isolatedProfile-MSlOY2gB.js": "5cc79afd9a17325d997c90542d8323d30f4b54f53a262a837fa5021aaaf7879b"
+  },
+  "sameRuntime": true,
+  "asarSha256": "c3397fde3435b0859bd359d30a41d167e4a87a5c7ac4ac5136f1f534de9f7335",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "completed": true,
+  "weightsBundled": false,
+  "externalNetworkDenied": true,
+  "settings": {
+    "language": "en",
+    "sharedCardCount": 1,
+    "experimentalBadge": true,
+    "licenseTermsLocalized": true,
+    "sharedDeletionWarning": true,
+    "cancelledDeletionPreservesBothProfiles": true
+  },
+  "nativeReleaseSigning": "Ad-hoc local signature; Developer ID signing and notarization are not tested.",
+  "otherNativePlatforms": "Windows x64, Linux x64 and macOS Intel pending."
+}

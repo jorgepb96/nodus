@@ -1,0 +1,146 @@
+
+> nodus@5.8.0 test:research:grounding
+> node --test scripts/test-research-chat-grounding.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs
+
+TAP version 13
+# Subtest: no Spanish error literal in the main process reaches a foreign-language reader untranslated
+ok 1 - no Spanish error literal in the main process reaches a foreign-language reader untranslated
+  ---
+  duration_ms: 1523.393542
+  type: 'test'
+  ...
+# Subtest: no Spanish error literal in the main process is erased into the generic message
+ok 2 - no Spanish error literal in the main process is erased into the generic message
+  ---
+  duration_ms: 1043.44225
+  type: 'test'
+  ...
+# Subtest: every catalogue entry is translated in all seven languages and left alone in Spanish
+ok 3 - every catalogue entry is translated in all seven languages and left alone in Spanish
+  ---
+  duration_ms: 22.768
+  type: 'test'
+  ...
+# Subtest: every parameterized pattern keeps its runtime values and translates around them
+ok 4 - every parameterized pattern keeps its runtime values and translates around them
+  ---
+  duration_ms: 122.549125
+  type: 'test'
+  ...
+# Subtest: Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+ok 5 - Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+  ---
+  duration_ms: 2.429417
+  type: 'test'
+  ...
+# Subtest: catalogue and server-address errors keep their specific cause through IPC in every UI language
+ok 6 - catalogue and server-address errors keep their specific cause through IPC in every UI language
+  ---
+  duration_ms: 0.969708
+  type: 'test'
+  ...
+# Subtest: the local provider failure that opened this file names its cause in every language
+ok 7 - the local provider failure that opened this file names its cause in every language
+  ---
+  duration_ms: 0.781833
+  type: 'test'
+  ...
+# Subtest: a transport detail we did not author is passed through verbatim
+ok 8 - a transport detail we did not author is passed through verbatim
+  ---
+  duration_ms: 0.172625
+  type: 'test'
+  ...
+# Subtest: the Settings connection test reports its HTTP status, not a generic failure
+ok 9 - the Settings connection test reports its HTTP status, not a generic failure
+  ---
+  duration_ms: 0.709334
+  type: 'test'
+  ...
+# Subtest: the Settings result travels as an IPC payload, which is the path the report used
+ok 10 - the Settings result travels as an IPC payload, which is the path the report used
+  ---
+  duration_ms: 3.838292
+  type: 'test'
+  ...
+# Subtest: the two literals the scanner cannot evaluate are translated in their real runtime form
+ok 11 - the two literals the scanner cannot evaluate are translated in their real runtime form
+  ---
+  duration_ms: 0.924291
+  type: 'test'
+  ...
+# Subtest: research assistant packs preserve complete rules, schemas, citations and limits
+ok 12 - research assistant packs preserve complete rules, schemas, citations and limits
+  ---
+  duration_ms: 76.1645
+  type: 'test'
+  ...
+# Subtest: research assistant wires prompt language into all model-facing branches and genealogy labels
+ok 13 - research assistant wires prompt language into all model-facing branches and genealogy labels
+  ---
+  duration_ms: 3.442916
+  type: 'test'
+  ...
+# Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+# Subtest: scripts/test-research-chat-agent.mjs
+ok 3 - scripts/test-research-chat-agent.mjs
+  ---
+  duration_ms: 21246.620209
+  type: 'test'
+  ...
+# ✔ only authorized literal passages from the frozen turn enter verification (2.330834ms)
+# ✔ an explicit constructed exercise retains its writing mode; untrusted source text cannot disable verification (0.2885ms)
+# ✔ a supported answer retains the literal fact and a canonical source attribution (19.467958ms)
+# ✔ a fabricated quote cannot approve a claim even when the judge returns supported (1.519875ms)
+# ✔ an unavailable verifier is an availability failure, never a successful absence answer (1.718709ms)
+# ✔ cancellation during verification never returns the unchecked draft (0.622125ms)
+# ✔ general answers without documentary excerpts do not trigger paid audits (0.255125ms)
+# ✔ verified citations remain inside table cells and web evidence keeps its own target (0.38175ms)
+# ✔ a semantically correct paraphrase cannot masquerade as a direct quote (18.429542ms)
+# ✔ simple calculated equations and table values are checked despite an approving semantic judge (3.740583ms)
+# ✔ a malformed premise reference gets a bounded schema repair, not an unchecked answer (1.817667ms)
+# ✔ repair receives the deterministic cause even when the semantic reason approves the premises (0.739458ms)
+# ✔ a rejected translated direct quote is repaired without deleting its supported value (2.41025ms)
+# ✔ a supported premise survives a fresh review after an unsupported compound claim is repaired (0.543917ms)
+# ✔ verified but irrelevant background is repaired when the requested fact exists (0.811125ms)
+# ✔ coverage outages and persistently incomplete repairs cannot become successful refusals (0.935791ms)
+# ✔ a verified evidence gap retains the requested facet even without a factual claim (0.422208ms)
+# ✔ coverage cannot demand a corpus-absence assertion instead of an already verified price limitation (0.416167ms)
+# ✔ an interpretation complaint is checked against the precise verified distribution limit (0.285916ms)
+# ✔ coverage confirmation cannot invent answer spans or supporting source quotes (1.016209ms)
+# ✔ a malformed coverage proof gets one identical retry and completeness is derived from validated proof (0.99525ms)
+# ✔ coverage proof retries are bounded and transport failures are never replayed (0.565625ms)
+# ✔ long documentary drafts discard unrequested commentary before the source judge sees it (0.653333ms)
+# ✔ draft relevance selection preserves entire table rows for separate evidence auditing (2.555292ms)
+# ✔ invalid or cancelled focus selections cannot publish a long unchecked draft (1.382125ms)
+# ✔ the real chat stream holds draft content, cancels safely and rechecks scope after verification (22884.54975ms)
+# ℹ tests 26
+# ℹ suites 0
+# ℹ pass 26
+# ℹ fail 0
+# ℹ cancelled 0
+# ℹ skipped 0
+# ℹ todo 0
+# ℹ duration_ms 23116.813792
+# Subtest: scripts/test-research-chat-grounding.mjs
+ok 4 - scripts/test-research-chat-grounding.mjs
+  ---
+  duration_ms: 30206.551583
+  type: 'test'
+  ...
+# Claim ledger: atomic premises, verdict agreement, silence, qualified inference, retired-claim carry-over, whole-report contradictions and orchestration passed.
+# Subtest: scripts/test-research-claim-audit.mjs
+ok 5 - scripts/test-research-claim-audit.mjs
+  ---
+  duration_ms: 3325.393875
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30381.399375

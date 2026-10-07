@@ -2,6 +2,8 @@
 
 Los perfiles de 512 y 256 dimensiones están implementados como opciones experimentales. No se ha cambiado el modelo predeterminado ni se ha accedido a bases de datos reales. Los umbrales de recuperación controlada se han superado en este corpus. La muestra revisada de respuestas factuales incumple el criterio de fundamentación. Falta cobertura nativa en otros sistemas. No se ofrecen como opciones validadas. Los criterios completos están en campaign.json.
 
+Este informe conserva la campaña original y sus cifras históricas. El [seguimiento de precisión](../research-chat-grounding/README.md) registra las mejoras comunes a todos los modelos, la medida nativa posterior de 256 dimensiones (p95 de 447 ms con 10.000 fragmentos), el paquete macOS ARM64 del runtime medido y la evaluación final de 113/120 casos. El límite acumulado se amplió expresamente de 5 a 8 USD y la campaña quedó cerrada en 7,9559 USD comprometidos, con todas las reservas pendientes conservadas. La precisión y adecuación exigidas siguen sin superarse; los estados pendientes y el gasto que aparecen debajo son los de la campaña original.
+
 ## Recuperación controlada
 
 40 documentos, 120 consultas; 70 positivas y 10 sin evidencia en evaluación, 40 consultas para desarrollo. Los textos controlados son extractos; la importación completa se mide aparte.

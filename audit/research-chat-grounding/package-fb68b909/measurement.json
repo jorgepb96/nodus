@@ -1,0 +1,22 @@
+{
+  "measuredRevision": "fb68b909",
+  "packageEntrySha256": "2648f5040b0d2623b991d58bf1ca8aad32b3cb6b1ff8810de7853ee60c851418",
+  "developmentEntrySha256": "2648f5040b0d2623b991d58bf1ca8aad32b3cb6b1ff8810de7853ee60c851418",
+  "sameRuntime": true,
+  "asarSha256": "4efafe41c93b704b2eef29a39b1b96b2d065595b42b9f26d41df58b40a148108",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "completed": true,
+  "weightsBundled": false,
+  "externalNetworkDenied": true,
+  "settings": {
+    "language": "en",
+    "sharedCardCount": 1,
+    "experimentalBadge": true,
+    "licenseTermsLocalized": true,
+    "sharedDeletionWarning": true,
+    "cancelledDeletionPreservesBothProfiles": true
+  },
+  "nativeReleaseSigning": "Ad-hoc local signature; Developer ID signing and notarization are not tested.",
+  "otherNativePlatforms": "Windows x64, Linux x64 and macOS Intel pending."
+}

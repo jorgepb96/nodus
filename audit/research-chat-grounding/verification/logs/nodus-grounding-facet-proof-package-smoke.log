@@ -1,0 +1,5 @@
+
+> nodus@5.8.0 test:embeddinggemma:package
+> node scripts/embeddinggemma-package-smoke.mjs --executable=/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof/mac-arm64/Nodus.app/Contents/MacOS/Nodus --model-root=/private/tmp/nodus-research-Rfuk56
+
+Package report: /private/tmp/nodus-research-c6Varv/artifacts/package-smoke.json

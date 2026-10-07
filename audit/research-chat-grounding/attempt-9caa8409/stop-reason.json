@@ -1,0 +1,17 @@
+{
+  "measuredRevision": "9caa8409",
+  "coordinatorTerminated": true,
+  "activePairAllowedToFinish": true,
+  "executed": 48,
+  "planned": 120,
+  "remaining": 72,
+  "reason": "Eight independently reviewed positive failures in the first profile pair already make the 95% positive acceptance target impossible even if all remaining positive cases pass. Preserve this failed attempt and use the remaining authorized budget for a revised full campaign.",
+  "positivePassed": 24,
+  "positiveReviewed": 32,
+  "absencePassed": 16,
+  "absenceReviewed": 16,
+  "executionErrors": 5,
+  "unknownReservationsPreserved": 4,
+  "cumulativeCommittedUsd": 5.1799205750000015,
+  "maximumAuthorizedUsd": 8
+}

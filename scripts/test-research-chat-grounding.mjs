@@ -123,6 +123,9 @@ test('simple calculated equations and table values are checked despite an approv
   }
   for (const sentence of ['Calculation: 83 − 47 = 36.', 'Calcul : 2,5 + 1,2 = 3,7.', 'Calculation: 1 / 3 = 0.33.', 'Calculation: 7*8 = 56.', 'Calculation: -5 + 10 = 5.', 'Calculation: 5 − 10 = −5.', '| Difference | **21 points** | calculation from 72 − 51 |', 'The survey ran from 2012–2013.', 'The source says “72 − 51 = 25”.']) assert.equal(check(sentence).markdown, sentence);
   assert.equal(check('The source reports 72 − 51 = 25.', 'attributed').claims[0].status, 'supported', 'checking our calculations does not silently rewrite an attributed source');
+  for (const sentence of ['Calculation: 1,000 + 250 = 1,250.', 'Calculation: 1.000 + 250 = 1.250.', 'Calculation: 999 + 1 = 1,000,000.', 'Calculation: 3^2 + 4 = 13.', 'Calculation: 1 + 2 = 3e0.', 'Calculation: -9007199254740993 + 1 = -9007199254740992.']) {
+    assert.equal(check(sentence).markdown, sentence, 'ambiguous grouping, symbolic expressions and unsafe integers remain for semantic review');
+  }
 });
 
 test('a malformed premise reference gets a bounded schema repair, not an unchecked answer', async () => {

@@ -103,15 +103,21 @@ export function researchChatCalculations(review: ResearchProseAudit): ResearchPr
     // A quotation reports its source's words; it is not the writer's calculation.
     const plain = researchPlainSentence(claim.sentence).replace(/«[^»]*»|“[^”]*”|"[^"]*"/gu, '').replace(/\*\*|__/gu, '');
     for (const expression of plain.matchAll(binary)) {
-      if (expression.index! > 0 && /[\p{L}\p{N}.,]/u.test(plain[expression.index! - 1])) continue;
+      if (expression.index! > 0 && /[\p{L}\p{N}.,^_]/u.test(plain[expression.index! - 1])) continue;
+      // A separator followed by three digits can mean decimal precision or
+      // thousands grouping. Do not choose a locale and reject a valid equation.
+      const ambiguous = (value: string) => /^[+−-]?\d{1,3}[.,]\d{3}$/u.test(value);
+      if (ambiguous(expression[1]) || ambiguous(expression[3])) continue;
       const numeric = (value: string) => Number(value.replace(',', '.').replace('−', '-'));
       const a = numeric(expression[1]), b = numeric(expression[3]);
-      if (!Number.isFinite(a) || !Number.isFinite(b) || Math.max(a, b) > Number.MAX_SAFE_INTEGER) continue;
+      if (!Number.isFinite(a) || !Number.isFinite(b) || Math.max(Math.abs(a), Math.abs(b)) > Number.MAX_SAFE_INTEGER) continue;
       const operator = expression[2];
       if (!'+−–-'.includes(operator) && expression[0].includes('%')) continue;
       const expected = operator === '+' ? a + b : '−–-'.includes(operator) ? a - b : '×*'.includes(operator) ? a * b : a / b;
       const rest = plain.slice(expression.index! + expression[0].length);
       const equation = new RegExp(`^\\s*=\\s*(${number})`).exec(rest);
+      // Do not check a prefix of a grouped number, exponent or symbolic result.
+      if (equation && /^(?:[.,]\d|[\p{L}\p{N}^_])/u.test(rest.slice(equation[0].length))) continue;
       let stated = equation?.[1];
       if (!stated && claim.kind === 'inference' && /^\s*\|/u.test(plain)) {
         const otherCells = plain.split('|').filter(cell => cell.trim() && !cell.includes(expression[0]));
@@ -120,6 +126,7 @@ export function researchChatCalculations(review: ResearchProseAudit): ResearchPr
       }
       if (stated === undefined) continue;
       const actual = numeric(stated);
+      if (ambiguous(stated) || !Number.isFinite(actual) || Math.abs(actual) > Number.MAX_SAFE_INTEGER) continue;
       // Equality permits decimal rounding to the displayed precision; integer
       // equations are exact. An approximate result should use ≈ instead of =.
       const decimals = stated.split(/[.,]/u)[1]?.length;

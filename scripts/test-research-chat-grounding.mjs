@@ -190,6 +190,8 @@ test('verified but irrelevant background is repaired when the requested fact exi
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
     const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, 'The flow rate was not measured.')) }
+      : input.coverageComplaint ? { complete: false, missing: input.coverageComplaint.missing, addressed: [], omissions: input.coverageComplaint.missing.map(complaint =>
+        ({ complaint, kind: 'available-fact', requiredFact: 'Give the requested river level of 18 metres.', sourceId: passage.id, quote: passage.summary })) }
       : input.answer.includes('18 metres') ? valid : { complete: false, missing: ['Give the requested river level of 18 metres.'] };
     assert(validate(result)); return result;
   };
@@ -203,7 +205,10 @@ test('coverage outages and persistently incomplete repairs cannot become success
     ai.completeJson = async (options, validate) => {
       const input = JSON.parse(options.user);
       if (!input.sentences && outage) throw new Error('simulated coverage outage');
-      const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index)) } : { complete: false, missing: ['The requested fact is omitted.'] };
+      const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index)) }
+        : input.coverageComplaint ? { complete: false, missing: input.coverageComplaint.missing, addressed: [], omissions: input.coverageComplaint.missing.map(complaint =>
+          ({ complaint, kind: 'available-fact', requiredFact: 'Give the requested river level of 18 metres.', sourceId: passage.id, quote: passage.summary })) }
+        : { complete: false, missing: ['The requested fact is omitted.'] };
       assert(validate(result)); return result;
     };
     ai.completeText = async () => 'The flow rate was not measured.';
@@ -222,6 +227,55 @@ test('a verified evidence gap retains the requested facet even without a factual
   };
   ai.completeText = async () => { throw new Error('A supported specific limitation needs no rewrite'); };
   assert.equal(await groundResearchChatAnswer(gap, sourceContext, 'What is the purchase price of this sensor?', model, 'en'), gap);
+});
+
+test('coverage cannot demand a corpus-absence assertion instead of an already verified price limitation', async () => {
+  const gap = 'I cannot establish the purchase price of this sensor from the available evidence.';
+  let confirmations = 0;
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    let result;
+    if (input.sentences) result = { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'Specific epistemic limit' }] };
+    else if (input.coverageComplaint) {
+      confirmations++;
+      assert.equal(input.verifiedClaims[0].sentence, gap);
+      assert.match(options.system, /must not additionally assert that complete documents contain no such fact/);
+      result = { complete: true, missing: [], omissions: [], addressed: input.coverageComplaint.missing.map(complaint => ({ complaint, answerQuote: gap })) };
+    } else result = { complete: false, missing: ['The answer must say that no price is documented in the documents.'] };
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('A spurious absence complaint must not buy a repair'); };
+  assert.equal(await groundResearchChatAnswer(gap, sourceContext, 'What is the purchase price?', model, 'en'), gap);
+  assert.equal(confirmations, 1);
+});
+
+test('an interpretation complaint is checked against the precise verified distribution limit', async () => {
+  const sentence = 'I cannot establish the shape of the distribution from these excerpts.';
+  ai.completeJson = async (options, validate) => {
+    const input = JSON.parse(options.user);
+    const result = input.sentences ? { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, premises: [], unsupportedParts: [], reason: 'Precise interpretation limit' }] }
+      : input.coverageComplaint ? { complete: true, missing: [], omissions: [], addressed: input.coverageComplaint.missing.map(complaint => ({ complaint, answerQuote: sentence })) }
+      : { complete: false, missing: ['The requested distribution interpretation is omitted.'] };
+    assert(validate(result)); return result;
+  };
+  ai.completeText = async () => { throw new Error('Do not invent a distribution shape to appease coverage'); };
+  assert.equal(await groundResearchChatAnswer(sentence, sourceContext, 'What distribution shape can I establish?', model, 'en'), sentence);
+});
+
+test('coverage confirmation cannot invent answer spans or supporting source quotes', async () => {
+  for (const invalidKind of ['answer', 'source', 'format-only']) {
+    ai.completeJson = async (options, validate) => {
+      const input = JSON.parse(options.user);
+      if (input.sentences) return { claims: input.sentences.map((_row, index) => accepted(index)) };
+      if (!input.coverageComplaint) return { complete: false, missing: ['The requested facet is omitted.'] };
+      const complaint = input.coverageComplaint.missing[0];
+      const result = invalidKind !== 'source'
+        ? { complete: true, missing: [], omissions: [], addressed: [{ complaint, answerQuote: invalidKind === 'format-only' ? '**********' : 'A fabricated answer span that was never written.' }] }
+        : { complete: false, missing: [complaint], addressed: [], omissions: [{ complaint, kind: 'available-fact', requiredFact: 'The flow rate is 99 litres.', sourceId: passage.id, quote: 'The flow rate is 99 litres.' }] };
+      assert.equal(validate(result), false); throw new Error('Invalid coverage proof');
+    };
+    await assert.rejects(groundResearchChatAnswer('The river level is 18 metres.', sourceContext, 'What is the level?', model, 'en'), /No se pudo verificar/);
+  }
 });
 
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {

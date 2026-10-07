@@ -25,7 +25,14 @@ sentence must not permanently retire its true premises. Unsupported assertions
 are removed; empty headings and broken table citation placement are cleaned up.
 An additional coverage check catches supported but irrelevant background and
 omitted requested facts. It can request one further repair, which is audited
-again. A verified epistemic limitation retains the exact requested facet even
+again. An incomplete-coverage verdict is independently confirmed before acting:
+each dismissed complaint needs an exact meaningful span of the verified answer;
+each omitted available fact needs an exact authorized source quote, while an
+unaddressed evidence gap asks only for a scoped acknowledgement. Fabricated spans,
+empty formatting and unknown source IDs fail validation. This resolves coverage
+complaints that demand an unsupported absence assertion or speculative conclusion
+without restoring rejected prose. The original critic and confirmation are both
+retained in QA traces. A verified epistemic limitation retains the exact requested facet even
 when there are no supported factual claims. Repairs receive the deterministic
 failure code as well as the semantic reason, so a true but unqualified inference
 can be labelled and a translated direct quote can become a paraphrase. If no

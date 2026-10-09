@@ -615,13 +615,44 @@ function TreeButton({
   );
 }
 
-function UnitTree({
+/** The provenance tree, built once per render of the archive: each unit's children and the
+ *  number of sources filed anywhere beneath it. Counting by re-deriving every unit's
+ *  descendants once per source row, at every node, made the sidebar cubic in the size of
+ *  the archive; this is linear. */
+export function archiveUnitTree(units: ArchiveDescriptionUnit[], rows: PrimarySourceArchiveRow[]): { children: Map<string | null, ArchiveDescriptionUnit[]>; counts: Map<string, number> } {
+  const children = new Map<string | null, ArchiveDescriptionUnit[]>();
+  for (const unit of units) {
+    const siblings = children.get(unit.parentUnitId ?? null);
+    if (siblings) siblings.push(unit); else children.set(unit.parentUnitId ?? null, [unit]);
+  }
+  for (const siblings of children.values()) siblings.sort((a, b) => a.position - b.position || a.title.localeCompare(b.title));
+  const direct = new Map<string, number>();
+  for (const row of rows) direct.set(row.unit.unitId, (direct.get(row.unit.unitId) ?? 0) + 1);
+  const counts = new Map<string, number>();
+  const visiting = new Set<string>();
+  const count = (unitId: string): number => {
+    const known = counts.get(unitId);
+    if (known !== undefined) return known;
+    if (visiting.has(unitId)) return 0;
+    visiting.add(unitId);
+    let total = direct.get(unitId) ?? 0;
+    for (const child of children.get(unitId) ?? []) total += count(child.unitId);
+    visiting.delete(unitId);
+    counts.set(unitId, total);
+    return total;
+  };
+  for (const unit of units) count(unit.unitId);
+  return { children, counts };
+}
+
+export function UnitTree({
   units,
   rows,
   parentId,
   selectedId,
   onSelect,
   depth = 0,
+  tree: givenTree,
 }: {
   units: ArchiveDescriptionUnit[];
   rows: PrimarySourceArchiveRow[];
@@ -629,11 +660,14 @@ function UnitTree({
   selectedId: string | null;
   onSelect: (id: string) => void;
   depth?: number;
+  tree?: ReturnType<typeof archiveUnitTree>;
 }) {
+  const builtTree = useMemo(() => givenTree ?? archiveUnitTree(units, rows), [givenTree, units, rows]);
+  const tree = givenTree ?? builtTree;
   return (
     <>
-      {unitChildren(units, parentId).map((unit) => {
-        const count = rows.filter((row) => descendantIds(units, unit.unitId).has(row.unit.unitId)).length;
+      {(tree.children.get(parentId) ?? []).map((unit) => {
+        const count = tree.counts.get(unit.unitId) ?? 0;
         return (
           <div key={unit.unitId}>
             <TreeButton
@@ -644,7 +678,7 @@ function UnitTree({
               depth={depth}
               onClick={() => onSelect(unit.unitId)}
             />
-            <UnitTree units={units} rows={rows} parentId={unit.unitId} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
+            <UnitTree units={units} rows={rows} parentId={unit.unitId} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} tree={tree} />
           </div>
         );
       })}

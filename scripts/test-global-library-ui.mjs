@@ -352,7 +352,10 @@ test('the global reader exposes annotations, metadata, chat and native attachmen
   assert.match(reader, /sourceId: selectedSource/);
   assert.match(reader, /model: chatModel/);
   assert.match(reader, /ModelPicker/);
-  assert.match(reader, /onReaderCitation={openReaderCitation}/);
+  // The chat answers route reader links through a stable callback that calls openReaderCitation.
+  assert.match(reader, /onReaderCitation={chatReaderCitation}/);
+  assert.match(reader, /chatReaderCitation = useCallback\(\(target: MarkdownReaderCitation\) => openReaderCitationRef\.current\(target\), \[\]\)/);
+  assert.match(reader, /openReaderCitationRef\.current = openReaderCitation;/);
   assert.match(reader, /library-reader-chat-input/);
   assert.match(reader, /data-testid="library-reader-empty-card"/);
   assert.match(reader, /library-reader-empty-icon/);

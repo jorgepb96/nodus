@@ -119,7 +119,17 @@ export function PageBlockEditor({
 
   useEffect(() => {
     void load();
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+    // Leaving the page (or switching to another row) inside the save debounce used to cancel
+    // the pending save, losing the last half second of typing. It is written now, against the
+    // page it was typed into, without touching the state of whatever loads next.
+    return () => {
+      if (!saveTimer.current) return;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      const current = documentRef.current;
+      if (!current || current.page.locked) return;
+      void window.nodus.savePageDocument({ pageId: current.page.id, expectedRevision: current.revision, blocks: draftsRef.current, reason: 'editor' }).catch(() => undefined);
+    };
   }, [load]);
 
   const persist = useCallback(async (snapshot: PageBlockDraft[], serial: number) => {
@@ -166,7 +176,7 @@ export function PageBlockEditor({
     setDrafts(next);
     const serial = ++serialRef.current;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void persist(next, serial), options.immediate ? 0 : 550);
+    saveTimer.current = setTimeout(() => { saveTimer.current = null; void persist(next, serial); }, options.immediate ? 0 : 550);
   }, [persist]);
 
   const updateBlock = (index: number, patch: Partial<PageBlockDraft>) => {

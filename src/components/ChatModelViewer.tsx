@@ -34,7 +34,13 @@ export function ChatModelViewer({ node, owner, staticPreview = false }: { node: 
   const [detail, setDetail] = useState('');
   const [open, setOpen] = useState(staticPreview);
 
+  // Bumped by every load and every teardown. A viewer that finishes building after the
+  // model was closed, the message unmounted or a newer load started belongs to nobody: it is
+  // disposed at once instead of keeping a WebGL context and a render loop alive off screen.
+  const generation = useRef(0);
+
   const teardown = useCallback(() => {
+    generation.current++;
     loaded.current?.dispose();
     loaded.current = null;
   }, []);
@@ -43,6 +49,7 @@ export function ChatModelViewer({ node, owner, staticPreview = false }: { node: 
 
   const load = useCallback(async () => {
     if (!owner || !mount.current || loaded.current) return;
+    const ticket = ++generation.current;
     setState('loading');
     setDetail('');
     try {
@@ -52,16 +59,19 @@ export function ChatModelViewer({ node, owner, staticPreview = false }: { node: 
         import('../lib/modelViewer'),
         window.nodus.readCapabilityModel(`nodus-capability://chat/${owner}/${node.attachmentId}`),
       ]);
-      if (!mount.current) return;
-      loaded.current = await build({
+      if (!mount.current || ticket !== generation.current) return;
+      const viewer = await build({
         container: mount.current,
         bytes: asset.bytes,
         mimeType: asset.mimeType,
         maxPixelRatio: MAX_PIXEL_RATIO,
         label: node.alt,
       });
+      if (ticket !== generation.current) { viewer.dispose(); return; }
+      loaded.current = viewer;
       setState('ready');
     } catch (error) {
+      if (ticket !== generation.current) return;
       teardown();
       setState('failed');
       setDetail(error instanceof Error ? error.message : String(error));

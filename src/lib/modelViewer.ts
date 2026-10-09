@@ -78,7 +78,17 @@ export default async function buildModelViewer(request: ViewerRequest): Promise<
   // arrangement every 3D tool a researcher already uses agrees on.
   controls.enablePan = true;
 
-  const parsed = await parse(request);
+  let parsed: Object3D;
+  try {
+    parsed = await parse(request);
+  } catch (error) {
+    // The renderer and its controls exist already; a model that fails to parse must not
+    // leave a WebGL context behind for every attempt to open it.
+    controls.dispose();
+    renderer.dispose();
+    renderer.domElement.remove();
+    throw error;
+  }
   const model = new Group();
   model.add(parsed);
   scene.add(model);

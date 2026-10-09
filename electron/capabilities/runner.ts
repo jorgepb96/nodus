@@ -5,11 +5,13 @@ import fs from 'node:fs';
 import { utilityProcess } from 'electron';
 import type { ModelRef } from '@shared/types';
 import { serializeChatVisualPart } from '@shared/chatSkills';
+import { documentedContextWindow } from '@shared/providerContextWindows';
 import { completeText } from '../ai/aiClient';
 import { storeCapabilityFile } from '../chatAssets';
 import { validateViewDocument, type ViewDocumentV1 } from '../../packages/capability-api/src/views';
 import type { WorkerArtifactV1 } from '../../packages/capability-api/src/artifacts';
 import type { ChatAstNode } from '../../packages/capability-api/src/chat';
+import type { ChatModelBudgetV1 } from '../../packages/capability-api/src/worker';
 import { acquireCapabilityWorker, stopCapabilityWorkers, type TrustedWorkerRuntime } from './workerHost';
 import { createCapabilityHostServices, type CapabilityServiceAdapters } from './hostServices';
 import { resolveTrustedCapability } from './pluginStoreV2';
@@ -22,6 +24,22 @@ import type { TrustedCapabilityRunner } from './chatPipeline';
 
 /** Assembles the pieces for one turn: the pinned package, its worker, the host services
  *  it is allowed to reach, and where its results are stored. */
+
+/** The host's estimate of characters per token, passed to capabilities so that every consumer
+ *  sizes its limits with ONE ratio instead of inventing its own. Same figure the research lane
+ *  uses. An estimate, and documented as one. */
+const CAPABILITY_CHARS_PER_TOKEN = 3.2;
+
+/** What this turn's model can hold, for a capability to size its own limits against.
+ *
+ *  A model with no documented window yields an absent window rather than a guessed one, because
+ *  a capability's own floor is a better answer than a number nobody verified — and `null` here
+ *  must never be read as "unlimited". */
+function chatModelBudget(model: ModelRef | null | undefined): ChatModelBudgetV1 | undefined {
+  if (!model?.provider || !model.model) return undefined;
+  const window = documentedContextWindow(model.provider, model.model);
+  return window == null ? undefined : { contextWindowTokens: window, charsPerToken: CAPABILITY_CHARS_PER_TOKEN };
+}
 
 export interface TrustedTurnContext {
   vision?: VisionSession;
@@ -122,7 +140,13 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
       // named no number and no cause. The work it bounds was measured at a third of a second
       // against a budget of fifteen, so an overrun is a starved or unstarted process rather than a
       // hard molecule — and that is only visible with the spawn-to-result time written down.
-      const spawned = Date.now();
+      // Both clocks on purpose. performance.now() is monotonic, so a duration measured with it
+      // survives an NTP correction or a sleep; Date.now() is kept beside it as a cross-check,
+      // because a disagreement between the two IS the finding — it says the wall clock moved
+      // under the measurement, and a number taken from it should not be trusted. Two timing
+      // calls cost nothing against a subprocess spawn.
+      const spawned = performance.now();
+      const spawnedWall = Date.now();
       const budget = Math.min(Math.max(request.timeoutMs, 1_000), 300_000);
       return new Promise((resolve, reject) => {
         let settled = false;
@@ -132,10 +156,15 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
           clearTimeout(timer);
           signal.removeEventListener('abort', abort);
           try { child.kill(); } catch { /* already gone */ }
-          const spent = Date.now() - spawned;
-          if (error || spent * 2 >= budget) {
-            console.info(`${new Date().toISOString()} [capability] ${runtime.capabilityId} subworker ${request.entry} ${error ? 'failed' : 'ok'} in ${(spent / 1000).toFixed(1)}s of a ${(budget / 1000).toFixed(0)}s budget`);
-          }
+          const spent = performance.now() - spawned;
+          const wallSpent = Date.now() - spawnedWall;
+          const drift = Math.abs(wallSpent - spent) > Math.max(250, spent * 0.1) ? ` · CLOCK STEPPED: wall says ${(wallSpent / 1000).toFixed(1)}s` : '';
+          // Always, and with the reason. Logging only past half the budget hid the useful case:
+          // on one measured run 12 of 13 of these failed, most of them well inside the budget, so
+          // they were not timeouts — and the line said nothing about what had gone wrong. The
+          // drawing path degrades silently, so a route can verify while almost every structure
+          // validation fails, and nothing anywhere records it.
+          console.info(`${new Date().toISOString()} [capability] ${runtime.capabilityId} subworker ${request.entry} ${error ? 'failed' : 'ok'} in ${(spent / 1000).toFixed(1)}s of a ${(budget / 1000).toFixed(0)}s budget${error ? ` — ${error.message.replace(/\s+/g, ' ').slice(0, 200)}` : ''}${drift}`);
           if (error) reject(error); else resolve(value);
         };
         const abort = () => finish(new DOMException('The capability subworker was cancelled.', 'AbortError'));
@@ -162,6 +191,8 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
 }
 
 export function createTrustedCapabilityRunner(context: TrustedTurnContext): TrustedCapabilityRunner {
+  // Computed once per turn, not per call: the model does not change inside a turn.
+  const budget = chatModelBudget(context.model);
   const scopeKey = randomUUID();
   const services = createCapabilityHostServices(createCapabilityAdapters(context));
   const workerFor = (provider: CapabilityProvider) => {
@@ -191,22 +222,27 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
       // unverified fallback — so the budget is almost never spent on chemistry, and a timeout
       // without a timing line is undiagnosable. Logged on failure always, and on success only when
       // the call used more than half its budget, so an ordinary route stays quiet.
-      const started = Date.now();
-      const report = (outcome: string) => {
-        const spent = Date.now() - started;
-        if (outcome === 'ok' && spent * 2 < tool.timeoutMs) return;
-        console.info(`${new Date().toISOString()} [capability] ${provider.id} ${toolId} ${outcome} in ${(spent / 1000).toFixed(1)}s of a ${(tool.timeoutMs / 1000).toFixed(0)}s budget`);
+      const started = performance.now();
+      const startedWall = Date.now();
+      // Always, so a run's log carries the per-tool cost a later analysis can total. Suppressing
+      // the quick successes left the dominant cost of a turn unmeasurable from its own log.
+      const report = (outcome: string, detail = '') => {
+        const spent = performance.now() - started;
+        const wallSpent = Date.now() - startedWall;
+        const drift = Math.abs(wallSpent - spent) > Math.max(250, spent * 0.1) ? ` · CLOCK STEPPED: wall says ${(wallSpent / 1000).toFixed(1)}s` : '';
+        console.info(`${new Date().toISOString()} [capability] ${provider.id} ${toolId} ${outcome} in ${(spent / 1000).toFixed(1)}s of a ${(tool.timeoutMs / 1000).toFixed(0)}s budget${detail}${drift}`);
       };
       try {
         const result = await handle.call<Awaited<ReturnType<TrustedCapabilityRunner['invoke']>>>('invoke', {
           invocationId: `i${Math.random().toString(36).slice(2, 10)}`,
           toolId, input, locale: context.locale,
-          chat: { question: context.question, nodeId },
+          chat: { question: context.question, nodeId, ...(budget ? { budget } : {}) },
         }, { timeoutMs: tool.timeoutMs, signal: context.signal });
         report('ok');
         return result;
       } catch (error) {
-        report(error instanceof Error && error.name === 'AbortError' ? 'cancelled' : 'failed');
+        report(error instanceof Error && error.name === 'AbortError' ? 'cancelled' : 'failed',
+          error instanceof Error ? ` — ${error.message.replace(/\s+/g, ' ').slice(0, 200)}` : '');
         throw error;
       }
     },
@@ -214,7 +250,7 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
     async hook({ provider, hook, nodes }: { provider: CapabilityProvider; hook: 'prepare' | 'finalize'; nodes: ChatAstNode[] }) {
       const { handle } = workerFor(provider);
       return handle.call(hook === 'prepare' ? 'prepareChat' : 'finalizeChat',
-        { nodes, ...(hook === 'prepare' ? { question: context.question } : {}), locale: context.locale },
+        { nodes, ...(hook === 'prepare' ? { question: context.question, ...(budget ? { budget } : {}) } : {}), locale: context.locale },
         { timeoutMs: 60_000, signal: context.signal });
     },
 

@@ -96,21 +96,28 @@ function getWorker(): Worker | null {
     return null;
   }
   try {
-    worker = new Worker(file);
-    worker.unref(); // never keep the app alive just for the compute thread
-    worker.on('message', (res: { id: number; ok: boolean; matches?: Array<CentroidMatch | NeighborMatch>; error?: string }) => {
+    const spawned = new Worker(file);
+    worker = spawned;
+    spawned.unref(); // never keep the app alive just for the compute thread
+    spawned.on('message', (res: { id: number; ok: boolean; matches?: Array<CentroidMatch | NeighborMatch>; error?: string }) => {
       const p = pending.get(res.id);
       if (!p) return;
       pending.delete(res.id);
       if (res.ok && res.matches) p.resolve(res.matches);
       else p.reject(new Error(res.error ?? 'compute worker error'));
     });
-    worker.on('error', (err) => {
+    // Events from a worker that is no longer the current one are ignored. A timed-out
+    // worker is terminated on purpose and then exits with code 1; letting that exit mark
+    // the host broken (and null out a successor spawned meanwhile) turned ONE timeout into
+    // "inline for the rest of the session", bypassing MAX_CONSECUTIVE_TIMEOUTS.
+    spawned.on('error', (err) => {
+      if (worker !== spawned) return;
       workerBroken = true;
       worker = null;
       failAllPending(err instanceof Error ? err : new Error(String(err)));
     });
-    worker.on('exit', (code) => {
+    spawned.on('exit', (code) => {
+      if (worker !== spawned) return;
       worker = null;
       if (code !== 0) {
         workerBroken = true;

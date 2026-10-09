@@ -170,6 +170,8 @@ const publicLookup: net.LookupFunction = (hostname, options, callback) => {
   });
 };
 
+const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
+
 function fetchWithPinnedPublicDns(url: URL, init: RequestInit): Promise<Response> {
   return new Promise((resolve, reject) => {
     const transport = url.protocol === 'https:' ? https : http;
@@ -182,11 +184,23 @@ function fetchWithPinnedPublicDns(url: URL, init: RequestInit): Promise<Response
       const headers = new Headers();
       for (let index = 0; index < incoming.rawHeaders.length; index += 2)
         headers.append(incoming.rawHeaders[index], incoming.rawHeaders[index + 1]);
-      resolve(new Response(Readable.toWeb(incoming) as ReadableStream, {
-        status: incoming.statusCode ?? 500,
-        statusText: incoming.statusMessage,
-        headers,
-      }));
+      // The Response constructor throws for a body on a null-body status (204, 304, …) and
+      // for any status outside 200-599. Thrown here, inside the socket callback, that
+      // escaped the promise as an uncaught exception and left the caller waiting for the
+      // timeout, which then reported a misleading "operation was aborted".
+      const status = incoming.statusCode ?? 500;
+      try {
+        const nullBody = NULL_BODY_STATUSES.has(status);
+        if (nullBody) incoming.resume();
+        resolve(new Response(nullBody ? null : Readable.toWeb(incoming) as ReadableStream, {
+          status,
+          statusText: incoming.statusMessage,
+          headers,
+        }));
+      } catch (error) {
+        incoming.destroy();
+        reject(new Error(`The resource server answered with an invalid HTTP status (${status}).`, { cause: error }));
+      }
     });
     request.once('error', reject);
     request.end();

@@ -301,3 +301,56 @@ test('cancellation propagates instead of being swallowed as a provider problem',
     error => error.name === 'AbortError',
   );
 });
+
+test('a refusal over a size limit names the size that arrived, not the type', async () => {
+  // B46. "the input.question must be a string of at most 8000 characters (received string)" is
+  // true, tautological and unactionable — it restates the rule and says nothing about the value.
+  // B45 hid behind exactly that sentence for a whole 30-target sweep: 58 refused calls, and no
+  // line anywhere said whether the string was 8001 characters or 80000, which is the difference
+  // between a clamp and a design problem.
+  const chemistry = provider({
+    id: 'nodus:chemistry', priority: 300,
+    tools: [tool('compile', {
+      inputSchema: {
+        type: 'object',
+        properties: { plan: { type: 'string', maxLength: 64_000 }, question: { type: 'string', maxLength: 8_000 } },
+        required: ['plan'], additionalProperties: false,
+      },
+    })],
+    requests: [{ fence: 'chemistry-plan', toolId: 'compile', maxPerReply: 1, answerMode: 'replace-block' }],
+  });
+  const question = 'x'.repeat(8_461);
+  const answer = `\`\`\`chemistry-plan\n${JSON.stringify({ plan: '{"version":2}', question })}\n\`\`\``;
+  const output = await runTrustedChatPipeline(answer, registryOf(chemistry), runnerOf());
+
+  assert.match(output, /the input\.question is 8461 characters; at most 8000 are allowed/,
+    'the measured length comes first, then the rule it broke');
+  assert.doesNotMatch(output, /received string/, 'and the sentence that said nothing is gone');
+  // The offending text is never echoed back: it can be enormous and it is the user's own writing.
+  assert.ok(!output.includes('x'.repeat(100)), 'the content itself is not quoted into the answer');
+
+  // A string inside its limits still passes, so this did not turn into a new refusal.
+  const ok = `\`\`\`chemistry-plan\n${JSON.stringify({ plan: '{"version":2}', question: 'Draw ethanol.' })}\n\`\`\``;
+  assert.doesNotMatch(await runTrustedChatPipeline(ok, registryOf(chemistry), runnerOf()), /was not run/);
+});
+
+test('a too-short string and an out-of-range number are reported the same way', async () => {
+  // The same defect class: a minimum and a numeric range both used to report only the type.
+  const widgets = provider({
+    id: 'nodus:widgets', priority: 100,
+    tools: [tool('make', {
+      inputSchema: {
+        type: 'object',
+        properties: { colour: { type: 'string', minLength: 7 }, count: { type: 'integer', minimum: 1, maximum: 12 } },
+        required: ['colour'], additionalProperties: false,
+      },
+    })],
+    requests: [{ fence: 'widget-plan', toolId: 'make', maxPerReply: 1, answerMode: 'replace-block' }],
+  });
+  const short = await runTrustedChatPipeline('```widget-plan\n{"colour":"#abc"}\n```', registryOf(widgets), runnerOf());
+  assert.match(short, /the input\.colour is 4 characters; at least 7 are required/);
+
+  const high = await runTrustedChatPipeline('```widget-plan\n{"colour":"#abcdef","count":17}\n```', registryOf(widgets), runnerOf());
+  assert.match(high, /the input\.count must be an integer between 1 and 12 \(received 17\)/,
+    'a number reports the value that arrived');
+});

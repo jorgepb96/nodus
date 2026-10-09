@@ -175,8 +175,12 @@ function expressions(
   ]
     .filter(Boolean)
     .join(" ");
+  // Strict needs at least one positive term. With no quotes and no concept match it used to
+  // be the exclusions alone ("spanish civil war -novel" became just -"novel"), a query of
+  // only a negative term; the plain words are the positive part then.
+  const positives = [...quotedText, ...conceptTerms].filter(Boolean);
   const strict =
-    [...quotedText, ...conceptTerms, ...exclusions]
+    [...(positives.length ? positives : [plain]), ...exclusions]
       .filter(Boolean)
       .join(" AND ") || plain;
   const semantic = [...exact, ...concepts.map((group) => group[0]), plain]

@@ -75,7 +75,8 @@ async function fetchCatalogue(): Promise<unknown> {
  */
 export async function getTutorialCatalogue(): Promise<TutorialVideo[]> {
   if (inFlight) return inFlight;
-  inFlight = (async () => {
+  let fellBack = false;
+  const attempt: Promise<TutorialVideo[]> = (async () => {
     try {
       const raw = await fetchCatalogue();
       const { videos, rejected } = parseTutorialCatalogue(raw);
@@ -84,6 +85,7 @@ export async function getTutorialCatalogue(): Promise<TutorialVideo[]> {
       writeCache(raw);
       return mergeTutorialCatalogue(videos);
     } catch (error) {
+      fellBack = true;
       const cached = readCache();
       if (cached.length > 0) {
         console.log('[tutorials] using the cached catalogue:', error instanceof Error ? error.message : error);
@@ -93,9 +95,12 @@ export async function getTutorialCatalogue(): Promise<TutorialVideo[]> {
       return [...TUTORIAL_VIDEOS];
     }
   })();
-  // A failed check must not be remembered as "already done" for the whole run.
-  inFlight.catch(() => { inFlight = null; });
-  return inFlight;
+  inFlight = attempt;
+  // A failed check must not be remembered as "already done" for the whole run. The block
+  // above never rejects (it falls back instead), so a rejection handler alone never fired
+  // and one offline open pinned the fallback list until restart.
+  void attempt.then(() => { if (fellBack && inFlight === attempt) inFlight = null; }, () => { if (inFlight === attempt) inFlight = null; });
+  return attempt;
 }
 
 /** Test seam: forget this run's answer. */

@@ -66,11 +66,13 @@ interface StatusJson {
  * The shape of `serve status --json` has changed across Tailscale versions, so rather than
  * walk a structure that may be `Web` keyed by `host:443` in one release and something else in
  * the next, this asks the only question that matters — does the configuration mention our
- * loopback port — of the serialized text. A false positive here costs nothing: the button it
- * hides is idempotent anyway.
+ * loopback port — of the serialized text. A false positive is not free: stopTailscaleServe
+ * relies on it before turning the 443 handler off.
  */
-function servesPort(serveJson: string, port: number): boolean {
-  return serveJson.includes(`127.0.0.1:${port}`) || serveJson.includes(`localhost:${port}`);
+export function servesPort(serveJson: string, port: number): boolean {
+  // Bounded on the right: a plain substring test let port 3000 match a proxy to
+  // 127.0.0.1:30000, and stopTailscaleServe would then take down that unrelated 443 config.
+  return new RegExp(`(?:127\\.0\\.0\\.1|localhost):${port}(?!\\d)`).test(serveJson);
 }
 
 /** Read Tailscale's current state. Never throws: an absent or broken CLI is just "not available". */

@@ -111,7 +111,16 @@ function rewriteAssets(
   const replace = (_whole: string, prefix: string, rawTarget: string, suffix: string) => {
     if (SAFE_URL.test(rawTarget)) return `${prefix}${rawTarget}${suffix}`;
     const withoutAnchor = rawTarget.split('#')[0].split('?')[0];
-    const resolved = cleanEntryName(path.posix.join(directory === '.' ? '' : directory, decodeLink(withoutAnchor)));
+    // A link that resolves outside the export (root-relative, or `..` above the ZIP root) is
+    // just a link that is not in this ZIP. cleanEntryName throws for those, and that throw
+    // used to roll back the whole import over a single dead link in one page.
+    let resolved: string;
+    try {
+      resolved = cleanEntryName(path.posix.join(directory === '.' ? '' : directory, decodeLink(withoutAnchor)));
+    } catch {
+      addNotice(notices, 'omitted', markdownName, `No se encontró el archivo enlazado «${rawTarget}».`);
+      return `${prefix}${rawTarget}${suffix}`;
+    }
     const asset = entries.get(resolved);
     if (!asset) {
       addNotice(notices, 'omitted', markdownName, `No se encontró el archivo enlazado «${rawTarget}».`);

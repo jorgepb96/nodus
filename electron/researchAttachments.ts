@@ -108,6 +108,7 @@ export async function importResearchAttachment(owner: ResearchAttachmentOwner, f
     const pdf = await openPdf(filePath, { forRendering: true });
     try {
       if (pdf.numPages > 200) throw new Error('El PDF supera 200 páginas. Divide el documento para adjuntarlo.');
+      let pagesWithoutText = 0;
       for (let n = 1; n <= pdf.numPages; n++) {
         assertCurrent();
         const page = await pdf.getPage(n);
@@ -122,11 +123,18 @@ export async function importResearchAttachment(owner: ResearchAttachmentOwner, f
           await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
           imageBuffers.push(canvas.toBuffer('image/png'));
         }
-        if (!text.trim()) meta.warning = 'Hay páginas sin texto extraíble; necesitan un modelo con visión.';
+        if (!text.trim()) {
+          pagesWithoutText += 1;
+          meta.warning = 'Hay páginas sin texto extraíble; necesitan un modelo con visión.';
+        }
         page.cleanup();
       }
       if (pdf.numPages > 20) {
-        if (meta.warning) meta.kind = 'unsupported';
+        // Over 20 pages no page images are kept, so a PDF with no text layer at all has
+        // nothing to offer. One that has text on most pages (a blank separator, a figure
+        // page) is still readable through that text, which is what the warning promises.
+        // (The warning text is left as it was: the model reads it as the file's limitation.)
+        if (pagesWithoutText === pdf.numPages) meta.kind = 'unsupported';
         meta.warning = 'PDF de más de 20 páginas: solo se incluye la capa de texto. Divide el PDF para analizar sus imágenes o páginas escaneadas.';
       }
     } finally { await pdf.destroy(); }

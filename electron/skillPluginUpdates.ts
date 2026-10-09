@@ -10,6 +10,11 @@ const stateFile = () => path.join(app.getPath('userData'), 'plugin-update-state.
 let timer: ReturnType<typeof setInterval> | undefined;
 let running: Promise<void> | undefined;
 
+/** The same lock that keeps the app and capability packages from updating themselves.
+ *  Without it this loop ran on every launch, and would fetch catalogues and install updates
+ *  for any plugin with autoUpdate on, in a build that was told not to update. */
+const updatesDisabled = () => process.env.NODUS_DISABLE_AUTO_UPDATE === '1';
+
 function lastCheck(): number {
   try { return Date.parse(JSON.parse(fs.readFileSync(stateFile(), 'utf8')).checkedAt) || 0; } catch { return 0; }
 }
@@ -19,6 +24,7 @@ function recordCheck() {
 }
 
 export function checkPluginUpdates(force = false): Promise<void> {
+  if (updatesDisabled()) return Promise.resolve();
   if (running) return running;
   running = (async () => {
     if (!force && Date.now() - lastCheck() < PERIOD) return;
@@ -42,6 +48,7 @@ export function checkPluginUpdates(force = false): Promise<void> {
 }
 
 export function startPluginUpdates(): void {
+  if (updatesDisabled()) { console.log('[skill-plugins] automatic plugin updates disabled'); return; }
   void checkPluginUpdates();
   timer = setInterval(() => void checkPluginUpdates(), PERIOD);
 }

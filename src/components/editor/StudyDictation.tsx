@@ -91,6 +91,7 @@ export function StudyDictation({
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const captureGenerationRef = useRef(0);
   const chunksRef = useRef<Blob[]>([]);
   const previewTimerRef = useRef<number | null>(null);
   const previewBusyRef = useRef(false);
@@ -121,6 +122,7 @@ export function StudyDictation({
     void reloadClips();
     void refreshDevices().catch(() => undefined);
     return () => {
+      captureGenerationRef.current++;
       if (previewTimerRef.current) window.clearInterval(previewTimerRef.current);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (recorderRef.current && recorderRef.current.state !== 'inactive') recorderRef.current.stop();
@@ -236,7 +238,10 @@ export function StudyDictation({
 
   const startRecording = async () => {
     setError(''); setProvisional(''); silenceStoppingRef.current = false;
-    if (!(await confirmMicrophonePrivacy())) return;
+    // The dictation may close (or move to another document) while the privacy notice or the
+    // microphone permission is pending; the microphone is then released, not left recording.
+    const generation = captureGenerationRef.current;
+    if (!(await confirmMicrophonePrivacy()) || generation !== captureGenerationRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: {
         deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -244,8 +249,10 @@ export function StudyDictation({
         echoCancellation: noiseSuppression,
         autoGainControl: true,
       } });
+      if (generation !== captureGenerationRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
       streamRef.current = stream;
       await refreshDevices();
+      if (generation !== captureGenerationRef.current) { stream.getTracks().forEach((track) => track.stop()); streamRef.current = null; return; }
       const mimeType = bestRecorderMime();
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       recorderRef.current = recorder;

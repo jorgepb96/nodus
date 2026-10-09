@@ -47,6 +47,11 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     optionsSeen = options; questionSeen = question;
     return realGather(question, options);
   };
+  // Target-level evidence is remembered between a request and its corrections, and every case here
+  // asks about the same target. Without this, each test after the first is served the previous
+  // one's result and stops exercising the gather at all — which is how the cache was first seen
+  // working, and would otherwise read as these tests passing for the wrong reason.
+  test.beforeEach(() => evidence.clearSynthesisEvidenceCache());
   const selection = { ideas: false, themes: false, contradictions: false, gaps: false, readingPath: false, authors: false, documents: true, passages: true, graph: false, graphParts: {}, layers: { ideas: false, documents: true }, sourceFilter: { enabled: true, authorIds: [], workIds: ['selected'] } };
   const request = { model: { provider: 'openai', model: 'test' }, messages: [{ role: 'user', content: 'Propose a synthesis of benzocaine (SMILES: CCOC(=O)c1ccc(N)cc1).' }], selection, webSearch: 'off' };
   const skill = { id: 'chemistry-test', name: 'Chemistry', instructions: '', enabled: { assistant: true, nodi: false }, capabilities: ['nodus:chemistry'] };
@@ -143,33 +148,44 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     } finally { ai.embed = async () => null; }
   });
 
-  test('cancellation reaches concurrent route tools and disposes every runner', async () => {
+  test('cancellation reaches concurrent route tools, and one gather opens one runner', async () => {
     const registry = load('electron/capabilities/registry.ts');
     const reactions = load('electron/reactionIndex/index.ts');
     const originalRunner = molecule.chemistryRunner;
     const originalRegistry = registry.capabilityRegistry;
     const originalService = reactions.reactionIndexService;
     const controller = new AbortController();
-    let running = 0, disposed = 0, started;
+    let running = 0, disposed = 0, opened = 0, started;
     const ready = new Promise(resolve => { started = resolve; });
     registry.capabilityRegistry = () => ({ providers: new Map([['nodus:chemistry', { tools: [{ id: 'search-routes' }, { id: 'propose-disconnections' }] }]]) });
     reactions.reactionIndexService = () => ({ localDirectory: async () => '/isolated-ord' });
-    molecule.chemistryRunner = options => ({
-      runner: { invoke: async () => {
-        assert.equal(options.signal, controller.signal);
-        running++;
-        if (running === 2) started();
-        return new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true }));
-      } },
-      dispose: async () => { disposed++; },
-    });
+    molecule.chemistryRunner = options => {
+      // The real contract, mirrored: a supplied runner is handed back with a no-op dispose, so
+      // one gather opens ONE worker however many phases ask for it. The stub has to honour that
+      // or it counts a reuse as a fresh worker and this stops measuring anything.
+      if (options.runner) return { runner: options.runner, dispose: async () => {} };
+      opened++;
+      return {
+        runner: { invoke: async () => {
+          assert.equal(options.signal, controller.signal);
+          running++;
+          if (running === 2) started();
+          return new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true }));
+        } },
+        dispose: async () => { disposed++; },
+      };
+    };
     try {
       const pending = realGather(request.messages[0].content, { signal: controller.signal });
       pending.catch(() => {});
       await ready;
       controller.abort();
       await assert.rejects(pending, { name: 'AbortError' });
-      assert.equal(disposed, 2);
+      // Two tools ran concurrently on one worker: the phases reuse what the gather opened, and an
+      // abort still disposes it. A phase that goes back to opening its own raises both counts.
+      assert.equal(running, 2, 'both route tools were reached');
+      assert.equal(opened, 1, 'one worker for the whole gather');
+      assert.equal(disposed, 1, 'and the gather closes the one it opened');
     } finally {
       molecule.chemistryRunner = originalRunner;
       registry.capabilityRegistry = originalRegistry;

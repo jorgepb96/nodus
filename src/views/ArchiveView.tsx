@@ -600,7 +600,7 @@ function TextEntryModal({
   );
 }
 
-function ArchiveItemDetail({
+export function ArchiveItemDetail({
   item,
   isGenealogy,
   onClose,
@@ -643,17 +643,22 @@ function ArchiveItemDetail({
   };
 
   useEffect(() => {
+    // The bytes can arrive after the detail closed: no object URL is made for a closed
+    // detail, so the image is not pinned in memory for the rest of the session.
+    let alive = true;
     let revoked: string | null = null;
+    setImageUrl(null);
     if (item.kind === 'image' && item.hasBlob) {
       void window.nodus.getArchiveItemBlob(item.itemId).then((bytes) => {
-        if (!bytes) return;
+        if (!bytes || !alive) return;
         const blob = new Blob([new Uint8Array(bytes)], { type: item.mimeType ?? 'image/png' });
         const url = URL.createObjectURL(blob);
         revoked = url;
         setImageUrl(url);
-      });
+      }).catch(() => undefined);
     }
     return () => {
+      alive = false;
       if (revoked) URL.revokeObjectURL(revoked);
     };
   }, [item.itemId, item.hasBlob, item.kind, item.mimeType]);

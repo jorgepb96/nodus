@@ -61,6 +61,32 @@ function smilesIn(text: string): string[] {
 
 /** The starting materials the request names with a structure: every SMILES after "starting
  *  from/with", "from" or "using", except the target itself. At most sixteen. */
+/**
+ * Per-phase timings for one gather, printed as a single line the way `[routeReport]` already does.
+ *
+ *  Without this the whole evidence phase was one opaque number: measured at ~394s per turn, 43%
+ *  of a 31-minute round, against a model that was only 39% — and nothing said which phase inside
+ *  it was slow, so any tuning would have been guesswork. `[routeReport]` decomposes itself and
+ *  that is precisely why it was diagnosable in one pass.
+ *
+ *  Timing starts when the work STARTS, not when it is awaited, because two of the phases are
+ *  launched early and awaited last; measuring at the await would report the sliver left by then
+ *  and make a slow parallel phase look instant. A phase that FAILS is still recorded: how long
+ *  something took before giving up is exactly what you want to know. `now` is injectable so the
+ *  behaviour can be tested without real time.
+ */
+export function evidencePhases(now: () => number = Date.now) {
+  const recorded: string[] = [];
+  return {
+    track<T>(label: string, work: Promise<T>): Promise<T> {
+      const started = now();
+      return work.finally(() => { recorded.push(`${label} ${((now() - started) / 1000).toFixed(1)}s`); });
+    },
+    /** Settle order, which is itself informative: it shows what was still running when. */
+    line(): string { return recorded.join(' · '); },
+  };
+}
+
 export function findStartingSmiles(text: string, target?: string | null): string[] {
   const clause = START_CLAUSE.exec(text);
   if (!clause) return [];
@@ -295,6 +321,7 @@ const CLASS_RELEVANCE: Record<string, { all: RegExp[]; not?: RegExp[] }> = {
   'acylation of an alcohol or phenol': { all: [/acylat|acetylat|esterif/i] },
   'amide formation by acylation of an amine': { all: [/amide/i, /amine|ammonia/i, /acid chloride|acyl chloride|acylat|anhydride/i] },
   'ester hydrolysis': { all: [/hydroly|saponif/i, /ester/i] },
+  'reduction of an ester to an alcohol': { all: [/reduc/i, /ester/i], not: [/hydroly|saponif/i] },
   'nitrile hydrolysis': { all: [/nitrile/i, /hydroly/i] },
   'acid chloride formation with thionyl chloride': { all: [/thionyl chloride|SOCl\s*2/i, /acid chloride|acyl chloride|carboxylic acid/i] },
   'oxidation to a carboxylic acid': { all: [/oxidi[sz]|oxidation/i, /carboxylic acid/i] },

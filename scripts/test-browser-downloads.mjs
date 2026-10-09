@@ -122,3 +122,25 @@ test('a site-controlled filename cannot escape the trusted download directory', 
 });
 
 test.after(() => rmSync(dir, { recursive: true, force: true }));
+
+test('a download never replaces a file already in the folder, and is never hidden', async () => {
+  const { availableDownloadPath } = require(bundle);
+  assert.equal(typeof availableDownloadPath, 'function', 'the save path is chosen, not just joined');
+  const folder = mkdtempSync(path.join(tmpdir(), 'nodus-dl-folder-'));
+  const { writeFileSync, existsSync } = await import('node:fs');
+  try {
+    writeFileSync(path.join(folder, 'paper.pdf'), 'the paper from yesterday');
+    writeFileSync(path.join(folder, 'paper (1).pdf'), 'and its twin');
+    assert.equal(availableDownloadPath(folder, 'paper.pdf', existsSync, path.join), path.join(folder, 'paper (2).pdf'));
+    assert.equal(availableDownloadPath(folder, 'notes.txt', existsSync, path.join), path.join(folder, 'notes.txt'));
+    assert.equal(availableDownloadPath(folder, '.zshrc', existsSync, path.join), path.join(folder, 'zshrc'));
+    assert.equal(availableDownloadPath(folder, 'archive.tar.gz', () => false, path.join), path.join(folder, 'archive.tar.gz'));
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+});
+
+test('the download handler uses the chosen path, not a bare join', async () => {
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(path.join(repoRoot, 'electron/browser/downloads.ts'), 'utf8');
+  assert.doesNotMatch(source, /setSavePath\(path\.join\(folder, filename\)\)/);
+  assert.match(source, /setSavePath\(availableDownloadPath\(folder, filename,/);
+});

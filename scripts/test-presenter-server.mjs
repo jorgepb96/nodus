@@ -79,3 +79,40 @@ test('the shared Presenter link omits the PIN and its mobile page asks for it', 
   assert.match(remoteSource, /event\.code === 4001/);
   assert.match(remoteSource, /pattern="\[0-9\]\{6\}"/);
 });
+
+test('wrong PINs close the gate: a LAN client cannot walk the 6-digit space', () => {
+  assert.equal(typeof A.createPinGate, 'function', 'the servers admit through a stateful gate');
+  const gate = A.createPinGate('654321');
+  let admitted = 0;
+  for (let guess = 0; guess < 1000; guess++) {
+    if (gate.admit({ remoteAddress: '192.168.1.20', providedPin: String(guess).padStart(6, '0') })) admitted++;
+  }
+  assert.equal(admitted, 0);
+  assert.equal(gate.admit({ remoteAddress: '192.168.1.20', providedPin: '654321' }), false, 'after the limit even the right PIN is refused from that address');
+  assert.equal(gate.admit({ remoteAddress: '192.168.1.21', providedPin: '654321' }), true, 'another device with the right PIN still joins');
+
+  // Many addresses share one session limit.
+  const shared = A.createPinGate('654321');
+  for (let i = 0; i < A.PIN_FAILURES_PER_SESSION; i++) shared.admit({ remoteAddress: `10.0.${i >> 8}.${i & 255}`, providedPin: '000000' });
+  assert.equal(shared.admit({ remoteAddress: '10.9.9.9', providedPin: '654321' }), false);
+});
+
+test('loopback skips the PIN only for a request addressed to loopback and not sent by a foreign page', () => {
+  const gate = A.createPinGate('654321');
+  assert.equal(gate.admit({ remoteAddress: '127.0.0.1', providedPin: null, host: '127.0.0.1:50123' }), true);
+  assert.equal(gate.admit({ remoteAddress: '::1', providedPin: null, host: '[::1]:50123' }), true);
+  assert.equal(gate.admit({ remoteAddress: '127.0.0.1', providedPin: null, host: 'localhost:50123', origin: 'http://localhost:50123' }), true);
+  // A page in the presenter's browser opening ws://127.0.0.1:<port>.
+  assert.equal(gate.admit({ remoteAddress: '127.0.0.1', providedPin: null, host: '127.0.0.1:50123', origin: 'https://evil.example' }), false);
+  // A DNS-rebinding page: same-origin to itself, so no Origin, but its own host name.
+  assert.equal(gate.admit({ remoteAddress: '127.0.0.1', providedPin: null, host: 'rebind.evil.example:50123' }), false);
+  assert.equal(gate.admit({ remoteAddress: '127.0.0.1', providedPin: '654321', host: 'rebind.evil.example:50123' }), true, 'with the PIN it is an ordinary client');
+});
+
+test('both LAN servers admit through the gate, not the stateless check', async () => {
+  for (const file of ['electron/toolkit/presenter/server.ts', 'electron/toolkit/apps/server.ts']) {
+    const source = await readFile(path.join(repoRoot, file), 'utf8');
+    assert.doesNotMatch(source, /isAuthorized\(/, file);
+    assert.match(source, /createPinGate\(pin\)/, file);
+  }
+});

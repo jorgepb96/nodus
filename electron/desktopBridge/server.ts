@@ -2,7 +2,8 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual, X509Certificate }
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer, type Server as HttpsServer } from 'node:https';
 import path from 'node:path';
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from '../secrets/safeStorageGate';
 import { getDb, withVaultDatabase } from '../db/database';
 import { ensureLanCert } from '../localServer/lanCert';
 import { getVault } from '../vaults/vaultRegistry';

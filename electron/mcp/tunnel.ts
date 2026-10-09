@@ -305,11 +305,16 @@ async function installLatestTunnelClient(): Promise<RuntimeMetadata> {
 function tunnelEnvironment(config: TunnelConfig, apiKey: string): NodeJS.ProcessEnv {
   const settings = getSettings();
   if (!settings.mcpToken) throw new Error('El servidor MCP local todavía no tiene token.');
+  // The port the server is ACTUALLY on. When the configured port is taken, listenLoopback moves
+  // the server to a free one; building the URL from the setting sent the bearer token, and every
+  // remote call, to whatever other process held the configured port.
+  const live = getMcpStatus();
+  if (!live.running || !live.port) throw new Error('El servidor MCP local no está activo.');
   return {
     ...process.env,
     CONTROL_PLANE_API_KEY: apiKey,
     CONTROL_PLANE_TUNNEL_ID: config.tunnelId,
-    MCP_SERVER_URL: `http://127.0.0.1:${settings.mcpPort}/mcp`,
+    MCP_SERVER_URL: `http://127.0.0.1:${live.port}/mcp`,
     NODUS_MCP_AUTHORIZATION: `Bearer ${settings.mcpToken}`,
     MCP_EXTRA_HEADERS: 'Authorization: env:NODUS_MCP_AUTHORIZATION',
     MCP_DISCOVERY_EXTRA_HEADERS: 'Authorization: env:NODUS_MCP_AUTHORIZATION',

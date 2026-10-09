@@ -64,7 +64,7 @@ test('the table names the four sources, resolves library titles and counts model
   assert.match(text, /\| 1 — Oxidation of 4-nitrotoluene \| recorded \(4×\) \| Organic Chemistry 7e Ed, p\. 882 \| — \|/);
   assert.match(text, /\| 2 — Fischer esterification \| 81% similar \(same transformation\) \| Klein, 2012 \| orgsyn\.org \|/);
   assert.match(text, /\| 3 — Reduction of the nitro group \| 40% similar \(weak\) \| — \| — · _model knowledge only_ \|/);
-  assert.match(text, /\*\*3 step\(s\):\*\* the Open Reaction Database snapshot records 2 \(or the same transformation\), the answer cites textbooks or library passages in 2 and the web in 1; 1 rests on the model's own knowledge\./);
+  assert.match(text, /\*\*3 step\(s\):\*\* the Open Reaction Database snapshot records 2 \(or the same transformation\), the answer cites textbooks or library passages in 2 and the web in 1; 1 cites nothing of its own and rests on the model's own knowledge\./);
   assert.match(text, /Cited outside the steps: McMurry, 2012\./);
 });
 
@@ -82,8 +82,39 @@ test('bold lead-in steps, the check\'s own passage, and a closing section kept o
   assert.deepEqual(evidence.steps[1].library.map((entry) => entry.label), ['Klein, 2012']);
   assert.deepEqual(evidence.elsewhere.library.map((entry) => entry.label), ['McMurry, 2012']);
   const text = formatEvidenceSources(evidence);
-  assert.match(text, /\| 1 — First alkylation \| — \| Klein Organic Chemistry, p\. 924 \(found by the check\) \| — · _model knowledge only_ \|/);
-  assert.match(text, /the check found a textbook passage for 1; 1 rests on/);
+  // A passage the CHECK found is support, so the row no longer carries it and "model knowledge
+  // only" at the same time — which had the block contradicting its own header, since the header
+  // lists "Found by the check" among the things that stop a step resting on the model.
+  assert.match(text, /\| 1 — First alkylation \| — \| Klein Organic Chemistry, p\. 924 \(found by the check\) \| — \|/);
+  assert.ok(!/First alkylation[^\n]*model knowledge only/.test(text), 'a step with a found passage is not model-only');
+  assert.match(text, /the check found a textbook passage for 1; 0 cite nothing of their own and rest on/);
+});
+
+test('an idea citation counts as library support, not as model knowledge', () => {
+  // The third citation the application emits - `[Author, Year](nodus://idea/<id>)`, the form the
+  // prompt packs ask for. Only passages and web pages were recognised, so a step whose only
+  // support was an idea from the author's own graph was counted as resting on the model.
+  const answer = [
+    '### Step 1 - Oxidation',
+    'The ring is oxidised ([Baddeley, 1992](nodus://idea/abc-123)).',
+    'Reactants: toluene',
+    'Products: benzoic acid',
+    '',
+    '### Step 2 - Esterification',
+    'No citation here at all.',
+    'Reactants: benzoic acid',
+    'Products: methyl benzoate',
+  ].join('\n');
+  const evidence = collectStepEvidence(answer, 2, null, []);
+  assert.deepEqual(evidence.steps[0].library, [{ id: 'abc-123', label: 'Baddeley, 1992' }]);
+  assert.deepEqual(evidence.steps[1].library, [], 'the step that cites nothing is still counted as such');
+
+  const table = formatEvidenceSources(evidence);
+  // No passage lookup resolves an idea id, so the row falls back to the label the answer wrote.
+  assert.match(table, /Baddeley, 1992/);
+  assert.match(table, /library passages in 1 and the web in 0/);
+  assert.match(table, /1 cites nothing of its own/);
+  assert.ok(!/Oxidation[^\n]*model knowledge only/.test(table), 'the cited step is no longer model-only');
 });
 
 test('no steps, no table', () => {

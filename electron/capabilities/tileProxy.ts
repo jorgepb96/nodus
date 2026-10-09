@@ -2,6 +2,7 @@ import { LIMITS } from '../../packages/capability-api/src/limits';
 import { assertPublicHost } from '../../skill-capabilities/publicHost';
 import { capabilityRegistry } from './registry';
 import { resolveTrustedCapability } from './pluginStoreV2';
+import { readCappedBody } from './cappedBody';
 
 /** Tiles for a IIIF image, fetched by the host and never by the page.
  *
@@ -79,7 +80,7 @@ export async function fetchCapabilityTile(request: TileRequest, fetcher: typeof 
   if (!['image/jpeg', 'image/png', 'image/webp', 'application/json'].includes(mimeType)) {
     throw new Error(`The image service returned ${mimeType || 'an unknown type'}.`);
   }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (bytes.byteLength > LIMITS.tileBytes) throw new Error('The tile is larger than allowed.');
+  // Read against the ceiling: the whole body used to be buffered first and measured after.
+  const bytes = await readCappedBody(response, LIMITS.tileBytes, 'The tile is larger than allowed.');
   return { bytes, mimeType };
 }

@@ -5,10 +5,11 @@
  * `MoleculeDossier`. Research Chat injects that dossier as authoritative context
  * so a model reasons over a verified graph instead of re-reading SMILES text. */
 
-import { correctionTargetPlanRule, ROUTE_LABEL_LINES, ROUTE_SPECIES_RULES } from './routeRules';
+import { correctionTargetPlanRule, ROUTE_LABEL_LINES, routeSpeciesRules } from './routeRules';
 import { similarityBand } from './reactionSimilarity';
 import { conditionsText, normalizeReactionConditions, type ReactionConditions } from './reactionConditions';
 import { auditNote, normalizeAuditFlags, recordLabel, RECORD_ID } from './recordAudit';
+import { looksLikeSynthesisRequest } from './synthesisPrompt';
 
 export { similarityBand };
 
@@ -122,6 +123,9 @@ export interface RouteStepAudit {
   stereoNotRequired?: boolean;
   /** The equation balances only by assembling a product from more than one substrate. */
   assemblyProblem?: string;
+  /** Why the per-molecule packing search gave up. Absent when the step's shape is simply outside
+   *  what packing models (a convergent coupling), which is not a gap in coverage. */
+  assemblyUnchecked?: string;
   /** The bonds at carbon this balanced step forms and breaks, read as a graph edit by the
    *  capability. Facts for the report and the reviewer, whether or not the step was refused. */
   skeleton?: RouteSkeletonFacts;
@@ -133,6 +137,14 @@ export interface RouteStepAudit {
   /** A bond edit at carbon the step cannot explain: an undeclared 1,2-shift, or a new C–C or
    *  C–heteroatom bond at a carbon nothing activates. */
   skeletonProblem?: string;
+  /** Set when the step balanced only because a species listed under Reactants was treated as
+   *  taking no part. Reported because the arithmetic cannot tell a condition that was never
+   *  consumed from a reagent that was, whose product the author forgot to name. */
+  refiledReactant?: string;
+  /** A species anywhere in the step written as a lone atom of an element whose free form is
+   *  diatomic — an inert atmosphere given as `[N]`. It hides under Agents, which take no part
+   *  in the balance, so nothing else in the check compares it with the name beside it. */
+  monatomicSpecies?: string;
 }
 
 export interface RouteSkeletonFacts {
@@ -146,6 +158,8 @@ export interface RouteSkeletonFacts {
   unactivated: number;
   unactivatedHetero: number;
   heteroElements: string[];
+  /** Why the bond-edit search could not settle this step, when `change` is 'unchecked'. */
+  reason?: string;
 }
 
 export interface RouteLinkAudit {
@@ -164,6 +178,10 @@ export interface RouteTargetAudit {
   formula: string | null;
   formedAt: number | null;
   reason: 'formed' | 'stereo-mismatch' | 'not-formed' | 'unparsed';
+  /** What the route delivered at each centre the REQUEST left open, measured from the product.
+   *  A request that leaves a centre open accepts either configuration, so the route is not
+   *  refused for choosing one — but which one it chose is the author's to accept. */
+  openCentres?: Array<{ atom: number; delivered: string }>;
 }
 
 export interface RouteAudit {
@@ -625,6 +643,14 @@ export interface StepEvidence {
 const ORD_SUPPORT_SIMILARITY = 0.7;
 const PASSAGE_LINK = /\[([^\]]+)\]\(nodus:\/\/passage\/([^)\s]+)\)/g;
 const WEB_LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+/** The third citation the application can emit, and the one this used to miss. An answer may
+ *  cite an idea from the author's own graph — `[Author, Year](nodus://idea/<id>)`, the form every
+ *  prompt pack asks for — and only passages and web pages were recognised here, so a step whose
+ *  only support was an idea was counted as resting on the model's own knowledge. It belongs in the
+ *  library column: an idea is the author's library, read through the graph rather than the page.
+ *  `sourceFor` is a passage lookup and returns null for an idea id, which falls back to the label
+ *  the answer wrote — the author and year — so the row still names its source. */
+const IDEA_LINK = /\[([^\]]+)\]\(nodus:\/\/idea\/([^)\s]+)\)/g;
 
 function citationsIn(text: string): { library: StepEvidence['library']; web: StepEvidence['web'] } {
   const library: StepEvidence['library'] = [];
@@ -634,6 +660,11 @@ function citationsIn(text: string): { library: StepEvidence['library']; web: Ste
     try { id = decodeURIComponent(id); } catch { /* keep as written */ }
     if (id.startsWith('web:')) { if (!web.some((entry) => entry.label === match[1])) web.push({ label: match[1], host: '' }); }
     else if (!library.some((entry) => entry.id === id)) library.push({ id, label: match[1] });
+  }
+  for (const match of text.matchAll(IDEA_LINK)) {
+    let id = match[2];
+    try { id = decodeURIComponent(id); } catch { /* keep as written */ }
+    if (!library.some((entry) => entry.id === id)) library.push({ id, label: match[1] });
   }
   for (const match of text.matchAll(WEB_LINK)) {
     let host = '';
@@ -692,7 +723,12 @@ export function formatEvidenceSources(evidence: ReturnType<typeof collectStepEvi
     ordCount += supported ? 1 : 0;
     libraryCount += books.length ? 1 : 0;
     webCount += pages.length ? 1 : 0;
-    const none = !supported && !books.length && !pages.length;
+    // `step.found` counts. The block's own header lists "Found by the check" among the things
+    // that stop a step resting on the model's knowledge, and the row printed the found passage
+    // and "model knowledge only" side by side — the header and the row disagreeing about the
+    // same step. A passage the check looked up is weaker evidence than one the answer cited,
+    // which the row already distinguishes by labelling it; it is not an absence.
+    const none = !supported && !books.length && !pages.length && !step.found;
     modelOnly += none ? 1 : 0;
     const title = step.title ? ` — ${step.title.replace(/\|/g, '/').slice(0, 60)}` : '';
     foundCount += step.found ? 1 : 0;
@@ -700,10 +736,17 @@ export function formatEvidenceSources(evidence: ReturnType<typeof collectStepEvi
     lines.push(`| ${step.step + 1}${title} | ${ord} | ${shelf.join('; ') || '—'} | ${pages.join('; ') || '—'}${none ? ' · _model knowledge only_' : ''} |`);
   }
   const n = steps.length;
-  lines.push('', `**${n} step(s):** the Open Reaction Database snapshot records ${ordCount} (or the same transformation), the answer cites textbooks or library passages in ${libraryCount} and the web in ${webCount}${foundCount ? `, the check found a textbook passage for ${foundCount}` : ''}; ${modelOnly} rest${modelOnly === 1 ? 's' : ''} on the model's own knowledge.`);
   const otherBooks = library(elsewhere.library);
   const otherPages = web(elsewhere.web);
-  if (otherBooks.length || otherPages.length) lines.push('', `Cited outside the steps: ${[...otherBooks, ...otherPages].join('; ')}.`);
+  // The last count is an ATTRIBUTION, and saying which kind matters. A citation is credited to a
+  // step only when it sits inside that step's own block, so a source cited in a strategy preamble
+  // or a closing note counts for no step and every step it actually supports reads as model
+  // knowledge. Read as "unsupported", that number is simply wrong — and the sources were right
+  // there, in a trailing line the reader had to join up themselves. Where any exist, the sentence
+  // now says so, rather than leaving the stronger reading as the obvious one.
+  const outside = otherBooks.length + otherPages.length;
+  lines.push('', `**${n} step(s):** the Open Reaction Database snapshot records ${ordCount} (or the same transformation), the answer cites textbooks or library passages in ${libraryCount} and the web in ${webCount}${foundCount ? `, the check found a textbook passage for ${foundCount}` : ''}; ${modelOnly} ${modelOnly === 1 ? 'cites nothing of its own and rests' : 'cite nothing of their own and rest'} on the model's own knowledge.${outside ? ` A citation counts for a step only inside that step's own text, and this answer cites ${outside} further source${outside === 1 ? '' : 's'} outside the steps, so ${modelOnly === 1 ? 'that step' : `some of those ${modelOnly}`} may rest on the sources listed below rather than on nothing.` : ''}`);
+  if (outside) lines.push('', `Cited outside the steps: ${[...otherBooks, ...otherPages].join('; ')}.`);
   return `\n${lines.join('\n')}\n`;
 }
 
@@ -773,8 +816,19 @@ function roleOf(label: string): { role: RouteLabelRole; byproduct: boolean } | n
   return null;
 }
 
+/** A systematic name for an assembled chain is long, and cutting one leaves it SYNTACTICALLY
+ *  INCOMPLETE, so it can never resolve — the step is then reported as "no structure resolved",
+ *  which reads as the author's naming problem when it was our cut. Observed on a six-unit chain:
+ *  five steps unbuilt, every rejected name exactly 200 characters long.
+ *
+ *  Sized from the longest target in the suite rather than guessed. At roughly 40 characters per
+ *  unit in the nested style a model actually writes: 13 units ~580, 32 units ~1,340, 40 units
+ *  ~1,660. The bound is only a guard against a runaway reply, so it clears the longest by more
+ *  than twice and matches the 4000 already used for a declared structure in this file. */
+export const MAX_SPECIES_NAME = 4000;
+
 function cleanSpeciesName(raw: string): string {
-  return raw.replace(/^[\s>*_`:：-]+/, '').replace(/[\s*_`]+$/, '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  return raw.replace(/^[\s>*_`:：-]+/, '').replace(/[\s*_`]+$/, '').replace(/\s+/g, ' ').trim().slice(0, MAX_SPECIES_NAME);
 }
 
 /** Whether a parsed species name can be a chemical name at all. A model that draws its route
@@ -783,7 +837,14 @@ function cleanSpeciesName(raw: string): string {
  *  they land on is emptied and reported as unbuilt even though the author's own list was
  *  complete. Markup is not a name. */
 function isNameLikeSpecies(name: string): boolean {
-  return !/[<>{}\\"\n\r\t|]/.test(name) && !name.includes('→');
+  // Braces are NOT a tell: they are standard IUPAC punctuation for a nested substituent prefix,
+  // and every protected building block has them — "(2R)-2-{[(9H-fluoren-9-yl)methoxycarbonyl]
+  // amino}-3-(pyridin-3-yl)propanoic acid". Rejecting them dropped exactly those species from
+  // the declaration, silently: the step kept its other reactant, the balance was computed on an
+  // equation nobody wrote, and the author was told a species it HAD declared was missing. The
+  // markup this guard exists for carries angle brackets, quotes, backslashes, pipes or newlines,
+  // and a capability fence's JSON payload is already blanked by maskDrawnRegions.
+  return !/[<>\\"\n\r\t|]/.test(name) && !name.includes('→');
 }
 
 /** The answer with the blocks the interface renders specially blanked, the same length, so
@@ -1219,11 +1280,30 @@ export function routeFixPromptForHistory(text: string): string {
   return cut < 0 ? text : `${text.slice(0, cut).trimEnd()}\n[The shared route rules followed here.]`;
 }
 
+/** Every picture, wherever it sits, replaced by a word. A drawing has already been rendered and
+ *  read; replaying its markup only spends the window.
+ *
+ *  Dropping the route drawings section was not enough. A precedent section is KEPT for the latest
+ *  answer — it is the evidence the next turn reasons from — and it carries drawings of its own, so
+ *  a correction turn still replayed them. Measured on a real route: 652,000 characters of answer,
+ *  604,000 of it SVG, and the model opened its reply with "the complete preceding answer is not
+ *  included in the supplied history… below is a complete reconstruction". It then rebuilt the route
+ *  from scratch rather than correcting it, and the step count swung 9 -> 2 -> 8 -> 2 -> 9 across
+ *  four rounds. The pictures had pushed the route out of the window.
+ *
+ *  An unterminated `<svg` is handled too: a truncated drawing otherwise claims the rest of the
+ *  answer, which is the same fault the species parser had to be taught about. */
+function withoutDrawings(prose: string): string {
+  return prose
+    .replace(/<svg[\s\S]*?<\/svg>/gi, '[drawing omitted from history]')
+    .replace(/<svg[\s\S]*$/i, '[drawing omitted from history]');
+}
+
 export function routeReportsForHistory(prose: string, latest: boolean): string {
   const dropped = latest ? HISTORY_ALWAYS_DROPPED : [...HISTORY_ALWAYS_DROPPED, ...HISTORY_LATEST_ONLY];
   const kept: string[] = [];
   let skipping = false;
-  for (const line of prose.split('\n')) {
+  for (const line of withoutDrawings(prose).split('\n')) {
     if (dropped.includes(line.trim())) { skipping = true; continue; }
     if (skipping && (/^#{1,3}\s/.test(line) || HISTORY_NOTE.test(line))) skipping = false;
     if (!skipping) kept.push(line);
@@ -1240,14 +1320,52 @@ export function routeReportsForHistory(prose: string, latest: boolean): string {
 // never wanders into the starting materials.
 const TARGET_PATTERN = /\b(?:synthes[a-z]*(?:\s+(?:of|for))?|preparation\s+of|route\s+(?:to|for)|s[ií]ntesis\s+(?:de|del)|sintetiz[a-záéíóú]*|preparaci[oó]n\s+(?:de|del)|ruta\s+(?:de|para|hacia))\b(?:(?!\b(?:from|starting|using|with|desde|usando|con)\b|\ba\s+partir\s+de\b)[\s\S]){0,400}?\bSMILES\s*[:=]\s*`?([^\s`,;]+)/i;
 
-export function findRequestedTarget(text: string): string | null {
-  const match = TARGET_PATTERN.exec(text);
-  if (!match) return null;
-  let value = match[1].replace(/\.+$/, '');
+/** The verb that opens a route request, and where its target description ends. The same two
+ *  halves `TARGET_PATTERN` encodes, split out so the labelled and the bare form look in the same
+ *  place rather than drifting apart. */
+const TARGET_LEAD = /\b(?:synthes[a-z]*(?:\s+(?:of|for))?|preparation\s+of|route\s+(?:to|for)|s[ií]ntesis\s+(?:de|del)|sintetiz[a-záéíóú]*|preparaci[oó]n\s+(?:de|del)|ruta\s+(?:de|para|hacia))\b/i;
+const TARGET_END = /\b(?:from|starting|using|with|desde|usando|con)\b|\ba\s+partir\s+de\b/i;
+
+function cleanTarget(value: string): string | null {
+  let out = trimSentenceEdges(value).replace(/\.+$/, '');
   // "(SMILES: CCO)" leaves the prose's closing parenthesis on the SMILES.
-  const unbalanced = () => (value.match(/\)/g) ?? []).length > (value.match(/\(/g) ?? []).length;
-  while (value.endsWith(')') && unbalanced()) value = value.slice(0, -1);
-  return value && value.length <= 2000 && SMILES_CHARS.test(value) ? value : null;
+  const unbalanced = () => (out.match(/\)/g) ?? []).length > (out.match(/\(/g) ?? []).length;
+  while (out.endsWith(')') && unbalanced()) out = out.slice(0, -1);
+  return out && out.length <= 2000 && SMILES_CHARS.test(out) ? out : null;
+}
+
+/** The target of a route request: the labelled form first, then a bare structure written where
+ *  the target belongs.
+ *
+ *  The labelled form is all this used to accept, and the cost of that was invisible. A person
+ *  typing a request writes the structure bare — "a laboratory synthesis of OC(...)=O starting
+ *  from standard precursors" — with no `SMILES:` anywhere, so this returned null, and
+ *  `gatherSynthesisEvidence` opens by returning null on a missing target BEFORE it logs anything.
+ *  The entire pre-answer gather was therefore skipped without a word: no known-reaction
+ *  disconnections, no textbook passages, no candidate routes, no availability, and no evidence
+ *  rule in the system prompt. Measured on two of the author's own prompts, both null, against
+ *  harness prompts that write `(SMILES: …)` and had the evidence all along — so the harness and
+ *  the application were not running the same system, and no measurement could be compared across
+ *  them.
+ *
+ *  The bare form is admitted by `isBareSmilesName`, not by the looser `isSmilesLike`, and for the
+ *  same reason that function exists: here a false positive sends the whole gather after a molecule
+ *  nobody asked for. Every numbered name — `4-nitrotoluene`, `benzene-1,2-diamine` — satisfies the
+ *  looser test because a locant reads as a ring closure, and is correctly refused by this one.
+ *  The price is that a structure with no branch, bond or aromatic ring (`C1COCCO1`) is not
+ *  recognised bare; it still resolves through the labelled form. */
+export function findRequestedTarget(text: string): string | null {
+  const labelled = TARGET_PATTERN.exec(text);
+  if (labelled) return cleanTarget(labelled[1]);
+  const lead = TARGET_LEAD.exec(text);
+  if (!lead) return null;
+  const after = text.slice(lead.index + lead[0].length, lead.index + lead[0].length + 2400);
+  const end = TARGET_END.exec(after);
+  for (const raw of (end ? after.slice(0, end.index) : after).split(/\s+/)) {
+    const token = cleanTarget(raw);
+    if (token && isBareSmilesName(token)) return token;
+  }
+  return null;
 }
 
 /** The first line of the route-fix prompt, so the request behind a correction can be found. */
@@ -1261,6 +1379,82 @@ export const ROUTE_UNRESOLVED_LEAD = 'The application could not resolve some spe
  *  mistaken for a route that needed none. */
 export function formatRouteCheckUnavailable(reason: string): string {
   return `_Route check unavailable: ${reason.replace(/\s+/g, ' ').trim().slice(0, 300) || 'the chemistry package failed'}. The route above has not been checked._`;
+}
+
+/** A turn working on a route whose answer carries NO route the checker can read, so there was
+ *  nothing to check.
+ *
+ *  The sibling case — steps present but no labelled species — already says so
+ *  (ROUTE_MISSING_SPECIES_LEAD). This one said nothing: the legacy path only offers its chip when
+ *  `steps > 0`, so a reply carrying no steps was returned exactly as written and the round looked
+ *  like a success that produced prose.
+ *
+ *  First observed on a correction: it answered with two paragraphs of commentary, declining to
+ *  re-state the route on the grounds that the earlier steps were missing from its context. They
+ *  were not — the replayed history carried all six — and the prompt had asked in as many words for
+ *  the complete route. Then observed on a first answer, which is worse: nine numbered steps with
+ *  balanced equations and four citations, written with neither `Step N` headings nor the labelled
+ *  lines, so `countRouteSteps` read 0 and not one of them was resolved, balanced or drawn. The
+ *  reader had no way to tell that from a route that passed.
+ *
+ *  Which is the standing rule: a check that could not run has to say so. The harness has reported
+ *  this for a while ("no route check in the answer"); the application had no equivalent.
+ *
+ *  `steps === 0` is precisely "no `Step N` heading AND no role label anywhere" — with headings and
+ *  no labels the count is the heading count, which lands in the sibling case — so the note can
+ *  name both without re-deriving which one was missing.
+ *
+ *  Empty when there is nothing to report, so the caller appends it unconditionally. */
+export function uncheckedRouteNote(answer: string, options: { correction: boolean }): string {
+  if (countRouteSteps(typeof answer === 'string' ? answer : '') > 0) return '';
+  return options.correction
+    ? '_This reply re-stated no route, so nothing in it could be checked or drawn. The last checked route is the one above it._'
+    : '_Nothing in this reply was checked. A route is read from numbered `Step N` headings with `Reactants:`, `Products:`, `Byproducts:` and `Agents:` lines under each step, and this reply has neither, so no name was resolved, no equation was balanced and no step was drawn. Whatever steps it describes stand as unverified prose._';
+}
+
+/** Whether the application asked this turn for a route: a fresh request, one of its own fix
+ *  chips, or a turn in a conversation whose route request no answer has met yet.
+ *
+ *  Written once because two places must agree on it. The prompt uses it to decide whether to send
+ *  the output contract; the audit uses it to decide whether a turn that produced no readable route
+ *  has to say so. If they disagree, the application either asks for a route and says nothing when
+ *  none arrives, or reports an ordinary question as unchecked. */
+export function asksForRoute(turns: ReadonlyArray<{ role: string; content: string }>): boolean {
+  const list = Array.isArray(turns) ? turns : [];
+  let latest = '';
+  for (const turn of list) if (turn?.role === 'user' && typeof turn.content === 'string') latest = turn.content;
+  if (isRouteFixPrompt(latest) || looksLikeSynthesisRequest(latest)) return true;
+  const state = routeConversationState(list);
+  return state.request !== null && !state.delivered;
+}
+
+/** What a conversation is doing about a route: the request it is working on, and whether any
+ *  answer since has delivered a route the checker could read.
+ *
+ *  The route lane used to be decided from the latest message alone — a fresh synthesis request, or
+ *  one of the application's own fix chips. A human follow-up is neither, so a conversation that
+ *  had asked for a route fell out of the lane the moment the author typed a sentence of their own:
+ *  no output contract was sent, no evidence was gathered, and the answer that finally carried the
+ *  route was the one turn nothing was asked of. Measured on a real pair of turns — the request
+ *  opened the lane, "the alpha carbon will not have stereochemistry so you can solve this
+ *  directly" closed it, and the nine-step answer that followed went unchecked.
+ *
+ *  `request` is also the retrieval anchor. Deriving that from "the latest message that is not a fix
+ *  chip" has the same hole: a human follow-up becomes the anchor, so the evidence is gathered for
+ *  the follow-up sentence instead of for the target.
+ *
+ *  `delivered` is what keeps this from re-sending the contract forever: once an answer carries a
+ *  readable route, corrections carry their own rules and this stops asking. */
+export function routeConversationState(turns: ReadonlyArray<{ role: string; content: string }>): { request: string | null; delivered: boolean } {
+  const list = Array.isArray(turns) ? turns : [];
+  let asked = -1;
+  for (let index = 0; index < list.length; index += 1) {
+    const turn = list[index];
+    if (turn?.role === 'user' && typeof turn.content === 'string' && looksLikeSynthesisRequest(turn.content)) asked = index;
+  }
+  if (asked < 0) return { request: null, delivered: false };
+  const delivered = list.slice(asked + 1).some((turn) => turn?.role === 'assistant' && countRouteSteps(typeof turn.content === 'string' ? turn.content : '') > 0);
+  return { request: list[asked].content, delivered };
 }
 
 export const ROUTE_MISSING_SPECIES_LEAD = 'The synthesis route describes steps but does not list the species under the four required labels, so the application could not check or draw it.';
@@ -1337,7 +1531,6 @@ function stepDeclares(answer: string, count: number, declares: (text: string) =>
 
 // Named on the verified-route corpus: every legitimate rearrangement there was declared with one
 // of these, and "isomerisation" / "the skeleton reorganises" are how pinene → camphene is put.
-
 const REARRANGEMENT_PATTERN = /rearrange|\bmigrat|\bisomeri[sz]|\breorgani[sz]|\bskeletal\s+(?:change|shift)|\b1,2-(?:alkyl\s+|hydride\s+|methyl\s+|aryl\s+)?shift|\bwagner|\bmeerwein|\bpinacol|\bbenzilic|\bfavorskii|\bwolff\b|\barndt|\bcope\b|\bclaisen\s+rearr|\bsemipinacol|\btiffeneau|\bdemjanov|\bring\s+(?:expansion|contraction)|\bschleyer|\bmetathesis/gi;
 const RADICAL_PATTERN = /\bradical|\bphotochem|\bhν|\bhv\b|\bNBS\b|N-bromosuccinimide|\bperoxide\s+initiat|\bAIBN\b|\bC[–-]H\s+(?:activation|functionali[sz]ation|insertion|oxidation)|\bhofmann[–-]l[öo]ffler/gi;
 // "No rearrangement occurs", "without a 1,2-shift": a negated mention is not a declaration.
@@ -1392,7 +1585,7 @@ function normalizeRouteSpecies(entry: unknown): RouteSpeciesSummary | null {
     unspecifiedStereocentres: numberOr(value.unspecifiedStereocentres, 0),
     ...(value.alphaConfiguration === '(R)' || value.alphaConfiguration === '(S)' || value.alphaConfiguration === 'unassigned'
       ? { alphaConfiguration: value.alphaConfiguration } : {}),
-    ...(typeof value.name === 'string' && value.name.trim() ? { name: value.name.trim().slice(0, 200) } : {}),
+    ...(typeof value.name === 'string' && value.name.trim() ? { name: value.name.trim().slice(0, MAX_SPECIES_NAME) } : {}),
     ...(typeof value.nameOk === 'boolean' ? { nameOk: value.nameOk } : {}),
     ...(value.byproduct === true ? { byproduct: true } : {}),
     ...(typeof value.coefficient === 'number' && Number.isInteger(value.coefficient) && value.coefficient > 0 ? { coefficient: value.coefficient } : {}),
@@ -1428,12 +1621,15 @@ function normalizeRouteStep(entry: unknown, index: number): RouteStepAudit | nul
     ...(value.racemic === true ? { racemic: true } : {}),
     ...(value.stereoNotRequired === true ? { stereoNotRequired: true } : {}),
     ...(typeof value.assemblyProblem === 'string' && value.assemblyProblem ? { assemblyProblem: value.assemblyProblem.slice(0, 400) } : {}),
+    ...(typeof value.assemblyUnchecked === 'string' && value.assemblyUnchecked ? { assemblyUnchecked: value.assemblyUnchecked.slice(0, 300) } : {}),
     ...(normalizeSkeleton(value.skeleton) ? { skeleton: normalizeSkeleton(value.skeleton)! } : {}),
     ...(normalizeBonds(value.bonds) ? { bonds: normalizeBonds(value.bonds)! } : {}),
     ...(value.rearrangement === true ? { rearrangement: true } : {}),
     ...(value.radical === true ? { radical: true } : {}),
     // Kept whole, like the checker's other messages: it ends with what to do.
     ...(typeof value.skeletonProblem === 'string' && value.skeletonProblem ? { skeletonProblem: value.skeletonProblem.slice(0, 1000) } : {}),
+    ...(typeof value.refiledReactant === 'string' && value.refiledReactant ? { refiledReactant: value.refiledReactant.slice(0, 1000) } : {}),
+    ...(typeof value.monatomicSpecies === 'string' && value.monatomicSpecies ? { monatomicSpecies: value.monatomicSpecies.slice(0, 1000) } : {}),
   };
 }
 
@@ -1462,6 +1658,7 @@ function normalizeSkeleton(entry: unknown): RouteSkeletonFacts | null {
     unactivated: count('unactivated'),
     unactivatedHetero: count('unactivatedHetero'),
     heteroElements: stringArray(value.heteroElements).filter((element) => /^[A-Z][a-z]?$/.test(element)).slice(0, 8),
+    ...(typeof value.reason === 'string' && value.reason ? { reason: value.reason.slice(0, 300) } : {}),
   };
 }
 
@@ -1500,8 +1697,9 @@ function normalizeRouteLink(entry: unknown, index: number): RouteLinkAudit | nul
   };
 }
 
-/** The most route steps the package checks (chemistry-studio MAX_STEPS). A long assembly
- *  written one operation per step reaches dozens, so the audit must not stop short of it. */
+/** The most route steps the package checks (chemistry-studio MAX_STEPS): a solid-phase peptide
+ *  synthesis runs to dozens. An audit cut shorter than the route it answers is refused as
+ *  misaligned, so this must not be below the package's own limit. */
 const MAX_ROUTE_STEPS = 96;
 
 /** Accepts only a route audit the capability can actually have produced. */
@@ -1707,6 +1905,13 @@ function normalizeRouteTarget(entry: unknown): RouteTargetAudit | null {
     formula: typeof value.formula === 'string' ? value.formula.slice(0, 200) : null,
     formedAt: Number.isInteger(value.formedAt) ? value.formedAt as number : null,
     reason: value.reason as RouteTargetAudit['reason'],
+    ...(Array.isArray(value.openCentres) && value.openCentres.length
+      ? { openCentres: (value.openCentres as unknown[]).slice(0, 24).flatMap((entry) => {
+        const centre = asRecord(entry);
+        return centre && Number.isInteger(centre.atom) && typeof centre.delivered === 'string'
+          ? [{ atom: centre.atom as number, delivered: centre.delivered.slice(0, 8) }] : [];
+      }) }
+      : {}),
   };
 }
 
@@ -1888,7 +2093,7 @@ export function clampReviewDetail(detail: string): string {
 
 /** Parse the review defensively: an unreadable or inconsistent reply means "not checked",
  *  never a fabricated problem, so it never blocks a route. */
-export function parseRouteReview(raw: string): RouteReview | null {
+export function parseRouteReview(raw: string, stepCount?: number): RouteReview | null {
   const match = /\{[\s\S]*\}/.exec(raw);
   if (!match) return null;
   let value: unknown;
@@ -1900,7 +2105,13 @@ export function parseRouteReview(raw: string): RouteReview | null {
   const problems = (Array.isArray(record.problems) ? record.problems : []).map((entry) => {
     const item = asRecord(entry);
     if (!item || typeof item.detail !== 'string' || !item.detail.trim()) return null;
-    const step = Number.isInteger(item.step) ? Math.min(Math.max(item.step as number, 0), 15) : 0;
+    // Clamp to the route's own length, never a constant. A hard-coded 15 silently RELABELLED
+    // every finding above step 15 as step 15 — on a 24-step route a correct finding about the
+    // macrolactamisation at step 23 was reported against an Fmoc removal at step 15, which reads
+    // as the review inventing a molecule and sent three fix rounds after the wrong step. Routes
+    // only started exceeding 15 steps once they were asked to decompose.
+    const highest = Number.isInteger(stepCount) && (stepCount as number) > 0 ? (stepCount as number) : 999;
+    const step = Number.isInteger(item.step) ? Math.min(Math.max(item.step as number, 0), highest) : 0;
     // Only an explicit "blocking" stops the route; a missing or unreadable severity is advisory.
     const severity: RouteReviewProblem['severity'] = item.severity === 'blocking' ? 'blocking' : 'advisory';
     return { step, severity, detail: clampReviewDetail(item.detail) };
@@ -2008,6 +2219,10 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
   const assembled = audit.steps.filter((step) => Boolean(step.assemblyProblem)).map((step) => step.index + 1);
   const skeletal = audit.steps.filter((step) => Boolean(step.skeletonProblem)).map((step) => step.index + 1);
   const isolated = isolatedSteps(audit);
+  // A check that could not run must not look like a check that passed. The bond-edit search is
+  // budgeted and gives up on a hard graph; until this was said out loud, a route whose bonds were
+  // never examined read exactly like one whose bonds were fine.
+  const bondUnchecked = audit.steps.filter((step) => step.skeleton?.change === 'unchecked');
   const reviewProblems = blockingReviewProblems(review);
   const reasons: string[] = [];
   if (failedSteps.length) reasons.push(`${failedSteps.length} of ${audit.steps.length} step(s) do not pass (${failedSteps.map((index) => `step ${index}`).join(', ')})`);
@@ -2020,12 +2235,29 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
   if (audit.target?.reason === 'not-formed') reasons.push('no step forms the requested target');
   else if (audit.target?.reason === 'stereo-mismatch') reasons.push('the target is formed only with the wrong stereochemistry');
   if (reviewProblems.length) reasons.push(`a route review raised ${reviewProblems.length} problem(s)`);
+  // Not a reason the route failed: a caveat on what was examined. Kept out of `reasons` so it
+  // cannot refuse a step, and said anyway so no one reads silence as a pass.
+  const packUnchecked = audit.steps.filter((step) => Boolean(step.assemblyUnchecked));
+  const coverage: string[] = [];
+  if (bondUnchecked.length) {
+    coverage.push(`the bond-edit check could not settle ${bondUnchecked.length} of ${audit.steps.length} step(s) (${bondUnchecked.map((step) => `step ${step.index + 1}`).join(', ')})${bondUnchecked[0]?.skeleton?.reason ? ` — ${bondUnchecked[0].skeleton.reason}` : ''}`);
+  }
+  if (packUnchecked.length) {
+    coverage.push(`the per-molecule packing search gave up on ${packUnchecked.length} step(s) (${packUnchecked.map((step) => `step ${step.index + 1}`).join(', ')}) — ${packUnchecked[0].assemblyUnchecked}`);
+  }
+  const bondCaveat = coverage.length
+    ? `Not examined: ${coverage.join('; ')}. Those checks say nothing about those steps either way — this is a gap in coverage, not a finding about the chemistry.`
+    : '';
   const verified = !reasons.length;
   lines.push(verified
     ? reviewPending
       ? `**Route checks passed** — every equation balances and every intermediate is carried over${audit.target ? ', and the target is formed' : ''}. The model review is still running.`
       : `**Route checked: balanced and connected** — every equation balances and every intermediate is carried over${audit.target ? ', and the target is formed' : ''}. This is bookkeeping only: conditions, selectivity, yields and safety are not checked.`
     : `**Route check failed** — ${reasons.join('; ')}.`);
+  // Said right under the verdict, where a problem would appear, so coverage is never mistaken for
+  // a clean result. It does not change the verdict: a step whose bonds could not be examined has
+  // not done anything wrong.
+  if (bondCaveat) lines.push(bondCaveat);
   for (const step of audit.steps) {
     const label = `Step ${step.index + 1}`;
     if (!step.ok) {
@@ -2049,7 +2281,15 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
     const nameFailure = (step.nameProblems?.length ?? 0) > 0;
     const assemblyFailure = Boolean(step.assemblyProblem);
     const skeletonFailure = Boolean(step.skeletonProblem);
-    const verdict = !nameFailure && !assemblyFailure && !skeletonFailure && step.balanced && (step.unspecifiedStereocentres === 0 || racemic || moot) ? 'OK' : 'FAIL';
+    // ONE predicate for both verdicts. This line used to re-list the causes by hand, and the hand
+    // list did not know about `refiledReactant` or `monatomicSpecies` — so a step failing on only
+    // those printed "OK — balanced" directly under a header that counted it as not passing.
+    // Measured on the 30-target small-molecule cascade: 27 of 90 failing turns contradicted
+    // themselves that way, and the two targets whose only fault was a lone atom (4-bromoaniline,
+    // fluorobenzene) never recovered at any rung from being told, in one report, that the step was
+    // both fine and not fine. `routeStepFailure` is a strict superset of the old list, so no step
+    // that used to read FAIL can now read OK.
+    const verdict = routeStepFailure(step) === null ? 'OK' : 'FAIL';
     const stereo = step.unspecifiedStereocentres
       ? racemic
         ? ', declared racemic (stereochemistry not controlled)'
@@ -2069,12 +2309,19 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
       ? ` Note: the carbon compounds balance only with large coefficients (up to ${largest}); the step passes, but check that its products and byproducts are the intended ones.`
       : '';
     const assemblyNote = assemblyFailure ? ` ${step.assemblyProblem}.` : '';
+    // A balanced step that only balanced because something moved off the reactant side. The
+    // sentence is what makes the assumption reviewable; the verdict above now counts it as a
+    // failure too, which it already did in the route header and in the per-step fix chip.
+    const refiledNote = step.refiledReactant ? ` ${step.refiledReactant}` : '';
+    // Printed for the same reason, and it is the more urgent of the two: a lone atom of a diatomic
+    // element said nothing at all in this line, so the step named no fault while failing.
+    const monatomicNote = step.monatomicSpecies ? ` ${step.monatomicSpecies}` : '';
     const skeletonNote = skeletonFailure ? ` ${step.skeletonProblem}.` : skeletonFacts(step);
     const agents = step.agents.length ? ` [agents: ${sideTrace(step.agents, names)}]` : '';
     const stepLabels = labels[step.index] ?? [];
     const reactantSide = groupedSideTrace(step.reactants, stepLabels.filter((entry) => entry.role === 'reactant'), names, step.balanced === true, step.products);
     const productSide = groupedSideTrace(step.products, stepLabels.filter((entry) => entry.role === 'product'), names, step.balanced === true, step.reactants);
-    lines.push(`- ${label} ${verdict} — ${balance}${stereo}.${nameNote}${largeNote}${assemblyNote}${skeletonNote} ${reactantSide}${agents} → ${productSide}`);
+    lines.push(`- ${label} ${verdict} — ${balance}${stereo}.${nameNote}${largeNote}${refiledNote}${monatomicNote}${assemblyNote}${skeletonNote} ${reactantSide}${agents} → ${productSide}`);
     const alpha = alphaConfigurationLine(step, stepLabels);
     if (alpha) lines.push(alpha);
   }
@@ -2099,8 +2346,14 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
   const target = audit.target;
   if (target) {
     const name = target.canonicalSmiles ? `\`${target.canonicalSmiles}\`${target.formula ? ` (${target.formula})` : ''}` : `\`${target.input}\``;
+    // Where the request left a centre open it accepts either configuration, so the route is not
+    // refused for choosing one. Which one it chose is the author's to accept, and saying so is the
+    // whole point: before this the choice was made, was correct, and was invisible.
+    const chose = target.openCentres?.length
+      ? ` The request left ${target.openCentres.length === 1 ? 'one centre' : `${target.openCentres.length} centres`} open and the route delivers ${target.openCentres.map((centre) => `${centre.delivered} at atom ${centre.atom}`).join(', ')} — accepted, because the request did not ask for a particular one.`
+      : '';
     lines.push('', target.reason === 'formed' && target.formedAt !== null
-      ? `Target ${name}: formed in step ${target.formedAt + 1}.`
+      ? `Target ${name}: formed in step ${target.formedAt + 1}.${chose}`
       : target.reason === 'stereo-mismatch'
         ? `Target ${name}: FAIL — a step forms its constitution but not its stereochemistry.`
         : target.reason === 'not-formed'
@@ -2228,6 +2481,51 @@ function skeletonFacts(step: RouteStepAudit): string {
   return ` Bonds made (+) and broken (−): ${parts.join(', ')}${shift}${declared}.`;
 }
 
+/** The model's own drawing requests, taken out of a route answer before the chat pipeline can
+ *  run them.
+ *
+ *  In a route answer the application decides what gets drawn and when: nothing until every step
+ *  passes, then one final report with a diagram per step. A `chemistry-plan` fence bypasses that
+ *  entirely — it drew whatever the model asked for, on any turn, whatever the verdict. Measured on
+ *  the 30-target cascade: 58 turns, all of them fix rounds, and every one of them failed the
+ *  capability's 8000-character limit on `question` and printed a raw application error into the
+ *  answer the author reads (B45). So this path produced no pictures and plenty of noise.
+ *
+ *  Only route turns are stripped. Asking for a structure in ordinary chat still draws it — that is
+ *  the capability's own feature and nothing here touches it.
+ *
+ *  A residual, stated rather than hidden: the package's prepare hook can also adopt a bare `json`
+ *  fence that reads like a drawing intent. Stripping every `json` fence from a route answer would
+ *  take prose the author wants, so that path is left alone; it was never observed firing. */
+export function stripDrawingRequests(answer: string): { text: string; removed: number } {
+  let removed = 0;
+  const text = answer.replace(/```chemistry-plan[ \t]*\r?\n[\s\S]*?\r?\n```/g, () => {
+    removed += 1;
+    return '_Not drawn here: a route draws nothing until every step passes, and then the final report draws them all._';
+  });
+  return { text, removed };
+}
+
+/** Every step of a route as the final report shows it: the balanced equation with names,
+ *  coefficients and agents, plus the bond changes. One line per step.
+ *
+ *  Shares `groupedSideTrace` and `skeletonFacts` with the route check block above, so the final
+ *  report cannot drift from the check that let it be printed — the two said different things
+ *  about the same step once already (B44) and that cost more than the duplication saved.
+ *
+ *  Says nothing about whether the step passed: the caller only prints this once the whole route
+ *  has, so a verdict per line would be noise. */
+export function routeStepSummaries(audit: RouteAudit, labels: RouteSpeciesLabel[][] = []): Array<{ index: number; summary: string }> {
+  const names = routeLabelNames(labels);
+  return audit.steps.map((step) => {
+    const stepLabels = labels[step.index] ?? [];
+    const agents = step.agents.length ? ` [agents: ${sideTrace(step.agents, names)}]` : '';
+    const reactants = groupedSideTrace(step.reactants, stepLabels.filter((entry) => entry.role === 'reactant'), names, step.balanced === true, step.products);
+    const products = groupedSideTrace(step.products, stepLabels.filter((entry) => entry.role === 'product'), names, step.balanced === true, step.reactants);
+    return { index: step.index, summary: `${reactants}${agents} → ${products}${skeletonFacts(step)}` };
+  });
+}
+
 export function routeStepFailure(step: RouteStepAudit): string | null {
   if (step.nameProblems?.length) return step.nameProblems.join('; ');
   if (!step.ok) return step.error ?? 'could not be parsed';
@@ -2239,6 +2537,26 @@ export function routeStepFailure(step: RouteStepAudit): string | null {
   // Likewise a balanced step whose bond changes the reactants cannot make: a ring closed onto a
   // carbon nothing activates, a bromine beyond the α-carbon, an undeclared 1,2-shift.
   if (step.skeletonProblem) return step.skeletonProblem;
+  // And a step that balanced only because the checker overrode the author's own declaration: a
+  // species they listed as consumed takes no part, so it was filed as a condition instead.
+  //
+  // Reported but not corrected, it was the one fault class the model never heard about. Measured
+  // on one pair of runs: five instances where the model WAS told — the solver had given a listed
+  // species coefficient 0 and no refiling rescued it — were all five fixed, and the route
+  // verified; the single instance where it was not told survived the correction round unchanged.
+  // Same error, and the only difference was whether it reached the model.
+  //
+  // Which path it takes also turns on nothing chemical. One species taking no part is rescued and
+  // silent; two that cannot both be moved are reported and fixed. That is an artifact of how far
+  // the rescue search reaches, not a judgement about the chemistry, so the two cases are now
+  // reported alike.
+  if (step.refiledReactant) return step.refiledReactant;
+  // And a species written as a lone atom of a diatomic element. Reported here rather than as a
+  // balance failure because it usually sits under Agents, which take no part in the balance: the
+  // equation is right and the structure is not, so calling it unbalanced would name the wrong
+  // fault. Found by two independent reviewers reading the same answer, where it had printed as
+  // "nitrogen (N)" and passed.
+  if (step.monatomicSpecies) return step.monatomicSpecies;
   if (step.unspecifiedStereocentres > 0 && step.racemic !== true && step.stereoNotRequired !== true) {
     // Say where the open centres are, so a model that already named something knows which name.
     const open = step.products.filter((entry) => entry.unspecifiedStereocentres > 0).map((entry) => `${entry.name ? `“${entry.name}”` : `\`${entry.canonicalSmiles}\``} (${entry.unspecifiedStereocentres})`);
@@ -2249,11 +2567,16 @@ export function routeStepFailure(step: RouteStepAudit): string | null {
 
 /** Every reason to offer a per-step fix for this step: its own failure, a disconnection, and
  *  any plan problem the model route review found in it. */
-function namedStepReasons(step: RouteStepAudit, isolated: Set<number>, review: string[] = []): string[] {
+function namedStepReasons(step: RouteStepAudit, isolated: Set<number>, review: string[] = [], audit?: RouteAudit): string[] {
   const reasons: string[] = [];
   const failure = routeStepFailure(step);
   if (failure) reasons.push(failure);
-  if (isolated.has(step.index)) reasons.push('disconnected from the rest of the route — none of its species is made by an earlier step or used by a later one');
+  if (isolated.has(step.index)) {
+    // The per-step chip has to carry the duplicate note too. Without it, "Fix step N" aims the
+    // author at the orphan while the step to delete is the other one — the whole point of B22.
+    const duplicate = audit ? orphanedByDuplicate(audit, step.index) : '';
+    reasons.push(`disconnected from the rest of the route — none of its species is made by an earlier step or used by a later one${duplicate}`);
+  }
   for (const detail of review) reasons.push(`review: ${detail}`);
   return reasons;
 }
@@ -2263,14 +2586,64 @@ const NAMES_ONLY_FORMAT = ROUTE_LABEL_LINES.map((line) => `  ${line}`);
 /** The rules every correction ends with: the same species rules the first request was given,
  *  then what to do with the target drawing. */
 function correctionRules(target: string | null | undefined): string[] {
-  return ['Rules for every step:', ...ROUTE_SPECIES_RULES.map((rule) => `- ${rule}`), '', correctionTargetPlanRule(target)];
+  return ['Rules for every step:', ...routeSpeciesRules().map((rule) => `- ${rule}`), '', correctionTargetPlanRule(target)];
+}
+
+/** Every species a step makes for the route to carry, byproducts excluded: those are what another
+ *  step could consume, and what a second step could redundantly duplicate. */
+function carriedProducts(step: RouteStepAudit): RouteSpeciesSummary[] {
+  return (step.products ?? []).filter((entry) => entry.byproduct !== true && entry.canonicalSmiles);
+}
+
+/** Why a step is really orphaned, when the audit can tell.
+ *
+ *  An isolated step is usually a SYMPTOM, not the defect. When two steps produce the same species
+ *  the earlier one is left with nothing to feed, and it is the earlier one the checker reports as
+ *  disconnected — while the step the author has to delete is the LATER, redundant one. Saying only
+ *  "step 1 is disconnected" sent three fix rounds at the innocent step on a short route, which went
+ *  nowhere: the isolation was real and the route was defective, but the message aimed at the wrong
+ *  place. The duplicate producer and the unmade reactant are both already in the audit, so state
+ *  the pair as facts and leave the choice of which step to drop to the author. */
+function orphanedByDuplicate(audit: RouteAudit, index: number): string {
+  const step = audit.steps.find((entry) => entry.index === index);
+  if (!step) return '';
+  const producers = new Map<string, number[]>();
+  for (const other of audit.steps) {
+    for (const product of carriedProducts(other)) {
+      producers.set(product.canonicalSmiles, [...(producers.get(product.canonicalSmiles) ?? []), other.index]);
+    }
+  }
+  const duplicated = carriedProducts(step).find((entry) => (producers.get(entry.canonicalSmiles) ?? []).length > 1);
+  if (!duplicated) return '';
+  const all = (producers.get(duplicated.canonicalSmiles) ?? []).map((entry) => entry + 1).sort((a, b) => a - b);
+  const others = all.filter((number) => number !== index + 1);
+  const made = duplicated.name || duplicated.canonicalSmiles;
+  // The redundant step usually also consumes something nothing produces — the clearest sign that
+  // it, not this one, is the step to remove. Said only when the audit actually shows it.
+  const unmade = new Set<string>();
+  for (const other of audit.steps) {
+    if (other.index === index) continue;
+    if (!others.includes(other.index + 1)) continue;
+    for (const reactant of other.reactants ?? []) {
+      if (!reactant.canonicalSmiles) continue;
+      if (!producers.has(reactant.canonicalSmiles)) unmade.add(reactant.name || reactant.canonicalSmiles);
+    }
+  }
+  const alsoConsumes = unmade.size
+    ? `, and step ${others.join(' and ')} consumes ${[...unmade].slice(0, 2).join(' and ')}, which no step makes`
+    : '';
+  const every = all.length === 2 ? 'both' : 'all';
+  return ` Steps ${all.join(' and ')} ${every} produce ${made}${alsoConsumes}. So this step is orphaned by a duplicate rather than by a missing step: delete the redundant one of step ${others.join(' or ')}, or let this step's product feed it instead of making it again.`;
 }
 
 /** The route-level problems: a step that connects to nothing, and a target no step forms. */
 function namedRouteProblems(labels: RouteSpeciesLabel[][], audit: RouteAudit): string[] {
   const problems: string[] = [];
   for (const index of isolatedSteps(audit)) {
-    problems.push(`- Step ${index + 1} is disconnected: none of its species is made by an earlier step or used by a later one. Insert the missing step where it belongs, or write the carried species with the same IUPAC name in both steps.`);
+    const duplicate = orphanedByDuplicate(audit, index);
+    problems.push(duplicate
+      ? `- Step ${index + 1} is disconnected: none of its species is made by an earlier step or used by a later one.${duplicate}`
+      : `- Step ${index + 1} is disconnected: none of its species is made by an earlier step or used by a later one. Insert the missing step where it belongs, or write the carried species with the same IUPAC name in both steps.`);
   }
   const target = audit.target;
   if (target && audit.steps.every((step) => step.ok)) {
@@ -2312,10 +2685,38 @@ function fixEvidence(support: StepSupport | undefined, indent: string): string {
   return lines.length ? `\n${lines.join('\n')}` : '';
 }
 
-function namedFixPreamble(failures: string[], problems: string[], review: RouteReviewProblem[] = []): string[] {
+/** When one fault repeats across steps, say it ONCE with the list of steps.
+ *
+ *  Ten copies of the same sentence read as ten separate problems and invite ten local edits.
+ *  Named once with its steps it reads as the single systematic mistake it is — which is what the
+ *  author actually has to change. Observed: one route failed ten coupling steps for the same
+ *  reason, and three correction rounds edited them one at a time without ever addressing the
+ *  pattern. The arithmetic differs per step, so the numbers are stripped to key the CLASS of
+ *  fault rather than its particulars. */
+function repeatedFaultSummary(flagged: Array<{ step: RouteStepAudit; reasons: string[] }>): string[] {
+  const groups = new Map<string, { steps: number[]; sample: string }>();
+  for (const entry of flagged) {
+    const failure = routeStepFailure(entry.step);
+    if (!failure) continue;
+    const key = failure.replace(/\d+/g, '#').replace(/\s+/g, ' ').slice(0, 200);
+    const seen = groups.get(key);
+    if (seen) seen.steps.push(entry.step.index + 1);
+    else groups.set(key, { steps: [entry.step.index + 1], sample: failure });
+  }
+  const repeated = [...groups.values()].filter((group) => group.steps.length > 1);
+  if (!repeated.length) return [];
+  return [
+    'One fault repeats below, so this is one mistake made several times, not several mistakes. Fix the pattern rather than each step on its own:',
+    ...repeated.map((group) => `- step ${group.steps.join(', step ')} all fail the same way: ${group.sample.split('. ')[0]}.`),
+    '',
+  ];
+}
+
+function namedFixPreamble(failures: string[], problems: string[], review: RouteReviewProblem[] = [], flagged: Array<{ step: RouteStepAudit; reasons: string[] }> = []): string[] {
   return [
     ROUTE_FIX_PROMPT_LEAD,
     '',
+    ...repeatedFaultSummary(flagged),
     ...(failures.length ? ['The route checker rejected these steps:', ...failures, ''] : []),
     ...(problems.length ? ['The route as a whole has these problems:', ...problems, ''] : []),
     ...(review.length ? ['A model review of the route plan also reported:', ...review.map((problem) => `- ${problem.step > 0 ? `Step ${problem.step}: ` : ''}${problem.detail}`), ''] : []),
@@ -2344,7 +2745,7 @@ export function formatNamedRouteFixPrompts(labels: RouteSpeciesLabel[][], audit:
     reviewByStep.set(problem.step, [...(reviewByStep.get(problem.step) ?? []), problem.detail]);
   }
   const flagged = audit.steps
-    .map((step) => ({ step, reasons: namedStepReasons(step, isolated, reviewByStep.get(step.index + 1) ?? []) }))
+    .map((step) => ({ step, reasons: namedStepReasons(step, isolated, reviewByStep.get(step.index + 1) ?? [], audit) }))
     .filter((entry) => entry.reasons.length);
   const failures = flagged
     .filter((entry) => routeStepFailure(entry.step) !== null)
@@ -2364,7 +2765,7 @@ export function formatNamedRouteFixPrompts(labels: RouteSpeciesLabel[][], audit:
   chips.push({
     label: 'Ask the model to fix the failed steps',
     prompt: [
-      ...namedFixPreamble(failures, problems, reviewProblems),
+      ...namedFixPreamble(failures, problems, reviewProblems, flagged),
       relabel,
       ...NAMES_ONLY_FORMAT,
       `What may change: only the rejected steps above and what their failures require. You may split a rejected step, combine it with a neighbour (see the rules below), insert a missing step, or remove a step reported above as disconnected or redundant. Every other step keeps its prose and names exactly, and no step is duplicated. The route must still reach the requested target${atTarget}.`,
@@ -2374,7 +2775,7 @@ export function formatNamedRouteFixPrompts(labels: RouteSpeciesLabel[][], audit:
   chips.push({
     label: 'Fix from the target backwards',
     prompt: [
-      ...namedFixPreamble(failures, problems, reviewProblems),
+      ...namedFixPreamble(failures, problems, reviewProblems, flagged),
       `Work backwards from the final step. First make the last step name the requested target${atTarget} as a Product. Then move to the step before it and make its Products line name exactly the species the next step consumes as a Reactant. Continue back to step 1, so every step's product is the next step's reactant (or a permitted starting material).`,
       'What may change: this is the one correction that may rename a species in a step that already passes — only so that its Products line names exactly the species the next step consumes. Otherwise a passing step keeps its prose and names. Split, combine, insert or remove steps only where the failures above require it.',
       relabel,

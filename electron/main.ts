@@ -63,6 +63,7 @@ import { recoverLegacyApiKeys } from './secrets/legacySecretRecovery';
 import { hasBackupPassword } from './secrets/secretStore';
 import type { UpdateCheckResponse, UpdateProgressEvent } from '@shared/types';
 import { installMediaRequestHeaders } from './mediaRequestHeaders';
+import { installDefaultWindowGuards } from './windowGuards';
 import { killChatGptSubscriptionServer } from './ai/codexSubscription';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
@@ -1039,6 +1040,10 @@ app.whenReady().then(async () => {
   // OpenStreetMap also needs an identified client. A single scoped listener keeps
   // both rules active: registering another listener would replace the first one.
   installMediaRequestHeaders(session.defaultSession.webRequest, app.getVersion());
+  // Every window without its own guard (Nodi, the presenter windows) denies window.open and
+  // sends the link to the system browser; pages that are not Nodus's own get no device,
+  // location or external-protocol permission on this session.
+  installDefaultWindowGuards({ app, session: session.defaultSession, openExternal: openExternalSafely, devServerUrl: VITE_DEV_SERVER_URL });
   // Nodus Toolkit OCR caches its Tesseract language traineddata here (the one
   // opt-in network call), so downloads persist across sessions in userData.
   if (!process.env.NODUS_TESSDATA_CACHE) {

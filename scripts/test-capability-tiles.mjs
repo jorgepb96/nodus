@@ -237,3 +237,29 @@ test('what comes back is checked before the renderer sees it', async () => {
   assert.equal(seen.method, 'GET');
   assert.equal(seen.url, `${SERVICE}/${TILE}`);
 });
+
+test('an oversized tile is cut off while it streams, not buffered whole and measured after', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const { createRequire } = await import('node:module');
+  const { build } = await import('esbuild');
+  const root = path.resolve(import.meta.dirname, '..');
+  const source = fs.readFileSync(path.join(root, 'electron/capabilities/tileProxy.ts'), 'utf8');
+  assert.doesNotMatch(source, /Buffer\.from\(await response\.arrayBuffer\(\)\)/, 'the tile body is not read whole');
+  assert.match(source, /readCappedBody\(response, LIMITS\.tileBytes,/);
+
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-capped-body-'));
+  try {
+    const bundle = path.join(scratch, 'capped.cjs');
+    await build({ entryPoints: [path.join(root, 'electron/capabilities/cappedBody.ts')], outfile: bundle, bundle: true, platform: 'node', format: 'cjs', logLevel: 'silent' });
+    const { readCappedBody } = createRequire(import.meta.url)(bundle);
+    const limit = 8 * 1024 * 1024;
+    let pulled = 0;
+    const endless = new ReadableStream({ pull(controller) { pulled += 1 << 20; controller.enqueue(new Uint8Array(1 << 20)); } });
+    await assert.rejects(readCappedBody(new Response(endless), limit, 'too large'), /too large/);
+    assert.ok(pulled <= limit + (2 << 20), `stopped near the limit (pulled ${pulled} bytes)`);
+    await assert.rejects(readCappedBody(new Response('x', { headers: { 'content-length': String(limit + 1) } }), limit, 'too large'), /too large/);
+    assert.equal((await readCappedBody(new Response('tile'), limit, 'too large')).toString(), 'tile');
+  } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
+});

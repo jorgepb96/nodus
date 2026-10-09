@@ -3,6 +3,7 @@ import { BrowserWindow, clipboard, dialog, shell } from 'electron';
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { openDocumentPath } from '../util/openDocument';
 import { promisify } from 'node:util';
 import { uiText, type UiTranslations } from '@shared/uiLanguage';
 import { showImportOpenDialog } from '../privacy';
@@ -231,7 +232,7 @@ export function registerLibraryIpc({ h }: IpcContext): void {
     return selected.canceled ? existingItem(itemId) : replaceGlobalLibraryAttachment(itemId, attachmentId, selected.filePaths[0]);
   });
   h('library:removeAttachment', async (_event, itemId, attachmentId) => removeGlobalLibraryAttachment(itemId, attachmentId));
-  h('library:openAttachment', async (_event, itemId, attachmentId) => (await shell.openPath(globalLibraryAttachmentPath(itemId, attachmentId))) === '');
+  h('library:openAttachment', async (_event, itemId, attachmentId) => (await openDocumentPath(globalLibraryAttachmentPath(itemId, attachmentId))) === '');
   h('library:revealAttachment', async (_event, itemId, attachmentId) => revealAttachmentInFolder(globalLibraryAttachmentPath(itemId, attachmentId)));
   h('library:upsertNote', async (_event, itemId, note) => upsertGlobalLibraryNote(itemId, note));
   h('library:deleteNote', async (_event, itemId, noteId) => deleteGlobalLibraryNote(itemId, noteId));

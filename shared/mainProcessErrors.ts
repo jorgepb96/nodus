@@ -4671,6 +4671,10 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   'zh-TW': "找不到科目。",
   ko: "과목을 찾을 수 없습니다.",
   ja: "科目が見つかりません。", },
+  'El servidor MCP local no está activo.': { en: 'The local MCP server is not running.', fr: 'Le serveur MCP local n’est pas actif.', de: 'Der lokale MCP-Server läuft nicht.', pt: 'O servidor MCP local não está ativo.', 'pt-BR': 'O servidor MCP local não está ativo.', it: 'Il server MCP locale non è attivo.', tr: 'Yerel MCP sunucusu çalışmıyor.' , "zh-CN": "本地 MCP 服务器未运行。" ,
+  'zh-TW': "本機 MCP 伺服器未執行。",
+  ko: "로컬 MCP 서버가 실행 중이 아닙니다.",
+  ja: "ローカル MCP サーバーが起動していません。", },
 };
 
 /**

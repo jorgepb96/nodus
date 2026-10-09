@@ -86,8 +86,12 @@ export async function runTrustedChatPipeline(
     // Checked here rather than left to the provider, because the provider's own refusal is
     // the one with no room to explain itself: a worker that validates exact keys answers
     // "Invalid map request." and names nothing, which is a dead end for the next turn.
+    const hostOwned = hostSuppliedField(input);
+    if (hostOwned) throw new Error(`${toolId} was not run: ${hostOwned} is supplied by the application, never by the reply.`);
     const mismatch = describeInputMismatch(tool.inputSchema, input);
-    if (mismatch) throw new Error(`${toolId} was not run: ${mismatch}.`);
+    // No full stop added here: describeInputMismatch already ends its sentence, and adding one
+    // produced "at most 8000 are allowed.." in the answer the author reads.
+    if (mismatch) throw new Error(`${toolId} was not run: ${mismatch}`);
     const result = await runner.invoke({ provider, toolId, input, nodeId: node.id });
     const pieces: string[] = [];
     for (const artifact of result.artifacts ?? []) pieces.push(await runner.persistArtifact({ provider, artifact }));
@@ -197,6 +201,19 @@ export async function runTrustedChatPipeline(
   return serialize(nodes, removed, placement);
 }
 
+/** Inputs the application fills on its own calls: local directories a package reads, or (for a
+ *  local OPSIN) runs a program from, and the switch that keeps it off the network. A request that
+ *  comes out of a reply — a fence the model wrote, or one a hook promoted from it — must never
+ *  choose them: `{"plan": …, "opsinDir": "~/Downloads/kit"}` would have the package execute
+ *  whatever `java` that folder holds. The tool schemas accept them because the application's own
+ *  calls send them, so the schema check alone does not refuse them. */
+export const HOST_SUPPLIED_INPUTS: readonly string[] = ['pubchemDir', 'opsinDir', 'indexDir', 'indexDirs', 'stockDir', 'textbookDir', 'localOnly'];
+
+function hostSuppliedField(input: unknown): string | null {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  return HOST_SUPPLIED_INPUTS.find(key => Object.prototype.hasOwnProperty.call(input, key)) ?? null;
+}
+
 function anchorFor(nodes: readonly ChatAstNode[], position: 'before' | 'after'): string {
   return position === 'before' ? nodes[0]?.id ?? '' : nodes[nodes.length - 1]?.id ?? '';
 }
@@ -242,7 +259,20 @@ function expectedShape(schema: JsonSchema): string {
   if (schema.type === 'boolean') return 'true or false';
   return 'a different value';
 }
-const receivedType = (value: unknown): string => Array.isArray(value) ? 'an array' : value === null ? 'null' : typeof value;
+/** What actually arrived, in the terms the failure turns on.
+ *
+ *  For a string that means its LENGTH, not the word "string". A cap of 8000 characters refused
+ *  with "must be a string of at most 8000 characters (received string)" is true, tautological and
+ *  unactionable: it restates the rule and says nothing about the value, so neither a model reading
+ *  it nor a person reading the log can tell whether the string was 8001 characters or 80000. B45
+ *  hid behind that sentence for a whole 30-target sweep. The length alone is enough and the
+ *  content is never echoed — it can be huge, and it is the user's text. */
+const receivedType = (value: unknown): string =>
+  Array.isArray(value) ? `an array of ${value.length} item(s)`
+    : value === null ? 'null'
+      : typeof value === 'string' ? `a string of ${value.length} character(s)`
+        : typeof value === 'number' ? `${value}`
+          : typeof value;
 
 /** The first place an input disagrees with its schema, named by path.
  *
@@ -277,6 +307,13 @@ function mismatchPath(schema: JsonSchema, value: unknown, path: string, depth = 
       if (nested) return nested;
     }
     return null;
+  }
+  // Said the way the array case above says it: the measured fact first, then the rule it broke.
+  // A length that is one over its cap and a length that is ten times it need different fixes, and
+  // the generic sentence below cannot tell them apart.
+  if (schema.type === 'string' && typeof value === 'string' && !schema.enum) {
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) return `${path} is ${value.length} characters; at most ${schema.maxLength} are allowed`;
+    if (schema.minLength !== undefined && value.length < schema.minLength) return `${path} is ${value.length} characters; at least ${schema.minLength} are required`;
   }
   return `${path} must be ${expectedShape(schema)} (received ${receivedType(value)})`;
 }

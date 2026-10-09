@@ -3,7 +3,7 @@
  *  the route, the roles and the systematic IUPAC names, and the application derives every
  *  structure and every balanced equation from the names. */
 
-import { ROUTE_SPECIES_RULES } from './routeRules';
+import { routeSpeciesRules } from './routeRules';
 
 /** How to plan, ahead of the output format. Weaker thinking models spent most of their reasoning
  *  hand-balancing hydrogens and re-deriving mechanisms (deepseek-flash on the Robinson tropinone
@@ -70,7 +70,7 @@ export const SYNTHESIS_TEMPLATE_ADDENDUM = [
   METHOD.join('\n'),
   '',
   placeholders(HEAD),
-  ...ROUTE_SPECIES_RULES.map((rule) => `   - ${rule}`),
+  ...routeSpeciesRules().map((rule) => `   - ${rule}`),
   placeholders(TAIL),
 ].join('\n');
 

@@ -94,7 +94,9 @@ def _side_key_atoms(side):
 
 
 def _split_cxsmiles(cx):
-    parts = cx.split('>')
+    # A CXSMILES extension (' |f:1.2|', coordinates…) follows a space; SMILES itself has none, and
+    # left in place it makes the product side unparsable, which silently dropped those reactions.
+    parts = cx.split(' ', 1)[0].split('>')
     if len(parts) == 2:
         return parts[0], '', parts[1]
     if len(parts) >= 3:
@@ -161,6 +163,25 @@ def _template(reactants, agents, products, rid):
     return (out or {}).get('reaction_smarts') or None
 
 
+def _map_audit(reactants, agents, products):
+    """Exclusions for one atom-mapped reaction (reaction_audit, shared with the textbook templates).
+    A record carries no prose, so nothing can be declared: a mechanism flag here has no scheme text
+    that could explain it, and in a mined record it is more often a mapping or transcription error
+    than genuinely unusual chemistry. The template is the atom map, so a flagged map would propose
+    that error as a disconnection — this builder therefore treats every mechanism flag as an
+    exclusion. Stereocentres from achiral inputs are excused when an agent is itself chiral (a
+    chiral catalyst or ligand), which is the one case the prose would otherwise have declared."""
+    from reaction_audit import audit_reaction, MECHANISM_FLAGS
+    hard, soft, _ = audit_reaction(f'{reactants}>>{products}', '')
+    excluded = set(hard) | (MECHANISM_FLAGS & set(soft))
+    if 'stereo from achiral inputs' in excluded:
+        chiral_agent = any(Chem.FindMolChiralCenters(m, useLegacyImplementation=False)
+                           for m in (Chem.MolFromSmiles(x) for x in agents.split('.') if x) if m is not None)
+        if chiral_agent:
+            excluded.discard('stereo from achiral inputs')
+    return sorted(excluded)
+
+
 def _template_for(reactants, agents, products, rid, n_atoms, force_fast=False):
     """RDChiral for small/moderate reactions, the fast centre extractor above the threshold.
     `n_atoms` (reactant+product heavy atoms) is computed during the canonicalisation pass so we
@@ -202,11 +223,64 @@ def _part_path(path, group):
     return os.path.join(_PARTS_DIR, f'{part_name(path, group)}.json')
 
 
-def init_worker(parts_dir, threshold, digests=None):
+# Lowe's USPTO files (doi:10.6084/m9.figshare.5104873, CC0): tab-separated, one atom-mapped reaction
+# SMILES per line after a header. A "row group" is RSMI_GROUP lines; the byte offset of each group's
+# first line is found once in the main process and handed to the workers.
+RSMI_GROUP = 5000
+_RSMI_OFFSETS = {}
+
+
+def rsmi_offsets(path):
+    if path not in _RSMI_OFFSETS:
+        offsets, line = [], 0
+        with open(path, 'rb') as fh:
+            fh.readline()  # header
+            while True:
+                pos = fh.tell()
+                if not fh.readline():
+                    break
+                if line % RSMI_GROUP == 0:
+                    offsets.append(pos)
+                line += 1
+        _RSMI_OFFSETS[path] = offsets
+    return _RSMI_OFFSETS[path]
+
+
+def source_family(path):
+    """Grants reach the index twice — ORD's uspto-grants consolidates Lowe's grants file — so counts
+    are combined per family as max(ord, lowe-grants) + lowe-applications rather than summed."""
+    if path.endswith('.rsmi'):
+        return 'lowe-applications' if 'application' in os.path.basename(path).lower() else 'lowe-grants'
+    return 'ord'
+
+
+def _iter_reactions(path, group):
+    """(id, (reactants, agents, products, mapped)) for one row group of either source."""
+    if path.endswith('.rsmi'):
+        tag = 'la' if source_family(path) == 'lowe-applications' else 'lg'
+        with open(path, 'rb') as fh:
+            fh.seek(_RSMI_OFFSETS[path][group])
+            for _ in range(RSMI_GROUP):
+                raw = fh.readline()
+                if not raw:
+                    break
+                cols = raw.decode('utf-8', 'replace').rstrip('\n').split('\t')
+                r, a, p = _split_cxsmiles(cols[0])
+                rid = f'{tag}:{cols[1]}:{cols[2]}' if len(cols) > 2 else f'{tag}:{group}'
+                yield rid, ((r, a, p, bool(ATOM_MAP.search(cols[0]))) if r and p else None)
+        return
+    from ord_schema.datasets import load_dataset
+    view = load_dataset(path)
+    for rid, rxn in view.iter_reactions(row_group=group):
+        yield rid, (_reaction_level_smiles(rxn) or _from_components(rxn))
+
+
+def init_worker(parts_dir, threshold, digests=None, rsmi=None):
     global _PARTS_DIR, _TEMPLATE_THRESHOLD
     _PARTS_DIR = parts_dir
     _TEMPLATE_THRESHOLD = threshold
     _FILE_DIGESTS.update(digests or {})
+    _RSMI_OFFSETS.update(rsmi or {})
     # A worker the watchdog terminates mid-result prints a BrokenPipeError traceback; that is
     # expected, so send worker stderr to /dev/null to keep the run's log readable.
     try:
@@ -216,7 +290,6 @@ def init_worker(parts_dir, threshold, digests=None):
 
 
 def process_row_group(args):
-    from ord_schema.datasets import load_dataset
     path, group, force_fast = args
     out = _part_path(path, group)
     if os.path.exists(out):
@@ -229,11 +302,14 @@ def process_row_group(args):
     # representative canonical reaction "r>>p" and product key per exact hash, for later fingerprints
     reaction_meta = {}          # key -> [reaction_smiles, product_key]
     products = {}               # product_key -> {n, s, k}
+    # Per exact key, the map audit of its mapped instances: [] once any instance is clean, else the
+    # flags of the first. Templates are cut per instance; this verdict is the citation fallback when
+    # the skeleton gate cannot compare the two sides.
+    map_audit = {}
+    audit_flags = Counter()
     n = 0
-    view = load_dataset(path)
-    for rid, rxn in view.iter_reactions(row_group=group):
+    for rid, parsed in _iter_reactions(path, group):
         n += 1
-        parsed = _reaction_level_smiles(rxn) or _from_components(rxn)
         if not parsed:
             continue
         reactants, agents, products_s, mapped = parsed
@@ -255,6 +331,16 @@ def process_row_group(args):
             if len(entry['k']) < SAMPLE_KEYS_PER_PRODUCT and key not in entry['k']:
                 entry['k'].append(key)
         if mapped:
+            try:
+                hard = _map_audit(reactants, agents, products_s)
+            except Exception as e:
+                hard = [f'audit error: {type(e).__name__}']
+            if key not in map_audit or not hard:
+                map_audit[key] = hard
+            if hard:
+                audit_flags['excluded'] += 1
+                audit_flags.update(hard)
+                continue
             t, who = _template_for(reactants, agents, products_s, rid, r_atoms + p_atoms, force_fast)
             if who == 'fast':
                 fast_templates += 1
@@ -270,7 +356,8 @@ def process_row_group(args):
                'exactSamples': dict(exact_samples), 'templateSamples': dict(template_samples),
                'reactionMeta': reaction_meta, 'products': products,
                'fastTemplates': fast_templates, 'rdchiralTemplates': rdchiral_templates,
-               'forcedFast': 1 if force_fast else 0}
+               'forcedFast': 1 if force_fast else 0,
+               'family': source_family(path), 'mapAudit': map_audit, 'auditFlags': dict(audit_flags)}
     tmp = out + '.tmp'
     with open(tmp, 'w') as fh:
         json.dump(payload, fh)
@@ -279,6 +366,41 @@ def process_row_group(args):
         with open(os.path.join(os.path.dirname(out), '..', 'slow.jsonl'), 'a') as fh:
             fh.write(json.dumps({'file': os.path.basename(path), 'group': group, 'seconds': round(time.time() - started, 1)}) + '\n')
     return ('done', path, group)
+
+
+def run_skeleton_gate(args, reaction_meta):
+    """The app's bond-edit gate over every distinct recorded reaction (skeleton_audit.mjs), sharded
+    across --gate-shards Node processes. Shards are assigned by key and each output is append-only,
+    so an interrupted run resumes. Returns {key: {'verdict', 'flags'}}."""
+    import subprocess
+    gate_dir = os.path.join(args.out, 'gate')
+    os.makedirs(gate_dir, exist_ok=True)
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'skeleton_audit.mjs')
+    shards = max(1, args.gate_shards)
+    handles = [open(os.path.join(gate_dir, f'in-{i:02d}.jsonl'), 'w') for i in range(shards)]
+    for key, (smiles, _p) in reaction_meta.items():
+        r, _, p = smiles.partition('>>')
+        handles[int(key[:8], 16) % shards].write(json.dumps({'id': key, 'reactants': r.split('.'), 'products': p.split('.')}) + '\n')
+    for h in handles:
+        h.close()
+    print(f'skeleton gate: {len(reaction_meta)} reactions in {shards} shards...', flush=True)
+    t1 = time.time()
+    procs = [subprocess.Popen(['node', script, os.path.join(gate_dir, f'in-{i:02d}.jsonl'),
+                               os.path.join(gate_dir, f'out-{i:02d}.jsonl'), args.skeleton_gate],
+                              stdout=subprocess.DEVNULL, stderr=open(os.path.join(gate_dir, f'err-{i:02d}.log'), 'w'))
+             for i in range(shards)]
+    failed = [i for i, proc in enumerate(procs) if proc.wait() != 0]
+    if failed:
+        raise SystemExit(f'skeleton gate: shard(s) {failed} failed (see {gate_dir}/err-*.log); re-run to resume')
+    verdicts = {}
+    for i in range(shards):
+        with open(os.path.join(gate_dir, f'out-{i:02d}.jsonl')) as fh:
+            for line in fh:
+                if line.strip():
+                    row = json.loads(line)
+                    verdicts[row['id']] = row
+    print(f'skeleton gate: {len(verdicts)} verdicts in {time.time() - t1:.0f}s', flush=True)
+    return verdicts
 
 
 def compute_reaction_fps(items):
@@ -290,10 +412,10 @@ def compute_reaction_fps(items):
     return list(zip(keys, packed))
 
 
-def list_tasks(root, files, limit):
+def list_tasks(root, files, limit, rsmi=()):
     from ord_schema.datasets import load_dataset
     paths = files or sorted(glob.glob(os.path.join(root, 'data', '*', '*.parquet')))
-    tasks = []
+    tasks = [(path, g) for path in rsmi for g in range(len(rsmi_offsets(path)))]
     for path in paths:
         try:
             view = load_dataset(path)
@@ -332,6 +454,21 @@ def main():
                          '(for datasets with pathological RDChiral inputs, e.g. e7830cd6). Matching existing '
                          'checkpoints are discarded so the file is rebuilt uniformly fast.')
     ap.add_argument('--fresh', action='store_true', help='delete existing checkpoints and rebuild from scratch')
+    ap.add_argument('--rsmi', nargs='*', default=[],
+                    help="Lowe's atom-mapped USPTO .rsmi files (grants / applications) indexed alongside ORD")
+    ap.add_argument('--skeleton-gate', metavar='PLUGIN_DIR',
+                    help="chemistry-studio plugin directory: audit every recorded reaction with the app's own "
+                         'bond-edit gate (skeleton_audit.mjs); without it, citations fall back to the map audit')
+    ap.add_argument('--gate-shards', type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    ap.add_argument('--extra-map-audit', metavar='JSON',
+                    help='{key: [flags]} from re-mapping reactions neither the gate nor their own atom map could '
+                         'decide (an ambiguous or missing map): used as the map audit for exactly those')
+    ap.add_argument('--gate-flags', choices=('exclude', 'tag'), default='tag',
+                    help="what a gate flag does to a recorded reaction: keep it cited and list its flags in "
+                         "audit-flags.tsv.zst (the default), or leave it out. A record carries no prose, so a real "
+                         "rearrangement cannot be declared and looks like a flagged one — excluding by default would "
+                         "silently drop every Beckmann, pinacol, Claisen and Cope record from the index, so that is "
+                         "opt-in for a curated build. Map-audit flags always exclude")
     ap.add_argument('--revision', default='93475c46949f9218e1dfb6624096025135db2add')
     args = ap.parse_args()
 
@@ -355,7 +492,7 @@ def main():
 
     atexit.register(_clear_pid)
 
-    tasks = list_tasks(args.root, args.files, args.limit)
+    tasks = list_tasks(args.root, args.files, args.limit, args.rsmi)
     total_tasks = len(tasks)
     for path in sorted({t[0] for t in tasks}):
         file_digest(path)
@@ -414,7 +551,7 @@ def main():
     window = args.workers + 2
 
     def new_pool():
-        return mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS)))
+        return mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS)))
 
     pool = new_pool()
     inflight = {}  # AsyncResult -> [task, submit_time]
@@ -482,10 +619,10 @@ def main():
     else:
         print(f'completeness OK: {len(expected & present)}/{len(expected)} checkpoints', flush=True)
     print('merging checkpoints...', flush=True)
-    exact, templates = Counter(), Counter()
-    templates_r, templates_f = Counter(), Counter()
+    fam = defaultdict(lambda: {'exact': Counter(), 'templates': Counter(), 'r': Counter(), 'f': Counter(), 'products': Counter()})
     exact_samples, template_samples = {}, {}
     reaction_meta, products = {}, {}
+    map_audit, audit_flags = {}, Counter()
     fast_templates = rdchiral_templates = forced_fast_parts = 0
     # Merge exactly this scan's row groups: a checkpoint left by a dataset since removed or
     # retired upstream, or by a file since replaced, is not part of the index.
@@ -498,31 +635,117 @@ def main():
         if 'templatesRdchiral' not in p or 'templatesFast' not in p:
             raise SystemExit(f'checkpoint {os.path.basename(part)} predates per-template provenance; '
                              f'delete it and re-run so its row group is re-extracted')
+        if 'mapAudit' not in p:
+            raise SystemExit(f'checkpoint {os.path.basename(part)} predates the per-reaction audit; '
+                             f'build into a fresh --out (or --fresh) so every reaction is audited')
+        f = fam[p.get('family', 'ord')]
         forced_fast_parts += p.get('forcedFast', 0)
-        exact.update(p['exact'])
-        templates.update(p['templates'])
-        templates_r.update(p['templatesRdchiral'])
-        templates_f.update(p['templatesFast'])
+        f['exact'].update(p['exact'])
+        f['templates'].update(p['templates'])
+        f['r'].update(p['templatesRdchiral'])
+        f['f'].update(p['templatesFast'])
         fast_templates += p.get('fastTemplates', 0)
         rdchiral_templates += p.get('rdchiralTemplates', 0)
+        audit_flags.update(p.get('auditFlags', {}))
+        for k, flags in p['mapAudit'].items():
+            if k not in map_audit or not flags:
+                map_audit[k] = flags
         for k, v in p['exactSamples'].items():
             if k not in exact_samples:
                 exact_samples[k] = v[:SAMPLE_PER_EXACT]
+            elif p.get('family', 'ord') == 'ord' and not any(s.startswith('ord-') for s in exact_samples[k]):
+                # ORD's records carry the conditions table (keyed by ORD id): prefer them as samples.
+                exact_samples[k] = (v + exact_samples[k])[:SAMPLE_PER_EXACT]
         for k, v in p['templateSamples'].items():
             if k not in template_samples:
                 template_samples[k] = v[:SAMPLE_PER_TEMPLATE]
         for k, v in p['reactionMeta'].items():
             reaction_meta.setdefault(k, v)
         for k, v in p['products'].items():
+            f['products'][k] += v['n']
             e = products.get(k)
             if e is None:
-                products[k] = {'n': v['n'], 's': v['s'], 'k': list(v['k'])}
+                products[k] = {'n': 0, 's': v['s'], 'k': list(v['k'])}
             else:
-                e['n'] += v['n']
                 for key in v['k']:
                     if key not in e['k'] and len(e['k']) < SAMPLE_KEYS_PER_PRODUCT:
                         e['k'].append(key)
-    print(f'merged: {len(exact)} exact keys, {len(templates)} templates, {len(products)} products', flush=True)
+
+    def counts(name, field):
+        """`fam` is a defaultdict, so reading a family that was never merged would create it and
+        the manifest would then advertise a source this build never read."""
+        return fam[name][field] if name in fam else Counter()
+
+    def combined(field):
+        """ORD's uspto-grants and Lowe's grants file report the same reactions: count the larger of
+        the two, then add the applications (and everything else ORD holds) once."""
+        o, g, a = counts('ord', field), counts('lowe-grants', field), counts('lowe-applications', field)
+        return Counter({k: max(o.get(k, 0), g.get(k, 0)) + a.get(k, 0) for k in set(o) | set(g) | set(a)})
+
+    exact, templates = combined('exact'), combined('templates')
+    templates_r, templates_f = combined('r'), combined('f')
+    for k, n in combined('products').items():
+        products[k]['n'] = n
+    per_family = ', '.join(f'{name} {sum(c.get("exact", {}).values())}' for name, c in sorted(fam.items()))
+    print(f'merged: {len(exact)} exact keys, {len(templates)} templates, {len(products)} products '
+          f'(reactions per family: {per_family})', flush=True)
+
+    # Citation audit. Every recorded reaction is judged by the app's own bond-edit gate, which reads
+    # the reaction itself (no atom map, so a mapper's error cannot condemn a sound reaction); where
+    # the gate cannot compare the sides (a carbon by-product left out), the map audit decides; a
+    # reaction neither can read stays in, counted as unaudited.
+    #
+    # This gate decides CITATIONS only. Templates were already filtered one by one at extraction by
+    # the map audit (_map_audit), which is the right test for them: a template IS an atom map, and
+    # it is aggregated across every reaction that yields it, so one excluded citation cannot retract
+    # a template that a hundred clean reactions also produce. The manifest records both rules.
+    gate = run_skeleton_gate(args, reaction_meta) if args.skeleton_gate else {}
+    extra_audit = json.load(open(args.extra_map_audit)) if args.extra_map_audit else {}
+    verdict_by = Counter()
+    excluded_rows, tagged_rows = [], []
+    for key in list(reaction_meta):
+        g = gate.get(key)
+        # An ambiguous map (one number on two atoms) or an audit error says nothing about the reaction:
+        # it costs the template, not the citation.
+        map_flags = map_audit.get(key)
+        if map_flags and all(f == 'duplicate atom maps' or f.startswith('audit error') for f in map_flags):
+            map_flags = None
+        map_by = 'map'
+        if map_flags is None and key in extra_audit:
+            map_flags, map_by = extra_audit[key], 'remap'
+        # Every product already among the reactants, unchanged: a salt written as its ions, a
+        # mixture or formulation — no bond changes, so nothing to cite as a way to make it.
+        r_side, _, p_side = reaction_meta[key][0].partition('>>')
+        if set(p_side.split('.')) <= set(r_side.split('.')):
+            flags, by = ['no reaction (products already among reactants)'], 'check'
+        elif g and g['verdict'] in ('clean', 'excluded'):
+            flags, by = g['flags'], 'gate'
+        elif map_flags is not None:
+            flags, by = map_flags, map_by
+        else:
+            verdict_by['unaudited'] += 1
+            continue
+        # A re-map flag mixes real chemistry and broken records like a gate flag (a reagent used twice but
+        # listed once scrambles the map), so it follows --gate-flags; a record's own map flags exclude.
+        if flags and by in ('gate', 'remap') and args.gate_flags == 'tag':
+            verdict_by[f'tagged ({by})'] += 1
+            tagged_rows.append(f'{key}\t{by}\t{",".join(flags)}')
+            continue
+        verdict_by[f'{"excluded" if flags else "clean"} ({by})'] += 1
+        if flags:
+            smiles, product_key = reaction_meta.pop(key)
+            excluded_rows.append(f'{key}\t{by}\t{",".join(flags)}\t{smiles}')
+            count = exact.pop(key, 0)
+            exact_samples.pop(key, None)
+            entry = products.get(product_key)
+            if entry is not None:
+                entry['n'] -= count
+                if key in entry['k']:
+                    entry['k'].remove(key)
+                if entry['n'] <= 0:
+                    del products[product_key]
+    print(f'citation audit: {dict(verdict_by)}; templates: {audit_flags.get("excluded", 0)} mapped reactions '
+          f'excluded {dict((k, v) for k, v in audit_flags.items() if k != "excluded")}', flush=True)
 
     import zstandard as zstd
     cctx = zstd.ZstdCompressor(level=14)
@@ -559,6 +782,10 @@ def main():
                    key=lambda t: (-templates[t], t))
     write_zst(os.path.join(args.out, 'retro-templates.tsv.zst'),
               '\n'.join(f'{templates[t]}\t{templates_r.get(t, 0)}\t{t}' for t in retro))
+    # For review: every recorded reaction left out of the index by the audit, with who decided.
+    write_zst(os.path.join(args.out, 'audit-excluded.tsv.zst'), '\n'.join(sorted(excluded_rows)))
+    # Kept and cited, with the flags the gate raised (--gate-flags tag): key, decided by, flags.
+    write_zst_blocked(os.path.join(args.out, 'audit-flags.tsv.zst'), sorted(tagged_rows))
     # Per molecule: occurrences as a reactant and as a product, weighted by how often each exact
     # reaction was recorded, and a few reactions that make it (most recorded first).
     as_reactant, as_product, makes = Counter(), Counter(), defaultdict(list)
@@ -590,7 +817,7 @@ def main():
         return h.hexdigest()
 
     for name in ('exact.tsv.zst', 'templates.tsv.zst', 'products.tsv.zst', 'reaction-smiles.tsv.zst',
-                 'retro-templates.tsv.zst', 'molecules.tsv.zst', 'exact.tsv.zst.blocks',
+                 'retro-templates.tsv.zst', 'molecules.tsv.zst', 'audit-excluded.tsv.zst', 'audit-flags.tsv.zst', 'exact.tsv.zst.blocks',
                  'reaction-smiles.tsv.zst.blocks', 'molecules.tsv.zst.blocks'):
         record(name, os.path.join(args.out, name))
 
@@ -608,7 +835,7 @@ def main():
         chunk = max(1, len(items) // (args.workers * 4))
         batches = [items[i:i + chunk] for i in range(0, len(items), chunk)]
         t1 = time.time()
-        with mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS))) as pool:
+        with mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS))) as pool:
             results = []
             for i, part in enumerate(pool.imap_unordered(compute_reaction_fps, batches)):
                 results.append(part)
@@ -644,7 +871,9 @@ def main():
         'source': 'open-reaction-database/ord-data',
         'revision': args.revision,
         'licence': 'CC-BY-SA-4.0',
-        'citation': 'Kearnes et al., JACS 2021, doi:10.1021/jacs.1c09820',
+        'citation': 'Kearnes et al., JACS 2021, doi:10.1021/jacs.1c09820'
+                    + ('; D. M. Lowe, Chemical reactions from US patents (1976-Sep2016), doi:10.6084/m9.figshare.5104873 (CC0)'
+                       if args.rsmi else ''),
         'fingerprint': {'kind': 'drfp', 'bits': DRFP_BITS, 'space': 'hamming', 'index': 'flat',
                         'vectors': fp_vectors, 'emptyExcluded': empty_fps},
         'templateExtractor': {'thresholdAtoms': args.template_threshold,
@@ -654,6 +883,10 @@ def main():
         'exactKeys': len(exact),
         'templates': len(templates),
         'products': len(products),
+        'sources': sorted(fam),
+        'audit': {'citations': dict(verdict_by), 'skeletonGate': bool(args.skeleton_gate), 'gateFlags': args.gate_flags,
+                  'templateExclusions': dict(audit_flags),
+                  'rule': 'citations: app bond-edit gate, else map audit, else unaudited (gateFlags decides tag vs exclude); templates: map audit per reaction at extraction, aggregated across reactions, so the citation gate does not retract them'},
         'files': files_meta,
         'builtAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
     }

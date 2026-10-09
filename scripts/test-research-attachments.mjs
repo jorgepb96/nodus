@@ -147,7 +147,8 @@ try {
     }
     remove(chat.id); assert.equal(fs.existsSync(store.researchAttachmentDirectory(own)),false);
   }
-  assert.equal(planningCalls.length, providers.length * 3);
+  assert.equal(planningCalls.length, providers.length * 2,
+    'attachments are validated and budgeted before retrieval; unsupported images never start a search');
   assert.deepEqual([...new Set(planningCalls.map(call => call.model.provider))], providers);
   for (const call of planningCalls) {
     assert.match(call.options.system, /plan the library search/);

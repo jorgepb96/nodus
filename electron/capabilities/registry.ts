@@ -69,6 +69,11 @@ function providerFor(state: InstalledPluginStateV2, manifest: CapabilityManifest
     version: manifest.version,
     description: manifest.description,
     source: 'plugin',
+    // The SLOT's label, which is what identifies the installation: this is the turn pin
+    // (pinCapabilitiesForTurn below), and resolveTrustedCapability both matches it against
+    // state.active and builds `<version>-<digest>` from it. It must stay the slot label even
+    // when the slot holds newer content. The CONTENT's version is `version` above, and that is
+    // what an artifact is stamped with — see persistArtifact in runner.ts.
     plugin: { id: state.id, version: state.active!.version, digest: state.active!.digest },
     capabilityKey: manifest.id,
     tools: manifest.tools,

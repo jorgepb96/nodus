@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const dir = await mkdtemp(path.join(os.tmpdir(), 'molecule-inspection-'));
 await build({ entryPoints: ['shared/moleculeInspection.ts'], outfile: path.join(dir, 'inspection.mjs'), bundle: true, platform: 'node', format: 'esm' });
-const { findSmilesCandidates, findAnswerSpecies, normalizeMoleculeDossier, formatMoleculeDossier, formatStructureAudit, MOLECULE_DOSSIER_SYSTEM_RULE, findStepConditions, declaresRacemic, stepDeclaresRacemic, normalizeRouteAudit, formatRouteAudit, ROUTE_CONTINUITY_SYSTEM_RULE, findRequestedTarget, requestedTargetFor, ROUTE_FIX_PROMPT_LEAD, parseRouteReview, buildRouteReviewRequest, ROUTE_REVIEW_SYSTEM, clampReviewDetail, findStepProse, routeLabelNames, countRouteSteps, findStepNamedSpecies, buildRouteSteps, annotateSpeciesSmiles, formatNameCorrectionNote, formatAuthorStructureNote, formatNamedRouteFixPrompts, formatMissingSpeciesPrompt, isRouteFixPrompt, parseNameFeedback, ROUTE_NAME_FEEDBACK_SYSTEM, formatUnresolvedNameClarification, routeReportsForHistory, classifyCoProducts, smilesHasCarbon, routeStepFailure, routeFixPromptForHistory, formatRouteCheckUnavailable, normalizeReactionPrecedent, formatReactionPrecedents, buildPrecedentQueries, similarityBand, precedentDrawingFor } = await import(pathToFileURL(path.join(dir, 'inspection.mjs')));
+const { findSmilesCandidates, findAnswerSpecies, normalizeMoleculeDossier, formatMoleculeDossier, formatStructureAudit, MOLECULE_DOSSIER_SYSTEM_RULE, findStepConditions, declaresRacemic, stepDeclaresRacemic, normalizeRouteAudit, formatRouteAudit, ROUTE_CONTINUITY_SYSTEM_RULE, findRequestedTarget, requestedTargetFor, ROUTE_FIX_PROMPT_LEAD, parseRouteReview, buildRouteReviewRequest, ROUTE_REVIEW_SYSTEM, clampReviewDetail, findStepProse, routeLabelNames, countRouteSteps, findStepNamedSpecies, buildRouteSteps, isBareSmilesName, annotateSpeciesSmiles, formatNameCorrectionNote, formatAuthorStructureNote, formatNamedRouteFixPrompts, formatMissingSpeciesPrompt, isRouteFixPrompt, parseNameFeedback, ROUTE_NAME_FEEDBACK_SYSTEM, formatUnresolvedNameClarification, routeReportsForHistory, classifyCoProducts, smilesHasCarbon, routeStepFailure, routeFixPromptForHistory, formatRouteCheckUnavailable, normalizeReactionPrecedent, formatReactionPrecedents, buildPrecedentQueries, similarityBand, precedentDrawingFor, formatResolutionSourceNote, UNBUILT_STEP_ERROR_PREFIX, isPlaceholderSpecies } = await import(pathToFileURL(path.join(dir, 'inspection.mjs')));
 await build({ entryPoints: ['shared/chatSkills.ts'], outfile: path.join(dir, 'chatSkills.mjs'), bundle: true, platform: 'node', format: 'esm' });
 const { splitChatVisuals } = await import(pathToFileURL(path.join(dir, 'chatSkills.mjs')));
 await build({ entryPoints: ['shared/synthesisPrompt.ts'], outfile: path.join(dir, 'synthesisPrompt.mjs'), bundle: true, platform: 'node', format: 'esm' });
@@ -163,6 +163,19 @@ test('a malformed route audit degrades to no audit instead of junk', () => {
   assert.equal(normalizeRouteAudit(null), null);
   assert.equal(normalizeRouteAudit({ steps: [] }), null);
   assert.equal(normalizeRouteAudit({ steps: [{}] }), null);
+});
+
+test('a long route audit keeps every step (a route of dozens of steps runs past 16)', () => {
+  // The package checks up to 96 steps; an audit cut shorter than the route is refused as misaligned,
+  // which once left every route over 16 steps unchecked.
+  const step = (index) => ({ index, reaction: 'CCO>>CC=O', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0,
+    reactants: [{ canonicalSmiles: 'CCO', formula: 'C2H6O', heavyAtoms: 3 }], agents: [], products: [{ canonicalSmiles: 'CC=O', formula: 'C2H4O', heavyAtoms: 3 }] });
+  const link = (from) => ({ from, to: from + 1, ok: true, reason: 'carried', carried: [{ canonicalSmiles: 'CC=O', formula: 'C2H4O', heavyAtoms: 3 }], skeletonOnly: [] });
+  const audit = normalizeRouteAudit({ continuous: true, blocked: [], steps: Array.from({ length: 26 }, (_, i) => step(i)), links: Array.from({ length: 25 }, (_, i) => link(i)), isolated: [20] });
+  assert.equal(audit.steps.length, 26);
+  assert.deepEqual(audit.steps.map((s) => s.index), Array.from({ length: 26 }, (_, i) => i));
+  assert.equal(audit.links.length, 25);
+  assert.deepEqual(audit.isolated, [20]);
 });
 
 test('a route audit is normalized defensively and formatted deterministically', () => {
@@ -655,6 +668,32 @@ test('in-place annotation does not split a longer name or touch headings and pro
   assert.match(out, /\*\*Step 1 — Oxidation of cyclohexanol\*\*/, 'the heading is untouched');
 });
 
+test('a species written as a bare SMILES is recognised, but a systematic name is never mistaken for one', () => {
+  // Only ever asked of a name that already failed to resolve. Some species have no resolvable
+  // name, so under load the model gives the structure alone and the step was being discarded
+  // over the formatting while the structure sat right there.
+  assert.ok(isBareSmilesName('O=C(O)[C@@H](CCCCNC(C)=O)NC(=O)OCC1c2ccccc2-c2ccccc21'), 'a protected intermediate');
+  assert.ok(isBareSmilesName('C=C1c2ccccc2-c2ccccc21'), 'dibenzofulvene');
+  assert.ok(isBareSmilesName('*OC(=O)CN'), 'a species on a solid support, written with *');
+  // A real systematic name passes the shape test too, which is why this is only consulted after
+  // resolution has failed — never to pre-empt it.
+  assert.ok(!isBareSmilesName('ethanol'), 'no structural characters');
+  assert.ok(!isBareSmilesName('2-methylbutanoic acid'), 'a name with a space is never a SMILES');
+  assert.ok(!isBareSmilesName('=O'), 'a quoted fragment is not a species');
+  // Numbered systematic names all satisfy the looser shape test used to find candidates in prose,
+  // because a locant digit reads as a ring closure. They must not reach the declared-structure
+  // path: when a reference service is merely unreachable, adopting the name as its own structure
+  // replaces a precise "this name could not be resolved" with a route of unparseable steps.
+  for (const name of ['2-methylbutan-2-ol', 'cyclohex-2-en-1-one', 'benzene-1,2-diamine',
+    '4-nitrophenol', 'bornan-2-ol', 'N,N-dimethylformamide', '2,3-dibromobutane',
+    '(1R,5R)-2,6,6-trimethylbicyclo[3.1.1]hept-2-ene']) {
+    assert.ok(!isBareSmilesName(name), `a systematic name is not a structure: ${name}`);
+  }
+  // A hyphen is an explicit single bond, not a locant: a biaryl linkage is still a structure.
+  assert.ok(isBareSmilesName('C=C1c2ccccc2-c2ccccc21'));
+  assert.ok(isBareSmilesName('[Na+].[Cl-]'), 'a charge inside a bracket atom is not punctuation');
+});
+
 test('reaction lines are derived from resolved species, never the model', () => {
   const resolved = [[
     { role: 'reactant', byproduct: false, name: 'acetylene', status: 'resolved', smiles: 'C#C', source: 'pubchem' },
@@ -667,6 +706,23 @@ test('reaction lines are derived from resolved species, never the model', () => 
   // A step with no resolvable reactant cannot form an equation; it stays as an empty line so the
   // steps after it keep their numbers.
   assert.deepEqual(buildRouteSteps([[{ role: 'product', byproduct: false, name: 'x', status: 'unresolved' }]]), ['']);
+  // One unresolved reactant or product empties the whole step, rather than leaving the rest to be
+  // checked as an equation nobody wrote: a ring closure whose precursor and product were name-only
+  // came back as "oxygen -> water" and failed for want of H2.
+  const partial = [[
+    { role: 'reactant', byproduct: false, name: 'the long precursor', status: 'unresolved' },
+    { role: 'reactant', byproduct: false, name: 'oxygen', status: 'resolved', smiles: '[O]', source: 'pubchem' },
+    { role: 'product', byproduct: false, name: 'the macrocycle', status: 'resolved', smiles: 'C1CCCCC1', source: 'pubchem' },
+    { role: 'product', byproduct: true, name: 'water', status: 'resolved', smiles: 'O', source: 'pubchem' },
+  ]];
+  assert.deepEqual(buildRouteSteps(partial), ['']);
+  // An agent that does not resolve is still only a condition: it is dropped and the step checked.
+  const unresolvedAgent = [[
+    { role: 'reactant', byproduct: false, name: 'acetylene', status: 'resolved', smiles: 'C#C', source: 'pubchem' },
+    { role: 'product', byproduct: false, name: 'but-1-yne', status: 'resolved', smiles: 'CCC#C', source: 'pubchem' },
+    { role: 'agent', byproduct: false, name: 'aqueous buffer, pH 8', status: 'unresolved' },
+  ]];
+  assert.deepEqual(buildRouteSteps(unresolvedAgent), ['C#C>>CCC#C']);
 });
 
 test('precedent queries leave byproducts out, as the Open Reaction Database records the main product', () => {
@@ -693,16 +749,31 @@ test('precedent queries leave byproducts out, as the Open Reaction Database reco
   assert.deepEqual(buildPrecedentQueries(gap), [{ step: 1, query: 'CCO>>CC=O' }]);
 });
 
-test('an ion shared by two salts is written once per side so the balance is unique', () => {
+test('two salts sharing an ion each keep their own stoichiometry', () => {
+  // This used to write each distinct ion once and leave the counts to the solver, so that a
+  // shared ion could not appear twice on one side. It read as tidy and it threw away what the
+  // author had actually declared: chromium(III) sulfate's own 2:3 ratio became one chromium and
+  // one sulfate, and the solver re-derived whatever numbers balanced. The same freedom let a
+  // wrong equation balance elsewhere -- a hydrolysis one hydrogen short came back balanced by
+  // taking two of one reagent -- because a free ion's coefficient is the solver's to choose.
+  //
+  // Now every fragment of every species is written out, and the package regroups them from the
+  // labels so each DECLARED species takes one coefficient. The ratio the author wrote survives.
   const sulfate = 'S(=O)(=O)([O-])[O-]';
+  const chromiumSulfate = `${sulfate}.[Cr+3].${sulfate}.${sulfate}.[Cr+3]`;
+  const sodiumSulfate = `${sulfate}.[Na+].[Na+]`;
   const resolved = [[
     { role: 'reactant', byproduct: false, name: 'sodium dichromate', status: 'resolved', smiles: '[O-][Cr](=O)(=O)O[Cr](=O)(=O)[O-].[Na+].[Na+]' },
     { role: 'reactant', byproduct: false, name: 'cyclohexanol', status: 'resolved', smiles: 'C1CCC(CC1)O' },
-    { role: 'product', byproduct: false, name: 'chromium(III) sulfate', status: 'resolved', smiles: `${sulfate}.[Cr+3].${sulfate}.${sulfate}.[Cr+3]` },
-    { role: 'product', byproduct: false, name: 'sodium sulfate', status: 'resolved', smiles: `${sulfate}.[Na+].[Na+]` },
+    { role: 'product', byproduct: false, name: 'chromium(III) sulfate', status: 'resolved', smiles: chromiumSulfate },
+    { role: 'product', byproduct: false, name: 'sodium sulfate', status: 'resolved', smiles: sodiumSulfate },
   ]];
   const [step] = buildRouteSteps(resolved);
-  assert.deepEqual(step.split('>')[2].split('.'), [sulfate, '[Cr+3]', '[Na+]'], 'sulfate, chromium and sodium each appear once');
+  assert.equal(step.split('>')[2], `${chromiumSulfate}.${sodiumSulfate}`, 'each salt contributes its own fragments, in order');
+  const products = step.split('>')[2].split('.');
+  assert.equal(products.filter((part) => part === sulfate).length, 4, 'three sulfates from one salt and one from the other');
+  assert.equal(products.filter((part) => part === '[Cr+3]').length, 2);
+  assert.equal(products.filter((part) => part === '[Na+]').length, 2);
 });
 
 test('the resolved SMILES is attached to the name in place, replacing any declared one', () => {
@@ -1464,7 +1535,6 @@ test('a spectator ion the solver left at 1:1 still lets the salts show whole (ca
   assert.match(line, /3 cyclohexanol \(C6H12O\) \+ 4 sulfuric acid \(H2O4S\) \+ sodium dichromate \(Cr2Na2O7\) → 3 cyclohexanone \(C6H10O\) \+ 7 water \(H2O\) \+ chromium\(III\) sulfate \(Cr2O12S3\) \+ sodium sulfate \(Na2O4S\)$/);
 });
 
-
 test('a stereo declaration counts wherever it sits in the step, and a bold lead-in keeps its prose (Sonnet 5.5, hard suite)', () => {
   const lead = 'Treat the triketone with pyrrolidine in methanol at room temperature. The methyl ketone enolate attacks one ring carbonyl and closes the second six-membered ring. The step is an isomerization with no gain or loss of atoms. It creates two stereocentres, the carbon bearing the OH and the methyl-bearing quaternary carbon. No chiral catalyst is used, so the stereochemistry of this step is not controlled and the ketol is racemic.';
   const answer = [
@@ -1526,4 +1596,202 @@ test('open stereocentres that cannot reach the target pass, and say so', () => {
   // Without the flag the same step still fails.
   const strict = normalizeRouteAudit({ ...audit, steps: [{ ...audit.steps[0], stereoNotRequired: false }] });
   assert.match(routeStepFailure(strict.steps[0]) ?? '', /2 unspecified stereocentre/);
+});
+
+test('a step whose bond changes cannot happen is FAIL, and the fix prompt carries the checker\'s sentence', () => {
+  const problem = 'a new C–Br bond forms at a carbon nothing activates — no leaving group, metal, heteroatom or multiple bond on it, and not next to a carbonyl, alkene or arene — so the product does not follow from the reactants as written. Check which carbon reacts (the regiochemistry: an enol or enolate reacts only at the α-carbon)';
+  const audit = normalizeRouteAudit({
+    continuous: false, blocked: [`Step 1: ${problem}.`],
+    steps: [{
+      index: 0, reaction: 'a>>b', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0,
+      skeleton: { change: 'none', formed: 0, cleaved: 0, ringSizes: [], migration: false, unactivated: 0, unactivatedHetero: 2, heteroElements: ['Br'] },
+      skeletonProblem: problem, reactants: [], agents: [], products: [],
+    }],
+    links: [],
+  });
+  assert.equal(audit.steps[0].skeleton.unactivatedHetero, 2);
+  const text = formatRouteAudit(audit);
+  assert.match(text, /\*\*Route check failed\*\* — [^.]*makes or breaks a bond its reactants cannot \(step 1\)/);
+  assert.match(text, /- Step 1 FAIL — balanced\. a new C–Br bond forms at a carbon nothing activates/);
+  assert.equal(routeStepFailure(audit.steps[0]), problem);
+  const labels = [[{ role: 'product', byproduct: false, name: '2,3,4-tribromocyclopentan-1-one', smiles: 'O=C1CC(Br)C(Br)C1Br' }]];
+  const chips = routeFixChips(formatNamedRouteFixPrompts(labels, audit));
+  assert.match(chips[0].prompt, /- Step 1: a new C–Br bond forms at a carbon nothing activates/);
+  const stepChip = chips.find(chip => chip.label === 'Fix step 1');
+  assert.ok(stepChip, 'the step gets its own fix chip');
+  assert.match(stepChip.prompt, /the regiochemistry: an enol or enolate reacts only at the α-carbon/);
+});
+
+test('a passing step states the bonds it forms, so the reviewer reads the checker\'s facts', () => {
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [
+      { index: 0, reaction: 'a>>b', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0, reactants: [], agents: [], products: [],
+        skeleton: { change: 'formed', formed: 1, cleaved: 0, ringSizes: [6], migration: false, unactivated: 0, unactivatedHetero: 0, heteroElements: [] }, bonds: { 'C–C': 1, 'C–O': -1 } },
+      { index: 1, reaction: 'b>>c', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0, reactants: [], agents: [], products: [],
+        skeleton: { change: 'formed+cleaved', formed: 1, cleaved: 1, ringSizes: [], migration: true, reorganised: false, unactivated: 1, unactivatedHetero: 0, heteroElements: [] }, rearrangement: true },
+      { index: 2, reaction: 'c>>d', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0, reactants: [], agents: [], products: [],
+        skeleton: { change: 'none', formed: 0, cleaved: 0, ringSizes: [], migration: false, unactivated: 0, unactivatedHetero: 0, heteroElements: [] } },
+      { index: 3, reaction: 'd>>e', ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0, reactants: [], agents: [], products: [],
+        skeleton: { change: 'none', formed: 0, cleaved: 0, ringSizes: [], migration: false, unactivated: 0, unactivatedHetero: 0, heteroElements: [] }, bonds: { 'N–O': 1, 'O–O': -1 } },
+    ],
+    links: [],
+  });
+  const text = formatRouteAudit(audit);
+  assert.match(text, /- Step 1 OK — balanced\. Bonds made \(\+\) and broken \(−\): \+1 C–C \(closing a 6-membered ring\), −1 C–O\./);
+  assert.match(text, /- Step 2 OK — balanced\. Bonds made \(\+\) and broken \(−\): \+1 C–C, −1 C–C — a 1,2-shift; declared a rearrangement\./);
+  assert.doesNotMatch(text, /- Step 3 OK — balanced\. Bonds made/);
+  // Every bond type, not only those at carbon: an N-oxidation by a peroxide.
+  assert.match(text, /- Step 4 OK — balanced\. Bonds made \(\+\) and broken \(−\): \+1 N–O, −1 O–O\./);
+});
+
+test('step prose stays aligned when bold lead-in steps and full-line step headings are mixed', () => {
+  const answer = [
+    '**Step 1 — Acid-catalysed isomerisation of α-pinene to camphene.** The pinane skeleton reorganises.',
+    'Reactants: (1R,5R)-2,6,6-trimethylbicyclo[3.1.1]hept-2-ene',
+    'Products: camphene',
+    '',
+    '**Step 2 — Hydroboration–oxidation.** Boron adds to the less substituted carbon.',
+    'Reactants: camphene; borane',
+    'Products: bornan-2-ol',
+    '',
+    '**Step 3 — Wagner–Meerwein shift to isobornyl acetate.**',
+    'Reactants: camphene; acetic acid',
+    'Products: isobornyl acetate',
+  ].join('\n');
+  const prose = findStepProse(answer, 3);
+  assert.match(prose[0], /isomerisation of α-pinene/);
+  assert.match(prose[1], /Hydroboration/);
+  assert.match(prose[2], /Wagner–Meerwein/);
+});
+
+test('a route the model draws in a capability fence does not turn its own labels into species', () => {
+  // Seen on a long route: the model emitted its own picture through the `nodus-view`
+  // fence and hand-wrote the SVG inside it, repeating the role labels in its `<text>` elements,
+  // and the drawing ran out before `</svg>`. One `Byproducts:` inside the picture claimed the
+  // rest of the answer, and two fragments of markup became species of that step that no resolver
+  // could turn into structures — so the step was emptied and reported as unbuilt although the
+  // author's own list was complete.
+  const answer = [
+    '**Step 1 — Coupling**',
+    'Reactants: ethanol; ethanoic acid',
+    'Products: ethyl ethanoate',
+    'Byproducts: water',
+    'Agents: sulfuric acid',
+    '',
+    '**Step 2 — Hydrolysis**',
+    'Reactants: ethyl ethanoate; water',
+    'Products: ethanol',
+    'Byproducts: ethanoic acid',
+    'Agents: none',
+    '',
+    '```nodus-view',
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200">',
+    '  <text x="60" y="40" font-size="16">Step 1 — Coupling</text>',
+    '  <text x="80" y="65" font-size="13">Byproducts: water, carbon dioxide, etc.</text>',
+    '  <text x="80" y="90" font-size="13">Product: ethyl ethanoate, purified.</text>',
+    '```',
+    '',
+    'Caveats: the conditions are a proposal.',
+  ].join('\n');
+  assert.equal(countRouteSteps(answer), 2, 'the picture does not add a step');
+  const species = findStepNamedSpecies(answer, 2);
+  assert.deepEqual(species[0].map((entry) => entry.name), ['ethanol', 'ethanoic acid', 'ethyl ethanoate', 'water', 'sulfuric acid']);
+  assert.deepEqual(species[1].map((entry) => entry.name), ['ethyl ethanoate', 'water', 'ethanol', 'ethanoic acid'],
+    'no fragment of the drawing is read as a species');
+  // Every species still resolves, so both steps are built rather than reported unbuilt.
+  const steps = buildRouteSteps([
+    species[0].map((entry) => ({ role: entry.role, smiles: 'CCO' })),
+    species[1].map((entry) => ({ role: entry.role, smiles: 'CCO' })),
+  ]);
+  assert.ok(steps.every((step) => step.length > 0), 'a step is not emptied by the drawing');
+});
+
+test('a closed inline SVG is masked too, and a species name that is markup is dropped', () => {
+  const answer = [
+    '**Step 1 — Oxidation**',
+    'Reactants: cyclohexanol',
+    'Products: cyclohexanone',
+    'Byproducts: water; <text x="80" y="745">Product: something</text>',
+    'Agents: none',
+    '<svg width="10" height="10"><text>Reactants: benzene</text></svg>',
+  ].join('\n');
+  const species = findStepNamedSpecies(answer, 1);
+  assert.deepEqual(species[0].map((entry) => entry.name), ['cyclohexanol', 'cyclohexanone', 'water'],
+    'markup is not a species name, and the closed picture contributes nothing');
+});
+
+test('a step the application could not build is reported as UNBUILT and names the species', () => {
+  // Nothing was checked on such a step, so calling it a failed check both overstates the route's
+  // problems and hides what the author has to fix. The old line read
+  // "Step 2 FAIL — This step could not be built: a species it names has no resolved structure."
+  // and named nothing, which made a real diagnosis slow.
+  const audit = normalizeRouteAudit({
+    steps: [
+      { index: 0, reaction: 'CCO>>CC=O', ok: true, reactants: [], agents: [], products: [], balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0 },
+      { index: 1, reaction: '', ok: false, error: 'This step could not be built: a species it names has no resolved structure.', reactants: [], agents: [], products: [], balanced: null, chargeBalanced: null, differences: [], unspecifiedStereocentres: 0 },
+    ],
+  });
+  const report = formatRouteAudit(audit, [[], []], null, false, [
+    { step: 2, role: 'reactant', byproduct: false, name: 'the supported intermediate' },
+  ]);
+  assert.match(report, /- Step 2 UNBUILT — nothing was checked: no structure resolved for reactant "the supported intermediate"/);
+  assert.doesNotMatch(report, /Step 2 FAIL/, 'an unbuilt step is not reported as a failed check');
+  assert.match(report, /1 step\(s\) could not be built because a species they name has no resolved structure \(step 2\)/);
+  assert.doesNotMatch(report, /1 of 2 step\(s\) do not pass/, 'it is not counted among the steps that do not pass');
+});
+
+test('the resolution source of every structure is reported', () => {
+  assert.equal(formatResolutionSourceNote([
+    { status: 'resolved', source: 'builtin' }, { status: 'resolved', source: 'builtin' },
+    { status: 'resolved', source: 'pubchem' }, { status: 'resolved', source: 'opsin' },
+    { status: 'fallback', source: 'declared' },
+    { status: 'unresolved' },
+  ]), 'Structures resolved: 2 from the built-in dictionary · 1 from PubChem · 1 from OPSIN · 1 from the answer itself.');
+  assert.equal(formatResolutionSourceNote([]), '', 'nothing resolved is no note');
+  assert.equal(formatResolutionSourceNote([{ status: 'unresolved' }]), '', 'an unresolved species is not a source');
+});
+
+test('a placeholder where a species belongs is called a placeholder, not an unresolvable name', () => {
+  // Seen live: a step whose Byproducts line read "see prose". Asking for "its structure" invites
+  // the author to invent one; the fault is that the species were never listed.
+  for (const name of ['see prose', 'see prose (protected building blocks)', 'as above', 'see step 2', 'as described in the text', 'various', 'etc.']) {
+    assert.equal(isPlaceholderSpecies(name), true, name);
+  }
+  for (const name of ['water', 'sodium bromide', '9H-fluoren-9-ylidenemethanone', 'propan-2-ol', 'the supported intermediate', 'Seebach amide']) {
+    assert.equal(isPlaceholderSpecies(name), false, name);
+  }
+  const audit = normalizeRouteAudit({
+    steps: [{ index: 0, reaction: '', ok: false, error: 'This step could not be built: a species it names has no resolved structure.', reactants: [], agents: [], products: [], balanced: null, chargeBalanced: null, differences: [], unspecifiedStereocentres: 0 }],
+  });
+  const placeholder = formatRouteAudit(audit, [[]], null, false, [{ step: 1, role: 'product', byproduct: true, name: 'see prose' }]);
+  assert.match(placeholder, /no structure resolved for byproduct "see prose"\. That is a placeholder, not a species: list each one by name, or write "none"\./);
+  const ordinary = formatRouteAudit(audit, [[]], null, false, [{ step: 1, role: 'reactant', byproduct: false, name: 'bornan-2-ol' }]);
+  assert.match(ordinary, /Give that species a name a reference resolves, or its structure\./);
+  assert.doesNotMatch(ordinary, /placeholder/);
+});
+
+test('every fragment of every species reaches the equation, including repeated counterions', () => {
+  // The components of one species are written out because a reaction SMILES cannot carry the
+  // boundary; the package regroups them from the labels. Dropping a repeated token to avoid an
+  // ambiguous balance used to cost atoms, which is the worse failure: calcium chloride lost a
+  // chloride, so any salt with repeated counterions could never balance.
+  const salt = buildRouteSteps([[
+    { role: 'reactant', smiles: 'CC(=O)O' }, { role: 'reactant', smiles: '[Ca+2].[Cl-].[Cl-]' },
+    { role: 'product', smiles: 'CC(=O)[O-]' },
+  ]]);
+  assert.equal(salt[0], 'CC(=O)O.[Ca+2].[Cl-].[Cl-]>>CC(=O)[O-]', 'both chlorides survive');
+
+  const shared = buildRouteSteps([[
+    { role: 'reactant', smiles: 'C[Mg]Br' }, { role: 'reactant', smiles: '[Na+].[Br-]' },
+    { role: 'product', smiles: 'C' }, { role: 'product', smiles: '[Mg+2].[Br-]' }, { role: 'product', smiles: '[Na+].[Br-]' },
+  ]]);
+  assert.equal(shared[0], 'C[Mg]Br.[Na+].[Br-]>>C.[Mg+2].[Br-].[Na+].[Br-]', 'two salts sharing an ion keep both');
+
+  // Unchanged: agents are still dropped from the equation, and a step missing a side is unbuilt.
+  const agents = buildRouteSteps([[
+    { role: 'reactant', smiles: 'CCO' }, { role: 'agent', smiles: 'O=S(=O)(O)O' }, { role: 'product', smiles: 'CC=O' },
+  ]]);
+  assert.equal(agents[0], 'CCO>O=S(=O)(O)O>CC=O');
+  assert.equal(buildRouteSteps([[{ role: 'reactant', smiles: 'CCO' }]])[0], '', 'no product is still unbuilt');
 });

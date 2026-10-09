@@ -270,7 +270,7 @@ async function translateInPopup(text, langName, resultEl, L) {
     let acc = "";
     const onDelta = (d) => { acc += d; resultEl.textContent = acc; resultEl.scrollTop = resultEl.scrollHeight; };
     if (mode === "standalone") {
-      const key = NS.getKey(model.provider);
+      const key = await NS.getKey(model.provider);
       const localBase = NS.getLocalBase(model.provider);
       await NP.chatStream(model, { system, key, localBase, messages: [{ role: "user", content: text }] }, onDelta, undefined);
     } else {

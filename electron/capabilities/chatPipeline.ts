@@ -212,11 +212,21 @@ function serialize(nodes: readonly ChatAstNode[], removed: ReadonlySet<string>, 
   return parts.join('');
 }
 
+/** The lead on a capability failure, exported so a reader that strips the application's own
+ *  output can find it. */
+export const CAPABILITY_ERROR_LEAD = 'Capability error, from the application and not the model: ';
+
 /** Provider failures are reported to the user as inert text, never as something the next
- *  turn could read back as a request. */
+ *  turn could read back as a request.
+ *
+ *  Attributed and italicised, because the failure replaces the directive where it stood — in the
+ *  middle of the answer — and an unattributed line there reads as the model's own words to
+ *  everything downstream. Measured: a blind reviewer comparing two routes read "Capability error:
+ *  nodus:chemistry exceeded 180 seconds" as part of the answer and marked that answer truncated.
+ *  The position is worth keeping, since it says which directive failed; the ambiguity is not. */
 function errorText(error: unknown): string {
   const message = String(error instanceof Error ? error.message : error).replace(/[\r\n`*<>[\]]/g, ' ').slice(0, 500);
-  return `\n\nCapability error: ${message}\n\n`;
+  return `\n\n_${CAPABILITY_ERROR_LEAD}${message}_\n\n`;
 }
 
 /** The shape a schema asks for, in a few words: enough for a model to correct itself. */

@@ -118,6 +118,12 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
       const max = runtime.permissions.subworkers?.max ?? 0;
       if (max < 1) throw new Error('Capability subworkers are not permitted.');
       const child = utilityProcess.fork(entry, [], { serviceName: `Nodus capability subworker ${runtime.capabilityId}`, stdio: 'ignore' });
+      // Same reason as the tool budget above: "the capability subworker exceeded its time limit"
+      // named no number and no cause. The work it bounds was measured at a third of a second
+      // against a budget of fifteen, so an overrun is a starved or unstarted process rather than a
+      // hard molecule — and that is only visible with the spawn-to-result time written down.
+      const spawned = Date.now();
+      const budget = Math.min(Math.max(request.timeoutMs, 1_000), 300_000);
       return new Promise((resolve, reject) => {
         let settled = false;
         const finish = (error?: Error, value?: unknown) => {
@@ -126,10 +132,14 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
           clearTimeout(timer);
           signal.removeEventListener('abort', abort);
           try { child.kill(); } catch { /* already gone */ }
+          const spent = Date.now() - spawned;
+          if (error || spent * 2 >= budget) {
+            console.info(`${new Date().toISOString()} [capability] ${runtime.capabilityId} subworker ${request.entry} ${error ? 'failed' : 'ok'} in ${(spent / 1000).toFixed(1)}s of a ${(budget / 1000).toFixed(0)}s budget`);
+          }
           if (error) reject(error); else resolve(value);
         };
         const abort = () => finish(new DOMException('The capability subworker was cancelled.', 'AbortError'));
-        const timer = setTimeout(() => finish(new Error('The capability subworker exceeded its time limit.')), Math.min(Math.max(request.timeoutMs, 1_000), 300_000));
+        const timer = setTimeout(() => finish(new Error(`The capability subworker exceeded its time limit of ${(budget / 1000).toFixed(0)} seconds.`)), budget);
         signal.addEventListener('abort', abort, { once: true });
         child.on('message', (message: { error?: string; result?: unknown }) => {
           if (message?.error) finish(new Error(String(message.error).slice(0, 2_000)));
@@ -174,11 +184,31 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
       if (!tool) throw new Error(`${provider.id} has no tool ${toolId}.`);
       const { handle } = workerFor(provider);
       context.beforeInvoke?.();
-      return handle.call('invoke', {
-        invocationId: `i${Math.random().toString(36).slice(2, 10)}`,
-        toolId, input, locale: context.locale,
-        chat: { question: context.question, nodeId },
-      }, { timeoutMs: tool.timeoutMs, signal: context.signal });
+      // A blown tool budget used to reach the author as "nodus:chemistry exceeded 180 seconds"
+      // with nothing to say where the 180 went. Measured afterwards, the chemistry in that tool is
+      // a third of a second: a cold WebAssembly load plus one parse of a 39-atom target. The time
+      // goes on the model round-trips the tool makes — resolution, up to two repairs, then the
+      // unverified fallback — so the budget is almost never spent on chemistry, and a timeout
+      // without a timing line is undiagnosable. Logged on failure always, and on success only when
+      // the call used more than half its budget, so an ordinary route stays quiet.
+      const started = Date.now();
+      const report = (outcome: string) => {
+        const spent = Date.now() - started;
+        if (outcome === 'ok' && spent * 2 < tool.timeoutMs) return;
+        console.info(`${new Date().toISOString()} [capability] ${provider.id} ${toolId} ${outcome} in ${(spent / 1000).toFixed(1)}s of a ${(tool.timeoutMs / 1000).toFixed(0)}s budget`);
+      };
+      try {
+        const result = await handle.call<Awaited<ReturnType<TrustedCapabilityRunner['invoke']>>>('invoke', {
+          invocationId: `i${Math.random().toString(36).slice(2, 10)}`,
+          toolId, input, locale: context.locale,
+          chat: { question: context.question, nodeId },
+        }, { timeoutMs: tool.timeoutMs, signal: context.signal });
+        report('ok');
+        return result;
+      } catch (error) {
+        report(error instanceof Error && error.name === 'AbortError' ? 'cancelled' : 'failed');
+        throw error;
+      }
     },
 
     async hook({ provider, hook, nodes }: { provider: CapabilityProvider; hook: 'prepare' | 'finalize'; nodes: ChatAstNode[] }) {
@@ -194,7 +224,15 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
       if (!declared) throw new Error(`${provider.id} produced an undeclared artifact type.`);
       const reference = storeCapabilityArtifact(context.owner, artifact, {
         capabilityId: provider.id,
-        plugin: provider.plugin ?? { id: 'core', version: '0.0.0', digest: '0'.repeat(64) },
+        // The CONTENT's version, not the slot's label. A sideload can replace what a slot
+        // holds without renaming it, so the slot label can be older than the manifest inside
+        // it — measured on one machine, a slot labelled 2.5.7 holding 2.5.23. The label is
+        // still the right thing for RESOLVING the installation (provider.plugin, the turn pin),
+        // but an artifact that names the wrong build makes an archive of runs useless as
+        // evidence, and `provider.version` is the manifest's own version.
+        plugin: provider.plugin
+          ? { id: provider.plugin.id, version: provider.version, digest: provider.plugin.digest }
+          : { id: 'core', version: '0.0.0', digest: '0'.repeat(64) },
         modelVisibility: declared.modelVisibility,
       });
       const pieces = [serializeArtifactReference(reference)];

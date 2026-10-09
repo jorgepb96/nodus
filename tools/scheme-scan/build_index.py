@@ -70,6 +70,10 @@ def main():
     ap.add_argument('--out', default=os.path.join(os.path.dirname(scan.DB), 'index'))
     ap.add_argument('--templates', default=os.path.join(os.path.dirname(scan.DB), 'templates', 'templates.json'),
                     help='templates.json from templates.py extract (a side work directory builds an alternative set)')
+    ap.add_argument('--audit', help='per-reaction audit verdicts ({id: {"hard": [flags]}}, e.g. templates.py audit or the '
+                    'bond-edit gate): a flagged reaction is cited with its flags (a book records real rearrangements and '
+                    'radical steps whose conditions need not say so)')
+    ap.add_argument('--audit-exclude', action='store_true', help='leave flagged reactions out of the index instead of tagging them')
     ap.add_argument('--zotero', default=os.path.expanduser('~/Zotero/zotero.sqlite'), help='for full book titles in citations')
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -79,9 +83,11 @@ def main():
       FROM records x JOIN items i ON i.id = x.item_id JOIN books b ON b.book_key = i.book_key
       WHERE x.status IN ('confirmed', 'repaired')""").fetchall()
 
+    audit = json.load(open(args.audit)) if args.audit else None
     full_titles = library_titles(args.zotero)
     exact, exact_samples, reaction_meta, products, records = Counter(), defaultdict(list), {}, {}, {}
     skipped = Counter()
+    unaudited, flagged = [0], [0]
     for (item_id, n, source, reactants, products_json, reagents, yld, status, checks, page, kind, x0, y0, x1, y1,
          ordinal, ref, title, nodus_id) in rows:
         checks = json.loads(checks)
@@ -93,6 +99,14 @@ def main():
             skipped['missing side'] += 1; continue
         if any('*' in s for s in r + p):
             skipped['generic structure'] += 1; continue
+        if audit is not None:
+            verdict = audit.get(f'{item_id}:{n}:{source}')
+            if verdict is None:
+                unaudited[0] += 1  # kept: neither the gate nor a confident map could read it
+            elif verdict.get('hard'):
+                if args.audit_exclude:
+                    skipped['audit excluded'] += 1; continue
+                flagged[0] += 1
         r_key, _ = ord_builder._side_key_atoms('.'.join(r))
         p_key, _ = ord_builder._side_key_atoms('.'.join(p))
         if not r_key or not p_key:
@@ -113,6 +127,8 @@ def main():
                         'box': [round(v, 1) for v in (x0, y0, x1, y1)], 'order': ordinal, 'image': ref,
                         'reagents': reagents, 'yield': yld, 'status': status, 'reading': source,
                         'reaction': f'{".".join(r)}>>{".".join(p)}'}
+        if audit is not None and (audit.get(f'{item_id}:{n}:{source}') or {}).get('hard'):
+            records[rid]['audit'] = audit[f'{item_id}:{n}:{source}']['hard']
 
     import zstandard as zstd
     cctx = zstd.ZstdCompressor(level=14)
@@ -192,6 +208,8 @@ def main():
         'fingerprint': {'kind': 'drfp', 'bits': ord_builder.DRFP_BITS, 'space': 'hamming', 'index': 'flat',
                         'vectors': len(keys), 'emptyExcluded': len(items) - len(keys)},
         'records': len(records), 'retroTemplates': len(templates), 'exactKeys': len(exact), 'products': len(products), 'skipped': dict(skipped),
+        'audit': ({'applied': True, 'policy': 'exclude' if args.audit_exclude else 'tag', 'flagged': flagged[0],
+                   'unaudited': unaudited[0]} if audit is not None else {'applied': False}),
         'books': sorted({r['book'] for r in records.values()}),
         'files': {n: {'bytes': os.path.getsize(out(n)), 'sha256': digest(out(n))} for n in names},
         'builtAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),

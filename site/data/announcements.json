@@ -2,6 +2,74 @@
   "version": 1,
   "notices": [
     {
+      "id": "2026-10-08-nodus-presenter-ios",
+      "date": "2026-10-08",
+      "severity": "info",
+      "url": "https://apps.apple.com/app/nodus-presenter/id6818107823",
+      "copy": {
+        "es": {
+          "title": "Nodus Presenter ya está disponible en iOS",
+          "body": "Usa tu iPhone o iPad como mando para las presentaciones de Nodus. Escanea el código QR de PDF Presenter en tu ordenador para pasar diapositivas, consultar tus notas y controlar el puntero, el temporizador y los vídeos. Sabemos que muchos estáis esperando la app móvil principal de Nodus: seguimos trabajando en ella, pero requiere mucho trabajo y aún necesita tiempo. Nodus Presenter es una app complementaria dedicada a las presentaciones. Llega primero a iOS; la versión para Android llegará más adelante. Gracias por vuestra paciencia y apoyo.",
+          "linkLabel": "Descargar en la App Store"
+        },
+        "en": {
+          "title": "Nodus Presenter is now available on iOS",
+          "body": "Use your iPhone or iPad as a remote for Nodus presentations. Scan the QR code in PDF Presenter on your computer to change slides, read your notes and control the pointer, timer and videos. We know many of you are waiting for the main Nodus mobile app: we are still working on it, but it takes a lot of work and needs more time. Nodus Presenter is a companion app dedicated to presentations. It launches on iOS first; the Android version will follow later. Thank you for your patience and support.",
+          "linkLabel": "Download on the App Store"
+        },
+        "fr": {
+          "title": "Nodus Presenter est disponible sur iOS",
+          "body": "Utilisez votre iPhone ou iPad comme télécommande pour vos présentations Nodus. Scannez le code QR de PDF Presenter sur votre ordinateur pour changer de diapositive, lire vos notes et contrôler le pointeur, le minuteur et les vidéos. Beaucoup attendent l’app mobile principale de Nodus : nous y travaillons toujours, mais elle demande beaucoup de travail et encore du temps. Nodus Presenter est une app complémentaire dédiée aux présentations. Elle arrive d’abord sur iOS ; la version Android suivra. Merci pour votre patience et votre soutien.",
+          "linkLabel": "Télécharger sur l’App Store"
+        },
+        "de": {
+          "title": "Nodus Presenter ist jetzt für iOS verfügbar",
+          "body": "Nutze dein iPhone oder iPad als Fernbedienung für Nodus-Präsentationen. Scanne den QR-Code in PDF Presenter am Computer, um Folien zu wechseln, Notizen zu lesen und Zeiger, Timer und Videos zu steuern. Wir wissen, dass viele auf die mobile Nodus-Hauptapp warten: Wir arbeiten weiter daran, doch die Entwicklung erfordert viel Arbeit und braucht noch Zeit. Nodus Presenter ist eine Begleitapp für Präsentationen. Sie erscheint zuerst für iOS; die Android-Version folgt später. Danke für eure Geduld und Unterstützung.",
+          "linkLabel": "Im App Store herunterladen"
+        },
+        "pt": {
+          "title": "O Nodus Presenter já está disponível no iOS",
+          "body": "Usa o teu iPhone ou iPad como comando para as apresentações do Nodus. Lê o código QR do PDF Presenter no computador para mudar de diapositivo, consultar as notas e controlar o ponteiro, o temporizador e os vídeos. Sabemos que muitos esperam a aplicação móvel principal do Nodus: continuamos a trabalhar nela, mas exige muito trabalho e ainda precisa de tempo. O Nodus Presenter é uma aplicação complementar dedicada às apresentações. Chega primeiro ao iOS; a versão para Android chegará mais tarde. Obrigado pela vossa paciência e apoio.",
+          "linkLabel": "Descarregar na App Store"
+        },
+        "pt-BR": {
+          "title": "O Nodus Presenter já está disponível no iOS",
+          "body": "Use seu iPhone ou iPad como controle para as apresentações do Nodus. Escaneie o código QR do PDF Presenter no computador para mudar de slide, consultar suas notas e controlar o ponteiro, o temporizador e os vídeos. Sabemos que muitos esperam o aplicativo móvel principal do Nodus: continuamos trabalhando nele, mas exige muito trabalho e ainda precisa de tempo. O Nodus Presenter é um aplicativo complementar dedicado às apresentações. Chega primeiro ao iOS; a versão para Android chegará mais tarde. Obrigado pela paciência e pelo apoio.",
+          "linkLabel": "Baixar na App Store"
+        },
+        "it": {
+          "title": "Nodus Presenter è disponibile su iOS",
+          "body": "Usa il tuo iPhone o iPad come telecomando per le presentazioni di Nodus. Scansiona il codice QR di PDF Presenter sul computer per cambiare diapositiva, leggere le note e controllare puntatore, timer e video. Sappiamo che molti aspettano l’app mobile principale di Nodus: continuiamo a lavorarci, ma richiede molto lavoro e ha ancora bisogno di tempo. Nodus Presenter è un’app complementare dedicata alle presentazioni. Arriva prima su iOS; la versione Android seguirà più avanti. Grazie per la pazienza e il sostegno.",
+          "linkLabel": "Scarica dall’App Store"
+        },
+        "tr": {
+          "title": "Nodus Presenter artık iOS’ta",
+          "body": "iPhone veya iPad’inizi Nodus sunumları için uzaktan kumanda olarak kullanın. Slayt değiştirmek, notlarınızı okumak ve işaretçiyi, zamanlayıcıyı ve videoları kontrol etmek için bilgisayarınızdaki PDF Presenter’ın QR kodunu tarayın. Birçoğunuzun Nodus’un ana mobil uygulamasını beklediğini biliyoruz: üzerinde çalışmaya devam ediyoruz, ancak geliştirme süreci çok emek ve daha fazla zaman gerektiriyor. Nodus Presenter, sunumlara özel bir yardımcı uygulamadır. Önce iOS’ta çıkıyor; Android sürümü daha sonra gelecek. Sabrınız ve desteğiniz için teşekkürler.",
+          "linkLabel": "App Store’dan indirin"
+        },
+        "zh-CN": {
+          "title": "Nodus Presenter 现已登陆 iOS",
+          "body": "用你的 iPhone 或 iPad 遥控 Nodus 演示。扫描电脑上 PDF Presenter 的二维码，即可切换幻灯片、查看笔记，并控制指示器、计时器和视频。我们知道许多人都在等待 Nodus 的主移动应用：我们仍在开发，但这项工作需要投入大量精力，也还需要时间。Nodus Presenter 是一款专为演示设计的配套应用，先在 iOS 上推出，Android 版将在之后发布。感谢大家的耐心与支持。",
+          "linkLabel": "在 App Store 下载"
+        },
+        "zh-TW": {
+          "title": "Nodus Presenter 現已在 iOS 上推出",
+          "body": "用你的 iPhone 或 iPad 遙控 Nodus 簡報。掃描電腦上 PDF Presenter 的 QR 碼，即可切換投影片、查看筆記，並控制指標、計時器和影片。我們知道許多人都在等待 Nodus 的主要行動應用程式：我們仍在開發，但這項工作需要投入大量心力，也還需要時間。Nodus Presenter 是一款專為簡報設計的搭配應用程式，先在 iOS 上推出，Android 版將在之後發布。感謝大家的耐心與支持。",
+          "linkLabel": "在 App Store 下載"
+        },
+        "ja": {
+          "title": "Nodus Presenter が iOS で公開されました",
+          "body": "iPhone や iPad を Nodus のプレゼンテーション用リモコンとして使えます。パソコンの PDF Presenter に表示される QR コードを読み取ると、スライドの切り替え、ノートの確認、ポインター・タイマー・動画の操作ができます。Nodus のメインモバイルアプリを待っている方が多いことも承知しています。開発は続けていますが、多くの作業が必要で、まだ時間がかかります。Nodus Presenter はプレゼンテーション専用の補助アプリです。まず iOS で公開し、Android 版は後日リリースします。お待ちいただき、応援してくださってありがとうございます。",
+          "linkLabel": "App Store でダウンロード"
+        },
+        "ko": {
+          "title": "Nodus Presenter가 iOS에 출시되었습니다",
+          "body": "iPhone이나 iPad를 Nodus 프레젠테이션 리모컨으로 사용하세요. 컴퓨터의 PDF Presenter에서 QR 코드를 스캔하면 슬라이드를 넘기고, 노트를 확인하고, 포인터와 타이머, 동영상을 제어할 수 있습니다. 많은 분이 Nodus의 메인 모바일 앱을 기다리고 계신다는 것을 알고 있습니다. 계속 개발하고 있지만 많은 작업이 필요하고 아직 시간이 더 필요합니다. Nodus Presenter는 프레젠테이션 전용 보조 앱입니다. iOS에 먼저 출시하며 Android 버전은 추후 출시됩니다. 기다려 주시고 응원해 주셔서 감사합니다.",
+          "linkLabel": "App Store에서 다운로드"
+        }
+      }
+    },
+    {
       "id": "2026-10-02-workspace-redesign-survey",
       "date": "2026-10-02",
       "severity": "info",

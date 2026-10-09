@@ -790,6 +790,13 @@ function withPromptContext<T extends { system: string; plainContext?: boolean }>
   return opts.plainContext ? withPromptLanguage(opts) : withPromptLanguage(withVaultTypeContext(opts));
 }
 
+/** Measure the same injected instructions and framing that completion will validate.
+ * Prompt builders call this before dispatch, while they can still select less evidence. */
+export function researchRequestUpperBound(opts: CallOpts): number {
+  const contextual = withPromptContext(opts);
+  return researchPromptUpperBound(contextual.system, contextual.user, contextual.maxTokens ?? 8000);
+}
+
 /** Resolve which model to use: explicit override, else the synthesis workload. */
 function resolveModel(override?: ModelRef | null): ModelRef {
   if (override?.provider && override.model) return override;

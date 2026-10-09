@@ -160,7 +160,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 199;
+export const SCHEMA_VERSION = 200;
 
 export const migrations: Migration[] = [
   {
@@ -9589,6 +9589,23 @@ export const migrations: Migration[] = [
   { version: 199, up: 'SELECT 1;', after: (db) => {
     for (const table of ['study_docs', 'study_doc_versions', 'note_versions']) addColumnIfMissing(db, table, 'academic_metadata_json', 'TEXT');
   } },
+  // Citation receipts of a research scope, one row each, instead of a map inside that scope's
+  // `scope_json`. A scope row also carries a manifest of every authorized document — some 8.6 MB
+  // on a 14,000-work library — so appending a 2 KB receipt there rewrote the whole row, and the
+  // count needed to police it parsed the whole row. That cost is why the store had a hard
+  // lifetime limit, and reaching it refused every passage found afterwards, silently, starving
+  // later runs of corpus evidence (2026-10-04). A row per receipt costs the receipt, so the limit
+  // is gone. Receipts written before this keep resolving from `scope_json`; nothing is moved,
+  // which keeps this body pure-CREATE and therefore safe to replay.
+  { version: 200, up: /* sql */ `
+    CREATE TABLE IF NOT EXISTS research_scope_receipts (
+      scope_id     TEXT NOT NULL,
+      key          TEXT NOT NULL,
+      receipt_json TEXT NOT NULL,
+      created_at   TEXT NOT NULL,
+      PRIMARY KEY (scope_id, key)
+    );
+  ` },
 ];
 
 /**

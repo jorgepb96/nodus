@@ -11,6 +11,12 @@ import { getActiveVault } from '../vaults/vaultRegistry';
 type Receipt = { documentId: string; detail: PassageDetail };
 type StoredScope = ResolvedResearchScope & { legacyEvidence?: Record<string, Receipt> };
 
+/** Receipts live one per row in `research_scope_receipts`, not in the scope's JSON column, so
+ *  recording one costs the receipt rather than a rewrite of the scope's whole document manifest.
+ *  There is deliberately no limit: the previous in-JSON store needed one to bound that rewrite
+ *  cost, and reaching it refused every passage found afterwards — silently, and for the whole
+ *  life of the scope, which starved later runs of all corpus evidence. */
+
 /** Adapt a legacy passage only after its content hash and scoped work match.
  * The immutable receipt lives with the backend scope, never in renderer input or
  * synced chat metadata. Old raw passage URLs remain a compatibility API. */
@@ -31,17 +37,11 @@ export function recordScopedSourcePassage(scope: ResolvedResearchScope, document
   const receipt: Receipt = { documentId: document.id, detail: { ...detail, revision: document.revision } };
   const key = researchFingerprint(receipt);
   recordResearchScope(scope);
-  const db = getDb();
-  const saved = db.transaction(() => {
-    // Counted by SQLite: parsing the stored scope here cost a megabyte per passage.
-    const row = db.prepare(`SELECT json_type(scope_json,'$.legacyEvidence.' || ?) present,
-      (SELECT COUNT(*) FROM json_each(scope_json,'$.legacyEvidence')) receipts FROM research_run_scopes WHERE id=?`).get(key, scope.id) as { present: string | null; receipts: number };
-    if (!row.present && row.receipts >= 512) return false;
-    db.prepare('UPDATE research_run_scopes SET scope_json=json_set(scope_json,?,json(?)) WHERE id=?')
-      .run(`$.legacyEvidence.${key}`, JSON.stringify(receipt), scope.id);
-    return true;
-  }).immediate();
-  return saved ? { ...receipt.detail, passage_id: `scoped:${scope.id}:${key}` } : null;
+  // One row, so the cost is the receipt and not the scope. Recording the same passage twice is
+  // the normal case across turns of one conversation and simply keeps the first row.
+  getDb().prepare('INSERT OR IGNORE INTO research_scope_receipts(scope_id,key,receipt_json,created_at) VALUES (?,?,?,?)')
+    .run(scope.id, key, JSON.stringify(receipt), new Date().toISOString());
+  return { ...receipt.detail, passage_id: `scoped:${scope.id}:${key}` };
 }
 
 export function getScopedLegacyPassageDetail(id: string): PassageDetail | null {
@@ -51,7 +51,12 @@ export function getScopedLegacyPassageDetail(id: string): PassageDetail | null {
     const row = getDb().prepare('SELECT scope_json FROM research_run_scopes WHERE id=?').get(match[1]) as { scope_json: string } | undefined;
     if (!row) return null;
     const scope: StoredScope = JSON.parse(row.scope_json);
-    const receipt = scope.legacyEvidence?.[match[2]];
+    // The receipt's own row, or — for one written before receipts had their own table — the copy
+    // still held inside this scope's JSON. Identical bytes either way, and the fingerprint below
+    // is what proves it, so the two sources need no distinguishing afterwards.
+    const stored = getDb().prepare('SELECT receipt_json FROM research_scope_receipts WHERE scope_id=? AND key=?')
+      .get(match[1], match[2]) as { receipt_json: string } | undefined;
+    const receipt: Receipt | undefined = stored ? JSON.parse(stored.receipt_json) : scope.legacyEvidence?.[match[2]];
     if (!receipt || scope.vaultId !== getActiveVault().id || researchFingerprint(receipt) !== match[2]) return null;
     const current = researchCorpusInventory().documents.find(item => item.id === receipt.documentId);
     const document = assertResearchDocumentPermission(scope, receipt.documentId, current);

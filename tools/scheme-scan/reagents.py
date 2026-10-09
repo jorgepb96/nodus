@@ -299,6 +299,9 @@ PROVIDERS = {
     'anthropic': ('claude-haiku-4-5-20251001', (1.0, 5.0), 'anthropic', 'https://api.anthropic.com/v1/messages'),
     # The tie-break, for names the first two disagree on.
     'sonnet': ('claude-sonnet-5-5', (3.0, 15.0), 'anthropic', 'https://api.anthropic.com/v1/messages'),
+    # The last word on what the tie-break still leaves open; counted only when it agrees with another
+    # source (decide). Price is rough, for the running spend line only.
+    'opus': ('claude-opus-5-5', (5.0, 25.0), 'anthropic', 'https://api.anthropic.com/v1/messages'),
 }
 
 
@@ -334,13 +337,24 @@ def element_counts_loose(name):
     return set(parts) if len(parts) >= 2 and set(parts) & METALS else None
 
 
+def _proportional(a, b):
+    """Whether two element counts differ only by a whole factor (Cu2Cl2 and CuCl)."""
+    a, b = {e: n for e, n in a.items() if n}, {e: n for e, n in b.items() if n}
+    if not a or not b or set(a) != set(b):
+        return False
+    big, small = (a, b) if sum(a.values()) >= sum(b.values()) else (b, a)
+    factors = {big[e] / small[e] for e in big}
+    return len(factors) == 1 and next(iter(factors)).is_integer()
+
+
 def consistent(name, smiles):
     """Whether a structure can be what the name says: exact element counts for a condensed formula,
     the element set for a metal salt written as symbols, and the element any word in the name demands."""
     have = smiles_counts(smiles)
     exact = formula_counts(name)
     if exact is not None:
-        return exact == have
+        # A name may give a dimer's formula for the monomer drawn (Cu2Cl2 for CuCl): same ratio.
+        return exact == have or _proportional(exact, have)
     loose = element_counts_loose(name)
     if loose is not None and loose != {e for e in have if e != 'H'} - set():
         return loose <= set(have) and set(have) - {'H'} <= loose | {'H'}
@@ -380,8 +394,8 @@ def _ask(provider, prompt, keys):
         headers = {'Authorization': f'Bearer {keys[provider]}'}
     else:
         body = {'model': model, 'max_tokens': 16000, 'messages': [{'role': 'user', 'content': prompt}]}
-        if provider != 'sonnet':
-            body['temperature'] = 0  # claude-sonnet-5-5 rejects temperature ("deprecated for this model")
+        if provider not in ('sonnet', 'opus'):
+            body['temperature'] = 0  # the 5.5 models reject temperature ("deprecated for this model")
         headers = {'x-api-key': keys['anthropic'], 'anthropic-version': '2023-06-01'}  # Haiku and Sonnet share the key
     for attempt in range(5):
         try:
@@ -489,7 +503,7 @@ def decide(cache):
         for provider, smiles in ok:
             groups[connectivity(smiles)].append((provider, smiles))
         agreed = max((g for k, g in groups.items() if k and len({p for p, _ in g}) >= 2), key=len, default=None)
-        roles = [role for p, role, _ in answers if p in ('deepseek', 'anthropic', 'sonnet')]
+        roles = [role for p, role, _ in answers if p in ('deepseek', 'anthropic', 'sonnet', 'opus')]
         not_reagent = [r for r in roles if r in ('solvent', 'catalyst', 'generic', 'other')]
         if opsin:
             final, how = opsin[0], 'opsin'
@@ -547,6 +561,11 @@ def crosscheck(provider=None, cap=None):
     if review and not provider:
         print(f'{len(review)} names unsettled; asking sonnet as the tie-break', flush=True)
         collect('sonnet', [name for name, _ in review], example, cache, lock=lock, workers=4)
+        tally, review = decide(cache)
+    # What still has no two agreeing sources goes to Opus, counted only where it agrees with one.
+    if review:
+        print(f'{len(review)} names still unsettled; asking opus', flush=True)
+        collect('opus', [name for name, _ in review], example, cache, lock=lock, workers=4)
         tally, review = decide(cache)
     with open(os.path.join(work, 'review.tsv'), 'w') as fh:
         fh.write('records\tname\tanswers\texample\n')

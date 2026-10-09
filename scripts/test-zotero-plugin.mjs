@@ -260,14 +260,14 @@ const FAKE_STORE = {
   getReasoning: () => 'default', setReasoning() {},
   getHlColors: () => ({ high: '#ff6666', medium: '#ffd400' }), setHlColors() {},
   getContext: () => ({ useIdeas: true, useCorpus: true, useFulltext: true, strategy: 'auto', ocr: 'off', repair: 'auto', agenticRounds: 1, fullTextThreshold: 48000 }),
-  setContext() {}, getKey: () => '', setKey() {}, getLocalBase: () => '', setLocalBase() {},
+  setContext() {}, getKey: async () => '', setKey: async () => true, getLocalBase: () => '', setLocalBase() {},
   getPinned: () => [], setPinned() {}, isPinned: () => false, togglePinned: () => [],
   getCustomPrompts: () => [], addCustomPrompt: () => [], removeCustomPrompt() {},
   getAutoUpdate: () => false, setAutoUpdate() {}, getAgent: () => false, setAgent() {},
   getAgentAuto: () => false, setAgentAuto() {},
   SOURCE_SCOPES: ['current', 'selection', 'collection', 'library'], getSourceScope: () => 'current', setSourceScope() {},
   getHistoryEnabled: () => true, setHistoryEnabled() {}, getHistoryRetention: () => 365, setHistoryRetention() {},
-  getManual: () => ({ port: 0, token: '' }), setManual() { return true; }, deleteConversationHistory: async () => true,
+  getManual: async () => ({ port: 0, token: '' }), setManual: async () => true, deleteConversationHistory: async () => true,
   loadConversations: async () => [], saveConversations: async () => {},
   saveEvidenceIndex: async () => {}, loadEvidenceIndex: async () => null, loadEvidenceIndexes: async () => [],
   evidenceCacheStats: async () => ({ documents: 0, pages: 0, bytes: 0 }), pruneEvidenceIndexes: async () => 0, clearEvidenceIndexes: async () => 0,
@@ -1056,7 +1056,7 @@ test('evidence: attachment signature detects same-size middle edits and forced r
   assert.equal(saved.pages[0].visualText, 'OCR diagram label');
 });
 
-test('security: provider credentials use Zotero Login Manager and migrate plaintext prefs', () => {
+test('security: provider credentials use Zotero Login Manager and migrate plaintext prefs', async () => {
   const prefs = new Map([['nodus.key.openai', 'legacy-secret']]);
   const logins = [];
   const manager = {
@@ -1074,14 +1074,14 @@ test('security: provider credentials use Zotero Login Manager and migrate plaint
     PathUtils: { join: (...parts) => parts.join('/') }, IOUtils: {},
   });
   assert.equal(NodusStore.getSecretStorageStatus(), 'encrypted');
-  assert.equal(NodusStore.getKey('openai'), 'legacy-secret');
+  assert.equal(await NodusStore.getKey('openai'), 'legacy-secret');
   assert.equal(logins[0].password, 'legacy-secret');
   assert.equal(prefs.get('nodus.key.openai'), '');
-  NodusStore.setKey('openai', 'new-secret');
-  assert.equal(NodusStore.getKey('openai'), 'new-secret');
+  assert.equal(await NodusStore.setKey('openai', 'new-secret'), true);
+  assert.equal(await NodusStore.getKey('openai'), 'new-secret');
 });
 
-test('security: legacy plaintext credentials fail closed without Login Manager', () => {
+test('security: legacy plaintext credentials fail closed without Login Manager', async () => {
   const prefs = new Map([['nodus.key.openai', 'must-not-leak'], ['nodus.token', 'bridge-secret'], ['nodus.port', 4321]]);
   const Zotero = { Prefs: { get: (key) => prefs.get(key), set: (key, value) => prefs.set(key, value) }, logError() {} };
   const { NodusStore } = loadModule('store.js', {
@@ -1091,8 +1091,8 @@ test('security: legacy plaintext credentials fail closed without Login Manager',
     PathUtils: { join: (...parts) => parts.join('/') }, IOUtils: {},
   });
   assert.equal(NodusStore.getSecretStorageStatus(), 'unavailable');
-  assert.equal(NodusStore.getKey('openai'), '');
-  assert.equal(NodusStore.getManual().token, '');
+  assert.equal(await NodusStore.getKey('openai'), '');
+  assert.equal((await NodusStore.getManual()).token, '');
 });
 
 test('security: Zotero bridge is authenticated, non-reflective, owner-only and removed on stop', () => {

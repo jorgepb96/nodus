@@ -18,6 +18,31 @@ export const RESEARCH_CHAT_PRECISION_RULES = [
 
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+export interface ResearchAnswerQuoteProof {
+  answerQuote?: string;
+  answerQuotes?: string[];
+}
+
+/** Coverage can span several paragraphs. Every cited span must still be literal
+ * in the audited final answer; joined ellipses, invented wording and a mixture of
+ * the legacy single-span and multiple-span formats are never repaired implicitly. */
+export function validResearchAnswerQuotes(answer: string, proof: ResearchAnswerQuoteProof, maxChars: number): boolean {
+  if ((proof.answerQuote === undefined) === (proof.answerQuotes === undefined)) return false;
+  const quotes = proof.answerQuotes ?? [proof.answerQuote];
+  if (!Array.isArray(quotes) || quotes.length < 1 || quotes.length > 6) return false;
+  const comparable = (text: string) => researchPlainSentence(text).replace(/\*\*|__/gu, '').normalize('NFC').replace(/\s+/gu, ' ').trim();
+  const target = comparable(answer);
+  const seen = new Set<string>();
+  let total = 0;
+  for (const quote of quotes) {
+    if (typeof quote !== 'string' || quote.trim().length < 8 || (total += quote.length) > maxChars) return false;
+    const literal = comparable(quote);
+    if (literal.length < 8 || seen.has(literal) || !target.includes(literal)) return false;
+    seen.add(literal);
+  }
+  return true;
+}
+
 export function researchChatNeedsGrounding(sourceContext: string): boolean {
   let input: unknown;
   try { input = JSON.parse(sourceContext); } catch { return false; }

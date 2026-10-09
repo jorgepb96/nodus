@@ -45,7 +45,11 @@ are removed; empty headings and broken table citation placement are cleaned up.
 An additional coverage check catches supported but irrelevant background and
 omitted requested facts. It can request one further repair, which is audited
 again. Both positive coverage judgements and incomplete-coverage verdicts need independent exact-span proof before acting. The full-question proof receives neither the original positive verdict nor retired-claim diagnoses. A positive judgement is decomposed into separate requested facets, each anchored to a literal span of the question and an exact meaningful answer span or source-backed omission. Empty proofs, invented request facets and duplicate records fail validation. This includes requested conclusions and comparisons; one correct value or a factual inventory cannot substitute for the other facets. A comparison derived from literal measurement qualifications may be requested as the answer's own labelled reasoning even when the source never uses the word limit; its premises still need the full prose audit. For the confirmation:
-each dismissed complaint needs an exact meaningful span of the verified answer;
+each dismissed complaint needs one to six separate exact meaningful spans of the
+verified answer in `answerQuotes`; the legacy `answerQuote` remains supported.
+Separate paragraphs or bullet points must stay separate, never joined with
+synthetic ellipses. Every span is checked individually and the aggregate length
+is bounded; invented text, duplicate spans and mixed formats fail validation.
 each omitted available fact needs an exact authorized source quote, while an
 unaddressed evidence gap asks only for a scoped acknowledgement. Fabricated spans,
 empty formatting and unknown source IDs fail validation. The application derives
@@ -93,6 +97,7 @@ auditor's original Deep Research policy and retired-claim behaviour are unchange
 
 ```sh
 npm run test:research:grounding
+npm run test:research:retrieval
 npm run build
 npm run audit:research:grounding -- --stage=development
 npm run audit:research:grounding -- --stage=repair --profiles=embeddinggemma-2-text-q8-512-v1
@@ -187,3 +192,14 @@ final cumulative USD 8 authorization. No further paid run is started. The paid
 commands above document reproduction, not permission to restart this campaign.
 Unit/build/package checks pass for the measured runtime, while product-quality,
 other native platforms and resource-terms release gates remain unfinished.
+
+The [9 October offline follow-up](../audit/research-retrieval-followup/README.md)
+diagnoses the frozen failures before changing code. It preserves all four planned
+lexical facet probes, bounds additional semantic probes by full-chunk capacity,
+shares context expansion fairly between anchors, and removes repeated evidence
+before charging its budget. Its paired tests use the actual baseline/current
+SQLite workers. Structured coverage quotes address a demonstrated representation
+failure while retaining source and question-facet validation. The isolated
+Electron smoke passes without provider calls. These findings apply to all
+embedding models and require no index rebuild; they do not revise the previous
+answer-quality rate or reopen the closed paid campaign.

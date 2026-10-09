@@ -1,0 +1,72 @@
+[e2e] renderer mounted
+[e2e] preload bridge ok
+[e2e] 5 translated UIs render on the real shell (sidebar + document lang)
+[e2e] the retired mobile teaser hands the chain straight to the summary
+[e2e] release notes hand off to the translated three-part connected-workflows summary
+[e2e] the video tutorials announcement shows the catalogue in-modal, once
+[e2e] essential tutorial language preferences + persistent seen-once gate ok
+[e2e] startup shows no document-understanding consent modal
+[e2e] file imports open the native picker directly, with no privacy modal
+[e2e] Nodi reaches every screen edge and its right-click goodbye persists visibility
+[e2e] a new vault hands off to the wizard, which discovers both models itself
+[e2e] provider UI exposes subscriptions, usage limits and real light/dark surfaces
+[e2e] custom OpenAI-compatible provider accepts a URL and hand-typed models
+[e2e] ChatGPT MCP connector has readable light/dark surfaces
+[e2e] all advanced model pickers search without strict separators, preserve layout and save selections
+[e2e] image provider settings rendered
+[e2e] About legal cards open a localized in-app modal
+[e2e] STT engine/model management rendered in Settings
+[e2e] header has no global model selector
+[e2e] sidebar Nodus brand stays centred throughout real resizing
+[e2e] header centre badge stays centred, yields to both rails and never overlaps
+[e2e] Nodus Apps: multilingual bundled tools, live brainstorm, staged AI flow, package download, fullscreen and delete modals
+[e2e] PDF Presenter folders migrate tags, search recursively, move by dragging or menu and confirm deletion while keeping decks.
+[e2e] toolkit: hub geometry, Convert regression, Translate text + PDF facsimile, and full Protect redact → trace → vault → verify round-trip
+[e2e] search idea result opens the shared idea detail modal
+[e2e] workspace: a legacy project reads as a collection with its document inside
+[e2e] workspace: notes and ideas open in tabs with the full Study editor
+[e2e] workspace: library links persist per note
+[e2e] optional image controls toggle in both owner flows
+[e2e] graph:get ok (39 nodes, 55 edges on a fresh profile)
+[e2e] records ontology + archive ok over IPC
+[e2e] map: gazetteer + per-person places ok over IPC
+[e2e] databases mode (CSV import + relations + views + analysis) ok over IPC
+[e2e] database Deep Research library + composer dialog + editable outline ok over real IPC
+[e2e] study logo, search padding, sidebar flow and creation dialogs ok
+[e2e] study dictation panel + fake microphone capture ok
+[e2e] study editor metadata controls ok
+[e2e] study editor raw Markdown autosave + version ok
+[e2e] compact prompt manager + four contextual streaming shortcuts + failure preservation ok
+[e2e] study BlockNote editor + metadata + raw Markdown + versioning ok
+[e2e] imported material is visible in its assigned course and subject
+[e2e] study material import + embedded PDF + highlight-to-note provenance ok
+[e2e] direct class capture + recording modal + timestamped transcript ok
+[e2e] hybrid study search + saved query + timestamp navigation ok
+[e2e] study recording deletion requires explicit confirmation
+[e2e] local study narration modes + formula speech + pronunciation dictionary ok
+[e2e] study Ideas reuse the original list and study Graph opens its themes hub and independent playback tab
+[e2e] study AI policy remains active without redundant settings UI
+[e2e] backup health surface + main layout ok
+[e2e] study privacy controls and real data administration checks ok
+[e2e] accessibility controls + keyboard command palette apply globally
+[e2e] primary-sources first-run corpus, tour, derived views, universal Toolkit, search, and cleanup work through the real UI
+[e2e] reversible study sample workspace works through the real UI and IPC bridge
+[e2e] teaching Analizar group (chat · ideas · graph) reads the teaching vault corpus
+[e2e] teaching Unit design gallery + teacher-defined structure editor work through the real UI
+[e2e] teaching sample workspace + orange-accented guided tutorial work through the real UI
+[e2e] worldbuilding characters: own sidebar, card grid, sheet, and world-calendar ordering ok
+[e2e] worldbuilding rules: created, put to the test from the scene, unpaid price reaches Continuidad
+[e2e] worldbuilding open questions: a hole becomes a decision, answering rewrites the sheet, undo restores it
+[e2e] worldbuilding manuscript: written from the scene, counted, chaptered, and part of the world
+[e2e] worldbuilding world chat: refuses to answer about a world it cannot anchor
+[e2e] worldbuilding arcs: lanes drawn from the scene strip, sheet, milestone sheet
+[e2e] worldbuilding conflicts: board, stake gaps, sheet prose indexed as an encyclopedia entry
+[e2e] worldbuilding continuity: badge on the sheet, section, canned silence that survives a date change
+[e2e] worldbuilding places, factions, cultures and scenes work through the shared workspace
+[e2e] worldbuilding encyclopedia: projections, [[links]], backlinks, red links and full-text search ok
+[e2e] worldbuilding maps: upload, calibration, pins, vertex editing and measuring work on the real canvas
+[e2e] genealogy person click sidebar + double-click focus + branch colours rendered and recalculated
+[e2e] genealogy timeline multiselects + shared dossier from timeline and map work
+[e2e] no renderer page errors
+[e2e] database at schema v199
+e2e smoke test passed

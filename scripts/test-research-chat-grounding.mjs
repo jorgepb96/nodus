@@ -577,6 +577,33 @@ test('full-question proof rejects empty, invented and duplicate request-facet re
   }
 });
 
+test('coverage accepts distributed literal spans without treating ellipsis-joined text as a quote', async () => {
+  const draft = 'The river level is 18 metres. The flow rate was not measured.';
+  for (const format of ['structured', 'ellipsis', 'invented']) {
+    ai.completeJson = async (options, validate) => {
+      const input = JSON.parse(options.user);
+      if (input.sentences) {
+        const result = { claims: input.sentences.map((_row, index) => accepted(index, passage.summary)) };
+        assert(validate(result)); return result;
+      }
+      if (!input.fullQuestionProof) return { complete: true, missing: [] };
+      assert.match(options.system, /answerQuotes/);
+      const quotes = format === 'ellipsis' ? { answerQuote: 'The river level is 18 metres. ... The flow rate was not measured.' }
+        : { answerQuotes: ['The river level is 18 metres.', format === 'invented' ? 'The flow rate is 99 cubic metres per second.' : 'The flow rate was not measured.'] };
+      const result = { addressed: [{ complaint: 'level and flow', ...quotes }], omissions: [] };
+      if (format !== 'structured') {
+        assert.equal(validate(result), false); throw new Error('Invalid literal answer proof');
+      }
+      assert(validate(result)); return result;
+    };
+    ai.completeText = async () => { throw new Error('Literal multi-span coverage requires no rewrite'); };
+    if (format === 'structured') {
+      const result = await groundResearchChatAnswer(draft, sourceContext, 'What is known about level and flow?', model, 'en');
+      assert.match(result, /18 metres/); assert.match(result, /not measured/);
+    } else await assert.rejects(groundResearchChatAnswer(draft, sourceContext, 'What is known about level and flow?', model, 'en'), /No se pudo verificar/);
+  }
+});
+
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: false, nodi: false } });

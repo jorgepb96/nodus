@@ -192,7 +192,8 @@
     "report:embeddinggemma": "node scripts/embeddinggemma-report.mjs",
     "test:embeddinggemma:restart": "node scripts/embeddinggemma-restart-preparation.mjs",
     "test:embeddinggemma:server:native": "node scripts/embeddinggemma-native-server.mjs",
-    "test:research:grounding": "node --test scripts/test-research-chat-grounding.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs",
+    "test:research:grounding": "node --test scripts/test-research-chat-grounding.mjs scripts/test-research-coverage-quotes.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs",
+    "test:research:retrieval": "node --test scripts/test-documentary-retrieval.mjs scripts/test-research-chat-agent.mjs scripts/test-research-corpus-run.mjs",
     "audit:research:grounding": "node scripts/embeddinggemma-grounding-campaign.mjs"
   },
   "dependencies": {

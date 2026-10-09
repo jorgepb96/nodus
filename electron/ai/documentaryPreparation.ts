@@ -807,7 +807,7 @@ async function initializeOwnedDocumentaryPreparation(): Promise<void> {
   if (shared) convertLegacyVectorsInBackground();
 }
 
-export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchScope, query: string, settings: RetrievalSettings, vector: number[] | null, signal?: AbortSignal, read?: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
+export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchScope, query: string, settings: RetrievalSettings, vector: number[] | null, signal?: AbortSignal, read?: ResearchDocumentRead, lexicalQueries?: string[]): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
   const inventory = researchCorpusInventory();
   const config = currentEmbeddingConfig();
   let parameters: ReturnType<typeof embeddingIdentityParameters> | null = null;
@@ -869,7 +869,7 @@ export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchS
     });
     worker.once('error', error => finish(error));
     worker.once('exit', (code: number | null) => { if (!settled) { console.warn(`[documentary] retrieval worker exited with code ${code} before replying`); finish(new Error('documentary_retrieval_worker_stopped')); } });
-    worker.postMessage({ filename: documentaryStore().db.name, query, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
+    worker.postMessage({ filename: documentaryStore().db.name, query, lexicalQueries, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
   });
   const latest = researchCorpusInventory().documents;
   for (const document of scope.documents) assertResearchDocumentPermission(scope, document.id, latest.find(item => item.id === document.id));

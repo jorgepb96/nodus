@@ -1,0 +1,1 @@
+Legacy fencing, lexical-first preparation, frozen model dispatch, durable batches and compatible vector reuse passed.

@@ -1,5 +1,5 @@
 {
-  "measuredAt": "2026-10-09T18:11:08.766Z",
+  "measuredAt": "2026-10-09T18:14:23.682Z",
   "baselineCommit": "af66e85fd76554322980686a5b54d9c0adc57410",
   "baselineSource": {
     "path": "scripts/fixtures/documentary-retrieval-baseline-af66e85f.ts",
@@ -9,8 +9,8 @@
     "electron/workers/documentaryRetrievalWorker.ts": "a66b54106fd57ea801d1c3d984c16d7f9315d3364f1466bdc7161265258a2608",
     "electron/db/documentaryRetrieval.ts": "08825c1940245e602f3f8f58bf4f56f37681c49e3ed18bb046f1f637c7e2338c",
     "electron/ai/documentaryPreparation.ts": "6dbd17344b5915cec2e56622801566530ca030ce713dfb737135ac05ae68df84",
-    "electron/ai/researchCorpusRun.ts": "b48ce9c5f54c4bf86f34a0a1d79a2b60d6bdf740eb2df2f433c58071ccdce33d",
-    "shared/researchRetrievalBudget.ts": "f3e97d55df4905ce4167515dd53d221b7f65e8f9a3407b6519e648cdd52b7f0b",
+    "electron/ai/researchCorpusRun.ts": "12a30f1de1a7ed6d0c470f6388ae7f6b7d8edc33bfe7f9522d5aba3817374daa",
+    "shared/researchRetrievalBudget.ts": "c5f79b9af7b1a752dfcb30a12d775c3576e6df3e9f74c43d6bb1e7be1ce9e840",
     "shared/retrievalChunks.ts": "998c5c5789b7d07bebea4fb337441b4c940e9597038a3444ea112e9dc274b040"
   },
   "comparisonMethod": "Same temporary SQLite fixture database and same serialized input are run through the committed baseline worker and current worker; both are bundled from their actual TypeScript sources.",

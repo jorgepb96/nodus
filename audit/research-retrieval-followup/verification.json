@@ -1,0 +1,117 @@
+{
+  "format": "research-retrieval-followup-verification-v1",
+  "measuredAt": "2026-10-09T18:18:36.853598+00:00",
+  "productionRevision": "b9a7b3f6372377815b107f9634e986c8a83ac955",
+  "mergedMainRevision": "0735f381485e5a0685e1f639e4e213ba1b014432",
+  "sourceHashes": {
+    "electron/db/documentaryRetrieval.ts": "08825c1940245e602f3f8f58bf4f56f37681c49e3ed18bb046f1f637c7e2338c",
+    "electron/workers/documentaryRetrievalWorker.ts": "a66b54106fd57ea801d1c3d984c16d7f9315d3364f1466bdc7161265258a2608",
+    "electron/ai/documentaryPreparation.ts": "6dbd17344b5915cec2e56622801566530ca030ce713dfb737135ac05ae68df84",
+    "electron/ai/researchCorpusRun.ts": "12a30f1de1a7ed6d0c470f6388ae7f6b7d8edc33bfe7f9522d5aba3817374daa",
+    "electron/ai/researchChatGrounding.ts": "766b8e05ad99dc03b997e032f47345df3c45115fe88686a5ea0a3818ccc304be",
+    "electron/ai/researchAssistant.ts": "ec7972277a30f4dcc733e0e933575782113c66dcf13acb219195252d122146d4",
+    "shared/researchChatGrounding.ts": "19c49739b940f52549db4b039e6377c6a8938adf3245b1a7343ca4f38ea2ce3d",
+    "shared/researchRetrievalBudget.ts": "c5f79b9af7b1a752dfcb30a12d775c3576e6df3e9f74c43d6bb1e7be1ce9e840",
+    "shared/retrievalChunks.ts": "998c5c5789b7d07bebea4fb337441b4c940e9597038a3444ea112e9dc274b040",
+    "scripts/test-documentary-retrieval.mjs": "b4a2d8f4362b36f3b11632f11492f723b93550226bb1bc61cc489cf0b2778f5b",
+    "scripts/test-research-coverage-quotes.mjs": "0151273302fdf676c894140971f84e912114d955506c62754a544d60658f2393",
+    "scripts/test-research-evidence-request.mjs": "f2dc6ca1f905782a098a93674db8f99ae6d6c3afc3b710dcceb89a3b6a369bf7"
+  },
+  "runtime": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "release": "25.6.0",
+    "cpuModel": "Apple M2",
+    "logicalCpus": 8,
+    "node": "24.18.1",
+    "electron": "43.4.0",
+    "sqlite": "3.53.1"
+  },
+  "checks": [
+    {
+      "name": "build",
+      "command": "npm run build",
+      "exitCode": 0,
+      "outerTestEntries": null,
+      "log": "verification/build.txt",
+      "sha256": "10da646b3bd98df46a1e73f3d0e0a6560b22a45e1675c176f3510e0917e191cb",
+      "rawSha256": "3367195b46ab6bdc9e7611c2d37ef2dd6476f5d3bc5d4e6c9eb9f57b15324c94",
+      "logNormalization": "Trailing whitespace removed; otherwise unchanged."
+    },
+    {
+      "name": "grounding",
+      "command": "npm run test:research:grounding",
+      "exitCode": 0,
+      "outerTestEntries": 17,
+      "log": "verification/grounding.txt",
+      "sha256": "fe86b144e2e192a0d91152f438e1c0e90170cb7d9e9a29ffbcbd52cc68af76a8"
+    },
+    {
+      "name": "retrieval",
+      "command": "npm run test:research:retrieval",
+      "exitCode": 0,
+      "outerTestEntries": 3,
+      "log": "verification/retrieval.txt",
+      "sha256": "fb91d24cf864da5a2bbc3b182b4e9af63e314b46b7ebd88137a868ac09617254"
+    },
+    {
+      "name": "envelope",
+      "command": "node --test scripts/test-research-evidence-request.mjs scripts/test-research-answer-tokens.mjs scripts/test-research-request-budget.mjs scripts/test-research-scope-receipts.mjs scripts/test-research-attachments.mjs",
+      "exitCode": 0,
+      "outerTestEntries": 8,
+      "log": "verification/envelope.txt",
+      "sha256": "6a8603c5c7a5144745f8246e8933a6d45080d25cb5e564e71c3714807d35f013"
+    },
+    {
+      "name": "writers",
+      "command": "node scripts/test-documentary-writers.mjs",
+      "exitCode": 0,
+      "outerTestEntries": null,
+      "log": "verification/writers.txt",
+      "sha256": "3c8256072a0fb0382d4c9d8f3144847fddfb3504580e4ff94356a3036a9cf821"
+    },
+    {
+      "name": "scope",
+      "command": "node --test scripts/test-documentary-requests.mjs scripts/test-research-actions.mjs scripts/test-research-original-read.mjs scripts/test-hierarchical-retrieval.mjs scripts/test-local-chat-fit.mjs scripts/test-library-source-pages.mjs",
+      "exitCode": 0,
+      "outerTestEntries": 14,
+      "log": "verification/scope.txt",
+      "sha256": "bb1d83d2497e9b5253ff0bc2190079b2a2c90e440e33e8b5b5efd24702d0f07e"
+    },
+    {
+      "name": "e2e",
+      "command": "node scripts/e2e-smoke.mjs",
+      "exitCode": 0,
+      "outerTestEntries": null,
+      "log": "verification/e2e.txt",
+      "sha256": "8e90007a8e93fdbd861257af4cc09e78a58cb2cbef26cfaa9f9e11f32023abb5"
+    }
+  ],
+  "targetedEslintExitCode": 0,
+  "groundingInnerCases": 38,
+  "quoteRepresentationChecks": 16,
+  "isolatedResearch": {
+    "command": "node scripts/e2e-research-isolated.mjs --notebooks --pdf --activity",
+    "exitCode": 0,
+    "report": "research-isolated.json",
+    "modelCalls": 0
+  },
+  "review": {
+    "engine": "Codex gpt-6-luna agents",
+    "productionBlockersFound": 0,
+    "portableTestCleanupFinding": "Corrected and re-reviewed: await worker exit on both normal and abnormal paths before deleting SQLite fixtures."
+  },
+  "externalPaidProviderCalls": 0,
+  "paidCampaignReopened": false,
+  "acceptance": {
+    "generativeQualityReevaluated": false,
+    "embeddingProfilesValidated": false,
+    "prReadyForMerge": false
+  },
+  "limits": [
+    "Deterministic worker fixtures measure specific regression behavior, not representative-corpus recall or embedding quality.",
+    "Luna assisted source diagnosis and code review; it did not execute the product writer as a replacement generative provider.",
+    "Both Electron runs use disposable profiles and fixture services; model generation is not validated by those runs.",
+    "Native release packaging and final answer quality gates remain pending."
+  ]
+}

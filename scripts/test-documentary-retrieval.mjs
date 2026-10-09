@@ -113,21 +113,27 @@ function runWorker(filename, input, selectedWorker = workerFile) {
     let settled = false;
     let stderr = '';
     let response;
-    const deadline = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      child.kill();
-      reject(new Error('documentary worker did not finish within 20 seconds'));
-    }, 20_000);
-    child.stderr?.on('data', (data) => { stderr += data; });
-    child.once('error', (error) => {
-      if (settled) return;
-      settled = true;
+    let failure;
+    let forceExit;
+    const stop = (error) => {
+      if (settled || failure) return;
+      failure = error;
       clearTimeout(deadline);
-      reject(error);
-    });
+      // A spawn failure never acquired database handles. A started process must
+      // actually exit before the caller is allowed to remove its SQLite files.
+      if (!child.pid || child.exitCode !== null || child.signalCode !== null) {
+        settled = true;
+        reject(error);
+        return;
+      }
+      child.kill();
+      forceExit = setTimeout(() => child.kill('SIGKILL'), 1000);
+    };
+    const deadline = setTimeout(() => stop(new Error('documentary worker did not finish within 20 seconds')), 20_000);
+    child.stderr?.on('data', (data) => { stderr += data; });
+    child.once('error', stop);
     child.once('message', (message) => {
-      if (settled) return;
+      if (settled || failure) return;
       response = message;
       child.disconnect();
     });
@@ -137,17 +143,14 @@ function runWorker(filename, input, selectedWorker = workerFile) {
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
-      if (code !== 0 || !response) reject(new Error(`documentary worker exited ${code} without a successful reply${stderr ? `: ${stderr}` : ''}`));
+      clearTimeout(forceExit);
+      if (failure) reject(failure);
+      else if (code !== 0 || !response) reject(new Error(`documentary worker exited ${code} without a successful reply${stderr ? `: ${stderr}` : ''}`));
       else if (response.error) reject(new Error(response.error));
       else resolve(response);
     });
     child.send({ filename, ...input }, (error) => {
-      if (error && !settled) {
-        settled = true;
-        clearTimeout(deadline);
-        child.kill();
-        reject(error);
-      }
+      if (error) stop(error);
     });
   });
 }

@@ -93,6 +93,20 @@ It tests the shell and document flows, not generated-answer quality. Its
 [log](e2e-smoke.txt) is retained. Native CI includes the new worker regression;
 cross-platform results must be assessed from the updated PR checks.
 
+After merging `main` at `dcd285e1`, the same checks pass with the fitted final
+request/output limits from upstream and this branch's grounding/content hold.
+The new upstream request-dispatch fixture now stubs `embedQuery` as well as the
+legacy `embed`, keeping its intended simulated transport call count. The
+additional request/context/receipt/attachment group passes eight entries and
+the chunk/hierarchy/original-read/action group passes fourteen.
+
+The stricter [isolated Research UI run](research-isolated.json) also passes:
+three synthetic sources, fixed notebook exclusions and citation revocation,
+original PDF page navigation, activity UI, cancellation and dark/light layouts.
+Its OS sandbox verifies outside writes and external network are denied; all
+nine initial database opens are inside the QA profile. The run records zero
+model calls. This is product-flow evidence, not generative answer acceptance.
+
 The previous 113/120 execution and its failed 95% factual-answer gate are retained
 unchanged. A fresh, source-reviewed generative evaluation is still needed for
 quality acceptance; neither offline fixtures nor Luna's code review substitute

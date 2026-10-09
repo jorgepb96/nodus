@@ -1,5 +1,7 @@
+import { EMBEDDING_GEMMA2_FAMILY, EMBEDDING_GEMMA2_REVISION } from './embeddingGemma2';
+
 export type NodusLocalModelKind = 'embedding' | 'chat';
-export type NodusLocalModelRuntime = 'llama_cpp' | 'transformers';
+export type NodusLocalModelRuntime = 'llama_cpp' | 'transformers' | 'embeddinggemma2';
 export type NodusLocalCapability = 'chat' | 'vision' | 'summary' | 'extraction' | 'fusion' | 'documentProfile';
 export type NodusLocalCapabilities = Readonly<Record<NodusLocalCapability, boolean>>;
 
@@ -8,6 +10,10 @@ export interface NodusLocalModelAsset {
   url: string;
   bytes: number;
   sha256?: string;
+  /** Resource-specific upstream declaration; notices travel with the application. */
+  license?: string;
+  licenseUrl?: string;
+  licenseNotice?: string;
 }
 
 export interface NodusLocalModelDefinition {
@@ -23,6 +29,9 @@ export interface NodusLocalModelDefinition {
   licenseUrl: string;
   contextLength?: number;
   dimensions?: number;
+  /** Profiles in a family share verified assets and one download. */
+  assetFamily?: string;
+  validation?: 'experimental' | 'validated';
   vision?: boolean;
   /** Benchmarked role contract. Unsupported roles are blocked before inference. */
   capabilities: NodusLocalCapabilities;
@@ -140,6 +149,7 @@ const TEXT_NO_EXTRACTION_CAPABILITIES: NodusLocalCapabilities = {
 };
 
 const HF_REVISIONS: Record<string, string> = {
+  'onnx-community/embeddinggemma-2-ONNX': EMBEDDING_GEMMA2_REVISION,
   'ggml-org/bge-m3-Q8_0-GGUF': '9eba04c5d75ba5a1595e45de734d36bef4e5cb98',
   'onnx-community/gte-multilingual-base': '2edbf5e672aab465f9ed4c154a8b61791c082c69',
   'Xenova/multilingual-e5-small': '761b726dd34fb83930e26aab4e9ac3899aa1fa78',
@@ -153,6 +163,23 @@ const hf = (repo: string, file: string) =>
   `https://huggingface.co/${repo}/resolve/${HF_REVISIONS[repo] ?? 'main'}/${file}?download=true`;
 
 export const NODUS_LOCAL_MODELS: readonly NodusLocalModelDefinition[] = [
+  ...([512, 256] as const).map((dimensions): NodusLocalModelDefinition => ({
+    id: `embeddinggemma-2-text-q8-${dimensions}-v1`,
+    label: `EmbeddingGemma 2 Q8 · ${dimensions}`,
+    kind: 'embedding', runtime: 'embeddinggemma2', quantization: 'Q8', dimensions,
+    assetFamily: EMBEDDING_GEMMA2_FAMILY, validation: 'experimental',
+    description: dimensions === 512 ? 'Texto multilingüe · perfil recomendado de esta familia. Validación de producto pendiente.' : 'Texto multilingüe · índice más pequeño. Validación de producto pendiente.',
+    sourceUrl: 'https://huggingface.co/onnx-community/embeddinggemma-2-ONNX',
+    licenseLabel: 'Apache-2.0 · revisar términos del recurso', licenseUrl: 'https://ai.google.dev/gemma/apache_2',
+    contextLength: 8192, capabilities: EMBEDDING_CAPABILITIES, modelFile: 'onnx/model_quantized.onnx',
+    assets: [
+      { file: 'config.json', url: hf('onnx-community/embeddinggemma-2-ONNX', 'config.json'), bytes: 5031, sha256: '8d011bfe08b5e345bbe0b81e5c6fd02c381920b345b986047bc2a33ce7b90d1d' },
+      { file: 'tokenizer.json', url: hf('onnx-community/embeddinggemma-2-ONNX', 'tokenizer.json'), bytes: 32170510, sha256: '4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4' },
+      { file: 'tokenizer_config.json', url: hf('onnx-community/embeddinggemma-2-ONNX', 'tokenizer_config.json'), bytes: 1599, sha256: '17bd5d6e9364ca49a534e1502076593317c298d4a663623091ed45388f004874' },
+      { file: 'onnx/model_quantized.onnx', url: hf('onnx-community/embeddinggemma-2-ONNX', 'onnx/model_quantized.onnx'), bytes: 495165, sha256: 'd06edd601f851c633a2519304cbeb8dc6170d7ceb61b436625c17fb9b6e74953' },
+      { file: 'onnx/model_quantized.onnx_data', url: hf('onnx-community/embeddinggemma-2-ONNX', 'onnx/model_quantized.onnx_data'), bytes: 313724928, sha256: '278a7ff1248c3618e4bd11a607fc54f7bdc7778854230f3956d3f86bd9db4f3b' },
+    ].map(asset => ({ ...asset, license: 'Apache-2.0', licenseUrl: 'https://ai.google.dev/gemma/apache_2', licenseNotice: 'legal/EMBEDDINGGEMMA_2_NOTICE.md' })),
+  })),
   {
     id: 'bge-m3-q8_0',
     label: 'BGE-M3 Q8_0',

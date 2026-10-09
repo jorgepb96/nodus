@@ -1,0 +1,596 @@
+{
+  "format": "nodus-retrieval-followup-diagnosis-v1",
+  "measuredRevision": "82dac50f",
+  "scope": "Offline diagnosis of the 17 classified failures in the five final regression profile reports. No providers or live user data used; archived synthetic corpus only.",
+  "sourceArtifacts": {
+    "analysis": {
+      "path": "audit/research-chat-grounding/final-82dac50f/analysis.json",
+      "sha256": "d1b08846033564c0ccf1d2fe6b90ef1d58dc2145ff04ee993972ae9c02ef082e"
+    },
+    "manualReviews": {
+      "path": "audit/research-chat-grounding/final-82dac50f/manual-reviews.json",
+      "sha256": "726b9b32375c73e9e1bf08a7b911a11232605687ad66cce4f5124b0dfdde525f"
+    },
+    "profileReports": {
+      "embeddinggemma-2-text-q8-512-v1": {
+        "path": "audit/research-chat-grounding/final-82dac50f/embeddinggemma-2-text-q8-512-v1.json",
+        "sha256": "6efb7e0f81d7d0b68e5d2489d352fffa8746370d424705b6288e7be09f85bcd1"
+      },
+      "multilingual-e5-small-int8": {
+        "path": "audit/research-chat-grounding/final-82dac50f/multilingual-e5-small-int8.json",
+        "sha256": "879c38640f73f2b5632895b2c8bf6b7353e644d84d5268fb22f0da492517d98c"
+      },
+      "gte-multilingual-base-int8": {
+        "path": "audit/research-chat-grounding/final-82dac50f/gte-multilingual-base-int8.json",
+        "sha256": "8f537d576a7abf87c5165710bb08256322c598d8f3e6bdefc44ebb0370e8623e"
+      },
+      "bge-m3-q8_0": {
+        "path": "audit/research-chat-grounding/final-82dac50f/bge-m3-q8-0.json",
+        "sha256": "bf96a610d635425497fe70ef0f04c525b6363f0a54727ab4c0ab41f0397829e3"
+      },
+      "embeddinggemma-2-text-q8-256-v1": {
+        "path": "audit/research-chat-grounding/final-82dac50f/embeddinggemma-2-text-q8-256-v1.json",
+        "sha256": "f81e6635d92a81461c1bf36433c94a1ffa07f3c9418a90b9e3fb7bafd0073f76"
+      }
+    }
+  },
+  "failureCounts": {
+    "total": 17,
+    "byCategory": {
+      "budget-unavailable": 1,
+      "requested-facet-omission": 8,
+      "requested-table-format": 1,
+      "unsupported-published-assertion": 1,
+      "verification-proof-schema": 4,
+      "verification-unavailable": 2
+    },
+    "qualityRatesComputed": false
+  },
+  "cases": [
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "requested-facet-omission",
+      "diagnosis": "The requested values are present; no source states a distribution shape. The response omits a bounded interpretation of what those summaries establish.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_values; no explicit distribution-shape claim",
+      "supportSource": "Bruma · archive 19, p. 1",
+      "shortVerbatimExcerpt": "The median was 18 and the mean 24; no son equivalentes.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 10,
+      "context": {
+        "selectedPassages": 10,
+        "contextChars": 24265,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 5
+      },
+      "error": null,
+      "sha256": {
+        "answer": "bb0872b3a0ffee97f1c98cd065d6eb0c3947c60126b8fbef31208a96a9ea6602",
+        "evidence": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+        "sources": "5fb05628c6c8be4a8cca12715954b14562faed50f899c6660d03fd70a4ad92ff"
+      },
+      "archivedReview": "Correct 18/24 figures and non-equivalence, but omits the requested distribution conclusion or precise evidentiary limitation; source/model coverage approval does not make it adequate."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "category": "requested-facet-omission",
+      "diagnosis": "Vega and Bruma facts are present in frozen evidence; answer gives values but misses requested comparison of interpretation limits.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_measured_facts; requested comparison must be bounded",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "No se midió inteligencia.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 18,
+      "context": {
+        "selectedPassages": 18,
+        "contextChars": 32222,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 5
+      },
+      "error": null,
+      "sha256": {
+        "answer": "56e9a37c6a5a467690d7c50d9d485173c2fd9cc6e28aaf87ab342567f9254214",
+        "evidence": "649086db22b7bdf85cd3b76f8d8ffdbbd716f7bca4349111a5e37c267d771eee",
+        "sources": "a9bc855fcf8af9708599b7effd304e08f4126953d539bbb51ff577a10fc33391"
+      },
+      "archivedReview": "Supported factual inventory and difference 6, including the original numbered field-log/review statements checked in full. Still lacks the requested comparison of supported interpretation limits; a numerical difference does not supply that facet."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/1",
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "requested-facet-omission",
+      "diagnosis": "Values and non-equivalence are present; answer omits requested distribution conclusion/limit.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_values; no explicit distribution-shape claim",
+      "supportSource": "Bruma · archive 14, p. 1",
+      "shortVerbatimExcerpt": "The median was 18 and the mean 24; they are not equivalent.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 10,
+      "context": {
+        "selectedPassages": 10,
+        "contextChars": 24265,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 5
+      },
+      "error": null,
+      "sha256": {
+        "answer": "635a704a42aa44ade0541272325bf46f510e86d000511c038237515043b4f11b",
+        "evidence": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+        "sources": "5bc7225eb7dcd31c31aedb311c848fc9cf07e59d62938738c4fa9a319cbe072b"
+      },
+      "archivedReview": "Correct statistics and labelled difference 6; still omits the requested distribution interpretation or precise evidence limit. This repeats the fixed adequacy criterion."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/1",
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "category": "unsupported-published-assertion",
+      "diagnosis": "Vega explicit non-measurement and Bruma values are present. Evidence does not establish that the studies share no common measure because Bruma’s measured construct is unspecified.",
+      "publishedFailureKind": "unsupported answer inference",
+      "frozenSourceSupport": "premises_present; published categorical claim unsupported",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "No se midió inteligencia.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 18,
+      "context": {
+        "selectedPassages": 18,
+        "contextChars": 32222,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 5
+      },
+      "error": null,
+      "sha256": {
+        "answer": "1097fbb42aa5d1c810f1f17593d6bf54bfdbed7cea93e75ec826407062f8ab36",
+        "evidence": "649086db22b7bdf85cd3b76f8d8ffdbbd716f7bca4349111a5e37c267d771eee",
+        "sources": "74ffb770ac73dbcf6f9688898d7bb6fdad58a143897f2c3a30bebde09569c240"
+      },
+      "archivedReview": "An explicit comparison is supplied, but it asserts that Vega and Bruma share no common measure. Bruma's measured construct is unspecified, so the supplied premises do not establish that categorical absence; the scoped inability to compare numbers does not prove it."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/1",
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "question": "Explica cómo NF4, la doble cuantización y los optimizadores paginados ahorran memoria en QLoRA; distingue almacenamiento y cómputo y cita el artículo.",
+      "category": "requested-facet-omission",
+      "diagnosis": "The exact double-quantization mechanism is in selected QLoRA source excerpts; final answer covers NF4 and paged optimizers but omits DQ.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "exact requested fact present",
+      "supportSource": "public QLORA001, pp. 4–5",
+      "shortVerbatimExcerpt": "Double Quantization (DQ), the process of quantizing the quantization constants for additional memory savings.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 19,
+      "context": {
+        "selectedPassages": 19,
+        "contextChars": 42254,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 7
+      },
+      "error": null,
+      "sha256": {
+        "answer": "901fb557ec1ae5a108f23709216e7570afb77fce3f70f9d5c7732c7576b4935d",
+        "evidence": "eeaa33939ed9603cb43cdfa56d2408a31957346733e4024be307f6027f406710",
+        "sources": "f909953e33780b54c2395915fc991d75db749344699976de22450d20f81ef278"
+      },
+      "archivedReview": "NF4, paging and storage/computation assertions and the labelled arithmetic are supported, but the answer omits the requested double-quantization mechanism (quantizing quantization constants). An unexplained numerical formula does not answer that facet."
+    },
+    {
+      "key": "multilingual-e5-small-int8/heldout-paper/0",
+      "profile": "multilingual-e5-small-int8",
+      "question": "Explica cómo NF4, la doble cuantización y los optimizadores paginados ahorran memoria en QLoRA; distingue almacenamiento y cómputo y cita el artículo.",
+      "category": "verification-proof-schema",
+      "diagnosis": "Frozen sources include the QLoRA mechanism and requested paper material; no answer was published because coverage proof failed schema twice.",
+      "publishedFailureKind": "verification proof-schema failure",
+      "frozenSourceSupport": "exact requested fact present; publication blocked after drafting",
+      "supportSource": "public QLORA001, pp. 2–3",
+      "shortVerbatimExcerpt": "Double Quantization, a method that quantizes the quantization constants, saving an average of about 0.37 bits per parameter.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 11,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Positive coverage proof fails schema twice after all initial claims were supported; availability failure counts as failure."
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-absent-funding/0",
+      "profile": "gte-multilingual-base-int8",
+      "question": "¿Qué organización financió el ensayo Vega?",
+      "category": "verification-unavailable",
+      "diagnosis": "The question asks for Vega’s funder. The frozen selected sources contain Vega results but no funding attribution; this is an evidence gap. Verification failed, so it is not a successful absence answer.",
+      "publishedFailureKind": "verification unavailable on an insufficient-evidence query",
+      "frozenSourceSupport": "absent_from_frozen_sources as expected for this heldout gap",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "The trial reports 72% vs 51% recall and says intelligence was not measured; no funding organization is named.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 17,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "549a89df27ac79f652837bd810dd94207b45f5601ea63f56b9e37812d391304a",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Verification unavailable; this error is not an adequate acknowledgement of insufficient evidence."
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-statistics/1",
+      "profile": "gte-multilingual-base-int8",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "requested-facet-omission",
+      "diagnosis": "Values and non-equivalence are present; answer omits requested distribution conclusion/limit.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_values; no explicit distribution-shape claim",
+      "supportSource": "Bruma · archive 14, p. 1",
+      "shortVerbatimExcerpt": "The median was 18 and the mean 24; they are not equivalent.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 14,
+      "context": {
+        "selectedPassages": 14,
+        "contextChars": 31462,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 4
+      },
+      "error": null,
+      "sha256": {
+        "answer": "b657b94f5f0fd312c7e1a353227c42bc202ba6491afb2f01f7f3fca5bd2f7959",
+        "evidence": "916d633b0c1f33bc8a3520756e31f12cb7e33592088bdfb9bd8a72f499ed5744",
+        "sources": "0b7eed4dc9af825f8ae1980a5956586b9833b0c1cefb95b1c995e3374bddea73"
+      },
+      "archivedReview": "Literal 18/24, non-equivalence, sample and confidence are correct, but the requested conclusion or precise limitation about distribution is omitted."
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-negation/1",
+      "profile": "gte-multilingual-base-int8",
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "category": "verification-proof-schema",
+      "diagnosis": "Frozen evidence contains the measured facts for both studies; answer was withheld after proof-schema failure.",
+      "publishedFailureKind": "verification proof-schema failure",
+      "frozenSourceSupport": "premises present; no answer published",
+      "supportSource": "Bruma · archive 14, p. 1",
+      "shortVerbatimExcerpt": "The median was 18 and the mean 24; they are not equivalent.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 17,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "6c63b782ad5fbf758d17d17e9db42f7aab03ac1e39b2c63d8d83d84dc3f44573",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Verification unavailable; failure counts against positive-answer adequacy and support."
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-paper/1",
+      "profile": "gte-multilingual-base-int8",
+      "question": "Explica cómo NF4, la doble cuantización y los optimizadores paginados ahorran memoria en QLoRA; distingue almacenamiento y cómputo y cita el artículo.",
+      "category": "verification-proof-schema",
+      "diagnosis": "Frozen QLoRA evidence includes double quantization, NF4, and paged optimizers; answer was withheld after proof-schema failure.",
+      "publishedFailureKind": "verification proof-schema failure",
+      "frozenSourceSupport": "exact requested facts present; no answer published",
+      "supportSource": "public QLORA001, pp. 4–5",
+      "shortVerbatimExcerpt": "Double Quantization (DQ), the process of quantizing the quantization constants for additional memory savings.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 19,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "0b0c369cbaf73b29a5157c792425186a08bb948f2c249659e981ec2af0af4c0c",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Verification unavailable; unpublished technical answer counts as failure, irrespective of correct draft claims."
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-calculation/0",
+      "profile": "bge-m3-q8_0",
+      "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+      "category": "requested-facet-omission",
+      "diagnosis": "Vega’s 72% and 51% outcomes are present; answer gives the table but omits the requested 21-point difference.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "exact operands present; requested derived result omitted",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "The group ... recalled 72%; the rereading group, 51%.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 16,
+      "context": {
+        "selectedPassages": 16,
+        "contextChars": 28731,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 4
+      },
+      "error": null,
+      "sha256": {
+        "answer": "95f75971c65556d8e6675cf776d0cd9cdec1821bf2c538f9adffa7bced827866",
+        "evidence": "cf812ed757b46bd60caf567322dc18900494af094c5ce45b4e100032a2c0de10",
+        "sources": "c4602df94cf6e9ab27777aa5d600031cbf61ed1c011dc90530dbf26fb6d22239"
+      },
+      "archivedReview": "Correct table and measured outcome, but omits the requested percentage-point difference. The reader computing it is not answer adequacy."
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-negation/0",
+      "profile": "bge-m3-q8_0",
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "category": "verification-unavailable",
+      "diagnosis": "Frozen evidence includes Vega and Bruma facts relevant to interpretation limits; final answer was not published because verification was unavailable.",
+      "publishedFailureKind": "verification unavailable",
+      "frozenSourceSupport": "relevant premises present; no final answer",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "No se midió inteligencia.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 17,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "d18c011527f162807389a561c22359ab47e47c5f7009860b36115410e5a60968",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Verification availability failure; no answer published."
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-statistics/1",
+      "profile": "bge-m3-q8_0",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "requested-facet-omission",
+      "diagnosis": "Bruma’s median/mean and sample are present; answer does not state a bounded distribution conclusion.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_values; no explicit distribution-shape claim",
+      "supportSource": "Bruma · archive 14, p. 1",
+      "shortVerbatimExcerpt": "The median was 18 and the mean 24; they are not equivalent.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 14,
+      "context": {
+        "selectedPassages": 14,
+        "contextChars": 29001,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 5
+      },
+      "error": null,
+      "sha256": {
+        "answer": "6c33c0f109adf9df6d208241c5ae6af7b0aaee67984977879aca66e348276402",
+        "evidence": "9c484f3f063fa5982b29033dcc88a2a1598a48ee606ebd66a7a3ee4570184cd4",
+        "sources": "9061ffd034eb38f3743800ef1f564a56d8e159d01609941c46cdc0c173a035d0"
+      },
+      "archivedReview": "Literal 18/24, non-equivalence and sample are correct, but the requested conclusion or precise limitation about distribution is omitted."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-calculation/0",
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+      "category": "requested-table-format",
+      "diagnosis": "All requested measured facts and the 21-point calculation are present; Electron rendered a malformed Markdown table as plain text.",
+      "publishedFailureKind": "requested table-format failure",
+      "frozenSourceSupport": "exact supporting facts and result present",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "The group ... recalled 72%; the rereading group, 51%.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 19,
+      "context": {
+        "selectedPassages": 19,
+        "contextChars": 37899,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 8
+      },
+      "error": null,
+      "sha256": {
+        "answer": "ea1585386215c183bc6c87965037f985267eaae0e68c22a622a6baec4c022204",
+        "evidence": "7d88aaa44b35ee8678826f0432eb4083ec8c505fb8fa99ebcba45554d7e9b2ab",
+        "sources": "d828ab65d1a5d0b5327aaea140a72e718532c42591827d28a97be8ae9d8e8fe4"
+      },
+      "archivedReview": "All figures, recall/intelligence distinction and labelled 21-point difference are supported, but the requested table has three header cells and four separator cells. The actual Electron screenshot shows flattened pipe text rather than a rendered table; requested format is unmet."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/0",
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "requested-facet-omission",
+      "diagnosis": "Bruma’s values are present; answer omits requested distribution interpretation/limit.",
+      "publishedFailureKind": "writer/coverage omission",
+      "frozenSourceSupport": "present_for_values; no explicit distribution-shape claim",
+      "supportSource": "Bruma · archive 19, p. 1",
+      "shortVerbatimExcerpt": "La mediana fue 18 y la media 24; no son equivalentes.",
+      "groundingTraceStatus": "complete",
+      "frozenGroundingSourceCount": 11,
+      "context": {
+        "selectedPassages": 11,
+        "contextChars": 28601,
+        "truncated": true,
+        "traversalPartial": true,
+        "rounds": 12
+      },
+      "error": null,
+      "sha256": {
+        "answer": "0e178ad17313907cef739091c483701902f9b2a033eba80f62148995247f3f17",
+        "evidence": "02b2605c714c2254e41dd1aa757ab1d2d8ef5734bbf0a1dbd43cf83d9f54a3a7",
+        "sources": "b13570f503091d6ddb7aa2c12b06031be5aecade1e156718af64f39b184d72e7"
+      },
+      "archivedReview": "Correct 18/24 and non-equivalence, but omits the requested conclusion or precise limitation about distribution."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "category": "verification-proof-schema",
+      "diagnosis": "Frozen evidence contains both studies’ measured facts; answer was withheld after verification proof failure.",
+      "publishedFailureKind": "verification proof-schema failure",
+      "frozenSourceSupport": "relevant premises present; no answer published",
+      "supportSource": "Vega · archive 7, p. 1",
+      "shortVerbatimExcerpt": "No se midió inteligencia.",
+      "groundingTraceStatus": "failed",
+      "frozenGroundingSourceCount": 16,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "e0b1a43f52f7cfb36be5055fd8a22873390f0469a9eca98eeae85b16f99920dc",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Verification unavailable; unpublished comparison counts as failure."
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/1",
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "category": "budget-unavailable",
+      "diagnosis": "The final shared-budget refusal prevented a turn trace; the UI’s invalid-key wording is not evidence of a credential problem. No retrieved/frozen turn evidence exists for this repetition.",
+      "publishedFailureKind": "budget unavailable before request execution",
+      "frozenSourceSupport": "not_observable_budget_blocked",
+      "supportSource": null,
+      "shortVerbatimExcerpt": null,
+      "groundingTraceStatus": null,
+      "frozenGroundingSourceCount": 0,
+      "context": {
+        "selectedPassages": null,
+        "contextChars": null,
+        "truncated": null,
+        "traversalPartial": null,
+        "rounds": null
+      },
+      "error": "Clave de IA inválida. Revísala en Ajustes.",
+      "sha256": {
+        "answer": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "evidence": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "sources": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "archivedReview": "Paid request blocked by the shared campaign budget at 23:45:51.786Z; report confirms budgetExhausted and seven remaining cases. UI misleadingly labels this as an invalid AI key. This is budget unavailability, not a credential diagnosis or a correct evidence refusal."
+    }
+  ],
+  "partialAndTruncatedExamples": [
+    {
+      "case": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+      "retrievalPartial": true,
+      "contextTruncated": true,
+      "selectedPassages": 10,
+      "groundingSources": 10,
+      "sourceFactPresent": "The median was 18 and the mean 24; no son equivalentes.",
+      "interpretation": "Both flags are set while the exact median/mean source remains in frozen grounding evidence."
+    },
+    {
+      "case": "embeddinggemma-2-text-q8-512-v1/heldout-paper/1",
+      "retrievalPartial": true,
+      "contextTruncated": true,
+      "selectedPassages": 19,
+      "groundingSources": 19,
+      "sourceFactPresent": "Double Quantization (DQ), the process of quantizing the quantization constants for additional memory savings.",
+      "interpretation": "Both flags are set while the omitted DQ mechanism is present in selected frozen sources."
+    },
+    {
+      "case": "gte-multilingual-base-int8/heldout-statistics/1",
+      "retrievalPartial": true,
+      "contextTruncated": true,
+      "selectedPassages": 14,
+      "groundingSources": 14,
+      "sourceFactPresent": "The median was 18 and the mean 24; they are not equivalent.",
+      "interpretation": "Both flags are set while the requested source values remain present."
+    },
+    {
+      "case": "bge-m3-q8_0/heldout-calculation/0",
+      "retrievalPartial": true,
+      "contextTruncated": true,
+      "selectedPassages": 16,
+      "groundingSources": 16,
+      "sourceFactPresent": "The group ... recalled 72%; the rereading group, 51%.",
+      "interpretation": "Both flags are set while both operands are present; the published answer omits the requested subtraction."
+    },
+    {
+      "case": "embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+      "retrievalPartial": true,
+      "contextTruncated": null,
+      "selectedPassages": null,
+      "groundingSources": 16,
+      "sourceFactPresent": "No se midió inteligencia.",
+      "interpretation": "The final verification failed, but frozen evidence already contains the requested study facts; context stats are absent because no answer was published."
+    }
+  ],
+  "retrievalFixReview": [
+    {
+      "proposal": "Planner permits four search queries but investigate truncates goal plus planned queries to three.",
+      "status": "confirmed",
+      "evidence": "researchTurnPlanner.ts validates 1–4 queries and returns up to four (lines 59, 69–76, 90–99); researchCorpusRun.ts combines goal with queries and slices to three (lines 133–142). When goal is distinct, at most two planned queries survive.",
+      "implementation": "Retain goal plus all unique planned queries up to an explicit bounded total; allocate opening evidence allowance using the actual count and retain per-query traversal traces."
+    },
+    {
+      "proposal": "Shared documentary worker has no facet lexical-query lane.",
+      "status": "confirmed_with_scope",
+      "evidence": "documentaryRetrievalWorker.ts receives one query and calls lexicalSearch once (lines 6, 17–19); each worker call performs a single semantic query too (lines 21–23). ResearchCorpusRun calls retrieve separately for retained plan queries (lines 135–142), so the loss is within each query call and is amplified by the three-query cap.",
+      "implementation": "Pass an explicit list of facet queries through the same scoped worker, run FTS per facet, and fuse by reciprocal rank with lane/query provenance. Preserve one canonical evidence entry across facets; make additional local query embeddings bounded and cancellation aware."
+    },
+    {
+      "proposal": "Expansion can spend its next-round budget around the first anchor before other anchors.",
+      "status": "confirmed",
+      "evidence": "documentaryRetrievalWorker.ts sets frontier to all chosen anchors (line 45) but pushes neighbors in anchor order into a single next list capped at passagesPerRound (lines 46–55). If the first anchor has enough adjacent chunks, later anchors have no slots. adjacentPassages returns ordinal neighbors (documentaryStore.ts lines 301–306).",
+      "implementation": "Use round-robin expansion across anchors (one neighbor per anchor per pass) with deterministic ordering; keep a per-anchor quota and evidence-budget checks."
+    },
+    {
+      "proposal": "Expansion deduplicates raw passage IDs rather than canonical evidence content.",
+      "status": "confirmed",
+      "evidence": "Initial lexical/semantic fusion uses document+text+locator as evidenceKey (documentaryRetrievalWorker.ts lines 24–34), while expansion calls budget.accept(adjacent.id, ...) (lines 49–53). The parent subsequently deduplicates content by work+summary+pageLabel (researchCorpusRun.ts lines 190–196). Duplicate rendition/index IDs can therefore occupy worker slots/tokens before parent drops repeated content.",
+      "implementation": "Apply one canonical dedup key during initial fusion and neighbor expansion, ideally normalized document identity + exact text + normalized locator/attachment revision; propagate that key into parent acceptance and trace duplicate suppression counts."
+    }
+  ],
+  "diagnosisDirectedPlan": [
+    "First fix the deterministic planner/query cap and multi-facet lexical lane, retaining strict scope authorization and bounded calls.",
+    "Then make expansion fair across anchors and deduplicate by canonical evidence content before accepting budget.",
+    "Add offline deterministic fixtures covering four distinct planned queries plus goal, per-facet lexical matching, equal-anchor expansion, and duplicate passages under distinct IDs; assert scope boundaries, candidate order, evidence bytes, and partial flags.",
+    "Run static/local contract checks and offline retrieval replay against archived synthetic inputs only; do not infer embedding-model accuracy from synthetic traces.",
+    "End-to-end generation validation remains pending. This diagnosis does not authorize or start a DeepSeek run; use a no-provider local/mock generator path and validate actual UI citation/context wiring if available."
+  ],
+  "limits": [
+    "Archived traces expose only returned candidate IDs, not all candidate texts/scores, so corpus recall cannot be quantified.",
+    "partial and truncated flags are budget/context indicators; they do not prove the needed fact was lost.",
+    "The 17 failures include writer, verifier, formatting, availability, and budget problems; retrieval changes alone cannot solve them.",
+    "All quoted sources here are archived QA synthetic/public-paper fixtures, not real user data."
+  ]
+}

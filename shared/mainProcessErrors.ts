@@ -1,5 +1,6 @@
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
+import { EMBEDDING_GEMMA2_ERRORS, EMBEDDING_GEMMA2_ERROR_PATTERNS } from './embeddingGemma2Errors';
 
 /**
  * Main-process error sentences that reached non-Spanish readers in Spanish.
@@ -32,6 +33,20 @@ export type MainErrorTranslations = Partial<Record<AppLanguage, string>> & { en:
 /** Messages whose text is fixed, matched exactly. */
 export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   ...SCRIPTOR_RUNTIME_ERRORS,
+  ...EMBEDDING_GEMMA2_ERRORS,
+  'No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.': {
+    en: 'The answer could not be verified against its sources. Please try again.',
+    fr: 'La réponse n’a pas pu être vérifiée par rapport à ses sources. Réessayez.',
+    de: 'Die Antwort konnte nicht anhand ihrer Quellen überprüft werden. Bitte versuche es erneut.',
+    pt: 'Não foi possível verificar a resposta com as suas fontes. Tenta novamente.',
+    'pt-BR': 'Não foi possível verificar a resposta com suas fontes. Tente novamente.',
+    it: 'Non è stato possibile verificare la risposta rispetto alle sue fonti. Riprova.',
+    tr: 'Yanıt kaynaklarıyla doğrulanamadı. Lütfen yeniden deneyin.',
+    'zh-CN': '无法根据来源核实回答。请重试。',
+    'zh-TW': '無法根據來源核實回答。請重試。',
+    ja: '回答を出典に照らして検証できませんでした。もう一度お試しください。',
+    ko: '답변을 출처와 대조하여 검증하지 못했습니다. 다시 시도해 주세요.',
+  },
   'La copia de Focus está dañada.': {
     en: 'The Focus backup is corrupted.',
     fr: 'La sauvegarde de Focus est endommagée.',
@@ -4700,6 +4715,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
 /** Messages that carry runtime values, matched by shape. Order matters: the more
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
+  ...EMBEDDING_GEMMA2_ERROR_PATTERNS,
   ...SCRIPTOR_RUNTIME_ERROR_PATTERNS,
   // ── Local providers: the failure this whole table was opened for ─────────────
   {

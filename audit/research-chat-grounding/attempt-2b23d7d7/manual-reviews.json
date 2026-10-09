@@ -1,0 +1,110 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8efaefca04c88817f805a86b4851f7cf9ecfe1915612f92598d32b461d99d3c4",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Independent positive coverage proof failed schema twice; source-audited dates were correct, but no answer published. Availability failure counts as failure."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Positive proof schema failed twice despite supported source facts; availability failure."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/0",
+    "answerSha256": "02248e1bf205c8a3c7a17caed2b56f2849b6b2f05dbadce3c863c22c6c93cf46",
+    "sourcesSha256": "77d226c1a0fee595ffc87e4bb764efcd05101e66b00822b8129d640f73b2aa3f",
+    "evidenceSha256": "c20a92376c7feb35ad4dbfc6ea9fba10cdcf77b7be664c4e9dc73f4890bb791a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table, labelled 21-point subtraction and measured recall/intelligence distinction."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/0",
+    "answerSha256": "b9e1d81734b0af74fb2a8beeea1f6454ed6de1d74d33d41e9da65b2f4ebd3af3",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct superseding 240/239 counts; redundant raw locator is presentation-only."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "0c5066975b329cc52208c6abdccbcc2e1a7763c14f3fe465af3f228b201c6bbf",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Unavailable verification; no answer published."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "82afd8840c3ae377e0b394b543709930f8f82bbf0767a20c437d2aae0498652b",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Unavailable verification; no answer published."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Positive coverage proof schema failed twice despite correct audited dates; availability failure."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/0",
+    "answerSha256": "cff2269f949362d3996e8f7bee95bc4f50254c16bb036ab1273951015b23da12",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Supported turbidity, visible-light 530 nm and oxygen exclusion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/0",
+    "answerSha256": "048ae36c114f0e05f46ae60c1cef951d56cb48343466f433afab21af1c6a14f2",
+    "sourcesSha256": "64b6824ef07dd74f4cdec479e482a06c4ee0e72b145e2512af1173f026e7bbe2",
+    "evidenceSha256": "2d6f9ea083d577f87a7ad610e855f352b38812da4843817220c5f0f56f8b584d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table, labelled 21-point subtraction and measured outcome."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Unavailable verification; no answer published."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "cbe93d038637a2ff3e38681fec6af2ba443bcc4f83f17882f7da2f3effcb9527",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Unavailable verification; no answer published."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/0",
+    "answerSha256": "451b7665018638aaf01cab509863446699280750738cae30b80047905da1f2f4",
+    "sourcesSha256": "1f41e0e947ff30e7096847ae3c17f4a72cb5581bc9c31e7acd99a050ec1b80bb",
+    "evidenceSha256": "efa8d74ae6846efa99db1e2c5eff04117ea0755c68e26ca43496cf6ba6879be8",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Accurate factual inventory followed by scoped refusal, but the requested comparison of supported measurement limits is still omitted."
+  }
+]

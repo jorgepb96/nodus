@@ -23,6 +23,7 @@ try {
   const embeddings = catalog.NODUS_LOCAL_MODELS.filter((model) => model.kind === 'embedding');
   const chat = catalog.NODUS_LOCAL_MODELS.filter((model) => model.kind === 'chat');
   assert.deepEqual(embeddings.map((model) => model.label), [
+    'EmbeddingGemma 2 Q8 · 512', 'EmbeddingGemma 2 Q8 · 256',
     'BGE-M3 Q8_0', 'GTE Multilingual Base INT8', 'Multilingual E5 Small INT8',
   ]);
   assert.deepEqual(chat.map((model) => model.label), [
@@ -75,7 +76,7 @@ try {
     'llama.cpp is installed (or upgraded) automatically before a dependent model download');
   assert.match(manager, /installNodusLocalRuntime.*downloadModelAssets/s, 'runtime installation continues immediately into the requested model download');
   assert.match(manager, /activeRuntimeDownload.*ActiveLocalAiDownload/s, 'runtime downloads persist in main-process state');
-  assert.match(manager, /activeDownloads\.get\(model\.id\)/, 'model status reconnects to a main-process download job');
+  assert.match(manager, /activeDownloads\.get\(downloadKey\(model\.id\)\)/, 'model status reconnects to a main-process download job');
   assert.match(manager, /return followDownload\(running, onProgress\)/, 'duplicate requests follow the existing download');
   assert.match(manager, /controller: AbortController/, 'every main-process transfer owns an abort controller');
   assert.match(manager, /Range: `bytes=\$\{resumedBytes\}-`/, 'interrupted downloads resume with HTTP Range');

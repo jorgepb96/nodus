@@ -1,0 +1,461 @@
+{
+  "measuredRevision": "82dac50f",
+  "note": "Per-profile counts include unavailable answers as failures. Pending cases remain pending. Stage timing samples are only traces with explicit timing; missing failed-verification timings are not imputed. End-to-end includes planning, retrieval and all generative calls. These timings are not local embedding/search benchmarks. The inspection is Codex source review, not external human or blinded evaluation.",
+  "profiles": [
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "executed": 24,
+      "completed": true,
+      "publishedPositive": {
+        "total": 16,
+        "faithful": 15,
+        "adequate": 12
+      },
+      "positive": {
+        "passed": 11,
+        "executed": 16,
+        "planned": 16
+      },
+      "absence": {
+        "passed": 8,
+        "executed": 8,
+        "planned": 8
+      },
+      "pending": [],
+      "requestTiming": {
+        "samples": 24,
+        "p50Ms": 22798,
+        "p95Ms": 62855
+      },
+      "verificationTimings": {
+        "sourceDraftMs": {
+          "samples": 24,
+          "p50Ms": 1028,
+          "p95Ms": 2267
+        },
+        "initialAuditMs": {
+          "samples": 24,
+          "p50Ms": 3369,
+          "p95Ms": 16625
+        },
+        "rewriteMs": {
+          "samples": 24,
+          "p50Ms": 873,
+          "p95Ms": 4777
+        },
+        "revisedAuditMs": {
+          "samples": 24,
+          "p50Ms": 1022,
+          "p95Ms": 12374
+        },
+        "coverageAndRepairMs": {
+          "samples": 24,
+          "p50Ms": 2065,
+          "p95Ms": 14928
+        },
+        "totalMs": {
+          "samples": 24,
+          "p50Ms": 7745,
+          "p95Ms": 40532
+        }
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "executed": 24,
+      "completed": true,
+      "publishedPositive": {
+        "total": 15,
+        "faithful": 15,
+        "adequate": 15
+      },
+      "positive": {
+        "passed": 15,
+        "executed": 16,
+        "planned": 16
+      },
+      "absence": {
+        "passed": 8,
+        "executed": 8,
+        "planned": 8
+      },
+      "pending": [],
+      "requestTiming": {
+        "samples": 24,
+        "p50Ms": 22187,
+        "p95Ms": 43208
+      },
+      "verificationTimings": {
+        "sourceDraftMs": {
+          "samples": 23,
+          "p50Ms": 1144,
+          "p95Ms": 1963
+        },
+        "initialAuditMs": {
+          "samples": 23,
+          "p50Ms": 3141,
+          "p95Ms": 11608
+        },
+        "rewriteMs": {
+          "samples": 23,
+          "p50Ms": 1192,
+          "p95Ms": 3757
+        },
+        "revisedAuditMs": {
+          "samples": 23,
+          "p50Ms": 1273,
+          "p95Ms": 10754
+        },
+        "coverageAndRepairMs": {
+          "samples": 23,
+          "p50Ms": 2273,
+          "p95Ms": 3357
+        },
+        "totalMs": {
+          "samples": 23,
+          "p50Ms": 8161,
+          "p95Ms": 29438
+        }
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "executed": 24,
+      "completed": true,
+      "publishedPositive": {
+        "total": 14,
+        "faithful": 14,
+        "adequate": 13
+      },
+      "positive": {
+        "passed": 13,
+        "executed": 16,
+        "planned": 16
+      },
+      "absence": {
+        "passed": 7,
+        "executed": 8,
+        "planned": 8
+      },
+      "pending": [],
+      "requestTiming": {
+        "samples": 24,
+        "p50Ms": 23596,
+        "p95Ms": 62815
+      },
+      "verificationTimings": {
+        "sourceDraftMs": {
+          "samples": 21,
+          "p50Ms": 1220,
+          "p95Ms": 1936
+        },
+        "initialAuditMs": {
+          "samples": 21,
+          "p50Ms": 3112,
+          "p95Ms": 9426
+        },
+        "rewriteMs": {
+          "samples": 21,
+          "p50Ms": 789,
+          "p95Ms": 2838
+        },
+        "revisedAuditMs": {
+          "samples": 21,
+          "p50Ms": 1047,
+          "p95Ms": 6724
+        },
+        "coverageAndRepairMs": {
+          "samples": 21,
+          "p50Ms": 2378,
+          "p95Ms": 3324
+        },
+        "totalMs": {
+          "samples": 21,
+          "p50Ms": 9271,
+          "p95Ms": 19243
+        }
+      }
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "executed": 24,
+      "completed": true,
+      "publishedPositive": {
+        "total": 15,
+        "faithful": 15,
+        "adequate": 13
+      },
+      "positive": {
+        "passed": 13,
+        "executed": 16,
+        "planned": 16
+      },
+      "absence": {
+        "passed": 8,
+        "executed": 8,
+        "planned": 8
+      },
+      "pending": [],
+      "requestTiming": {
+        "samples": 24,
+        "p50Ms": 30149,
+        "p95Ms": 63778
+      },
+      "verificationTimings": {
+        "sourceDraftMs": {
+          "samples": 23,
+          "p50Ms": 1239,
+          "p95Ms": 2306
+        },
+        "initialAuditMs": {
+          "samples": 23,
+          "p50Ms": 3492,
+          "p95Ms": 12744
+        },
+        "rewriteMs": {
+          "samples": 23,
+          "p50Ms": 1454,
+          "p95Ms": 5033
+        },
+        "revisedAuditMs": {
+          "samples": 23,
+          "p50Ms": 2432,
+          "p95Ms": 16696
+        },
+        "coverageAndRepairMs": {
+          "samples": 23,
+          "p50Ms": 2322,
+          "p95Ms": 4361
+        },
+        "totalMs": {
+          "samples": 23,
+          "p50Ms": 11630,
+          "p95Ms": 38798
+        }
+      }
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "executed": 17,
+      "completed": false,
+      "publishedPositive": {
+        "total": 11,
+        "faithful": 11,
+        "adequate": 9
+      },
+      "positive": {
+        "passed": 9,
+        "executed": 13,
+        "planned": 16
+      },
+      "absence": {
+        "passed": 4,
+        "executed": 4,
+        "planned": 8
+      },
+      "pending": [
+        "Remaining Research Chat repetitions: campaign budget exhausted"
+      ],
+      "requestTiming": {
+        "samples": 17,
+        "p50Ms": 24343,
+        "p95Ms": 55206
+      },
+      "verificationTimings": {
+        "sourceDraftMs": {
+          "samples": 15,
+          "p50Ms": 1099,
+          "p95Ms": 2167
+        },
+        "initialAuditMs": {
+          "samples": 15,
+          "p50Ms": 3199,
+          "p95Ms": 9703
+        },
+        "rewriteMs": {
+          "samples": 15,
+          "p50Ms": 765,
+          "p95Ms": 4978
+        },
+        "revisedAuditMs": {
+          "samples": 15,
+          "p50Ms": 1009,
+          "p95Ms": 11302
+        },
+        "coverageAndRepairMs": {
+          "samples": 15,
+          "p50Ms": 1947,
+          "p95Ms": 4236
+        },
+        "totalMs": {
+          "samples": 15,
+          "p50Ms": 7957,
+          "p95Ms": 31114
+        }
+      }
+    }
+  ],
+  "failedCases": [
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Correct 18/24 figures and non-equivalence, but omits the requested distribution conclusion or precise evidentiary limitation; source/model coverage approval does not make it adequate.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Supported factual inventory and difference 6, including the original numbered field-log/review statements checked in full. Still lacks the requested comparison of supported interpretation limits; a numerical difference does not supply that facet.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/1",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Correct statistics and labelled difference 6; still omits the requested distribution interpretation or precise evidence limit. This repeats the fixed adequacy criterion.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/1",
+      "classification": "unsupported-published-assertion",
+      "error": null,
+      "sourceReview": "An explicit comparison is supplied, but it asserts that Vega and Bruma share no common measure. Bruma's measured construct is unspecified, so the supplied premises do not establish that categorical absence; the scoped inability to compare numbers does not prove it.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/1",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "NF4, paging and storage/computation assertions and the labelled arithmetic are supported, but the answer omits the requested double-quantization mechanism (quantizing quantization constants). An unexplained numerical formula does not answer that facet.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "multilingual-e5-small-int8/heldout-paper/0",
+      "classification": "verification-proof-schema",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Positive coverage proof fails schema twice after all initial claims were supported; availability failure counts as failure.",
+      "proofSchemaFailures": [
+        {
+          "attempt": 1,
+          "code": "schema_mismatch"
+        }
+      ],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-absent-funding/0",
+      "classification": "verification-unavailable",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Verification unavailable; this error is not an adequate acknowledgement of insufficient evidence.",
+      "proofSchemaFailures": [],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-statistics/1",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Literal 18/24, non-equivalence, sample and confidence are correct, but the requested conclusion or precise limitation about distribution is omitted.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-negation/1",
+      "classification": "verification-proof-schema",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Verification unavailable; failure counts against positive-answer adequacy and support.",
+      "proofSchemaFailures": [
+        {
+          "attempt": 1,
+          "code": "schema_mismatch"
+        }
+      ],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "gte-multilingual-base-int8/heldout-paper/1",
+      "classification": "verification-proof-schema",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Verification unavailable; unpublished technical answer counts as failure, irrespective of correct draft claims.",
+      "proofSchemaFailures": [
+        {
+          "attempt": 1,
+          "code": "schema_mismatch"
+        }
+      ],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-calculation/0",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Correct table and measured outcome, but omits the requested percentage-point difference. The reader computing it is not answer adequacy.",
+      "proofSchemaFailures": [
+        {
+          "attempt": 1,
+          "code": "schema_mismatch"
+        }
+      ],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-negation/0",
+      "classification": "verification-unavailable",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Verification availability failure; no answer published.",
+      "proofSchemaFailures": [],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "bge-m3-q8_0/heldout-statistics/1",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Literal 18/24, non-equivalence and sample are correct, but the requested conclusion or precise limitation about distribution is omitted.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-calculation/0",
+      "classification": "requested-table-format",
+      "error": null,
+      "sourceReview": "All figures, recall/intelligence distinction and labelled 21-point difference are supported, but the requested table has three header cells and four separator cells. The actual Electron screenshot shows flattened pipe text rather than a rendered table; requested format is unmet.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/0",
+      "classification": "requested-facet-omission",
+      "error": null,
+      "sourceReview": "Correct 18/24 and non-equivalence, but omits the requested conclusion or precise limitation about distribution.",
+      "proofSchemaFailures": [],
+      "traceStatus": "complete"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+      "classification": "verification-proof-schema",
+      "error": "No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.",
+      "sourceReview": "Verification unavailable; unpublished comparison counts as failure.",
+      "proofSchemaFailures": [
+        {
+          "attempt": 1,
+          "code": "schema_mismatch"
+        }
+      ],
+      "traceStatus": "failed"
+    },
+    {
+      "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/1",
+      "classification": "budget-unavailable",
+      "error": "Clave de IA inválida. Revísala en Ajustes.",
+      "sourceReview": "Paid request blocked by the shared campaign budget at 23:45:51.786Z; report confirms budgetExhausted and seven remaining cases. UI misleadingly labels this as an invalid AI key. This is budget unavailability, not a credential diagnosis or a correct evidence refusal.",
+      "proofSchemaFailures": [],
+      "traceStatus": null
+    }
+  ]
+}

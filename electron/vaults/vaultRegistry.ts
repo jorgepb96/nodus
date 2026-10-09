@@ -271,6 +271,9 @@ export function listVaults(): VaultSummary[] {
 }
 
 const owningVaultContext = new AsyncLocalStorage<string>();
+let activeVaultEpoch = 0;
+/** In-flight UI reads are invalid even when the reader switches away and back. */
+export function activeVaultRevision(): number { return activeVaultEpoch; }
 
 /** Explicit background owner; never changes the UI's active-vault registry. */
 export function withOwningVault<T>(vaultId: string, work: () => T): T {
@@ -466,6 +469,7 @@ export function setActiveVault(id: string): VaultSummary {
   const vault = registry.vaults.find((candidate) => candidate.id === id);
   if (!vault) throw new Error('Bóveda no encontrada.');
   vault.lastOpenedAt = nowIso();
+  if (registry.activeVaultId !== id) activeVaultEpoch += 1;
   registry.activeVaultId = id;
   writeVaultManifest(vault);
   writeRegistry(registry);

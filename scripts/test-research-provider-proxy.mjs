@@ -43,6 +43,22 @@ test('paid gate reserves before dispatch, rejects other models and never logs cr
 // Deep extraction issues several model calls at once. A third concurrent call used to be
 // refused with a 403 that the application reads as an invalid key, which paused its queue;
 // it now waits for one of the two dispatch slots instead.
+test('separate proxy instances share the campaign-wide two-call limit', async () => {
+  const root = createResearchTestRoot(); let active = 0, peak = 0;
+  const dispatch = async () => {
+    active++; peak = Math.max(peak, active); await new Promise(resolve => setTimeout(resolve, 80)); active--;
+    return Response.json({ choices: [{ message: { content: 'fixture' } }], usage: { prompt_tokens: 2, completion_tokens: 1 } });
+  };
+  const proxies = await Promise.all([startResearchProviderProxy(root, { dispatch }), startResearchProviderProxy(root, { dispatch })]);
+  try {
+    const statuses = await Promise.all(Array.from({ length: 6 }, async (_, index) => {
+      const response = await fetch(`${proxies[index % 2].url}/deepseek/chat/completions`, { method: 'POST', headers: { Authorization: 'Bearer fixture', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'deepseek-flash', messages: [{ role: 'user', content: 'fixture' }], max_tokens: 10 }) });
+      await response.text(); return response.status;
+    }));
+    assert(statuses.every(status => status === 200)); assert.equal(peak, 2); assert.equal(proxies[0].ledger.read().calls.length, 6);
+  } finally { await Promise.all(proxies.map(proxy => proxy.close())); fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('calls beyond the two dispatch slots wait for a slot instead of being refused', async () => {
   const root = createResearchTestRoot();
   let inFlight = 0, peak = 0, dispatches = 0;

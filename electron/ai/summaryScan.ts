@@ -244,8 +244,8 @@ export async function runSummaryScan(work: Work, model?: ModelRef | null, option
   // embedding provider is temporarily unavailable, keep the committed summary
   // successful and let the reindex flow fill this derived field later.
   try {
-    const embedding = await embed(summary, undefined, { perf, jobId: `${work.nodus_id}:summary-embedding` });
-    if (embedding) updateWorkSummaryEmbedding(work.nodus_id, summary, embedding);
+    const embedding = await embed(summary, undefined, { role: 'document', title: work.title, perf, jobId: `${work.nodus_id}:summary-embedding` });
+    if (embedding) updateWorkSummaryEmbedding(work.nodus_id, summary, embedding, work.title);
     summaryDone({ status: 'ok', embedding: embedding ? 'done' : 'not-configured' });
   } catch (error) {
     console.warn(`[summaryScan] resumen guardado; embedding diferido para ${work.nodus_id}: ${error instanceof Error ? error.message : String(error)}`);

@@ -1,0 +1,935 @@
+{
+  "format": "nodus.embedding-corpus/2",
+  "documents": [
+    {
+      "id": "fixture-01",
+      "format": "pdf",
+      "language": "es",
+      "theme": 0,
+      "title": "Puerto Claro · archive 1",
+      "sha256": "20031db55e75bf3d0fed501b2d7a1d1b109d9a302a15984bc7f6b13ea8dc5d11",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-01:0",
+          "title": "Puerto Claro · archive 1",
+          "text": "La escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-01.pdf"
+    },
+    {
+      "id": "fixture-02",
+      "format": "pdf",
+      "language": "en",
+      "theme": 1,
+      "title": "Vega · archive 2",
+      "sha256": "158f7d36b834ee5921fc92f4e5c74314feb4e21019a285c3a2d47e4c9f9d01db",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-02:0",
+          "title": "Vega · archive 2",
+          "text": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-02.pdf"
+    },
+    {
+      "id": "fixture-03",
+      "format": "pdf-scanned",
+      "language": "fr",
+      "theme": 2,
+      "title": "Alba · archive 3",
+      "sha256": "bde93817820372161f3fc5ce319b53e6a4f2e14f28b42638221b56726d982324",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-03:0",
+          "title": "Alba · archive 3",
+          "text": "Le capteur Alba utilise une lumière verte à 530 nm pour mesurer la turbidité. Il ne mesure pas l’oxygène. Il doit être étalonné tous les 30 jours.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "scanQuality": "clean",
+      "file": "fixtures/fixture-03.pdf"
+    },
+    {
+      "id": "fixture-04",
+      "format": "pdf-scanned",
+      "language": "de",
+      "theme": 3,
+      "title": "Bruma · archive 4",
+      "sha256": "09c14dab53f54b3eefd5965cec5a743a8e4d86aea25e4eee4e258f8dc0569da5",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-04:0",
+          "title": "Bruma · archive 4",
+          "text": "Die Bruma-Umfrage umfasste 240 Personen aus sechs Dörfern. Das Konfidenzniveau betrug 95 %. Der Median war 18, der Mittelwert 24.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "scanQuality": "degraded",
+      "file": "fixtures/fixture-04.pdf"
+    },
+    {
+      "id": "fixture-05",
+      "format": "pdf-scanned",
+      "language": "pt",
+      "theme": 4,
+      "title": "Linde · archive 5",
+      "sha256": "5468269fea1b2a81710a5720250487386e4b1070260648ce163248b346451254",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-05:0",
+          "title": "Linde · archive 5",
+          "text": "A API Linde conserva eventos durante 14 dias. /restore recupera itens eliminados, mas não contas encerradas. A versão 2 alterou o prazo de 7 para 14 dias.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "scanQuality": "clean",
+      "file": "fixtures/fixture-05.pdf"
+    },
+    {
+      "id": "fixture-06",
+      "format": "pdf-scanned",
+      "language": "it",
+      "theme": 0,
+      "title": "Puerto Claro · archive 6",
+      "sha256": "2919dbcc857047b9730c18664cdbeffa101b9206cb55e2d1fb3eb1e19f861700",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-06:0",
+          "title": "Puerto Claro · archive 6",
+          "text": "La scuola di Puerto Claro aprì la biblioteca nel 1912. Il laboratorio aprì nel 1913, non la biblioteca.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "scanQuality": "degraded",
+      "file": "fixtures/fixture-06.pdf"
+    },
+    {
+      "id": "fixture-07",
+      "format": "pdf-scanned",
+      "language": "es",
+      "theme": 1,
+      "title": "Vega · archive 7",
+      "sha256": "00ecfc020b8f4614375d7805cc04e6df62b2ed9222121b679fc2cb2c648ca934",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-07:0",
+          "title": "Vega · archive 7",
+          "text": "En el ensayo Vega, el grupo que practicó recuperación espaciada recordó el 72 %; el grupo de relectura, el 51 %. No se midió inteligencia.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "scanQuality": "clean",
+      "file": "fixtures/fixture-07.pdf"
+    },
+    {
+      "id": "fixture-08",
+      "format": "pdf-scanned",
+      "language": "en",
+      "theme": 2,
+      "title": "Alba · archive 8",
+      "sha256": "359b70c14e5b66658837529fc05496741ead1d7abaf8c042c161064b2bde49ea",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-08:0",
+          "title": "Alba · archive 8",
+          "text": "The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "scanQuality": "degraded",
+      "file": "fixtures/fixture-08.pdf"
+    },
+    {
+      "id": "fixture-09",
+      "format": "docx",
+      "language": "fr",
+      "theme": 3,
+      "title": "Bruma · archive 9",
+      "sha256": "560f55e7daf7eed10c3afc62f72f654fc07c22021b448e2d3c1e86c169db1790",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-09:0",
+          "title": "Bruma · archive 9",
+          "text": "L’enquête Bruma comprenait 240 personnes de six villages. Le niveau de confiance était de 95 %. La médiane était 18 et la moyenne 24.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-09.docx"
+    },
+    {
+      "id": "fixture-10",
+      "format": "docx",
+      "language": "de",
+      "theme": 4,
+      "title": "Linde · archive 10",
+      "sha256": "2061cb075afb6ff10e585306f1377aef713f3f3f4a2aace510b7dc0b3c8b0304",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-10:0",
+          "title": "Linde · archive 10",
+          "text": "Die Linde-API speichert Ereignisse 14 Tage. /restore stellt gelöschte Elemente, aber keine geschlossenen Konten wieder her. Version 2 erhöhte die Frist von 7 auf 14 Tage.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-10.docx"
+    },
+    {
+      "id": "fixture-11",
+      "format": "docx",
+      "language": "pt",
+      "theme": 0,
+      "title": "Puerto Claro · archive 11",
+      "sha256": "66bb58a027d44778dc75488d9179dc06a0a1dde77566be84e4bedeb58452c31f",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-11:0",
+          "title": "Puerto Claro · archive 11",
+          "text": "A escola de Puerto Claro abriu a biblioteca em 1912. O laboratório abriu em 1913, não a biblioteca.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-11.docx"
+    },
+    {
+      "id": "fixture-12",
+      "format": "docx",
+      "language": "it",
+      "theme": 1,
+      "title": "Vega · archive 12",
+      "sha256": "b5be9c06f1d648ab5797d8f36c9c3d790f386e3cf63f6aa379be9547e4bf5f67",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-12:0",
+          "title": "Vega · archive 12",
+          "text": "Nello studio Vega, il recupero distribuito raggiunse il 72 %, la rilettura il 51 %. L’intelligenza non fu misurata.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-12.docx"
+    },
+    {
+      "id": "fixture-13",
+      "format": "docx",
+      "language": "es",
+      "theme": 2,
+      "title": "Alba · archive 13",
+      "sha256": "9cd1199f2f1819d08c88a226c35f5e6d3be0f12ca9aa8e3968c6826475554c9b",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-13:0",
+          "title": "Alba · archive 13",
+          "text": "El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-13.docx"
+    },
+    {
+      "id": "fixture-14",
+      "format": "docx",
+      "language": "en",
+      "theme": 3,
+      "title": "Bruma · archive 14",
+      "sha256": "b9c8b18c432202344e4b8fa37a00530d2f85a3d021efa5b6140456a96f7a9b50",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-14:0",
+          "title": "Bruma · archive 14",
+          "text": "The Bruma survey included 240 people from six villages. Confidence was 95%. The median was 18 and the mean 24; they are not equivalent.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-14.docx"
+    },
+    {
+      "id": "fixture-15",
+      "format": "epub",
+      "language": "fr",
+      "theme": 4,
+      "title": "Linde · archive 15",
+      "sha256": "5c4eacf2457ed5e12f8e3f11878bb117aa82a1ec42b9192859a1c966a657ed51",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-15:0",
+          "title": "Linde · archive 15",
+          "text": "L’API Linde conserve les événements 14 jours. /restore récupère les éléments supprimés, pas les comptes fermés. La version 2 a remplacé 7 jours par 14.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-15.epub"
+    },
+    {
+      "id": "fixture-16",
+      "format": "epub",
+      "language": "de",
+      "theme": 0,
+      "title": "Puerto Claro · archive 16",
+      "sha256": "cc36963bcb16728de4cacbb6486da87595e7b3e5b96dd0d10c11327d4ce5004b",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-16:0",
+          "title": "Puerto Claro · archive 16",
+          "text": "Die Schule in Puerto Claro eröffnete ihre Bibliothek 1912. Das Labor eröffnete 1913, nicht die Bibliothek.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-16.epub"
+    },
+    {
+      "id": "fixture-17",
+      "format": "epub",
+      "language": "pt",
+      "theme": 1,
+      "title": "Vega · archive 17",
+      "sha256": "b6361bbeb05153ee0fc7608186bc3812c584ebf5a050c34f811fb6785e963e61",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-17:0",
+          "title": "Vega · archive 17",
+          "text": "No ensaio Vega, a recuperação espaçada atingiu 72 %, e a releitura, 51 %. A inteligência não foi medida.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-17.epub"
+    },
+    {
+      "id": "fixture-18",
+      "format": "epub",
+      "language": "it",
+      "theme": 2,
+      "title": "Alba · archive 18",
+      "sha256": "9c212a6f18e4e8b08f0449a056f38717f59ae6deffe588397209b21695c280ce",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-18:0",
+          "title": "Alba · archive 18",
+          "text": "Il sensore Alba misura la torbidità con luce verde a 530 nm. Non misura l’ossigeno. Va calibrato ogni 30 giorni.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-18.epub"
+    },
+    {
+      "id": "fixture-19",
+      "format": "md",
+      "language": "es",
+      "theme": 3,
+      "title": "Bruma · archive 19",
+      "sha256": "d4363759f1d56f88802884d74d6d6b36c5d371fcf1fbadd169549ee20a01cdaa",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-19:0",
+          "title": "Bruma · archive 19",
+          "text": "La encuesta Bruma incluyó 240 personas de seis pueblos. El intervalo de confianza fue del 95 %. La mediana fue 18 y la media 24; no son equivalentes.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": true,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-19.md"
+    },
+    {
+      "id": "fixture-20",
+      "format": "md",
+      "language": "en",
+      "theme": 4,
+      "title": "Linde · archive 20",
+      "sha256": "59889d518cbe0d59e7757258fc9cafbd10ab94edda6e3a11703ca8b7e8895215",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-20:0",
+          "title": "Linde · archive 20",
+          "text": "The Linde API retains events for 14 days. The /restore endpoint recovers deleted items, but not closed accounts. Version 2 changed retention from 7 to 14 days.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-20.md"
+    },
+    {
+      "id": "fixture-21",
+      "format": "md",
+      "language": "fr",
+      "theme": 0,
+      "title": "Puerto Claro · archive 21",
+      "sha256": "43e5d3a340542816623ab112ac3635ab98685eaefd41db840a8227ca91a1ceb4",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-21:0",
+          "title": "Puerto Claro · archive 21",
+          "text": "L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque.\nCatalà: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-21.md"
+    },
+    {
+      "id": "fixture-22",
+      "format": "md",
+      "language": "de",
+      "theme": 1,
+      "title": "Vega · archive 22",
+      "sha256": "1c8804316e0c2059c5c253ad9b3d7847f5c93d86aef7c6cca25a518df7ffdc19",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-22:0",
+          "title": "Vega · archive 22",
+          "text": "Im Vega-Versuch erreichte verteiltes Abrufen 72 %, erneutes Lesen 51 %. Intelligenz wurde nicht gemessen.\nEuskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-22.md"
+    },
+    {
+      "id": "fixture-23",
+      "format": "txt",
+      "language": "pt",
+      "theme": 2,
+      "title": "Alba · archive 23",
+      "sha256": "7333d8e7aa2575f587c56973af44d7808b7dc47603da068cccd98127e9dea2f8",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-23:0",
+          "title": "Alba · archive 23",
+          "text": "O sensor Alba mede turbidez com luz verde de 530 nm. Não mede oxigénio. Deve ser calibrado a cada 30 dias.\nLatine: Navis Aster triginta amphoras portat; viginti vacuae sunt.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-23.txt"
+    },
+    {
+      "id": "fixture-24",
+      "format": "txt",
+      "language": "it",
+      "theme": 3,
+      "title": "Bruma · archive 24",
+      "sha256": "baefa19e23c3547f692c287b72448919293d3592d572c0561cb55a9b0f5c8b46",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-24:0",
+          "title": "Bruma · archive 24",
+          "text": "L’indagine Bruma comprendeva 240 persone di sei villaggi. La confidenza era del 95 %. La mediana era 18, la media 24.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.\nMixed: The Mistral observatory cerró durante cinco días por mantenimiento, not due to bad weather.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-24.txt"
+    },
+    {
+      "id": "fixture-25",
+      "format": "txt",
+      "language": "es",
+      "theme": 4,
+      "title": "Linde · archive 25",
+      "sha256": "e99ab8ac3581d334d117e793ff082b4b73664eb630e6a9143d516c8b8fad07b1",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-25:0",
+          "title": "Linde · archive 25",
+          "text": "La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-25.txt"
+    },
+    {
+      "id": "fixture-26",
+      "format": "txt",
+      "language": "en",
+      "theme": 0,
+      "title": "Puerto Claro · archive 26",
+      "sha256": "1ac165fc72ca06bfbe216039bce3bca388993ef7b7fe1a0488e4ce7e5a950a3f",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-26:0",
+          "title": "Puerto Claro · archive 26",
+          "text": "The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "1912",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-26.txt"
+    },
+    {
+      "id": "fixture-27",
+      "format": "csv",
+      "language": "fr",
+      "theme": 1,
+      "title": "Vega · archive 27",
+      "sha256": "1aeb5bd10e8820d5865b8de5bf54c3f1432568420e7d17cbd3e50359af185a2a",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-27:0",
+          "title": "Vega · archive 27",
+          "text": "Dans l’essai Vega, le rappel espacé a atteint 72 %, contre 51 % pour la relecture. L’intelligence n’a pas été mesurée.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "72%; 51%; recall, not intelligence",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-27.csv"
+    },
+    {
+      "id": "fixture-28",
+      "format": "csv",
+      "language": "de",
+      "theme": 2,
+      "title": "Alba · archive 28",
+      "sha256": "02c3391b748dcf95d64991c5017bda2b2a7a4b5d37db4235606a8dca2e1b6fa5",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-28:0",
+          "title": "Alba · archive 28",
+          "text": "Der Alba-Sensor misst Trübung mit grünem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage.",
+          "locator": {
+            "section": 1
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "turbidity; green; 530 nm; not oxygen",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-28.csv"
+    },
+    {
+      "id": "fixture-29",
+      "format": "xlsx",
+      "language": "pt",
+      "theme": 3,
+      "title": "Bruma · archive 29",
+      "sha256": "ef20e778adda41ddb26d99abe82a8bac7afb8b13f2ea3e59c3e89b89c00beab1",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-29:0",
+          "title": "Bruma · archive 29",
+          "text": "O inquérito Bruma incluiu 240 pessoas de seis aldeias. A confiança foi de 95 %. A mediana foi 18 e a média 24.\nBruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "locator": {
+            "sheet": "Evidence",
+            "cell": "B2"
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "240; six; median 18; mean 24",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-29.xlsx"
+    },
+    {
+      "id": "fixture-30",
+      "format": "xlsx",
+      "language": "it",
+      "theme": 4,
+      "title": "Linde · archive 30",
+      "sha256": "90cada088186bf78a245c281b42f2f1a37006ed7614d3ce23939b90c48cc2ab5",
+      "provenance": "Authored synthetic QA fixture; CC0-1.0",
+      "controlChunks": [
+        {
+          "id": "fixture-30:0",
+          "title": "Linde · archive 30",
+          "text": "L’API Linde conserva gli eventi per 14 giorni. /restore recupera elementi eliminati, non account chiusi. La versione 2 ha cambiato il limite da 7 a 14 giorni.",
+          "locator": {
+            "sheet": "Evidence",
+            "cell": "B2"
+          }
+        }
+      ],
+      "longDocument": false,
+      "expectedFacts": "14 days; deleted items; not closed accounts",
+      "extractionRequired": true,
+      "file": "fixtures/fixture-30.xlsx"
+    },
+    {
+      "id": "public-LORA0001",
+      "format": "pdf",
+      "language": "en",
+      "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+      "sha256": "e9a0d3128767db616085dc0f4e6e455e672e89af823e8ed1282793682787395a",
+      "provenance": "https://arxiv.org/pdf/2106.09685v2",
+      "controlChunks": [
+        {
+          "id": "public-LORA0001:0",
+          "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+          "text": "LoRA freezes pretrained weights and learns low-rank updates.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "LoRA freezes pretrained weights and learns low-rank updates.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-LORA0001.pdf"
+    },
+    {
+      "id": "public-SELF0001",
+      "format": "pdf",
+      "language": "en",
+      "title": "Self-Instruct: Aligning Language Models with Self-Generated Instructions",
+      "sha256": "1f14747af9bb8faee2221965449d7685174da18f3421efd4f38ef9bc57d6944e",
+      "provenance": "https://arxiv.org/pdf/2212.10560v2",
+      "controlChunks": [
+        {
+          "id": "public-SELF0001:0",
+          "title": "Self-Instruct: Aligning Language Models with Self-Generated Instructions",
+          "text": "Self-Instruct generates instructions using a language model and filters them.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "Self-Instruct generates instructions using a language model and filters them.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-SELF0001.pdf"
+    },
+    {
+      "id": "public-LLAMA001",
+      "format": "pdf",
+      "language": "en",
+      "title": "LLaMA: Open and Efficient Foundation Language Models",
+      "sha256": "2e663675ae36ad12adb2f5a05281bac2747ecf8d23d92bedd9f937a89fee7136",
+      "provenance": "https://arxiv.org/pdf/2302.13971v1",
+      "controlChunks": [
+        {
+          "id": "public-LLAMA001:0",
+          "title": "LLaMA: Open and Efficient Foundation Language Models",
+          "text": "LLaMA is a collection of foundation language models trained on publicly available datasets.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "LLaMA is a collection of foundation language models trained on publicly available datasets.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-LLAMA001.pdf"
+    },
+    {
+      "id": "public-SAM00001",
+      "format": "pdf",
+      "language": "en",
+      "title": "Segment Anything",
+      "sha256": "c6ca524e47200c3e542587ca76ac1dbc89cc67340f948c819250d16fdbd90cfb",
+      "provenance": "https://arxiv.org/pdf/2304.02643v1",
+      "controlChunks": [
+        {
+          "id": "public-SAM00001:0",
+          "title": "Segment Anything",
+          "text": "Segment Anything introduces promptable image segmentation.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "Segment Anything introduces promptable image segmentation.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-SAM00001.pdf"
+    },
+    {
+      "id": "public-RWKV0001",
+      "format": "pdf",
+      "language": "en",
+      "title": "RWKV: Reinventing RNNs for the Transformer Era",
+      "sha256": "57d18c40bdbb4bc1ab69c078a304f97e31657b4f543c408d8a5520e672a3fab0",
+      "provenance": "https://arxiv.org/pdf/2305.13048v2",
+      "controlChunks": [
+        {
+          "id": "public-RWKV0001:0",
+          "title": "RWKV: Reinventing RNNs for the Transformer Era",
+          "text": "RWKV combines recurrent inference with transformer-like parallel training.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "RWKV combines recurrent inference with transformer-like parallel training.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-RWKV0001.pdf"
+    },
+    {
+      "id": "public-QLORA001",
+      "format": "pdf",
+      "language": "en",
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+      "sha256": "33a4e757c19d6ea8d3cca8958fce8fe405e290272e135c99ee66065c775d5bd1",
+      "provenance": "https://arxiv.org/pdf/2305.14314v1",
+      "controlChunks": [
+        {
+          "id": "public-QLORA001:0",
+          "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+          "text": "QLoRA finetunes a frozen 4-bit quantized model with low-rank adapters.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "QLoRA finetunes a frozen 4-bit quantized model with low-rank adapters.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-QLORA001.pdf"
+    },
+    {
+      "id": "public-DPO00001",
+      "format": "pdf",
+      "language": "en",
+      "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
+      "sha256": "92cb3a2b71362acda98a789b03d88688fd33cf5fcf13f81d2b1de30ee7d3b67a",
+      "provenance": "https://arxiv.org/pdf/2305.18290v3",
+      "controlChunks": [
+        {
+          "id": "public-DPO00001:0",
+          "title": "Direct Preference Optimization: Your Language Model is Secretly a Reward Model",
+          "text": "DPO optimizes preferences without fitting a separate reward model.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "DPO optimizes preferences without fitting a separate reward model.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-DPO00001.pdf"
+    },
+    {
+      "id": "public-ARENA001",
+      "format": "pdf",
+      "language": "en",
+      "title": "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference",
+      "sha256": "039bccd60a7d49bfda80ce17ea627654736928eee9a7ee75767a38d04a01562f",
+      "provenance": "https://arxiv.org/pdf/2403.04132v1",
+      "controlChunks": [
+        {
+          "id": "public-ARENA001:0",
+          "title": "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference",
+          "text": "Chatbot Arena uses human preferences from pairwise model comparisons.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "Chatbot Arena uses human preferences from pairwise model comparisons.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-ARENA001.pdf"
+    },
+    {
+      "id": "public-AGENT001",
+      "format": "pdf",
+      "language": "en",
+      "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+      "sha256": "1b31e77fb24d25d7598f2c49e955d12a28b95a6dabad34acdac40f44bfb7a139",
+      "provenance": "https://arxiv.org/pdf/2304.03442v2",
+      "controlChunks": [
+        {
+          "id": "public-AGENT001:0",
+          "title": "Generative Agents: Interactive Simulacra of Human Behavior",
+          "text": "Generative Agents combines memory, reflection and planning.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "Generative Agents combines memory, reflection and planning.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-AGENT001.pdf"
+    },
+    {
+      "id": "public-HUGGPT01",
+      "format": "pdf",
+      "language": "en",
+      "title": "HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face",
+      "sha256": "5add5f7ff9041299c305769d49615e1ac2de2229e17c46e0811d1a60f94d6e3b",
+      "provenance": "https://arxiv.org/pdf/2303.17580v4",
+      "controlChunks": [
+        {
+          "id": "public-HUGGPT01:0",
+          "title": "HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face",
+          "text": "HuggingGPT coordinates models using a language model as a controller.",
+          "locator": {
+            "page": 1
+          }
+        }
+      ],
+      "expectedFacts": "HuggingGPT coordinates models using a language model as a controller.",
+      "extractionRequired": true,
+      "downloaded": true,
+      "file": "fixtures/public-HUGGPT01.pdf"
+    }
+  ],
+  "totals": {
+    "documents": 40,
+    "controlled": 30,
+    "publicPdfs": 10,
+    "queries": 120,
+    "development": 40,
+    "evaluation": 80
+  },
+  "limitations": [
+    "Controlled lane uses curated short excerpts of public papers; product lane must extract the originals.",
+    "Synthetic themes are translated parallel sources; report per-format/language strata and do not infer real-world recall from this small corpus."
+  ]
+}

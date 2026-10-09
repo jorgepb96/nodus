@@ -55,7 +55,9 @@ export function macResearchSandbox(root, allowedLoopbackPorts = []) {
 }
 
 export function verifyResearchSandbox(root, profile = macResearchSandbox(root)) {
-  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-sandbox-sentinel-'));
+  // TMPDIR may itself be confined to root. The denial probe must remain outside
+  // that root even when this verifier runs from an already isolated preparer.
+  const outside = fs.mkdtempSync(path.join(process.platform === 'darwin' ? '/private/tmp' : path.dirname(root), 'nodus-sandbox-sentinel-'));
   const canary = path.join(outside, 'sentinel');
   const inside = path.join(root, 'tmp', 'allowed');
   fs.writeFileSync(canary, 'unchanged');

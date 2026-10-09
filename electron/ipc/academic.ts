@@ -2,7 +2,7 @@ import { exportAcademicDocument, inspectAcademicDocument } from '../export/acade
 import * as preparationExperience from '../ai/researchPreparationExperience';
 import { onDocumentaryPreparationChanged } from '../ai/documentaryPreparationEvents';
 import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
-import { embed as embedResearchQuery } from '../ai/aiClient';
+import { embedQuery as embedResearchQuery } from '../ai/aiClient';
 import { assertAcademicAutomation } from '../ai/academicMode';
 import { registerResearchAttachmentIpc } from './researchAttachments';
 import { dialogTitle } from '../dialogTitles';

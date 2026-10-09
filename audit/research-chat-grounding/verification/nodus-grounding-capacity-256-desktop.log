@@ -1,0 +1,5 @@
+
+> nodus@5.8.0 test:embeddinggemma:capacity
+> node scripts/embeddinggemma-desktop-capacity.mjs --capacity-root=/private/tmp/nodus-research-VM32bn --contention=quiet
+
+Desktop capacity: /private/tmp/nodus-research-DyXiKZ/artifacts/desktop-capacity.json

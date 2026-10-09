@@ -29,7 +29,7 @@ import { chemistryStockDirectory } from './chemistryStock';
 import { textbookCitations, textbookSchemeDirectory, textbookTemplateCitations } from './textbookSchemes';
 import { formatTemplateCitation, formatTextbookCitation, textbookPreparations, type TextbookPreparation } from '@shared/textbookSchemes';
 import { rerank, rerankerAvailable } from './localReranker';
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 import { chemistryRunner } from './moleculeInspection';
 import type { ChemistryEvidenceScope } from './chemistryEvidenceScope';
 
@@ -256,7 +256,7 @@ export async function textbookPassages(queries: string[], workIds: string[], sig
     const lanes: SimilarPassage[][] = [];
     try { lanes.push(lexicalPassageSearch(query, laneSize, { nodusIds: workIds })); } catch { /* FTS is optional */ }
     try {
-      const vector = await embed(query, signal);
+      const vector = await embedQuery(query, signal);
       signal?.throwIfAborted();
       if (vector) lanes.push(findSimilarPassages(vector, PASSAGE_SIMILARITY, laneSize, { nodusIds: workIds }));
     } catch (error) {

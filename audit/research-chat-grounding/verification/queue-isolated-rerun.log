@@ -1,0 +1,167 @@
+TAP version 13
+# Subtest: queue dropdown retains and controls every processing lane
+    # Subtest: documentary preparation is one Queue entry with one set of controls
+    ok 1 - documentary preparation is one Queue entry with one set of controls
+      ---
+      duration_ms: 4892.327291
+      type: 'test'
+      ...
+    # Subtest: global clear confirms dismissal across lanes and preserves running, pending and paused tasks
+    ok 2 - global clear confirms dismissal across lanes and preserves running, pending and paused tasks
+      ---
+      duration_ms: 4596.567041
+      type: 'test'
+      ...
+    # Subtest: global clear leaves an empty panel and retains required graph maintenance
+    ok 3 - global clear leaves an empty panel and retains required graph maintenance
+      ---
+      duration_ms: 2676.815167
+      type: 'test'
+      ...
+    # Subtest: startup history stays quiet, including cancellation errors and later whole-list broadcasts
+    ok 4 - startup history stays quiet, including cancellation errors and later whole-list broadcasts
+      ---
+      duration_ms: 7511.3045
+      type: 'test'
+      ...
+    # Subtest: real failures survive startup but dismissed results stay hidden after a full renderer restart
+    ok 5 - real failures survive startup but dismissed results stay hidden after a full renderer restart
+      ---
+      duration_ms: 5232.741166
+      type: 'test'
+      ...
+    # Subtest: cancellation is a neutral result, not an error notification
+    ok 6 - cancellation is a neutral result, not an error notification
+      ---
+      duration_ms: 2907.403459
+      type: 'test'
+      ...
+    # Subtest: a completion received during startup is not hidden by a delayed historical read
+    ok 7 - a completion received during startup is not hidden by a delayed historical read
+      ---
+      duration_ms: 5618.282041
+      type: 'test'
+      ...
+    # Subtest: closed Zotero failures survive reopening and dismissal; subscriptions are unique
+    ok 8 - closed Zotero failures survive reopening and dismissal; subscriptions are unique
+      ---
+      duration_ms: 3903.272584
+      type: 'test'
+      ...
+    # Subtest: a retried job can show the same terminal status after its previous result was hidden
+    ok 9 - a retried job can show the same terminal status after its previous result was hidden
+      ---
+      duration_ms: 3091.144166
+      type: 'test'
+      ...
+    # Subtest: restored Zotero work updates the badge; stale initial reads cannot replace broadcasts
+    ok 10 - restored Zotero work updates the badge; stale initial reads cannot replace broadcasts
+      ---
+      duration_ms: 8379.41225
+      type: 'test'
+      ...
+    # Subtest: extraction, OCR, fusion, summaries, full embedding chain and bridges remain visible
+    ok 11 - extraction, OCR, fusion, summaries, full embedding chain and bridges remain visible
+      ---
+      duration_ms: 7847.96525
+      type: 'test'
+      ...
+    # Subtest: graph maintenance ticks its own clock and narrates its retries
+    ok 12 - graph maintenance ticks its own clock and narrates its retries
+      ---
+      duration_ms: 4918.907125
+      type: 'test'
+      ...
+    # Subtest: scan pause/resume, retry, prioritization, removal and both modal confirmations
+    ok 13 - scan pause/resume, retry, prioritization, removal and both modal confirmations
+      ---
+      duration_ms: 6123.44025
+      type: 'test'
+      ...
+    # Subtest: idea embeddings retain running, paused, error, cancelled and completed results
+    ok 14 - idea embeddings retain running, paused, error, cancelled and completed results
+      ---
+      duration_ms: 5342.912833
+      type: 'test'
+      ...
+    # Subtest: full-text passage embeddings retain running, paused, error, cancelled and completed results
+    ok 15 - full-text passage embeddings retain running, paused, error, cancelled and completed results
+      ---
+      duration_ms: 4567.24725
+      type: 'test'
+      ...
+    # Subtest: document index phases, pause/resume/stop, terminal errors and results
+    ok 16 - document index phases, pause/resume/stop, terminal errors and results
+      ---
+      duration_ms: 5477.847083
+      type: 'test'
+      ...
+    # Subtest: library extraction job phases, cancellation, retry and dismissal
+    ok 17 - library extraction job phases, cancellation, retry and dismissal
+      ---
+      duration_ms: 4045.925792
+      type: 'test'
+      ...
+    # Subtest: report and dictionary queues retain failures and background progress
+    ok 18 - report and dictionary queues retain failures and background progress
+      ---
+      duration_ms: 4970.443916
+      type: 'test'
+      ...
+    # Subtest: Toolkit OCR restores active documents, updates and cancels by document ID
+    ok 19 - Toolkit OCR restores active documents, updates and cancels by document ID
+      ---
+      duration_ms: 3504.539916
+      type: 'test'
+      ...
+    # Subtest: Convert, Translate, audio, database, immersion and report jobs remain observable
+    ok 20 - Convert, Translate, audio, database, immersion and report jobs remain observable
+      ---
+      duration_ms: 5241.788208
+      type: 'test'
+      ...
+    # Subtest: partially failed completed jobs remain actionable from the header
+    ok 21 - partially failed completed jobs remain actionable from the header
+      ---
+      duration_ms: 2417.667583
+      type: 'test'
+      ...
+    # Subtest: incremental snapshots preserve newer events and large queues load titles on demand
+    ok 22 - incremental snapshots preserve newer events and large queues load titles on demand
+      ---
+      duration_ms: 7623.723292
+      type: 'test'
+      ...
+    # Subtest: simultaneous pipelines fit the compact panel in both themes and at narrow widths
+    ok 23 - simultaneous pipelines fit the compact panel in both themes and at narrow widths
+      ---
+      duration_ms: 3464.170084
+      type: 'test'
+      ...
+    # Subtest: a standalone document job is visible, counted in the badge and clearable
+    ok 24 - a standalone document job is visible, counted in the badge and clearable
+      ---
+      duration_ms: 2675.520834
+      type: 'test'
+      ...
+    # Subtest: the header offers the processing log without disturbing the panel
+    ok 25 - the header offers the processing log without disturbing the panel
+      ---
+      duration_ms: 2790.208541
+      type: 'test'
+      ...
+    1..25
+ok 1 - queue dropdown retains and controls every processing lane
+  ---
+  duration_ms: 121061.355917
+  type: 'test'
+  ...
+1..1
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 121412.339459

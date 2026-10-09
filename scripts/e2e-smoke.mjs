@@ -893,7 +893,14 @@ try {
   await page.getByRole('button', { name: 'Modelos IA', exact: true }).click();
   await page.getByTestId('nodus-local-ai-models').waitFor({ timeout: 30_000 });
   const localAiStatus = await page.evaluate(() => window.nodus.getNodusLocalAiStatus());
-  assert.equal(localAiStatus.models.length, 7, 'integrated local AI catalog is available over the real preload bridge');
+  assert.equal(localAiStatus.models.length, 9, 'integrated local AI catalog is available over the real preload bridge');
+  const embeddingGemmaProfiles = localAiStatus.models.filter(model => model.id.startsWith('embeddinggemma'));
+  assert.deepEqual(embeddingGemmaProfiles.map(model => model.id), ['embeddinggemma-2-text-q8-512-v1', 'embeddinggemma-2-text-q8-256-v1']);
+  assert.equal(embeddingGemmaProfiles[0].path, embeddingGemmaProfiles[1].path, 'both profiles share one asset directory');
+  const embeddingGemmaCard = page.getByTestId('local-model-embeddinggemma-2-text-q8-512-v1');
+  assert.equal(await page.getByTestId('nodus-local-embedding-list').locator('[data-testid^="local-model-embeddinggemma-"]').count(), 1, 'shared weights render as a single download');
+  await embeddingGemmaCard.getByText('Experimental', { exact: true }).waitFor();
+  assert.match(await embeddingGemmaCard.innerText(), /Eliminarla afecta a ambos/);
   assert.equal(await page.getByText('BGE-M3 Q8_0', { exact: true }).count(), 1, 'local embedding catalog renders');
   assert.equal(await page.getByText('Qwen3.5-0.8B Q4', { exact: true }).count(), 1, 'local multimodal chat catalog renders');
   for (const assignmentAction of ['Seleccionado', 'Usar para embeddings', 'Modelo general', 'Usar como general', 'Modelo de visión', 'Usar para visión']) {

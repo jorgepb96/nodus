@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: campaign reservations survive restart and fail closed at the shared seven-dollar boundary
+ok 1 - campaign reservations survive restart and fail closed at the shared seven-dollar boundary
+  ---
+  duration_ms: 14.451084
+  type: 'test'
+  ...
+# Subtest: paid gate reserves before dispatch, rejects other models and never logs credentials
+ok 2 - paid gate reserves before dispatch, rejects other models and never logs credentials
+  ---
+  duration_ms: 101.790458
+  type: 'test'
+  ...
+# Subtest: separate proxy instances share the campaign-wide two-call limit
+ok 3 - separate proxy instances share the campaign-wide two-call limit
+  ---
+  duration_ms: 308.931333
+  type: 'test'
+  ...
+# Subtest: calls beyond the two dispatch slots wait for a slot instead of being refused
+ok 4 - calls beyond the two dispatch slots wait for a slot instead of being refused
+  ---
+  duration_ms: 480.793834
+  type: 'test'
+  ...
+# Subtest: free catalogues preserve provider metadata and only list the authorised model
+ok 5 - free catalogues preserve provider metadata and only list the authorised model
+  ---
+  duration_ms: 15.358834
+  type: 'test'
+  ...
+# Subtest: tariff accounting bounds the entire interval and fails closed outside verified dates
+ok 6 - tariff accounting bounds the entire interval and fails closed outside verified dates
+  ---
+  duration_ms: 2.973416
+  type: 'test'
+  ...
+# Subtest: reconciliation preserves cap, calls, unknown reservations, invoice costs and original evidence
+ok 7 - reconciliation preserves cap, calls, unknown reservations, invoice costs and original evidence
+  ---
+  duration_ms: 18.917791
+  type: 'test'
+  ...
+# Subtest: mismatched accounting evidence rejects reconciliation without changing the ledger
+ok 8 - mismatched accounting evidence rejects reconciliation without changing the ledger
+  ---
+  duration_ms: 10.665958
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1035.68475

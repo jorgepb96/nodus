@@ -785,7 +785,7 @@ export async function runDeepScan(
       const embeddings = await embedMany(
         preparedIdeas.map((entry) => entry.embeddingText),
         undefined,
-        { perf, jobId: `${work.nodus_id}:fusion-embeddings` },
+        { role: 'document', perf, jobId: `${work.nodus_id}:fusion-embeddings` },
       );
       embeddingDone({ available: embeddings.filter(Boolean).length });
       await withFusionLock(publishOrdinal, async () => {

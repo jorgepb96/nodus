@@ -1,0 +1,148 @@
+
+> nodus@5.8.0 test:research:grounding
+> node --test scripts/test-research-chat-grounding.mjs scripts/test-research-coverage-quotes.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs
+
+TAP version 13
+# Subtest: no Spanish error literal in the main process reaches a foreign-language reader untranslated
+ok 1 - no Spanish error literal in the main process reaches a foreign-language reader untranslated
+  ---
+  duration_ms: 567.608667
+  ...
+# Subtest: no Spanish error literal in the main process is erased into the generic message
+ok 2 - no Spanish error literal in the main process is erased into the generic message
+  ---
+  duration_ms: 863.026083
+  ...
+# Subtest: every catalogue entry is translated in all seven languages and left alone in Spanish
+ok 3 - every catalogue entry is translated in all seven languages and left alone in Spanish
+  ---
+  duration_ms: 47.744333
+  ...
+# Subtest: every parameterized pattern keeps its runtime values and translates around them
+ok 4 - every parameterized pattern keeps its runtime values and translates around them
+  ---
+  duration_ms: 4.213667
+  ...
+# Subtest: Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+ok 5 - Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+  ---
+  duration_ms: 0.714625
+  ...
+# Subtest: catalogue and server-address errors keep their specific cause through IPC in every UI language
+ok 6 - catalogue and server-address errors keep their specific cause through IPC in every UI language
+  ---
+  duration_ms: 0.252542
+  ...
+# Subtest: the local provider failure that opened this file names its cause in every language
+ok 7 - the local provider failure that opened this file names its cause in every language
+  ---
+  duration_ms: 0.308375
+  ...
+# Subtest: a transport detail we did not author is passed through verbatim
+ok 8 - a transport detail we did not author is passed through verbatim
+  ---
+  duration_ms: 0.115875
+  ...
+# Subtest: the Settings connection test reports its HTTP status, not a generic failure
+ok 9 - the Settings connection test reports its HTTP status, not a generic failure
+  ---
+  duration_ms: 0.137916
+  ...
+# Subtest: the Settings result travels as an IPC payload, which is the path the report used
+ok 10 - the Settings result travels as an IPC payload, which is the path the report used
+  ---
+  duration_ms: 0.196541
+  ...
+# Subtest: the two literals the scanner cannot evaluate are translated in their real runtime form
+ok 11 - the two literals the scanner cannot evaluate are translated in their real runtime form
+  ---
+  duration_ms: 0.334792
+  ...
+# Subtest: research assistant packs preserve complete rules, schemas, citations and limits
+ok 12 - research assistant packs preserve complete rules, schemas, citations and limits
+  ---
+  duration_ms: 38.709958
+  ...
+# Subtest: research assistant wires prompt language into all model-facing branches and genealogy labels
+ok 13 - research assistant wires prompt language into all model-facing branches and genealogy labels
+  ---
+  duration_ms: 1.39125
+  ...
+# Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-chat-agent.mjs
+ok 3 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-chat-agent.mjs
+  ---
+  duration_ms: 8652.651042
+  ...
+# ✔ only authorized literal passages from the frozen turn enter verification (1.331417ms)
+# ✔ an explicit constructed exercise retains its writing mode; untrusted source text cannot disable verification (0.322583ms)
+# ✔ a supported answer retains the literal fact and a canonical source attribution (6.003208ms)
+# ✔ a fabricated quote cannot approve a claim even when the judge returns supported (1.170458ms)
+# ✔ an unavailable verifier is an availability failure, never a successful absence answer (0.956625ms)
+# ✔ a contradictory inference classification needs a fresh consistent verdict, not automatic approval (1.191334ms)
+# ✔ repeated contradictory inference classifications stay unavailable after one retry (0.825792ms)
+# ✔ cancellation during verification never returns the unchecked draft (0.300416ms)
+# ✔ general answers without documentary excerpts do not trigger paid audits (0.127625ms)
+# ✔ verified citations remain inside table cells and web evidence keeps its own target (0.165083ms)
+# ✔ a semantically correct paraphrase cannot masquerade as a direct quote (1.607708ms)
+# ✔ simple calculated equations and table values are checked despite an approving semantic judge (2.469708ms)
+# ✔ a malformed premise reference gets a bounded schema repair, not an unchecked answer (0.346333ms)
+# ✔ repair receives the deterministic cause even when the semantic reason approves the premises (0.269958ms)
+# ✔ a rejected translated direct quote is repaired without deleting its supported value (1.098167ms)
+# ✔ a supported premise survives a fresh review after an unsupported compound claim is repaired (0.1815ms)
+# ✔ verified but irrelevant background is repaired when the requested fact exists (0.353542ms)
+# ✔ coverage outages and persistently incomplete repairs cannot become successful refusals (0.344292ms)
+# ✔ a verified evidence gap retains the requested facet even without a factual claim (0.206541ms)
+# ✔ coverage cannot demand a corpus-absence assertion instead of an already verified price limitation (0.251208ms)
+# ✔ an interpretation complaint is checked against the precise verified distribution limit (0.151458ms)
+# ✔ coverage confirmation cannot invent answer spans or supporting source quotes (0.406541ms)
+# ✔ a malformed coverage proof gets one identical retry and completeness is derived from validated proof (0.239792ms)
+# ✔ coverage proof retries are bounded and transport failures are never replayed (0.212334ms)
+# ✔ a confirmed missing limit is compared with the exact already verified acknowledgement before another repair (0.374292ms)
+# ✔ limit comparison cannot invent quotes, indices or a verified statement (0.4415ms)
+# ✔ an unrelated verified limitation cannot satisfy the missing requested facet (0.208ms)
+# ✔ broad drafts are redrafted from original excerpts without passing invented prose to the writer or judge (0.232167ms)
+# ✔ a source-only redraft table still needs separate quantity and negation evidence (0.254833ms)
+# ✔ a short draft citing generated orientation is redrafted and a fabricated replacement still cannot publish (0.148959ms)
+# ✔ empty, unavailable and cancelled source redrafts cannot publish unchecked prose (0.238916ms)
+# ✔ a positive coverage boolean cannot bypass independent proof or publish invented answer spans (0.646ms)
+# ✔ independent positive proof repairs refused reasoning from literal premises and audits the comparison anew (0.35225ms)
+# ✔ a long draft with few compound sentences still redrafts from original excerpts (0.16975ms)
+# ✔ full-question proof accepts separate literal request facets without inheriting a critic complaint (0.162458ms)
+# ✔ full-question proof rejects empty, invented and duplicate request-facet records (9.847708ms)
+# ✔ coverage accepts distributed literal spans without treating ellipsis-joined text as a quote (0.473459ms)
+# ✔ the real chat stream holds draft content, cancels safely and rechecks scope after verification (7118.272042ms)
+# ℹ tests 38
+# ℹ suites 0
+# ℹ pass 38
+# ℹ fail 0
+# ℹ cancelled 0
+# ℹ skipped 0
+# ℹ todo 0
+# ℹ duration_ms 7167.107875
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-chat-grounding.mjs
+ok 4 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-chat-grounding.mjs
+  ---
+  duration_ms: 10313.679833
+  ...
+# Claim ledger: atomic premises, verdict agreement, silence, qualified inference, retired-claim carry-over, whole-report contradictions and orchestration passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-claim-audit.mjs
+ok 5 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-claim-audit.mjs
+  ---
+  duration_ms: 1925.801417
+  ...
+# Research answer quote guard: 16 checks passed across legacy, structured, synthetic safety, and 3 archived regressions.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-coverage-quotes.mjs
+ok 6 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-coverage-quotes.mjs
+  ---
+  duration_ms: 367.228625
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10323.181875

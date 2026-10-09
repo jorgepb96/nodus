@@ -1,0 +1,31 @@
+TAP version 13
+# [perf][deep] JSON retry 1ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para google. Configúrala en Ajustes. retry=false
+# research assistant: cancellation preserves its publication contract
+# nodi: cancellation preserves its publication contract
+# world chat: cancellation preserves its publication contract
+# database chat: cancellation preserves its publication contract
+# study/teaching: cancellation preserves its publication contract
+# library reader: cancellation preserves its publication contract
+# All 40 partial-answer abort scenarios passed without network calls.
+# Subtest: scripts/test-chat-abort-partial.mjs
+ok 1 - scripts/test-chat-abort-partial.mjs
+  ---
+  duration_ms: 4369.040333
+  type: 'test'
+  ...
+# Concilium: bounds, duplicates, independent parallel streaming, chairman-only chat/skills, fan-in, persistence, partial/all failures, cancellation and ordinary chat passed. No network.
+# Subtest: scripts/test-research-concilium.mjs
+ok 2 - scripts/test-research-concilium.mjs
+  ---
+  duration_ms: 6170.358625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6179.6495

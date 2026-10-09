@@ -1,0 +1,90 @@
+{
+  "measuredRevision": "82dac50f",
+  "node": "22.23.2",
+  "electron": "43.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "checks": [
+    {
+      "name": "37 source-grounding runtime regressions",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-inner-tests.log"
+    },
+    {
+      "name": "16 focused outer tests, including chat/claim audit/localization",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-final-tests.log"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-final-lint.log"
+    },
+    {
+      "name": "production build and both TypeScript checks",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-final-build.log"
+    },
+    {
+      "name": "cost/proxy regressions enforcing the authorized ceiling",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-final-budget-tests.log"
+    },
+    {
+      "name": "macOS ARM64 package",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-package.log"
+    },
+    {
+      "name": "isolated offline ASAR package smoke, both profiles",
+      "exitCode": 0,
+      "log": "logs/nodus-grounding-facet-proof-package-smoke.log"
+    }
+  ],
+  "resolvedFailures": [
+    {
+      "log": "logs/nodus-grounding-source-redraft-tests.log",
+      "reason": "A new regression mock incorrectly asserted that a later repair omitted the diagnosed rejected draft; the source-only writer assertion is now limited to that writer request. Production code unchanged; final tests pass."
+    }
+  ],
+  "broaderInventory": {
+    "revision": "7026b2ff (grounding tests loaded after that source revision; other module code unchanged)",
+    "total": 4641,
+    "passed": 4634,
+    "failed": 3,
+    "cancelled": 2,
+    "skipped": 2,
+    "failure": "Queue panel parent hit its four-minute wall timeout under contention; isolated repeat passed all 26 tests. Original failed full-suite log retained; not claimed as exit zero."
+  },
+  "pending": [
+    "Windows x64 native execution/package",
+    "Linux x64 native execution/package",
+    "macOS Intel native execution/package",
+    "Developer ID signing/notarization"
+  ],
+  "paidQualityEvaluation": {
+    "measuredRevision": "82dac50f",
+    "coordinatorExitCode": 1,
+    "executed": 113,
+    "planned": 120,
+    "reviewedCaptured": 113,
+    "pending": 7,
+    "observedPositive": {
+      "passed": 61,
+      "executed": 77
+    },
+    "observedAbsence": {
+      "passed": 35,
+      "executed": 36
+    },
+    "citations": {
+      "resolvable": 113,
+      "captured": 113
+    },
+    "accepted": false,
+    "reason": "Budget admission stopped the final profile; all captured cases are reviewed, and positive fidelity/adequacy is already below the required gate.",
+    "report": "../final-82dac50f/campaign.json",
+    "log": "logs/nodus-grounding-facet-proof-evaluation.log"
+  },
+  "packagedRuntime": "../package-82dac50f/measurement.json"
+}

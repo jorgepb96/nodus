@@ -1,0 +1,452 @@
+{
+  "name": "cross-language",
+  "repetition": 0,
+  "question": "Which apparatus determines how cloudy a liquid is using a visible beam? Cite the Spanish source.",
+  "scope": "limited",
+  "started": 1791324217582,
+  "finished": 1791324249738,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Which apparatus determines how cloudy a liquid is using a visible beam? Cite the Spanish source.",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "60a0c67c-91d2-40c3-8e14-7725ba9b5db8"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "5772c6bd-1dc9-4588-9148-6e6d7f67b054",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "El aparato que la fuente en español describe es el **sensor Alba**: «El sensor Alba usa luz verde a 530 nm para medir turbidez» ([fixture 13, p. 1](nodus://passage/documentary%3Aa47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3%3Acd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb%3A0)). La misma idea se recoge como método en la idea generada correspondiente: el sensor Alba emplea luz verde a 530 nm para medir turbidez y requiere calibración cada 30 días ([fixture 13](nodus://idea/g-0001)).\n\nPrecisiones y límites de la evidencia:\n\n- **La turbidez y el haz.** La fuente atribuye al sensor Alba la medición de turbidez mediante luz verde de 530 nm ([fixture 13, p. 1](nodus://passage/documentary%3Aa47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3%3Acd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb%3A0)). Que 530 nm corresponda a luz visible es una inferencia de conocimiento general por mi parte, no una afirmación que la fuente formule con esas palabras: el pasaje solo dice «luz verde a 530 nm».\n- **Lo que no mide.** El pasaje añade explícitamente que el sensor Alba «No mide concentración de oxígeno» ([fixture 13, p. 1](nodus://passage/documentary%3Aa47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3%3Acd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb%3A0)), lo que descarta ese uso si tu interés era medir oxígeno disuelto.\n- **Mantenimiento.** El mismo pasaje indica que «Debe calibrarse cada 30 días» ([fixture 13, p. 1](nodus://passage/documentary%3Aa47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3%3Acd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb%3A0)).\n\n**Cobertura de la búsqueda:** esta respuesta se apoya únicamente en el documento «fixture 13», localizado al buscar dentro de esa obra; es la única fuente cuyo texto llegó a esta respuesta. El registro no incluye autoría ni año para esta obra, por lo que la cita se identifica por el título del documento; si la pregunta buscaba un aparato distinto (por ejemplo, un turbidímetro de haz visible de otra fuente), esa evidencia no está disponible en lo consultado.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 1,
+      "documents": 1,
+      "summaries": 0,
+      "passages": 1,
+      "contextChars": 4567,
+      "truncated": false,
+      "researchTraversal": {
+        "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+        "sourceCount": 1,
+        "rounds": 3,
+        "evidenceTokens": 267,
+        "decisionTokens": 4651,
+        "matchedDocumentIds": [
+          "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+            "title": "fixture 13",
+            "reasons": []
+          }
+        ],
+        "limitations": [],
+        "partial": false,
+        "queries": [
+          {
+            "query": "¿Qué aparato determina la turbidez de un líquido mediante un haz visible, según una fuente en español?",
+            "sources": [
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "determinación de turbidez con haz visible",
+            "sources": [
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+            ],
+            "candidates": 2,
+            "partial": false
+          },
+          {
+            "query": "aparato medición turbidez líquidos",
+            "sources": [
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+            ],
+            "candidates": 2,
+            "partial": false
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+        "nodus_id": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+        "libraryItemId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+        "attachmentId": "local:a637a1f4-055f-4068-8b26-1c50445df6da",
+        "revision": "ff18e2a86e8cfc1d84da1bf8b8fbc205e10ee984d582de1532be8ce68abc16ae",
+        "historical": false,
+        "provenance": "source",
+        "text": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus-library:nodus%3Aa637a1f4-055f-4068-8b26-1c50445df6da",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 13",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:03:47.272Z",
+      "type": "documentary-retrieval",
+      "query": "¿Qué aparato determina la turbidez de un líquido mediante un haz visible, según una fuente en español?",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "vectorKeys": [
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "selected": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+            "lexicalIds": [
+              "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+            ],
+            "semanticIds": [
+              "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:03:47.386Z",
+      "type": "research-evidence-selection",
+      "query": "¿Qué aparato determina la turbidez de un líquido mediante un haz visible, según una fuente en español?",
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "sharedCandidates": [
+        {
+          "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:03:54.056Z",
+      "type": "documentary-retrieval",
+      "query": "determinación de turbidez con haz visible",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "vectorKeys": [
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "selected": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+            "lexicalIds": [
+              "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+            ],
+            "semanticIds": [
+              "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:03:54.152Z",
+      "type": "research-evidence-selection",
+      "query": "determinación de turbidez con haz visible",
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "sharedCandidates": [
+        {
+          "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:04:02.360Z",
+      "type": "documentary-retrieval",
+      "query": "aparato medición turbidez líquidos",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "vectorKeys": [
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          }
+        ],
+        "selected": [
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+            "lexicalIds": [
+              "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+            ],
+            "semanticIds": [
+              "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:04:02.469Z",
+      "type": "research-evidence-selection",
+      "query": "aparato medición turbidez líquidos",
+      "scopeId": "a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3",
+      "sharedCandidates": [
+        {
+          "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": false
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    },
+    {
+      "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    },
+    {
+      "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    },
+    {
+      "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+      "title": "fixture 13",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 13\nOBRA ENLAZADA\n1\nfixture 13\nEVIDENCIA ANCLADA\n1\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-SG18aD/artifacts/chat-0-cross-language.png"
+}

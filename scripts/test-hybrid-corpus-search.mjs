@@ -9,7 +9,7 @@ const bundle = await build({ entryPoints: ['electron/ai/hybridCorpusSearch.ts'],
     build.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: path.endsWith('database')
       ? 'export function getDb() { return globalThis.__hybridSearchFixture.db; }'
       : path.endsWith('ideasRepo') ? 'export function currentEmbeddingConfig() { const s=globalThis.__hybridSearchFixture; return {provider:s.provider,model:s.model}; }'
-      : `export async function embed() { if(globalThis.__hybridSearchFixture.fail) throw new Error('offline'); return [1,0]; }
+      : `export async function embedQuery() { if(globalThis.__hybridSearchFixture.fail) throw new Error('offline'); return [1,0]; }
          export async function embedMany(texts) { const s=globalThis.__hybridSearchFixture; s.inputs.push(...texts); return texts.map(text=>text.includes('orchard')?[1,0]:[0,1]); }`, loader: 'js' }));
   } }],
 });

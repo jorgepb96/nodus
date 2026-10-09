@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -166,6 +167,7 @@ export const JA: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ja,
   ...TEXT_PROVENANCE_TRANSLATIONS.ja,
   ...MODEL_SETTINGS_TRANSLATIONS.ja,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['ja'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ja,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ja,
   ...ACADEMIC_TOUR_TRANSLATIONS.ja,

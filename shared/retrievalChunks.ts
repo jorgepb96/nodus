@@ -2,6 +2,7 @@
 export const RETRIEVAL_CHUNKER_VERSION = "words-280-overlap-60/utf8-4096/source-locators/3";
 export const RETRIEVAL_CHUNK_WORDS = 280;
 export const RETRIEVAL_OVERLAP_WORDS = 60;
+export const RETRIEVAL_CHUNK_MAX_BYTES = 4096;
 function clampInt(value: number | undefined, fallback: number, min: number, max: number): number {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return fallback;
@@ -45,7 +46,7 @@ export function planRetrievalChunks(
   text: string,
   opts: { chunkWords?: number; overlapWords?: number; sourceMap?: Record<string, string>; maxBytes?: number } = {}
 ): RetrievalChunk[] {
-  const maxBytes = clampInt(opts.maxBytes, 4096, 256, 4096);
+  const maxBytes = clampInt(opts.maxBytes, RETRIEVAL_CHUNK_MAX_BYTES, 256, RETRIEVAL_CHUNK_MAX_BYTES);
   const encoder = new TextEncoder();
   const chunkWords = clampInt(opts.chunkWords, RETRIEVAL_CHUNK_WORDS, 80, 1000);
   const overlapWords = clampInt(opts.overlapWords, RETRIEVAL_OVERLAP_WORDS, 0, Math.max(0, chunkWords - 1));
@@ -121,4 +122,3 @@ export function planRetrievalChunks(
   }
   return chunks;
 }
-

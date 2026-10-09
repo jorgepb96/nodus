@@ -35,7 +35,7 @@ const plugin = {
     stub(/\.\.\/db\/tutorRepo$/, 'tutor', 'export function listTutorRoutes(){return []}');
     stub(/\.\.\/db\/settingsRepo$/, 'settings', "export function getSettings(){return {promptLanguage:'es'}}");
     stub(/\.\/aiClient$/, 'ai', `
-      export async function embed(){return [1,0,0]}
+      export async function embedQuery(){return [1,0,0]}
       export async function embedMany(queries){return queries.map(()=>[1,0,0])}
       export async function completeJson(){return {}}
     `);

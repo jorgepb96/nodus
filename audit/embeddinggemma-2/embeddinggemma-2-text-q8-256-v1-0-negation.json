@@ -1,0 +1,3133 @@
+{
+  "name": "negation",
+  "repetition": 0,
+  "question": "¿El ensayo Vega midió la inteligencia de los participantes?",
+  "scope": "fixed",
+  "started": 1791326368890,
+  "finished": 1791326381776,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿El ensayo Vega midió la inteligencia de los participantes?",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "6a0623c3-102e-4e0a-b086-e545acfed59a"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "6140556b-8096-4a07-ace8-bc1bf5706ecb",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "**No. El ensayo Vega no midió la inteligencia de los participantes.** El archivo lo dice de forma explícita y coincidente en todas las versiones conservadas.\n\n**Lo que sí midió**\n\nEl ensayo comparó dos condiciones de estudio y reportó recuerdo: el grupo de recuperación espaciada recordó el 72 %, frente al 51 % del grupo de relectura ([Vega, archivo 2](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5%3A0)). Es decir, la variable dependiente registrada es el rendimiento en recuperación, no una medida cognitiva general.\n\n**Lo que no midió**\n\nJunto a ese resultado, la misma fuente precisa que la inteligencia no fue medida ([Vega, archivo 2](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5%3A0)). El archivo lo repite en español ([Vega, archivo 7](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda%3A0)), en portugués ([Vega, archivo 17](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52%3A0)), en italiano ([Vega, archivo 12](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6%3A0)), en francés ([Vega, archivo 27](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858%3A0)) y en alemán ([Vega, archivo 22](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3Ac3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889%3A0)). La coincidencia entre idiomas no es corroboración independiente: son variantes del mismo archivo sintético, y así lo declara al menos una de ellas ([Vega, archivo 7](nodus://passage/documentary%3A6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15%3A31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda%3A0)).\n\n**Implicación**\n\nCualquier afirmación del tipo «el ensayo Vega mostró que la recuperación espaciada mejora la inteligencia» iría más allá de la evidencia. Los datos disponibles permiten sostener una diferencia de recuerdo (72 % vs. 51 %), no un efecto sobre inteligencia.\n\n**Límite de esta búsqueda**\n\nNo apareció en el catálogo ninguna obra titulada «Vega»: la evidencia disponible son únicamente pasajes de archivo sintético. Tampoco hay registros de contradicciones ni de lagunas sobre este punto en el material consultado, y la búsqueda puede ser incompleta, de modo que no puedo descartar que exista un informe primario del ensayo fuera de lo recuperado aquí.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 40,
+      "documents": 40,
+      "summaries": 0,
+      "passages": 15,
+      "contextChars": 29023,
+      "truncated": true,
+      "researchTraversal": {
+        "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+        "sourceCount": 40,
+        "rounds": 4,
+        "evidenceTokens": 6469,
+        "decisionTokens": 21388,
+        "matchedDocumentIds": [
+          "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+          "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+          "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+          "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+          "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+          "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+          "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+          "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+          "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+          "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+          "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+          "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+          "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+          "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+          "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:f0547706-2b60-4689-826f-555fc6909ebd"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b",
+            "title": "fixture 24",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607",
+            "title": "fixture 15",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+            "title": "fixture 01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+            "title": "public AGENT001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4",
+            "title": "fixture 19",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f",
+            "title": "fixture 03",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91",
+            "title": "fixture 23",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:30f4e67b-bde4-471b-8f16-309757159655",
+            "title": "fixture 04",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+            "title": "fixture 09",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3ee81872-f46e-4b6e-89cc-9d30a7364917",
+            "title": "fixture 20",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+            "title": "fixture 22",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67",
+            "title": "public SAM00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+            "title": "public LORA0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f",
+            "title": "fixture 11",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+            "title": "fixture 25",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e",
+            "title": "public QLORA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53",
+            "title": "public LLAMA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:690e5d1f-fde5-4a05-9497-bf95b02e9f3e",
+            "title": "fixture 16",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f",
+            "title": "public SELF0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:75075b08-f75e-443d-b58e-53c35145a5b1",
+            "title": "fixture 05",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+            "title": "fixture 17",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:7e10523c-cab9-4897-addf-29626b52ecda",
+            "title": "fixture 18",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+            "title": "fixture 14",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e",
+            "title": "public ARENA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+            "title": "public RWKV0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6",
+            "title": "public DPO00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:93edf118-2dda-44ed-80dd-38afa6e25ceb",
+            "title": "fixture 26",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+            "title": "fixture 02",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+            "title": "fixture 12",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7",
+            "title": "fixture 30",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:bee29345-90f0-411d-9a7d-736eced5dabd",
+            "title": "fixture 08",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754",
+            "title": "public HUGGPT01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c8a3001f-00a7-4b58-90ef-818c60a16e35",
+            "title": "fixture 10",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:dc543f63-68f7-449f-8643-58519b5bd96b",
+            "title": "fixture 28",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+            "title": "fixture 21",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f",
+            "title": "fixture 06",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+            "title": "fixture 27",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e",
+            "title": "fixture 29",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+            "title": "fixture 13",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+            "title": "fixture 07",
+            "reasons": []
+          }
+        ],
+        "limitations": [
+          "repeated_action"
+        ],
+        "partial": true,
+        "queries": [
+          {
+            "query": "¿El ensayo Vega midió la inteligencia de los participantes?",
+            "sources": [
+              "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b",
+              "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607",
+              "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+              "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+              "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4",
+              "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f",
+              "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91",
+              "nodus:30f4e67b-bde4-471b-8f16-309757159655",
+              "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+              "nodus:3ee81872-f46e-4b6e-89cc-9d30a7364917",
+              "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+              "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67",
+              "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+              "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f",
+              "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+              "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e",
+              "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53",
+              "nodus:690e5d1f-fde5-4a05-9497-bf95b02e9f3e",
+              "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f",
+              "nodus:75075b08-f75e-443d-b58e-53c35145a5b1",
+              "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+              "nodus:7e10523c-cab9-4897-addf-29626b52ecda",
+              "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+              "nodus:80bd418f-0f2c-4e02-915d-209919f8703e",
+              "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+              "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6",
+              "nodus:93edf118-2dda-44ed-80dd-38afa6e25ceb",
+              "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+              "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+              "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7",
+              "nodus:bee29345-90f0-411d-9a7d-736eced5dabd",
+              "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754",
+              "nodus:c8a3001f-00a7-4b58-90ef-818c60a16e35",
+              "nodus:dc543f63-68f7-449f-8643-58519b5bd96b",
+              "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+              "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f",
+              "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+              "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e",
+              "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+              "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+            ],
+            "candidates": 105,
+            "partial": true
+          },
+          {
+            "query": "ensayo Vega medición inteligencia participantes",
+            "sources": [
+              "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b",
+              "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607",
+              "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+              "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+              "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4",
+              "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f",
+              "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91",
+              "nodus:30f4e67b-bde4-471b-8f16-309757159655",
+              "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+              "nodus:3ee81872-f46e-4b6e-89cc-9d30a7364917",
+              "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+              "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67",
+              "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+              "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f",
+              "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+              "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e",
+              "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53",
+              "nodus:690e5d1f-fde5-4a05-9497-bf95b02e9f3e",
+              "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f",
+              "nodus:75075b08-f75e-443d-b58e-53c35145a5b1",
+              "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+              "nodus:7e10523c-cab9-4897-addf-29626b52ecda",
+              "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+              "nodus:80bd418f-0f2c-4e02-915d-209919f8703e",
+              "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+              "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6",
+              "nodus:93edf118-2dda-44ed-80dd-38afa6e25ceb",
+              "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+              "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+              "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7",
+              "nodus:bee29345-90f0-411d-9a7d-736eced5dabd",
+              "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754",
+              "nodus:c8a3001f-00a7-4b58-90ef-818c60a16e35",
+              "nodus:dc543f63-68f7-449f-8643-58519b5bd96b",
+              "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+              "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f",
+              "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+              "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e",
+              "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+              "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+            ],
+            "candidates": 61,
+            "partial": true
+          },
+          {
+            "query": "Vega trial intelligence measurement participants",
+            "sources": [
+              "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b",
+              "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607",
+              "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+              "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+              "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4",
+              "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f",
+              "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91",
+              "nodus:30f4e67b-bde4-471b-8f16-309757159655",
+              "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+              "nodus:3ee81872-f46e-4b6e-89cc-9d30a7364917",
+              "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+              "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67",
+              "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+              "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f",
+              "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+              "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e",
+              "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53",
+              "nodus:690e5d1f-fde5-4a05-9497-bf95b02e9f3e",
+              "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f",
+              "nodus:75075b08-f75e-443d-b58e-53c35145a5b1",
+              "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+              "nodus:7e10523c-cab9-4897-addf-29626b52ecda",
+              "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+              "nodus:80bd418f-0f2c-4e02-915d-209919f8703e",
+              "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+              "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6",
+              "nodus:93edf118-2dda-44ed-80dd-38afa6e25ceb",
+              "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+              "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+              "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7",
+              "nodus:bee29345-90f0-411d-9a7d-736eced5dabd",
+              "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754",
+              "nodus:c8a3001f-00a7-4b58-90ef-818c60a16e35",
+              "nodus:dc543f63-68f7-449f-8643-58519b5bd96b",
+              "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+              "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f",
+              "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+              "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e",
+              "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+              "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+            ],
+            "candidates": 106,
+            "partial": true
+          },
+          {
+            "query": "Vega ensayo inteligencia participantes medición",
+            "sources": [
+              "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b",
+              "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607",
+              "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+              "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+              "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4",
+              "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f",
+              "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91",
+              "nodus:30f4e67b-bde4-471b-8f16-309757159655",
+              "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+              "nodus:3ee81872-f46e-4b6e-89cc-9d30a7364917",
+              "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+              "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67",
+              "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+              "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f",
+              "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+              "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e",
+              "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53",
+              "nodus:690e5d1f-fde5-4a05-9497-bf95b02e9f3e",
+              "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f",
+              "nodus:75075b08-f75e-443d-b58e-53c35145a5b1",
+              "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+              "nodus:7e10523c-cab9-4897-addf-29626b52ecda",
+              "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+              "nodus:80bd418f-0f2c-4e02-915d-209919f8703e",
+              "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+              "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6",
+              "nodus:93edf118-2dda-44ed-80dd-38afa6e25ceb",
+              "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+              "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+              "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7",
+              "nodus:bee29345-90f0-411d-9a7d-736eced5dabd",
+              "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754",
+              "nodus:c8a3001f-00a7-4b58-90ef-818c60a16e35",
+              "nodus:dc543f63-68f7-449f-8643-58519b5bd96b",
+              "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+              "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f",
+              "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+              "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e",
+              "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+              "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+            ],
+            "candidates": 61,
+            "partial": true
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+        "nodus_id": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+        "libraryItemId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+        "attachmentId": "local:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+        "revision": "6923d7588b5e200c7c075d88255886f77a5f16d10433f631142390fb4dafa8e3",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed:local:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 02",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+        "nodus_id": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+        "libraryItemId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+        "attachmentId": "local:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+        "revision": "552d7dbf4739e00028499b7659a5f8c8f9a9586c986550b0c777b0cf6159f53e",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7:local:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 07",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+        "nodus_id": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+        "libraryItemId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+        "attachmentId": "local:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+        "revision": "2ccccd9602070bd5201d0f40044b6f25fdb549af3d8f13bb58e3fc44e111ba0a",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad:local:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 17",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+        "nodus_id": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+        "libraryItemId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+        "attachmentId": "local:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+        "revision": "fe5dc146df806e157bb8b1e399d9f9db62c91e85126daf239485d156ed4cbaa1",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf:local:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 12",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+        "nodus_id": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+        "libraryItemId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+        "attachmentId": "local:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+        "revision": "86b229fe4ee21056d9c6136ecfd8892a15d1d7254a94e1239efc9fe17530ee89",
+        "historical": false,
+        "provenance": "source",
+        "text": "Campos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f:local:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 27",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+        "nodus_id": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+        "libraryItemId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+        "attachmentId": "local:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+        "revision": "f5c5be517c6eecab4589fb95c1908aa72deb2238971d82ea1c5aea3c2896e71e",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78:local:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 22",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:39:30.436Z",
+      "type": "documentary-retrieval",
+      "query": "¿El ensayo Vega midió la inteligencia de los participantes?",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1",
+        "dim": 256,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "vectorKeys": [
+        "8d40b0eaced230c40a51fa239d3c60026567c65aabd0c1b360c9ec10670cc844",
+        "016349b6d960d20bf7f54beaac5152cb362feb3c9d6f47b946d40b02fc0feedc",
+        "794bdc658937f25cc824fc8ddcfb489782116e8fd20ce2a792d2633258b6e912",
+        "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32",
+        "2940cbd8932c4d39f68570663378172604ed468a7de29f15e6c7c2caf61dd6a8",
+        "8e0bf800e1491901dae8b8b876e8a239fb2754000a3cd141bc08764ba063c06b",
+        "be5e02090ed6fc38559cabd058e7bab00342d65e567f1203724a1f6250ed7496",
+        "48191e6104e86f37b09bf4b0ecb9357d7db40af4df8e8e96a8ef51bed1da988a",
+        "0019ba725d8ad2d59e4332425c983541c766a9c10f1caeb210af54daa96934df",
+        "49f2ffd46392ee073ddff86babe6461c14e75a027fe7391f9796f7a1bea7f574",
+        "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03",
+        "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690",
+        "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9",
+        "cca2f7a449f09b0b42c6131e11541fc6c793da5c6956ff9900ce4b41a64a8771",
+        "76c6e98c78770e3ae66cca60938d083c26d1a5f1b6bd52db7a4a9cdf800495ff",
+        "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef",
+        "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4",
+        "d571111de23b0685cbe47d41bf4da4c85c27829ee73e8695dc7a086a2f470384",
+        "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596",
+        "dd2fb26781fdc4b406f21e77483e4302521713b73737cb4f75f4e923a275267a",
+        "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15",
+        "2c1b8a903690499d0c390d986c0a714df15da859d063ae5531f3005144adcdfb",
+        "f87fd5bd3b4937fe772df66f4d3d71e9fbacdf05e22f4584683edaa94584efd5",
+        "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141",
+        "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772",
+        "c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4",
+        "12dee54ee78c26a658a67538a8299c83613bd13dff8f0af1425066c4083d7a43",
+        "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2",
+        "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee",
+        "98bcb9c532b7062f6c32358b2e37c4db56c687711d4120be54fce6aa92b7f103",
+        "989a0d6fc741369adcaae2be97978b97fd8019058d148d2a6f128e74f3221c5a",
+        "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151",
+        "10c2ccfca09f1f335df76fdaa002462a38d1722026c749ac49bec745f60cc762",
+        "dbdffd5e83dc5460613dc5d0d11a8fa4ffd4dad4e31f0620a1a094fadd4b576e",
+        "6b49e749d39ebdd57888a49e7ae7fd9689adbd432bd66bf07fcabc0af65e8035",
+        "21c043f79501d8a050becbf4d692dae782f9790ef3760cb5c3599788be5e75f7",
+        "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf",
+        "75fd808e3730e04ef02c163bf837e812ff3c3a0a26aa6b35c1d6568bde4fac98",
+        "ce3eca7db8517d012cdb8243fc463c671961f11cc113b96a3183781a7edc23c8",
+        "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:22",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:52",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:59",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:24",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:54",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:25",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:17",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:31",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:15",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:31",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:39",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:55",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:40",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:58",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:13",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:51",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:54",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:58",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:19",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:24",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:11",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:16",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:23",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:84",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:22",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:29",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:57",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:50",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:42",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:10",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:56",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:17",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:21",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:57",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:8",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:22",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:45",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:18",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:34",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:37",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:59",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:53",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:14",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:39",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:58",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:20",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:31",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:4",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:27",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:30",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+            "documentId": "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f"
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+            "documentId": "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6"
+          },
+          {
+            "id": "7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+            "documentId": "nodus:06e11945-2799-423e-9003-5fb0da2db630"
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+            "documentId": "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4"
+          },
+          {
+            "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+            "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9"
+          },
+          {
+            "id": "d31fcf693b5590de7797f4eebbd8f1ab5c8bd2a858230f105aea1e1aca729607:51",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0",
+            "documentId": "nodus:f0547706-2b60-4689-826f-555fc6909ebd"
+          },
+          {
+            "id": "d31fcf693b5590de7797f4eebbd8f1ab5c8bd2a858230f105aea1e1aca729607:50",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "bc9a379e3c3d8c64e1c8585129f74b80e0ac38bfbe545fd4ee745b8eed2c9295:46",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "bc9a379e3c3d8c64e1c8585129f74b80e0ac38bfbe545fd4ee745b8eed2c9295:48",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "a95ff0c792583f46565d924f811f6249c1fb3040d9cff1817fee157c9146dcac:0",
+            "documentId": "nodus:e5a36e12-1e81-4871-ab03-b3a5eeed053f"
+          },
+          {
+            "id": "5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+            "documentId": "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b"
+          },
+          {
+            "id": "643a1c7f44bab829b37a9085ea8fab5d2f5a306419005694292f2aed457668be:0",
+            "documentId": "nodus:7e10523c-cab9-4897-addf-29626b52ecda"
+          },
+          {
+            "id": "a4eb9edd25395469ec15ea8434c767ad72e2dae55b07a24c620917a988b3f7ef:0",
+            "documentId": "nodus:0422f5fb-c99e-4f1f-902c-31e264a9d607"
+          },
+          {
+            "id": "a986c18393b75df296b0b3ab2df73fedbfdc65b0320cbe5eb8d0058a90422263:0",
+            "documentId": "nodus:1b11f5e7-497e-456e-9caf-25418ac3676f"
+          },
+          {
+            "id": "f39c01bfc980f6455f62c2c2270b78a5de473af1be1728584d80eea0745a2705:0",
+            "documentId": "nodus:b84be7bd-7092-46ac-8b1a-b20bda9755c7"
+          },
+          {
+            "id": "75601d9d90c74d9ac932a1918aaa3fe696f5a8e29be04fd991f6bbfad0ae8b77:0",
+            "documentId": "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e"
+          },
+          {
+            "id": "bc9a379e3c3d8c64e1c8585129f74b80e0ac38bfbe545fd4ee745b8eed2c9295:47",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "6c191fec542aca78220ba0d332a08b03e34fa16dc6c2d702161d8b86ce7d6410:0",
+            "documentId": "nodus:4d65e8b1-391c-4607-bf47-ab0568d0007f"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "bc23123550a8ecfcea92bc69f355af1ca6a88a512cb8418b25446a5f99cf22fa:0",
+            "documentId": "nodus:24b2b91a-8aad-4ea4-bbaf-7008bd4bfe91"
+          },
+          {
+            "id": "3e6c8d30ce2fe7a268d33060aca96af5bceb033013f53c471dfdbddd28fa2761:0",
+            "documentId": "nodus:75075b08-f75e-443d-b58e-53c35145a5b1"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:37",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:28",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:35",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "d31fcf693b5590de7797f4eebbd8f1ab5c8bd2a858230f105aea1e1aca729607:27",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:74",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:75",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:16",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:17",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:17",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:11",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:5",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb98f7bd4a8272169f797168ca804a33b3f403be5d642a6ef9523ac3801542bd:41",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "483d09776c9759ad0e9c1dc8059f86cd2af67cc9d4cee61f652044780d7a8a6a:12",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:27",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "483d09776c9759ad0e9c1dc8059f86cd2af67cc9d4cee61f652044780d7a8a6a:11",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "fb98f7bd4a8272169f797168ca804a33b3f403be5d642a6ef9523ac3801542bd:44",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:30",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "d31fcf693b5590de7797f4eebbd8f1ab5c8bd2a858230f105aea1e1aca729607:8",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:24",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:35",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "7cc96781ed18a6b94e8e8ee080848024f2c2d1ebb4886b6771a74658fee86469:45",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:36",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "7cc96781ed18a6b94e8e8ee080848024f2c2d1ebb4886b6771a74658fee86469:41",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb98f7bd4a8272169f797168ca804a33b3f403be5d642a6ef9523ac3801542bd:50",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "7cc96781ed18a6b94e8e8ee080848024f2c2d1ebb4886b6771a74658fee86469:44",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "483d09776c9759ad0e9c1dc8059f86cd2af67cc9d4cee61f652044780d7a8a6a:35",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "483d09776c9759ad0e9c1dc8059f86cd2af67cc9d4cee61f652044780d7a8a6a:34",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          }
+        ],
+        "selected": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+            "lexicalIds": [
+              "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0"
+            ],
+            "semanticIds": [
+              "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0"
+            ]
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+            "lexicalIds": [
+              "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0"
+            ],
+            "semanticIds": [
+              "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0"
+            ]
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+            "lexicalIds": [
+              "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0"
+            ],
+            "semanticIds": [
+              "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0"
+            ]
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+            "lexicalIds": [
+              "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0"
+            ],
+            "semanticIds": [
+              "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0"
+            ]
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+            "lexicalIds": [
+              "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0"
+            ],
+            "semanticIds": [
+              "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0"
+            ]
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+            "lexicalIds": [
+              "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0"
+            ],
+            "semanticIds": [
+              "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0"
+            ]
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+            "lexicalIds": [
+              "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38"
+            ],
+            "semanticIds": [
+              "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:38"
+            ]
+          },
+          {
+            "id": "f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+            "documentId": "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+            "lexicalIds": [
+              "f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+            "documentId": "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+            "lexicalIds": [
+              "f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+            "documentId": "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+            "lexicalIds": [
+              "7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+            "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+            "lexicalIds": [
+              "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0",
+            "documentId": "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+            "lexicalIds": [
+              "c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:39:30.484Z",
+      "type": "research-evidence-selection",
+      "query": "¿El ensayo Vega midió la inteligencia de los participantes?",
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "sharedCandidates": [
+        {
+          "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+          "provenance": "source"
+        },
+        {
+          "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+          "provenance": "source"
+        },
+        {
+          "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+          "provenance": "source"
+        },
+        {
+          "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+          "provenance": "source"
+        },
+        {
+          "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+          "provenance": "source"
+        },
+        {
+          "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+          "provenance": "source"
+        },
+        {
+          "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+          "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1",
+          "provenance": "source"
+        },
+        {
+          "id": "f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+          "documentId": "nodus:4e3e073b-7a32-45e9-9db9-57bb8b221e7f",
+          "provenance": "source"
+        },
+        {
+          "id": "f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+          "documentId": "nodus:df7a61c8-6dd1-484f-9ed5-1a0fe8f28ea6",
+          "provenance": "source"
+        },
+        {
+          "id": "7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+          "documentId": "nodus:06e11945-2799-423e-9003-5fb0da2db630",
+          "provenance": "source"
+        },
+        {
+          "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+          "provenance": "source"
+        },
+        {
+          "id": "c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0",
+          "documentId": "nodus:f0547706-2b60-4689-826f-555fc6909ebd",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+        "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0"
+      ],
+      "selectedIdeas": [],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:39:31.061Z",
+      "type": "documentary-retrieval",
+      "query": "ensayo Vega medición inteligencia participantes",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1",
+        "dim": 256,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "vectorKeys": [
+        "8d40b0eaced230c40a51fa239d3c60026567c65aabd0c1b360c9ec10670cc844",
+        "016349b6d960d20bf7f54beaac5152cb362feb3c9d6f47b946d40b02fc0feedc",
+        "794bdc658937f25cc824fc8ddcfb489782116e8fd20ce2a792d2633258b6e912",
+        "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32",
+        "2940cbd8932c4d39f68570663378172604ed468a7de29f15e6c7c2caf61dd6a8",
+        "8e0bf800e1491901dae8b8b876e8a239fb2754000a3cd141bc08764ba063c06b",
+        "be5e02090ed6fc38559cabd058e7bab00342d65e567f1203724a1f6250ed7496",
+        "48191e6104e86f37b09bf4b0ecb9357d7db40af4df8e8e96a8ef51bed1da988a",
+        "0019ba725d8ad2d59e4332425c983541c766a9c10f1caeb210af54daa96934df",
+        "49f2ffd46392ee073ddff86babe6461c14e75a027fe7391f9796f7a1bea7f574",
+        "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03",
+        "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690",
+        "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9",
+        "cca2f7a449f09b0b42c6131e11541fc6c793da5c6956ff9900ce4b41a64a8771",
+        "76c6e98c78770e3ae66cca60938d083c26d1a5f1b6bd52db7a4a9cdf800495ff",
+        "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef",
+        "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4",
+        "d571111de23b0685cbe47d41bf4da4c85c27829ee73e8695dc7a086a2f470384",
+        "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596",
+        "dd2fb26781fdc4b406f21e77483e4302521713b73737cb4f75f4e923a275267a",
+        "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15",
+        "2c1b8a903690499d0c390d986c0a714df15da859d063ae5531f3005144adcdfb",
+        "f87fd5bd3b4937fe772df66f4d3d71e9fbacdf05e22f4584683edaa94584efd5",
+        "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141",
+        "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772",
+        "c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4",
+        "12dee54ee78c26a658a67538a8299c83613bd13dff8f0af1425066c4083d7a43",
+        "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2",
+        "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee",
+        "98bcb9c532b7062f6c32358b2e37c4db56c687711d4120be54fce6aa92b7f103",
+        "989a0d6fc741369adcaae2be97978b97fd8019058d148d2a6f128e74f3221c5a",
+        "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151",
+        "10c2ccfca09f1f335df76fdaa002462a38d1722026c749ac49bec745f60cc762",
+        "dbdffd5e83dc5460613dc5d0d11a8fa4ffd4dad4e31f0620a1a094fadd4b576e",
+        "6b49e749d39ebdd57888a49e7ae7fd9689adbd432bd66bf07fcabc0af65e8035",
+        "21c043f79501d8a050becbf4d692dae782f9790ef3760cb5c3599788be5e75f7",
+        "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf",
+        "75fd808e3730e04ef02c163bf837e812ff3c3a0a26aa6b35c1d6568bde4fac98",
+        "ce3eca7db8517d012cdb8243fc463c671961f11cc113b96a3183781a7edc23c8",
+        "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:22",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:34",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:13",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:24",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:54",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:52",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:39",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:31",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:59",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:25",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:55",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:15",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:17",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:42",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:24",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:40",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:22",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:84",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:39",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:26",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:58",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:17",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:58",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:57",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:31",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:78",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:18",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:44",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4:29",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:59",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:37",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:57",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:20",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:22",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:19",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:19",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:22",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:39",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:58",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:11",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:72",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:43",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:54",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:17",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:20",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:74",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:20",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:56",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:65",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:48",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          }
+        ],
+        "selected": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+            "lexicalIds": [
+              "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0"
+            ],
+            "semanticIds": [
+              "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0"
+            ]
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+            "lexicalIds": [
+              "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0"
+            ],
+            "semanticIds": [
+              "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0"
+            ]
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+            "lexicalIds": [
+              "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0"
+            ],
+            "semanticIds": [
+              "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0"
+            ]
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+            "lexicalIds": [
+              "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0"
+            ],
+            "semanticIds": [
+              "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0"
+            ]
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+            "lexicalIds": [
+              "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0"
+            ],
+            "semanticIds": [
+              "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0"
+            ]
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+            "lexicalIds": [
+              "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0"
+            ],
+            "semanticIds": [
+              "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0"
+            ]
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+            "lexicalIds": [],
+            "semanticIds": [
+              "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:39:31.109Z",
+      "type": "research-evidence-selection",
+      "query": "ensayo Vega medición inteligencia participantes",
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "sharedCandidates": [
+        {
+          "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+          "provenance": "source"
+        },
+        {
+          "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+          "provenance": "source"
+        },
+        {
+          "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+          "provenance": "source"
+        },
+        {
+          "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+          "provenance": "source"
+        },
+        {
+          "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+          "provenance": "source"
+        },
+        {
+          "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+          "provenance": "source"
+        },
+        {
+          "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+          "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+        "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:39:31.685Z",
+      "type": "documentary-retrieval",
+      "query": "Vega trial intelligence measurement participants",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1",
+        "dim": 256,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "vectorKeys": [
+        "8d40b0eaced230c40a51fa239d3c60026567c65aabd0c1b360c9ec10670cc844",
+        "016349b6d960d20bf7f54beaac5152cb362feb3c9d6f47b946d40b02fc0feedc",
+        "794bdc658937f25cc824fc8ddcfb489782116e8fd20ce2a792d2633258b6e912",
+        "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32",
+        "2940cbd8932c4d39f68570663378172604ed468a7de29f15e6c7c2caf61dd6a8",
+        "8e0bf800e1491901dae8b8b876e8a239fb2754000a3cd141bc08764ba063c06b",
+        "be5e02090ed6fc38559cabd058e7bab00342d65e567f1203724a1f6250ed7496",
+        "48191e6104e86f37b09bf4b0ecb9357d7db40af4df8e8e96a8ef51bed1da988a",
+        "0019ba725d8ad2d59e4332425c983541c766a9c10f1caeb210af54daa96934df",
+        "49f2ffd46392ee073ddff86babe6461c14e75a027fe7391f9796f7a1bea7f574",
+        "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03",
+        "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690",
+        "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9",
+        "cca2f7a449f09b0b42c6131e11541fc6c793da5c6956ff9900ce4b41a64a8771",
+        "76c6e98c78770e3ae66cca60938d083c26d1a5f1b6bd52db7a4a9cdf800495ff",
+        "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef",
+        "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4",
+        "d571111de23b0685cbe47d41bf4da4c85c27829ee73e8695dc7a086a2f470384",
+        "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596",
+        "dd2fb26781fdc4b406f21e77483e4302521713b73737cb4f75f4e923a275267a",
+        "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15",
+        "2c1b8a903690499d0c390d986c0a714df15da859d063ae5531f3005144adcdfb",
+        "f87fd5bd3b4937fe772df66f4d3d71e9fbacdf05e22f4584683edaa94584efd5",
+        "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141",
+        "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772",
+        "c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4",
+        "12dee54ee78c26a658a67538a8299c83613bd13dff8f0af1425066c4083d7a43",
+        "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2",
+        "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee",
+        "98bcb9c532b7062f6c32358b2e37c4db56c687711d4120be54fce6aa92b7f103",
+        "989a0d6fc741369adcaae2be97978b97fd8019058d148d2a6f128e74f3221c5a",
+        "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151",
+        "10c2ccfca09f1f335df76fdaa002462a38d1722026c749ac49bec745f60cc762",
+        "dbdffd5e83dc5460613dc5d0d11a8fa4ffd4dad4e31f0620a1a094fadd4b576e",
+        "6b49e749d39ebdd57888a49e7ae7fd9689adbd432bd66bf07fcabc0af65e8035",
+        "21c043f79501d8a050becbf4d692dae782f9790ef3760cb5c3599788be5e75f7",
+        "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf",
+        "75fd808e3730e04ef02c163bf837e812ff3c3a0a26aa6b35c1d6568bde4fac98",
+        "ce3eca7db8517d012cdb8243fc463c671961f11cc113b96a3183781a7edc23c8",
+        "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:24",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:31",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:84",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:13",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:39",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:66",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:78",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:79",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:42",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:17",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:22",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:11",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:58",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:80",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:22",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:34",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:82",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:40",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:23",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:20",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:23",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:22",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:58",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:15",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:59",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:57",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:30",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:83",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:14",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:25",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:65",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:59",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:15",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:59",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:52",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:27",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:35",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:17",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:56",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:18",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:54",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:26",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:19",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:106",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:33",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:17",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:81",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:8",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:33",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:46",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:79",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:46",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+            "documentId": "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef"
+          },
+          {
+            "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+            "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9"
+          },
+          {
+            "id": "66898fccf4a5ad1f38fa0b516350c3334cc73aee8968a8da976f93e2a58827c8:0",
+            "documentId": "nodus:30f4e67b-bde4-471b-8f16-309757159655"
+          },
+          {
+            "id": "5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+            "documentId": "nodus:035a0995-072a-430c-8b24-ef9ce6a95e8b"
+          },
+          {
+            "id": "75601d9d90c74d9ac932a1918aaa3fe696f5a8e29be04fd991f6bbfad0ae8b77:0",
+            "documentId": "nodus:ed438de4-8dbb-4c5f-bfb6-4f7c1b49be1e"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:67",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:71",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:70",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:37",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:78",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:8",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:1",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:26",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:0",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+            "documentId": "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:77",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:76",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:47",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:59",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:39",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:27",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:9",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:28",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:18",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:7",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:3",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:10",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:1",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:19",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:33",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:37",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:0",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:35",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:83",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:46",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "e487c07e43424aa81f65311505b7fd9904c62c475364f193ee6ff566087e2e4d:31",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:69",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "7cc96781ed18a6b94e8e8ee080848024f2c2d1ebb4886b6771a74658fee86469:44",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:82",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "bc9a379e3c3d8c64e1c8585129f74b80e0ac38bfbe545fd4ee745b8eed2c9295:29",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:30",
+            "documentId": "nodus:92309b3e-9c60-45d3-a3e7-47d6f17652e6"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:73",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:75",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          }
+        ],
+        "selected": [
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+            "lexicalIds": [
+              "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0"
+            ],
+            "semanticIds": [
+              "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0"
+            ]
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+            "lexicalIds": [
+              "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0"
+            ],
+            "semanticIds": [
+              "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0"
+            ]
+          },
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+            "lexicalIds": [
+              "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0"
+            ],
+            "semanticIds": [
+              "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0"
+            ]
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+            "lexicalIds": [
+              "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0"
+            ],
+            "semanticIds": [
+              "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0"
+            ]
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+            "lexicalIds": [
+              "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0"
+            ],
+            "semanticIds": [
+              "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0"
+            ]
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+            "lexicalIds": [
+              "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0"
+            ],
+            "semanticIds": [
+              "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0"
+            ]
+          },
+          {
+            "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+            "lexicalIds": [
+              "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:49"
+            ],
+            "semanticIds": [
+              "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49"
+            ]
+          },
+          {
+            "id": "3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+            "documentId": "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+            "lexicalIds": [
+              "3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+            "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+            "lexicalIds": [
+              "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:39:31.733Z",
+      "type": "research-evidence-selection",
+      "query": "Vega trial intelligence measurement participants",
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "sharedCandidates": [
+        {
+          "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+          "provenance": "source"
+        },
+        {
+          "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+          "provenance": "source"
+        },
+        {
+          "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+          "provenance": "source"
+        },
+        {
+          "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+          "provenance": "source"
+        },
+        {
+          "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+          "provenance": "source"
+        },
+        {
+          "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+          "provenance": "source"
+        },
+        {
+          "id": "4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:49",
+          "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+          "provenance": "source"
+        },
+        {
+          "id": "3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+          "documentId": "nodus:7fb608b5-7650-4030-b2f6-a461bf1f35ef",
+          "provenance": "source"
+        },
+        {
+          "id": "7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "documentId": "nodus:3a374380-a70a-4be7-94f8-c5942c98cdd9",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+        "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:39:33.429Z",
+      "type": "documentary-retrieval",
+      "query": "Vega ensayo inteligencia participantes medición",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-256-v1",
+        "dim": 256,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "vectorKeys": [
+        "8d40b0eaced230c40a51fa239d3c60026567c65aabd0c1b360c9ec10670cc844",
+        "016349b6d960d20bf7f54beaac5152cb362feb3c9d6f47b946d40b02fc0feedc",
+        "794bdc658937f25cc824fc8ddcfb489782116e8fd20ce2a792d2633258b6e912",
+        "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32",
+        "2940cbd8932c4d39f68570663378172604ed468a7de29f15e6c7c2caf61dd6a8",
+        "8e0bf800e1491901dae8b8b876e8a239fb2754000a3cd141bc08764ba063c06b",
+        "be5e02090ed6fc38559cabd058e7bab00342d65e567f1203724a1f6250ed7496",
+        "48191e6104e86f37b09bf4b0ecb9357d7db40af4df8e8e96a8ef51bed1da988a",
+        "0019ba725d8ad2d59e4332425c983541c766a9c10f1caeb210af54daa96934df",
+        "49f2ffd46392ee073ddff86babe6461c14e75a027fe7391f9796f7a1bea7f574",
+        "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03",
+        "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690",
+        "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9",
+        "cca2f7a449f09b0b42c6131e11541fc6c793da5c6956ff9900ce4b41a64a8771",
+        "76c6e98c78770e3ae66cca60938d083c26d1a5f1b6bd52db7a4a9cdf800495ff",
+        "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef",
+        "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4",
+        "d571111de23b0685cbe47d41bf4da4c85c27829ee73e8695dc7a086a2f470384",
+        "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596",
+        "dd2fb26781fdc4b406f21e77483e4302521713b73737cb4f75f4e923a275267a",
+        "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15",
+        "2c1b8a903690499d0c390d986c0a714df15da859d063ae5531f3005144adcdfb",
+        "f87fd5bd3b4937fe772df66f4d3d71e9fbacdf05e22f4584683edaa94584efd5",
+        "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141",
+        "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772",
+        "c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4",
+        "12dee54ee78c26a658a67538a8299c83613bd13dff8f0af1425066c4083d7a43",
+        "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2",
+        "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee",
+        "98bcb9c532b7062f6c32358b2e37c4db56c687711d4120be54fce6aa92b7f103",
+        "989a0d6fc741369adcaae2be97978b97fd8019058d148d2a6f128e74f3221c5a",
+        "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151",
+        "10c2ccfca09f1f335df76fdaa002462a38d1722026c749ac49bec745f60cc762",
+        "dbdffd5e83dc5460613dc5d0d11a8fa4ffd4dad4e31f0620a1a094fadd4b576e",
+        "6b49e749d39ebdd57888a49e7ae7fd9689adbd432bd66bf07fcabc0af65e8035",
+        "21c043f79501d8a050becbf4d692dae782f9790ef3760cb5c3599788be5e75f7",
+        "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf",
+        "75fd808e3730e04ef02c163bf837e812ff3c3a0a26aa6b35c1d6568bde4fac98",
+        "ce3eca7db8517d012cdb8243fc463c671961f11cc113b96a3183781a7edc23c8",
+        "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:38",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:24",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:13",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:22",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:39",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:52",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:34",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:59",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:15",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:40",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:54",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:42",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:17",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:25",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:55",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:20",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:58",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:23",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:22",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:31",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:84",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:24",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:11",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:26",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:22",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:19",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:58",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:31",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:57",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:17",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "2940cbd8932c4d39f68570663378172604ed468a7de29f15e6c7c2caf61dd6a8:0",
+            "documentId": "nodus:15e66a81-fc80-43bf-8dae-f31b377baab4"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:58",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:78",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:37",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:59",
+            "documentId": "nodus:c06fd734-72f4-4df0-ac0d-2c5b0c9a5754"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:17",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:18",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:16",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:72",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:66",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "5101d94b6ba0018510b51b2f17de393fa84ba2ea3a6992301f0fbc1734010596:22",
+            "documentId": "nodus:697d1ea0-e83d-450e-ac70-d70b7da8201f"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:8",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:51",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:59",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d"
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:57",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370"
+          },
+          {
+            "id": "ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:39",
+            "documentId": "nodus:4fffb2bb-84c0-496e-8a88-a3c053873a7e"
+          },
+          {
+            "id": "ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:65",
+            "documentId": "nodus:4547ceb9-0aa2-49df-b287-dc9dd8753f67"
+          },
+          {
+            "id": "cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:10",
+            "documentId": "nodus:5bf99926-4b1e-4827-ba89-f7c8c83c9e53"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:43",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          },
+          {
+            "id": "0e72e9b2720dd9c4aaada8f883178bc3e8fcea97498df5fae59d6bdd9fa1e141:14",
+            "documentId": "nodus:80bd418f-0f2c-4e02-915d-209919f8703e"
+          },
+          {
+            "id": "cfc8324dbda75181f21b2ab50878bdd5b1adac3d6d6ea4e31634949662a69772:19",
+            "documentId": "nodus:8c706c4f-c27a-4180-bc56-0b41c4ae12c1"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7"
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad"
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf"
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed"
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78"
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f"
+          }
+        ],
+        "selected": [
+          {
+            "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+            "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+            "lexicalIds": [
+              "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0"
+            ],
+            "semanticIds": [
+              "e9fcf3050dfc8bbc84eeff5b84b6a6a59c15d5e11d220319ae10bef24a7a1f9f:0"
+            ]
+          },
+          {
+            "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+            "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+            "lexicalIds": [
+              "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0"
+            ],
+            "semanticIds": [
+              "3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0"
+            ]
+          },
+          {
+            "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+            "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+            "lexicalIds": [
+              "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0"
+            ],
+            "semanticIds": [
+              "1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0"
+            ]
+          },
+          {
+            "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+            "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+            "lexicalIds": [
+              "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0"
+            ],
+            "semanticIds": [
+              "b06af2b62a37069feaf0730498c26d82c1fc9ccb5af5bef28d9ddc95d04e4dee:0"
+            ]
+          },
+          {
+            "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+            "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+            "lexicalIds": [
+              "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0"
+            ],
+            "semanticIds": [
+              "9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0"
+            ]
+          },
+          {
+            "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+            "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+            "lexicalIds": [
+              "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0"
+            ],
+            "semanticIds": [
+              "76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0"
+            ]
+          },
+          {
+            "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+            "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+            "lexicalIds": [],
+            "semanticIds": [
+              "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49"
+            ]
+          },
+          {
+            "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+            "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+            "lexicalIds": [],
+            "semanticIds": [
+              "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:39:33.477Z",
+      "type": "research-evidence-selection",
+      "query": "Vega ensayo inteligencia participantes medición",
+      "scopeId": "6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15",
+      "sharedCandidates": [
+        {
+          "id": "31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "documentId": "nodus:f352e7d7-a160-43a3-bf9a-18e0fe3be8f7",
+          "provenance": "source"
+        },
+        {
+          "id": "136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "documentId": "nodus:776ae5f5-7e52-4ce6-837b-2edaf776fcad",
+          "provenance": "source"
+        },
+        {
+          "id": "90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "documentId": "nodus:a7b9c993-6f0d-40d7-93ff-14aa4a5a69ed",
+          "provenance": "source"
+        },
+        {
+          "id": "8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "documentId": "nodus:ac8c6d27-3c88-4297-8ccc-0ce3b570f9bf",
+          "provenance": "source"
+        },
+        {
+          "id": "c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "documentId": "nodus:421b4f37-f0ba-404e-be13-fb6aaa418a78",
+          "provenance": "source"
+        },
+        {
+          "id": "4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "documentId": "nodus:ec6a22af-2eec-4e7f-84cd-e0f4bd0f875f",
+          "provenance": "source"
+        },
+        {
+          "id": "fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+          "documentId": "nodus:152bb332-87d0-4c79-8a1f-dfa894132370",
+          "provenance": "source"
+        },
+        {
+          "id": "6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+          "documentId": "nodus:488a417f-1eb7-47a0-8ee4-54ff9b18044d",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+        "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:a24290b8161ebf0cecc82bd5322b8336094f4fb6a47550b6e9863d98df84fa99:38",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f4b65f252583a95d1e5fdc371a815186588a73b3eb1bd41a6125a5b9e3a13e28:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:fb027ea84bfa4c9eb2f542ded7695cdc395947a6a49a3f17352e88044d3bda32:49",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+        "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+      "title": "fixture 02",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 02\nOBRA ENLAZADA\n1\nfixture 02\nEVIDENCIA ANCLADA\n1\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+      "title": "fixture 02",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 02\nOBRA ENLAZADA\n1\nfixture 02\nEVIDENCIA ANCLADA\n1\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+      "title": "fixture 07",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 07\nOBRA ENLAZADA\n1\nfixture 07\nEVIDENCIA ANCLADA\n1\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+      "title": "fixture 17",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 17\nOBRA ENLAZADA\n1\nfixture 17\nEVIDENCIA ANCLADA\n1\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+      "title": "fixture 12",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 12\nOBRA ENLAZADA\n1\nfixture 12\nEVIDENCIA ANCLADA\n1\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+      "title": "fixture 27",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 27\nOBRA ENLAZADA\n1\nfixture 27\nEVIDENCIA ANCLADA\n1\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+      "title": "fixture 22",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 22\nOBRA ENLAZADA\n1\nfixture 22\nEVIDENCIA ANCLADA\n1\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.\np. 1"
+    },
+    {
+      "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+      "title": "fixture 07",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 07\nOBRA ENLAZADA\n1\nfixture 07\nEVIDENCIA ANCLADA\n1\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-8PwPuY/artifacts/chat-0-negation.png"
+}

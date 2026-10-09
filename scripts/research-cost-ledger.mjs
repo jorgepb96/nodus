@@ -2,14 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-/** Highest paid-inference budget any campaign may authorize (raised from USD 5 on
- * 25 September 2026). A ledger file's own limitUsd is its campaign's authorization. */
-export const RESEARCH_BUDGET_CEILING_USD = 7;
+/** Explicit campaign authorization may reach USD 8 (7 October 2026). Existing
+ * defaults remain USD 7; each ledger's own limitUsd is still its authorization. */
+export const RESEARCH_BUDGET_CEILING_USD = 8;
+export const RESEARCH_DEFAULT_BUDGET_USD = 7;
 
 /** Single campaign ledger shared by every test/provider; reservations are durable
  * before network dispatch and unknown/failed usage keeps the full reservation. */
 export class ResearchCostLedger {
-  constructor(file, limit = RESEARCH_BUDGET_CEILING_USD) {
+  constructor(file, limit = RESEARCH_DEFAULT_BUDGET_USD) {
     if (!Number.isFinite(limit) || limit <= 0 || limit > RESEARCH_BUDGET_CEILING_USD) throw new Error('Invalid research budget');
     this.file = file; this.limit = limit;
   }

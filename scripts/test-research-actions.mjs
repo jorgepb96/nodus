@@ -26,7 +26,7 @@ try {
   passages.replaceWorkPassages('inside', 'hash', [{ text: 'Known evidence about climate', pageLabel: '2', embedding: null }]);
   const scope = load('electron/ai/researchNotebookService.ts').resolveAcademicResearchScope();
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const preparation = load('electron/ai/documentaryPreparation.ts');
   preparation.retrieveSharedDocumentaryEvidence = async () => ({ evidence: [], traversal: { rounds: 1, candidates: 0, partial: false } });
   const { ResearchCorpusRun } = load('electron/ai/researchCorpusRun.ts');

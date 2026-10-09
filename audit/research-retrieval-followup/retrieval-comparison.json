@@ -1,0 +1,78 @@
+{
+  "measuredAt": "2026-10-09T18:14:23.682Z",
+  "baselineCommit": "af66e85fd76554322980686a5b54d9c0adc57410",
+  "baselineSource": {
+    "path": "scripts/fixtures/documentary-retrieval-baseline-af66e85f.ts",
+    "sha256": "3a4c41878b9f09f22182a828d81b293e57f5b579dc35376d5a88908d43072895"
+  },
+  "currentSources": {
+    "electron/workers/documentaryRetrievalWorker.ts": "a66b54106fd57ea801d1c3d984c16d7f9315d3364f1466bdc7161265258a2608",
+    "electron/db/documentaryRetrieval.ts": "08825c1940245e602f3f8f58bf4f56f37681c49e3ed18bb046f1f637c7e2338c",
+    "electron/ai/documentaryPreparation.ts": "6dbd17344b5915cec2e56622801566530ca030ce713dfb737135ac05ae68df84",
+    "electron/ai/researchCorpusRun.ts": "12a30f1de1a7ed6d0c470f6388ae7f6b7d8edc33bfe7f9522d5aba3817374daa",
+    "shared/researchRetrievalBudget.ts": "c5f79b9af7b1a752dfcb30a12d775c3576e6df3e9f74c43d6bb1e7be1ce9e840",
+    "shared/retrievalChunks.ts": "998c5c5789b7d07bebea4fb337441b4c940e9597038a3444ea112e9dc274b040"
+  },
+  "comparisonMethod": "Same temporary SQLite fixture database and same serialized input are run through the committed baseline worker and current worker; both are bundled from their actual TypeScript sources.",
+  "limits": [
+    "Deterministic fixture vectors validate cosine mechanics and scope only; they do not measure embedding accuracy.",
+    "Lexical facets, expansion, deduplication and byte counts are synthetic regressions, not generative answer quality or representative-corpus recall."
+  ],
+  "runtime": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "release": "25.6.0",
+    "cpuModel": "Apple M2",
+    "logicalCpus": 8,
+    "node": "24.18.1",
+    "electron": "43.4.0",
+    "sqlite": "3.53.1"
+  },
+  "comparisons": [
+    {
+      "label": "planned-facets",
+      "plannedFacetCount": 4,
+      "baseline": {
+        "returnedFacetCoverage": 0,
+        "independentFacetProbes": 0
+      },
+      "current": {
+        "returnedFacetCoverage": 4,
+        "independentFacetProbes": 4
+      },
+      "fixtureHash": "c394fe9477525a4d352e528e0bce9f80940c4ac84233cdd10be42d61719b5dda"
+    },
+    {
+      "label": "alias-neighbor-dedup",
+      "duplicateText": "aliasneighbor same content and page locator",
+      "baseline": {
+        "duplicateNeighborCount": 2,
+        "chargedEvidenceBytes": 141
+      },
+      "current": {
+        "duplicateNeighborCount": 1,
+        "chargedEvidenceBytes": 98
+      },
+      "fixtureHash": "9d47ec18414f855163f2138641d72910c67ae7e8ef917d907b065601118294fb"
+    },
+    {
+      "label": "fair-neighbor-expansion",
+      "baseline": {
+        "expandedPassageCount": 2,
+        "expandedWorkCount": 1,
+        "expandedWorkIds": [
+          "work-a"
+        ]
+      },
+      "current": {
+        "expandedPassageCount": 2,
+        "expandedWorkCount": 2,
+        "expandedWorkIds": [
+          "work-a",
+          "work-b"
+        ]
+      },
+      "fixtureHash": "5e3f636301aa500f1c24d4a21cd31a70b3f392d1834cbbc49bd94500d8257df1"
+    }
+  ]
+}

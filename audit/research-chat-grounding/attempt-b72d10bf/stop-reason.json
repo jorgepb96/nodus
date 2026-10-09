@@ -1,0 +1,11 @@
+{
+  "revision": "b72d10bf",
+  "executed": 48,
+  "reviewed": 48,
+  "positivePassed": 27,
+  "positiveEvaluated": 32,
+  "absencePassed": 15,
+  "absenceEvaluated": 16,
+  "reason": "Five positive failures make the 95% full-campaign target impossible. Coordinator stopped before the other 72; first-pair child processes completed and every answer/failure was independently reviewed. Positive coverage booleans admitted incomplete interpretation answers. Next candidate requires independent exact-span proof for positive coverage too. All calls and unknown reservations stay inside the unchanged final USD 8 ledger.",
+  "budgetReset": false
+}

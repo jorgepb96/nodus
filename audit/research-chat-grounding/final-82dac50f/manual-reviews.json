@@ -1,0 +1,1019 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/0",
+    "answerSha256": "b64bc3d0f3756999e346251e9d7de31bab1a6789f6bc8be3b0155b4f434355f0",
+    "sourcesSha256": "e844cede648e4bafee0b7b446d6d8b07c2d99aaa01c95d8f3bd89f90d21cac88",
+    "evidenceSha256": "13224fc17bd393e053aeaca9c4ad842a3121e017f7b56cb893dea2ecbf551f66",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct library/laboratory dates and predicate contrast; no invented provenance relationship."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/0",
+    "answerSha256": "c9034a78f09ca2316de68028ce49e18901cf7964e738ddeb2037d1a0f25991f6",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct turbidity with green 530 nm visible light and oxygen exclusion."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/0",
+    "answerSha256": "9cb552115eec3ef7b935e87256117db429727b7b79ce422f3607e36603ad972d",
+    "sourcesSha256": "48b429df22ef07eac69489240fd87fe8d8b70084d817eb4d51f268cbb297616a",
+    "evidenceSha256": "c20a92376c7feb35ad4dbfc6ea9fba10cdcf77b7be664c4e9dc73f4890bb791a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table, labelled 21 percentage-point difference and measured recall/intelligence distinction."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/0",
+    "answerSha256": "d4df82ea744e7ac913f863d879d2a95c65767cea29bdd3718906cb5931975e6a",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct final 240 replacing preliminary 239; quoted correction is literal."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "bb0872b3a0ffee97f1c98cd065d6eb0c3947c60126b8fbef31208a96a9ea6602",
+    "sourcesSha256": "5fb05628c6c8be4a8cca12715954b14562faed50f899c6660d03fd70a4ad92ff",
+    "evidenceSha256": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Correct 18/24 figures and non-equivalence, but omits the requested distribution conclusion or precise evidentiary limitation; source/model coverage approval does not make it adequate."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+    "answerSha256": "56e9a37c6a5a467690d7c50d9d485173c2fd9cc6e28aaf87ab342567f9254214",
+    "sourcesSha256": "a9bc855fcf8af9708599b7effd304e08f4126953d539bbb51ff577a10fc33391",
+    "evidenceSha256": "649086db22b7bdf85cd3b76f8d8ffdbbd716f7bca4349111a5e37c267d771eee",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Supported factual inventory and difference 6, including the original numbered field-log/review statements checked in full. Still lacks the requested comparison of supported interpretation limits; a numerical difference does not supply that facet."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-policy/0",
+    "answerSha256": "43673f8a87bd6f708a4e6a99093422fc2cfd2adeb919fab515cb72fc58c63382",
+    "sourcesSha256": "a39eb8ee666881b3e04655b8b52cd6e0a1a101d4ad5b1dbc18c26db96ddd422c",
+    "evidenceSha256": "afde233d4277d06b754aa81d922ced5a22af781c06b7d87f20981b682f50923b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct restore inclusion/exclusion, with event retention distinct."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/0",
+    "answerSha256": "1eed98a2f123de6e4546d6dfe07b78abf607d139fd7f46643ec609c9e805b85b",
+    "sourcesSha256": "faae58e7b2a7e6db6723fb47dbc143c5db15a5b6b856d629b5bbcd1903b37fe4",
+    "evidenceSha256": "f7cd3cb99fc8e9e9a18127c5e741db4c5cdc9d2fc3f60b1707731034079b02c1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct source-quoted NF4 property, DQ constants/savings, paged spikes and storage/BF16 computation; implicit bits-to-bytes conversion gives approximately 3 GB correctly."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/0",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price evidence gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "b47e55a9a2699be43b464d6c31e90ffc3399f8d33c0fb804758799e5aa369238",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "befbf52c2d2a7eb1f373cf5e45f60cb062f0f007cdf20c36ed066d8f15149b75",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "fd92ec9e2e3bf1d79f29634c16012ada60bc6093c51aee5e3cc0c722f11c3ea3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/1",
+    "answerSha256": "3c849dabe3a771758bf5092f1b514022c0b659fb99db02455baf709677827ea2",
+    "sourcesSha256": "e844cede648e4bafee0b7b446d6d8b07c2d99aaa01c95d8f3bd89f90d21cac88",
+    "evidenceSha256": "8efaefca04c88817f805a86b4851f7cf9ecfe1915612f92598d32b461d99d3c4",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct distinct library/laboratory dates."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/1",
+    "answerSha256": "de125d89820c12634de085040d86a70bbabf343926e0577810133bc6e107e583",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct sensor quantity and oxygen exclusion; redundant raw URL is presentation-only."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/1",
+    "answerSha256": "89b9ee8c95bca3758f3dc6cbc9dbcab3c937a98bc0964ff9c34fa6d411bf7bb7",
+    "sourcesSha256": "77d226c1a0fee595ffc87e4bb764efcd05101e66b00822b8129d640f73b2aa3f",
+    "evidenceSha256": "c20a92376c7feb35ad4dbfc6ea9fba10cdcf77b7be664c4e9dc73f4890bb791a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate table, recall/intelligence distinction and labelled 21 percentage-point subtraction."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/1",
+    "answerSha256": "deefd3d54af558642f85cff4fc472817577e9d4da154309afeb20b615cc2ba91",
+    "sourcesSha256": "b3271d7bb6215399c80b9d421f319e3d3c5a797580aeb0c8878d8420169c5f9d",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate superseding count; extra village and confidence figures directly supported."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/1",
+    "answerSha256": "635a704a42aa44ade0541272325bf46f510e86d000511c038237515043b4f11b",
+    "sourcesSha256": "5bc7225eb7dcd31c31aedb311c848fc9cf07e59d62938738c4fa9a319cbe072b",
+    "evidenceSha256": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Correct statistics and labelled difference 6; still omits the requested distribution interpretation or precise evidence limit. This repeats the fixed adequacy criterion."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/1",
+    "answerSha256": "1097fbb42aa5d1c810f1f17593d6bf54bfdbed7cea93e75ec826407062f8ab36",
+    "sourcesSha256": "74ffb770ac73dbcf6f9688898d7bb6fdad58a143897f2c3a30bebde09569c240",
+    "evidenceSha256": "649086db22b7bdf85cd3b76f8d8ffdbbd716f7bca4349111a5e37c267d771eee",
+    "faithful": false,
+    "adequate": true,
+    "notes": "An explicit comparison is supplied, but it asserts that Vega and Bruma share no common measure. Bruma's measured construct is unspecified, so the supplied premises do not establish that categorical absence; the scoped inability to compare numbers does not prove it."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-policy/1",
+    "answerSha256": "065797b34f06d68a63830b8ffcb52de9b1f63204ec9b7b2c647acaf1fc82d6af",
+    "sourcesSha256": "e9b23e7b2a9c77a4ea7fca619da9ac1ee3839afbf9ef51105229cb48ac0cdecd",
+    "evidenceSha256": "afde233d4277d06b754aa81d922ced5a22af781c06b7d87f20981b682f50923b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct restore scope and separate retention/version change."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/1",
+    "answerSha256": "901fb557ec1ae5a108f23709216e7570afb77fce3f70f9d5c7732c7576b4935d",
+    "sourcesSha256": "f909953e33780b54c2395915fc991d75db749344699976de22450d20f81ef278",
+    "evidenceSha256": "eeaa33939ed9603cb43cdfa56d2408a31957346733e4024be307f6027f406710",
+    "faithful": true,
+    "adequate": false,
+    "notes": "NF4, paging and storage/computation assertions and the labelled arithmetic are supported, but the answer omits the requested double-quantization mechanism (quantizing quantization constants). An unexplained numerical formula does not answer that facet."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "b47e55a9a2699be43b464d6c31e90ffc3399f8d33c0fb804758799e5aa369238",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding/1",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "befbf52c2d2a7eb1f373cf5e45f60cb062f0f007cdf20c36ed066d8f15149b75",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/1",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "fd92ec9e2e3bf1d79f29634c16012ada60bc6093c51aee5e3cc0c722f11c3ea3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/0",
+    "answerSha256": "4f66c0d413dc3511eabff68775cab06ca62985cc489f045df67511357f8c8e96",
+    "sourcesSha256": "af7948a45d9e8724bbbab687fede7a3d8025e7fa2bd7b078e9a967a1336f193a",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct separate 1912 library and 1913 laboratory dates."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/0",
+    "answerSha256": "cff2269f949362d3996e8f7bee95bc4f50254c16bb036ab1273951015b23da12",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct visible-light turbidity and oxygen exclusion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/0",
+    "answerSha256": "71e5dd41dbfa89743fa0573b4d6a45f7596bc3853316978f7517dbbd6133c1cf",
+    "sourcesSha256": "64b6824ef07dd74f4cdec479e482a06c4ee0e72b145e2512af1173f026e7bbe2",
+    "evidenceSha256": "e5a3f2e5fb03e885cfd2a52d5ec66989a2d60d0158fa1c4e5c7725e918d466e8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct group values, explicitly labelled 21-point difference and measured recall distinction."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/0",
+    "answerSha256": "9a75b0d81f545d0dc74bb9dd1a8f3de6fa7ef1e483e6d4bf83e2946a1194aefb",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final/preliminary counts and literal superseded quote match source."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "164577ca7e5fef2c4e802fa49c4ec11377b9f3e247ffcfc1d5d76dd39ed1f42f",
+    "sourcesSha256": "6b1de3cce28e95fe44ee55a3e068340dd401bc6ee225732024381ccc6b980637",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct statistics, labelled difference 6 and precise distribution-shape limitation; extra sample/confidence figures directly supported."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/0",
+    "answerSha256": "1e912af8f2a5bb847687d0c0b217ea7309c5b1ac7a79bd34a737dcc7e224a961",
+    "sourcesSha256": "be8c19186287a7dd4623fd1cc1ed82cfcf3beb66869da5c93bf87a5707e96c3e",
+    "evidenceSha256": "efa8d74ae6846efa99db1e2c5eff04117ea0755c68e26ca43496cf6ba6879be8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Explicit own comparison from literal measurement premises: recall cannot establish intelligence and distinct statistics cannot be treated as equivalent. Accurate correction and labelled arithmetic."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-policy/0",
+    "answerSha256": "9b7ea37928e9f5a6cd6c7d25b75e16f887c53025099cff159b3b8b139094e64c",
+    "sourcesSha256": "a1c1ff9d91d29265637e530e4df4c6b6ed37a044196c2da646a4dd7067f2073f",
+    "evidenceSha256": "30658119dc0750e7a91be58195c80cf9348c6de11b3a1cfc373f0bec0ad8657d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct restore/deleted versus closed accounts and separate event retention."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Positive coverage proof fails schema twice after all initial claims were supported; availability failure counts as failure."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/0",
+    "answerSha256": "075bb78790f61fb62fecb1aafffe1e2f3a19d96388a7414ce9262dca55f5ddde",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "34b975dfe22747b43c547a6c6a6b05c896b5cbd3d66ffd00f83e720ce5a05bb8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "55de9a63de9a2123c01242f7dc5fda5b7a0eeb21b7e9e87e95cd176c61465788",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "d020c737a2e62e33d4b831f73da63b8b5020b990fd9854d6473e05798cb480ae",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/1",
+    "answerSha256": "d7cf1b71fb9561caded27f435aa1db84eb4e87a22e5a1c80a63d452d8640904d",
+    "sourcesSha256": "af7948a45d9e8724bbbab687fede7a3d8025e7fa2bd7b078e9a967a1336f193a",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate dates and predicate contrast."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/1",
+    "answerSha256": "cff2269f949362d3996e8f7bee95bc4f50254c16bb036ab1273951015b23da12",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate turbidity and oxygen exclusion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/1",
+    "answerSha256": "6626eabe96e6e82def214b464aa878af0dc3d84f013688ad2027b537493ae6bc",
+    "sourcesSha256": "64b6824ef07dd74f4cdec479e482a06c4ee0e72b145e2512af1173f026e7bbe2",
+    "evidenceSha256": "e5a3f2e5fb03e885cfd2a52d5ec66989a2d60d0158fa1c4e5c7725e918d466e8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate group values, outcome and labelled 21-point difference."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/1",
+    "answerSha256": "1ed15fe372884a9005c1ff38ba0789d9242410454059504dfcc2e21ea8911fde",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct 240/239 supersession and literal final-correction quotation; joint record attribution does not change the count's temporal role."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/1",
+    "answerSha256": "754686b66be4d99eed8e8d723a643bcb8f5a3df88734ebb9ec0cca97e950f381",
+    "sourcesSha256": "42e68b53d630344c50dc23fd56f048d8069a9c3be6fdbf5f411f22c7973d42f3",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct statistics, labelled difference 6 and precise distribution-shape limit; mere agreement of literal values does not assert source independence."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/1",
+    "answerSha256": "54ee180fd4fb1921a5a2c53531cfb0a1c5b57783e9e1a5a800d2351bc7b43cac",
+    "sourcesSha256": "1f41e0e947ff30e7096847ae3c17f4a72cb5581bc9c31e7acd99a050ec1b80bb",
+    "evidenceSha256": "efa8d74ae6846efa99db1e2c5eff04117ea0755c68e26ca43496cf6ba6879be8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Measured outcomes and corrections are accurate; explicit own comparison confines conclusions to reported measurements and acknowledges unmeasured intelligence."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-policy/1",
+    "answerSha256": "c05ed7af394230d54a5c34229cbb68090ce544417a4e927fce32f0afd3784d46",
+    "sourcesSha256": "a1c1ff9d91d29265637e530e4df4c6b6ed37a044196c2da646a4dd7067f2073f",
+    "evidenceSha256": "30658119dc0750e7a91be58195c80cf9348c6de11b3a1cfc373f0bec0ad8657d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Restoration/deleted items and closed-account exclusion are accurate; redundant inference does not add an invented deadline."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/1",
+    "answerSha256": "3bf2b4f8a38ea5fe0f32e80077081406d96e74c87031a198f4c5769b60d739a5",
+    "sourcesSha256": "b00c515561a8d853bbb48a2641077958c76d77f06fada98c214af6fdb8864445",
+    "evidenceSha256": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Technical properties, DQ/paged mechanisms, storage/BF16 computation and 780-to-48 GB claim match the frozen paper passages."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "34b975dfe22747b43c547a6c6a6b05c896b5cbd3d66ffd00f83e720ce5a05bb8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-funding/1",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "55de9a63de9a2123c01242f7dc5fda5b7a0eeb21b7e9e87e95cd176c61465788",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/1",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "d020c737a2e62e33d4b831f73da63b8b5020b990fd9854d6473e05798cb480ae",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-dates/0",
+    "answerSha256": "82a70036cca0d6585d1d97980f1084b360b553eafe39fcf4a6e078e6116a5fc1",
+    "sourcesSha256": "043e84c198d9d50c7a8f7d51926ead803c669d9179d82332bf0c702922a160a3",
+    "evidenceSha256": "410f0c36d68d71a0c9ab0673254c29cbfd8b2038ed71a818781fe197af1cf06d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct dates and temporal predicate contrast."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-sensor/0",
+    "answerSha256": "67dd836c48664addb1df323ba5db31293464d2834ccc5af0275a9de07c9813c2",
+    "sourcesSha256": "1ebb87e383bd100767808f88bf5aa373f8883194c7f77db8cdb2944cba214995",
+    "evidenceSha256": "f88816196466e794829e65f17aea4556e47d1b8c03af8c1b9a1c9a7b46612ba3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct turbidity and explicit oxygen exclusion."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-calculation/0",
+    "answerSha256": "070555fa0f7f2e205c5b2ca072cc91895122f8c833e680a503bfcfe0e03a92a4",
+    "sourcesSha256": "e284f05b9dac8bc92b144d88f4720418e5e30245e0ba683e7ab4fb1eae61e213",
+    "evidenceSha256": "35ea0c5e655ddcb84f87ac17ab7d5718d8b60d3858ac5a182a3c48001c42730b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table, explicit 21-point calculation and measured recall/intelligence distinction."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-correction/0",
+    "answerSha256": "1e6a5bb29a47f65ad480a047b20182516f3a459106e50a8b1fd114862c9281e3",
+    "sourcesSha256": "b410726d9460e1486d401423661dd5e194e0b33bb15af0dbc7efd7ec2d690cf2",
+    "evidenceSha256": "e099733fc78a37267f6feaa666f2de1024397ee9c8998be24df4825c9347191b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct superseding 240/239 counts and literal correction/memorandum quotations."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-statistics/0",
+    "answerSha256": "c2a6705cdc88c37b21d5f1f1ce6f5589078413dec6fe991ac7d6bc852d82a84e",
+    "sourcesSha256": "23e15f6606f1923380c437e8230f4f156e64a173dbd9ab718990ede7fcb4b9f8",
+    "evidenceSha256": "916d633b0c1f33bc8a3520756e31f12cb7e33592088bdfb9bd8a72f499ed5744",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct statistics and precise limitation on determining distribution shape; extra sample/confidence facts supported."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-negation/0",
+    "answerSha256": "919c01dda608ab578c1aba61f4a611ad0d2d737211e538cb6bf4391b9968a2ef",
+    "sourcesSha256": "d53745af33edf221287619f012d0264de5a101be1953634e8c5269cc69052baa",
+    "evidenceSha256": "340d73568d0e9641723f457b71d1b320b56177e67bdf6b1162340e6c3bd94f86",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Supported Vega/Bruma measurements, correction and literal field-log content; explicitly own comparison states scoped inability to establish distribution or cause from excerpts, without asserting a real distribution."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-policy/0",
+    "answerSha256": "04d690764794bf2114ad1b91d7c5bf5e8414654935cf1b2329b41ae8aefc0566",
+    "sourcesSha256": "b67482a064fb5f3a13ceba1a97d3c247bb1b7c0b89c425ce19995509ebdbb32c",
+    "evidenceSha256": "92a1a2ad13bb9a8b1afe6d9989c60849cafe15b5e6a98e5e9208b53ec4acccce",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Restoration eligibility and exclusions match Linde; event retention and its version change are explicitly separated."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-paper/0",
+    "answerSha256": "49fe949e166d8f43a18463f3373188fc2b436fe6b6a64e753f44181426c7c65a",
+    "sourcesSha256": "b9bff8754c387c3fcc234c40d17f1a68613449a551b07af058547b1684bcfc8b",
+    "evidenceSha256": "d2e7c3f90e6348933496d9c5711280eddc64577d81c25bad22e41f4b5b029b96",
+    "faithful": true,
+    "adequate": true,
+    "notes": "NF4 property, DQ constants and savings, paging, storage/BF16 computation and 780-to-48 GB memory comparison match frozen paper passages. Labelled distinction adds no unsupported operation."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-price/0",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "f88816196466e794829e65f17aea4556e47d1b8c03af8c1b9a1c9a7b46612ba3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish the unavailable price; no invented corpus-wide absence."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-donor/0",
+    "answerSha256": "c39efe3ba0d567b2b57f0230e116dd5e600ac180dc34d7206443fd80ba9b3024",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "e263d6277541ff966081695c7f94f337e4606da51b6d83b1aa593eb77d70d1af",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise scoped funding gap; selected excerpts do not describe book purchase or funding."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-funding/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "549a89df27ac79f652837bd810dd94207b45f5601ea63f56b9e37812d391304a",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Verification unavailable; this error is not an adequate acknowledgement of insufficient evidence."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "cc29d2b5475e85712fadca966fba1317457e6fa5e5b064252333fe79e9819617",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish individual values absent from selected aggregate excerpts."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-dates/1",
+    "answerSha256": "9fca5d0cf4660d4083877ddbf31aa88c2075dbe7be726621d359194e4e4d51f8",
+    "sourcesSha256": "043e84c198d9d50c7a8f7d51926ead803c669d9179d82332bf0c702922a160a3",
+    "evidenceSha256": "cbb1ec4f5f2e9e699f048acfb0004030f349f83e67d42fdf1d517e36dbe62301",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Library 1912 and laboratory 1913 match literal excerpt."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-sensor/1",
+    "answerSha256": "94d122d24b498b43a2eab6481344578da979165c7a12822fd8c943b21d69a9fb",
+    "sourcesSha256": "1ebb87e383bd100767808f88bf5aa373f8883194c7f77db8cdb2944cba214995",
+    "evidenceSha256": "f88816196466e794829e65f17aea4556e47d1b8c03af8c1b9a1c9a7b46612ba3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "530 nm green light, turbidity and oxygen exclusion match literal excerpt."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-calculation/1",
+    "answerSha256": "0687eb53dceecf2ffd16fed7875d8f05f6ad1ee1c36fce8b6c1885a46f32230b",
+    "sourcesSha256": "e284f05b9dac8bc92b144d88f4720418e5e30245e0ba683e7ab4fb1eae61e213",
+    "evidenceSha256": "8d09cdfedbafb281e283a2d905d45110945b189e7075d78e39c82e64cc535af5",
+    "faithful": true,
+    "adequate": true,
+    "notes": "72/51 recall, unmeasured intelligence and explicitly derived 21 percentage points are correct."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-correction/1",
+    "answerSha256": "a6f0303fb562a0fa1b52fcf668539483126ea3e48e3cb6b1104ddf213c167914",
+    "sourcesSha256": "4c8d03901cf60d5b852ad2af68781363719fec6df1e57f1b2529081a8a36e6c8",
+    "evidenceSha256": "e099733fc78a37267f6feaa666f2de1024397ee9c8998be24df4825c9347191b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 replaces preliminary 239 as explicitly stated by the correction."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-statistics/1",
+    "answerSha256": "b657b94f5f0fd312c7e1a353227c42bc202ba6491afb2f01f7f3fca5bd2f7959",
+    "sourcesSha256": "0b7eed4dc9af825f8ae1980a5956586b9833b0c1cefb95b1c995e3374bddea73",
+    "evidenceSha256": "916d633b0c1f33bc8a3520756e31f12cb7e33592088bdfb9bd8a72f499ed5744",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Literal 18/24, non-equivalence, sample and confidence are correct, but the requested conclusion or precise limitation about distribution is omitted."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-negation/1",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "6c63b782ad5fbf758d17d17e9db42f7aab03ac1e39b2c63d8d83d84dc3f44573",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Verification unavailable; failure counts against positive-answer adequacy and support."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-policy/1",
+    "answerSha256": "04d690764794bf2114ad1b91d7c5bf5e8414654935cf1b2329b41ae8aefc0566",
+    "sourcesSha256": "b67482a064fb5f3a13ceba1a97d3c247bb1b7c0b89c425ce19995509ebdbb32c",
+    "evidenceSha256": "579749c549e00d765ec127db81130dc613fd1929a4734d31425c6b8b4e7a1718",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Restoration eligibility and account exclusion are correct; event retention and version change are explicitly distinguished."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-paper/1",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "0b0c369cbaf73b29a5157c792425186a08bb948f2c249659e981ec2af0af4c0c",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Verification unavailable; unpublished technical answer counts as failure, irrespective of correct draft claims."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "f88816196466e794829e65f17aea4556e47d1b8c03af8c1b9a1c9a7b46612ba3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish the unavailable price."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "e263d6277541ff966081695c7f94f337e4606da51b6d83b1aa593eb77d70d1af",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable book-purchase funder."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-funding/1",
+    "answerSha256": "36fca01cf8f3635ba181033e8de9a08edd526af9f8d7f00b8e9567a4a13fe9c5",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "549a89df27ac79f652837bd810dd94207b45f5601ea63f56b9e37812d391304a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precisely limits funder uncertainty to the available excerpts."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-data/1",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "cc29d2b5475e85712fadca966fba1317457e6fa5e5b064252333fe79e9819617",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable individual survey values."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-dates/0",
+    "answerSha256": "31e56a0448bd9362ccfdd4f195c1ba76b1a9ac5ebb517820eb5547e23bde210c",
+    "sourcesSha256": "d939adb729f21ab5056a962fc0f3def68d0e5235d93b4a112d6a4ef269653261",
+    "evidenceSha256": "510bea9664a2d9f7f96abc84057caec2f397c4bcda1f97cc55a3e504cd0645cc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct dates; other numbered Puerto Claro archive records have visible shared series labels. This grouping does not assert file-version lineage or source independence."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-sensor/0",
+    "answerSha256": "542ecd8dbad89633d784115f4ba4bdcfe23e1755094aef1825b4e5a24a2ed0eb",
+    "sourcesSha256": "3c663773366d5a3640674880b80577bb2f1b6be3f78a14f839b1fe42e8ac4907",
+    "evidenceSha256": "ad9012f0de01761dd14b1b6a0d065a6da2647350122ba122bf23629a387a17fc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct turbidity and oxygen exclusion."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-calculation/0",
+    "answerSha256": "95f75971c65556d8e6675cf776d0cd9cdec1821bf2c538f9adffa7bced827866",
+    "sourcesSha256": "c4602df94cf6e9ab27777aa5d600031cbf61ed1c011dc90530dbf26fb6d22239",
+    "evidenceSha256": "cf812ed757b46bd60caf567322dc18900494af094c5ce45b4e100032a2c0de10",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Correct table and measured outcome, but omits the requested percentage-point difference. The reader computing it is not answer adequacy."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-correction/0",
+    "answerSha256": "3b12f963d8779425eb98496a971661a100411d48e2e3b6ab8f1d707312088cef",
+    "sourcesSha256": "18a2d39173ae836079c365a0404858a3eaba448689714d0f077a77b0fc49ab6f",
+    "evidenceSha256": "6e532988a06f2d1d6782cb729c31c703984d2b00800fb273b672210f9b94ae50",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct final count replacing preliminary count."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-statistics/0",
+    "answerSha256": "745418d6ee59a97f700eb3a3f81ca6540550ac7d2adc4841b46c01258cd31604",
+    "sourcesSha256": "4fe886cf49e73a2481ecc1e68c7773ee9d1c0470e557f44713213508e72ccd56",
+    "evidenceSha256": "9426d28cf1763299d068f319018d79c4e713120af79265c2d3b0a8924763e273",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate statistics and precise inability to determine actual shape. The explicitly labelled statement only says compatibility with positive asymmetry, not that Bruma has that shape: a hypothetical 240-value construction repeating 6/18/48 has mean 24, median 18 and positive third moment. This review-only construction is never indexed or attributed as real Bruma data."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-negation/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "d18c011527f162807389a561c22359ab47e47c5f7009860b36115410e5a60968",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Verification availability failure; no answer published."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-policy/0",
+    "answerSha256": "8e1d34b9f3d344aaea603f81bf79c846555aefa54563f37c19f685b297e3a604",
+    "sourcesSha256": "5ab850430be1405a9ed6c788c459493344bbd80ff56823921d57dbe89ca27a2d",
+    "evidenceSha256": "6fd085c8f4ce20ca400a2b237464116c3a30ded8f05662893575d31d788ec104",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Deleted-item restoration and closed-account exclusion are correct; event retention is stated separately."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-paper/0",
+    "answerSha256": "9188d868d46f376997a9e96b3c7c88fd0dfdc8a20b66bc58a382c1d9a4ab5bac",
+    "sourcesSha256": "7757f922768b612d7c3d63141c7c47a624d3348bf87b594a74a84fc5ff4ad176",
+    "evidenceSha256": "4cb4e49eb6a7a0f483546f234e9ef36427e827a7a49e437f1e925aa22c02d6ce",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Describes the requested 4-bit weight-storage saving without naming NF4, DQ quantization constants and savings, paged spike management, and BF16 computation. Labelled 0.127 arithmetic is correct and supported by the cited DQ premises; no extra quantile count."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-price/0",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "ad9012f0de01761dd14b1b6a0d065a6da2647350122ba122bf23629a387a17fc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable price."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "6d01f7451c6a56016f21c885387f6b19cff747f87754ba5e89497966e7b4fde1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable book-purchase funder."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "e53f00f02f9b20062ca2973d61acdc111c258b4b49d29185596c1c86ec3d716f",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable trial funder."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "962e59746774da60bc71b23ded11f2360769b644b938a57b5edb6b9866035b3a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable individual survey values."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-dates/1",
+    "answerSha256": "c3ca1e4143d28cd3bba82edfb54f78db25ad58a83e546694a42a404af18f4fd8",
+    "sourcesSha256": "fd8d7740eb9d6dca26d8b46677088536a6e8e3f7f64612ca31d020cb198e463e",
+    "evidenceSha256": "698bcfdba1362171a564f30d94e801a81a6fa0e55c1fa1cf26c61a837a36f966",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Library 1912 and laboratory 1913 distinction matches literal excerpt."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-sensor/1",
+    "answerSha256": "542ecd8dbad89633d784115f4ba4bdcfe23e1755094aef1825b4e5a24a2ed0eb",
+    "sourcesSha256": "3c663773366d5a3640674880b80577bb2f1b6be3f78a14f839b1fe42e8ac4907",
+    "evidenceSha256": "ad9012f0de01761dd14b1b6a0d065a6da2647350122ba122bf23629a387a17fc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Green 530 nm light, turbidity and oxygen exclusion match literal excerpt."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-calculation/1",
+    "answerSha256": "67c99848c3f71f515c3f8e5853511c2a19098c27ab22223e7c99a61c602bb76e",
+    "sourcesSha256": "c4602df94cf6e9ab27777aa5d600031cbf61ed1c011dc90530dbf26fb6d22239",
+    "evidenceSha256": "a4e9390763b6813c00184836bfe1425c1040924dc58285ece9fb3ae483f02798",
+    "faithful": true,
+    "adequate": true,
+    "notes": "72/51 recall and unmeasured intelligence match source; labelled difference is correct 21 percentage points."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-correction/1",
+    "answerSha256": "757f8414ecadf434ca00a52e1718cee21601eaf4b6bda95034ab2cab56aaae30",
+    "sourcesSha256": "18a2d39173ae836079c365a0404858a3eaba448689714d0f077a77b0fc49ab6f",
+    "evidenceSha256": "6e532988a06f2d1d6782cb729c31c703984d2b00800fb273b672210f9b94ae50",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 supersedes preliminary 239, including faithful direct quote."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-statistics/1",
+    "answerSha256": "6c33c0f109adf9df6d208241c5ae6af7b0aaee67984977879aca66e348276402",
+    "sourcesSha256": "9061ffd034eb38f3743800ef1f564a56d8e159d01609941c46cdc0c173a035d0",
+    "evidenceSha256": "9c484f3f063fa5982b29033dcc88a2a1598a48ee606ebd66a7a3ee4570184cd4",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Literal 18/24, non-equivalence and sample are correct, but the requested conclusion or precise limitation about distribution is omitted."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-negation/1",
+    "answerSha256": "e66976e7093b19231f065cd164922e919a60dbdcb45d752451d2e7bb65322d5d",
+    "sourcesSha256": "f833388eccc3f8f6ad1b9515063fc63d1b6bf9a5c7c936fbcaeb7adcae34c51c",
+    "evidenceSha256": "20299df46184645a5449706826e5193ec74e9a0b7206754775185c871010bdd9",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct measurements, correction and exclusions. Explicit own comparison restricts conclusions to measured constructs and unequal mean/median, and states a scoped inability to rank interpretation limits; no invented real-world effect or distribution."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-policy/1",
+    "answerSha256": "8e1d34b9f3d344aaea603f81bf79c846555aefa54563f37c19f685b297e3a604",
+    "sourcesSha256": "5ab850430be1405a9ed6c788c459493344bbd80ff56823921d57dbe89ca27a2d",
+    "evidenceSha256": "6fd085c8f4ce20ca400a2b237464116c3a30ded8f05662893575d31d788ec104",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Deleted-item restoration and closed-account exclusion are correct; event retention appears separately."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-paper/1",
+    "answerSha256": "b3f280a82865bab6f210f9887491d06ed64109f5cf3c6b0c960e7cc360530a4a",
+    "sourcesSha256": "2f8dd164e3a30ac987e6615b176179fb558470f3797b250ad2f4a1d853ac78df",
+    "evidenceSha256": "785e1baaca69ed11c70ca02adbe9238cc63550f6e54e496c71cdc733d1ebef59",
+    "faithful": true,
+    "adequate": true,
+    "notes": "NF4 construction and normal-distribution property, DQ constants and savings, paged checkpointing spikes, and storage/BF16 computation match literal paper excerpts. Explicitly own arithmetic yields 0.126953125 correctly; no erroneous quantile count is introduced."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "ad9012f0de01761dd14b1b6a0d065a6da2647350122ba122bf23629a387a17fc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable price."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "abdbb6fdce4c629a22b44d5ae603a5cb06d3885a1f1fe2ec9620394426f6f555",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable book-purchase funder."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-funding/1",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "38b87d33062645a7773b44ba196c193e2894cf60ac0b05260600b359f6616c13",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable trial funder."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-data/1",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "441be25dc4971d537b1884f797e4890c1516fd4f7dfcba540fa8d9a21bc18fad",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable individual survey values."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-dates/0",
+    "answerSha256": "46b5dd6b6d2c203ff4cec2f57f92d5cbbfa3d8ba997de7d9cd87b264fada1926",
+    "sourcesSha256": "291092f959bc5f7067e26bcd772e758615d78cc932060aad375a4ed20fc474cf",
+    "evidenceSha256": "a22de92c2268856f6757ef1dd5f3be2887e5d5080eee75e1e4d524612804b189",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Library 1912 and laboratory 1913 distinction match literal excerpt."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-sensor/0",
+    "answerSha256": "a26374399ab38a3890a43263f1070eadfbe76d2222f28f169a55cbd7af9b0851",
+    "sourcesSha256": "57d33511582db05d791942ec427fafae153b093ff7aee8e177768d688702278a",
+    "evidenceSha256": "a1a6d90b877c0ee0a2fc2045967aaf09d91e21d6874d34228f6489d5ae8ac4f5",
+    "faithful": true,
+    "adequate": true,
+    "notes": "530 nm green light, turbidity and oxygen exclusion match literal excerpt."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-calculation/0",
+    "answerSha256": "ea1585386215c183bc6c87965037f985267eaae0e68c22a622a6baec4c022204",
+    "sourcesSha256": "d828ab65d1a5d0b5327aaea140a72e718532c42591827d28a97be8ae9d8e8fe4",
+    "evidenceSha256": "7d88aaa44b35ee8678826f0432eb4083ec8c505fb8fa99ebcba45554d7e9b2ab",
+    "faithful": true,
+    "adequate": false,
+    "notes": "All figures, recall/intelligence distinction and labelled 21-point difference are supported, but the requested table has three header cells and four separator cells. The actual Electron screenshot shows flattened pipe text rather than a rendered table; requested format is unmet."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-correction/0",
+    "answerSha256": "eccde9afc39b619e9e3860c2643287808448727ce4e534dc1cf4468a5bc99c4d",
+    "sourcesSha256": "b8f5519dfad651ed13ade87711a55e689c991d097a0d1bfb0009348cb1293744",
+    "evidenceSha256": "56cdba87e26a945c899d5a77496ababdb1def1674683dc3edbaebc5f8a9fe1f6",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 replaces preliminary 239 as explicitly stated; direct correction quote is literal."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/0",
+    "answerSha256": "0e178ad17313907cef739091c483701902f9b2a033eba80f62148995247f3f17",
+    "sourcesSha256": "b13570f503091d6ddb7aa2c12b06031be5aecade1e156718af64f39b184d72e7",
+    "evidenceSha256": "02b2605c714c2254e41dd1aa757ab1d2d8ef5734bbf0a1dbd43cf83d9f54a3a7",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Correct 18/24 and non-equivalence, but omits the requested conclusion or precise limitation about distribution."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "e0b1a43f52f7cfb36be5055fd8a22873390f0469a9eca98eeae85b16f99920dc",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Verification unavailable; unpublished comparison counts as failure."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-policy/0",
+    "answerSha256": "e670f8afe3fe272cfd0ee64726192cbe9f3b534121882c66c8f02ab4d2b8b705",
+    "sourcesSha256": "f3dee57400cab1f67469de00887e158b571223da8fad6e6381b899e2398dd737",
+    "evidenceSha256": "5f8e9cd9e6aafc72bd040491dfadfc8793d307b0d8351a462cf92624ddb83340",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Restoration eligibility/account exclusion match source; event-retention change is stated separately."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-paper/0",
+    "answerSha256": "1f67090e1fe14b69bdf0efcf5a9b1fe19654a3fd6db2ff608826472729d0b77a",
+    "sourcesSha256": "37e36a57ea9586140e3c2ef93a097c9185ccf5ff60d202203416492aa26a7717",
+    "evidenceSha256": "8855cf55e7dbb9efe99882c610377dae94c978c1b73f2a359803b5cf2352a0bb",
+    "faithful": true,
+    "adequate": true,
+    "notes": "NF4 property and 4-bit storage, DQ constants/savings, paging spikes and BF16 computation match literal passages. Does not repeat unsupported future-work claims from the garbled passage; labelled distinction uses supported premises."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price/0",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a1a6d90b877c0ee0a2fc2045967aaf09d91e21d6874d34228f6489d5ae8ac4f5",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable price."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "f92864bdbd7a7fc2327709ca0e624de4a156f7cca3df4a845a91784e4815bc90",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable book-purchase funder."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "0613f6e367077429a8cbe3c57c46e47126887298c62cbbe88028e986645e24d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable trial funder."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "0814ad4e357151c974601392d885494fc9fbef3e77e5a1656630625a98d9c9bb",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise inability to establish unavailable individual survey values."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-dates/1",
+    "answerSha256": "85abe18a4a0801872cb3ab7e87bd312a1998e3e4b0ea1078f5f36375ab386053",
+    "sourcesSha256": "291092f959bc5f7067e26bcd772e758615d78cc932060aad375a4ed20fc474cf",
+    "evidenceSha256": "bd4fcbe192097276647ef0d31bb914150c25f7d15ffc9b852e5894e9fa7e1c87",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Library 1912 and laboratory 1913 distinction match literal excerpt."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-sensor/1",
+    "answerSha256": "a26374399ab38a3890a43263f1070eadfbe76d2222f28f169a55cbd7af9b0851",
+    "sourcesSha256": "57d33511582db05d791942ec427fafae153b093ff7aee8e177768d688702278a",
+    "evidenceSha256": "a1a6d90b877c0ee0a2fc2045967aaf09d91e21d6874d34228f6489d5ae8ac4f5",
+    "faithful": true,
+    "adequate": true,
+    "notes": "530 nm green light, turbidity and oxygen exclusion match literal excerpt."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-calculation/1",
+    "answerSha256": "086db0f770b0714004afbf4ef2eff8be037a7352f7ece4b176dd9cc9e0819c6a",
+    "sourcesSha256": "d828ab65d1a5d0b5327aaea140a72e718532c42591827d28a97be8ae9d8e8fe4",
+    "evidenceSha256": "95871933359cb51db3f97f235377fdb944708b0aa555da2c629f0cb17391f47f",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table structure, 72/51 recall and unmeasured intelligence; explicitly derived difference is correct 21 percentage points."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-correction/1",
+    "answerSha256": "b25bdad083842e960b4aa8fbcac9b1e3cda73935e9a2eea77dfdfce383c6e8ce",
+    "sourcesSha256": "b8f5519dfad651ed13ade87711a55e689c991d097a0d1bfb0009348cb1293744",
+    "evidenceSha256": "861415b629e11c8052605ba1e526736f4eb3facec4efaf310a04527d89e18018",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 replaces preliminary 239 as explicitly stated."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/1",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Paid request blocked by the shared campaign budget at 23:45:51.786Z; report confirms budgetExhausted and seven remaining cases. UI misleadingly labels this as an invalid AI key. This is budget unavailability, not a credential diagnosis or a correct evidence refusal."
+  }
+]

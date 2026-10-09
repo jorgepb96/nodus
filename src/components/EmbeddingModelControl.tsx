@@ -56,7 +56,7 @@ export function EmbeddingModelControl({
     <div className="w-full max-w-3xl space-y-2">
       <div className="grid gap-2 lg:grid-cols-[11rem_minmax(13rem,1fr)_auto]">
         <div className="flex items-center gap-1.5">
-          <select className="input w-full min-w-0 flex-1" value={provider} onChange={(e) => setProvider(e.target.value as EmbeddingProvider)}>
+          <select data-testid="embedding-provider" className="input w-full min-w-0 flex-1" value={provider} onChange={(e) => setProvider(e.target.value as EmbeddingProvider)}>
             {EMBEDDING_PROVIDERS.map((p) => (
               <option key={p} value={p}>
                 {PROVIDER_LABELS[p]}
@@ -67,6 +67,7 @@ export function EmbeddingModelControl({
           <LocalModelWarning provider={provider} testId="embedding-provider-local-warning" />
         </div>
         <input
+          data-testid="embedding-model-input"
           className="input w-full min-w-0"
           value={modelInput}
           onChange={(e) => setModelInput(e.target.value)}

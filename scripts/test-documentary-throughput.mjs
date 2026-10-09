@@ -115,6 +115,9 @@ try {
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const remote = { ...config, endpoint: `http://127.0.0.1:${server.address().port}/v1` };
+  // An explicit job must describe the currently selected execution contract.
+  load('electron/db/settingsRepo.ts').updateSettings({ embeddingProvider: remote.provider, embeddingModel: remote.modelId });
+  load('electron/ai/providers.ts').openAiCompatBase = provider => provider === remote.provider ? remote.endpoint : null;
   try {
     await Promise.all([0, 1, 2].map(i => ai.embedManyStrict([`Gate ${i}`], undefined, { config: remote })));
   } finally { server.close(); }

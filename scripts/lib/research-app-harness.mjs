@@ -69,17 +69,19 @@ export function simulatedUpstream(behaviour = () => null) {
  * may wrap the real fetch to observe requests (it must still send them). `extraEnv`
  * reaches only the application (for example an explicit disposable Zotero endpoint).
  * Every launch, not only the first, re-proves the five isolation guarantees. */
-export async function createResearchApp({ provider = null, realProvider = null, extraPorts = [], extraEnv = {} } = {}) {
-  const root = createResearchTestRoot();
+export async function createResearchApp({ provider = null, realProvider = null, extraPorts = [], extraEnv = {}, root: requestedRoot = null, executablePath = require('electron'), appArgs = [repoRoot] } = {}) {
+  const root = requestedRoot ? fs.realpathSync(requestedRoot) : createResearchTestRoot();
+  const marker = JSON.parse(fs.readFileSync(path.join(root, 'isolation.json'), 'utf8'));
+  if (marker.root !== root || marker.format !== 'nodus.isolated-research-profile/1') throw new Error('Only a marked disposable QA profile can be resumed');
   let proxy = null;
   if (provider) proxy = await startResearchProviderProxy(root, { dispatch: provider.dispatch, catalogDispatch: provider.dispatch });
-  else if (realProvider) proxy = await startResearchProviderProxy(realProvider.campaignRoot, realProvider.dispatch ? { dispatch: realProvider.dispatch, catalogDispatch: fetch } : {});
+  else if (realProvider) proxy = await startResearchProviderProxy(realProvider.campaignRoot, { ...(realProvider.dispatch ? { dispatch: realProvider.dispatch, catalogDispatch: fetch } : {}), ...realProvider.proxyOptions });
   const ports = [...extraPorts, ...(proxy ? [Number(new URL(proxy.url).port)] : [])];
   const sandbox = macResearchSandbox(root, ports);
   const proof = { ...verifyResearchSandbox(root, sandbox), allowedLoopbackPorts: ports };
   fs.writeFileSync(path.join(root, 'isolation.sb'), sandbox);
   const wrapper = path.join(root, 'electron-isolated');
-  fs.writeFileSync(wrapper, `#!/bin/sh\nexec /usr/bin/sandbox-exec -f ${quote(path.join(root, 'isolation.sb'))} ${quote(require('electron'))} "$@"\n`, { mode: 0o700 });
+  fs.writeFileSync(wrapper, `#!/bin/sh\nexec /usr/bin/sandbox-exec -f ${quote(path.join(root, 'isolation.sb'))} ${quote(executablePath)} "$@"\n`, { mode: 0o700 });
   const environment = { ...researchTestEnvironment(root), ...extraEnv, ...(proxy ? { NODUS_RESEARCH_PROVIDER_PROXY: proxy.url } : {}) };
   let app = null;
   const harness = {
@@ -88,7 +90,14 @@ export async function createResearchApp({ provider = null, realProvider = null, 
       // The boundary is inherited from the OS, so prove it again before every start.
       const launchProof = { ...verifyResearchSandbox(root, sandbox), allowedLoopbackPorts: ports, at: new Date().toISOString() };
       harness.launchProofs.push(launchProof);
-      app = await _electron.launch({ executablePath: wrapper, args: ['--no-sandbox', '--disable-gpu', repoRoot], cwd: root, env: environment, timeout: 60000 });
+      const lock = path.join(root, 'profile/isolated-instance.lock');
+      if (fs.existsSync(lock)) {
+        const pid = Number(fs.readFileSync(lock, 'utf8'));
+        if (!Number.isSafeInteger(pid) || pid < 2) throw new Error('Invalid disposable profile lock');
+        try { process.kill(pid, 0); throw new Error('Disposable profile is still running'); }
+        catch (error) { if (error.code !== 'ESRCH') throw error; fs.unlinkSync(lock); }
+      }
+      app = await _electron.launch({ executablePath: wrapper, args: ['--no-sandbox', '--disable-gpu', ...appArgs], cwd: root, env: environment, timeout: 60000 });
       const page = await app.firstWindow();
       await page.waitForFunction(() => Boolean(document.getElementById('root')?.children.length), null, { timeout: 60000 });
       harness.app = app; harness.page = page;
@@ -112,12 +121,12 @@ export async function createResearchApp({ provider = null, realProvider = null, 
       });
     },
     /** Replaces the profile's provider credentials with the isolated encrypted copies. */
-    async importCredentials(source) {
+    async importCredentials(source, providers = ['deepseek', 'openrouter']) {
       if (app) throw new Error('close the application before replacing credentials');
       const secrets = path.join(root, 'profile/secrets');
       for (const name of fs.existsSync(secrets) ? fs.readdirSync(secrets) : []) if (/^ai_key_(deepseek|openrouter)/.test(name)) fs.rmSync(path.join(secrets, name));
       const { importResearchTestCredentials } = await import('../research-test-credentials.mjs');
-      return importResearchTestCredentials(root, source);
+      return importResearchTestCredentials(root, source, providers);
     },
     async closeApp() {
       if (app) await app.close().catch(() => undefined);

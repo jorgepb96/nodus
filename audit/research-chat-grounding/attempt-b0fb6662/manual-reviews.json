@@ -1,0 +1,263 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/0",
+    "answerSha256": "fb4b9272be9fedf32bb56d65e4fe07fea5f0d8d44c6d3aa4d5cdf2a8aa1f1396",
+    "sourcesSha256": "bb5dbc114bbae52030b96a2d4f00c3ebb5fbdb972ef13d742ee1584d6a0316bf",
+    "evidenceSha256": "8efaefca04c88817f805a86b4851f7cf9ecfe1915612f92598d32b461d99d3c4",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Both dates and the 1913 negation match fixture 01. The additional language descriptions match the displayed authored fixtures; no independence claim is made."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/0",
+    "answerSha256": "517b191c517744173c551b94f8d43aa9d52ab4aa3b7f026354a31297b096c274",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Turbidity, 530 nm, calibration every 30 days and explicit oxygen exclusion match the literal Spanish fixture 13; the quotation is verbatim."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/0",
+    "answerSha256": "f9bad72910956cb1ccb7892f2a59e0c6a84abb932009732aaf56f7d1f6cf0cf5",
+    "sourcesSha256": "48b429df22ef07eac69489240fd87fe8d8b70084d817eb4d51f268cbb297616a",
+    "evidenceSha256": "c20a92376c7feb35ad4dbfc6ea9fba10cdcf77b7be664c4e9dc73f4890bb791a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The displayed table preserves the two actual recall outcomes, 72% and 51%, explicitly labels the correct 21 percentage-point calculation, and retains the source negation that intelligence was not measured. Fixture 07 OCR is damaged but these values and the negation remain readable."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/0",
+    "answerSha256": "88573c2f5a5f961833a6165c3066c3d7cc888876217b809449c9fa4234860343",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Fixture 19 explicitly records preliminary 239, final 240 participants and supersession; the answer supplies the requested current and replaced totals."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "97982c42df5982ff21198e4bfe9b80b509b9a02c82adca93be9351ec3f46086d",
+    "sourcesSha256": "0bad0929a5ea5347a05efb798cda0270dafc7cddea5cc09e9e3a4eb5290dadbb",
+    "evidenceSha256": "613c4a857af2d236b0480d1b3295ffe30e94b930d12de42d692e310e8bf5f863",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Median 18 and mean 24 match the tabulated and literal Bruma passages. The additional sample/correction/confidence-level facts match fixtures 19/14/29. The answer honestly limits what it can establish about distribution shape and does not infer skewness."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+    "answerSha256": "bd55cd981e1d4f531569202e69731fc4e53ef3fbce21ff59182571bb10dfbcba",
+    "sourcesSha256": "8400e1bba6e58df5f56038a56767e02dbb7368f16b864c311a66612a5a26157b",
+    "evidenceSha256": "649086db22b7bdf85cd3b76f8d8ffdbbd716f7bca4349111a5e37c267d771eee",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual passages support recall 72/51 and unmeasured intelligence, Bruma median 18/mean 24, sample 240 and correction from 239. The additional language repetitions match their excerpts. The independence statement is explicitly an evidentiary inference that repetition does not establish corroboration, rather than an assertion of actual dependence."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-policy/0",
+    "answerSha256": "83d1dca5a16ac28c311db36497dcf6083a68b0a66d72193efa57c9a97be88bf3",
+    "sourcesSha256": "d9b42e2727d17b77ca5efd638203a365597dddac283a047da5e764362ee9d3a1",
+    "evidenceSha256": "bd96a4ac21c10e4226a0cdb35d6ebe9218f934cf5bf0fab55c7442fd4d257c33",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Linde excerpts and version cells support restore deleted items, exclude closed accounts, and event retention 14 days/v1 7 to v2 14. The answer separates event retention from restoration and invents no restoration deadline."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/0",
+    "answerSha256": "ebf25f7923e9b574f0da9523f4ea2b3c94dc428e48b2f89c0f42e2114414e908",
+    "sourcesSha256": "d0ba8eac64781b2d32700c4aac101bbd94b544d44bf45ea8839471f37d287326",
+    "evidenceSha256": "cdac21a7fd0b754c44eacecda29323204cdc68e7cb78ecc09841da8f4aec2a35",
+    "faithful": false,
+    "adequate": true,
+    "notes": "FAIL: the answer says the paging analysis is future work. Original QLoRA PDF page 6 says a runtime analysis was performed; future work concerns circumstances where paging causes slowdowns. Its extracted multi-column excerpt loses these qualifiers. The requested NF4/DQ/paged/storage-vs-compute facets are otherwise supplied, but the added assertion is false. Checked original rendered pages 5 and 6, not only the app judge."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. The literal Alba excerpt has no price; repair retained an exact inability to establish the price, but coverage demanded a documentary-absence assertion. The unpublished gap does not count as a successful absence response."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor/0",
+    "answerSha256": "63bd9c6bec0e0e44d588151cd4d03892f1ecb49e03b77c754488cd8b1503e95f",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "b47e55a9a2699be43b464d6c31e90ffc3399f8d33c0fb804758799e5aa369238",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The answer gives an exact scoped inability to identify the book purchaser funder. It invents neither an identity nor complete-document absence."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding/0",
+    "answerSha256": "54f4dee0b92a6a3b1a25d9c98f5c32a5527a83dbc4bf5576e742090214320349",
+    "sourcesSha256": "34a84fc29f88ada42f9468fda7afb7f09a99f1952197f965449cc57f1a8eaddf",
+    "evidenceSha256": "befbf52c2d2a7eb1f373cf5e45f60cb062f0f007cdf20c36ed066d8f15149b75",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The first statement limits absence to the authorized Vega excerpts, which were separately inspected and contain only recall outcomes/negation; it does not claim complete-document absence. Extra 72/51/no-intelligence and multilingual repetitions match the actual passages."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "fd92ec9e2e3bf1d79f29634c16012ada60bc6093c51aee5e3cc0c722f11c3ea3",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. Actual Bruma passages supply aggregates and correction, not individual respondent values. A repair retained the exact inability to establish individual values, but coverage demanded an absence assertion. The unpublished gap does not count as a successful absence response."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/0",
+    "answerSha256": "899919de91f7bca3394590fd07ac17781c9a96baae7baa3d5806db5db36faba2",
+    "sourcesSha256": "af7948a45d9e8724bbbab687fede7a3d8025e7fa2bd7b078e9a967a1336f193a",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Library 1912 and laboratory 1913 are separately attributed to fixture 01, including the explicit negation."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/0",
+    "answerSha256": "e8df257f5a2693c7e8fe384b55206e272e5413b5c0a48eef66b3c63b7090efbf",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Turbidity and the excluded oxygen concentration match the actual fixture 13 passage."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/0",
+    "answerSha256": "f773756cfcb5c40a2611f94dd674b61e3c77a60ff036b83cb11b6b0a65b2d3a5",
+    "sourcesSha256": "15f7f2ecd817c4536772f8c61d405285bc49df1ab782613fb39230354dacbe4e",
+    "evidenceSha256": "c5a20566c44aaa59c60a42f61bad8b7cc0942d4289ce4c720b2d92c3ed81c833",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Both groups and the measured recall values match fixture 02 and its translations. The derived 21 percentage-point subtraction is correct and explicitly labelled. Intelligence is explicitly not measured in the source."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/0",
+    "answerSha256": "16ed6d1010327eddc7b0a3d04dbae091f24446e527130a26380a0e894d7727e7",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Fixture 19 and translated Bruma passages explicitly supersede 239 by final 240 participants. The recommendation is correctly labelled as inference and both requested totals are given."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "cbe93d038637a2ff3e38681fec6af2ba443bcc4f83f17882f7da2f3effcb9527",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. Source values 18/24 are present; the final coverage critic demands a distribution conclusion including unsupported asymmetry despite verified scoped limits. An unavailable turn is neither an adequate factual answer nor a correct refusal."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/0",
+    "answerSha256": "6bf1d995c3a5b65fc37aa2fc9e35b187a70cf8efc86ce57d34392caf42d31e35",
+    "sourcesSha256": "f684f4ee62a7a847b6cf89b5039485b4014c8a8c7715ae578720f816b852132c",
+    "evidenceSha256": "efa8d74ae6846efa99db1e2c5eff04117ea0755c68e26ca43496cf6ba6879be8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Vega recall 72/51 and unmeasured intelligence, Bruma sample/correction/mean/median match the source passages. Source-specific synthetic provenance is correctly restricted to one source. Administrative-review absence is literally stated in fixture 19, rather than inferred for the whole corpus. Interpretive joins are labelled as inference; no numeric confidence bounds are invented."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-policy/0",
+    "answerSha256": "55d59bddf70a5064eeca3e968813b2497d25301e1d54150369252060dc3f6281",
+    "sourcesSha256": "2e9cc3ab5e867465e0dd55cef0cedac913fca1dd04a8dda1a83593e6c2c864e6",
+    "evidenceSha256": "30658119dc0750e7a91be58195c80cf9348c6de11b3a1cfc373f0bec0ad8657d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "All language quotations match their actual Linde excerpts. Restore items/not accounts and event retention 7-to-14 match the passages and version cells. The answer keeps the two policies distinct and does not invent a restoration deadline."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/0",
+    "answerSha256": "feb4af2978c5bf6185c210962083b25aa97d0129d36c1df158e234ea06704dcd",
+    "sourcesSha256": "ec91da59bd8080892215acc7af020bc768b356420cf85dec9270ea278441de91",
+    "evidenceSha256": "2a3ede29973a7ce00f83ccbfdc9fc994c44956f8263cd1e1b2f33c47d917fd2c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual QLoRA passages support NF4 optimality for normal weights, quantile construction, DQ of constants/~0.37 bits/~3GB, paged optimizers preventing checkpointing OOM, NF4 storage/BF16 computation and frozen-model LoRA. The additional 18MB/5048MB and 13B 11.3GB/33B 24.7GB/65B 45.0GB values match page 4/page 26. The missing internal-block procedure is framed as inability to establish from excerpts, not corpus absence."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. The literal Alba excerpt has no price; repair retained an exact inability to establish the price, but coverage demanded a documentary-absence assertion. The unpublished gap does not count as a successful absence response."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "34b975dfe22747b43c547a6c6a6b05c896b5cbd3d66ffd00f83e720ce5a05bb8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "An exact inability to establish the book purchase funder; no invented person or exhaustive absence assertion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "e6341d76fb5d8e8a433b4b0e503d120cbaafd9a04a1ebefb89d1d207d8a3892b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "An exact inability to establish the Vega funder; no invented organization or complete-document absence."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "d020c737a2e62e33d4b831f73da63b8b5020b990fd9854d6473e05798cb480ae",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. Actual Bruma passages supply aggregates and correction, not individual respondent values. A repair retained the exact inability to establish individual values, but coverage demanded an absence assertion. The unpublished gap does not count as a successful absence response."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/1",
+    "answerSha256": "36b0b6bae4be1ea97da47f6b3166c6460f58fe1be163b118ad408c21de8c1ce6",
+    "sourcesSha256": "af7948a45d9e8724bbbab687fede7a3d8025e7fa2bd7b078e9a967a1336f193a",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Fixture 01 literally supports library 1912, laboratory 1913 and the explicit not-library negation."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/1",
+    "answerSha256": "3595469937e8e0ba91d1ebdeae5da96ae9cf4eb190c7bfcda3cff34cb888a09c",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual fixture 13 supports turbidity via green 530nm light, excludes oxygen concentration and adds 30-day calibration. No incorrect quantity association."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/1",
+    "answerSha256": "371c114dc45d50a68afe1294acd5ce790bf91281071ac29eb63a016157e5d179",
+    "sourcesSha256": "b8fe7ab147a1cc4c27abb21bf20a1a9810453621bf6122ad993530b7e9c49c0f",
+    "evidenceSha256": "e5a3f2e5fb03e885cfd2a52d5ec66989a2d60d0158fa1c4e5c7725e918d466e8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Vega passages support spaced retrieval 72%, rereading 51%, measured recall and explicit unmeasured intelligence. The answer calculates 21 percentage points correctly and labels this as its own calculation."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/1",
+    "answerSha256": "b24b6510ce44ea075eb2335f66055fc2386bef1e7b2e006b58a76e32630730f2",
+    "sourcesSha256": "a8d811740ea3b4bdf6543dabbfef9c112172ec8a4e391781ba1123e808975ab0",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The answer gives final 240 replacing preliminary 239, with literal quotes matching Bruma passages and the current participant total."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/1",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer was published. Source values 18/24 are present; the final coverage critic demands a distribution conclusion including unsupported asymmetry despite verified scoped limits. An unavailable turn is neither an adequate factual answer nor a correct refusal."
+  }
+]

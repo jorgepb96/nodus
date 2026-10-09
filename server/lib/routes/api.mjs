@@ -980,6 +980,7 @@ export function createApiRoutes(ctx) {
       contract = set.header.embeddingContract
         ? createEmbeddingContract(set.header.embeddingContract)
         : migrateLegacyVectorV1Header(set.header);
+      if (contract.provider !== set.header.provider || contract.model !== set.header.model || contract.dim !== set.dim) throw new Error('Embedding contract disagrees with vector header.');
     } catch (error) {
       json(res, 400, { error: 'invalid_embedding_contract', error_description: error instanceof Error ? error.message : String(error) });
       return true;

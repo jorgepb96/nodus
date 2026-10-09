@@ -1,0 +1,268 @@
+{
+  "format": "nodus.embedding-package-smoke/1",
+  "root": "/private/tmp/nodus-research-p2w7S3",
+  "executablePath": "/private/tmp/nodus-research-EkjNvg/packages-grounding-semantic-repair/mac-arm64/Nodus.app/Contents/MacOS/Nodus",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true,
+    "allowedLoopbackPorts": []
+  },
+  "completed": true,
+  "package": {
+    "packaged": true,
+    "appPath": "/private/tmp/nodus-research-EkjNvg/packages-grounding-semantic-repair/mac-arm64/Nodus.app/Contents/Resources/app.asar",
+    "metrics": [
+      {
+        "cpu": {
+          "cumulativeCPUUsage": 3.22999,
+          "percentCPUUsage": 0,
+          "idleWakeupsPerSecond": 0
+        },
+        "pid": 45621,
+        "type": "Browser",
+        "creationTime": 1791412200955.258,
+        "memory": {
+          "workingSetSize": 363248,
+          "peakWorkingSetSize": 453824
+        },
+        "sandboxed": true
+      },
+      {
+        "cpu": {
+          "cumulativeCPUUsage": 0.115653,
+          "percentCPUUsage": 0,
+          "idleWakeupsPerSecond": 0
+        },
+        "pid": 45660,
+        "type": "GPU",
+        "creationTime": 1791412222875.813,
+        "serviceName": "GPU",
+        "memory": {
+          "workingSetSize": 89040,
+          "peakWorkingSetSize": 89040
+        },
+        "sandboxed": true
+      },
+      {
+        "cpu": {
+          "cumulativeCPUUsage": 0.055561,
+          "percentCPUUsage": 0,
+          "idleWakeupsPerSecond": 0
+        },
+        "pid": 45661,
+        "type": "Utility",
+        "creationTime": 1791412222883.929,
+        "serviceName": "network.mojom.NetworkService",
+        "name": "Network Service",
+        "memory": {
+          "workingSetSize": 39936,
+          "peakWorkingSetSize": 39936
+        },
+        "sandboxed": true
+      },
+      {
+        "cpu": {
+          "cumulativeCPUUsage": 0.518444,
+          "percentCPUUsage": 0,
+          "idleWakeupsPerSecond": 0
+        },
+        "pid": 45663,
+        "type": "Tab",
+        "creationTime": 1791412224577.78,
+        "memory": {
+          "workingSetSize": 258192,
+          "peakWorkingSetSize": 259168
+        },
+        "sandboxed": true
+      }
+    ]
+  },
+  "legalNotice": {
+    "path": "/private/tmp/nodus-research-EkjNvg/packages-grounding-semantic-repair/mac-arm64/Nodus.app/Contents/Resources/legal/EMBEDDINGGEMMA_2_NOTICE.md",
+    "declaredLicense": "Apache-2.0",
+    "unresolvedPolicyStatementRetained": true
+  },
+  "profiles": [
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "evidence": [
+        {
+          "id": "55ed9ccd5a066457168b3cf274053a763b8c5e7f92636b7916b61d1e96296803:0",
+          "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f",
+          "workId": null,
+          "attachmentId": null,
+          "revision": "b2e2212b8c41bd407619171e42bf406db1670533cf74c01ff9047c6678135c25",
+          "text": "El sensor Alba mide turbidez con luz verde de 530 nm. No mide oxígeno.",
+          "locator": {
+            "pageLabel": null,
+            "sourceRef": null,
+            "pageNumber": null
+          },
+          "provenance": "abstract",
+          "limitations": [
+            "abstract_only"
+          ]
+        }
+      ],
+      "trace": {
+        "at": "2026-10-07T22:30:29.143Z",
+        "type": "documentary-retrieval",
+        "query": "Which apparatus determines how cloudy a liquid is using a visible beam?",
+        "profile": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-512-v1"
+        },
+        "contract": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-512-v1",
+          "dim": 512,
+          "protocol": "embeddinggemma2-text/1",
+          "task": {
+            "document": "title: {title|none} | text: ",
+            "query": "task: search result | query: "
+          },
+          "preprocessing": {
+            "maxTokens": 8192,
+            "output": "sentence_embedding",
+            "projection": "onnx-model",
+            "reduction": "matryoshka-prefix",
+            "specialTokens": true,
+            "titleFallback": "none",
+            "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+            "truncation": false,
+            "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+          },
+          "normalization": "l2-after-reduction",
+          "quantization": "onnx-q8",
+          "configVersion": 1
+        },
+        "scopeId": "05bf3a18b9a3499873ecc64db81dca3a2d60ec20e4c35bac1615ad1b30f3f047",
+        "vectorKeys": [
+          "55ed9ccd5a066457168b3cf274053a763b8c5e7f92636b7916b61d1e96296803"
+        ],
+        "retrieval": {
+          "semantic": [
+            {
+              "id": "55ed9ccd5a066457168b3cf274053a763b8c5e7f92636b7916b61d1e96296803:0",
+              "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f"
+            }
+          ],
+          "lexical": [],
+          "selected": [
+            {
+              "id": "55ed9ccd5a066457168b3cf274053a763b8c5e7f92636b7916b61d1e96296803:0",
+              "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f",
+              "lexicalIds": [],
+              "semanticIds": [
+                "55ed9ccd5a066457168b3cf274053a763b8c5e7f92636b7916b61d1e96296803:0"
+              ]
+            }
+          ]
+        },
+        "limitations": {
+          "incompleteAttachments": [],
+          "lexicalOnly": false
+        }
+      }
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "evidence": [
+        {
+          "id": "6ab3237a2f071757c079137ca96ef135cfb0f4dd91baefa2a9355b20daa8e946:0",
+          "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f",
+          "workId": null,
+          "attachmentId": null,
+          "revision": "b2e2212b8c41bd407619171e42bf406db1670533cf74c01ff9047c6678135c25",
+          "text": "El sensor Alba mide turbidez con luz verde de 530 nm. No mide oxígeno.",
+          "locator": {
+            "pageLabel": null,
+            "sourceRef": null,
+            "pageNumber": null
+          },
+          "provenance": "abstract",
+          "limitations": [
+            "abstract_only"
+          ]
+        }
+      ],
+      "trace": {
+        "at": "2026-10-07T22:30:30.116Z",
+        "type": "documentary-retrieval",
+        "query": "Which apparatus determines how cloudy a liquid is using a visible beam?",
+        "profile": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1"
+        },
+        "contract": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1",
+          "dim": 256,
+          "protocol": "embeddinggemma2-text/1",
+          "task": {
+            "document": "title: {title|none} | text: ",
+            "query": "task: search result | query: "
+          },
+          "preprocessing": {
+            "maxTokens": 8192,
+            "output": "sentence_embedding",
+            "projection": "onnx-model",
+            "reduction": "matryoshka-prefix",
+            "specialTokens": true,
+            "titleFallback": "none",
+            "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+            "truncation": false,
+            "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+          },
+          "normalization": "l2-after-reduction",
+          "quantization": "onnx-q8",
+          "configVersion": 1
+        },
+        "scopeId": "05bf3a18b9a3499873ecc64db81dca3a2d60ec20e4c35bac1615ad1b30f3f047",
+        "vectorKeys": [
+          "6ab3237a2f071757c079137ca96ef135cfb0f4dd91baefa2a9355b20daa8e946"
+        ],
+        "retrieval": {
+          "semantic": [
+            {
+              "id": "6ab3237a2f071757c079137ca96ef135cfb0f4dd91baefa2a9355b20daa8e946:0",
+              "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f"
+            }
+          ],
+          "lexical": [],
+          "selected": [
+            {
+              "id": "6ab3237a2f071757c079137ca96ef135cfb0f4dd91baefa2a9355b20daa8e946:0",
+              "documentId": "nodus:5f300701-c786-4c5e-8298-4410de72231f",
+              "lexicalIds": [],
+              "semanticIds": [
+                "6ab3237a2f071757c079137ca96ef135cfb0f4dd91baefa2a9355b20daa8e946:0"
+              ]
+            }
+          ]
+        },
+        "limitations": {
+          "incompleteAttachments": [],
+          "lexicalOnly": false
+        }
+      }
+    }
+  ],
+  "profileSwitchRequiresRebuild": true,
+  "screenshot": "/private/tmp/nodus-research-p2w7S3/artifacts/package.png",
+  "settingsScreenshot": "/private/tmp/nodus-research-p2w7S3/artifacts/package-settings.png",
+  "deletionScreenshot": "/private/tmp/nodus-research-p2w7S3/artifacts/package-deletion.png",
+  "settings": {
+    "language": "en",
+    "sharedCardCount": 1,
+    "experimentalBadge": true,
+    "licenseTermsLocalized": true,
+    "sharedDeletionWarning": true,
+    "cancelledDeletionPreservesBothProfiles": true
+  }
+}

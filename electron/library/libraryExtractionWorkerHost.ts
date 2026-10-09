@@ -12,6 +12,7 @@ import {
   type LibraryRemoteOcr,
 } from './libraryExtractionEngine';
 import { LibraryDiskStore } from './libraryStorage';
+import { recordEmbeddingTrace } from '../qa/embeddingTrace';
 
 export interface LibraryWorkerExtractionInput {
   item: LibraryItemRecord;
@@ -50,6 +51,10 @@ export async function extractLibraryItemInWorker(input: LibraryWorkerExtractionI
   }
   if (input.signal?.aborted) throw abortError();
   const worker = backgroundProcess(workerFile(), 'Nodus document extraction');
+  if (process.env.NODUS_EMBEDDING_QA_TRACE === '1') {
+    recordEmbeddingTrace({ type: 'extraction-worker', phase: 'requested', itemId: input.item.id, file: workerFile() });
+    worker.once('spawn', pid => recordEmbeddingTrace({ type: 'extraction-worker', phase: 'spawned', itemId: input.item.id, pid }));
+  }
   activeWorkers.add(worker);
   worker.unref();
   return new Promise<LibraryExtractionResult>((resolve, reject) => {
@@ -61,7 +66,8 @@ export async function extractLibraryItemInWorker(input: LibraryWorkerExtractionI
       if (forcedTermination) clearTimeout(forcedTermination);
       input.signal?.removeEventListener('abort', cancel);
       activeWorkers.delete(worker);
-      void worker.terminate().finally(() => { if (error) reject(error); else resolve(result!); });
+      recordEmbeddingTrace({ type: 'extraction-worker', phase: 'terminating', itemId: input.item.id, error: error?.message });
+      void worker.terminate().finally(() => { recordEmbeddingTrace({ type: 'extraction-worker', phase: 'terminated', itemId: input.item.id }); if (error) reject(error); else resolve(result!); });
     };
     const cancel = (): void => {
       worker.postMessage({ kind: 'cancel' });

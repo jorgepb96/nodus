@@ -1,0 +1,122 @@
+  • electron-builder  version=26.15.3 os=25.6.0
+  • loaded configuration  file=package.json ("build" field)
+[zotero-mcp] verified build inputs unchanged (darwin-arm64)
+[licenses] 699 production packages, 369 notice groups, 83 pinned upstream files
+[beforePack] Generated and verified third-party legal bundle
+✔ Built nodus-zotero.xpi (25 files)
+  /Users/jorgepb96/.codex/worktrees/ffb6/nodus/dist-zotero/nodus-zotero.xpi
+  sha256: f9ae6026332f9cb2ca5cdc87fe25fd85f0ad23115c46a49e0c5308a8d0c9313a
+✔ Wrote updates.json → /Users/jorgepb96/.codex/worktrees/ffb6/nodus/dist-zotero/updates.json
+
+Release integrity metadata:
+  required Zotero feed  : https://github.com/jorgepb96/nodus/releases/latest/download/updates.json
+  background updates    : disabled per add-on; installation remains manual
+  published XPI base    : https://github.com/jorgepb96/nodus/releases/latest/download/
+Install or update this XPI through Zotero: Tools → Plugins → ⚙ → Install Add-on From File.
+[beforePack] Built the canonical Zotero XPI
+[browser-extension] Built dist-browser/nodus-research-connector-chrome.zip (47 files)
+[beforePack] Built the canonical Chrome connector ZIP
+kept light-rain
+kept heavy-rain
+kept thunder
+kept rain-on-window
+kept rain-on-car-roof
+kept rain-on-umbrella
+kept rain-on-tent
+kept rain-on-leaves
+kept river
+kept waves
+kept campfire
+kept wind
+kept howling-wind
+kept wind-in-trees
+kept waterfall
+kept walk-in-snow
+kept walk-on-leaves
+kept walk-on-gravel
+kept droplets
+kept jungle
+kept birds
+kept seagulls
+kept crickets
+kept wolf
+kept owl
+kept frog
+kept dog-barking
+kept horse-gallop
+kept cat-purring
+kept crows
+kept whale
+kept beehive
+kept woodpecker
+kept chickens
+kept cows
+kept sheep
+kept cafe
+kept airport
+kept church
+kept temple
+kept construction-site
+kept underwater
+kept crowded-bar
+kept night-village
+kept subway-station
+kept office
+kept supermarket
+kept carousel
+kept laboratory
+kept laundry-room
+kept restaurant
+kept library
+kept keyboard
+kept typewriter
+kept paper
+kept clock
+kept wind-chimes
+kept singing-bowl
+kept ceiling-fan
+kept dryer
+kept slide-projector
+kept boiling-water
+kept bubbles
+kept tuning-radio
+kept morse-code
+kept washing-machine
+kept vinyl-effect
+kept windshield-wipers
+kept train
+kept inside-a-train
+kept airplane
+kept submarine
+kept sailboat
+kept rowing-boat
+kept highway
+kept road
+kept ambulance-siren
+kept busy-street
+kept crowd
+kept traffic
+kept fireworks
+
+prepared 0 recording(s), kept 81 already in place, skipped 0 pending, failed 0.
+[beforePack] Prepared the Nodus Drift recordings
+/Users/jorgepb96/.codex/worktrees/ffb6/nodus/build/presenter-native/arm64/nodus-presenter-native: replacing existing signature
+[beforePack] Built /Users/jorgepb96/.codex/worktrees/ffb6/nodus/build/NodusDockTile.docktileplugin for arm64
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=darwin arch=arm64 electron=43.4.0 appOutDir=/private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=/private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64
+  • searching for node modules  pm=npm searchDir=/Users/jorgepb96/.codex/worktrees/ffb6/nodus
+  • duplicate dependency references  dependencies=["call-bind-apply-helpers@1.0.2","es-object-atoms@1.1.2","hasown@2.0.4","hasown@2.0.4","@ariakit/store@0.1.10","@ariakit/react-utils@0.2.6","@ariakit/store@0.1.10","react@18.3.1","@ariakit/store@0.1.10","react@18.3.1","react-dom@18.3.1","react@18.3.1","react-dom@18.3.1","react@18.3.1","@blocknote/core@0.55.0","@blocknote/react@0.55.0","react-dom@18.3.1","react@18.3.1","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","@types/hast@3.0.5","@tiptap/pm@3.31.4","@tiptap/pm@3.31.4","prosemirror-transform@1.12.2","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","prosemirror-keymap@1.2.3","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-view@1.42.6","prosemirror-history@1.5.0","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-state@1.4.4","prosemirror-model@1.25.12","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-state@1.4.4","prosemirror-tables@1.8.5","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","@y/y@14.0.0-rc.23","@shikijs/types@4.5.0","@types/hast@3.0.5","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","prosemirror-model@1.25.12","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","prosemirror-keymap@1.2.3","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","prosemirror-view@1.42.6","prosemirror-model@1.25.12","prosemirror-model@1.25.12","prosemirror-state@1.4.4","prosemirror-transform@1.12.2","yjs@13.6.32","@blocknote/core@0.55.0","@floating-ui/dom@1.8.0","react-dom@18.3.1","react@18.3.1","react-dom@18.3.1","react@18.3.1","@tiptap/pm@3.31.4","@floating-ui/dom@1.8.0","@tiptap/pm@3.31.4","@floating-ui/dom@1.8.0","@tiptap/pm@3.31.4","@tiptap/pm@3.31.4","@types/react@18.3.31","@types/react@18.3.31","react-dom@18.3.1","react@18.3.1","react@18.3.1","react-dom@18.3.1","react@18.3.1","react@18.3.1","fetch-blob@3.2.0","fetch-blob@3.2.0","formdata-polyfill@4.0.10","protobufjs@7.6.5","@modelcontextprotocol/sdk@1.29.0","debug@4.4.3","fetch-blob@3.2.0","formdata-polyfill@4.0.10","gaxios@7.2.0","ecdsa-sig-formatter@1.0.11","@types/node@22.19.21","globalthis@1.0.4","protobufjs@7.6.5","@emnapi/runtime@1.11.3","express@5.2.1","debug@4.4.3","http-errors@2.0.1","on-finished@2.4.1","qs@6.15.2","raw-body@3.0.2","type-is@2.1.0","debug@4.4.3","on-finished@2.4.1","call-bind-apply-helpers@1.0.2","get-intrinsic@1.3.0","get-intrinsic@1.3.0","call-bound@1.0.4","get-intrinsic@1.3.0","side-channel-map@1.0.1","debug@4.4.3","debug@4.4.3","http-errors@2.0.1","on-finished@2.4.1","send@1.2.1","http-errors@2.0.1","protobufjs@7.6.5","sharp@0.35.4","once@1.4.0","once@1.4.0","readable-stream@3.6.2","once@1.4.0","readable-stream@3.6.2","glob@7.2.3","lazystream@1.0.1","readable-stream@3.6.2","readable-stream@3.6.2","readable-stream@3.6.2","readable-stream@3.6.2","end-of-stream@1.4.5","once@1.4.0","once@1.4.0","pump@3.0.4","tar-stream@2.2.0","debug@4.4.3","react-dom@18.3.1","react@18.3.1","@huggingface/transformers@3.8.1","domhandler@6.0.1","domhandler@6.0.1","domhandler@5.0.3","domhandler@5.0.3","jszip@3.10.1","@types/node-fetch@2.6.13","abort-controller@3.0.0","agentkeepalive@4.6.0","formdata-node@4.4.1","node-fetch@2.7.0","es5-ext@0.10.64","d@1.0.2","es5-ext@0.10.64","es6-symbol@3.1.4","d@1.0.2","d@1.0.2","es5-ext@0.10.64","event-emitter@0.3.5","@napi-rs/canvas@0.1.100","string-width@4.2.3","string-width@4.2.3","strip-ansi@6.0.1","strip-ansi@6.0.1","react@18.3.1","loose-envify@1.4.0","@types/hast@3.0.5","devlop@1.1.0","@types/hast@3.0.5","@types/hast@3.0.5","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","@types/estree-jsx@1.0.5","@types/hast@3.0.5","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","decode-named-character-reference@1.3.0","vfile-message@4.0.3","@types/estree-jsx@1.0.5","@types/hast@3.0.5","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","unist-util-stringify-position@4.0.0","@types/hast@3.0.5","@types/mdast@4.0.4","devlop@1.1.0","micromark-util-character@2.1.1","unist-util-position@5.0.0","unist-util-visit@5.1.0","vfile@6.0.3","react@18.3.1","@types/mdast@4.0.4","@types/mdast@4.0.4","devlop@1.1.0","@types/mdast@4.0.4","decode-named-character-reference@1.3.0","micromark-util-character@2.1.1","micromark-util-decode-numeric-character-reference@2.0.2","debug@4.4.3","decode-named-character-reference@1.3.0","devlop@1.1.0","micromark-core-commonmark@2.0.3","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","micromark-util-chunked@2.0.1","micromark-util-combine-extensions@2.0.1","micromark-util-decode-numeric-character-reference@2.0.2","micromark-util-normalize-identifier@2.0.1","micromark-util-resolve-all@2.0.1","micromark-util-sanitize-uri@2.0.1","devlop@1.1.0","micromark-util-chunked@2.0.1","unist-util-stringify-position@4.0.0","unified@11.0.5","@types/hast@3.0.5","@types/mdast@4.0.4","mdast-util-to-hast@13.2.1","unified@11.0.5","vfile@6.0.3","devlop@1.1.0","vfile@6.0.3","unist-util-visit-parents@6.0.2","vfile-message@4.0.3","loose-envify@1.4.0","@types/hast@3.0.5","@types/hast@3.0.5","@types/hast@3.0.5","@types/hast@3.0.5","@types/hast@3.0.5","@types/hast@3.0.5","devlop@1.1.0","@types/hast@3.0.5","devlop@1.1.0","hastscript@9.0.1","vfile@6.0.3","vfile@6.0.3","vfile-message@4.0.3","vfile@6.0.3","unist-util-visit@5.1.0","@types/hast@3.0.5","@types/hast@3.0.5","unist-util-is@6.0.1","unist-util-is@6.0.1","vfile@6.0.3","@types/mdast@4.0.4","mdast-util-from-markdown@2.0.3","@types/mdast@4.0.4","devlop@1.1.0","@types/mdast@4.0.4","unist-util-is@6.0.1","unist-util-visit-parents@6.0.2","micromark-util-character@2.1.1","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","micromark-util-normalize-identifier@2.0.1","@types/mdast@4.0.4","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","@types/mdast@4.0.4","@types/mdast@4.0.4","unist-util-is@6.0.1","mdast-util-to-string@4.0.0","micromark-util-character@2.1.1","micromark-util-decode-string@2.0.1","unist-util-visit@5.1.0","micromark-util-character@2.1.1","micromark-util-sanitize-uri@2.0.1","devlop@1.1.0","decode-named-character-reference@1.3.0","devlop@1.1.0","micromark-util-character@2.1.1","devlop@1.1.0","micromark-util-character@2.1.1","micromark-factory-space@2.0.1","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","micromark-util-character@2.1.1","micromark-util-chunked@2.0.1","micromark-util-classify-character@2.0.1","micromark-util-normalize-identifier@2.0.1","micromark-util-resolve-all@2.0.1","micromark-util-subtokenize@2.1.0","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","micromark-util-normalize-identifier@2.0.1","micromark-util-sanitize-uri@2.0.1","devlop@1.1.0","micromark-util-classify-character@2.0.1","devlop@1.1.0","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","devlop@1.1.0","micromark-factory-space@2.0.1","micromark-util-character@2.1.1","micromark-util-chunked@2.0.1","remark-parse@11.0.0","@types/mdast@4.0.4","mdast-util-to-markdown@2.1.2","unified@11.0.5","unified@11.0.5","@types/mdast@4.0.4","@types/hast@3.0.5","@types/mdast@4.0.4","devlop@1.1.0","mdast-util-from-markdown@2.0.3","mdast-util-to-markdown@2.1.2","unist-util-remove-position@5.0.0","devlop@1.1.0","micromark-util-character@2.1.1","unified@11.0.5","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-cms@2.10.0","@peculiar/asn1-cms@2.10.0","@peculiar/asn1-pkcs8@2.10.0","@peculiar/asn1-rsa@2.10.0","@peculiar/asn1-schema@2.10.0","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509-attr@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/asn1-x509@2.10.0","asn1js@3.0.10","asn1js@3.0.10","@peculiar/asn1-schema@2.10.0","@peculiar/utils@2.0.3","asn1js@3.0.10","pvtsutils@1.3.6","pvtsutils@1.3.6","node-fetch@2.7.0","topojson-client@3.1.0"]
+  • file source doesn't exist  from=/Users/jorgepb96/.codex/worktrees/ffb6/nodus/build/capability-bootstrap
+  • file source doesn't exist  from=/Users/jorgepb96/.codex/worktrees/ffb6/nodus/build/capability-bootstrap
+[drift-assets] packaged archive /private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64/Nodus.app/Contents/Resources/app.asar
+  recordings packaged: 81 (103863687 bytes)
+  cleared but absent:  0
+  pending review:      0 (not bundled)
+  generators:          8 (no files)
+[drift-assets] ok
+[native-runtime] Verified arm64 Electron, Canvas, Sharp, Koffi, Codex and Copilot in /private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64/Nodus.app
+/private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64/Nodus.app: replacing existing signature
+[afterPack] Ad-hoc signed /private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale/mac-arm64/Nodus.app (local/dev fallback)
+  • skipped macOS code signing  reason=identity explicitly is set to null

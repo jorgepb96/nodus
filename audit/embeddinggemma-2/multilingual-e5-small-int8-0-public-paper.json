@@ -1,0 +1,3316 @@
+{
+  "name": "public-paper",
+  "repetition": 0,
+  "question": "¿Cómo reduce QLoRA la memoria de ajuste del modelo? Cita el artículo.",
+  "scope": "fixed",
+  "started": 1791324103605,
+  "finished": 1791324141599,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Cómo reduce QLoRA la memoria de ajuste del modelo? Cita el artículo.",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "33e6e679-7e07-4218-b8cb-b06f9bcf60bb"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "0e987912-c412-420a-994d-de1f6c252169",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "## Cómo reduce QLoRA la memoria de ajuste fino\n\n**El punto de partida: el coste prohibitivo del ajuste en 16 bits.** El artículo plantea el problema en términos de memoria de GPU: el ajuste fino convencional en 16 bits de un modelo LLaMA de 65.000 millones de parámetros exige más de 780 GB de memoria de GPU, y las técnicas de cuantización previas solo servían para inferencia y se rompían durante el entrenamiento ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A1)). QLoRA reduce ese requisito promedio de **más de 780 GB a menos de 48 GB** sin degradar el rendimiento en tiempo de ejecución ni el rendimiento predictivo respecto a una línea base ajustada por completo en 16 bits ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A1)). El resumen lo formula del mismo modo: permite ajustar un modelo de 65B en una única GPU de 48 GB preservando el rendimiento completo del ajuste en 16 bits ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A0)).\n\n**La idea central: gradientes a través de pesos congelados y cuantizados.** El mecanismo no es \"entrenar menos\", sino *dónde* se aplican los gradientes. QLoRA retropropaga los gradientes a través de un modelo preentrenado congelado y cuantizado a 4 bits, hacia unos *Low Rank Adapters* (LoRA) ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A0)). Es decir, la mayor parte del peso del modelo nunca se actualiza ni acumula estados de optimizador; solo un conjunto pequeño de adaptadores entrenables lo hace. Esto se apoya en la maquinaria de LoRA, que absorbe los adaptadores en los pesos originales de modo que no se introduce latencia adicional en inferencia; el material consultado sobre LoRA describe ese diseño y su beneficio en memoria y almacenamiento, pero no forma parte de la aportación propia de QLoRA ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3A19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082%3A10)).\n\n**Tres innovaciones concretas.** El artículo atribuye la reducción de memoria sin sacrificar rendimiento a tres piezas ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A3)):\n\n1. **NormalFloat de 4 bits (NF4)**, presentado como un tipo de dato de cuantización teóricamente óptimo desde el punto de vista de la información para pesos distribuidos normalmente. Se construye sobre la cuantización por cuantiles, que busca que cada *bin* de cuantización reciba el mismo número de valores del tensor de entrada; la limitación de ese procedimiento es el propio cálculo de los cuantiles ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A6)).\n2. **Doble cuantización**, que cuantiza las constantes de cuantización y ahorra de media unos **0,37 bits por parámetro** (aproximadamente 3 GB en un modelo de 65B) ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A3)).\n3. **Optimizadores paginados (*Paged Optimizers*)**, pensados para gestionar picos de memoria. En el desarrollo del método se explicita que su función es evitar errores de memoria agotada durante el *gradient checkpointing*, que tradicionalmente han dificultado el ajuste de modelos grandes en una sola máquina ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A6)).\n\n**Precisión mixta: almacenar en 4 bits, calcular en 16.** QLoRA tiene un tipo de dato de almacenamiento de baja precisión, habitualmente 4 bits, y un tipo de dato de cómputo, habitualmente BFloat16: cada vez que se usa un tensor de pesos QLoRA, este se desquantiza a BFloat16 y la multiplicación de matrices se realiza en 16 bits ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A6)). El ahorro proviene de mantener congelado el modelo base en 4 bits, no de degradar la aritmética.\n\n**Dónde está el ahorro, en cifras de desglose.** El propio análisis de huella de memoria es revelador de dónde no conviene optimizar: con *gradient checkpointing*, los adaptadores LoRA ocupan solo 26 MB y los gradientes de entrada se reducen a unos 18 MB de media por secuencia —más intensivos en memoria que todos los pesos LoRA juntos—, mientras que el modelo base en 4 bits consume 5.048 MB ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A6)). De ahí la conclusión del artículo: reducir agresivamente el número de parámetros LoRA apenas aporta beneficios de memoria, lo que a su vez permite usar más adaptadores sin aumentar significativamente la huella total de entrenamiento ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A6)).\n\n**El resultado en tamaños desplegables.** La familia Guanaco ilustra el efecto acumulado: 41 GB para el modelo de 65B, 21 GB para el de 33B, 10 GB para el de 13B y 5 GB para el de 7B ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A57)). El artículo enmarca esto como un cambio en la accesibilidad del ajuste fino de modelos grandes y reporta que su mejor modelo alcanza el 99,3% del nivel de rendimiento de ChatGPT con 24 horas de ajuste en una sola GPU ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A0)).\n\n**Matices que el propio artículo señala.** Dos cautelas conviene no perder: el trabajo sostiene que las evaluaciones con GPT-4 son una alternativa barata y razonable a la evaluación humana, y a la vez que los *benchmarks* actuales de chatbots no son fiables para medir con precisión sus niveles de rendimiento ([Dettmers et al., 2023](nodus://passage/documentary%3A10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585%3Aedb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea%3A1)).\n\n**Alcance de esta consulta.** La respuesta se apoya en los pasajes del artículo de QLoRA disponibles en la biblioteca consultada; no hay en el material recuperado un desglose experimental independiente que reproduzca estas cifras, y buena parte de las fuentes recuperadas en esta búsqueda (archivos sintéticos sobre otros dominios) no guarda relación con la pregunta y no se ha usado como evidencia. No se realizó ninguna llamada al MCP de Zotero en este turno; el acceso fue a los registros y pasajes indexados en la biblioteca local.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 40,
+      "documents": 40,
+      "summaries": 0,
+      "passages": 19,
+      "contextChars": 40320,
+      "truncated": true,
+      "researchTraversal": {
+        "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+        "sourceCount": 40,
+        "rounds": 7,
+        "evidenceTokens": 15342,
+        "decisionTokens": 79360,
+        "matchedDocumentIds": [
+          "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+          "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+          "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+          "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+          "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+          "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+          "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+          "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+          "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a",
+          "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+          "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+          "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+        ],
+        "readDocumentIds": [
+          "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+        ],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [
+          "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+          "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+        ],
+        "contextDocumentIds": [
+          "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:02b733bc-09b8-4e57-86cb-21651b255d2b",
+            "title": "fixture 23",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6",
+            "title": "public HUGGPT01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f",
+            "title": "public ARENA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+            "title": "public LORA0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:0f2bbeb4-a926-4032-b0ca-e87e7eab0d37",
+            "title": "fixture 18",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:164a5900-6add-4e0a-b35f-42b2e3a33e17",
+            "title": "fixture 22",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c",
+            "title": "public DPO00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:1b8c4c09-a055-4132-815e-20ce71f53f97",
+            "title": "public SAM00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:1cc49002-4ef0-4ccb-a4bd-1a0e9026036a",
+            "title": "fixture 16",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:2562b0c1-b3fd-4971-abc1-876020538ef9",
+            "title": "fixture 20",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245",
+            "title": "fixture 19",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+            "title": "fixture 02",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+            "title": "fixture 01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+            "title": "public LLAMA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+            "title": "fixture 07",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:2db2353b-d962-4a3b-b0de-2b0e237bb31a",
+            "title": "fixture 12",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "title": "public QLORA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3e8e218c-f6b5-403a-9541-cae0850816fc",
+            "title": "fixture 14",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3fe4d903-ad66-4475-ba59-235f0470f2a7",
+            "title": "fixture 10",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4ac336d4-93f6-476d-b8f1-04eb6791a64d",
+            "title": "fixture 11",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f",
+            "title": "public SELF0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:5d74edb9-e8a9-4f7c-98f6-df1e3aded26a",
+            "title": "fixture 03",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:5e5fbb48-b0bf-493d-b7e8-0e596dda11cc",
+            "title": "fixture 08",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+            "title": "fixture 21",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+            "title": "fixture 17",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:78abccc8-d794-44c7-bcae-d20c0434b9d9",
+            "title": "fixture 28",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:7d8bca84-8be5-4ee9-bf23-15acff98317f",
+            "title": "fixture 30",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+            "title": "fixture 25",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:9ec6b1e5-beb3-40ed-b7ea-7c77f132e73d",
+            "title": "fixture 04",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+            "title": "fixture 09",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+            "title": "fixture 27",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c65c516e-ba30-43df-9e50-0cd676c697f8",
+            "title": "fixture 24",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c9c6204f-12d7-44d1-b5c4-b714c1ca27d7",
+            "title": "fixture 06",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "title": "fixture 13",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9",
+            "title": "public AGENT001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:d5c36cdd-e7f7-41e4-9d44-7fa5eb0958d0",
+            "title": "fixture 26",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5",
+            "title": "public RWKV0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+            "title": "fixture 29",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ee1b885c-1c04-4467-bb50-a8d0dec5b17b",
+            "title": "fixture 15",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a",
+            "title": "fixture 05",
+            "reasons": []
+          }
+        ],
+        "limitations": [
+          "repeated_action"
+        ],
+        "partial": true,
+        "queries": [
+          {
+            "query": "Cómo reduce QLoRA la memoria de ajuste fino de modelos de lenguaje, según el artículo que lo propone",
+            "sources": [
+              "nodus:02b733bc-09b8-4e57-86cb-21651b255d2b",
+              "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6",
+              "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f",
+              "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+              "nodus:0f2bbeb4-a926-4032-b0ca-e87e7eab0d37",
+              "nodus:164a5900-6add-4e0a-b35f-42b2e3a33e17",
+              "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c",
+              "nodus:1b8c4c09-a055-4132-815e-20ce71f53f97",
+              "nodus:1cc49002-4ef0-4ccb-a4bd-1a0e9026036a",
+              "nodus:2562b0c1-b3fd-4971-abc1-876020538ef9",
+              "nodus:26af8601-7dad-4d32-8eaf-17027d828245",
+              "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+              "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+              "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+              "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+              "nodus:2db2353b-d962-4a3b-b0de-2b0e237bb31a",
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+              "nodus:3e8e218c-f6b5-403a-9541-cae0850816fc",
+              "nodus:3fe4d903-ad66-4475-ba59-235f0470f2a7",
+              "nodus:4ac336d4-93f6-476d-b8f1-04eb6791a64d",
+              "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f",
+              "nodus:5d74edb9-e8a9-4f7c-98f6-df1e3aded26a",
+              "nodus:5e5fbb48-b0bf-493d-b7e8-0e596dda11cc",
+              "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+              "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+              "nodus:78abccc8-d794-44c7-bcae-d20c0434b9d9",
+              "nodus:7d8bca84-8be5-4ee9-bf23-15acff98317f",
+              "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+              "nodus:9ec6b1e5-beb3-40ed-b7ea-7c77f132e73d",
+              "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+              "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+              "nodus:c65c516e-ba30-43df-9e50-0cd676c697f8",
+              "nodus:c9c6204f-12d7-44d1-b5c4-b714c1ca27d7",
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+              "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9",
+              "nodus:d5c36cdd-e7f7-41e4-9d44-7fa5eb0958d0",
+              "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5",
+              "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+              "nodus:ee1b885c-1c04-4467-bb50-a8d0dec5b17b",
+              "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a"
+            ],
+            "candidates": 97,
+            "partial": true
+          },
+          {
+            "query": "QLoRA memoria ajuste fino cuantización",
+            "sources": [
+              "nodus:02b733bc-09b8-4e57-86cb-21651b255d2b",
+              "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6",
+              "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f",
+              "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+              "nodus:0f2bbeb4-a926-4032-b0ca-e87e7eab0d37",
+              "nodus:164a5900-6add-4e0a-b35f-42b2e3a33e17",
+              "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c",
+              "nodus:1b8c4c09-a055-4132-815e-20ce71f53f97",
+              "nodus:1cc49002-4ef0-4ccb-a4bd-1a0e9026036a",
+              "nodus:2562b0c1-b3fd-4971-abc1-876020538ef9",
+              "nodus:26af8601-7dad-4d32-8eaf-17027d828245",
+              "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+              "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+              "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+              "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+              "nodus:2db2353b-d962-4a3b-b0de-2b0e237bb31a",
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+              "nodus:3e8e218c-f6b5-403a-9541-cae0850816fc",
+              "nodus:3fe4d903-ad66-4475-ba59-235f0470f2a7",
+              "nodus:4ac336d4-93f6-476d-b8f1-04eb6791a64d",
+              "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f",
+              "nodus:5d74edb9-e8a9-4f7c-98f6-df1e3aded26a",
+              "nodus:5e5fbb48-b0bf-493d-b7e8-0e596dda11cc",
+              "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+              "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+              "nodus:78abccc8-d794-44c7-bcae-d20c0434b9d9",
+              "nodus:7d8bca84-8be5-4ee9-bf23-15acff98317f",
+              "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+              "nodus:9ec6b1e5-beb3-40ed-b7ea-7c77f132e73d",
+              "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+              "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+              "nodus:c65c516e-ba30-43df-9e50-0cd676c697f8",
+              "nodus:c9c6204f-12d7-44d1-b5c4-b714c1ca27d7",
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+              "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9",
+              "nodus:d5c36cdd-e7f7-41e4-9d44-7fa5eb0958d0",
+              "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5",
+              "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+              "nodus:ee1b885c-1c04-4467-bb50-a8d0dec5b17b",
+              "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a"
+            ],
+            "candidates": 63,
+            "partial": true
+          },
+          {
+            "query": "QLoRA efficient finetuning quantized language models",
+            "sources": [
+              "nodus:02b733bc-09b8-4e57-86cb-21651b255d2b",
+              "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6",
+              "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f",
+              "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+              "nodus:0f2bbeb4-a926-4032-b0ca-e87e7eab0d37",
+              "nodus:164a5900-6add-4e0a-b35f-42b2e3a33e17",
+              "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c",
+              "nodus:1b8c4c09-a055-4132-815e-20ce71f53f97",
+              "nodus:1cc49002-4ef0-4ccb-a4bd-1a0e9026036a",
+              "nodus:2562b0c1-b3fd-4971-abc1-876020538ef9",
+              "nodus:26af8601-7dad-4d32-8eaf-17027d828245",
+              "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+              "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+              "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+              "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+              "nodus:2db2353b-d962-4a3b-b0de-2b0e237bb31a",
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+              "nodus:3e8e218c-f6b5-403a-9541-cae0850816fc",
+              "nodus:3fe4d903-ad66-4475-ba59-235f0470f2a7",
+              "nodus:4ac336d4-93f6-476d-b8f1-04eb6791a64d",
+              "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f",
+              "nodus:5d74edb9-e8a9-4f7c-98f6-df1e3aded26a",
+              "nodus:5e5fbb48-b0bf-493d-b7e8-0e596dda11cc",
+              "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+              "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+              "nodus:78abccc8-d794-44c7-bcae-d20c0434b9d9",
+              "nodus:7d8bca84-8be5-4ee9-bf23-15acff98317f",
+              "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+              "nodus:9ec6b1e5-beb3-40ed-b7ea-7c77f132e73d",
+              "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+              "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+              "nodus:c65c516e-ba30-43df-9e50-0cd676c697f8",
+              "nodus:c9c6204f-12d7-44d1-b5c4-b714c1ca27d7",
+              "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+              "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9",
+              "nodus:d5c36cdd-e7f7-41e4-9d44-7fa5eb0958d0",
+              "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5",
+              "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+              "nodus:ee1b885c-1c04-4467-bb50-a8d0dec5b17b",
+              "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a"
+            ],
+            "candidates": 85,
+            "partial": true
+          },
+          {
+            "query": "QLoRA memory reduction 4-bit quantization paged optimizers",
+            "sources": [
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+            ],
+            "candidates": 49,
+            "partial": true
+          },
+          {
+            "query": "4-bit NormalFloat quantization double quantization paged optimizers memory",
+            "sources": [
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+            ],
+            "candidates": 47,
+            "partial": true
+          },
+          {
+            "query": "pages:{\"kind\":\"pages\",\"from\":1,\"to\":4}",
+            "sources": [
+              "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+            ],
+            "candidates": 9,
+            "partial": true
+          },
+          {
+            "query": "QLoRA memory reduction 4-bit quantization paged optimizers",
+            "sources": [
+              "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+            ],
+            "candidates": 47,
+            "partial": true
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+        "nodus_id": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "libraryItemId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "attachmentId": "local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "revision": "99bc2c4db3367b5ea5349c7fedbb7fa13ef329e9a10cab20114577d604830fed",
+        "historical": false,
+        "provenance": "source",
+        "text": "models than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to ChatGPT. We release all of our models and code, including CUDA kernels for 4-bit training.2 arXiv:2305.14314v1 [cs.LG] 23 May 2023 ## 1 Introduction Finetuning large language models (LLMs) is a highly effective way to improve their performance, [40, 62, 43, 61, 59, 37] and to add desirable or remove undesirable behaviors [43, 2, 4]. However, finetuning very large models is prohibitively expensive; regular 16-bit finetuning of a LLaMA 65B parameter model [57] requires more than 780 GB of GPU memory. While recent quantization methods can reduce the memory footprint of LLMs [14, 13, 18, 66], such techniques only work for inference and break down during training [65]. We demonstrate for the first time that it is possible to finetune a quantized 4-bit model without any performance degradation. Our method, QLORA, uses a novel high-precision technique to quantize a pretrained model to 4-bit, then adds a small set of learnable Low-rank Adapter weights [28] ∗Equal contribution. [^2]https://github.com/artidoro/qlora and https://github.com/TimDettmers/bitsandbytes Preprint. Under review. that are tuned by backpropagating gradients through the quantized weights. QLORA reduces the average memory requirements of finetuning a 65B parameter model from >780GB of GPU memory to <48GB without degrading the runtime or predictive performance compared to a 16- bit fully finetuned baseline. This marks a significant largest publicly available models to date finetunable on a single GPU.",
+        "page_label": "pp. 1–2",
+        "source_ref": "library:nodus:2e2900de-fb71-496c-a92d-5f118e54b24c:local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "page_number": 1,
+        "chunk_index": 1,
+        "work": {
+          "title": "public QLORA001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+        "nodus_id": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "libraryItemId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "attachmentId": "local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "revision": "99bc2c4db3367b5ea5349c7fedbb7fa13ef329e9a10cab20114577d604830fed",
+        "historical": false,
+        "provenance": "source",
+        "text": "# QLORA: Efficient Finetuning of Quantized LLMs Tim Dettmers∗ Artidoro Pagnoni∗ Ari Holtzman Luke Zettlemoyer University of Washington {dettmers,artidoro,ahai,lsz}@cs.washington.edu ## Abstract We present QLORA, an efficient finetuning approach that reduces memory usage enough to finetune a 65B parameter model on a single 48GB GPU while preserving full 16-bit finetuning task performance. QLORA backpropagates gradients through a frozen, 4-bit quantized pretrained language model into Low Rank Adapters (LoRA). Our best model family, which we name Guanaco, outperforms all previous openly released models on the Vicuna benchmark, reaching 99.3% of the performance level of ChatGPT while only requiring 24 hours of finetuning on a single GPU. QLORA introduces a number of innovations to save memory without sacrificing performance: (a) 4-bit NormalFloat (NF4), a new data type that is information theoretically optimal for normally distributed weights (b) Double Quantization to reduce the average memory footprint by quantizing the quantization constants, and (c) Paged Optimizers to manage memory spikes. We use QLORA to finetune more than 1,000 models, providing a detailed analysis of instruction following and chatbot performance across 8 instruction datasets, multiple model types (LLaMA, T5), and model scales that would be infeasible to run with regular finetuning (e.g. 33B and 65B parameter models). Our results show that QLoRA finetuning on a small high-quality dataset leads to state-of-the-art results, even when using smaller models than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:2e2900de-fb71-496c-a92d-5f118e54b24c:local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "public QLORA001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+        "nodus_id": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+        "libraryItemId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+        "attachmentId": "local:0ec19f00-b22e-441c-8dc1-9e025097d920",
+        "revision": "ce688b6caeca68245fad6e792ff837f3d3f0d2b4719000250adbaff261885cf9",
+        "historical": false,
+        "provenance": "source",
+        "text": "to a model that cannot take long input sequences. No Additional Inference Latency. When deployed in production, we can explicitly compute and storeW =W0 + BA and perform inference as usual. Note that bothW0 and BA are inRd×k. When we need to switch to another downstream task, we can recoverW0 by subtracting BA and then adding a differentB′A′, a quick operation with very little memory overhead. Critically, this guarantees that we do not introduce any additional latency during inference compared to a fine-tuned model by construction. ## 4.2APPLYINGLORA TOTRANSFORMER In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce the number of trainable parameters. In the Transformer architecture, there are four weight matrices in the self-attention module (Wq, Wk, Wv, Wo) and two in the MLP module. We treatWq (orWk,Wv) as a single matrix of dimensiondmodel ×dmodel, even though the output dimension is usually sliced into attention heads. We limit our study to only adapting the attention weights for downstream tasks and freeze the MLP modules (so they are not trained in downstream tasks) both for simplicity and parameter-efficiency.We further study the effect on adapting different types of attention weight matrices in a Transformer in Section 7.1. We leave the empirical investigation of adapting the MLP layers, LayerNorm layers, and biases to a future work. Practical Benefits and Limitations. The most significant benefit comes from the reduction in memory and storage usage. For a large Transformer trained with Adam, we reduce that VRAM usage by up to 2/3 ifr \u001cdmodel as we do not need to store the optimizer states for the frozen parameters. On GPT-3 175B, we reduce the VRAM consumption",
+        "page_label": "pp. 4–5",
+        "source_ref": "library:nodus:0ec19f00-b22e-441c-8dc1-9e025097d920:local:0ec19f00-b22e-441c-8dc1-9e025097d920",
+        "page_number": 4,
+        "chunk_index": 10,
+        "work": {
+          "title": "public LORA0001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+        "nodus_id": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "libraryItemId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "attachmentId": "local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "revision": "99bc2c4db3367b5ea5349c7fedbb7fa13ef329e9a10cab20114577d604830fed",
+        "historical": false,
+        "provenance": "source",
+        "text": "GB 1022 ± 1 | - | 1348 ± 1 | | - | - | - | | Guanaco 33B 21 GB | | 992 ± 1 | | Vicuna 13B | 26 GB | 974 ± 1 | | ChatGPT | - | 966 ± 1 | | Guanaco 13B 10 GB | | 916 ± 1 | | Bard | - | 902 ± 1 | | Guanaco 7B | 6 GB | 879 ± 1 | | shift in accessibility of LLM finetuning: now the Model QL O RA introduces multiple innovations designed to reduce memory use without sacrificing performance: (1) 4-bit NormalFloat, an information theoretically optimal quantization data type for (2) Double Quantization, a method that quantizes the quantization constants, saving an average of about 0.37 bits per parameter (approximately 3 GB for a 65B model). (3) Paged Optimizers, QL O RA’s efficiency enables us to perform an in-depth study of instruction finetuning and chatbot model architectures, and sizes between 80M to 65B parameters. In addition to showing that QL O RA recovers 16-bit performance (§4) and training a state-of-the-art chatbot, Guanaco, (§5), we also Elo scores [16, 17] which determine the ranking of chatbot performance. We find that GPT-4 and We augment our chatbot benchmark results with a qualitative analysis of Guanaco models. Our analytransformers stack [64], making them easily accessible to all. We release a collection of adapters | Size | Elo | Figure 1: Different finetuning methods and their memory requirements. QLORA improves over LoRA by quantizing the transformer model to 4-bit precision and using paged optimizers to handle memory spikes. ## 2 Background Block-wise k-bit Quantization Quantization is the process of",
+        "page_label": "pp. 2–3",
+        "source_ref": "library:nodus:2e2900de-fb71-496c-a92d-5f118e54b24c:local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "page_number": 2,
+        "chunk_index": 3,
+        "work": {
+          "title": "public QLORA001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+        "nodus_id": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "libraryItemId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "attachmentId": "local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "revision": "99bc2c4db3367b5ea5349c7fedbb7fa13ef329e9a10cab20114577d604830fed",
+        "historical": false,
+        "provenance": "source",
+        "text": "footprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile",
+        "page_label": "p. 4",
+        "source_ref": "library:nodus:2e2900de-fb71-496c-a92d-5f118e54b24c:local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "page_number": 4,
+        "chunk_index": 6,
+        "work": {
+          "title": "public QLORA001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+        "nodus_id": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "libraryItemId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "attachmentId": "local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "revision": "99bc2c4db3367b5ea5349c7fedbb7fa13ef329e9a10cab20114577d604830fed",
+        "historical": false,
+        "provenance": "source",
+        "text": "13B (11.3 GB) Figure 6: Breakdown of the memory footprint of different LLaMA models. The input gradient size is for batch G Memory Footprint Table 13: The complete ordering induced by pairwise GPT-4 judgments between systems | 33B (24.7 GB) | 65B (45.0 GB) | | Model | Params | Size | | Guanaco | 65B | 41 GB | | Guanaco | 33B | 21 GB | | Vicuna | 13B | 26 GB | | ChatGPT-3.5 Turbo | N/A | N/A | | Bard | N/A | N/A | | Guanaco | 13B | 10 GB | | Guanaco | 7B | 5 GB |",
+        "page_label": "p. 26",
+        "source_ref": "library:nodus:2e2900de-fb71-496c-a92d-5f118e54b24c:local:2e2900de-fb71-496c-a92d-5f118e54b24c",
+        "page_number": 26,
+        "chunk_index": 57,
+        "work": {
+          "title": "public QLORA001",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:01:45.974Z",
+      "type": "documentary-retrieval",
+      "query": "Cómo reduce QLoRA la memoria de ajuste fino de modelos de lenguaje, según el artículo que lo propone",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [
+        "b8fb38449b336430f7f5e9ab4fb90553fb101d0aa7effa7ac74ef85634e9c795",
+        "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef",
+        "914f4b05acedaa5503503ad80105be5c0a620225b5675790f2840a62380303de",
+        "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d",
+        "bc36af711f103cd7e8f1f5d37e5ee510763ae37c9c407ba9d59f375d2230e3c7",
+        "c68bb2c6956db978d632f563b46950fc6ce2b08657518171c8477cadf0c0c1d3",
+        "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee",
+        "bf9dfad46249f2606c68459c3f7cb92e17e1dddd42d114345b33c444a1b4e4c9",
+        "40cc47d3a425052417c0e796a6aa8deb945da081bdfb17120fcadd3a94c70b72",
+        "e8ec8277c5c8fa6a95ad862398464a3a009fdf7c06fe6ccf012c914bd006ee9b",
+        "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae",
+        "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448",
+        "e6678e240cc4208781b3f62405287f48f7184e1245d30cae9c1a5a4939e24018",
+        "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a",
+        "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455",
+        "0900b21a7145b87618f265800bf38297294488131b4e0f6ae702d2e261bbf800",
+        "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211",
+        "f8def3f2e7bf155c459610635aba941c54909749e5a2da4243974453f140409e",
+        "ea85a29347685cceafad3601a7fa1fe898d5500f3b23b6d26ebf00fab941c297",
+        "b18381f7ecfea45c217bc01de49041204f2c69552ea3071d6bc4323431455a25",
+        "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7",
+        "e8419661c9533b9887fbc96c1742b2bc971ee2514d7aa4ad850ec9757937fb8f",
+        "35bc32e50183a13ecc12e1b8bf45058437e17168265ea9a01e6d0714745f227f",
+        "b12a03425e9faffdb9cf48cdf58d7a676494c060b01ad9e30e7c8ed941d40c31",
+        "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138",
+        "8345cabcf8c8cef77574dd62c73189125463eaa722257fced1ce492fb3874bca",
+        "235468b07a620de8cc5a7268bb228510cd5a547fa913ac4b372420b6e04986be",
+        "9c79471b39ade9f707458d37cc71321c05be20fd09caf9b1e2630cc5ded7e15d",
+        "d8613a5ecbb70d99dfd96b6542abb051e4329163387aa94a3d9a5e98ef37980e",
+        "d7a354562a4a3e61bbe78ab2513e11076f3050105735500d81945f917739d480",
+        "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a",
+        "8a4b0cadaf6d2a7a40b63b904de32dfdb462bafa54ad4a15b64fbce0f70df24a",
+        "0e535472f4a274f1a84709d78492632da5227a5456cacafe6f16a1d1a98c6659",
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05",
+        "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f",
+        "007f0de8aa164eef8653e03257836f97f78da54ec382d0d37185c9daadf86698",
+        "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a",
+        "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50",
+        "3000eefe41cf6d49e9d32387c2e534e42473894d97c0ecee39c7bb6c13b9d49c",
+        "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0",
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:16",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:0",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef:3",
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:0",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0",
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:27",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:47",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:0",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:27",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+            "documentId": "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:41",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:5",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:2",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:17",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "914f4b05acedaa5503503ad80105be5c0a620225b5675790f2840a62380303de:19",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:1",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:9",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:14",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:25",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:3",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:13",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:29",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:1",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:27",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:40",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:4",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:24",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:18",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:43",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:12",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:27",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:0",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:33",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:38",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef:8",
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:15",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891"
+          },
+          {
+            "id": "7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+            "documentId": "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927"
+          },
+          {
+            "id": "8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+            "documentId": "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44"
+          },
+          {
+            "id": "fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+            "documentId": "nodus:29179ff4-d565-4dea-af96-f32f838f2182"
+          },
+          {
+            "id": "079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+            "documentId": "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e"
+          },
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:46",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:48",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+            "documentId": "nodus:c9c6204f-12d7-44d1-b5c4-b714c1ca27d7"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+            "documentId": "nodus:c65c516e-ba30-43df-9e50-0cd676c697f8"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "4b9d3f9ce13b168d497b02b9bfa9af94592a7e75e1adcbcf49ee05c7ecafec1d:0",
+            "documentId": "nodus:1b8c4c09-a055-4132-815e-20ce71f53f97"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+            "documentId": "nodus:2db2353b-d962-4a3b-b0de-2b0e237bb31a"
+          },
+          {
+            "id": "6d27f0b5db2d0f16a9965e6f8369bbad79ef31c48720e719ce119b0886d2048d:0",
+            "documentId": "nodus:0f2bbeb4-a926-4032-b0ca-e87e7eab0d37"
+          },
+          {
+            "id": "dc7acb76d0c54c9937af722dd681fde918a4a95cb287cb1ec88571e0b9625c36:0",
+            "documentId": "nodus:ee1b885c-1c04-4467-bb50-a8d0dec5b17b"
+          },
+          {
+            "id": "0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076"
+          },
+          {
+            "id": "1bab9d68cf91380dd236128b8c1415c875763c9a56aa8bcd04512777946f2fef:0",
+            "documentId": "nodus:5d74edb9-e8a9-4f7c-98f6-df1e3aded26a"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "701e547df2bd7ff57e7b52569410331ac921785d83e2cd7e143714a129040f65:0",
+            "documentId": "nodus:7d8bca84-8be5-4ee9-bf23-15acff98317f"
+          },
+          {
+            "id": "48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+            "documentId": "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:47",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:50",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:38",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+            "documentId": "nodus:4ac336d4-93f6-476d-b8f1-04eb6791a64d"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "12a281d97fa3e0b4987c3fc2cc6c89320f758bceba1e3a98c8fa13f2f4cd10e8:0",
+            "documentId": "nodus:02b733bc-09b8-4e57-86cb-21651b255d2b"
+          },
+          {
+            "id": "cea24d401949301062a59979872f573528c763873d47e8e61178049c859e7184:0",
+            "documentId": "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:9",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:8",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:37",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "5cf3f4bb2ff5c2d2ed2dde829a4bf5442744ce881420aa71a4e1daff32c7c811:28",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:35",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:50",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:27",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:51",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:15",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "a6f1ac3658ad2598305a843389f225ef1cc90a7c69a00d0e558300dda9c3e85f:74",
+            "documentId": "nodus:d3d09a63-978d-486b-bc4a-00454f4988f9"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:10",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:16",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:20",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          }
+        ],
+        "selected": [
+          {
+            "id": "88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+            "lexicalIds": [
+              "88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0"
+            ],
+            "semanticIds": [
+              "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0"
+            ]
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0"
+            ],
+            "semanticIds": [
+              "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0"
+            ]
+          },
+          {
+            "id": "0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+            "lexicalIds": [
+              "0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0"
+            ],
+            "semanticIds": [
+              "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0"
+            ]
+          },
+          {
+            "id": "7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+            "documentId": "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+            "lexicalIds": [
+              "7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+            "documentId": "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+            "lexicalIds": [
+              "8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+            "documentId": "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+            "lexicalIds": [
+              "fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+            "documentId": "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+            "lexicalIds": [
+              "196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+            "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+            "lexicalIds": [
+              "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:01:46.077Z",
+      "type": "research-evidence-selection",
+      "query": "Cómo reduce QLoRA la memoria de ajuste fino de modelos de lenguaje, según el artículo que lo propone",
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "sharedCandidates": [
+        {
+          "id": "88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+          "provenance": "source"
+        },
+        {
+          "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+          "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+          "provenance": "source"
+        },
+        {
+          "id": "0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+          "provenance": "source"
+        },
+        {
+          "id": "7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+          "documentId": "nodus:943f743c-cace-49e9-b52b-c2fcf44f8927",
+          "provenance": "source"
+        },
+        {
+          "id": "8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "documentId": "nodus:6ee8b9d9-7c0e-4402-8886-11d5f56a2b44",
+          "provenance": "source"
+        },
+        {
+          "id": "fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "documentId": "nodus:29179ff4-d565-4dea-af96-f32f838f2182",
+          "provenance": "source"
+        },
+        {
+          "id": "196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "documentId": "nodus:bf0e198d-8431-4454-887d-3a8a26cfd16e",
+          "provenance": "source"
+        },
+        {
+          "id": "dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "documentId": "nodus:cb14f5a9-f41e-4f2a-bf3c-f23618821596",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+        "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0"
+      ],
+      "selectedIdeas": [],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:01:47.641Z",
+      "type": "documentary-retrieval",
+      "query": "QLoRA memoria ajuste fino cuantización",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [
+        "b8fb38449b336430f7f5e9ab4fb90553fb101d0aa7effa7ac74ef85634e9c795",
+        "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef",
+        "914f4b05acedaa5503503ad80105be5c0a620225b5675790f2840a62380303de",
+        "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d",
+        "bc36af711f103cd7e8f1f5d37e5ee510763ae37c9c407ba9d59f375d2230e3c7",
+        "c68bb2c6956db978d632f563b46950fc6ce2b08657518171c8477cadf0c0c1d3",
+        "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee",
+        "bf9dfad46249f2606c68459c3f7cb92e17e1dddd42d114345b33c444a1b4e4c9",
+        "40cc47d3a425052417c0e796a6aa8deb945da081bdfb17120fcadd3a94c70b72",
+        "e8ec8277c5c8fa6a95ad862398464a3a009fdf7c06fe6ccf012c914bd006ee9b",
+        "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae",
+        "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448",
+        "e6678e240cc4208781b3f62405287f48f7184e1245d30cae9c1a5a4939e24018",
+        "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a",
+        "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455",
+        "0900b21a7145b87618f265800bf38297294488131b4e0f6ae702d2e261bbf800",
+        "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211",
+        "f8def3f2e7bf155c459610635aba941c54909749e5a2da4243974453f140409e",
+        "ea85a29347685cceafad3601a7fa1fe898d5500f3b23b6d26ebf00fab941c297",
+        "b18381f7ecfea45c217bc01de49041204f2c69552ea3071d6bc4323431455a25",
+        "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7",
+        "e8419661c9533b9887fbc96c1742b2bc971ee2514d7aa4ad850ec9757937fb8f",
+        "35bc32e50183a13ecc12e1b8bf45058437e17168265ea9a01e6d0714745f227f",
+        "b12a03425e9faffdb9cf48cdf58d7a676494c060b01ad9e30e7c8ed941d40c31",
+        "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138",
+        "8345cabcf8c8cef77574dd62c73189125463eaa722257fced1ce492fb3874bca",
+        "235468b07a620de8cc5a7268bb228510cd5a547fa913ac4b372420b6e04986be",
+        "9c79471b39ade9f707458d37cc71321c05be20fd09caf9b1e2630cc5ded7e15d",
+        "d8613a5ecbb70d99dfd96b6542abb051e4329163387aa94a3d9a5e98ef37980e",
+        "d7a354562a4a3e61bbe78ab2513e11076f3050105735500d81945f917739d480",
+        "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a",
+        "8a4b0cadaf6d2a7a40b63b904de32dfdb462bafa54ad4a15b64fbce0f70df24a",
+        "0e535472f4a274f1a84709d78492632da5227a5456cacafe6f16a1d1a98c6659",
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05",
+        "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f",
+        "007f0de8aa164eef8653e03257836f97f78da54ec382d0d37185c9daadf86698",
+        "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a",
+        "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50",
+        "3000eefe41cf6d49e9d32387c2e534e42473894d97c0ecee39c7bb6c13b9d49c",
+        "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+            "documentId": "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+            "documentId": "nodus:784006b4-9992-4506-91f6-e354b9d177ab"
+          },
+          {
+            "id": "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0",
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+            "documentId": "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:53",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:54",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:0",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0",
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:46",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:10",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:18",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:38",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:9",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:39",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:42",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:45",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:55",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:0",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:48",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:51",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:23",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+            "documentId": "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:41",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:20",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:27",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:21",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:14",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:50",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:17",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:23",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:13",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:8",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          },
+          {
+            "id": "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae:20",
+            "documentId": "nodus:26af8601-7dad-4d32-8eaf-17027d828245"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:50",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:20",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          }
+        ],
+        "selected": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0"
+            ],
+            "semanticIds": [
+              "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0"
+            ]
+          },
+          {
+            "id": "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+            "documentId": "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+            "lexicalIds": [],
+            "semanticIds": [
+              "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0"
+            ]
+          },
+          {
+            "id": "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+            "documentId": "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+            "lexicalIds": [],
+            "semanticIds": [
+              "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0"
+            ]
+          },
+          {
+            "id": "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0",
+            "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+            "lexicalIds": [],
+            "semanticIds": [
+              "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0"
+            ]
+          },
+          {
+            "id": "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+            "documentId": "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a",
+            "lexicalIds": [],
+            "semanticIds": [
+              "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0"
+            ]
+          },
+          {
+            "id": "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0",
+            "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+            "lexicalIds": [],
+            "semanticIds": [
+              "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0"
+            ]
+          },
+          {
+            "id": "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+            "documentId": "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+            "lexicalIds": [],
+            "semanticIds": [
+              "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:01:47.734Z",
+      "type": "research-evidence-selection",
+      "query": "QLoRA memoria ajuste fino cuantización",
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "sharedCandidates": [
+        {
+          "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+          "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+          "provenance": "source"
+        },
+        {
+          "id": "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+          "documentId": "nodus:df522933-c26d-495b-aa02-ae7d33ba5d07",
+          "provenance": "source"
+        },
+        {
+          "id": "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+          "documentId": "nodus:784006b4-9992-4506-91f6-e354b9d177ab",
+          "provenance": "source"
+        },
+        {
+          "id": "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455:0",
+          "documentId": "nodus:2c26980b-57c1-429c-bb84-95dc5c2c9891",
+          "provenance": "source"
+        },
+        {
+          "id": "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+          "documentId": "nodus:f13638c6-f7dc-4e03-a4e3-19c8c99a7b1a",
+          "provenance": "source"
+        },
+        {
+          "id": "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0",
+          "documentId": "nodus:c476d326-a5af-40e5-9633-fbaf1386f076",
+          "provenance": "source"
+        },
+        {
+          "id": "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+          "documentId": "nodus:2788d1ac-9432-41a8-ad3a-750b797eda21",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+        "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:01:50.789Z",
+      "type": "documentary-retrieval",
+      "query": "QLoRA efficient finetuning quantized language models",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [
+        "b8fb38449b336430f7f5e9ab4fb90553fb101d0aa7effa7ac74ef85634e9c795",
+        "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef",
+        "914f4b05acedaa5503503ad80105be5c0a620225b5675790f2840a62380303de",
+        "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d",
+        "bc36af711f103cd7e8f1f5d37e5ee510763ae37c9c407ba9d59f375d2230e3c7",
+        "c68bb2c6956db978d632f563b46950fc6ce2b08657518171c8477cadf0c0c1d3",
+        "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee",
+        "bf9dfad46249f2606c68459c3f7cb92e17e1dddd42d114345b33c444a1b4e4c9",
+        "40cc47d3a425052417c0e796a6aa8deb945da081bdfb17120fcadd3a94c70b72",
+        "e8ec8277c5c8fa6a95ad862398464a3a009fdf7c06fe6ccf012c914bd006ee9b",
+        "c895443317d4ee0eb92583d55395138898477f5f81d473443801fe98fb7e56ae",
+        "fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448",
+        "e6678e240cc4208781b3f62405287f48f7184e1245d30cae9c1a5a4939e24018",
+        "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a",
+        "c216a77ba1a3d46ce0d66d233d5876599a20d0282d38a75a22948710260d1455",
+        "0900b21a7145b87618f265800bf38297294488131b4e0f6ae702d2e261bbf800",
+        "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211",
+        "f8def3f2e7bf155c459610635aba941c54909749e5a2da4243974453f140409e",
+        "ea85a29347685cceafad3601a7fa1fe898d5500f3b23b6d26ebf00fab941c297",
+        "b18381f7ecfea45c217bc01de49041204f2c69552ea3071d6bc4323431455a25",
+        "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7",
+        "e8419661c9533b9887fbc96c1742b2bc971ee2514d7aa4ad850ec9757937fb8f",
+        "35bc32e50183a13ecc12e1b8bf45058437e17168265ea9a01e6d0714745f227f",
+        "b12a03425e9faffdb9cf48cdf58d7a676494c060b01ad9e30e7c8ed941d40c31",
+        "786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138",
+        "8345cabcf8c8cef77574dd62c73189125463eaa722257fced1ce492fb3874bca",
+        "235468b07a620de8cc5a7268bb228510cd5a547fa913ac4b372420b6e04986be",
+        "9c79471b39ade9f707458d37cc71321c05be20fd09caf9b1e2630cc5ded7e15d",
+        "d8613a5ecbb70d99dfd96b6542abb051e4329163387aa94a3d9a5e98ef37980e",
+        "d7a354562a4a3e61bbe78ab2513e11076f3050105735500d81945f917739d480",
+        "30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a",
+        "8a4b0cadaf6d2a7a40b63b904de32dfdb462bafa54ad4a15b64fbce0f70df24a",
+        "0e535472f4a274f1a84709d78492632da5227a5456cacafe6f16a1d1a98c6659",
+        "e271afb064b8dd734159545eac4027cccf3131810a2a2e22d579562040e67b05",
+        "b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f",
+        "007f0de8aa164eef8653e03257836f97f78da54ec382d0d37185c9daadf86698",
+        "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a",
+        "b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50",
+        "3000eefe41cf6d49e9d32387c2e534e42473894d97c0ecee39c7bb6c13b9d49c",
+        "11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:1",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:46",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:43",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:9",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef:28",
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:0",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:0",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "c57550f023178466d0b5b778d68f0b5417856621e2b2c13ed22f8d04e6f1331a:23",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:4",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:31",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:3",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:49",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:25",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:1",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:12",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:9",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "41ae439e31062bfa0a18d01d9bec7f6d55a84894b8d9a7dc5c989796b93e75ef:8",
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:40",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:41",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:0",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:42",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:34",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:27",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "76255af5455dbd6ee8969b79a233a1cf2688173fc6c4947ffc62bb9cb11c7cd7:35",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:18",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:54",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:45",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:25",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:38",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:31",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:2",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "9e5771b9c1d34d8c6965a0c0c88db8ebb1a921ae80601b6c307a8342b675de5d:8",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "be22b7453a19d0ac2a3cb3250a41fe252489ce37de164a6de7f59aa270a0c85a:4",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:37",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          },
+          {
+            "id": "65ff350b270ad9602af08b439ca64ef4935b0c3154d40e593ad010358faa05ee:33",
+            "documentId": "nodus:1799e02f-010c-4343-9112-9ef6d6d38e1c"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:43",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:50",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:46",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:39",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:38",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:5",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:14",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:14",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:41",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:22",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:25",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:13",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:29",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:42",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "d7797878e6f7df82d12c389dad93815e1fb3a3d3a1b88c534922260a66009a61:3",
+            "documentId": "nodus:077b0b58-96d7-49b0-b4ff-2c81997d752f"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:0",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:15",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:34",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:36",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:0",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:35",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:45",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:31",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:32",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:1",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:37",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "2856ec94688973d9001f14649a2885b75c535e5d13d3727768cbd6b5fe8ee95f:52",
+            "documentId": "nodus:daf1eb4f-cd02-4784-88b6-46aafdf2b3f5"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:27",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "53246409f18491f60f7a743c1eba1aba786563a92ee694d02479d4f187abdb33:26",
+            "documentId": "nodus:05061fee-6208-41e0-bc0d-92bdd9e937d6"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:31",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:36",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:0",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a"
+          },
+          {
+            "id": "40bc67ec2d353f5084af2b54c2d24fab0ea746bb1effa992fd67c778edefc566:2",
+            "documentId": "nodus:4fbfd7e9-4e3c-40e2-b4d3-1b43ce5b5a0f"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:4",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          }
+        ],
+        "selected": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0"
+            ],
+            "semanticIds": [
+              "b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:0"
+            ]
+          },
+          {
+            "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:14",
+            "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+            "lexicalIds": [
+              "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:14"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:01:50.893Z",
+      "type": "research-evidence-selection",
+      "query": "QLoRA efficient finetuning quantized language models",
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "sharedCandidates": [
+        {
+          "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+          "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+          "provenance": "source"
+        },
+        {
+          "id": "dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:14",
+          "documentId": "nodus:29bf8fba-a153-482e-aef1-cf1fec2d1d1a",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+        "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+        "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:dd00f71f44ed0323d8e013b081b1cea4f7bc9927e7bb0f452c1b6c159e29bc01:14"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:01:53.331Z",
+      "type": "documentary-retrieval",
+      "query": "QLoRA memory reduction 4-bit quantization paged optimizers",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [],
+      "retrieval": {
+        "semantic": [],
+        "lexical": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:10",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:39",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:40",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:8",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:7",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:22",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:23",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:36",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:24",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:34",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:46",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:50",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:37",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:20",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:54",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:56",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:38",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:25",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:18",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:19",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:53",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:31",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:43",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:55",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          }
+        ],
+        "selected": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": true
+      }
+    },
+    {
+      "at": "2026-10-06T22:01:54.737Z",
+      "type": "documentary-retrieval",
+      "query": "4-bit NormalFloat quantization double quantization paged optimizers memory",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [],
+      "retrieval": {
+        "semantic": [],
+        "lexical": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:9",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:10",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:13",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:14",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:11",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:39",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:8",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:16",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:40",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:35",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:17",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:15",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:7",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:32",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:22",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:33",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:54",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:51",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:52",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:23",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:24",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:34",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:21",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:46",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:47",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:56",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:38",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:50",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:25",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:18",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:49",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:19",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:48",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:53",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:31",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:20",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:43",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:55",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          }
+        ],
+        "selected": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": true
+      }
+    },
+    {
+      "at": "2026-10-06T22:01:57.653Z",
+      "type": "documentary-retrieval",
+      "query": "pages:{\"kind\":\"pages\",\"from\":1,\"to\":4}",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [],
+      "retrieval": {
+        "semantic": [],
+        "lexical": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:2",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:5",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:7",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:8",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c"
+          }
+        ],
+        "selected": [
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+            "documentId": "nodus:2e2900de-fb71-496c-a92d-5f118e54b24c",
+            "lexicalIds": [
+              "edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": true
+      }
+    },
+    {
+      "at": "2026-10-06T22:02:00.524Z",
+      "type": "documentary-retrieval",
+      "query": "QLoRA memory reduction 4-bit quantization paged optimizers",
+      "profile": {
+        "provider": "nodus",
+        "model": "multilingual-e5-small-int8"
+      },
+      "contract": null,
+      "scopeId": "10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585",
+      "vectorKeys": [],
+      "retrieval": {
+        "semantic": [],
+        "lexical": [
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:24",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:3",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:2",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:22",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:5",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:0",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:53",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:54",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:57",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:14",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:13",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:29",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:46",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:25",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:20",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:48",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:26",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:19",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:52",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:58",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:60",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:47",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:43",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:17",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:55",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:30",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:32",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:56",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:42",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:27",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:51",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:61",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:59",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:50",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:31",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:49",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:28",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:44",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:7",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:34",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:16",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:8",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:4",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:41",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:33",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920"
+          }
+        ],
+        "selected": [
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+            "lexicalIds": [
+              "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:11",
+            "documentId": "nodus:0ec19f00-b22e-441c-8dc1-9e025097d920",
+            "lexicalIds": [
+              "19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:11"
+            ],
+            "semanticIds": []
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": true
+      }
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\npp. 1–2\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nmodels than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to ChatGPT. We release all of our models and code, including CUDA kernels for 4-bit training.2 arXiv:2305.14314v1 [cs.LG] 23 May 2023 ## 1 Introduction Finetuning large language models (LLMs) is a highly effective way to improve their performance, [40, 62, 43, 61, 59, 37] and to add desirable or remove undesirable behaviors [43, 2, 4]. However, finetuning very large models is prohibitively expensive; regular 16-bit finetuning of a LLaMA 65B parameter model [57] requires more than 780 GB of GPU memory. While recent quantization methods can reduce the memory footprint of LLMs [14, 13, 18, 66], such techniques only work for inference and break down during training [65]. We demonstrate for the first time that it is possible to finetune a quantized 4-bit model without any performance degradation. Our method, QLORA, uses a novel high-precision technique to quantize a pretrained model to 4-bit, then adds a small set of learnable Low-rank Adapter weights [28] ∗Equal contribution. [^2]https://github.com/artidoro/qlora and https://github.com/TimDettmers/bitsandbytes Preprint. Under review. that are tuned by backpropagating gradients through the quantized weights. QLORA reduces the average memory requirements of finetuning a 65B parameter model from >780GB of GPU memory to <48GB without degrading the runtime or predictive performance compared to a 16- bit fully finetuned baseline. This marks a significant largest publicly available models to date finetunable on a single GPU.\npp. 1–2"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\npp. 1–2\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nmodels than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to ChatGPT. We release all of our models and code, including CUDA kernels for 4-bit training.2 arXiv:2305.14314v1 [cs.LG] 23 May 2023 ## 1 Introduction Finetuning large language models (LLMs) is a highly effective way to improve their performance, [40, 62, 43, 61, 59, 37] and to add desirable or remove undesirable behaviors [43, 2, 4]. However, finetuning very large models is prohibitively expensive; regular 16-bit finetuning of a LLaMA 65B parameter model [57] requires more than 780 GB of GPU memory. While recent quantization methods can reduce the memory footprint of LLMs [14, 13, 18, 66], such techniques only work for inference and break down during training [65]. We demonstrate for the first time that it is possible to finetune a quantized 4-bit model without any performance degradation. Our method, QLORA, uses a novel high-precision technique to quantize a pretrained model to 4-bit, then adds a small set of learnable Low-rank Adapter weights [28] ∗Equal contribution. [^2]https://github.com/artidoro/qlora and https://github.com/TimDettmers/bitsandbytes Preprint. Under review. that are tuned by backpropagating gradients through the quantized weights. QLORA reduces the average memory requirements of finetuning a 65B parameter model from >780GB of GPU memory to <48GB without degrading the runtime or predictive performance compared to a 16- bit fully finetuned baseline. This marks a significant largest publicly available models to date finetunable on a single GPU.\npp. 1–2"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\n# QLORA: Efficient Finetuning of Quantized LLMs Tim Dettmers∗ Artidoro Pagnoni∗ Ari Holtzman Luke Zettlemoyer University of Washington {dettmers,artidoro,ahai,lsz}@cs.washington.edu ## Abstract We present QLORA, an efficient finetuning approach that reduces memory usage enough to finetune a 65B parameter model on a single 48GB GPU while preserving full 16-bit finetuning task performance. QLORA backpropagates gradients through a frozen, 4-bit quantized pretrained language model into Low Rank Adapters (LoRA). Our best model family, which we name Guanaco, outperforms all previous openly released models on the Vicuna benchmark, reaching 99.3% of the performance level of ChatGPT while only requiring 24 hours of finetuning on a single GPU. QLORA introduces a number of innovations to save memory without sacrificing performance: (a) 4-bit NormalFloat (NF4), a new data type that is information theoretically optimal for normally distributed weights (b) Double Quantization to reduce the average memory footprint by quantizing the quantization constants, and (c) Paged Optimizers to manage memory spikes. We use QLORA to finetune more than 1,000 models, providing a detailed analysis of instruction following and chatbot performance across 8 instruction datasets, multiple model types (LLaMA, T5), and model scales that would be infeasible to run with regular finetuning (e.g. 33B and 65B parameter models). Our results show that QLoRA finetuning on a small high-quality dataset leads to state-of-the-art results, even when using smaller models than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to\np. 1"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\n# QLORA: Efficient Finetuning of Quantized LLMs Tim Dettmers∗ Artidoro Pagnoni∗ Ari Holtzman Luke Zettlemoyer University of Washington {dettmers,artidoro,ahai,lsz}@cs.washington.edu ## Abstract We present QLORA, an efficient finetuning approach that reduces memory usage enough to finetune a 65B parameter model on a single 48GB GPU while preserving full 16-bit finetuning task performance. QLORA backpropagates gradients through a frozen, 4-bit quantized pretrained language model into Low Rank Adapters (LoRA). Our best model family, which we name Guanaco, outperforms all previous openly released models on the Vicuna benchmark, reaching 99.3% of the performance level of ChatGPT while only requiring 24 hours of finetuning on a single GPU. QLORA introduces a number of innovations to save memory without sacrificing performance: (a) 4-bit NormalFloat (NF4), a new data type that is information theoretically optimal for normally distributed weights (b) Double Quantization to reduce the average memory footprint by quantizing the quantization constants, and (c) Paged Optimizers to manage memory spikes. We use QLORA to finetune more than 1,000 models, providing a detailed analysis of instruction following and chatbot performance across 8 instruction datasets, multiple model types (LLaMA, T5), and model scales that would be infeasible to run with regular finetuning (e.g. 33B and 65B parameter models). Our results show that QLoRA finetuning on a small high-quality dataset leads to state-of-the-art results, even when using smaller models than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to\np. 1"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+      "title": "public LORA0001",
+      "locator": "pp. 4–5",
+      "content": "Pasaje de texto completo\npp. 4–5\nVer página 4\npublic LORA0001\nOBRA ENLAZADA\n1\npublic LORA0001\nEVIDENCIA ANCLADA\n1\nto a model that cannot take long input sequences. No Additional Inference Latency. When deployed in production, we can explicitly compute and storeW =W0 + BA and perform inference as usual. Note that bothW0 and BA are inRd×k. When we need to switch to another downstream task, we can recoverW0 by subtracting BA and then adding a differentB′A′, a quick operation with very little memory overhead. Critically, this guarantees that we do not introduce any additional latency during inference compared to a fine-tuned model by construction. ## 4.2APPLYINGLORA TOTRANSFORMER In principle, we can apply LoRA to any subset of weight matrices in a neural network to reduce the number of trainable parameters. In the Transformer architecture, there are four weight matrices in the self-attention module (Wq, Wk, Wv, Wo) and two in the MLP module. We treatWq (orWk,Wv) as a single matrix of dimensiondmodel ×dmodel, even though the output dimension is usually sliced into attention heads. We limit our study to only adapting the attention weights for downstream tasks and freeze the MLP modules (so they are not trained in downstream tasks) both for simplicity and parameter-efficiency.We further study the effect on adapting different types of attention weight matrices in a Transformer in Section 7.1. We leave the empirical investigation of adapting the MLP layers, LayerNorm layers, and biases to a future work. Practical Benefits and Limitations. The most significant benefit comes from the reduction in memory and storage usage. For a large Transformer trained with Adam, we reduce that VRAM usage by up to 2/3 ifr \u001cdmodel as we do not need to store the optimizer states for the frozen parameters. On GPT-3 175B, we reduce the VRAM consumption\npp. 4–5"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+      "title": "public QLORA001",
+      "locator": "pp. 2–3",
+      "content": "Pasaje de texto completo\npp. 2–3\nVer página 2\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nGB 1022 ± 1 | - | 1348 ± 1 | | - | - | - | | Guanaco 33B 21 GB | | 992 ± 1 | | Vicuna 13B | 26 GB | 974 ± 1 | | ChatGPT | - | 966 ± 1 | | Guanaco 13B 10 GB | | 916 ± 1 | | Bard | - | 902 ± 1 | | Guanaco 7B | 6 GB | 879 ± 1 | | shift in accessibility of LLM finetuning: now the Model QL O RA introduces multiple innovations designed to reduce memory use without sacrificing performance: (1) 4-bit NormalFloat, an information theoretically optimal quantization data type for (2) Double Quantization, a method that quantizes the quantization constants, saving an average of about 0.37 bits per parameter (approximately 3 GB for a 65B model). (3) Paged Optimizers, QL O RA’s efficiency enables us to perform an in-depth study of instruction finetuning and chatbot model architectures, and sizes between 80M to 65B parameters. In addition to showing that QL O RA recovers 16-bit performance (§4) and training a state-of-the-art chatbot, Guanaco, (§5), we also Elo scores [16, 17] which determine the ranking of chatbot performance. We find that GPT-4 and We augment our chatbot benchmark results with a qualitative analysis of Guanaco models. Our analytransformers stack [64], making them easily accessible to all. We release a collection of adapters | Size | Elo | Figure 1: Different finetuning methods and their memory requirements. QLORA improves over LoRA by quantizing the transformer model to 4-bit precision and using paged optimizers to handle memory spikes. ## 2 Background Block-wise k-bit Quantization Quantization is the process of\npp. 2–3"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "title": "public QLORA001",
+      "locator": "p. 4",
+      "content": "Pasaje de texto completo\np. 4\nVer página 4\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nfootprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile\np. 4"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+      "title": "public QLORA001",
+      "locator": "pp. 2–3",
+      "content": "Pasaje de texto completo\npp. 2–3\nVer página 2\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nGB 1022 ± 1 | - | 1348 ± 1 | | - | - | - | | Guanaco 33B 21 GB | | 992 ± 1 | | Vicuna 13B | 26 GB | 974 ± 1 | | ChatGPT | - | 966 ± 1 | | Guanaco 13B 10 GB | | 916 ± 1 | | Bard | - | 902 ± 1 | | Guanaco 7B | 6 GB | 879 ± 1 | | shift in accessibility of LLM finetuning: now the Model QL O RA introduces multiple innovations designed to reduce memory use without sacrificing performance: (1) 4-bit NormalFloat, an information theoretically optimal quantization data type for (2) Double Quantization, a method that quantizes the quantization constants, saving an average of about 0.37 bits per parameter (approximately 3 GB for a 65B model). (3) Paged Optimizers, QL O RA’s efficiency enables us to perform an in-depth study of instruction finetuning and chatbot model architectures, and sizes between 80M to 65B parameters. In addition to showing that QL O RA recovers 16-bit performance (§4) and training a state-of-the-art chatbot, Guanaco, (§5), we also Elo scores [16, 17] which determine the ranking of chatbot performance. We find that GPT-4 and We augment our chatbot benchmark results with a qualitative analysis of Guanaco models. Our analytransformers stack [64], making them easily accessible to all. We release a collection of adapters | Size | Elo | Figure 1: Different finetuning methods and their memory requirements. QLORA improves over LoRA by quantizing the transformer model to 4-bit precision and using paged optimizers to handle memory spikes. ## 2 Background Block-wise k-bit Quantization Quantization is the process of\npp. 2–3"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "title": "public QLORA001",
+      "locator": "p. 4",
+      "content": "Pasaje de texto completo\np. 4\nVer página 4\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nfootprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile\np. 4"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "title": "public QLORA001",
+      "locator": "p. 4",
+      "content": "Pasaje de texto completo\np. 4\nVer página 4\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nfootprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile\np. 4"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "title": "public QLORA001",
+      "locator": "p. 4",
+      "content": "Pasaje de texto completo\np. 4\nVer página 4\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nfootprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile\np. 4"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+      "title": "public QLORA001",
+      "locator": "p. 4",
+      "content": "Pasaje de texto completo\np. 4\nVer página 4\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nfootprint of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the input gradients reduce to an average of 18 MB per sequence making them more memory intensive than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile\np. 4"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+      "title": "public QLORA001",
+      "locator": "p. 26",
+      "content": "Pasaje de texto completo\np. 26\nVer página 26\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\n13B (11.3 GB) Figure 6: Breakdown of the memory footprint of different LLaMA models. The input gradient size is for batch G Memory Footprint Table 13: The complete ordering induced by pairwise GPT-4 judgments between systems | 33B (24.7 GB) | 65B (45.0 GB) | | Model | Params | Size | | Guanaco | 65B | 41 GB | | Guanaco | 33B | 21 GB | | Vicuna | 13B | 26 GB | | ChatGPT-3.5 Turbo | N/A | N/A | | Bard | N/A | N/A | | Guanaco | 13B | 10 GB | | Guanaco | 7B | 5 GB |\np. 26"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\n# QLORA: Efficient Finetuning of Quantized LLMs Tim Dettmers∗ Artidoro Pagnoni∗ Ari Holtzman Luke Zettlemoyer University of Washington {dettmers,artidoro,ahai,lsz}@cs.washington.edu ## Abstract We present QLORA, an efficient finetuning approach that reduces memory usage enough to finetune a 65B parameter model on a single 48GB GPU while preserving full 16-bit finetuning task performance. QLORA backpropagates gradients through a frozen, 4-bit quantized pretrained language model into Low Rank Adapters (LoRA). Our best model family, which we name Guanaco, outperforms all previous openly released models on the Vicuna benchmark, reaching 99.3% of the performance level of ChatGPT while only requiring 24 hours of finetuning on a single GPU. QLORA introduces a number of innovations to save memory without sacrificing performance: (a) 4-bit NormalFloat (NF4), a new data type that is information theoretically optimal for normally distributed weights (b) Double Quantization to reduce the average memory footprint by quantizing the quantization constants, and (c) Paged Optimizers to manage memory spikes. We use QLORA to finetune more than 1,000 models, providing a detailed analysis of instruction following and chatbot performance across 8 instruction datasets, multiple model types (LLaMA, T5), and model scales that would be infeasible to run with regular finetuning (e.g. 33B and 65B parameter models). Our results show that QLoRA finetuning on a small high-quality dataset leads to state-of-the-art results, even when using smaller models than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to\np. 1"
+    },
+    {
+      "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+      "title": "public QLORA001",
+      "locator": "pp. 1–2",
+      "content": "Pasaje de texto completo\npp. 1–2\nVer página 1\npublic QLORA001\nOBRA ENLAZADA\n1\npublic QLORA001\nEVIDENCIA ANCLADA\n1\nmodels than the previous SoTA. We provide a detailed analysis of chatbot performance based on both human and GPT-4 evaluations showing that GPT-4 evaluations are a cheap and reasonable alternative to human evaluation. Furthermore, we find that current chatbot benchmarks are not trustworthy to accurately evaluate the performance levels of chatbots. A lemon-picked analysis demonstrates where Guanaco fails compared to ChatGPT. We release all of our models and code, including CUDA kernels for 4-bit training.2 arXiv:2305.14314v1 [cs.LG] 23 May 2023 ## 1 Introduction Finetuning large language models (LLMs) is a highly effective way to improve their performance, [40, 62, 43, 61, 59, 37] and to add desirable or remove undesirable behaviors [43, 2, 4]. However, finetuning very large models is prohibitively expensive; regular 16-bit finetuning of a LLaMA 65B parameter model [57] requires more than 780 GB of GPU memory. While recent quantization methods can reduce the memory footprint of LLMs [14, 13, 18, 66], such techniques only work for inference and break down during training [65]. We demonstrate for the first time that it is possible to finetune a quantized 4-bit model without any performance degradation. Our method, QLORA, uses a novel high-precision technique to quantize a pretrained model to 4-bit, then adds a small set of learnable Low-rank Adapter weights [28] ∗Equal contribution. [^2]https://github.com/artidoro/qlora and https://github.com/TimDettmers/bitsandbytes Preprint. Under review. that are tuned by backpropagating gradients through the quantized weights. QLORA reduces the average memory requirements of finetuning a 65B parameter model from >780GB of GPU memory to <48GB without degrading the runtime or predictive performance compared to a 16- bit fully finetuned baseline. This marks a significant largest publicly available models to date finetunable on a single GPU.\npp. 1–2"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-xoTdoN/artifacts/chat-0-public-paper.png"
+}

@@ -1,0 +1,75 @@
+{
+  "note": "Historical logs are versioned diagnostics and proof, not claims that the current candidate passed every command. The original full-regression log contains nine disk-space failures and two stale cancellation/council expectations; subsequent source/test fixes and reruns are retained separately. The full-final-locale run started before the latest coverage changes, whose specific branches have separate targeted tests.",
+  "files": [
+    {
+      "file": "verification/nodus-grounding-focus-tests.log",
+      "sha256": "9a2b100789564dc03fc9f911468a752e4067809cfb4a45b5dc3f4c7f17c05e8f",
+      "bytes": 6782
+    },
+    {
+      "file": "verification/nodus-grounding-focus-types.log",
+      "sha256": "a057d123e87a4a020bf5a247d992b6f46559fb809b8531fff06cf6ee629d7d98",
+      "bytes": 100
+    },
+    {
+      "file": "verification/nodus-grounding-focus-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "verification/nodus-grounding-proof-schema-final-tests.log",
+      "sha256": "d2e98f99555d4aa6d08a35eac68591a22c3aee0e9d3788b6598af92c9aa52519",
+      "bytes": 7008
+    },
+    {
+      "file": "verification/nodus-grounding-tariff-final-tests.log",
+      "sha256": "5e974b653623d4cff704472176858964f69ee5b8218c797619bce8867e895f23",
+      "bytes": 1991
+    },
+    {
+      "file": "verification/nodus-grounding-cancellation-concilium-final.log",
+      "sha256": "882930d0d43f6fe340d4899161c7167d0542fffabb8726c74db6da34c60fcecf",
+      "bytes": 1213
+    },
+    {
+      "file": "verification/nodus-grounding-full-typed-repair.log",
+      "sha256": "7f0a211911c8335a01b75120914958e82265c64dfc98e38bb81dfefb1dc754ce",
+      "bytes": 1580394
+    },
+    {
+      "file": "verification/nodus-grounding-full-final-locale.log",
+      "sha256": "894730af8ec064ea6440954809369c9e130995dfddea86477b6e9b5143980122",
+      "bytes": 1582028
+    },
+    {
+      "file": "verification/nodus-grounding-delivery-e2e.log",
+      "sha256": "5e19914053d742d5b0f00460f99bfe208e56134d81314c816b445a9a57d90c60",
+      "bytes": 5471
+    },
+    {
+      "file": "verification/nodus-grounding-full-regression.log",
+      "sha256": "ebe6ca07df39a66f29d85e461b77137daa7551baa599b6974cdd1cf86d4e8fec",
+      "bytes": 1591586
+    },
+    {
+      "file": "verification/nodus-grounding-package-final-locale-build.log",
+      "sha256": "20b9a570859919a3498ad3316e71227a013baa1170e08ff773bd11a37d0521b4",
+      "bytes": 13231
+    },
+    {
+      "file": "verification/nodus-grounding-package-final-locale-smoke.log",
+      "sha256": "e6d8900698863fa6e1a3838f5764a9a12bc05fa1edcd096deba7277262b8a3fd",
+      "bytes": 341
+    },
+    {
+      "file": "verification/nodus-grounding-capacity-256-native.log",
+      "sha256": "483a3ea73bdcde74ee287bacc812df5096f0a5e11ae2401b52af9df90d3f0bb1",
+      "bytes": 2034
+    },
+    {
+      "file": "verification/nodus-grounding-capacity-256-desktop.log",
+      "sha256": "aa98c8c03a22fbda2a872e6434c173b3868fd1bc203abcb77ed16f7a823c8f68",
+      "bytes": 251
+    }
+  ]
+}

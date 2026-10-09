@@ -45,7 +45,7 @@ try {
     traversal: { rounds: 1, candidates: 1, partial: false } };
   };
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const { validResearchAction } = load('shared/researchActions.ts');
   assert.equal(validResearchAction({ action: 'catalog', author: 'Alburquerque' }), false, 'only the chat agent is offered the catalogue');
   assert.equal(validResearchAction({ action: 'catalog', author: 'Alburquerque' }, false, true), true);
@@ -77,6 +77,42 @@ try {
   const literal = await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null);
   assert.deepEqual([literal.planned, literal.goal, literal.explicitLibrary], [false, 'usa zotero mcp', true], 'a planner that fails falls back to the literal message');
   assert.equal(literalResearchTurnPlan('define libro de viaje vs relato de viaje').kind, 'comparison');
+
+  // Every one of the planner's four facets reaches the real retrieval binding.
+  // Small windows must not be divided into five slices smaller than one chunk.
+  {
+    const { ResearchCorpusRun } = load('electron/ai/researchCorpusRun.ts');
+    const { RESEARCH_CHAT_AGENT_SETTINGS, RESEARCH_CHAT_LIGHT_AGENT_SETTINGS } = load('shared/researchCorpus.ts');
+    const savedRetrieval = preparation.retrieveSharedDocumentaryEvidence;
+    const goal = 'Explain quantization, compression, paging and computation';
+    const facets = ['NF4 data representation', 'double quantization constants', 'paged optimizer memory', 'storage versus compute precision'];
+    try {
+      ai.completeJson = async () => { throw new Error('Document-free planning fixture must never request generation'); };
+      for (const [settings, expectedQueries] of [[RESEARCH_CHAT_LIGHT_AGENT_SETTINGS, 1], [RESEARCH_CHAT_AGENT_SETTINGS, 2],
+        [{ ...RESEARCH_CHAT_AGENT_SETTINGS, evidenceTokens: 64000 }, 5]]) {
+        const calls = [];
+        preparation.retrieveSharedDocumentaryEvidence = async (requested, query, limits, vector, signal, read, lexicalQueries) => {
+          calls.push({ query, limits, lexicalQueries });
+          assert.deepEqual(requested.documents.map(document => document.id), scope.documents.map(document => document.id));
+          return { evidence: [], traversal: { rounds: 1, candidates: 0, partial: false } };
+        };
+        const planned = new ResearchCorpusRun(scope, settings);
+        planned.agent = { plan: { ...literalResearchTurnPlan(goal), queries: facets }, question: goal, compact: true, minSources: 1 };
+        // No supervisor generation; use real run/budget/SQL retrieval and capture
+        // the shared-worker binding when its document layer is explicitly on.
+        const actions = load('electron/ai/researchActionCoordinator.ts');
+        const originalDeepen = actions.deepenResearch;
+        actions.deepenResearch = async () => {};
+        try { await planned.investigate(goal); } finally { actions.deepenResearch = originalDeepen; }
+        assert.equal(calls.length, expectedQueries);
+        assert.deepEqual(calls[0].lexicalQueries, facets, 'all facets survive even when only one semantic query fits');
+        assert.deepEqual(calls.map(call => call.query), [goal, ...facets].slice(0, expectedQueries));
+        assert.ok(calls.reduce((sum, call) => sum + call.limits.evidenceTokens, 0) <= Math.floor(settings.evidenceTokens / 3), 'opening discovery preserves the existing allowance');
+        if (expectedQueries > 1) assert.ok(calls.every(call => call.limits.evidenceTokens >= 4096), 'a full prepared chunk fits each semantic probe');
+        assert.ok(planned.budget.rounds < settings.rounds, 'supervision retains a round');
+      }
+    } finally { preparation.retrieveSharedDocumentaryEvidence = savedRetrieval; }
+  }
 
   // 2. The agent looks the author up, reads their works and does not settle for too few.
   const { ResearchCorpusRun } = load('electron/ai/researchCorpusRun.ts');

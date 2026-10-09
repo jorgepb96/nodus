@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, writeFileSync } from 'node:fs';
+import fs, { existsSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
@@ -56,6 +56,8 @@ try {
     groupItems: [item({
       key: 'groups:42:G1', itemKey: 'G1', library: group, version: 7, title: 'Libro del grupo',
       itemType: 'book', collections: ['groups:42:GC'], doi: null,
+      // Zotero keeps every ISBN of a book in one field, separated by spaces.
+      isbn: '9780306406157 0306406152',
     })],
     deletedPersonal: [],
     calls: [],
@@ -165,6 +167,10 @@ try {
   assert.ok(existsSync(path.join(store.itemFolder(storedA.storageId), storedA.files.original)));
   const storedGroup = store.findItemBySourceIdentity({ source: 'zotero', libraryType: 'group', libraryId: '42', itemKey: 'G1' });
   assert.ok(existsSync(path.join(store.itemFolder(storedGroup.storageId), 'attachments', 'EPUB-grupo.epub')));
+  assert.deepEqual(storedGroup.metadata.isbn, ['9780306406157', '0306406152'], 'a space-separated Zotero ISBN field is a list of ISBNs');
+  assert.equal(catalog.findItemIdByMetadataIdentifiers({
+    title: 'Otro título', itemType: 'book', creators: [], year: null, isbn: ['0-306-40615-2'], issn: [], tags: [],
+  }), storedGroup.id, 'importing the same book again by its ISBN finds the Zotero record instead of duplicating it');
   assert.equal(catalog.getImportSource('zotero:users/0').version, 10);
   assert.equal(catalog.getImportSource('zotero:groups/42').version, 7);
 
@@ -557,6 +563,28 @@ try {
     await readFile(path.join(childStore.itemFolder(childStored.storageId), repairedChildTwo.relativePath), 'utf8'),
     await readFile(childTwo, 'utf8'),
   );
+
+  // An unchanged sync reads each file once at each end, not twice: the verification
+  // barrier reuses a digest whose file has not changed since it was taken.
+  const opened = [];
+  const realCreateReadStream = fs.createReadStream;
+  fs.createReadStream = function (file, ...rest) { opened.push(String(file)); return realCreateReadStream.call(this, file, ...rest); };
+  let unchangedRun;
+  try {
+    unchangedRun = await importZoteroLibraries({ requestId: 'child-unchanged', store: childStore, catalog: childCatalog, client: childClient });
+  } finally { fs.createReadStream = realCreateReadStream; }
+  assert.equal(unchangedRun.verification.status, 'passed');
+  assert.equal(unchangedRun.attachmentsUnchanged, 1);
+  assert.equal(opened.filter((file) => file === childTwo).length, 1, 'the unchanged source is read once per sync');
+  assert.equal(opened.filter((file) => file.startsWith(childStore.itemFolder(childStored.storageId))).length, 1, 'the unchanged copy is read once per sync');
+  // A source rewritten between the copy and the verification barrier is still caught.
+  const childTwoBytes = await readFile(childTwo);
+  const raced = await importZoteroLibraries({
+    requestId: 'child-raced', store: childStore, catalog: childCatalog, client: childClient,
+    onProgress(value) { if (value.phase === 'verification') writeFileSync(childTwo, '%PDF-1.4\nchild-tw0\n'); },
+  });
+  assert.equal(raced.verification.status, 'blocked', 'a source that changed after hashing fails verification');
+  await writeFile(childTwo, childTwoBytes);
 
   // Zotero can rename/retype an attachment without changing its bytes. A hash-only
   // fast path used to retain the old filename, extension and MIME while verification

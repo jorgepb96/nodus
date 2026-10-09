@@ -28,16 +28,25 @@ export async function analyzePdf(filePath: string): Promise<PdfAnalysis> {
 
   let textPages = 0;
   let totalChars = 0;
-  for (const p of indices) {
-    const page = await pdf.getPage(p);
-    const txt = await pageText(page);
-    page.cleanup?.();
-    if (txt.length >= MIN_CHARS_TEXT_PAGE) {
-      textPages++;
-      totalChars += txt.length;
+  try {
+    for (const p of indices) {
+      // A damaged page object (pdf.js: "Page dictionary kid reference points to wrong type
+      // of object") is a page without usable text, not a reason to reject the document.
+      let txt = '';
+      try {
+        const page = await pdf.getPage(p);
+        try { txt = await pageText(page); } finally { page.cleanup?.(); }
+      } catch {
+        txt = '';
+      }
+      if (txt.length >= MIN_CHARS_TEXT_PAGE) {
+        textPages++;
+        totalChars += txt.length;
+      }
     }
+  } finally {
+    await pdf.destroy?.();
   }
-  await pdf.destroy?.();
 
   const sampledPages = indices.size;
   const textCoverage = sampledPages ? textPages / sampledPages : 0;

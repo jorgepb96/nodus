@@ -162,6 +162,9 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 // shipped — add a new one. The current schema version is the highest applied.
 export const SCHEMA_VERSION = 200;
 
+// What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
+// (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
+
 export const migrations: Migration[] = [
   {
     version: 1,

@@ -119,6 +119,16 @@ function splitIdentifiers(value: string | null): string[] {
   return [...new Set(String(value ?? '').split(/[;,\n]+/).map((entry) => entry.trim()).filter(Boolean))];
 }
 
+/** Zotero separates the ISBNs of one book with spaces. Split there only when every
+ * part is a whole ISBN, so a single number written in spaced groups stays one value. */
+function splitIsbns(value: string | null): string[] {
+  return [...new Set(splitIdentifiers(value).flatMap((entry) => {
+    const parts = entry.split(/\s+/);
+    return parts.length > 1 && parts.every((part) => /^(?:\d{9}[\dX]|\d{13})$/i.test(part.replace(/-/g, '')))
+      ? parts : [entry];
+  }))];
+}
+
 function parseExtra(value: string | null, item: ZoteroItem): Record<string, string> | undefined {
   const result: Record<string, string> = {};
   for (const line of String(value ?? '').split(/\r?\n/)) {
@@ -162,7 +172,7 @@ function metadata(item: ZoteroItem): LibraryItemMetadata {
     ...(item.rights?.trim() ? { rights: item.rights.trim() } : {}),
     ...(item.url?.trim() ? { url: item.url.trim() } : {}),
     ...(item.doi?.trim() ? { doi: item.doi.trim() } : {}),
-    isbn: splitIdentifiers(item.isbn),
+    isbn: splitIsbns(item.isbn),
     issn: splitIdentifiers(item.issn),
     tags: [...new Set(item.tags.map((tag) => tag.trim()).filter(Boolean))],
     ...(extra ? { extra } : {}),
@@ -463,6 +473,26 @@ export async function importZoteroLibraries(options: {
     partial: false, warnings: [], canceled: false, durationMs: 0,
   };
   const verification = report.verification!;
+  // Every attachment used to be read in full four times per sync: the source and the
+  // Nodus copy before the copy decision, then both again at the verification barrier.
+  // Within one run a second digest of a file whose identity has not moved is the same
+  // digest, so it is reused. The identity includes ctime, which every write and rename
+  // updates and no user tool can set, so a file that changed in between (a linked file
+  // edited mid-sync, a copy damaged on disk) is still read again and still caught.
+  const digests = new Map<string, { identity: string; hash: string }>();
+  const fileIdentity = async (file: string): Promise<string> => {
+    const stat = await fsp.stat(file, { bigint: true });
+    return `${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
+  };
+  const hashFile = async (file: string, hashSignal?: AbortSignal): Promise<string> => {
+    const before = await fileIdentity(file);
+    const known = digests.get(file);
+    if (known?.identity === before) return known.hash;
+    const hash = await sha256(file, hashSignal);
+    if (await fileIdentity(file).catch(() => null) === before) digests.set(file, { identity: before, hash });
+    else digests.delete(file);
+    return hash;
+  };
   const sessions = new ZoteroSyncSessionStore(store.root);
   let processedItems = 0;
   let totalItems = 0;
@@ -963,7 +993,7 @@ export async function importZoteroLibraries(options: {
                 if (!sourcePath || !fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isFile()) {
                   throw codedError(`Adjunto no disponible: ${item.title} — ${attachment.title}`, 'attachment-unavailable');
                 }
-                const sourceHash = await sha256(sourcePath, signal);
+                const sourceHash = await hashFile(sourcePath, signal);
                 const attachmentIdentity = `${item.itemKey}:${attachment.itemKey}`;
                 expectedHashes.set(attachmentIdentity, sourceHash);
                 expectedSourceFiles.set(attachmentIdentity, sourcePath);
@@ -981,7 +1011,7 @@ export async function importZoteroLibraries(options: {
                   && previous.mimeType === mimeType
                   && path.extname(previous.relativePath).toLocaleLowerCase() === path.extname(fileName).toLocaleLowerCase();
                 if (previous?.sha256 === sourceHash && descriptorUnchanged
-                  && previousPath && await sha256(previousPath, signal) === sourceHash) {
+                  && previousPath && await hashFile(previousPath, signal) === sourceHash) {
                   sourceAttachments.push({
                     ...previous,
                     title: attachment.title,
@@ -1005,7 +1035,7 @@ export async function importZoteroLibraries(options: {
                 for (const candidate of candidates) {
                   const candidatePath = assertInside(attachmentDirectory, path.join(attachmentDirectory, candidate));
                   if (!fs.existsSync(candidatePath)) { destination = candidatePath; break; }
-                  if (fs.statSync(candidatePath).isFile() && await sha256(candidatePath, signal) === sourceHash) {
+                  if (fs.statSync(candidatePath).isFile() && await hashFile(candidatePath, signal) === sourceHash) {
                     destination = candidatePath;
                     reusedExisting = true;
                     break;
@@ -1018,7 +1048,7 @@ export async function importZoteroLibraries(options: {
                   ));
                 }
                 if (!reusedExisting) await copyImmutable(sourcePath, destination, signal);
-                const destinationHash = await sha256(destination, signal);
+                const destinationHash = await hashFile(destination, signal);
                 if (destinationHash !== sourceHash) {
                   throw codedError(`La copia no coincide con Zotero: ${item.title} — ${attachment.title}`, 'attachment-corrupt');
                 }
@@ -1164,8 +1194,8 @@ export async function importZoteroLibraries(options: {
                 // the Zotero library version; a single pre-copy hash cannot detect that
                 // race. Both ends must still equal the same immutable expectation.
                 if (provenanceExact
-                  && await sha256(sourcePath, signal) === expectedHash
-                  && await sha256(storedPath, signal) === expectedHash) exactAttachments += 1;
+                  && await hashFile(sourcePath, signal) === expectedHash
+                  && await hashFile(storedPath, signal) === expectedHash) exactAttachments += 1;
               } catch (error) {
                 if (signal?.aborted || (error instanceof Error && error.name === 'AbortError')) throw error;
                 // Count mismatch below is the durable verification result.

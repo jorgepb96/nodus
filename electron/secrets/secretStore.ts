@@ -1,4 +1,5 @@
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { harnessApiKey, safeStorage } from './safeStorageGate';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { AiProvider } from '@shared/types';
@@ -123,6 +124,9 @@ export function setApiKey(provider: AiProvider, key: string): void {
 
 export function getApiKey(provider: AiProvider): string | null {
   if (provider === 'codex' || provider === 'github-copilot') return null;
+  // Harness mode (see safeStorageGate): keys come from the harness file, never the Keychain.
+  const fromHarness = harnessApiKey(provider);
+  if (fromHarness !== null) return fromHarness;
   const canonical = keyFile(provider);
   const fromGlobal = readApiKeyFile(canonical);
   if (fromGlobal !== null) return fromGlobal;

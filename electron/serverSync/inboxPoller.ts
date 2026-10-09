@@ -53,13 +53,17 @@ let draining = false;
  * `map_images` mutation. The owner Desktop resolves it here, verifies it again, and only then
  * lets the canonical SQLite upsert see a blob.
  */
+const MISSING_IMAGE_ASSET = 'La imagen llegó sin referencia a sus bytes y no puede guardarse. Quien la envió debe volver a guardarla con una versión actual de Nodus.';
+
 async function hydrateImageMutations(
   mutations: IncomingMutation[], base: string, spaceId: string, token: string,
 ): Promise<void> {
   for (const mutation of mutations) {
     if (mutation.kind !== 'upsert' || !['world_images', 'map_images', 'decorative_images'].includes(mutation.table)) continue;
     const hash = String(mutation.assets?.[0]?.hash ?? '');
-    if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error('world_image_missing_asset');
+    // No asset named at all is not going to change on a retry: refuse it, so it is reported
+    // and acknowledged instead of stopping every later mutation behind it for good.
+    if (!/^[0-9a-f]{64}$/.test(hash)) { mutation.refusal = MISSING_IMAGE_ASSET; continue; }
     const response = await fetchWithTimeout(
       `${base}/api/v1/spaces/${encodeURIComponent(spaceId)}/assets/${hash}`,
       { headers: { authorization: `Bearer ${token}`, accept: 'image/*' } },

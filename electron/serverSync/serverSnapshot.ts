@@ -4,6 +4,7 @@ import type { VaultSummary } from '@shared/types';
 import type { PublishedLibraryManifest } from './serverLibrary';
 import type { ServerPersonalImportEnvelope, ServerPersonalImportBatch, ServerPersonalLibraryAnnotation } from '@shared/serverPublication';
 import { PERMANENT_PUBLICATION_DENYLIST, SERVER_PERSONAL_IMPORT_FORMAT, SERVER_PERSONAL_IMPORT_VERSION } from '@shared/serverPublication';
+import { SYNC_SCHEMA_VERSION } from '../db/syncSchemaVersion';
 
 export const SERVER_SNAPSHOT_FORMAT = 'nodus.server-snapshot';
 export const SERVER_SNAPSHOT_VERSION = 2;
@@ -692,7 +693,10 @@ export function buildServerSnapshot(
   const assets = wantsAssets ? collectSnapshotAssets(db, present) : [];
   const assetRefs = assets.map(assetRef);
   phaseStartedAt = logPublishPerf('collect-assets:complete', phaseStartedAt, { assets: assets.length });
-  const schemaVersion = db.pragma('user_version', { simple: true }) as number;
+  // The wire version, not the file's: a replica refuses anything above its own schema, and
+  // a migration that changed no table (v201) must not make it refuse. A file not yet
+  // migrated that far keeps its own, lower number.
+  const schemaVersion = Math.min(db.pragma('user_version', { simple: true }) as number, SYNC_SCHEMA_VERSION);
 
   const generatedAt = new Date().toISOString();
   const payload = {

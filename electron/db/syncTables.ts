@@ -90,7 +90,6 @@ const SYNC_GROUPS: { key: SyncGroupKey; prefix?: string; tables?: string[] }[] =
       'events',
       'event_participants',
       'relationships',
-      'evidence',
       'record_evidence',
       'archive_folders',
       'archive_items',
@@ -246,6 +245,11 @@ const NOT_SYNCED_TABLES = new Set([
   'work_themes', 'work_zotero_tags', 'authors', 'author_relations', 'author_dossier_synthesis',
   'saved_authors',
   'ideas', 'idea_occurrences', 'idea_theme_links', 'themes', 'edges', 'edge_traces', 'gaps',
+  // The analysis's quotes for an idea, keyed by the idea's global_id. That id is a
+  // per-machine counter (nextGlobalId), so a quote carried to another machine lands on
+  // whatever idea holds the same number there. Genealogy's own evidence is
+  // `record_evidence`, which does travel.
+  'evidence',
   'passages', 'collections', 'zotero_tags', 'external_refs', 'extraction_cache', 'scan_checkpoints',
   // Scope receipts authorize evidence against THIS profile's revisions and
   // permissions. Importing them would incorrectly trust another device's history.

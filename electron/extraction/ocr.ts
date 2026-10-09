@@ -56,10 +56,24 @@ async function createOcrWorker(languages: string, localOnly = false): Promise<an
   return Tesseract.createWorker(languages, undefined, installed ?? (cachePath ? { cachePath } : {}));
 }
 
+/** OCR renders at 2.5x (180 DPI), but never wider or taller than this many pixels. A large
+ * sheet (a fold-out map, a poster, a plan) at 2.5x exceeds what the canvas can allocate: a
+ * 14400-point page, the largest PDF allows, would need 36000 px a side. 7000 px still gives
+ * a 200-inch side about 35 DPI and an A0 sheet about 150. */
+export const OCR_RENDER_SCALE = 2.5;
+export const OCR_MAX_RENDER_SIDE = 7000;
+
+/** The render scale for one page: the OCR default, reduced so its longest side fits. */
+export function ocrRenderScale(width: number, height: number, scale = OCR_RENDER_SCALE): number {
+  const side = Math.max(width, height) * scale;
+  return Number.isFinite(side) && side > OCR_MAX_RENDER_SIDE ? scale * (OCR_MAX_RENDER_SIDE / side) : scale;
+}
+
 /** Render one pdfjs page to a PNG buffer at a DPI suitable for OCR. */
-async function renderPageToPng(page: any, scale = 2.5): Promise<{ png: Buffer; width: number; height: number }> {
+async function renderPageToPng(page: any, preferredScale = OCR_RENDER_SCALE): Promise<{ png: Buffer; width: number; height: number }> {
   const { createCanvas } = await getCanvas();
-  const viewport = page.getViewport({ scale });
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: ocrRenderScale(base.width, base.height, preferredScale) });
   const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
   const ctx = canvas.getContext('2d');
   await page.render({ canvasContext: ctx as any, viewport }).promise;
@@ -237,7 +251,7 @@ export async function ocrPdfPages(
   pageNumbers: number[],
   languages: string,
   onProgress?: (p: OcrProgress) => void,
-  options: { localOnly?: boolean; signal?: AbortSignal } = {},
+  options: { localOnly?: boolean; signal?: AbortSignal; onPageError?: (page: number, error: unknown) => void } = {},
 ): Promise<Map<number, OcrPageResult>> {
   options.signal?.throwIfAborted();
   const worker = await createOcrWorker(languages, options.localOnly);
@@ -246,12 +260,20 @@ export async function ocrPdfPages(
     let done = 0;
     for (const n of pageNumbers) {
       options.signal?.throwIfAborted();
-      const page = await pdf.getPage(n);
-      const rendered = await renderPageToPng(page);
-      page.cleanup?.();
-      const { data } = await worker.recognize(rendered.png, {}, { blocks: true, text: true });
-      options.signal?.throwIfAborted();
-      out.set(n, structuredPage(data, rendered.width, rendered.height));
+      // One page that cannot be rendered or read must not discard the pages already read:
+      // it is left out of the result and reported, and the pass goes on to the next page.
+      try {
+        const page = await pdf.getPage(n);
+        let rendered: { png: Buffer; width: number; height: number };
+        try { rendered = await renderPageToPng(page); } finally { page.cleanup?.(); }
+        const { data } = await worker.recognize(rendered.png, {}, { blocks: true, text: true });
+        options.signal?.throwIfAborted();
+        out.set(n, structuredPage(data, rendered.width, rendered.height));
+      } catch (error) {
+        options.signal?.throwIfAborted();
+        if (!options.onPageError) throw error;
+        options.onPageError(n, error);
+      }
       done++;
       onProgress?.({ page: done, totalPages: pageNumbers.length });
     }

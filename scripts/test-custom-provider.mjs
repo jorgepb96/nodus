@@ -323,7 +323,9 @@ test('DeepSeek, Anthropic and OpenRouter read their native effort metadata', asy
   };
   globalThis.fetch = async url => Response.json({ data: fixtures[Object.keys(fixtures).find(provider => String(url).includes(provider))] });
   try {
-    assert.deepEqual((await listModels('deepseek', 'fixture')).map(m => m.researchReasoningLevels), [['low', 'high', 'max'], []]);
+    // DeepSeek's own catalogue gets an Off stop (thinking.type disabled) ahead of its published
+    // levels; a model that publishes none gets no slider, and custom endpoints are untouched.
+    assert.deepEqual((await listModels('deepseek', 'fixture')).map(m => m.researchReasoningLevels), [['none', 'low', 'high', 'max'], []]);
     const anthropic = await listModels('anthropic', 'fixture');
     assert.deepEqual(anthropic.find(m => m.id === 'claude-opus-4-7').researchReasoningLevels, ['low', 'medium', 'max']);
     assert.deepEqual(anthropic.find(m => m.id === 'claude-unknown').researchReasoningLevels, []);

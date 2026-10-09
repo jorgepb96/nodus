@@ -12,6 +12,7 @@ import type { DocumentaryIndexIdentity, ResearchCorpusDocument, ResearchDocument
 import { DocumentaryRequests } from '../db/documentaryRequests';
 import { DocumentaryCampaigns } from '../db/documentaryCampaigns';
 import { DocumentaryStore, type DocumentaryChunk } from '../db/documentaryStore';
+import { schemeCleaningFor, type SchemeCleaning } from './schemeCleaning';
 import { documentaryChunks } from './documentaryChunking';
 import { researchCorpusInventory } from './researchCorpusInventory';
 import { assertResearchDocumentPermission, researchFingerprint } from './researchCorpusScope';
@@ -158,9 +159,13 @@ export function prepareDocumentaryText(document: ResearchCorpusDocument, text: s
 }
 async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text: string, sourceMap: Record<string, string>, signal: AbortSignal | undefined, processingVersion: string): Promise<{ indexKey: string; chunks: DocumentaryChunk[] }> {
   const store = documentaryStore();
+  // Scheme decluttering, where a layout file matches this text's pages: a separate identity,
+  // so its chunks and vectors are never taken for the uncleaned index's or the reverse.
+  const cleaning = schemeCleaningFor(text, sourceMap);
   const identity: DocumentaryIndexIdentity = { documentId: document.id, attachmentId: document.attachmentId, revision: document.revision,
     attachmentRevision: document.attachments?.find(attachment => attachment.id === document.attachmentId)?.revision,
-    coverage: document.coverage, textFingerprint: createHash('sha256').update(text).digest('hex'), chunkerVersion: RETRIEVAL_CHUNKER_VERSION, processingVersion, embedding: null };
+    coverage: document.coverage, textFingerprint: createHash('sha256').update(text).digest('hex'), chunkerVersion: RETRIEVAL_CHUNKER_VERSION, processingVersion, embedding: null,
+    ...(cleaning ? { layout: cleaning.signature } : {}) };
   const indexKey = store.enqueue(identity, { text, sourceMap });
   const existing = store.revision(indexKey);
   if (existing?.lexical_ready) return { indexKey, chunks: JSON.parse(existing.chunks_json!) };
@@ -170,7 +175,7 @@ async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text:
   try {
     signal?.throwIfAborted();
     if (job.stage === 'extract') store.saveExtraction(job, text);
-    const chunks = existing?.chunks_json ? JSON.parse(existing.chunks_json) as DocumentaryChunk[] : await documentaryChunks(text, sourceMap, signal);
+    const chunks = existing?.chunks_json ? JSON.parse(existing.chunks_json) as DocumentaryChunk[] : cleanedChunks(await documentaryChunks(text, sourceMap, signal), cleaning, document.id);
     signal?.throwIfAborted();
     if (job.stage === 'chunk') store.saveChunks(job, chunks);
     if (job.stage === 'lexical') store.publishLexical(job);
@@ -183,6 +188,14 @@ async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text:
     }
     throw error;
   } finally { clearInterval(heartbeat); }
+}
+
+function cleanedChunks(chunks: DocumentaryChunk[], cleaning: SchemeCleaning | null, documentId: string): DocumentaryChunk[] {
+  if (!cleaning) return chunks;
+  const cleaned = chunks.map(chunk => cleaning.clean(chunk));
+  const before = chunks.reduce((sum, chunk) => sum + chunk.text.length, 0), after = cleaned.reduce((sum, chunk) => sum + chunk.text.length, 0);
+  console.log(`[scheme-layout] ${documentId}: ${cleaning.pages} page layouts matched; ${cleaned.filter((chunk, index) => chunk !== chunks[index]).length}/${chunks.length} chunks cleaned; ${before} → ${after} chars`);
+  return cleaned;
 }
 
 /** Upper bound per document; the provider gate (automatic 2→4, halved on a 429) is the real limit. */
@@ -206,7 +219,7 @@ async function prepareDocumentaryEmbeddingsNow(indexKey: string, chunks: Documen
     AND json_extract(identity_json,'$.chunkerVersion')=? AND json_extract(identity_json,'$.embedding.provider')=?
     AND json_extract(identity_json,'$.embedding.model')=? AND json_extract(identity_json,'$.processingVersion')=?
     AND json_extract(identity_json,'$.attachmentId') IS ?
-    AND json_extract(identity_json,'$.embedding.parameters')=?`).get(base.documentId, base.textFingerprint, base.revision, base.chunkerVersion, config.provider, config.model, base.processingVersion, base.attachmentId, JSON.stringify(parameters)) as { index_key: string } | undefined;
+    AND json_extract(identity_json,'$.embedding.parameters')=? AND json_extract(identity_json,'$.layout') IS ?`).get(base.documentId, base.textFingerprint, base.revision, base.chunkerVersion, config.provider, config.model, base.processingVersion, base.attachmentId, JSON.stringify(parameters), base.layout ?? null) as { index_key: string } | undefined;
   if (cached) {
     const rows = store.db.prepare('SELECT vector,vector_json FROM documentary_passages WHERE index_key=? ORDER BY ordinal').all(cached.index_key) as Array<{ vector: Buffer | null; vector_json: string | null }>;
     progress(rows.length, 0);
@@ -320,7 +333,7 @@ function attachmentRevisions(document: ResearchCorpusDocument): Array<ReturnType
   for (const row of revisionsFor(document)) {
     const identity: DocumentaryIndexIdentity = JSON.parse(row.identity_json);
     if (published && !published.some(base => base.attachmentId === identity.attachmentId && base.textFingerprint === identity.textFingerprint
-      && base.chunkerVersion === identity.chunkerVersion && base.processingVersion === identity.processingVersion)) continue;
+      && base.chunkerVersion === identity.chunkerVersion && base.processingVersion === identity.processingVersion && (base.layout ?? null) === (identity.layout ?? null))) continue;
     if (attachments?.length && identity.attachmentId !== null
         && !attachments.some(attachment => attachment.id === identity.attachmentId
           && (!identity.attachmentRevision || attachment.revision === identity.attachmentRevision))) continue;
@@ -830,9 +843,11 @@ export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchS
   const activities = new Map<string, ReturnType<typeof startResearchActivity>>();
   const result = await new Promise<{ passages: ReturnType<DocumentaryStore['lexicalSearch']>; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }>((resolve, reject) => {
     let settled = false;
+    const retrievalStarted = Date.now();
     const finish = (error: Error | null, value?: { passages: ReturnType<DocumentaryStore['lexicalSearch']>; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }) => {
       if (settled) return;
       settled = true;
+      console.info(`${new Date().toISOString()} [documentary] retrieval ${read?.kind ?? 'search'} ${((Date.now() - retrievalStarted) / 1000).toFixed(1)}s · ${keys.length} lexical / ${vectorKeys.length} vector keys · ${value?.passages.length ?? 0} passages${error ? ` · ${error.message}` : ''}`);
       clearTimeout(deadline);
       finishSearch(error ? 'failed' : 'completed', value?.passages.length);
       for (const finishActivity of activities.values()) finishActivity(error ? 'failed' : 'completed');

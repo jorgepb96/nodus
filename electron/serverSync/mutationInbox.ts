@@ -37,6 +37,12 @@ export interface IncomingMutation {
   assets?: { hash: string }[];
   documentHash?: string | null;
   blobHash?: string | null;
+  /**
+   * Set by a caller that found the mutation deterministically unusable before applying it
+   * (an image row that names no asset). Refused and acknowledged like any other poison row,
+   * rather than thrown, which would block every later mutation forever.
+   */
+  refusal?: string;
 }
 
 /**
@@ -296,6 +302,10 @@ export function applyIncomingMutations(
     // refuse a newer package outright.
     if (Number(mutation.schemaVersion) > SCHEMA_VERSION) {
       refuse(mutation, `Procede de un esquema más reciente (v${mutation.schemaVersion} frente a v${SCHEMA_VERSION}). Actualiza Nodus para recibir estos cambios.`);
+      continue;
+    }
+    if (mutation.refusal) {
+      refuse(mutation, mutation.refusal);
       continue;
     }
     try {

@@ -125,6 +125,19 @@ export function replaceWorkPassages(nodusId: string, contentHash: string, rows: 
       assertPassagePublication(nodusId, prepared.publication);
       if (config.provider !== prepared.embeddingProvider || config.model !== prepared.embeddingModel) throw new Error('documentary_embedding_configuration_changed');
     }
+    // Passage ids are positional (`<work>#<chunk>`), and the current document profile's
+    // supports point at them. A rebuild that re-extracted the source (an evicted
+    // extraction cache, a newer extractor) moves the chunk boundaries, so the same id
+    // now names different text. Say so instead of leaving the profile current.
+    const previous = db.prepare('SELECT chunk_index, text FROM passages WHERE nodus_id = ?').all(nodusId) as Array<{ chunk_index: number; text: string }>;
+    const moved = previous.length > 0 && (previous.length !== rows.length
+      || previous.some((old) => rows[old.chunk_index]?.text !== old.text));
+    if (moved) {
+      db.prepare(`UPDATE document_profile_state
+           SET status=CASE WHEN status='current' THEN 'stale' ELSE status END,
+               stale_reason='passages_changed', updated_at=?
+         WHERE nodus_id=? AND current_version_id IS NOT NULL`).run(now, nodusId);
+    }
     db.prepare('DELETE FROM passages WHERE nodus_id = ?').run(nodusId);
     rows.forEach((row, chunkIndex) => {
       const embedding = row.embedding;

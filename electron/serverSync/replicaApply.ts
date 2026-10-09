@@ -242,6 +242,9 @@ export function applySnapshotToReplica(db: Database.Database, snapshot: { tables
         db.prepare(`DELETE FROM ${quoteIdentifier(table)}`).run();
       }
       db.prepare('DELETE FROM sync_snapshot_tables').run();
+      const tombstoneOf = present.has('sync_tombstones')
+        ? db.prepare('SELECT deleted_at FROM sync_tombstones WHERE table_name = ? AND row_key = ?')
+        : null;
       const rememberProjection = db.prepare('INSERT INTO sync_snapshot_tables (table_name, projected_at) VALUES (?, ?)');
       const projectedAt = new Date().toISOString();
       for (const table of incomingNames) rememberProjection.run(table, projectedAt);
@@ -311,6 +314,16 @@ export function applySnapshotToReplica(db: Database.Database, snapshot: { tables
           const key = identity.map((column) => row[column] ?? null);
           const local = find.get(...key) as Record<string, unknown> | undefined;
           if (!local) {
+            // Absent because it was DELETED here. A snapshot is the owner's last
+            // publication and keeps carrying the row until the owner has collected this
+            // deletion and republished, so inserting it would resurrect it — and the merge
+            // never removes a local row, so it would then outlive every other copy. Same
+            // rule as mergeSyncPackage: only an edit made after the deletion brings it back.
+            const deletedAt = tombstoneOf?.get(table, JSON.stringify(key)) as { deleted_at: string } | undefined;
+            if (deletedAt) {
+              const stamp = typeof row.updated_at === 'string' ? row.updated_at : typeof row.created_at === 'string' ? row.created_at : '';
+              if (!stamp || stamp <= deletedAt.deleted_at) { counts.kept += 1; continue; }
+            }
             insert.run([
               ...columns.map((column) => (row[column] === undefined ? null : row[column])),
               ...insertPlaceholders.map(() => Buffer.alloc(0)),

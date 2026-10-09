@@ -27,6 +27,15 @@ import { readMeta, selectNotesChangedSince, writeMeta, type StoredNodiNote } fro
 
 const LAST_SYNC_KEY = 'lastSyncedAt';
 const LAST_SERVER_KEY = 'lastSyncedServer';
+/**
+ * How far this machine's own changes have been sent, on THIS machine's clock.
+ *
+ * Kept apart from LAST_SYNC_KEY on purpose. That one is the server's clock and answers
+ * "what has the server got that I have not seen"; comparing a local `updated_at` against it
+ * meant a desktop running behind the server never sent an edit made within its lag after a
+ * sync, and that jumping it to the server's "now" skipped every change past the first batch.
+ */
+const LAST_SENT_KEY = 'lastSentUpdatedAt';
 const REQUEST_TIMEOUT_MS = 20_000;
 /** Ample for text, and a hard stop on a runaway note. */
 const MAX_BATCH = 200;
@@ -96,9 +105,19 @@ function since(url: string): number {
   return Number.isFinite(stored) ? stored : 0;
 }
 
+/** The local `updated_at` up to which this machine's changes have reached `url`. */
+function sentUpTo(url: string): number {
+  if (readMeta(LAST_SERVER_KEY) !== url) return 0;
+  const stored = Number(readMeta(LAST_SENT_KEY));
+  return Number.isFinite(stored) ? stored : 0;
+}
+
 export async function syncNodiNotes(target: NodiNotesSyncTarget): Promise<NodiNotesSyncResult> {
   const from = since(target.url);
-  const outgoing = selectNotesChangedSince(from).slice(0, MAX_BATCH);
+  const sentFrom = sentUpTo(target.url);
+  const changed = selectNotesChangedSince(sentFrom);
+  const outgoing = changed.slice(0, MAX_BATCH);
+  const truncated = changed.length > outgoing.length;
 
   try {
     const response = await fetch(`${target.url}/api/v1/nodi/notes?since=${from}`, {
@@ -120,6 +139,11 @@ export async function syncNodiNotes(target: NodiNotesSyncTarget): Promise<NodiNo
     if (Number.isFinite(serverTime)) {
       writeMeta(LAST_SERVER_KEY, target.url);
       writeMeta(LAST_SYNC_KEY, String(serverTime));
+      // Advance only over what was actually sent. A cut batch stops one millisecond short of
+      // its last note, so a note sharing that timestamp beyond the cut goes in the next one.
+      const last = outgoing.at(-1)?.updatedAt;
+      const sent = last === undefined ? sentFrom : truncated ? Math.max(sentFrom, last - 1) : Math.max(sentFrom, last);
+      writeMeta(LAST_SENT_KEY, String(sent));
     }
     return { sent: outgoing.length, applied, serverTime: Number.isFinite(serverTime) ? serverTime : null, error: null };
   } catch (error) {
@@ -131,5 +155,5 @@ export async function syncNodiNotes(target: NodiNotesSyncTarget): Promise<NodiNo
 
 /** Whether anything is waiting to go out, so a tick can skip the request entirely. */
 export function nodiNotesPending(url: string): boolean {
-  return selectNotesChangedSince(since(url)).length > 0;
+  return selectNotesChangedSince(sentUpTo(url)).length > 0;
 }

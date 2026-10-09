@@ -4,6 +4,7 @@ import {
   candidateRoutes,
   compoundAvailability,
   disconnectionClasses,
+  evidencePhases,
   findStartingSmiles,
   findTargetName,
   formatTargetAvailability,
@@ -39,6 +40,23 @@ const ROUTE_SEARCH_TOOL = 'search-routes';
 const STOCK_TOOL = 'check-stock';
 /** The route search's time budget: it returns the complete routes it has found by then. */
 const ROUTE_SEARCH_SECONDS = 60;
+/** Above this size the route search has never found anything, so it is not asked.
+ *
+ *  Derived, not chosen. Across every `[synthesisEvidence]` line on disk, grouped by distinct
+ *  target: at 27 atom symbols or fewer the search returns candidates for most targets, and the
+ *  largest target it has ever returned one for has 27. From 35 upwards it has returned zero for
+ *  all twelve distinct targets measured — 35, 47, 56, 66, 75, 84, 94, 97, 107, 112, 117, 121, 129
+ *  and 146 — while spending its full sixty-second budget each time. The threshold sits in the gap
+ *  between the largest success and the smallest unbroken run of failures.
+ *
+ *  The measure is the count of ASCII letters in the target's SMILES, which over-counts a two-letter
+ *  element and a bracketed hydrogen. It is a proxy and is named as one; it is used because it is
+ *  exactly the measure the numbers above were taken with, and because nothing has parsed the target
+ *  at this point, so a real heavy-atom count is not in hand.
+ *
+ *  Raising the budget was the other option and is the wrong one: the search is not running out of
+ *  time on these, it is finding nothing. */
+const ROUTE_SEARCH_MAX_ATOM_SYMBOLS = 32;
 /** Proposals kept per molecule, and passages kept in all. */
 const PROPOSALS_PER_TARGET = 6;
 const MAX_PASSAGES = 8;
@@ -52,6 +70,11 @@ const RERANK_POOL = 30;
 
 interface EvidenceOptions {
   evidenceScope?: ChemistryEvidenceScope;
+  /** The vault the passages and work ids are read from, for the cache key only. */
+  vaultId?: string;
+  /** A worker to reuse. `chemistryRunner` returns it untouched with a no-op dispose, so every
+   *  phase of one gather shares a single worker instead of starting its own. */
+  runner?: Runner;
   model?: ModelRef | null;
   locale?: string;
   signal?: AbortSignal;
@@ -149,6 +172,11 @@ async function textbookSchemePreparations(target: string, disconnections: Target
 async function searchedRoutes(target: string, starting: string[], options: EvidenceOptions): Promise<CandidateRoute[]> {
   const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
   if (!provider || !provider.tools.some((tool) => tool.id === ROUTE_SEARCH_TOOL)) return [];
+  const atomSymbols = (target.match(/[A-Za-z]/g) ?? []).length;
+  if (atomSymbols > ROUTE_SEARCH_MAX_ATOM_SYMBOLS) {
+    console.info(`${new Date().toISOString()} [synthesisEvidence] route search skipped: the target has ${atomSymbols} atom symbols, past the ${ROUTE_SEARCH_MAX_ATOM_SYMBOLS} above which it has never returned a candidate`);
+    return [];
+  }
   const textbookDir = textbookSchemeDirectory(options.evidenceScope);
   const ordDir = options.evidenceScope?.external === false ? null : await reactionIndexService().localDirectory();
   options.signal?.throwIfAborted();
@@ -303,37 +331,145 @@ export async function textbookPassages(queries: string[], workIds: string[], sig
 /** Evidence for a route request, gathered before the model answers: ORD disconnections of the
  *  target and textbook passages for the target and the reaction classes those disconnections
  *  name. Null when the request names no target SMILES. */
+/** Target-level evidence, remembered between a route request and its corrections.
+ *
+ *  Measured on a two-turn run: the gather cost 394.4s and then 393.8s, and printed byte-identical
+ *  counts both times — 43% of the whole clock, spent twice on the same answer. It is evidence about
+ *  the TARGET, and the target does not change when the model is asked to fix its route, so the
+ *  second computation buys nothing. On the four-turn worst case `fixes: 3` allows, this is about
+ *  twenty minutes of wall clock.
+ *
+ *  KEYED ON THE GATHER'S REAL INPUTS, not on the question string. The question is not the input:
+ *  the gather reads the target, the starting materials, the target's name, the reaction classes the
+ *  request implies, the work ids in scope, the stock directory and the model out of it, and nothing
+ *  else. Keying on those means two requests that imply the same evidence share an entry while two
+ *  that imply different evidence cannot collide — and it does not depend on the question being
+ *  byte-identical across turns, which is a property of the caller that has already changed once.
+ *
+ *  NOT DEDUPED IN FLIGHT, on purpose. Sharing one promise between two turns would propagate the
+ *  first caller's cancellation into the second, and a turn that cancels is the common case. Only
+ *  completed results are kept, so the worst a concurrent pair costs is the work it costs today.
+ *
+ *  BOUNDED BOTH WAYS. A long-lived window must not serve evidence from a corpus that has since
+ *  been rescanned, and must not hold passage text for every target ever asked about. Adding a work
+ *  to the scope changes the key by itself, so that case misses without help; the time limit is for
+ *  passages rebuilt inside the works already in scope. */
+const EVIDENCE_CACHE_TTL_MS = 30 * 60 * 1000;
+const EVIDENCE_CACHE_MAX = 8;
+const evidenceCache = new Map<string, { at: number; value: SynthesisEvidence }>();
+
+function evidenceCacheKey(question: string, target: string, startingMaterials: string[], options: EvidenceOptions): string {
+  const scope = options.evidenceScope;
+  return JSON.stringify([
+    target,
+    [...startingMaterials].sort(),
+    findTargetName(question) ?? '',
+    [...requestMethodClasses(question)].sort(),
+    scope ? [scope.workIds ? [...scope.workIds].sort() : null, scope.external, scope.web] : null,
+    chemistryStockDirectory() ?? '',
+    options.model ? `${options.model.provider}/${options.model.model}` : '',
+    // The vault, because every passage and work id below is read from ITS database, and two
+    // vaults can hold the same target with no work in scope in either — the one case the scope
+    // above cannot tell apart. Passed in rather than read here: reaching for the vault registry
+    // from this module pulls the database driver into it, and the suites that exercise the gather
+    // deliberately stub the database out.
+    options.vaultId ?? '',
+  ]);
+}
+
+/** Forget everything remembered. For a test, and for any caller that knows the corpus moved. */
+export function clearSynthesisEvidenceCache(): void {
+  evidenceCache.clear();
+}
+
+function cachedEvidence(key: string): SynthesisEvidence | null {
+  const hit = evidenceCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > EVIDENCE_CACHE_TTL_MS) { evidenceCache.delete(key); return null; }
+  // Re-insert so the map's own order is least-recently-used.
+  evidenceCache.delete(key);
+  evidenceCache.set(key, hit);
+  return hit.value;
+}
+
+function rememberEvidence(key: string, value: SynthesisEvidence): void {
+  evidenceCache.set(key, { at: Date.now(), value });
+  while (evidenceCache.size > EVIDENCE_CACHE_MAX) {
+    const oldest = evidenceCache.keys().next();
+    if (oldest.done) break;
+    evidenceCache.delete(oldest.value);
+  }
+}
+
 export async function gatherSynthesisEvidence(question: string, options: EvidenceOptions = {}): Promise<SynthesisEvidence | null> {
   options.signal?.throwIfAborted();
   const target = findRequestedTarget(question);
-  if (!target) return null;
-  const startingMaterials = findStartingSmiles(question, target);
-  // The route search runs beside the rest of the evidence (it has its own time budget).
-  const routes = searchedRoutes(target, startingMaterials, options);
-  routes.catch(() => undefined); // awaited below; a cancelled request must not leave it unhandled
-  const availability = targetAvailability(target, findTargetName(question) || target, options);
-  availability.catch(() => undefined);
-  const disconnections = await ordDisconnections(target, startingMaterials, options);
-  let passages: EvidencePassage[] = [];
-  try {
-    // The methods the request's own starting materials imply come first: ORD need not propose them.
-    const classes = [...new Set([...requestMethodClasses(question), ...disconnectionClasses(disconnections, 6)])];
-    const queries = synthesisEvidenceQueries(findTargetName(question), classes);
-    passages = await textbookPassages(queries, synthesisEvidenceWorkIds(options.evidenceScope), options.signal);
-  } catch (error) {
-    if (options.signal?.aborted) throw error;
-    console.warn('[synthesisEvidence] textbook passages unavailable:', error instanceof Error ? error.message : String(error));
+  // Said out loud. This used to be a bare `return null`, which skipped every phase of the gather
+  // in silence — and because the log line is written at the END, its absence was the only trace.
+  // A whole class of runs went without evidence and nothing recorded that they had.
+  if (!target) {
+    console.info(`${new Date().toISOString()} [synthesisEvidence] no target found in the request, so no evidence was gathered`);
+    return null;
   }
-  const preparations = await textbookSchemePreparations(target, disconnections, startingMaterials, options);
-  const candidates = await routes;
-  const available = await availability;
-  options.signal?.throwIfAborted();
-  // One line per request, so a run's log shows which evidence reached the model.
-  console.info(`[synthesisEvidence] target ${target} · ORD disconnections ${disconnections.reduce((n, d) => n + d.proposals.length, 0)} · passages ${passages.length} · textbook preparations ${preparations.length} · candidate routes ${candidates.length} · target purchasable ${available ? 'yes' : 'no/unknown'} · stock ${chemistryStockDirectory() ? 'on' : 'off'}`);
-  return {
-    target, startingMaterials, disconnections, passages,
-    ...(available ? { targetAvailability: available } : {}),
-    ...(preparations.length ? { textbookPreparations: preparations } : {}),
-    ...(candidates.length ? { candidateRoutes: candidates } : {}),
-  };
+  const evidenceStarted = Date.now();
+  const phases = evidencePhases();
+  const startingMaterials = findStartingSmiles(question, target);
+  // A correction asks about the same target as the request it corrects, so the evidence is already
+  // in hand. Logged, because a saving nobody can see is a saving nobody can check — and because a
+  // hit that should have been a miss is only diagnosable from this line.
+  const key = evidenceCacheKey(question, target, startingMaterials, options);
+  const remembered = cachedEvidence(key);
+  if (remembered) {
+    console.info(`${new Date().toISOString()} [synthesisEvidence] reused the evidence gathered for this target · target ${target} · ORD disconnections ${remembered.disconnections.reduce((n, d) => n + d.proposals.length, 0)} · passages ${remembered.passages.length}`);
+    return remembered;
+  }
+  // ONE worker for the whole gather. Each phase used to call chemistryRunner itself and dispose
+  // it again, so a single gather paid FOUR cold starts: four process spawns, four RDKit imports,
+  // and four index or catalogue loads — one of them against a directory holding over a gigabyte
+  // of vendor data. The reuse path already existed (`chemistryRunner` returns a supplied runner
+  // with a no-op dispose) but EvidenceOptions never declared the field, so it was unreachable.
+  const { runner, dispose } = chemistryRunner(options);
+  const scoped: EvidenceOptions = { ...options, runner };
+  try {
+    // The route search runs beside the rest of the evidence (it has its own time budget).
+    const routes = phases.track('route search', searchedRoutes(target, startingMaterials, scoped));
+    routes.catch(() => undefined); // awaited below; a cancelled request must not leave it unhandled
+    const availability = phases.track('availability', targetAvailability(target, findTargetName(question) || target, scoped));
+    availability.catch(() => undefined);
+    const disconnections = await phases.track('ORD disconnections', ordDisconnections(target, startingMaterials, scoped));
+    // The passages and the scheme preparations both need the disconnections and neither needs the
+    // other, so they run together rather than one after the other. Started here and awaited below,
+    // the same shape the route search and the availability lookup already use above.
+    const prepared = phases.track('textbook preparations', textbookSchemePreparations(target, disconnections, startingMaterials, scoped));
+    prepared.catch(() => undefined); // awaited below; a cancelled request must not leave it unhandled
+    let passages: EvidencePassage[] = [];
+    try {
+      // The methods the request's own starting materials imply come first: ORD need not propose them.
+      const classes = [...new Set([...requestMethodClasses(question), ...disconnectionClasses(disconnections, 6)])];
+      const queries = synthesisEvidenceQueries(findTargetName(question), classes);
+      passages = await phases.track('passages', textbookPassages(queries, synthesisEvidenceWorkIds(options.evidenceScope), options.signal));
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      console.warn('[synthesisEvidence] textbook passages unavailable:', error instanceof Error ? error.message : String(error));
+    }
+    const preparations = await prepared;
+    const candidates = await routes;
+    const available = await availability;
+    options.signal?.throwIfAborted();
+    // One line per request, so a run's log shows which evidence reached the model.
+    console.info(`${new Date().toISOString()} [synthesisEvidence] ${((Date.now() - evidenceStarted) / 1000).toFixed(1)}s · ${phases.line()} · target ${target} · ORD disconnections ${disconnections.reduce((n, d) => n + d.proposals.length, 0)} · passages ${passages.length} · textbook preparations ${preparations.length} · candidate routes ${candidates.length} · target purchasable ${available ? 'yes' : 'no/unknown'} · stock ${chemistryStockDirectory() ? 'on' : 'off'}`);
+    const gathered: SynthesisEvidence = {
+      target, startingMaterials, disconnections, passages,
+      ...(available ? { targetAvailability: available } : {}),
+      ...(preparations.length ? { textbookPreparations: preparations } : {}),
+      ...(candidates.length ? { candidateRoutes: candidates } : {}),
+    };
+    // Only a completed gather is kept. The throwIfAborted above means a cancelled one never
+    // reaches here, so a half-gathered result cannot be served to the next turn as a whole one.
+    rememberEvidence(key, gathered);
+    return gathered;
+  } finally {
+    // Ours to close, and only ours: when the caller supplied the runner, dispose is a no-op.
+    await dispose();
+  }
 }

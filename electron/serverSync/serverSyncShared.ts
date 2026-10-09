@@ -5,6 +5,7 @@ import { listVaults } from '../vaults/vaultRegistry';
 import type { AppLanguage, AppSettings, VaultSummary } from '@shared/types';
 import type { NodusServerKind } from '@shared/cloudflare';
 import { normalizeUiLanguage } from '@shared/uiLanguage';
+import { requestTimeoutMs } from './serverNetwork';
 
 /**
  * What both halves of the Nodus Server conversation need: where the server is, how to ask
@@ -15,8 +16,6 @@ import { normalizeUiLanguage } from '@shared/uiLanguage';
  * mutation ledger on a fixed timer. Neither is a sub-part of the other, so neither should
  * be reaching into the other's module for a URL parser.
  */
-
-const REQUEST_TIMEOUT_MS = 60_000;
 
 export function normalizeUrl(value: string): string {
   const clean = value.trim().replace(/\/+$/, '');
@@ -29,7 +28,8 @@ export function normalizeUrl(value: string): string {
 }
 
 export async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  // Scaled by the body: a snapshot PUT of tens of MiB is not a sixty-second request.
+  return fetch(url, { ...init, signal: AbortSignal.timeout(requestTimeoutMs(init)) });
 }
 
 // ── Per-vault configuration reads ───────────────────────────────────────────

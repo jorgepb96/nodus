@@ -20,7 +20,6 @@ export const ROUTE_SPECIES_RULES = [
   'If a step rearranges the carbon skeleton — a Wagner–Meerwein shift, a pinacol, benzilic acid or Favorskii rearrangement, a ring expansion or contraction — name the rearrangement in that step\'s own prose; if a step forms a bond at an unactivated C–H by a radical (light, NBS, a peroxide initiator), say so there. The application checks which bonds each step makes and breaks, and refuses an undeclared skeletal shift, or a new bond at a carbon nothing activates (an enolate or enol reacts only at its α-carbon).',
   'List every species that is consumed or produced exactly once per side, under one role: Reactants (consumed), Products (the intended products), Byproducts (every other species on the product side — never repeat a product there) and Agents (catalysts, solvents and other conditions the step does not consume). A species the step consumes is a Reactant, never an Agent, even when the prose calls it a catalyst or says it is derived from another reagent before it reacts. A solvent the step also forms — water in an aqueous oxidation, ethanol from sodium ethoxide in ethanol — goes under Agents as the solvent and under Byproducts as the amount formed, never under Reactants.',
   'A multi-component step lists every consumed species under Reactants and every released species under Byproducts — a condensation often releases water, carbon dioxide, or both.',
-  'A solid-phase peptide synthesis may be written as one mega-step (assemble the whole chain in a single balanced equation) rather than one step per residue — the coupling/deprotection cycle is the same recipe repeated. If you do, that step must still balance: list every protected amino acid consumed under Reactants, and every aggregate byproduct under Byproducts — one water for each amide bond formed, and for Fmoc removal one dibenzofulvene (`C=C1c2ccccc2-c2ccccc21`) and one carbon dioxide per deprotection, plus the activator byproducts. Give every protected or non-natural amino acid as its SMILES with the structure fallback (for example `Fmoc-Lys(Boc)-OH — `O=C(O)[C@@H](CCCCNC(=O)OC(C)(C)C)NC(=O)OCC1c2ccccc2-c2ccccc21``): names like `Fmoc-Cys(Trt)-OH` do not resolve, and a non-natural residue has no resolvable name at all. A plain unprotected proteinogenic amino acid (glycine, L-alanine) may be named.',
   'A metal that enters as a reagent leaves as a salt: name the metal-containing product or byproduct (for example `sodium salicylate`, `sodium bromide`); never leave a metal on one side only.',
   'A catalyst or mediator that is regenerated and not consumed — a Lewis acid such as iron(III) bromide or aluminium chloride in an electrophilic substitution, palladium, an acid catalyst — goes under Agents and does not appear in the balanced equation. Put a metal under Reactants, leaving as a salt, only when it is stoichiometrically consumed.',
   'For a metal-oxo oxidation (dichromate, permanganate, chromium trioxide), name the reduced metal as its salt with the acid anion (for example `chromium(III) sulfate`, `manganese(II) sulfate`) and list the water it releases. Name each salt whole (sodium sulfate, chromium(III) sulfate) even when two salts share an ion, and do not list an acid and a free anion of the same acid separately.',
@@ -31,6 +30,49 @@ export const ROUTE_SPECIES_RULES = [
   'The step prose is the reference for what each step does: every name must describe the structure the prose describes, and you never change the prose just to make a name fit. Prose changes only to state a racemic or uncontrolled outcome, or where a step is rewritten, split, combined or inserted — then write that step\'s prose and names together.',
   'Every step ends with the four labelled lines. A step that gives its product only in prose cannot be checked.',
 ];
+
+/** RETIRED 2026-10-06. This offered a solid-support route the option of one wide equation instead
+ *  of one step per cycle. Withholding it is what finally carried the hardest target end to end:
+ *  with the affordance the model wrote a single equation that never balanced across four runs and
+ *  roughly fifteen fix rounds, and without it the same model decomposed into 29 steps that all
+ *  balanced, reaching the requested structure exactly, in one fix round. A wide step is also the
+ *  only shape that trips the coefficient search's dimension limit, so retiring this removes the
+ *  trigger as well as the symptom.
+ *
+ *  The sentence below is unchanged from the rule that was in force, and is spliced back at its
+ *  original position when restored. It is NOT the whole of the old rule: the structure-fallback
+ *  guidance that used to share this one string is now an always-active rule of its own, because it
+ *  is needed whether or not a route is written wide. So restoring this reinstates the affordance and
+ *  the guidance is still present, but as two list entries rather than the original single one.
+ *  To restore for a run: NODUS_ROUTE_MEGA_STEP=on (the harness suite field `megaStep: true`). */
+const RETIRED_SINGLE_EQUATION_RULE =
+  'A solid-phase peptide synthesis may be written as one mega-step (assemble the whole chain in a single balanced equation) rather than one step per residue — the coupling/deprotection cycle is the same recipe repeated. If you do, that step must still balance: list every protected amino acid consumed under Reactants, and every aggregate byproduct under Byproducts — one water for each amide bond formed, and for Fmoc removal one dibenzofulvene (`C=C1c2ccccc2-c2ccccc21`) and one carbon dioxide per deprotection, plus the activator byproducts.';
+
+/** Where it sat in ROUTE_SPECIES_RULES, so a restored run reads the original order. */
+const RETIRED_RULE_POSITION = 8;
+
+/** Whether the retired single-equation affordance is restored for this run. Setting NODUS_ROUTE_MEGA_STEP=off
+ *  withholds that one rule so a route is expected to decompose instead, which is the controlled
+ *  comparison; the rule's own text is never altered. Read defensively, because these rules are
+ *  assembled in the renderer as well as in the main process. */
+function singleEquationRestored(): boolean {
+  try {
+    const host = globalThis as { process?: { env?: Record<string, string | undefined> } };
+    return host.process?.env?.NODUS_ROUTE_MEGA_STEP === 'on';
+  } catch {
+    return false;
+  }
+}
+
+/** The step rules in force for this run. The retired affordance is absent unless a run restores
+ *  it, and then it is spliced back where it used to sit. Both the first request and every
+ *  correction read this, so a run cannot offer it in one and withhold it in the other. */
+export function routeSpeciesRules(): string[] {
+  if (!singleEquationRestored()) return ROUTE_SPECIES_RULES;
+  const restored = ROUTE_SPECIES_RULES.slice();
+  restored.splice(RETIRED_RULE_POSITION, 0, RETIRED_SINGLE_EQUATION_RULE);
+  return restored;
+}
 
 /** What a correction says about the target drawing. The drawing tool accepts only an identity
  *  quoted in the current message, so a correction quotes the target exactly as the original

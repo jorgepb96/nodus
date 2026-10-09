@@ -46,13 +46,33 @@ export interface HealthResult {
   dataVersion: number;
 }
 
+/** What the turn's model can hold, so a capability can size its own limits against it instead of
+ *  hardwiring them.
+ *
+ *  Both fields are optional and a capability must work without them: an older host does not send
+ *  them, and a model with no documented window leaves `contextWindowTokens` absent rather than
+ *  guessed. Absent means "use your own floor", never "unlimited".
+ *
+ *  Why a capability needs this at all: Chemistry Studio's text and count limits were fixed numbers
+ *  chosen when a large window was 32k. On a 1,000,000-token model the same numbers silently
+ *  truncate the thing the window was bought for — a 48-name ceiling stops verifying the names in a
+ *  40-step route, and an 8,000-character ceiling on the chat question refused every drawing on a
+ *  fix round once the correction prompt grew past it.
+ *
+ *  `charsPerToken` is the HOST's own estimate, passed so that every consumer converts with one
+ *  ratio rather than inventing its own. It is an estimate, not a guarantee. */
+export interface ChatModelBudgetV1 {
+  contextWindowTokens?: number;
+  charsPerToken?: number;
+}
+
 export interface ToolInvocationV2 {
   invocationId: string;
   toolId: string;
   input: unknown;
   locale: string;
   /** Present only when the invocation came from a chat reply. */
-  chat?: { question?: string; nodeId?: string };
+  chat?: { question?: string; nodeId?: string; budget?: ChatModelBudgetV1 };
 }
 
 export interface WorkerInvocationResultV1 {
@@ -62,7 +82,7 @@ export interface WorkerInvocationResultV1 {
   notices?: ViewDocumentV1[];
 }
 
-export interface PrepareChatInput { nodes: ChatAstNode[]; question?: string; locale: string }
+export interface PrepareChatInput { nodes: ChatAstNode[]; question?: string; locale: string; budget?: ChatModelBudgetV1 }
 export interface FinalizeChatInput { nodes: ChatAstNode[]; locale: string }
 export interface RenderArtifactInput { artifactType: string; artifactVersion: number; data: unknown; locale: string }
 export interface ArtifactProjectionInput { artifactType: string; artifactVersion: number; data: unknown }

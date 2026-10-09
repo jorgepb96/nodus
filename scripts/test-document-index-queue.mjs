@@ -19,7 +19,7 @@ globalThis.__documentQueue = {
   works: new Map([['v1',[{nodus_id:'v1-w',title:'Obra V1'}]],['v2',[{nodus_id:'v2-w',title:'Obra V2'}]]]),
   data: new Map(), runs: [], seq: 0, continuousEnabled: false, failWorks: new Set(),
   logs: [],
-  blockWorks: new Set(), abortedWorks: [], configWorks: new Set(), sourceChangedWorks: new Set(), sourceResetProgress: [],
+  blockWorks: new Set(), abortedWorks: [], configWorks: new Set(), sourceChangedWorks: new Set(), supersededWorks: new Set(), sourceResetProgress: [],
   failVaultOpen: new Set(),
 };
 const state = (id) => {
@@ -57,7 +57,7 @@ await build({
       export function setDocumentProfileState(id,status){data().profiles.set(id,status)}
     `);
     stub(/\.\.\/vaults\/vaultRegistry$/,'vaults',`export function listVaults(){return globalThis.__documentQueue.vaults}export function getVault(id){return globalThis.__documentQueue.vaults.find(v=>v.id===id)||null}`);
-    stub(/\.\.\/ai\/documentProfile$/,'scan',`export async function runDocumentProfileScan(work,options){const vault=globalThis.__documentQueue.storage.getStore();globalThis.__documentQueue.runs.push({vault,work:work.nodus_id});options?.onProgress?.({phase:'analyzing_sections',progress:.4,message:'working'});if(globalThis.__documentQueue.blockWorks.has(work.nodus_id)){await new Promise((resolve,reject)=>{const stop=()=>{globalThis.__documentQueue.blockWorks.delete(work.nodus_id);globalThis.__documentQueue.abortedWorks.push(work.nodus_id);reject(new Error('aborted'))};if(options.signal?.aborted)stop();else options.signal?.addEventListener('abort',stop,{once:true})})}await new Promise(r=>setTimeout(r,5));if(globalThis.__documentQueue.sourceChangedWorks.delete(work.nodus_id))throw new Error('DOCUMENT_SOURCE_CHANGED');if(globalThis.__documentQueue.configWorks.has(work.nodus_id))throw new globalThis.__documentQueue.AiError('Clave inválida',false,true);if(globalThis.__documentQueue.failWorks.has(work.nodus_id))throw new Error('provider rejected this document');return 'version'}`);
+    stub(/\.\.\/ai\/documentProfile$/,'scan',`export async function runDocumentProfileScan(work,options){const vault=globalThis.__documentQueue.storage.getStore();globalThis.__documentQueue.runs.push({vault,work:work.nodus_id});options?.onProgress?.({phase:'analyzing_sections',progress:.4,message:'working'});if(globalThis.__documentQueue.blockWorks.has(work.nodus_id)){await new Promise((resolve,reject)=>{const stop=()=>{globalThis.__documentQueue.blockWorks.delete(work.nodus_id);globalThis.__documentQueue.abortedWorks.push(work.nodus_id);reject(new Error('aborted'))};if(options.signal?.aborted)stop();else options.signal?.addEventListener('abort',stop,{once:true})})}await new Promise(r=>setTimeout(r,5));if(globalThis.__documentQueue.sourceChangedWorks.delete(work.nodus_id))throw new Error('DOCUMENT_SOURCE_CHANGED');if(globalThis.__documentQueue.supersededWorks.delete(work.nodus_id))throw new Error('documentary_publication_superseded');if(globalThis.__documentQueue.configWorks.has(work.nodus_id))throw new globalThis.__documentQueue.AiError('Clave inválida',false,true);if(globalThis.__documentQueue.failWorks.has(work.nodus_id))throw new Error('provider rejected this document');return 'version'}`);
     stub(/\.\.\/ai\/aiClient$/,'ai',`export class AiError extends Error{constructor(message,retriable=false,config=false){super(message);this.retriable=retriable;this.config=config}}globalThis.__documentQueue.AiError=AiError`);
     stub(/\.\.\/util\/coalesce$/,'coalesce',`export function coalesce(fn){return {schedule:fn}}`);
     // The processing log, recorded instead of written. The scope is pushed so the assertions
@@ -192,6 +192,18 @@ test('a source change at publication is retried with the fresh document',async()
   assert.equal(globalThis.__documentQueue.data.get('v1').profiles.get('v1-source-race'),'current');
   assert.equal(globalThis.__documentQueue.runs.filter(run=>run.work==='v1-source-race').length,2);
   assert.equal(globalThis.__documentQueue.sourceResetProgress.at(-1),0,'a new source revision restarts visible progress');
+});
+
+test('a passage run that fences the index at publication retries the job instead of failing it',async()=>{
+  // The index prepared its passages, then a deep scan's chained passage step (or a per-work
+  // Retry) published newer ones for the same work: publication throws superseded.
+  globalThis.__documentQueue.works.get('v1').push({nodus_id:'v1-fenced',title:'Obra con pasajes nuevos'});
+  globalThis.__documentQueue.supersededWorks.add('v1-fenced');
+  await documentIndexQueue.enqueueWork('v1','v1-fenced',500,'manual');
+  const deadline=Date.now()+2000;
+  do{await new Promise(r=>setTimeout(r,10));}while(!['current','failed'].includes(globalThis.__documentQueue.data.get('v1').profiles.get('v1-fenced'))&&Date.now()<deadline);
+  assert.equal(globalThis.__documentQueue.data.get('v1').profiles.get('v1-fenced'),'current');
+  assert.equal(globalThis.__documentQueue.runs.filter(run=>run.work==='v1-fenced').length,2);
 });
 
 test('double start reuses the same live campaign instead of creating a ghost campaign',async()=>{

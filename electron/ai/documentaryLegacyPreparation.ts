@@ -7,6 +7,7 @@ import { assertResearchDocument, resolveNotebookScope } from './researchCorpusSc
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { currentEmbeddingConfig } from '../db/ideasRepo';
 import { planRetrievalChunks } from '@shared/retrievalChunks';
+import { schemeCleaningFor } from './schemeCleaning';
 import { embedMany } from './aiClient';
 
 export interface PreparedLegacyPassages {
@@ -19,7 +20,9 @@ export async function prepareLegacyDocumentaryPassages(nodusId: string, text: st
   const publication = beginPassagePublication(nodusId, contentHash);
   if (getActiveVault().type !== 'academic') {
     const config = currentEmbeddingConfig();
-    const chunks = planRetrievalChunks(text, { sourceMap });
+    const cleaning = schemeCleaningFor(text, sourceMap);
+    const planned = planRetrievalChunks(text, { sourceMap });
+    const chunks = cleaning ? planned.map(chunk => cleaning.clean(chunk)) : planned;
     const vectors = await embedMany(chunks.map(chunk => chunk.text), signal);
     if (vectors.some(vector => !vector?.length)) throw new Error('documentary_embeddings_unavailable');
     return { contentHash, publication, rows: chunks.map((chunk, index) => ({ ...chunk, embedding: vectors[index] })), embeddingProvider: config.provider, embeddingModel: config.model };

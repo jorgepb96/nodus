@@ -271,11 +271,28 @@ export function closeDb(): void {
   }
 }
 
-/** Replace the live DB file with an imported one and re-open. Used by import. */
+/**
+ * Replace the live DB file with an imported one and re-open. Used by import.
+ *
+ * Copied to a sibling first and renamed into place, never copied over the vault: a copy that
+ * fails part way (disk full, volume gone) would otherwise leave a truncated vault, and a copy
+ * onto the same file opens THROUGH the `-wal` that any other connection still open on the vault
+ * keeps beside it — the restore then reads back the old vault's rows, and that connection later
+ * checkpoints its log into the new file. Renaming gives the import a new file of its own; the
+ * stale log and shared-memory files are removed so SQLite starts it with fresh ones.
+ */
 export function replaceDbFile(sourceFile: string): void {
   closeDb();
   const target = dbPath();
-  fs.copyFileSync(sourceFile, target);
+  const staged = `${target}.incoming-${process.pid}-${randomUUID()}`;
+  try {
+    fs.copyFileSync(sourceFile, staged);
+    for (const sibling of [`${target}-wal`, `${target}-shm`]) fs.rmSync(sibling, { force: true });
+    fs.renameSync(staged, target);
+  } catch (error) {
+    fs.rmSync(staged, { force: true });
+    throw error;
+  }
   db = openDatabase(target); // brings an older import up to the current schema
 }
 

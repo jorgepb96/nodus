@@ -1747,10 +1747,15 @@ export function registerAcademicIpc(context: IpcContext): void {
     const controller = new AbortController();
     chatAborters.set(requestId, controller);
     const unregisterNotebook = request.selection.notebookId ? researchNotebooks.registerNotebookRun(request.selection.notebookId, controller) : () => {};
+    // Timeline of one answer (request, first and last streamed text, done), for perf diagnosis.
+    const t0 = Date.now();
+    let firstDelta = 0, lastDelta = 0, chars = 0;
     try {
       return await streamResearchChat(
         request,
         (delta, kind) => {
+          const now = Date.now();
+          if (kind !== 'replace') { if (!firstDelta) firstDelta = now; lastDelta = now; chars += delta.length; }
           const channel = kind === 'reasoning' ? 'research:chatStream:reasoning' : kind === 'replace' ? 'research:chatStream:replace' : 'research:chatStream:delta';
           e.sender.send(channel, requestId, delta);
         },
@@ -1759,6 +1764,8 @@ export function registerAcademicIpc(context: IpcContext): void {
         activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); }
       );
     } finally {
+      const s = (t: number) => (t ? ((t - t0) / 1000).toFixed(1) : '-');
+      console.info(`${new Date().toISOString()} [chatTimeline] first text ${s(firstDelta)}s · last text ${s(lastDelta)}s · done ${s(Date.now())}s · streamed ${chars} chars`);
       chatAborters.delete(requestId);
       unregisterNotebook();
     }

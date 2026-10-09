@@ -16,7 +16,7 @@ const stubs = new Map([
   ['../zotero/zoteroClient', 'export const itemChildren = () => []; export const itemAsAttachment = () => null; export const getFulltext = () => null; export const attachmentFilePath = () => null; export class ZoteroRequestError extends Error {}'],
   ['./pdfjsLoader', 'export const openPdf = async () => globalThis.__pdfOcrProvenance.pdf; export const pageText = async page => page.text; export const pageTextWithSchemes = async page => ({ text: page.text, declutteredText: "[scheme]", schemeLines: [], marginLines: [] });'],
   // Durable work/attachment choices have real-SQLite coverage in test-scheme-declutter.
-  ['./schemeDeclutter', 'export const declutterForWorkSource = () => false; export const declutterCacheKey = file => `${file}#declutter`; export const pdfBodySize = async () => 0;'],
+  ['./schemeDeclutter', 'export const declutterForWorkSource = () => false; export const schemeClassifierForWorkSource = () => null; export const declutterCacheKey = file => `${file}#declutter`; export const pdfBodySize = async () => 0;'],
   ['../db/settingsRepo', 'export const getSettings = () => ({ declutterNewDocuments: true });'],
   ['./pdfAnalyzer', 'export const analyzePdf = async () => globalThis.__pdfOcrProvenance.analysis;'],
   ['./ocr', 'export const ocrPdfPages = (...args) => globalThis.__pdfOcrProvenance.ocr(...args); export const ocrImageFile = async () => ({text:""});'],
@@ -41,7 +41,7 @@ const parserBundle = path.join(dir, 'parser.mjs');
 await build({ entryPoints: [path.join(root, 'shared/textProvenance.ts')], outfile: parserBundle, bundle: true, platform: 'node', format: 'esm', logLevel: 'silent' });
 const { parseTextNotes } = await import(pathToFileURL(parserBundle).href);
 
-async function extract({ total, cap, failures = [], scanPages = null, weakPages = [], enabled = true, throwAfter = null, signal, onProgress }) {
+async function extract({ total, cap, failures = [], scanPages = null, weakPages = [], enabled = true, throwAfter = null, pageErrors = [], signal, onProgress }) {
   const fail = new Set(failures);
   const scan = scanPages && new Set(scanPages);
   const weak = new Set(weakPages);
@@ -55,12 +55,19 @@ async function extract({ total, cap, failures = [], scanPages = null, weakPages 
       getPage: async (p) => ({ text: weak.has(p) ? '1234567890'.repeat(10) : scan && !scan.has(p) ? goodText : '', cleanup() {} }),
       destroy: async () => { observed.destroyed++; },
     },
-    ocr: async (_pdf, pages, _languages, progress) => {
+    ocr: async (_pdf, pages, _languages, progress, options = {}) => {
       globalThis.__pdfOcrProvenance.ocrCalls++;
       observed.selected = [...pages];
       const results = new Map();
       for (const page of pages) {
         if (globalThis.__pdfOcrProvenance.throwAfter === observed.completed.length) throw new Error('OCR worker failed');
+        // Like the real loop: a page failure rejects the pass unless the caller handles it.
+        if (pageErrors.includes(page)) {
+          const error = new Error('Create skia surface failed');
+          if (!options.onPageError) throw error;
+          options.onPageError(page, error);
+          continue;
+        }
         observed.completed.push(page);
         results.set(page, { text: fail.has(page) ? '' : goodText });
         progress?.({ page: observed.completed.length, totalPages: pages.length });
@@ -114,6 +121,16 @@ test('startup and mid-batch failures never label selected pages as OCR results',
     assert.equal(destroyed, 1);
     assert.deepEqual(provenance, { ocrPages: 0, cappedPages: 342, cap: 1000, blankPages: 0, unresolvedPages: 1000, ocrFailed: true });
   }
+});
+
+test('one page OCR cannot read keeps every other recognised page, and the result is not final', async () => {
+  const { completed, doc, provenance } = await extract({ total: 6, cap: 1000, pageErrors: [3] });
+  assert.deepEqual(completed, [1, 2, 4, 5, 6]);
+  assert.match(doc.text, /\[\[p\. 2\]\]/);
+  assert.match(doc.text, /\[\[p\. 6\]\]/);
+  assert.doesNotMatch(doc.text, /\[\[p\. 3\]\]/);
+  assert.equal(doc.ocrFailed, true, 'an incomplete OCR pass is never cached as the final text');
+  assert.deepEqual(provenance, { ocrPages: 5, cappedPages: 0, cap: null, blankPages: 0, unresolvedPages: 1, ocrFailed: true });
 });
 
 test('an uncapped OCR failure preserves digital pages and reports only the missing text', async () => {

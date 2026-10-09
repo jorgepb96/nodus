@@ -10,6 +10,9 @@ export function researchPromptUpperBound(system: string, user: string, output: n
 /** A run-owned budget, passed to every probe and section, never reset per query.
  * UTF-8 bytes conservatively bound tokenizer output without guessing a language's
  * characters/token ratio. The presets are initial operating limits, not calibrated. */
+/** The least evidence allowance a turn keeps, matching the floors its callers already apply when
+ *  they size a budget. Small enough to fit any window that can hold a prompt at all. */
+
 export class ResearchRetrievalBudget {
   readonly settings: RetrievalSettings;
   usedEvidenceTokens = 0;
@@ -103,3 +106,13 @@ export function withinModelOutput(total: number, provider: string, model: string
   const ceiling = documentedMaxOutput(provider, model) ?? unknownCeiling;
   return Math.min(total, ceiling);
 }
+
+/** Output tokens for one route review. It reads every step and may return up to 24 findings, so a
+ *  flat budget truncates the longer the route gets: a nineteen-step route was handed the same
+ *  2,000 tokens as a three-step one, and a review that produced nothing readable was
+ *  indistinguishable in the report from a review that found nothing wrong. The ceiling keeps a
+ *  pathological route from asking without bound. */
+export function routeReviewTokens(stepCount: number): number {
+  return Math.min(16_000, Math.max(2_000, 1_200 + 600 * Math.max(1, stepCount)));
+}
+

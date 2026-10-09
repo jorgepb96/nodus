@@ -31,6 +31,26 @@ export type MainErrorTranslations = Partial<Record<AppLanguage, string>> & { en:
 
 /** Messages whose text is fixed, matched exactly. */
 export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
+  'Directorio ZIP64 dañado.': { en: 'The ZIP64 directory is damaged.', fr: 'Le répertoire ZIP64 est endommagé.', de: 'Das ZIP64-Verzeichnis ist beschädigt.', pt: 'O diretório ZIP64 está danificado.', 'pt-BR': 'O diretório ZIP64 está danificado.', it: 'La directory ZIP64 è danneggiata.', tr: 'ZIP64 dizini bozuk.' , "zh-CN": "ZIP64 目录已损坏。" ,
+  'zh-TW': "ZIP64 目錄已損壞。",
+  ko: "ZIP64 디렉터리가 손상되었습니다.",
+  ja: "ZIP64 ディレクトリが破損しています。", },
+  'Directorio ZIP64 inválido.': { en: 'The ZIP64 directory is invalid.', fr: 'Le répertoire ZIP64 n’est pas valide.', de: 'Das ZIP64-Verzeichnis ist ungültig.', pt: 'O diretório ZIP64 é inválido.', 'pt-BR': 'O diretório ZIP64 é inválido.', it: 'La directory ZIP64 non è valida.', tr: 'ZIP64 dizini geçersiz.' , "zh-CN": "ZIP64 目录无效。" ,
+  'zh-TW': "ZIP64 目錄無效。",
+  ko: "ZIP64 디렉터리가 잘못되었습니다.",
+  ja: "ZIP64 ディレクトリが無効です。", },
+  'Directorio ZIP64 no encontrado.': { en: 'The ZIP64 directory was not found.', fr: 'Le répertoire ZIP64 est introuvable.', de: 'Das ZIP64-Verzeichnis wurde nicht gefunden.', pt: 'O diretório ZIP64 não foi encontrado.', 'pt-BR': 'O diretório ZIP64 não foi encontrado.', it: 'La directory ZIP64 non è stata trovata.', tr: 'ZIP64 dizini bulunamadı.' , "zh-CN": "未找到 ZIP64 目录。" ,
+  'zh-TW': "找不到 ZIP64 目錄。",
+  ko: "ZIP64 디렉터리를 찾을 수 없습니다.",
+  ja: "ZIP64 ディレクトリが見つかりません。", },
+  'Entrada ZIP64 sin datos de tamaño.': { en: 'A ZIP64 entry has no size data.', fr: 'Une entrée ZIP64 n’a pas de données de taille.', de: 'Einem ZIP64-Eintrag fehlen die Größenangaben.', pt: 'Uma entrada ZIP64 não tem dados de tamanho.', 'pt-BR': 'Uma entrada ZIP64 não tem dados de tamanho.', it: 'Una voce ZIP64 non ha dati di dimensione.', tr: 'Bir ZIP64 girdisinde boyut verisi yok.' , "zh-CN": "ZIP64 条目缺少大小数据。" ,
+  'zh-TW': "ZIP64 項目缺少大小資料。",
+  ko: "ZIP64 항목에 크기 데이터가 없습니다.",
+  ja: "ZIP64 エントリにサイズ情報がありません。", },
+  'El vault está en uso por otra conexión y no se puede copiar antes de migrar. No se ha modificado nada; vuelve a abrirlo en unos segundos.': { en: 'The vault is in use by another connection and cannot be copied before migrating. Nothing was changed; open it again in a few seconds.', fr: 'Le coffre est utilisé par une autre connexion et ne peut pas être copié avant la migration. Rien n’a été modifié ; rouvrez-le dans quelques secondes.', de: 'Der Tresor wird von einer anderen Verbindung verwendet und kann vor der Migration nicht kopiert werden. Es wurde nichts geändert; öffnen Sie ihn in einigen Sekunden erneut.', pt: 'O cofre está a ser usado por outra ligação e não pode ser copiado antes de migrar. Nada foi alterado; volte a abri-lo dentro de alguns segundos.', 'pt-BR': 'O cofre está em uso por outra conexão e não pode ser copiado antes de migrar. Nada foi alterado; abra-o novamente em alguns segundos.', it: 'Il vault è in uso da un’altra connessione e non può essere copiato prima della migrazione. Non è stato modificato nulla; riaprilo tra qualche secondo.', tr: 'Kasa başka bir bağlantı tarafından kullanılıyor ve taşımadan önce kopyalanamıyor. Hiçbir şey değiştirilmedi; birkaç saniye sonra yeniden açın.' , "zh-CN": "该库正被另一个连接使用，迁移前无法复制。未做任何更改；请几秒钟后重新打开。" ,
+  'zh-TW': "該庫正被另一個連線使用，遷移前無法複製。未做任何變更；請幾秒鐘後重新開啟。",
+  ko: "볼트가 다른 연결에서 사용 중이어서 마이그레이션 전에 복사할 수 없습니다. 아무것도 변경되지 않았습니다. 몇 초 후 다시 여세요.",
+  ja: "ボールトは別の接続で使用中のため、移行前にコピーできません。何も変更されていません。数秒後にもう一度開いてください。", },
   ...SCRIPTOR_RUNTIME_ERRORS,
   'La copia de Focus está dañada.': {
     en: 'The Focus backup is corrupted.',

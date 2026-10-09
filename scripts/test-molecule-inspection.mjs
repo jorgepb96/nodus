@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { build } from 'esbuild';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const dir = await mkdtemp(path.join(os.tmpdir(), 'molecule-inspection-'));
 await build({ entryPoints: ['shared/moleculeInspection.ts'], outfile: path.join(dir, 'inspection.mjs'), bundle: true, platform: 'node', format: 'esm' });
-const { findSmilesCandidates, findAnswerSpecies, normalizeMoleculeDossier, formatMoleculeDossier, formatStructureAudit, MOLECULE_DOSSIER_SYSTEM_RULE, findStepConditions, declaresRacemic, stepDeclaresRacemic, normalizeRouteAudit, formatRouteAudit, ROUTE_CONTINUITY_SYSTEM_RULE, findRequestedTarget, requestedTargetFor, ROUTE_FIX_PROMPT_LEAD, parseRouteReview, buildRouteReviewRequest, ROUTE_REVIEW_SYSTEM, clampReviewDetail, findStepProse, routeLabelNames, countRouteSteps, findStepNamedSpecies, buildRouteSteps, isBareSmilesName, annotateSpeciesSmiles, formatNameCorrectionNote, formatAuthorStructureNote, formatNamedRouteFixPrompts, formatMissingSpeciesPrompt, isRouteFixPrompt, parseNameFeedback, ROUTE_NAME_FEEDBACK_SYSTEM, formatUnresolvedNameClarification, routeReportsForHistory, classifyCoProducts, smilesHasCarbon, routeStepFailure, routeFixPromptForHistory, formatRouteCheckUnavailable, normalizeReactionPrecedent, formatReactionPrecedents, buildPrecedentQueries, similarityBand, precedentDrawingFor, formatResolutionSourceNote, UNBUILT_STEP_ERROR_PREFIX, isPlaceholderSpecies } = await import(pathToFileURL(path.join(dir, 'inspection.mjs')));
+const { findSmilesCandidates, findAnswerSpecies, normalizeMoleculeDossier, formatMoleculeDossier, formatStructureAudit, MOLECULE_DOSSIER_SYSTEM_RULE, findStepConditions, declaresRacemic, stepDeclaresRacemic, stepDeclaresRearrangement, stepDeclaresRadical, normalizeRouteAudit, formatRouteAudit, ROUTE_CONTINUITY_SYSTEM_RULE, findRequestedTarget, requestedTargetFor, ROUTE_FIX_PROMPT_LEAD, parseRouteReview, buildRouteReviewRequest, ROUTE_REVIEW_SYSTEM, clampReviewDetail, findStepProse, routeLabelNames, countRouteSteps, findStepNamedSpecies, buildRouteSteps, isBareSmilesName, annotateSpeciesSmiles, formatNameCorrectionNote, formatAuthorStructureNote, formatNamedRouteFixPrompts, formatMissingSpeciesPrompt, isRouteFixPrompt, parseNameFeedback, ROUTE_NAME_FEEDBACK_SYSTEM, formatUnresolvedNameClarification, routeReportsForHistory, classifyCoProducts, smilesHasCarbon, routeStepFailure, routeFixPromptForHistory, formatRouteCheckUnavailable, normalizeReactionPrecedent, formatReactionPrecedents, buildPrecedentQueries, similarityBand, precedentDrawingFor, formatResolutionSourceNote, UNBUILT_STEP_ERROR_PREFIX, isPlaceholderSpecies, statedConfiguration, uncheckedRouteNote, routeConversationState, asksForRoute, routeStepSummaries, stripDrawingRequests } = await import(pathToFileURL(path.join(dir, 'inspection.mjs')));
 await build({ entryPoints: ['shared/chatSkills.ts'], outfile: path.join(dir, 'chatSkills.mjs'), bundle: true, platform: 'node', format: 'esm' });
 const { splitChatVisuals } = await import(pathToFileURL(path.join(dir, 'chatSkills.mjs')));
 await build({ entryPoints: ['shared/synthesisPrompt.ts'], outfile: path.join(dir, 'synthesisPrompt.mjs'), bundle: true, platform: 'node', format: 'esm' });
@@ -336,6 +336,52 @@ test('a declared racemate is formatted as a caveat, not a refusal', () => {
 const fixPayload = (fence) => JSON.parse(fence.replace(/^```nodus-route-fix\n/, '').replace(/\n```$/, ''));
 const passingStep = (index, reaction, products = []) => ({ index, reaction, ok: true, balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0, reactants: [], agents: [], products });
 
+test('a step orphaned by a duplicate names the pair, not just the orphan', () => {
+  // The chain-3 shape that sent three fix rounds at the wrong step: a protection gave the free acid
+  // directly, and a later step "acidified" a salt nothing produces to emit the same free acid. The
+  // checker correctly isolates step 1, but the step to delete is step 2.
+  const ACID = 'CC(C)(C)OC(=O)NCC(=O)O';
+  const SALT = 'CC(C)(C)OC(=O)NCC(=O)[O-].[Na+]';
+  const acid = { canonicalSmiles: ACID, name: 'N-(tert-butoxycarbonyl)glycine' };
+  const audit = normalizeRouteAudit({
+    continuous: false, blocked: ['Step 1 is disconnected from the rest of the route.'], links: [],
+    isolated: [0],
+    steps: [
+      { ...passingStep(0, 'a>>b', [acid]) },
+      { ...passingStep(1, 'c>>b', [acid]), reactants: [{ canonicalSmiles: SALT, name: 'sodium N-(tert-butoxycarbonyl)glycinate' }] },
+    ],
+  });
+  const text = formatNamedRouteFixPrompts([[], []], audit);
+  assert.match(text, /Steps 1 and 2 both produce N-\(tert-butoxycarbonyl\)glycine/, 'it names both producers');
+  assert.match(text, /step 2 consumes sodium N-\(tert-butoxycarbonyl\)glycinate, which no step makes/, 'and the unmade reactant of the redundant step');
+  assert.match(text, /delete the redundant one of step 2/, 'and points at the step to remove, not the orphan');
+  // The old advice aimed the author at inserting a step or renaming a carried species, which is
+  // the wrong repair when the defect is a duplicate.
+  assert.doesNotMatch(text, /Insert the missing step where it belongs/, 'no misdirecting advice when a duplicate explains it');
+  // The per-step chip must carry it too: "Fix step 1" pointing at the orphan with no mention of the
+  // duplicate is the original bug, just in a different chip.
+  const perStep = routeFixChips(text).find((chip) => /^Fix step 1$/.test(chip.label));
+  assert.ok(perStep, 'the per-step chip exists');
+  assert.match(perStep.prompt, /Steps 1 and 2 both produce/, 'the per-step chip names the pair as well');
+  assert.match(perStep.prompt, /delete the redundant one of step 2/);
+});
+
+test('a genuinely missing step still gets the original advice', () => {
+  // No duplicate producer, so nothing is known about why the step floats free: keep the old wording.
+  const audit = normalizeRouteAudit({
+    continuous: false, blocked: ['Step 2 is disconnected from the rest of the route.'], links: [],
+    isolated: [1],
+    steps: [
+      passingStep(0, 'a>>b', [{ canonicalSmiles: 'CCO', name: 'ethanol' }]),
+      passingStep(1, 'c>>d', [{ canonicalSmiles: 'CCCCO', name: 'butan-1-ol' }]),
+    ],
+  });
+  const text = formatNamedRouteFixPrompts([[], []], audit);
+  assert.match(text, /Step 2 is disconnected/);
+  assert.match(text, /Insert the missing step where it belongs/, 'the original advice is kept when no duplicate explains it');
+  assert.doesNotMatch(text, /orphaned by a duplicate/);
+});
+
 test('the requested target is read from the synthesis request', () => {
   assert.equal(findRequestedTarget('Propose a synthesis of tropinone (SMILES: CN1C2CCC1CC(=O)C2). You may use methylamine (CN).'), 'CN1C2CCC1CC(=O)C2');
   assert.equal(findRequestedTarget('Propose a step-by-step laboratory synthesis of sulfanilamide (4-aminobenzenesulfonamide, SMILES: Nc1ccc(cc1)S(N)(=O)=O), starting from benzene (c1ccccc1)'), 'Nc1ccc(cc1)S(N)(=O)=O');
@@ -350,6 +396,35 @@ test('the requested target is read from the synthesis request', () => {
   assert.equal(findRequestedTarget('Propose a synthesis of aspirin starting from phenol (SMILES: Oc1ccccc1)'), null, 'a starting material is not the target');
   assert.equal(findRequestedTarget('Compare and contrast to this approach: Step 1 phenol, SMILES: Oc1ccccc1'), null);
   assert.equal(findRequestedTarget('What is the SMILES: of water?'), null);
+});
+
+test('a target written bare, the way a person types it, is found', () => {
+  // The shape that exposed this, reduced from a real request: no `SMILES:` label anywhere, which
+  // is how someone types it by hand. It used to return null, and because the evidence gather
+  // returns null on a missing target before it logs anything, every such run went without
+  // evidence and left no trace that it had.
+  const bare = 'Propose a step-by-step laboratory synthesis of'
+    + ' OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O'
+    + ' starting from natural acids and standard precursors. Number each step.';
+  assert.equal(findRequestedTarget(bare), 'OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O');
+  assert.equal(findRequestedTarget('Propose a step-by-step laboratory synthesis of CC(=O)Oc1ccccc1C(=O)O starting from phenol.'), 'CC(=O)Oc1ccccc1C(=O)O');
+  assert.equal(findRequestedTarget('Propose a laboratory synthesis of CC(=O)Oc1ccccc1C(=O)O.'), 'CC(=O)Oc1ccccc1C(=O)O', 'a trailing full stop is not part of the structure');
+  // The cut-off still applies, so what follows "starting from" is a precursor, not the target.
+  assert.equal(findRequestedTarget('Propose a synthesis of CC(=O)Oc1ccccc1C(=O)O starting from Cc1ccc([N+](=O)[O-])cc1.'), 'CC(=O)Oc1ccccc1C(=O)O');
+
+  // A NAME in that position must not be taken as a structure: the gather would then go looking
+  // for a molecule nobody asked for. Every numbered name satisfies the loose `isSmilesLike` shape
+  // test because a locant reads as a ring closure, which is why the strict test is used here.
+  assert.equal(findRequestedTarget('Propose a step-by-step laboratory synthesis of 4-nitrotoluene starting from toluene.'), null);
+  assert.equal(findRequestedTarget('Propose a synthesis of (2S)-2-amino-3-(4-hydroxyphenyl)propanoic acid starting from phenol.'), null);
+  assert.equal(findRequestedTarget('Propose a synthesis of aspirin from salicylic acid and ethanoic anhydride.'), null);
+  assert.equal(findRequestedTarget('Propose a synthesis of benzene-1,2-diamine from nitrobenzene.'), null, 'a comma-separated locant is a name, never a structure');
+  // No request verb, so nothing is a target however structure-shaped it looks.
+  assert.equal(findRequestedTarget('What is the molecular formula of CC(=O)Oc1ccccc1C(=O)O?'), null);
+  // The documented gap: no branch, bond or aromatic ring, so the strict test refuses it bare. It
+  // still resolves through the labelled form, which is the trade this makes on purpose.
+  assert.equal(findRequestedTarget('Propose a synthesis of C1COCCO1 starting from ethane-1,2-diol.'), null);
+  assert.equal(findRequestedTarget('Propose a synthesis of dioxane (SMILES: C1COCCO1) starting from ethane-1,2-diol.'), 'C1COCCO1');
 
   const request = 'Propose a synthesis of tropinone (SMILES: CN1C2CCC1CC(=O)C2).';
   const correction = `${ROUTE_FIX_PROMPT_LEAD}\n\nThe route checker rejected these steps: ...`;
@@ -1535,6 +1610,7 @@ test('a spectator ion the solver left at 1:1 still lets the salts show whole (ca
   assert.match(line, /3 cyclohexanol \(C6H12O\) \+ 4 sulfuric acid \(H2O4S\) \+ sodium dichromate \(Cr2Na2O7\) → 3 cyclohexanone \(C6H10O\) \+ 7 water \(H2O\) \+ chromium\(III\) sulfate \(Cr2O12S3\) \+ sodium sulfate \(Na2O4S\)$/);
 });
 
+
 test('a stereo declaration counts wherever it sits in the step, and a bold lead-in keeps its prose (Sonnet 5.5, hard suite)', () => {
   const lead = 'Treat the triketone with pyrrolidine in methanol at room temperature. The methyl ketone enolate attacks one ring carbonyl and closes the second six-membered ring. The step is an isomerization with no gain or loss of atoms. It creates two stereocentres, the carbon bearing the OH and the methyl-bearing quaternary carbon. No chiral catalyst is used, so the stereochemistry of this step is not controlled and the ketol is racemic.';
   const answer = [
@@ -1643,6 +1719,33 @@ test('a passing step states the bonds it forms, so the reviewer reads the checke
   assert.doesNotMatch(text, /- Step 3 OK — balanced\. Bonds made/);
   // Every bond type, not only those at carbon: an N-oxidation by a peroxide.
   assert.match(text, /- Step 4 OK — balanced\. Bonds made \(\+\) and broken \(−\): \+1 N–O, −1 O–O\./);
+});
+
+test('rearrangement and radical declarations are read per step, and a negated mention is not one', () => {
+  const answer = [
+    '**Step 1 — Acid-catalysed isomerisation of α-pinene to camphene.** The pinane skeleton reorganises.',
+    'Reactants: (1R,5R)-2,6,6-trimethylbicyclo[3.1.1]hept-2-ene',
+    'Products: camphene',
+    '',
+    '**Step 2 — Hydroboration–oxidation.** Boron adds to the less substituted carbon; no rearrangement occurs.',
+    'Reactants: camphene; borane',
+    '',
+    'Products: bornan-2-ol',
+    '',
+    '**Step 3 — Wagner–Meerwein shift to isobornyl acetate.**',
+    'Reactants: camphene; acetic acid',
+    'Products: isobornyl acetate',
+    '',
+    '**Step 4 — Allylic bromination with NBS under light.**',
+    'Reactants: cyclohexene; N-bromosuccinimide',
+    'Products: 3-bromocyclohexene',
+    '',
+    '**Step 5 — Bromination of the ketone.** This is not a radical reaction.',
+    'Reactants: cyclopentanone; bromine',
+    'Products: radical-free 2-bromocyclopentanone',
+  ].join('\n');
+  assert.deepEqual(stepDeclaresRearrangement(answer, 5), [true, false, true, false, false]);
+  assert.deepEqual(stepDeclaresRadical(answer, 5), [false, false, false, true, false]);
 });
 
 test('step prose stays aligned when bold lead-in steps and full-line step headings are mixed', () => {
@@ -1794,4 +1897,431 @@ test('every fragment of every species reaches the equation, including repeated c
   ]]);
   assert.equal(agents[0], 'CCO>O=S(=O)(O)O>CC=O');
   assert.equal(buildRouteSteps([[{ role: 'reactant', smiles: 'CCO' }]])[0], '', 'no product is still unbuilt');
+});
+
+test('the configuration report names each block, what was measured, and what the name asserts', () => {
+  // The user-visible half of the configuration work. A block of the opposite configuration has
+  // the same formula, atom counts and constitution as the intended one, so the report is the only
+  // place a reader can see the difference — and it must never imply a verdict, because which
+  // letter belongs to a series flips when a sulfur-bearing branch outranks the carboxyl.
+  const species = (input, name, alphaConfiguration) => ({
+    input, canonicalSmiles: input, skeletonSmiles: input, formula: 'C9H11NO2', charge: 0,
+    heavyAtoms: 12, stereocentres: 1, unspecifiedStereocentres: 0, name, alphaConfiguration,
+  });
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [{
+      index: 0, reaction: 'a.b>>c', ok: true, balanced: true, chargeBalanced: true, differences: [],
+      unspecifiedStereocentres: 0, links: [],
+      reactants: [
+        species('N[C@@H](C)C(=O)O', 'Fmoc-3-(2-naphthyl)-L-Ala-OH', '(R)'),
+        species('N[C@H](C)C(=O)O', 'Fmoc-Asn(Trt)-OH', '(S)'),
+        species('CC(=O)O', 'acetic acid', undefined),
+        species('N[C@H](C)C(=O)O', '(2S)-2-amino-3-phenylpropanoic acid', '(S)'),
+        species('N[C@@H](C)C(=O)O', '(2S)-2-amino-4-methylpentanoic acid', '(R)'),
+      ],
+      agents: [], products: [species('CCO', 'ethanol', undefined)],
+    }],
+  });
+  const text = formatRouteAudit(audit, [[]], null, false, []);
+  assert.match(text, /Building blocks, alpha configuration as measured \(2 \(R\), 2 \(S\)\)/, 'it tallies what it measured');
+  assert.match(text, /a block of the wrong configuration balances exactly like the right one/, 'and says why it is reported at all');
+  // What the name asserts is shown beside the measurement, never resolved into a verdict.
+  assert.match(text, /Fmoc-3-\(2-naphthyl\)-L-Ala-OH \(R\), name says L/, 'an L- name beside an (R) measurement');
+  assert.match(text, /Fmoc-Asn\(Trt\)-OH \(S\)(?! ?, name says)/, 'a name that asserts nothing gets no claim');
+  // Two CIP statements CAN be compared directly, with no L/D mapping involved.
+  assert.match(text, /\(2S\)-2-amino-3-phenylpropanoic acid \(S\), name agrees/, 'matching descriptors agree');
+  // The asserted descriptor is normalised to the measured one's form, so the two read side by side.
+  assert.match(text, /\(2S\)-2-amino-4-methylpentanoic acid \(R\), NAME SAYS \(S\)/, 'conflicting descriptors are called out');
+  // A species with no such centre is left out of the configuration line rather than reported as
+  // unknown. It still appears in the step's equation, which is where every species belongs.
+  const alphaLine = text.split('\n').find((line) => line.includes('alpha configuration as measured'));
+  assert.ok(alphaLine, 'the configuration line is present');
+  assert.doesNotMatch(alphaLine, /acetic acid/, 'a reactant with no alpha centre is not in it');
+  assert.doesNotMatch(alphaLine, /ethanol/, 'nor is a product');
+  assert.match(text, /acetic acid/, 'but it is still in the step equation');
+});
+
+test('what a name asserts about configuration is read, and only when it says something', () => {
+  for (const [name, expected] of [
+    ['Fmoc-3-(2-naphthyl)-L-Ala-OH', 'L'],
+    ['N-acetyl-S-trityl-beta,beta-dimethyl-D-glucosamine', 'D'],
+    ['(2R)-2-(9H-fluoren-9-ylmethoxycarbonylamino)propanoic acid', '(R)'],
+    ['(2S)-2-aminopropanoic acid', '(S)'],
+    ['(S)-naproxen', '(S)'],
+    ['Fmoc-Asn(Trt)-OH', null],
+    ['benzocaine', null],
+    ['cyclohexanol', null],
+    // A lone capital L or D inside a word must not read as a configuration.
+    ['LDA', null],
+    ['DMF', null],
+  ]) {
+    assert.equal(statedConfiguration(name), expected, name);
+  }
+  assert.equal(statedConfiguration(undefined), null, 'no name asserts nothing');
+});
+
+test('a systematic name with braces is a species, not markup', () => {
+  // Braces are standard IUPAC punctuation for a nested substituent prefix, and every protected
+  // building block carries them. They used to be treated as a sign of markup, so a step that
+  // declared such a species BY NAME lost it: the step kept its other reactant, the equation was
+  // solved on something the author never wrote, and the report told the author a species it had
+  // declared was missing from Reactants. Ten steps of one route failed that way, through three
+  // fix rounds, with no unresolved-name message anywhere.
+  const named = '(2R)-2-{[(9H-fluoren-9-yl)methoxycarbonyl]amino}-3-(pyridin-3-yl)propanoic acid';
+  const answer = [
+    '**Step 1 — Couple the building block.** One amide forms.',
+    '',
+    `Reactants: the chain on the support — \`*NC(=O)CNC\`;${named}`,
+    'Products: the extended chain — `*NC(=O)CN(C)C(=O)[C@H](Cc1cccnc1)NC(=O)OCC1c2ccccc2-c2ccccc21`',
+    'Byproducts: water — `O`',
+    'Agents: N,N-dimethylformamide',
+  ].join('\n');
+  const species = findStepNamedSpecies(answer, 1);
+  const reactants = species[0].filter((entry) => entry.role === 'reactant');
+  assert.equal(reactants.length, 2, 'the named building block must be one of the reactants');
+  assert.ok(reactants.some((entry) => entry.name === named), 'the braced name must survive verbatim');
+
+  // And markup still does not become a species: angle brackets, quotes and pipes remain tells.
+  const markup = [
+    '**Step 1 — A drawing, not a declaration.**',
+    '',
+    'Reactants: <text x="10">Reactants: ethanol</text>;ethanol — `CCO`',
+    'Products: ethanal — `CC=O`',
+  ].join('\n');
+  const scraped = findStepNamedSpecies(markup, 1)[0].filter((entry) => entry.role === 'reactant');
+  assert.ok(!scraped.some((entry) => entry.name.includes('<text')), 'markup must still be rejected');
+});
+
+test('one fault repeated across steps is stated once, as a pattern', () => {
+  // Ten copies of the same sentence read as ten problems and invite ten local edits. One route
+  // failed ten coupling steps identically and three correction rounds edited them one at a time
+  // without addressing the pattern, so the repeat is now named up front.
+  // ok: true with balanced: false is the real shape of a step that parsed and failed its
+  // equation; ok: false short-circuits to "could not be parsed" and would group everything.
+  const step = (index, missing) => ({
+    index, reaction: 'a>>b', ok: true, balanced: false, chargeBalanced: true,
+    differences: [`The declared species cannot be balanced: N: reactants 2, products ${missing}.`],
+    unspecifiedStereocentres: 0, reactants: [], agents: [], products: [],
+  });
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [step(0, 4), step(2, 5), step(4, 6)],
+    links: [],
+  });
+  const labels = [[], [], [], [], []];
+  const chips = routeFixChips(formatNamedRouteFixPrompts(labels, audit));
+  const backwards = chips.find((chip) => chip.label === 'Fix from the target backwards');
+  assert.ok(backwards, 'the whole-route backwards chip exists');
+  for (const chip of [chips[0], backwards]) {
+    assert.match(chip.prompt, /One fault repeats below, so this is one mistake made several times/);
+    assert.match(chip.prompt, /step 1, step 3, step 5 all fail the same way/);
+    // and it must quote the real failure, not a generic parse message
+    assert.match(chip.prompt, /all fail the same way: not balanced \(The declared species cannot be balanced/);
+  }
+  // A per-step chip must NOT carry the pattern line: it is scoped to one step by design.
+  const single = chips.find((chip) => chip.label === 'Fix step 1');
+  if (single) assert.doesNotMatch(single.prompt, /One fault repeats below/);
+});
+
+test('distinct faults are not collapsed into a false pattern', () => {
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [
+      { index: 0, reaction: 'a>>b', ok: true, balanced: false, chargeBalanced: true,
+        differences: ['The declared species cannot be balanced: N: reactants 2, products 4.'],
+        unspecifiedStereocentres: 0, reactants: [], agents: [], products: [] },
+      { index: 1, reaction: 'c>>d', ok: true, balanced: false, chargeBalanced: true,
+        differences: ['This step inverts a stereocentre: its reactants carry 1 (S) and 0 (R).'],
+        unspecifiedStereocentres: 0, reactants: [], agents: [], products: [] },
+    ],
+    links: [],
+  });
+  const chips = routeFixChips(formatNamedRouteFixPrompts([[], []], audit));
+  assert.doesNotMatch(chips[0].prompt, /One fault repeats below/);
+});
+
+test('a bond check that could not run is said out loud, and does not fail the route', () => {
+  // The bond-edit search is budgeted and gives up on a hard graph. Until this was reported, a
+  // route whose bonds were never examined read exactly like one whose bonds were sound — the
+  // fourth instance in one session of a check that did not run looking like a check that passed.
+  const facts = (change, reason) => ({
+    change, formed: 0, cleaved: 0, ringSizes: [], migration: false, reorganised: false,
+    unactivated: 0, unactivatedHetero: 0, heteroElements: [], ...(reason ? { reason } : {}),
+  });
+  const step = (index, skeleton) => ({
+    index, reaction: 'CCO>>CC=O', ok: true, balanced: true, chargeBalanced: true, differences: [],
+    unspecifiedStereocentres: 0, reactants: [], agents: [], products: [], skeleton,
+  });
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [step(0, facts('none')), step(1, facts('unchecked', 'the search ran out of budget'))],
+    links: [{ from: 0, to: 1, reason: 'carried' }],
+  });
+  const text = formatRouteAudit(audit);
+  // The verdict is unchanged: a step whose bonds could not be examined has done nothing wrong.
+  assert.match(text, /\*\*Route checked: balanced and connected\*\*/);
+  // But the gap in coverage is stated, naming the step and the reason.
+  assert.match(text, /Not examined: the bond-edit check could not settle 1 of 2 step\(s\) \(step 2\)/);
+  assert.match(text, /gap in coverage, not a finding about the chemistry/);
+  assert.match(text, /the search ran out of budget/);
+
+  // And when every step was examined, nothing extra is said.
+  const clean = normalizeRouteAudit({
+    continuous: true, blocked: [],
+    steps: [step(0, facts('none')), step(1, facts('formed'))],
+    links: [{ from: 0, to: 1, reason: 'carried' }],
+  });
+  assert.doesNotMatch(formatRouteAudit(clean), /could not settle/);
+});
+
+test('a replayed answer carries its text, never its drawings', () => {
+  // A drawing has already been rendered and read; replaying its markup only spends the window.
+  // Dropping the route-drawings section was not enough, because the precedent section is KEPT
+  // for the latest answer and carries drawings of its own. Measured on a real route: 652,000
+  // characters of answer, 604,000 of it SVG, after which the model said the preceding answer was
+  // not in its history and rebuilt the route from scratch instead of correcting it.
+  const answer = [
+    '**Step 1 — Protect the amine.**',
+    'Reactants: glycine; di-tert-butyl dicarbonate',
+    'Products: N-(tert-butoxycarbonyl)glycine',
+    '',
+    '### Route check (RDKit)',
+    '- Step 1 OK — balanced.',
+    '',
+    '### Known reactions (Open Reaction Database)',
+    'A precedent worth keeping: amide formation by acylation of an amine.',
+    // a realistic size: a real route drawing runs to tens of thousands of characters
+    `<svg xmlns="http://www.w3.org/2000/svg" width="300">${'<path d="M 1 2 L 3 4"/>'.repeat(400)}</svg>`,
+    'Another precedent line.',
+    '',
+    '### Route drawings (RDKit)',
+    `<svg xmlns="http://www.w3.org/2000/svg">${'<circle r="2"/>'.repeat(400)}</svg>`,
+  ].join('\n');
+
+  const replayed = routeReportsForHistory(answer, true);
+  assert.ok(!replayed.includes('<svg'), 'no drawing markup survives');
+  assert.ok(!replayed.includes('<path'), 'nor its contents');
+  // The text around the drawings is what the next turn reasons from, so it must survive.
+  assert.match(replayed, /amide formation by acylation of an amine/);
+  assert.match(replayed, /Another precedent line/);
+  assert.match(replayed, /Reactants: glycine/);
+  assert.ok(replayed.length < answer.length / 10, 'and it is far smaller: measured 94-97% on real answers');
+
+  // A truncated drawing must not claim the rest of the answer.
+  const unterminated = 'Keep this.\n### Known reactions (Open Reaction Database)\nprecedent\n<svg width="9"><path d="M 1';
+  const cut = routeReportsForHistory(unterminated, true);
+  assert.ok(!cut.includes('<svg'), 'an unterminated drawing is removed too');
+  assert.match(cut, /Keep this/);
+});
+
+test('a correction that re-states no route says so, instead of returning prose in silence', () => {
+  const correction = `${ROUTE_FIX_PROMPT_LEAD}\n\n- Step 4: not balanced (…)`;
+
+  // Verbatim from the reply that exposed this: the model declined to re-state the route, on the
+  // false premise that the earlier steps were missing from its context. Whatever its reason, the
+  // round produced nothing checkable and the application said nothing.
+  // The decisive sentence, verbatim. The reply's opening line is left out deliberately: it
+  // names the chemistry, and what matters here is only that the reply carries no route.
+  const refusedReply = "I cannot faithfully re-output the **complete route while preserving passing steps**,"
+    + " because the supplied conversation contains only the rejected steps 4 and 5\u2014not the original"
+    + " steps 1\u20133, their prose and species lists, or any later workup.";
+  assert.match(uncheckedRouteNote(refusedReply, { correction: true }), /re-stated no route/);
+  assert.match(uncheckedRouteNote(refusedReply, { correction: true }), /last checked route is the one above/);
+
+  // A correction that DID re-state a route is left alone.
+  const withRoute = ['**Step 1 — Something.** Prose.', 'Reactants: ethanol — `CCO`', 'Products: ethanal — `CC=O`'].join('\n');
+  assert.equal(uncheckedRouteNote(withRoute, { correction: true }), '', 'a route was re-stated, so there is nothing to report');
+  assert.equal(uncheckedRouteNote(withRoute, { correction: false }), '', 'and the same holds for a first answer');
+  // An empty answer has no route either, and on a route turn that is worth saying. Whether the
+  // note is said at all is the caller's decision, through `asksForRoute`.
+  assert.match(uncheckedRouteNote('', { correction: false }), /Nothing in this reply was checked/);
+  // The caller's half of this is checked below, on the real pair of turns.
+});
+
+test('a route answer the checker cannot read says nothing was checked', () => {
+  // Verbatim shape from the answer that exposed this: nine numbered steps with balanced equations
+  // and library citations, written with `### 1.` headings and display-maths arrows instead of the
+  // contract. `countRouteSteps` reads 0 — no `Step N` heading, no role label — so not one step was
+  // resolved, balanced or drawn, and the reply used to be returned exactly as written.
+  const offContract = [
+    '## Numbered synthesis',
+    '',
+    '### 1. Prepare the ester hydrochloride — A',
+    '',
+    String.raw`\[ \mathrm{X + CH_2=C(CH_3)_2 + HCl \rightarrow A} \]`,
+    '',
+    '**Proposed conditions:** dry dioxane, 0 °C then room temperature.',
+    '',
+    '### 2. Install the carbamate — B',
+    '',
+    String.raw`\[ \mathrm{A + ClCO_2CH_2Ph + 2NaHCO_3 \rightarrow B + 2NaCl + 2CO_2 + 2H_2O} \]`,
+  ].join('\n');
+  assert.equal(countRouteSteps(offContract), 0, 'the premise: the parser finds no step at all');
+
+  const note = uncheckedRouteNote(offContract, { correction: false });
+  assert.match(note, /Nothing in this reply was checked/);
+  assert.match(note, /Step N/, 'it names the heading the parser reads');
+  assert.match(note, /Reactants:/, 'and the labelled lines');
+  assert.match(note, /unverified prose/);
+  // Not the correction wording: nothing was re-stated here, this was the first answer.
+  assert.ok(!note.includes('re-stated no route'));
+
+  // The sibling case is left to ROUTE_MISSING_SPECIES_LEAD, which needs steps to exist. Headings
+  // without labels count as steps, so this note must stay out of its way.
+  const headingsOnly = '### Step 1 — Something.\nProse only.\n\n### Step 2 — Something else.\nMore prose.';
+  assert.ok(countRouteSteps(headingsOnly) > 0, 'headings alone are steps');
+  assert.equal(uncheckedRouteNote(headingsOnly, { correction: false }), '', 'that case has its own chip');
+});
+
+test('a route conversation stays one when the author types a follow-up', () => {
+  // The real pair of turns, reduced to what the predicates read. The request opens the lane; the
+  // answer asks a question instead of delivering a route; the author answers the question.
+  const request = 'Propose a step-by-step laboratory synthesis of CC(=O)Oc1ccccc1C(=O)O starting from'
+    + ' standard precursors. Number each step; for each, give the reagents/conditions and the name'
+    + ' of the product formed.';
+  const asked = 'Before proposing the route, I need to resolve one stereochemical ambiguity that'
+    + ' affects the starting material. Which of the two do you intend?';
+  const followUp = 'the alpha carbon will not have stereochemistry so i think you can solve this directly.';
+
+  assert.ok(looksLikeSynthesisRequest(request), 'the premise: the first message reads as a request');
+  assert.ok(!looksLikeSynthesisRequest(followUp), 'and the follow-up does not');
+  assert.ok(!isRouteFixPrompt(followUp), 'nor is it one of our own chips');
+
+  const opening = [{ role: 'user', content: request }];
+  assert.equal(routeConversationState(opening).request, request);
+  assert.equal(routeConversationState(opening).delivered, false);
+  assert.ok(asksForRoute(opening), 'the request itself asks for a route');
+
+  // The turn that used to fall out of the lane: no contract was sent, no evidence gathered, and
+  // the answer that then carried the route was the one turn nothing was asked of.
+  const pushedBack = [...opening, { role: 'assistant', content: asked }, { role: 'user', content: followUp }];
+  assert.equal(routeConversationState(pushedBack).request, request, 'the anchor is the request, not the follow-up');
+  assert.equal(routeConversationState(pushedBack).delivered, false, 'a question is not a delivered route');
+  assert.ok(asksForRoute(pushedBack), 'so this turn still asks for a route');
+
+  // Once an answer carries a readable route the contract stops being re-sent: a correction brings
+  // its own rules, and an ordinary question after a finished route is not answered with a route.
+  const delivered = [...opening, { role: 'assistant', content: ['**Step 1 — Esterification.** Prose.',
+    'Reactants: salicylic acid; ethanoic anhydride', 'Products: acetylsalicylic acid', 'Byproducts: ethanoic acid', 'Agents: none'].join('\n') }];
+  assert.equal(routeConversationState(delivered).delivered, true);
+  assert.ok(!asksForRoute([...delivered, { role: 'user', content: 'what does the anhydride do here?' }]),
+    'a question after a finished route is just a question');
+
+  // A conversation that never asked for a route is never in the lane, however much chemistry it
+  // talks about — otherwise every molecule question would be told its prose went unchecked.
+  const neverAsked = [{ role: 'user', content: 'what is the molecular formula of benzene?' },
+    { role: 'assistant', content: 'C6H6.' }, { role: 'user', content: 'and its boiling point?' }];
+  assert.equal(routeConversationState(neverAsked).request, null);
+  assert.ok(!asksForRoute(neverAsked));
+
+  // A fix chip always asks, whatever the history looks like.
+  assert.ok(asksForRoute([{ role: 'user', content: `${ROUTE_FIX_PROMPT_LEAD}\n\n- Step 2: not balanced` }]));
+  assert.ok(!asksForRoute([]), 'and an empty conversation asks for nothing');
+});
+
+test('the report starts the step support before it waits on the final report', async () => {
+  // The two largest costs in a route report were running end to end: measured on one route,
+  // drawings 52.9s then step support 41.0s inside a 96.7s total, where the precedent lookup they
+  // both wait on took 6.4s. The support needs the lookup's classes and nothing else — in
+  // particular not the drawings — so it belongs beside them, not behind them.
+  const source = await readFile(new URL('../electron/ai/moleculeInspection.ts', import.meta.url), 'utf8');
+  const support = source.indexOf("timed('step support'");
+  // Renamed when every diagram moved into one gated final report; the ordering it guards is the
+  // same, since that report is still the phase the drawings happen inside.
+  const drawings = source.indexOf("await timed('final report'");
+  const review = source.indexOf("timed('review'");
+  assert.ok(support > 0 && drawings > 0 && review > 0, 'all three phases are present');
+  assert.ok(support > review, 'the support follows the review, which starts the precedent lookup chain');
+  assert.ok(support < drawings, 'and is started before the final report is awaited, not after');
+});
+
+test('a step that balanced only by refiling a declared reactant is a failing step', () => {
+  // One error class took two paths, and only one of them reached the model. When the solver gives
+  // a listed species coefficient 0 and no refiling rescues the balance, the step reports NOT
+  // balanced and names it — measured on a real run, five such instances were all five fixed by the
+  // correction round. When refiling DOES rescue it, the step reported balanced and the finding
+  // went to the report only; the one instance of that survived its correction round untouched.
+  const refiled = '"trifluoroacetic acid" was listed under Reactants, and the step balances only if'
+    + ' it takes no part, so the check treated it as a condition. If that is right, list it under'
+    + ' Agents. If it is genuinely consumed, then the product it becomes is missing from this step,'
+    + ' and naming it is what makes the equation close.';
+  const base = {
+    index: 0, reaction: 'a>>b', ok: true, reactants: [], agents: [], products: [],
+    balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0,
+  };
+  // The step balances — that is not in dispute and is not what is reported.
+  assert.equal(routeStepFailure({ ...base, refiledReactant: refiled }), refiled);
+  // Which path it takes turns on how far the rescue search reaches, not on the chemistry, so a
+  // step with nothing refiled is still clean.
+  assert.equal(routeStepFailure(base), null);
+  // The ordering matters: a step that does not balance at all reports that first, because the
+  // refiled note presumes a balance was reached.
+  assert.match(routeStepFailure({ ...base, balanced: false, differences: ['O: reactants 2, products 1'], refiledReactant: refiled }), /not balanced/);
+});
+
+test('a route answer draws only through the final report', () => {
+  // The route lane decides what is drawn and when. A `chemistry-plan` fence let the model draw on
+  // any turn whatever the verdict; on the 30-target cascade all 58 of them failed the capability's
+  // 8000-character limit and printed a raw application error into the answer instead (B45).
+  const answer = 'Step 1 is the bromination.\n\n```chemistry-plan\n{"draw":"bromobenzene","question":"…"}\n```\n\nStep 2 follows.';
+  const { text, removed } = stripDrawingRequests(answer);
+  assert.equal(removed, 1);
+  assert.doesNotMatch(text, /chemistry-plan/, 'the directive cannot survive, or the pipeline runs it');
+  assert.match(text, /the final report draws them all/, 'and the gap says why nothing was drawn');
+  // The prose on both sides is the model's answer and is kept.
+  assert.match(text, /Step 1 is the bromination\./);
+  assert.match(text, /Step 2 follows\./);
+  // Ordinary chat is untouched: nothing here runs unless the turn asked for a route.
+  assert.equal(stripDrawingRequests('Draw me aspirin.').removed, 0);
+});
+
+test('every step of a passing route is summarised the same way the check reports it', () => {
+  // The final report prints a summary per step beside its diagram. It shares its formatting with
+  // the route check block so the two cannot drift — which is the B44 failure mode, one step
+  // described two different ways in one answer.
+  const audit = normalizeRouteAudit({
+    continuous: true, blocked: [], links: [],
+    steps: [{
+      index: 0, reaction: 'c1ccccc1.BrBr>>Brc1ccccc1.Br', ok: true, balanced: true, chargeBalanced: true,
+      differences: [], unspecifiedStereocentres: 0,
+      reactants: [{ canonicalSmiles: 'c1ccccc1', formula: 'C6H6', heavyAtoms: 6 }, { canonicalSmiles: 'BrBr', formula: 'Br2', heavyAtoms: 2 }],
+      agents: [], products: [{ canonicalSmiles: 'Brc1ccccc1', formula: 'C6H5Br', heavyAtoms: 7 }, { canonicalSmiles: 'Br', formula: 'HBr', heavyAtoms: 1 }],
+    }],
+  });
+  const [first] = routeStepSummaries(audit, [[]]);
+  assert.equal(first.index, 0);
+  assert.match(first.summary, /C6H6/);
+  assert.match(first.summary, /→/, 'both sides of the equation are shown');
+  assert.match(first.summary, /C6H5Br/);
+  // No verdict in the line: the report only prints when every step already passed.
+  assert.doesNotMatch(first.summary, /\bOK\b|\bFAIL\b/);
+});
+
+test('the step line and the route verdict cannot disagree about which step failed', () => {
+  // B44, found on the 30-target small-molecule cascade: 27 of 90 failing turns printed
+  // "- Step N OK — balanced" directly under "Route check failed — 1 of N step(s) do not pass
+  // (step N)". The header asked `routeStepFailure`; the step line re-listed the causes by hand and
+  // did not know about `monatomicSpecies` or `refiledReactant`. 4-bromoaniline and fluorobenzene
+  // each spent every fix round at three separate rungs being told the step was fine and not fine
+  // at once, and neither ever recovered. Both verdicts now come from the one predicate.
+  const base = {
+    index: 0, reaction: 'a>>b', ok: true, reactants: [], agents: [], products: [],
+    balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0,
+  };
+  const lone = '`[Br]` should be `BrBr`. A lone atom of that element is not a species a route uses:'
+    + ' its free form is diatomic.';
+  for (const [cause, step] of [['monatomicSpecies', { ...base, monatomicSpecies: lone }],
+    ['refiledReactant', { ...base, refiledReactant: 'water was listed under Reactants.' }]]) {
+    const audit = normalizeRouteAudit({ continuous: true, blocked: [], steps: [step], links: [] });
+    const text = formatRouteAudit(audit);
+    const named = /do not pass \(step 1\)/.test(text);
+    const line = text.split('\n').find((entry) => entry.startsWith('- Step 1'));
+    assert.equal(named, line.startsWith('- Step 1 FAIL'),
+      `${cause}: the header and the step line must agree — header named it: ${named}, line: ${line}`);
+    // And the line has to say WHY. A lone atom printed no sentence at all, so the step failed
+    // while naming no fault, which is the half of the bug the model could not work around.
+    assert.ok(line.includes(cause === 'monatomicSpecies' ? 'diatomic' : 'listed under Reactants'),
+      `${cause}: the step line names the fault it failed on — got: ${line}`);
+  }
 });

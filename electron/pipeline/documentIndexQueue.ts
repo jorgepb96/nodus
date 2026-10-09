@@ -554,7 +554,12 @@ class DocumentIndexQueue {
           logPipelineWarning({ subject: 'subjectIndexing', code: 'queue_paused', reason: 'reasonCancelled', detail: work.title });
           return;
         }
-        if (message === 'DOCUMENT_SOURCE_CHANGED') {
+        // A passage run that reached this work after the index prepared its passages
+        // (a deep scan's chained passage step, a per-work Retry) fences the index's
+        // publication. The work itself is fine and the section analyses are
+        // checkpointed under this job, so retry it like a source change instead of
+        // failing it for good and throwing the analysis away.
+        if (message === 'DOCUMENT_SOURCE_CHANGED' || message === 'documentary_publication_superseded') {
           requeueDocumentIndexJobForSourceChange(job.jobId);
           logPipelineWarning({ subject: 'subjectIndexing', code: 'source_changed', reason: 'reasonSourceChanged', detail: work.title });
           return;

@@ -9,17 +9,36 @@ for (let n = 0; n < 256; n += 1) {
   CRC_TABLE[n] = value >>> 0;
 }
 
-function updateCrc(crc: number, data: Buffer): number {
+function updateCrcInJs(crc: number, data: Buffer): number {
   let next = crc;
   for (const byte of data) next = CRC_TABLE[(next ^ byte) & 0xff] ^ (next >>> 8);
   return next >>> 0;
 }
 
+/**
+ * The running CRC-32 of an entry, in the pre/post-conditioned form ZIP writers keep (start at
+ * 0xffffffff, xor at the end). The byte loop above ran at 186 MiB/s on the main process: a 2.8 GB
+ * vault plus its 1.1 GB encrypted archive spent ~21 s of event-loop time in it on every backup.
+ * zlib's native crc32 (Node 22.2+, Electron's runtime) does the same 512 MiB in 22 ms.
+ */
+const nativeCrc32 = (zlib as { crc32?: (data: Buffer, value?: number) => number }).crc32;
+function updateCrc(crc: number, data: Buffer): number {
+  // zlib.crc32 takes and returns the finished value, so undo and redo the conditioning around it.
+  if (nativeCrc32) return (nativeCrc32(data, (crc ^ 0xffffffff) >>> 0) ^ 0xffffffff) >>> 0;
+  return updateCrcInJs(crc, data);
+}
+
 function u16(value: number): Buffer { const out = Buffer.allocUnsafe(2); out.writeUInt16LE(value, 0); return out; }
-function u32(value: number): Buffer { const out = Buffer.allocUnsafe(4); out.writeUInt32LE(value >>> 0, 0); return out; }
+function u32(value: number): Buffer {
+  // Never wrap: a size or offset past 4 GiB must go through the ZIP64 fields, not lose its top bits.
+  if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) throw new RangeError(`ZIP field out of range: ${value}`);
+  const out = Buffer.allocUnsafe(4); out.writeUInt32LE(value, 0); return out;
+}
+function u64(value: number): Buffer { const out = Buffer.allocUnsafe(8); out.writeBigUInt64LE(BigInt(value), 0); return out; }
 
 interface CentralEntry {
   name: Buffer;
+  zip64: boolean;
   method: 0 | 8;
   crc: number;
   compressed: number;
@@ -27,9 +46,18 @@ interface CentralEntry {
   offset: number;
 }
 
-/** Minimal sequential ZIP32 writer with data descriptors. It invokes
- * `zlib.createDeflateRaw` explicitly, so tests can prove compression is asynchronous. */
+/** Minimal sequential ZIP writer with data descriptors. It invokes
+ * `zlib.createDeflateRaw` explicitly, so tests can prove compression is asynchronous.
+ *
+ * ZIP32 while everything fits, ZIP64 for whatever does not. The 32-bit size fields used to wrap
+ * silently, so a vault database past 4 GiB produced an archive whose recorded size disagreed with
+ * its data: every backup then failed verification and was discarded, and a pre-restore safety
+ * archive (which is not verified) could not have been restored. */
 export class StreamingZipWriter {
+  /** The largest value a ZIP32 field may hold; anything at or past it goes into ZIP64 fields. Tests
+   *  lower it to exercise the ZIP64 layout without writing 4 GiB. */
+  static zip32Limit = 0xffffffff;
+
   private readonly output: fs.WriteStream;
   private readonly entries: CentralEntry[] = [];
   private offset = 0;
@@ -86,25 +114,55 @@ export class StreamingZipWriter {
       }
     }
     crc = (crc ^ 0xffffffff) >>> 0;
-    await this.write(Buffer.concat([u32(0x08074b50), u32(crc), u32(compressed), u32(uncompressed)]));
-    this.entries.push({ name, method, crc, compressed, uncompressed, offset });
+    const limit = StreamingZipWriter.zip32Limit;
+    const zip64 = compressed >= limit || uncompressed >= limit || offset >= limit;
+    // A ZIP64 entry's data descriptor carries 8-byte sizes.
+    await this.write(zip64
+      ? Buffer.concat([u32(0x08074b50), u32(crc), u64(compressed), u64(uncompressed)])
+      : Buffer.concat([u32(0x08074b50), u32(crc), u32(compressed), u32(uncompressed)]));
+    this.entries.push({ name, zip64, method, crc, compressed, uncompressed, offset });
   }
 
   async finalize(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    const limit = StreamingZipWriter.zip32Limit;
     const centralOffset = this.offset;
     for (const entry of this.entries) {
+      // Each value that does not fit is written as 0xffffffff and given, in this order, in the
+      // ZIP64 extra field.
+      const big: Buffer[] = [];
+      if (entry.uncompressed >= limit) big.push(u64(entry.uncompressed));
+      if (entry.compressed >= limit) big.push(u64(entry.compressed));
+      if (entry.offset >= limit) big.push(u64(entry.offset));
+      const extra = big.length ? Buffer.concat([u16(0x0001), u16(big.length * 8), ...big]) : Buffer.alloc(0);
+      const version = entry.zip64 ? 45 : 20;
       await this.write(Buffer.concat([
-        u32(0x02014b50), u16(20), u16(20), u16(0x0808), u16(entry.method), u16(0), u16(0),
-        u32(entry.crc), u32(entry.compressed), u32(entry.uncompressed), u16(entry.name.length),
-        u16(0), u16(0), u16(0), u16(0), u32(0), u32(entry.offset), entry.name,
+        u32(0x02014b50), u16(version), u16(version), u16(0x0808), u16(entry.method), u16(0), u16(0),
+        u32(entry.crc),
+        u32(entry.compressed >= limit ? 0xffffffff : entry.compressed),
+        u32(entry.uncompressed >= limit ? 0xffffffff : entry.uncompressed),
+        u16(entry.name.length), u16(extra.length), u16(0), u16(0), u16(0), u32(0),
+        u32(entry.offset >= limit ? 0xffffffff : entry.offset),
+        entry.name, extra,
       ]));
     }
     const centralSize = this.offset - centralOffset;
+    const count = this.entries.length;
+    const zip64 = count >= 0xffff || centralSize >= limit || centralOffset >= limit || this.entries.some((entry) => entry.zip64);
+    if (zip64) {
+      const recordOffset = this.offset;
+      await this.write(Buffer.concat([
+        u32(0x06064b50), u64(44), u16(45), u16(45), u32(0), u32(0),
+        u64(count), u64(count), u64(centralSize), u64(centralOffset),
+      ]));
+      await this.write(Buffer.concat([u32(0x07064b50), u32(0), u64(recordOffset), u32(1)]));
+    }
     await this.write(Buffer.concat([
-      u32(0x06054b50), u16(0), u16(0), u16(this.entries.length), u16(this.entries.length),
-      u32(centralSize), u32(centralOffset), u16(0),
+      u32(0x06054b50), u16(0), u16(0),
+      u16(zip64 && count >= 0xffff ? 0xffff : count), u16(zip64 && count >= 0xffff ? 0xffff : count),
+      u32(zip64 && centralSize >= limit ? 0xffffffff : centralSize),
+      u32(zip64 && centralOffset >= limit ? 0xffffffff : centralOffset), u16(0),
     ]));
     await new Promise<void>((resolve, reject) => {
       this.output.once('close', resolve); this.output.once('error', reject); this.output.end();

@@ -14,7 +14,8 @@ import type {
 } from '@shared/types';
 import { itemChildren, itemAsAttachment, getFulltext, attachmentFilePath, ZoteroAttachment, ZoteroRequestError } from '../zotero/zoteroClient';
 import { openPdf, pageText, pageTextWithSchemes } from './pdfjsLoader';
-import { declutterCacheKey, declutterForWorkSource, pdfBodySize } from './schemeDeclutter';
+import { declutterCacheKey, pdfBodySize, schemeClassifierForWorkSource } from './schemeDeclutter';
+import type { SchemeClassifier } from './schemeClassifiers';
 import { getSettings } from '../db/settingsRepo';
 import { analyzePdf } from './pdfAnalyzer';
 import { ocrPdfPages, ocrImageFile } from './ocr';
@@ -321,7 +322,7 @@ export function planTextChunks(text: string, opts: ChunkOptions = {}): ChunkPlan
  */
 export async function extractPdfStreaming(
   filePath: string,
-  opts: { ocr: OcrOptions; onProgress?: OnExtractProgress; analysis?: PdfAnalysis; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean }
+  opts: { ocr: OcrOptions; onProgress?: OnExtractProgress; analysis?: PdfAnalysis; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean; schemeClassifier?: SchemeClassifier }
 ): Promise<ExtractedDoc> {
   opts.signal?.throwIfAborted();
   const analysisDone = opts.analysis ? null : startPerf('PDF analysis', opts.perf, { file: path.basename(filePath) });
@@ -352,12 +353,15 @@ export async function extractPdfStreaming(
   // Opted-in works: schemes become "[scheme]", margin lines go.
   let body = 0;
   try {
-    if (opts.declutter) body = await pdfBodySize(pdf, opts.signal);
+    if (opts.declutter) body = await pdfBodySize(pdf, opts.signal, opts.schemeClassifier);
   } catch (error) {
     await pdf.destroy?.();
     throw error;
   }
   const layerQuality = new Map<number, number>();
+  /** Pages pdf.js cannot open at all (a damaged page object). They have no text and cannot
+   * be rendered for OCR either; the rest of the document is still read. */
+  const damaged = new Set<number>();
   if (opts.declutter) perfLog('scheme declutter', 0, opts.perf, { file: path.basename(filePath), body });
 
   for (let p = 1; p <= total; p++) {
@@ -366,12 +370,24 @@ export async function extractPdfStreaming(
       opts.signal.throwIfAborted();
     }
     opts.onProgress?.({ phase: 'extract', detail: `Extrayendo p. ${p}/${total}`, pct: p / total });
-    const page = await pdf.getPage(p);
-    // Blank and low-quality pages (sent to OCR) are judged on the page's full text layer: a page
-    // that is mostly scheme is short once decluttered, and OCR would only read the scheme back.
-    const layered = opts.declutter ? await pageTextWithSchemes(page, true, body || undefined) : null;
-    const txt = cleanExtractedText(layered ? layered.text : await pageText(page));
-    page.cleanup?.();
+    let txt: string;
+    let layered: Awaited<ReturnType<typeof pageTextWithSchemes>> | null;
+    try {
+      const page = await pdf.getPage(p);
+      try {
+        // Blank and low-quality pages (sent to OCR) are judged on the page's full text layer: a page
+        // that is mostly scheme is short once decluttered, and OCR would only read the scheme back.
+        layered = opts.declutter ? await pageTextWithSchemes(page, true, body || undefined, opts.schemeClassifier) : null;
+        txt = cleanExtractedText(layered ? layered.text : await pageText(page));
+      } finally {
+        page.cleanup?.();
+      }
+    } catch (error) {
+      console.warn(`[extractPdfStreaming] p. ${p} unreadable: ${error instanceof Error ? error.message : String(error)}`);
+      damaged.add(p);
+      blanks.push(p);
+      continue;
+    }
     if (txt.length >= MIN_CHARS_TEXT_PAGE) {
       pageTexts.set(p, layered ? cleanExtractedText(layered.declutteredText) : txt);
       layerQuality.set(p, textQualityScore(txt));
@@ -383,7 +399,7 @@ export async function extractPdfStreaming(
   let ocredPages = 0;
   let ocrFailed = false;
   const ocrReadPages = new Set<number>();
-  const ocrCandidates = [...blanks, ...lowQuality].slice(0, opts.ocr.maxPages);
+  const ocrCandidates = [...blanks.filter((page) => !damaged.has(page)), ...lowQuality].slice(0, opts.ocr.maxPages);
   if (opts.ocr.enabled && ocrCandidates.length) {
     const toOcr = ocrCandidates;
     const ocrDone = startPerf('OCR', opts.perf, { pages: toOcr.length, languages: opts.ocr.languages });
@@ -396,7 +412,13 @@ export async function extractPdfStreaming(
           // fraction of `totalPages` made the bar's percentage fall back from 100% to
           // 1/K. The label still ticks page by page.
           opts.onProgress?.({ phase: 'ocr', detail: `OCR p. ${page}/${totalPages}`, pct: null });
-        }
+        },
+        // A page OCR could not read keeps the pass going; the document is still marked
+        // incomplete, so it is not cached and a later scan tries that page again.
+        { onPageError: (page, error) => {
+          ocrFailed = true;
+          console.warn(`[extractPdfStreaming] OCR failed on p. ${page}: ${error instanceof Error ? error.message : String(error)}`);
+        } },
       );
       opts.signal?.throwIfAborted();
       for (const [p, result] of map) {
@@ -437,7 +459,7 @@ export async function extractPdfStreaming(
   // a missing worker or a mid-batch failure can prevent any page results returning.
   const ocrSelected = new Set(opts.ocr.enabled ? ocrCandidates : []);
   const unrecovered = blanks.filter((page) => !pageTexts.has(page));
-  const capped = opts.ocr.enabled ? unrecovered.filter((page) => !ocrSelected.has(page)).length : 0;
+  const capped = opts.ocr.enabled ? unrecovered.filter((page) => !ocrSelected.has(page) && !damaged.has(page)).length : 0;
   const readWithoutText = unrecovered.filter((page) => ocrReadPages.has(page)).length;
   const unresolved = unrecovered.length - capped - readWithoutText;
   const notes: string[] = [];
@@ -610,7 +632,7 @@ export function extractEpub(filePath: string): string {
 
 export async function extractFromPath(
   filePath: string,
-  opts: { ocr?: OcrOptions; onProgress?: OnExtractProgress; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean } = {}
+  opts: { ocr?: OcrOptions; onProgress?: OnExtractProgress; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean; schemeClassifier?: SchemeClassifier } = {}
 ): Promise<ExtractedDoc> {
   opts.signal?.throwIfAborted();
   const ext = path.extname(filePath).toLowerCase();
@@ -619,7 +641,7 @@ export async function extractFromPath(
   // The caller passes this work/attachment's durable choice. A bare file path
   // never enables decluttering for other works or tools that happen to read it.
   const declutter = ext === '.pdf' && opts.declutter === true;
-  const cacheKey = { filePath: declutter ? declutterCacheKey(filePath) : filePath, fileSize: stat.size, fileMtimeMs: stat.mtimeMs, ocr };
+  const cacheKey = { filePath: declutter ? declutterCacheKey(filePath, opts.schemeClassifier) : filePath, fileSize: stat.size, fileMtimeMs: stat.mtimeMs, ocr };
   const cacheLookupDone = startPerf('extraction cache lookup', opts.perf, { file: path.basename(filePath) });
   const cached = getExtractionCache(cacheKey);
   cacheLookupDone({ hit: Boolean(cached), size: stat.size });
@@ -631,7 +653,7 @@ export async function extractFromPath(
     const analysisDone = startPerf('PDF analysis', opts.perf, { file: path.basename(filePath) });
     const analysis = await analyzePdf(filePath);
     analysisDone({ strategy: analysis.strategy, pages: analysis.pageCount });
-    doc = await extractPdfStreaming(filePath, { ocr, onProgress: opts.onProgress, analysis, perf: opts.perf, signal: opts.signal, declutter });
+    doc = await extractPdfStreaming(filePath, { ocr, onProgress: opts.onProgress, analysis, perf: opts.perf, signal: opts.signal, declutter, ...(opts.schemeClassifier ? { schemeClassifier: opts.schemeClassifier } : {}) });
   } else if (ext === '.docx') {
     const done = startPerf('document extraction', opts.perf, { file: path.basename(filePath), type: 'docx' });
     doc = { text: await extractDocx(filePath), sourceType: 'upload', notes: null };
@@ -817,9 +839,10 @@ async function readTextAttachments(
     }
     if (filePath && fs.existsSync(filePath)) {
       try {
-        const declutter = path.extname(filePath).toLowerCase() === '.pdf'
-          && declutterForWorkSource(workKey, sourceRefForAttachment(att), getSettings().declutterNewDocuments !== false);
-        localDoc = await extractFromPath(filePath, { ocr: opts.ocr, onProgress: opts.onProgress, perf: opts.perf, signal: opts.signal, declutter });
+        const classifier = path.extname(filePath).toLowerCase() === '.pdf'
+          ? schemeClassifierForWorkSource(workKey, sourceRefForAttachment(att), getSettings().declutterNewDocuments !== false)
+          : null;
+        localDoc = await extractFromPath(filePath, { ocr: opts.ocr, onProgress: opts.onProgress, perf: opts.perf, signal: opts.signal, declutter: classifier !== null, ...(classifier ? { schemeClassifier: classifier } : {}) });
       } catch (error) {
         console.error(`[resolveWorkText] Error extracting from ${filePath}:`, error);
       }

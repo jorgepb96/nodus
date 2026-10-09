@@ -434,10 +434,58 @@ ER  -`);
   assert.equal(catalog.list({ collectionId: collection.id }).total, 1);
   assert.equal(operations.importBibliographyFiles([risFile], collection.id).duplicates, 1);
   const importedRecord = store.readMaterializedItem(imported.itemIds[0]);
+  // A reference the library already holds is still filed into the collection it is imported into.
+  const otherCollection = operations.createCollection('Capítulo 2', null);
+  const refiled = operations.importBibliographyFiles([risFile], otherCollection.id);
+  assert.equal(refiled.duplicates, 1);
+  assert.deepEqual(refiled.itemIds, [imported.itemIds[0]]);
+  assert.deepEqual(catalog.list({ collectionId: otherCollection.id }).items.map((entry) => entry.id), [imported.itemIds[0]],
+    'importing an existing reference into a collection files it there');
+  // A trashed record is not a duplicate: the import must bring the reference back as a live item.
+  const trashRis = path.join(scratch, 'trashed.ris');
+  await writeFile(trashRis, `TY  - JOUR\nTI  - Referencia enviada a la papelera\nAU  - Ruiz, Irene\nPY  - 2021\nDO  - 10.7777/trash.1\nER  -\n`);
+  const trashedId = operations.importBibliographyFiles([trashRis], null).itemIds[0];
+  operations.setItemsDeleted([trashedId], true);
+  const reimported = operations.importBibliographyFiles([trashRis], null);
+  assert.equal(reimported.created, 1, 'a reference whose only match is in the trash is imported again');
+  assert.notEqual(reimported.itemIds[0], trashedId);
+  assert.ok(!store.readMaterializedItem(reimported.itemIds[0]).deletedAt);
   assert.equal(catalog.findItemIdByMetadataIdentifiers({
     title: 'Same DOI', itemType: 'journal-article', creators: [], year: null,
     doi: 'https://doi.org/10.7777/import.1', isbn: [], issn: [], tags: [],
   }), importedRecord.id, 'identifier imports can update an existing record instead of creating a duplicate');
+  // A record stored before ISBN lists were split keeps Zotero's space-separated field.
+  const multiIsbn = operations.createItem({ title: 'Libro con dos ISBN', itemType: 'book', creators: [], year: null, isbn: ['9780306406157 0306406152'], issn: [], tags: [] });
+  for (const isbn of ['978-0-306-40615-7', '0306406152']) {
+    assert.equal(catalog.findItemIdByMetadataIdentifiers({ title: 'x', itemType: 'book', creators: [], year: null, isbn: [isbn], issn: [], tags: [] }),
+      multiIsbn.id, `an ISBN list stored as one string still matches ${isbn}`);
+  }
+  assert.equal(catalog.findItemIdByMetadataIdentifiers({ title: 'x', itemType: 'book', creators: [], year: null, isbn: ['0-306-40615-2 9780306406157'], issn: [], tags: [] }),
+    multiIsbn.id, 'an incoming space-separated ISBN list matches too');
+  // Duplicate detection must see every record, not just the 5,000 the scan reaches first
+  // (the most recently updated, by the index SQLite picks). Hold a record only the fallback
+  // scans can find, then put more than 5,000 newer records in front of it.
+  {
+    const late = operations.createItem({ title: 'Un registro anterior a cinco mil más', itemType: 'document', creators: [], year: null,
+      doi: 'DOI: 10.5555/late.1', url: 'https://example.test/late/record', isbn: [], issn: [], tags: [] });
+    const handle = catalog.handle;
+    const template = handle.prepare('SELECT * FROM library_items WHERE id=?').get(importedRecord.id);
+    const columns = Object.keys(template);
+    const insert = handle.prepare(`INSERT INTO library_items (${columns.join(',')}) VALUES (${columns.map((c) => '@' + c).join(',')})`);
+    handle.transaction(() => {
+      for (let index = 0; index < 5_100; index += 1) {
+        insert.run({ ...template, id: `filler:${index}`, storage_id: `filler:${index}`, citation_key: null, doi: null, title: `Relleno ${index}`, year: 1900, updated_at: '2999-01-01T00:00:00.000Z',
+          metadata_json: JSON.stringify({ title: `Relleno ${index}`, url: `https://example.test/filler/${index}` }) });
+      }
+    })();
+    const lookup = (fields) => ({ title: 'x', itemType: 'document', creators: [], year: null, isbn: [], issn: [], tags: [], ...fields });
+    const started = performance.now();
+    assert.equal(catalog.findItemIdByMetadataIdentifiers(lookup({ doi: '10.5555/late.1' })), late.id, 'a legacy DOI spelling behind 5,000 newer records is still found');
+    console.log(`identifier fallback over ${5_100 + 2} rows: ${(performance.now() - started).toFixed(1)} ms`);
+    assert.equal(catalog.findItemIdByNormalizedBibliography(lookup({ title: 'Un registro anterior a cinco mil más' })), late.id, 'a title match behind 5,000 newer records is still found');
+    assert.equal(catalog.findItemIdByMetadataUrl(lookup({ url: 'https://example.test/late/record' })), late.id, 'a URL match behind 5,000 newer records is still found');
+    handle.prepare("DELETE FROM library_items WHERE id LIKE 'filler:%'").run();
+  }
   assert.ok(importedRecord.citationKey, 'imports always receive a stable citation key');
   const generated = generateCitationKey(importedRecord.metadata, [importedRecord.citationKey], importedRecord.citationKey);
   assert.notEqual(generated, importedRecord.citationKey);

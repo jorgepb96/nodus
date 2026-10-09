@@ -83,6 +83,10 @@ class ScanQueue {
   private bridgeAfterDrain = false;
   /** Terminal jobs already represented in a drain notification. */
   private notifiedTerminalIds = new Set<string>();
+  /** Deep items whose analysis already committed in an earlier attempt. A retriable
+   *  failure in the chain after it (summary, indexing) retries only the chain: the
+   *  analysis is not run again, which for a forced rescan would re-pay every chunk. */
+  private deepCommitted = new Set<string>();
 
   onProgress(cb: ProgressListener): () => void {
     this.listeners.add(cb);
@@ -674,7 +678,10 @@ class ScanQueue {
       if (item.kind === 'light') {
         await this.doLight(work, item);
       } else if (item.kind === 'deep') {
-        await this.doDeep(work, item);
+        if (!this.deepCommitted.has(item.id)) {
+          await this.doDeep(work, item);
+          this.deepCommitted.add(item.id);
+        }
         const committedWork = getWorkById(work.nodus_id) ?? work;
         await this.chainAfterDeep(committedWork, item);
         this.deepSinceReprocess = true;
@@ -753,6 +760,7 @@ class ScanQueue {
     // writes its result too, and by then the work may already hold a queued replacement.
     if (item.kind === 'deep' && (item.state === 'done' || item.state === 'failed')) this.syncDeepQueued(work.nodus_id);
     if (item.state === 'done' || item.state === 'failed' || item.state === 'cancelled') {
+      this.deepCommitted.delete(item.id);
       item.finished_at = new Date().toISOString();
       if (item.kind === 'deep') this.syncDeepQueued(work.nodus_id);
       if (this.removeAfterSettle.has(item.id)) this.items = this.items.filter((candidate) => candidate.id !== item.id);

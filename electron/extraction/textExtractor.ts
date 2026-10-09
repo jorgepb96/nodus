@@ -14,7 +14,8 @@ import type {
 } from '@shared/types';
 import { itemChildren, itemAsAttachment, getFulltext, attachmentFilePath, ZoteroAttachment, ZoteroRequestError } from '../zotero/zoteroClient';
 import { openPdf, pageText, pageTextWithSchemes } from './pdfjsLoader';
-import { declutterCacheKey, declutterForWorkSource, pdfBodySize } from './schemeDeclutter';
+import { declutterCacheKey, pdfBodySize, schemeClassifierForWorkSource } from './schemeDeclutter';
+import type { SchemeClassifier } from './schemeClassifiers';
 import { getSettings } from '../db/settingsRepo';
 import { analyzePdf } from './pdfAnalyzer';
 import { ocrPdfPages, ocrImageFile } from './ocr';
@@ -321,7 +322,7 @@ export function planTextChunks(text: string, opts: ChunkOptions = {}): ChunkPlan
  */
 export async function extractPdfStreaming(
   filePath: string,
-  opts: { ocr: OcrOptions; onProgress?: OnExtractProgress; analysis?: PdfAnalysis; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean }
+  opts: { ocr: OcrOptions; onProgress?: OnExtractProgress; analysis?: PdfAnalysis; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean; schemeClassifier?: SchemeClassifier }
 ): Promise<ExtractedDoc> {
   opts.signal?.throwIfAborted();
   const analysisDone = opts.analysis ? null : startPerf('PDF analysis', opts.perf, { file: path.basename(filePath) });
@@ -352,7 +353,7 @@ export async function extractPdfStreaming(
   // Opted-in works: schemes become "[scheme]", margin lines go.
   let body = 0;
   try {
-    if (opts.declutter) body = await pdfBodySize(pdf, opts.signal);
+    if (opts.declutter) body = await pdfBodySize(pdf, opts.signal, opts.schemeClassifier);
   } catch (error) {
     await pdf.destroy?.();
     throw error;
@@ -369,7 +370,7 @@ export async function extractPdfStreaming(
     const page = await pdf.getPage(p);
     // Blank and low-quality pages (sent to OCR) are judged on the page's full text layer: a page
     // that is mostly scheme is short once decluttered, and OCR would only read the scheme back.
-    const layered = opts.declutter ? await pageTextWithSchemes(page, true, body || undefined) : null;
+    const layered = opts.declutter ? await pageTextWithSchemes(page, true, body || undefined, opts.schemeClassifier) : null;
     const txt = cleanExtractedText(layered ? layered.text : await pageText(page));
     page.cleanup?.();
     if (txt.length >= MIN_CHARS_TEXT_PAGE) {
@@ -610,7 +611,7 @@ export function extractEpub(filePath: string): string {
 
 export async function extractFromPath(
   filePath: string,
-  opts: { ocr?: OcrOptions; onProgress?: OnExtractProgress; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean } = {}
+  opts: { ocr?: OcrOptions; onProgress?: OnExtractProgress; perf?: PerfContext; signal?: AbortSignal; declutter?: boolean; schemeClassifier?: SchemeClassifier } = {}
 ): Promise<ExtractedDoc> {
   opts.signal?.throwIfAborted();
   const ext = path.extname(filePath).toLowerCase();
@@ -619,7 +620,7 @@ export async function extractFromPath(
   // The caller passes this work/attachment's durable choice. A bare file path
   // never enables decluttering for other works or tools that happen to read it.
   const declutter = ext === '.pdf' && opts.declutter === true;
-  const cacheKey = { filePath: declutter ? declutterCacheKey(filePath) : filePath, fileSize: stat.size, fileMtimeMs: stat.mtimeMs, ocr };
+  const cacheKey = { filePath: declutter ? declutterCacheKey(filePath, opts.schemeClassifier) : filePath, fileSize: stat.size, fileMtimeMs: stat.mtimeMs, ocr };
   const cacheLookupDone = startPerf('extraction cache lookup', opts.perf, { file: path.basename(filePath) });
   const cached = getExtractionCache(cacheKey);
   cacheLookupDone({ hit: Boolean(cached), size: stat.size });
@@ -631,7 +632,7 @@ export async function extractFromPath(
     const analysisDone = startPerf('PDF analysis', opts.perf, { file: path.basename(filePath) });
     const analysis = await analyzePdf(filePath);
     analysisDone({ strategy: analysis.strategy, pages: analysis.pageCount });
-    doc = await extractPdfStreaming(filePath, { ocr, onProgress: opts.onProgress, analysis, perf: opts.perf, signal: opts.signal, declutter });
+    doc = await extractPdfStreaming(filePath, { ocr, onProgress: opts.onProgress, analysis, perf: opts.perf, signal: opts.signal, declutter, ...(opts.schemeClassifier ? { schemeClassifier: opts.schemeClassifier } : {}) });
   } else if (ext === '.docx') {
     const done = startPerf('document extraction', opts.perf, { file: path.basename(filePath), type: 'docx' });
     doc = { text: await extractDocx(filePath), sourceType: 'upload', notes: null };
@@ -817,9 +818,10 @@ async function readTextAttachments(
     }
     if (filePath && fs.existsSync(filePath)) {
       try {
-        const declutter = path.extname(filePath).toLowerCase() === '.pdf'
-          && declutterForWorkSource(workKey, sourceRefForAttachment(att), getSettings().declutterNewDocuments !== false);
-        localDoc = await extractFromPath(filePath, { ocr: opts.ocr, onProgress: opts.onProgress, perf: opts.perf, signal: opts.signal, declutter });
+        const classifier = path.extname(filePath).toLowerCase() === '.pdf'
+          ? schemeClassifierForWorkSource(workKey, sourceRefForAttachment(att), getSettings().declutterNewDocuments !== false)
+          : null;
+        localDoc = await extractFromPath(filePath, { ocr: opts.ocr, onProgress: opts.onProgress, perf: opts.perf, signal: opts.signal, declutter: classifier !== null, ...(classifier ? { schemeClassifier: classifier } : {}) });
       } catch (error) {
         console.error(`[resolveWorkText] Error extracting from ${filePath}:`, error);
       }

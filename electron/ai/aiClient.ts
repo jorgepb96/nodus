@@ -466,6 +466,8 @@ function nodusLocalMaxTokens(model: ModelRef, opts: CallOpts, requestedMax: numb
   return Math.min(requestedMax, available);
 }
 
+import { withTranscript as __withTranscript, transcriptFetch as __transcriptFetch } from './transcript';
+
 export interface CallOpts {
   /** Backend academic corpus requests only; include all final prompt/output bytes. */
   corpusContext?: boolean;
@@ -1867,7 +1869,7 @@ export async function completeText(opts: CallOpts, model?: ModelRef | null): Pro
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
     ? configuredCodexReasoning(resolved)
     : undefined;
-  return deanonymizeResult(await rawComplete(resolved, withPromptContext(opts), false, reasoning, codexReasoning));
+  return __withTranscript(resolved, opts, async () => deanonymizeResult(await rawComplete(resolved, withPromptContext(opts), false, reasoning, codexReasoning)));
 }
 
 /**
@@ -1893,7 +1895,7 @@ export async function completeTextStream(
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
     ? configuredCodexReasoning(resolved)
     : undefined;
-  return rawCompleteStream(resolved, withPromptContext(opts), onDelta, reasoning, signal, codexReasoning);
+  return __withTranscript(resolved, opts, () => rawCompleteStream(resolved, withPromptContext(opts), onDelta, reasoning, signal, codexReasoning));
 }
 
 /**
@@ -2078,7 +2080,8 @@ async function rawCompleteStreamTransport(
 
   if (model.provider === 'anthropic') {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const client = new Anthropic({ apiKey: key, ...(opts.noRetry ? { maxRetries: 0 } : {}), ...(opts.timeoutMs ? { timeout: opts.timeoutMs } : {}) });
+    const __fetch = __transcriptFetch(key);
+    const client = new Anthropic({ apiKey: key, ...(__fetch ? { fetch: __fetch } : {}), ...(opts.noRetry ? { maxRetries: 0 } : {}), ...(opts.timeoutMs ? { timeout: opts.timeoutMs } : {}) });
     // `message_delta` is the final event and the only one carrying `stop_reason`; the thinking
     // token breakdown rides along with it. Kept outside `streamOnce` so a replay (temperature or
     // thinking recovery) overwrites rather than inherits the previous attempt's outcome.

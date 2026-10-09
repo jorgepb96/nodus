@@ -1,4 +1,5 @@
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from '../secrets/safeStorageGate';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';

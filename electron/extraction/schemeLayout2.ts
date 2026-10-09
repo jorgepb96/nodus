@@ -1,8 +1,11 @@
+// Frozen: the layout-2 classifier, kept so works decluttered with it keep their text. Do not
+// edit; change the current classifier in schemeLayout.ts (see schemeClassifiers.ts).
+
 /**
  * Reaction schemes, figures and tables in a PDF's text layer: short small-type fragments
  * ("CH", "2", "1) LDA, THF", "vernolepin") spread around a drawing. Extracted in reading
- * order they land in the middle of the prose. This classifies them from the page layout
- * before the first extraction of an opted-in work.
+ * order they land in the middle of the prose. This finds them from the page layout, so the
+ * passages built from the text can leave them out without the text itself changing.
  *
  * A line (items sharing a baseline) is a scheme line when every item is set smaller than the
  * body type and it has at most three words or a wide gap between fragments. Footnotes are
@@ -30,16 +33,9 @@ export interface PageSchemeLayout {
  *  Decluttered text is re-derived from the PDF whenever its extraction cache entry is gone, so
  *  changing these rules changes the text of every decluttered work at its next extraction and
  *  leaves its analysis out of date — like any extractor change. Change them with a rescan plan. */
-export const SCHEME_LAYOUT_CLASSIFIER = 'layout-4' as const;
+export const SCHEME_LAYOUT_CLASSIFIER = 'layout-2' as const;
 
-const WORD = /\p{L}[\p{L}\p{M}]{2,}/gu;
-// These scripts do not reliably separate words with spaces. Count their letters
-// for body-size estimation.
-const UNSEGMENTED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/gu;
-// The chemistry rules below describe Latin labels. Preserve other alphabets,
-// including caseless scripts whose prose cannot be recognized by capitalization.
-const NON_LATIN_LETTER = /(?=\p{L})\P{Script=Latin}/u;
-const wordCount = (text: string) => (text.match(WORD) ?? []).length + (text.match(UNSEGMENTED) ?? []).length;
+const WORD = /[A-Za-z][a-z]{2,}/g;
 const FOOTNOTE_START = /^\d{1,4}\s+\S/;
 const REFERENCE = /[A-Z]\.\s|\(\d{4}\)|\bsee\b/;
 const VOLUME_YEAR = /\b\d{1,4}\s*\(\d{4}\)/;
@@ -47,20 +43,7 @@ const VOLUME_YEAR = /\b\d{1,4}\s*\(\d{4}\)/;
 const STRUCTURE_TOKEN = /^(?:[A-Z][a-z]?\d*|\d+|[+\-−–=≡→()]|\u2032)+$/;
 
 /** A caption names its figure; it is text a search should find, not part of the drawing. */
-const CAPTION = /^(?:fig(?:ure|ura)?\.?|scheme|schema|esquema|table|tableau|tabla|tabela|tabella|tabelle|chart|cuadro|abbildung|schaubild|şekil|şema|tablo)\s*(?:[A-Z]?\p{N}+|[IVXLCDM]+)(?=$|[\s.:)-])/iu;
-const protectedText = (text: string) => NON_LATIN_LETTER.test(text) || CAPTION.test(text)
-  || (FOOTNOTE_START.test(text) && REFERENCE.test(text)) || VOLUME_YEAR.test(text);
-// Small type and a short line alone do not distinguish a quote or verse from a
-// drawing. Retain phrases of ordinary words; isolated labels and chemical symbols
-// can still be identified from the surrounding scheme layout.
-const ordinaryProse = (text: string) => {
-  const words = text.match(/[\p{L}\p{M}]+/gu) ?? [];
-  return words.filter((word) => /\p{Ll}{2,}/u.test(word)).length >= 2
-    // The structure-token grammar can also spell arbitrary all-caps headings.
-    // Preserve alphabetic phrases containing a long word, but retain numeric reagent steps
-    // such as "1) LDA, THF, HMPA" and rows of short element symbols as candidates.
-    || (/^[\p{L}\p{M}\s.,:;!?'"“”‘’–—-]+$/u.test(text) && words.length >= 2 && words.some((word) => /^\p{Lu}{3,}$/u.test(word)));
-};
+const CAPTION = /^(?:fig(?:ure)?\.?|scheme|table|chart)\s*\d/i;
 
 function size(item: LayoutItem): number {
   return Math.round(Math.abs(Number(item.transform[3])) || Number(item.height) || 0);
@@ -78,7 +61,7 @@ export function typeSizeWeights(items: LayoutItem[], into = new Map<number, numb
   }
   for (const line of lines) {
     const str = line.items.map((item) => item.str).join(' ');
-    if (wordCount(str) < 6) continue;
+    if ((str.match(WORD) ?? []).length < 6) continue;
     const bySize = new Map<number, number>();
     for (const item of line.items) bySize.set(size(item), (bySize.get(size(item)) ?? 0) + item.str.length);
     const main = [...bySize].sort((a, b) => b[1] - a[1])[0][0];
@@ -111,15 +94,15 @@ export function pageSchemeLayout(items: LayoutItem[], bodyHint?: number): PageSc
   const right = Math.max(...text.filter(({ item }) => size(item) === body && item.transform[4] >= left - 2).map(({ item }) => item.transform[4] + item.width));
   const column = Number.isFinite(left) && Number.isFinite(right);
   const outside = (item: LayoutItem) => column && (item.transform[4] + item.width < left - 8 || item.transform[4] > right + 8);
-  const words = (entries: typeof text) => wordCount(entries.map(({ item }) => item.str).join(' '));
+  const words = (entries: typeof text) => (entries.map(({ item }) => item.str).join(' ').match(WORD) ?? []).length;
 
-  type Line = { y: number; members: typeof text; small: boolean; scheme: boolean; structure: boolean; protected: boolean; longest: number };
+  type Line = { y: number; members: typeof text; small: boolean; scheme: boolean; longest: number; x: number; size: number };
   const lines: Line[] = [];
   const sorted = [...text].sort((a, b) => b.item.transform[5] - a.item.transform[5] || a.item.transform[4] - b.item.transform[4]);
   for (const entry of sorted) {
     const y = entry.item.transform[5];
     const line = lines.find((candidate) => Math.abs(candidate.y - y) <= body * 0.4);
-    if (line) line.members.push(entry); else lines.push({ y, members: [entry], small: false, scheme: false, structure: false, protected: false, longest: 0 });
+    if (line) line.members.push(entry); else lines.push({ y, members: [entry], small: false, scheme: false, longest: 0, x: 0, size: 0 });
   }
   lines.sort((a, b) => b.y - a.y);
   // Prose pieces of the line above: a short piece right under one, at its left edge, ends that
@@ -144,31 +127,29 @@ export function pageSchemeLayout(items: LayoutItem[], bodyHint?: number): PageSc
     const continuing = pieces.filter((entries) => entries.length && endsParagraph(entries));
     proseAbove = pieces.filter((entries) => entries.length && (words(entries) >= 4 || CAPTION.test(entries.map(({ item }) => item.str).join(' ').trim()))).map((entries) => ({ x: entries[0].item.transform[4], y: entries[0].item.transform[5] }));
     const kept = pieces.filter((entries) => {
-      const str = entries.map(({ item }) => item.str).join(' ').trim();
-      const isMargin = entries.every(({ item }) => outside(item)) && words(entries) <= 4 && !protectedText(str) && !continuing.includes(entries);
+      const isMargin = entries.every(({ item }) => outside(item)) && words(entries) <= 4 && !continuing.includes(entries);
       if (isMargin) for (const { index } of entries) margin[index] = true;
       return !isMargin;
     });
     line.members = kept.flat();
     if (!line.members.length) continue;
     const str = line.members.map(({ item }) => item.str).join(' ').replace(/\s+/g, ' ').trim();
-    line.protected = kept.some((entries) => {
-      const text = entries.map(({ item }) => item.str).join(' ').trim();
-      return continuing.includes(entries) || protectedText(text) || ordinaryProse(text);
-    });
+    const footnote = (FOOTNOTE_START.test(str) && REFERENCE.test(str)) || VOLUME_YEAR.test(str);
     line.small = line.members.every(({ item }) => size(item) < body * 0.92);
     line.longest = Math.max(...kept.map(words));
+    line.x = line.members[0].item.transform[4];
+    line.size = Math.max(...line.members.map(({ item }) => size(item)));
     // A row of structure fragments ("OH O O N O") is a drawing at any type size.
     const tokens = str.split(' ');
-    line.structure = tokens.length >= 4 && tokens.every((token) => STRUCTURE_TOKEN.test(token)) && !tokens.every((token) => /^\d+$/.test(token));
-    line.scheme = !line.protected && (line.structure || (line.small && line.longest <= 3));
+    const structureRow = tokens.length >= 4 && tokens.every((token) => STRUCTURE_TOKEN.test(token)) && !tokens.every((token) => /^\d+$/.test(token));
+    line.scheme = (structureRow || (line.small && !footnote && !CAPTION.test(str) && line.longest <= 3)) && !kept.some((entries) => continuing.includes(entries));
   }
   const content = lines.filter((line) => line.members.length);
   // A small row of labels between two scheme rows ("anti favored for R = Me") is part of the
   // scheme; a row of prose there (a caption, a problem, a reference) is not.
   for (let k = 1; k < content.length - 1; k++) {
     const line = content[k];
-    if (!line.scheme && !line.protected && line.small && line.longest <= 5 && content[k - 1].scheme && content[k + 1].scheme) line.scheme = true;
+    if (!line.scheme && line.small && line.longest <= 5 && content[k - 1].scheme && content[k + 1].scheme) line.scheme = true;
   }
   for (let k = 0; k < content.length; k++) {
     const line = content[k];
@@ -176,7 +157,7 @@ export function pageSchemeLayout(items: LayoutItem[], bodyHint?: number): PageSc
     const above = content[k - 1];
     // A lone one- or two-fragment small row among prose is a superscript (a citation number,
     // a charge), not a scheme.
-    if (!line.structure && !above?.scheme && !content[k + 1]?.scheme && line.members.length <= 2) line.scheme = false;
+    if (!above?.scheme && !content[k + 1]?.scheme && line.members.length <= 2) line.scheme = false;
   }
   for (const line of content) if (line.scheme) for (const { index } of line.members) scheme[index] = true;
   return { body, scheme, margin };

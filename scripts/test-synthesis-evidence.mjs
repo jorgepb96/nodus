@@ -22,6 +22,42 @@ test('the textbook scope is synthetic-chemistry titles and chemistry collections
   assert.equal(isSynthesisEvidenceWork(''), false);
 });
 
+test('each evidence phase is timed from when it starts, not from when it is awaited', async () => {
+  const { evidencePhases } = evidence;
+  let clock = 0;
+  const phases = evidencePhases(() => clock);
+
+  // Two of the real phases are launched early and awaited last. Timing them at the await would
+  // report only the sliver of time left by then and make a slow parallel phase look instant,
+  // which is the whole reason the 394s block was undiagnosable.
+  let release;
+  const slow = phases.track('route search', new Promise(resolve => { release = resolve; }));
+  clock = 5_000;
+  const quick = phases.track('passages', Promise.resolve('p'));
+  assert.equal(await quick, 'p');
+  clock = 9_000;
+  release('r');
+  assert.equal(await slow, 'r');
+
+  // Settle order, and each phase's OWN span: passages started and finished at 5s; the route
+  // search started at 0 and ran the full 9s beside it.
+  assert.equal(phases.line(), 'passages 0.0s · route search 9.0s');
+});
+
+test('a phase that fails is still timed, because how long it ran before giving up is the point', async () => {
+  const { evidencePhases } = evidence;
+  let clock = 0;
+  const phases = evidencePhases(() => clock);
+  const doomed = phases.track('ORD disconnections', Promise.reject(new Error('index unavailable')));
+  clock = 2_500;
+  await assert.rejects(doomed, /index unavailable/, 'the failure still propagates');
+  assert.equal(phases.line(), 'ORD disconnections 2.5s', 'the time it ran before failing is recorded');
+});
+
+test('no phases means an empty line, not a stray separator', () => {
+  assert.equal(evidence.evidencePhases(() => 0).line(), '');
+});
+
 test('starting materials are the SMILES after "starting from", never the target', () => {
   const { findStartingSmiles, findTargetName } = evidence;
   const hexene = 'Propose a step-by-step laboratory synthesis of (Z)-hex-3-ene (SMILES: CC/C=C\\CC),\nstarting from acetylene (C#C) and bromoethane (CCBr) plus common inorganic reagents and solvents.';
@@ -84,7 +120,8 @@ test('textbook queries use textbook reaction names and skip classes with none', 
 
 test('the research chat adds the evidence only to a new route request and reserves room for it', async () => {
   const source = await readFile(path.join(root, 'electron/ai/researchAssistant.ts'), 'utf8');
-  assert.match(source, /const routeRequest = chemistryEnabled && !genealogy && !isRouteFixPrompt\(question\) && looksLikeSynthesisRequest\(question\);/);
+  // The template goes with a request, not with a correction: the chip carries the same rules.
+  assert.match(source, /const routeRequest = chemistryRoute && !isRouteFixPrompt\(question\);/);
   assert.match(source, /routeEvidence \? SYNTHESIS_EVIDENCE_SYSTEM_RULE : ''/);
   assert.match(source, /routeEvidence \? JSON\.stringify\(routeEvidence\)\.length : 0/, 'the budget reserves the evidence');
   const app = await readFile(path.join(root, 'electron/ai/synthesisEvidence.ts'), 'utf8');
@@ -106,11 +143,22 @@ test('a route request retrieves corpus context for its chemistry, not its output
 test('a route correction keeps Chemistry Studio and gets chemistry-focused corpus context', async () => {
   const source = await readFile(path.join(root, 'electron/ai/researchAssistant.ts'), 'utf8');
   // The fix chip's turn gets the chemistry skill back even in an academic vault (no standing skills).
-  assert.match(source, /isRouteFixPrompt\(userMessages\.at\(-1\) \?\? ''\) \? capabilityChatSkills\('nodus:chemistry'\) : \[\]/);
+  // Any route turn, not only a fix chip: an academic vault has no standing skills, so a route
+  // started with @ lost the capability the moment the author typed a follow-up of their own, and
+  // the turn came back with no checks and no notice (the notice needs the skill to be present).
+  assert.match(source, /const fixSkills = routeTurn \? capabilityChatSkills\('nodus:chemistry'\) : \[\];/);
   // Route requests and corrections both count as chemistry turns; the correction searches with
   // the original request's chemistry, not the fix prompt's text.
-  assert.match(source, /const chemistryRoute = chemistryEnabled && !genealogy && \(routeRequest \|\| isRouteFixPrompt\(question\)\);/);
+  // Whether a route was asked for is read from the conversation, not from the latest message: a
+  // human follow-up is neither a fresh request nor a fix chip, and deciding from the latest
+  // message alone dropped the route lane exactly when the author pushed back.
+  assert.match(source, /const chemistryRoute = chemistryEnabled && !genealogy && asksForRoute\(turns\);/);
   assert.match(source, /message\.role === 'user' && !isRouteFixPrompt\(message\.content\)/);
+  // And the evidence is anchored to the conversation's own request ahead of `originalRequest`,
+  // which a human follow-up satisfies and would otherwise become the anchor for.
+  assert.match(source, /const routeQuestion = route\.request \?\? originalRequest \?\? question;/);
+  // The audit must agree with the prompt, or a turn asked for a route goes unreported.
+  assert.match(source, /const routeTurn = asksForRoute\(request\.messages\);/);
   // The corpus path (5.7 academic chat) uses it too, and drops library-wide gaps and contradictions.
   assert.match(source, /await run\.investigate\(chemistryRoute \? retrievalQuestion : plan\.goal, request\.model\)/);
   assert.match(source, /contradicciones: request\.selection\.contradictions && !chemistryRoute/);

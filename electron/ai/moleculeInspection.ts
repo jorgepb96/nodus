@@ -9,9 +9,9 @@ import {
   countRouteSteps,
   isBareSmilesName,
   isolatedSteps,
+  stepDeclaresRacemic,
   stepDeclaresRearrangement,
   stepDeclaresRadical,
-  stepDeclaresRacemic,
   findAnswerSpecies,
   findSmilesCandidates,
   findStepConditions,
@@ -22,7 +22,7 @@ import {
   collectStepEvidence,
   formatEvidenceSources,
   routeStepFailure,
-  precedentDrawingFor,
+  routeStepSummaries,
   formatRouteAudit,
   formatRouteCheckUnavailable,
   formatStructureAudit,
@@ -47,7 +47,9 @@ import {
   type RouteSpeciesLabel,
   type StepSupport,
   type UnresolvedName,
+  MAX_SPECIES_NAME,
 } from '@shared/moleculeInspection';
+import { routeReviewTokens } from '@shared/researchRetrievalBudget';
 import { compoundAvailability, findStartingSmiles, formatStartingMaterialStock, formatTargetAvailability, relevantExcerpt, routeStartingMaterials, routeTargetSmiles, textbookQueryForClass } from '@shared/synthesisEvidence';
 import { chemistryStockDirectory } from './chemistryStock';
 import { textbookCitations, textbookSchemeDirectory } from './textbookSchemes';
@@ -69,12 +71,10 @@ const ROUTE_TOOL = 'verify-route';
 const COMPILE_TOOL = 'compile';
 const KNOWN_REACTIONS_TOOL = 'known-reactions';
 const MAX_BATCH = 24;
-/** Each step is a full validated compile, so at most this many are drawn. The checker accepts
- *  longer routes (peptide syntheses run to ~80 steps); those are drawn first steps and last
- *  steps, so the step that forms the target is always drawn and the middle is listed as skipped. */
+/** Each step is a full validated compile, so this bounds a pathological route. The final report
+ *  only runs on a route where every step passed, so this is a backstop rather than a triage rule:
+ *  anything past it is listed as not drawn instead of silently missing. */
 const MAX_ROUTE_DRAWINGS = 16;
-/** Open Reaction Database reactions drawn under the precedent section, one per step at most. */
-const MAX_PRECEDENT_DRAWINGS = 8;
 
 interface InspectOptions {
   evidenceScope?: ChemistryEvidenceScope;
@@ -240,15 +240,15 @@ async function invokeRoute(runner: Runner, provider: CapabilityProvider, steps: 
   const input = {
     steps,
     ...(racemic ? { racemic } : {}),
-    // What the step's own prose declares, per step. Sent only to a package whose route tool
-    // reads them, so an older one never sees an input its schema would reject. Without this the
-    // package's skeleton check has no way to tell a declared rearrangement from an unexplained
-    // one, and refuses both.
+    // Declared rearrangements and radical steps, per step from their own prose: only to a package
+    // whose route tool reads them (the skeleton check), so an older one is never sent them.
     ...(declared.rearrangement?.some(Boolean) && routeAccepts(provider, 'rearrangement') ? { rearrangement: declared.rearrangement } : {}),
     ...(declared.radical?.some(Boolean) && routeAccepts(provider, 'radical') ? { radical: declared.radical } : {}),
     ...(target ? { target } : {}),
-    // A long species name is still sent, cut to whatever the package's schema allows: one
-    // overlong name must not make the package reject the whole route.
+    // A long species name is still sent, cut to whatever the installed package's schema allows:
+    // one overlong name must not make the package reject the whole route, and a species given as
+    // its own structure carries that structure as its name, so cutting one to a figure fixed
+    // here would corrupt the label it is displayed under.
     ...(named && routeAcceptsLabels(provider) ? { labels: labels!.map((entries) => entries.map((entry) => ({ ...entry, name: entry.name.slice(0, labelLimit) }))) } : {}),
     ...(await stereoEnumerationAvailable(provider) ? { enumerateStereo: true } : {}),
   };
@@ -394,7 +394,7 @@ function normalizeSpeciesResolution(entry: unknown): SpeciesResolution | null {
   const status = value.status;
   if (status !== 'resolved' && status !== 'ambiguous' && status !== 'unresolved') return null;
   return {
-    name: value.name.slice(0, 200),
+    name: value.name.slice(0, MAX_SPECIES_NAME),
     status,
     ...(typeof value.smiles === 'string' && value.smiles ? { smiles: value.smiles.slice(0, 2000) } : {}),
     ...(typeof value.formula === 'string' ? { formula: value.formula.slice(0, 200) } : {}),
@@ -438,7 +438,7 @@ function normalizeStructureName(entry: unknown): SpeciesStructureName | null {
     smiles: value.smiles.slice(0, 2000),
     status: value.status === 'named' ? 'named' : 'unnamed',
     ...(Number.isSafeInteger(value.cid) && (value.cid as number) > 0 ? { cid: value.cid as number } : {}),
-    ...(typeof value.name === 'string' && value.name ? { name: value.name.slice(0, 300) } : {}),
+    ...(typeof value.name === 'string' && value.name ? { name: value.name.slice(0, MAX_SPECIES_NAME) } : {}),
     ...(typeof value.formula === 'string' && value.formula ? { formula: value.formula.slice(0, 200) } : {}),
     ...(typeof value.canonicalSmiles === 'string' && value.canonicalSmiles ? { canonicalSmiles: value.canonicalSmiles.slice(0, 2000) } : {}),
     ...(typeof value.feedback === 'string' && value.feedback ? { feedback: value.feedback.slice(0, 400) } : {}),
@@ -515,14 +515,6 @@ async function evidenceSources(modelAnswer: string, stepCount: number, precedent
   }
 }
 
-/** The review's output budget. It reads every step and may return up to 24 findings, so a flat
- *  budget silently truncates the longer the route gets: a 19-step route was given the same 2,000
- *  tokens as a 3-step one. Scaled by step count, with a ceiling so a pathological route cannot
- *  ask for an unbounded answer. */
-function routeReviewTokens(stepCount: number): number {
-  return Math.min(16_000, Math.max(2_000, 1_200 + 600 * Math.max(1, stepCount)));
-}
-
 async function requestRouteReview(question: string, labels: RouteSpeciesLabel[][], audit: RouteAudit, options: InspectOptions, stepProse: string[] = []): Promise<RouteReview | null> {
   const budget = routeReviewTokens(audit.steps.length);
   const started = Date.now();
@@ -538,7 +530,7 @@ async function requestRouteReview(question: string, labels: RouteSpeciesLabel[][
       reasoning: 'off',
       ...(options.signal ? { signal: options.signal } : {}),
     }, options.model ?? null);
-    const review = parseRouteReview(raw);
+    const review = parseRouteReview(raw, audit.steps.length);
     // A review that produced nothing readable is indistinguishable, in the report, from a review
     // that found nothing wrong — and that is how a dead check looked healthy for two sessions.
     // Say it out loud instead.
@@ -705,37 +697,6 @@ async function drawReaction(runner: Runner, provider: CapabilityProvider, reacti
   return artifact?.view ? runner.renderView({ provider, view: artifact.view as ViewDocumentV1 }) : null;
 }
 
-/** The view for each step's closest known reaction, from the drawing the package returned
- *  with the lookup (an exact match is not drawn). No second tool call: the package draws the
- *  record as listed in the same process that found it. */
-function precedentDrawings(
-  runner: Runner,
-  provider: CapabilityProvider,
-  precedent: ReactionPrecedent,
-  queries: PrecedentQuery[],
-): Map<number, string> {
-  const similarByInput = new Map(precedent.similar.map((item) => [item.input, item]));
-  const drawings = new Map<number, string>();
-  precedent.reactions.forEach((entry, position) => {
-    const step = queries[position]?.step;
-    const neighbor = entry.unchanged ? null : precedentDrawingFor(entry, similarByInput.get(entry.input));
-    if (step === undefined || !neighbor?.svg || drawings.size >= MAX_PRECEDENT_DRAWINGS) return;
-    const similarity = neighbor.similarity !== undefined ? `${Math.round(neighbor.similarity * 100)}% similar` : 'closest known reaction';
-    try {
-      drawings.set(step, runner.renderView({ provider, view: {
-        schemaVersion: 1,
-        title: `Closest known reaction to step ${step + 1}`,
-        summary: `Open Reaction Database reaction, ${similarity}, drawn as recorded.`,
-        // The view caps alt text at 1,000 characters; a long record keeps its opening SMILES.
-        nodes: [{ kind: 'svg', svg: neighbor.svg, title: `Closest known reaction to step ${step + 1}`, alt: `${(neighbor.reaction ?? '').slice(0, 900)} (as recorded, unbalanced)` }],
-      } }));
-    } catch {
-      // A drawing the view validator rejects is left out; the section still reads without it.
-    }
-  });
-  return drawings;
-}
-
 /** Steps whose product is worth other ways to make: a step the checker refused, or one with no
  *  recorded precedent. At most this many, so the lookup stays one short call. */
 const MAX_ALTERNATIVE_STEPS = 6;
@@ -811,17 +772,44 @@ function targetName(labels: RouteSpeciesLabel[][], audit: RouteAudit, target: st
   return target ? labels.flat().find((entry) => entry.role === 'product' && entry.smiles === target && entry.name)?.name : undefined;
 }
 
-/** Draws every step the checker accepted, in order, on the runner already opened for the
- *  route check. A step the checker refused is never auto-drawn: the verified lane abstains
- *  for it and its fallback picture is unchecked, so it gets a deterministic note instead. */
-async function drawRouteSteps(
+/** Does the whole synthesis pass? Every step passes, nothing is disconnected, and the target is
+ *  formed with the stereochemistry that was asked for.
+ *
+ *  Deliberately deterministic: it does not consult the model route review, so the final report
+ *  does not wait on a model call to decide whether to draw. A review problem is advice about a
+ *  route that balances, and it is printed in the check block either way. */
+function routePasses(audit: RouteAudit): boolean {
+  return audit.steps.length > 0
+    && audit.steps.every((step) => !routeStepFailure(step))
+    && !isolatedSteps(audit).length
+    && audit.target?.reason !== 'not-formed'
+    && audit.target?.reason !== 'stereo-mismatch';
+}
+
+/** THE ONLY PLACE A ROUTE IS DRAWN. One block, printed once, when the whole synthesis passes:
+ *  a summary of every step and the reaction diagram for every step.
+ *
+ *  Nothing else in the route lane draws. Before this, three paths could each put a picture in a
+ *  route answer — these step diagrams, the recorded-reaction pictures beside the ORD precedent,
+ *  and whatever the model asked for in its own `chemistry-plan` fence — and the last of those ran
+ *  on every fix round whatever the verdict, which is how a route with a failing step still came
+ *  back with structures drawn. Drawing is also the most expensive thing the report does, so doing
+ *  it only on a route that passed is both the clearer answer and the cheaper one.
+ *
+ *  The gate is deterministic and does not wait for the model review: every step passes, no step is
+ *  disconnected, and the target is formed with the stereochemistry asked for. */
+async function printFinalReport(
   runner: Runner,
   provider: CapabilityProvider,
   steps: string[],
   conditions: string[],
   audit: RouteAudit,
+  labels: RouteSpeciesLabel[][],
   options: InspectOptions,
 ): Promise<string> {
+  // Checked here as well as at the call site, because this function's contract is the gate: it
+  // must be impossible to get a drawing out of it for a route that did not pass.
+  if (!routePasses(audit)) return '';
   const drawable: RouteStepAudit[] = [];
   const skipped: string[] = [];
   const passing: RouteStepAudit[] = [];
@@ -832,13 +820,12 @@ async function drawRouteSteps(
     if (reason) { skipped.push(`- Step ${step.index + 1} — ${reason}`); continue; }
     passing.push(step);
   }
-  // Too many to draw: the first ones and the last ones, so the target-forming step is drawn.
-  const head = Math.ceil(MAX_ROUTE_DRAWINGS / 2);
-  const tail = MAX_ROUTE_DRAWINGS - head;
-  const drawn = passing.length <= MAX_ROUTE_DRAWINGS ? passing : [...passing.slice(0, head), ...passing.slice(-tail)];
+  // Every step gets a diagram: the gate above means every step passed, so there is no partial
+  // route to triage here. The ceiling stays only to bound a pathological route; a real one that
+  // passes end to end is a handful of steps, and the longest in the 30-target suite was 14.
   for (const step of passing) {
-    if (drawn.includes(step)) drawable.push(step);
-    else skipped.push(`- Step ${step.index + 1} — not drawn (a long route draws its first ${head} and last ${tail} steps)`);
+    if (drawable.length < MAX_ROUTE_DRAWINGS) drawable.push(step);
+    else skipped.push(`- Step ${step.index + 1} — not drawn (at most ${MAX_ROUTE_DRAWINGS} diagrams per report)`);
   }
   const figures: Array<{ index: number; view: string } | null> = new Array(drawable.length).fill(null);
   let cursor = 0;
@@ -868,12 +855,23 @@ async function drawRouteSteps(
   };
   await Promise.all(Array.from({ length: Math.min(DRAW_CONCURRENCY, drawable.length) }, run));
   const ordered = figures.filter((figure): figure is { index: number; view: string } => figure !== null);
-  // Nothing drawable is not a drawings section; the route report already says why each
-  // step was refused.
+  // Nothing drawable is not a report. The route check block above already stands on its own.
   if (!ordered.length) return '';
-  // Label each scheme with the step it is, so the drawings line up with the report and the
-  // "Fix step N" chips instead of floating unlabelled under the route.
-  const lines = ['### Route drawings (RDKit)', '', ...ordered.flatMap((figure) => [`**Step ${figure.index + 1}**`, '', figure.view, ''])];
+  // Each step reads as its own entry: the equation the checker accepted, then the picture of it.
+  // The summary comes from the same helpers as the route check block, so the two cannot disagree.
+  const summaries = new Map(routeStepSummaries(audit, labels).map((entry) => [entry.index, entry.summary]));
+  const lines = [
+    '### Final report',
+    '',
+    `Every step of this route passed the check, so the route is drawn. ${ordered.length} step(s), one diagram each. This is still bookkeeping: conditions, selectivity, yields and safety are not checked.`,
+    '',
+    ...ordered.flatMap((figure) => [
+      `**Step ${figure.index + 1}** — ${summaries.get(figure.index) ?? ''}`,
+      '',
+      figure.view,
+      '',
+    ]),
+  ];
   if (skipped.length) lines.push('Not drawn:', ...skipped);
   return `\n${lines.join('\n')}\n`;
 }
@@ -943,25 +941,43 @@ export async function appendRouteReportAndDrawings(
   // elsewhere ("benzocaine is achiral", a note on the target) no longer excuses every step.
   const racemic = stepDeclaresRacemic(modelAnswer, steps.length);
   // A step that names a rearrangement or a radical step is reported, not refused, when its bond
-  // changes need one; read from that step's own section, like the racemic declaration above.
+  // changes need one; read the same way, from the step's own section.
   const declared = { rearrangement: stepDeclaresRearrangement(modelAnswer, steps.length), radical: stepDeclaresRadical(modelAnswer, steps.length) };
   const provider = routeProvider();
   if (!provider) return finalAnswer;
   const compile = compileProvider();
   const { runner, dispose } = chemistryRunner(options);
+  // How long each part of the report takes, one line per answer (route reports run several
+  // chemistry tools; this says which one an answer waited on).
+  const started = Date.now();
+  const timings: string[] = [];
+  const timed = <T,>(label: string, promise: Promise<T>): Promise<T> => {
+    const t0 = Date.now();
+    return promise.finally(() => timings.push(`${label} ${((Date.now() - t0) / 1000).toFixed(1)}s`));
+  };
   try {
-    const checked = await invokeRoute(runner, provider, steps, racemic, options.target, labels, declared);
+    const checked = await timed('audit', invokeRoute(runner, provider, steps, racemic, options.target, labels, declared));
     const audit = checked ? implyRacemicTarget(checked, options.target) : checked;
     if (!audit) return `${finalAnswer.trimEnd()}\n\n${formatRouteCheckUnavailable('the chemistry package returned no route audit')}\n`;
     // The index lookup runs alongside the review and the drawings; it is skipped entirely
     // when the package has no such tool or the index has not been downloaded.
     const queries = buildPrecedentQueries(labels);
-    const precedentPromise = lookupReactionPrecedent(runner, queries.map((query) => query.query), options);
+    const precedentPromise = timed('ORD precedent', lookupReactionPrecedent(runner, queries.map((query) => query.query), options));
     // One model review looks for plan problems the checker cannot see (prose vs names, a
     // product that is a different compound, a step that cannot work, a redundant step). It is
     // blocking: a finding marks the route not verified. An unreadable reply never blocks. It
     // runs while the drawings compile, so the reviewer and the drawings overlap.
-    const reviewPromise = requestRouteReview(options.question ?? '', labels, audit, options, stepProse);
+    const reviewPromise = timed('review', requestRouteReview(options.question ?? '', labels, audit, options, stepProse));
+    // The step support needs the precedent lookup's classes and nothing else — in particular not
+    // the drawings. It used to be started after the drawings were awaited, which put the two
+    // largest costs in the report end to end. Measured on one route: drawings 52.9s then step
+    // support 41.0s inside a 96.7s report, where the lookup they both wait on took 6.4s. Started
+    // here it overlaps the drawings instead, and the report's floor becomes the larger of the two
+    // rather than their sum. Concurrent invokes are safe on one worker: the handle keys pending
+    // calls by callId, which is what lets the evidence gather run three tools at once already.
+    const supportPromise = timed('step support', precedentPromise
+      .then((result) => (result ? buildStepSupport(runner, result.precedent, queries, labels, audit, options) : new Map<number, StepSupport>()))
+      .catch(() => new Map<number, StepSupport>()));
     // Nothing is drawn until every step passes. A route with a failing step is about to be
     // rewritten and each picture made for it is discarded with it: measured on one long route,
     // ~200,000 characters of SVG per turn, three turns running, none of it ever read, while the
@@ -970,42 +986,39 @@ export async function appendRouteReportAndDrawings(
     // from, and they cost nothing to render.
     // Nothing is drawn while any step still fails, and the report says so rather than leaving a
     // gap: a route with a failing step is about to be rewritten, and every picture made for it is
-    // discarded with it. Measured on one long route, ~200,000 characters of SVG per turn, three
-    // turns running, none of it ever read, while the package's runtime budget was being exhausted
-    // elsewhere in the same turn. Route-level refusals count too — a route whose steps do not
-    // join up is equally about to change.
-    const routeIsRight = audit.steps.every((step) => !routeStepFailure(step))
-      && !isolatedSteps(audit).length && audit.target?.reason !== 'not-formed';
+    // discarded with it. Route-level refusals count too — a route whose steps do not join up is
+    // equally about to change.
+    const routeIsRight = routePasses(audit);
     const drawings = !compile ? ''
-      : routeIsRight ? await drawRouteSteps(runner, compile, steps, conditions, audit, options)
-      : 'Not drawn: the route has a step that does not pass yet. The structures are drawn once every step passes.';
+      : routeIsRight ? await timed('final report', printFinalReport(runner, compile, steps, conditions, audit, labels, options))
+      : 'Not drawn: the route has a step that does not pass yet. Every step is summarised and drawn in one final report, once the whole route passes.';
     // Paint the deterministic report and drawings before the reviewer returns. The transport
     // replaces the provisional stream with this returned answer, so the route only waits on
     // the reviewer when the reviewer is the last thing outstanding.
     if (options.onDeterministic) options.onDeterministic(`${finalAnswer.trimEnd()}\n\n${formatRouteAudit(audit, labels, null, true, overrides.unresolved ?? [])}\n${drawings}`);
     // The lookup already carries its drawings; this only formats. Best-effort throughout. The
     // step support (textbook passage per reaction class, ORD alternatives for a failed or
-    // unprecedented step) needs the lookup's classes, so it follows it, still beside the review.
-    const supportPromise = precedentPromise
-      .then((result) => (result ? buildStepSupport(runner, result.precedent, queries, labels, audit, options) : new Map<number, StepSupport>()))
-      .catch(() => new Map<number, StepSupport>());
+    // unprecedented step) was started above, beside the review and the drawings.
     // Pictures of the recorded reactions wait for the same gate: they are the largest of the lot.
     const precedentSection = Promise.all([precedentPromise, supportPromise]).then(([result, support]) => {
       if (!result) return '';
       const target = options.target ? { smiles: options.target, name: targetName(labels, audit, options.target) } : null;
-      const drawings = routeIsRight ? precedentDrawings(runner, result.provider, result.precedent, queries) : undefined;
+      // No pictures here any more. The recorded reaction is cited by id and similarity, which is
+      // what makes it evidence; drawing it put a second set of structures in the answer that was
+      // easily read as this route's own. Every diagram now comes from the final report.
+      const drawings = undefined;
       return formatReactionPrecedents(result.precedent, { queries, labels, target, drawings, support });
     }).catch(() => '');
     // The same steps in the reaction schemes of the user's own textbooks, cited by book and page.
-    const textbookSection = lookupTextbookPrecedent(runner, queries.map((query) => query.query), options).then((precedent) => {
+    const textbookSection = timed('textbook precedent', lookupTextbookPrecedent(runner, queries.map((query) => query.query), options).then((precedent) => {
       if (!precedent) return '';
       const target = options.target ? { smiles: options.target, name: targetName(labels, audit, options.target) } : null;
       return formatTextbookPrecedents(precedent, (ids) => textbookCitations(ids, undefined, options.evidenceScope), { queries, target });
-    }).catch(() => '');
+    }).catch(() => ''));
     // Groups a step's reagents would attack (an ester through LiAlH4, a free OH beside a Grignard).
-    const compatibilityPromise = checkStepCompatibility(runner, labels, conditions, options).catch(() => [] as StepCompatibility[]);
+    const compatibilityPromise = timed('compatibility', checkStepCompatibility(runner, labels, conditions, options).catch(() => [] as StepCompatibility[]));
     // Which starting materials the user's vendor stock lists hold (no lists: nothing is said).
-    const stockPromise = options.evidenceScope?.external === false ? Promise.resolve('') : startingMaterialStockLine(runner, labels).catch(() => '');
+    const stockPromise = timed('stock', options.evidenceScope?.external === false ? Promise.resolve('') : startingMaterialStockLine(runner, labels).catch(() => ''));
     const review = await reviewPromise;
     const report = formatRouteAudit(audit, labels, review, false, overrides.unresolved ?? []);
     const precedentText = await precedentSection;
@@ -1024,6 +1037,7 @@ export async function appendRouteReportAndDrawings(
     const sources = await evidenceSources(modelAnswer, steps.length, precedentPromise, queries, support);
     const stockLine = await stockPromise;
     const textbookText = await textbookSection;
+    console.info(`${new Date().toISOString()} [routeReport] ${((Date.now() - started) / 1000).toFixed(1)}s · ${timings.join(' · ')}`);
     return `${finalAnswer.trimEnd()}\n\n${report}\n${stockLine ? `${stockLine}\n\n` : ''}${drawings}${precedentText}${textbookText}${compatibilityText}${sources}${fix ? `\n${fix}\n` : ''}`;
   } catch (error) {
     if (options.signal?.aborted) return finalAnswer;

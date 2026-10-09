@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Build smoke-test image
-        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.0 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
+        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.1 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
 
       - name: Run image health smoke test
         shell: bash
@@ -124,7 +124,7 @@ jobs:
           scripts/test-server-vectors.mjs
 
       - name: Build smoke-test image
-        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.0 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
+        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.1 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
 
       - name: Run image health smoke test
         shell: bash
@@ -169,7 +169,7 @@ jobs:
             org.opencontainers.image.description=Experimental self-hosted Nodus MCP server
             org.opencontainers.image.source=https://github.com/jorgepb96/nodus
             org.opencontainers.image.licenses=AGPL-3.0-only
-            org.opencontainers.image.version=5.8.0
+            org.opencontainers.image.version=5.8.1
             org.opencontainers.image.revision=${{ github.sha }}
             app.nodus.stability=experimental
 
@@ -232,7 +232,7 @@ jobs:
             org.opencontainers.image.description=Experimental self-hosted Nodus MCP server
             org.opencontainers.image.source=https://github.com/jorgepb96/nodus
             org.opencontainers.image.licenses=AGPL-3.0-only
-            org.opencontainers.image.version=5.8.0
+            org.opencontainers.image.version=5.8.1
             org.opencontainers.image.revision=${{ github.sha }}
             app.nodus.stability=experimental
 

@@ -24,10 +24,10 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.8.0');
-  assert.equal(current.highlights.length, 11);
-  assert.deepEqual(current.highlights.map(h => h.category), ['new','enhancement','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['toolkit','toolkit','toolkit','ai','academic','general','toolkit','browser','library','ai','general']);
+  assert.equal(current.version, '5.8.1');
+  assert.equal(current.highlights.length, 8);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','enhancement','enhancement','fix','fix','fix','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['toolkit','ai','academic','ai','ai','academic','zotero','general']);
   for (const lang of languages) for (const highlight of current.highlights) {
     assert.ok(highlight[lang].length > 30, `${lang}: complete note`);
     if (lang !== 'en') assert.notEqual(highlight[lang], highlight.en, `${lang}: native translation`);
@@ -53,7 +53,7 @@ test('only v5 and future releases use the three translated sections, including e
       for (const section of sections) assert.ok(section.highlights.every(h => h.category === section.category));
     }
   }
-  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [current.highlights[6]] };
+  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [current.highlights[3]] };
   assert.deepEqual(releaseNoteSections(fixesOnly).map(s => s.highlights.length), [0,0,1]);
   assert.equal(releaseNoteMarkdown(fixesOnly).split(RELEASE_EMPTY_SECTION.en).length - 1, 2);
   assert.throws(() => releaseNoteSections({ ...fixesOnly, highlights: [{ ...current.highlights[0], category: undefined }] }), /uncategorized/);
@@ -72,7 +72,7 @@ test('scope ordering stays inside each section, with stable ties', () => {
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) =>
-    `## ${title}\n\n` + current.highlights.slice([0,1,6][i], [1,6,11][i]).map(h => `- ${h.en}`).join('\n\n')
+    `## ${title}\n\n` + current.highlights.slice([0,1,3][i], [1,3,8][i]).map(h => `- ${h.en}`).join('\n\n')
   ).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);
   await assert.rejects(generateReleaseNotes('v99.0.0'), /does not match/);

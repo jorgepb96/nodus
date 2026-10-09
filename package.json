@@ -1,6 +1,6 @@
 {
   "name": "nodus",
-  "version": "5.8.0",
+  "version": "5.8.1",
   "description": "Local-first desktop app that turns a Zotero library into a navigable graph of ideas and authors.",
   "author": {
     "name": "Jorge Pérez Burgueño",
@@ -13,7 +13,7 @@
     "url": "https://github.com/jorgepb96/nodus.git"
   },
   "releaseMetadata": {
-    "dateReleased": "2026-10-03",
+    "dateReleased": "2026-10-09",
     "conceptDoi": "10.5281/zenodo.21515531",
     "versionDoi": null
   },

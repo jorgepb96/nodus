@@ -33,7 +33,14 @@ export class DocumentaryStore {
   readonly db: Database.Database;
   constructor(filename: string, readonly = false) {
     this.db = new Database(filename, { readonly, fileMustExist: readonly });
-    if (readonly) { this.db.pragma('busy_timeout = 5000'); return; }
+    if (readonly) {
+      this.db.pragma('busy_timeout = 5000');
+      // A semantic search reads every vector in scope, about 4 KB each: mapped, the pages are read
+      // in place instead of copied through a 2 MB page cache on every search.
+      this.db.pragma('mmap_size = 1073741824');
+      this.db.pragma('cache_size = -32768');
+      return;
+    }
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('busy_timeout = 5000');
     this.db.pragma('foreign_keys = ON');
@@ -83,6 +90,21 @@ export class DocumentaryStore {
     // convertLegacyVectors() rewrites them.
     const passageColumns = new Set((this.db.prepare('PRAGMA table_info(documentary_passages)').all() as { name: string }[]).map(column => column.name));
     if (!passageColumns.has('vector')) this.db.exec('ALTER TABLE documentary_passages ADD COLUMN vector BLOB');
+    // A write counter per revision, for the retrieval worker's vector cache
+    // (documentaryVectorCache.ts): any insert, update or delete of a revision's passages moves it.
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS documentary_vector_generations (index_key TEXT PRIMARY KEY, generation INTEGER NOT NULL);
+      CREATE TRIGGER IF NOT EXISTS documentary_vector_generation_insert AFTER INSERT ON documentary_passages BEGIN
+        INSERT INTO documentary_vector_generations VALUES (NEW.index_key,1) ON CONFLICT(index_key) DO UPDATE SET generation=generation+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_vector_generation_update AFTER UPDATE ON documentary_passages BEGIN
+        INSERT INTO documentary_vector_generations VALUES (OLD.index_key,1) ON CONFLICT(index_key) DO UPDATE SET generation=generation+1;
+        INSERT INTO documentary_vector_generations VALUES (NEW.index_key,1) ON CONFLICT(index_key) DO UPDATE SET generation=generation+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_vector_generation_delete AFTER DELETE ON documentary_passages BEGIN
+        INSERT INTO documentary_vector_generations VALUES (OLD.index_key,1) ON CONFLICT(index_key) DO UPDATE SET generation=generation+1;
+      END;
+    `);
   }
   /** Rewrite the next `limit` legacy JSON vectors after `afterRowid` as blobs and return
    * the cursor to continue from, or null once none remain. A cursor, not a count: counting
@@ -243,6 +265,34 @@ export class DocumentaryStore {
     const row = this.db.prepare('SELECT identity_json FROM documentary_jobs WHERE id=?').get(id) as { identity_json: string } | undefined;
     return row ? JSON.parse(row.identity_json) as DocumentaryIndexIdentity : null;
   }
+  /** `jobIdentity` for many jobs, in one statement. Absent ids are absent from the map. */
+  jobIdentities(ids: string[]): Map<string, DocumentaryIndexIdentity> {
+    const rows = this.db.prepare('SELECT id,identity_json FROM documentary_jobs WHERE id IN (SELECT value FROM json_each(?))').all(JSON.stringify([...new Set(ids)])) as Array<{ id: string; identity_json: string }>;
+    return new Map(rows.map(row => [row.id, JSON.parse(row.identity_json) as DocumentaryIndexIdentity]));
+  }
+  /** The revisions of many documents without their text, each document's in the order
+   *  `embedding_ready DESC, created_at DESC`, with the revision each was built from. */
+  revisionsOf(documentIds: string[]): Map<string, Array<{ index_key: string; identity_json: string; embedding_ready: number; lexical_ready: number; revision: string | null }>> {
+    const rows = this.db.prepare(`SELECT document_id,index_key,identity_json,embedding_ready,lexical_ready,json_extract(identity_json,'$.revision') revision
+      FROM documentary_revisions WHERE document_id IN (SELECT value FROM json_each(?)) ORDER BY document_id,embedding_ready DESC,created_at DESC`)
+      .all(JSON.stringify([...new Set(documentIds)])) as Array<{ document_id: string; index_key: string; identity_json: string; embedding_ready: number; lexical_ready: number; revision: string | null }>;
+    const byDocument = new Map<string, Array<Omit<typeof rows[number], 'document_id'>>>();
+    for (const { document_id: documentId, ...row } of rows) {
+      const list = byDocument.get(documentId);
+      if (list) list.push(row); else byDocument.set(documentId, [row]);
+    }
+    return byDocument;
+  }
+  /** Chunks per revision: passages counted on their index for a published revision, the chunk
+   *  JSON's length for one still being built. One statement for each kind. */
+  chunkCounts(rows: Array<{ index_key: string; lexical_ready: number }>): Map<string, number> {
+    const published = rows.filter(row => row.lexical_ready).map(row => row.index_key);
+    const building = rows.filter(row => !row.lexical_ready).map(row => row.index_key);
+    const counts = new Map<string, number>();
+    if (published.length) for (const row of this.db.prepare('SELECT index_key,COUNT(*) n FROM documentary_passages WHERE index_key IN (SELECT value FROM json_each(?)) GROUP BY index_key').all(JSON.stringify(published)) as Array<{ index_key: string; n: number }>) counts.set(row.index_key, row.n);
+    if (building.length) for (const row of this.db.prepare('SELECT index_key,json_array_length(chunks_json) n FROM documentary_revisions WHERE index_key IN (SELECT value FROM json_each(?))').all(JSON.stringify(building)) as Array<{ index_key: string; n: number | null }>) counts.set(row.index_key, row.n ?? 0);
+    return counts;
+  }
   revision(id: string): { text: string | null; chunks_json: string | null; lexical_ready: number; embedding_ready: number } | null {
     return this.db.prepare('SELECT text,chunks_json,lexical_ready,embedding_ready FROM documentary_revisions WHERE index_key=?').get(id) as ReturnType<DocumentaryStore['revision']> ?? null;
   }
@@ -262,7 +312,22 @@ export class DocumentaryStore {
   }
   publishedDocument(document: ResearchCorpusDocument): ResearchCorpusDocument | null {
     const row = this.db.prepare('SELECT document_json,index_keys_json FROM documentary_publications WHERE document_id=?').get(document.id) as { document_json: string; index_keys_json: string } | undefined;
-    if (!row) return null;
+    return row ? DocumentaryStore.fromPublication(document, row) : null;
+  }
+  /** `publishedDocument` for many documents, in one statement: an inventory asked once per source. */
+  publishedDocuments(documents: ResearchCorpusDocument[]): Map<string, ResearchCorpusDocument> {
+    const rows = this.db.prepare('SELECT document_id,document_json,index_keys_json FROM documentary_publications WHERE document_id IN (SELECT value FROM json_each(?))')
+      .all(JSON.stringify(documents.map(document => document.id))) as Array<{ document_id: string; document_json: string; index_keys_json: string }>;
+    const byId = new Map(rows.map(row => [row.document_id, row]));
+    const published = new Map<string, ResearchCorpusDocument>();
+    for (const document of documents) {
+      const row = byId.get(document.id);
+      const pinned = row && DocumentaryStore.fromPublication(document, row);
+      if (pinned) published.set(document.id, pinned);
+    }
+    return published;
+  }
+  private static fromPublication(document: ResearchCorpusDocument, row: { document_json: string; index_keys_json: string }): ResearchCorpusDocument | null {
     const published: ResearchCorpusDocument = JSON.parse(row.document_json);
     // An old revision may survive replacement, but never permission revocation
     // or removal of any file contributing to that revision.
@@ -280,16 +345,7 @@ export class DocumentaryStore {
   }
   semanticSearch(query: number[], indexKeys: string[], limit: number, threshold = -1): ReturnType<DocumentaryStore['lexicalSearch']> {
     if (!indexKeys.length || !query.length || limit <= 0) return [];
-    const norm = Math.sqrt(query.reduce((sum, value) => sum + value * value, 0));
-    if (!norm) return [];
-    this.db.function('documentary_similarity', (blob: Uint8Array | null, json: string | null) => {
-      const vector: ArrayLike<number> = blob ? decodeDocumentaryVector(blob) : JSON.parse(json!) as number[];
-      if (vector.length !== query.length) return -2;
-      for (let index = 0; index < vector.length; index++) if (!Number.isFinite(vector[index])) return -2;
-      let dot = 0, magnitude = 0;
-      for (let index = 0; index < vector.length; index++) { dot += vector[index] * query[index]; magnitude += vector[index] ** 2; }
-      return magnitude ? dot / (norm * Math.sqrt(magnitude)) : -2;
-    });
+    if (!this.registerSimilarity(query)) return [];
     // Materialized so the similarity is computed once per passage (a flattened subquery
     // computed it again for the ORDER BY) and the sort carries ids, not texts and vectors.
     return this.db.prepare(`WITH scored AS MATERIALIZED (
@@ -297,6 +353,32 @@ export class DocumentaryStore {
       WHERE (vector IS NOT NULL OR vector_json IS NOT NULL) AND index_key IN (SELECT value FROM json_each(?)))
       SELECT p.id,p.document_id,p.index_key,p.text,p.locator_json FROM scored JOIN documentary_passages p ON p.id=scored.id
       WHERE scored.similarity>=? ORDER BY scored.similarity DESC,scored.id LIMIT ?`).all(JSON.stringify(indexKeys), threshold, limit) as ReturnType<DocumentaryStore['lexicalSearch']>;
+  }
+  /** Each scored passage of `indexKeys` at or above `threshold`, unordered: the scores
+   *  `semanticSearch` ranks by, for a caller that ranks them with others. */
+  semanticScores(query: number[], indexKeys: string[], threshold = -1): Array<{ id: string; similarity: number }> {
+    if (!indexKeys.length || !query.length || !this.registerSimilarity(query)) return [];
+    return this.db.prepare(`WITH scored AS MATERIALIZED (
+      SELECT id,documentary_similarity(vector,vector_json) similarity FROM documentary_passages
+      WHERE (vector IS NOT NULL OR vector_json IS NOT NULL) AND index_key IN (SELECT value FROM json_each(?)))
+      SELECT id,similarity FROM scored WHERE similarity>=?`).all(JSON.stringify(indexKeys), threshold) as Array<{ id: string; similarity: number }>;
+  }
+  private registerSimilarity(query: number[]): boolean {
+    const norm = Math.sqrt(query.reduce((sum, value) => sum + value * value, 0));
+    if (!norm) return false;
+    this.db.function('documentary_similarity', (blob: Uint8Array | null, json: string | null) => {
+      const vector: ArrayLike<number> = blob ? decodeDocumentaryVector(blob) : JSON.parse(json!) as number[];
+      if (vector.length !== query.length) return -2;
+      // A blob holds float32s, whose squares cannot overflow a double: any NaN or infinity in it
+      // makes the sum of squares non-finite, so one test after the loop rejects exactly the
+      // vectors a separate pass over every element did. Legacy JSON doubles keep that pass.
+      if (!blob) for (let index = 0; index < vector.length; index++) if (!Number.isFinite(vector[index])) return -2;
+      let dot = 0, magnitude = 0;
+      for (let index = 0; index < vector.length; index++) { dot += vector[index] * query[index]; magnitude += vector[index] ** 2; }
+      if (!Number.isFinite(magnitude)) return -2;
+      return magnitude ? dot / (norm * Math.sqrt(magnitude)) : -2;
+    });
+    return true;
   }
   adjacentPassages(id: string, indexKeys: string[], radius = 1): ReturnType<DocumentaryStore['lexicalSearch']> {
     if (!indexKeys.length || radius < 0 || radius > 3) return [];

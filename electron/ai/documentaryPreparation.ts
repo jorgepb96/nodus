@@ -12,9 +12,10 @@ import type { DocumentaryIndexIdentity, ResearchCorpusDocument, ResearchDocument
 import { DocumentaryRequests } from '../db/documentaryRequests';
 import { DocumentaryCampaigns } from '../db/documentaryCampaigns';
 import { DocumentaryStore, type DocumentaryChunk } from '../db/documentaryStore';
+import { schemeCleaningFor, type SchemeCleaning } from './schemeCleaning';
 import { documentaryChunks } from './documentaryChunking';
 import { researchCorpusInventory } from './researchCorpusInventory';
-import { assertResearchDocumentPermission, researchFingerprint } from './researchCorpusScope';
+import { assertResearchDocumentPermission, documentsById, researchFingerprint } from './researchCorpusScope';
 import { getLibraryReaderRawContent } from '../libraryReader/libraryReaderStore';
 import { getGlobalLibraryItem } from '../library/libraryService';
 import { currentEmbeddingConfig } from '../db/ideasRepo';
@@ -146,6 +147,7 @@ export function closeDocumentaryPreparation(): Promise<void> {
   if (vectorConversion) clearTimeout(vectorConversion); vectorConversion = null;
   // An interrupted VACUUM rolls back; the store stays as it was.
   if (maintenanceWorker) void maintenanceWorker.terminate().catch(() => undefined);
+  stopDocumentaryRetrievalWorker();
   unsubscribe?.(); unsubscribe = null;
   if (!draining) { shared?.close(); shared = null; return Promise.resolve(); }
   return new Promise(resolve => { drainClosed = resolve; });
@@ -158,9 +160,13 @@ export function prepareDocumentaryText(document: ResearchCorpusDocument, text: s
 }
 async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text: string, sourceMap: Record<string, string>, signal: AbortSignal | undefined, processingVersion: string): Promise<{ indexKey: string; chunks: DocumentaryChunk[] }> {
   const store = documentaryStore();
+  // Scheme decluttering, where a layout file matches this text's pages: a separate identity,
+  // so its chunks and vectors are never taken for the uncleaned index's or the reverse.
+  const cleaning = schemeCleaningFor(text, sourceMap);
   const identity: DocumentaryIndexIdentity = { documentId: document.id, attachmentId: document.attachmentId, revision: document.revision,
     attachmentRevision: document.attachments?.find(attachment => attachment.id === document.attachmentId)?.revision,
-    coverage: document.coverage, textFingerprint: createHash('sha256').update(text).digest('hex'), chunkerVersion: RETRIEVAL_CHUNKER_VERSION, processingVersion, embedding: null };
+    coverage: document.coverage, textFingerprint: createHash('sha256').update(text).digest('hex'), chunkerVersion: RETRIEVAL_CHUNKER_VERSION, processingVersion, embedding: null,
+    ...(cleaning ? { layout: cleaning.signature } : {}) };
   const indexKey = store.enqueue(identity, { text, sourceMap });
   const existing = store.revision(indexKey);
   if (existing?.lexical_ready) return { indexKey, chunks: JSON.parse(existing.chunks_json!) };
@@ -170,7 +176,7 @@ async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text:
   try {
     signal?.throwIfAborted();
     if (job.stage === 'extract') store.saveExtraction(job, text);
-    const chunks = existing?.chunks_json ? JSON.parse(existing.chunks_json) as DocumentaryChunk[] : await documentaryChunks(text, sourceMap, signal);
+    const chunks = existing?.chunks_json ? JSON.parse(existing.chunks_json) as DocumentaryChunk[] : cleanedChunks(await documentaryChunks(text, sourceMap, signal), cleaning, document.id);
     signal?.throwIfAborted();
     if (job.stage === 'chunk') store.saveChunks(job, chunks);
     if (job.stage === 'lexical') store.publishLexical(job);
@@ -183,6 +189,14 @@ async function prepareDocumentaryTextNow(document: ResearchCorpusDocument, text:
     }
     throw error;
   } finally { clearInterval(heartbeat); }
+}
+
+function cleanedChunks(chunks: DocumentaryChunk[], cleaning: SchemeCleaning | null, documentId: string): DocumentaryChunk[] {
+  if (!cleaning) return chunks;
+  const cleaned = chunks.map(chunk => cleaning.clean(chunk));
+  const before = chunks.reduce((sum, chunk) => sum + chunk.text.length, 0), after = cleaned.reduce((sum, chunk) => sum + chunk.text.length, 0);
+  console.log(`[scheme-layout] ${documentId}: ${cleaning.pages} page layouts matched; ${cleaned.filter((chunk, index) => chunk !== chunks[index]).length}/${chunks.length} chunks cleaned; ${before} → ${after} chars`);
+  return cleaned;
 }
 
 /** Upper bound per document; the provider gate (automatic 2→4, halved on a 429) is the real limit. */
@@ -206,7 +220,7 @@ async function prepareDocumentaryEmbeddingsNow(indexKey: string, chunks: Documen
     AND json_extract(identity_json,'$.chunkerVersion')=? AND json_extract(identity_json,'$.embedding.provider')=?
     AND json_extract(identity_json,'$.embedding.model')=? AND json_extract(identity_json,'$.processingVersion')=?
     AND json_extract(identity_json,'$.attachmentId') IS ?
-    AND json_extract(identity_json,'$.embedding.parameters')=?`).get(base.documentId, base.textFingerprint, base.revision, base.chunkerVersion, config.provider, config.model, base.processingVersion, base.attachmentId, JSON.stringify(parameters)) as { index_key: string } | undefined;
+    AND json_extract(identity_json,'$.embedding.parameters')=? AND json_extract(identity_json,'$.layout') IS ?`).get(base.documentId, base.textFingerprint, base.revision, base.chunkerVersion, config.provider, config.model, base.processingVersion, base.attachmentId, JSON.stringify(parameters), base.layout ?? null) as { index_key: string } | undefined;
   if (cached) {
     const rows = store.db.prepare('SELECT vector,vector_json FROM documentary_passages WHERE index_key=? ORDER BY ordinal').all(cached.index_key) as Array<{ vector: Buffer | null; vector_json: string | null }>;
     progress(rows.length, 0);
@@ -300,27 +314,32 @@ async function prepareDocumentaryEmbeddingsNow(indexKey: string, chunks: Documen
  * and chunk JSON (327 MB over 453 revisions in a real library) into the main process for each
  * of 1,229 sources, and the inventory parsed the chunks twice to count them: 1.3–2.7 s with
  * the window frozen, at every Research Chat question and every documentary search. */
-function revisionsFor(document: ResearchCorpusDocument): Array<{ index_key: string; identity_json: string; embedding_ready: number; lexical_ready: number }> {
+function revisionsFor(document: ResearchCorpusDocument, lookups?: DocumentaryLookups): Array<{ index_key: string; identity_json: string; embedding_ready: number; lexical_ready: number }> {
+  const revision = document.indexedSource?.revision ?? document.revision;
+  if (lookups) return (lookups.revisions.get(document.id) ?? []).filter(row => row.revision === revision);
   return documentaryStore().db.prepare(`SELECT index_key,identity_json,embedding_ready,lexical_ready FROM documentary_revisions WHERE document_id=? AND json_extract(identity_json,'$.revision')=? ORDER BY embedding_ready DESC,created_at DESC`)
-    .all(document.id, document.indexedSource?.revision ?? document.revision) as ReturnType<typeof revisionsFor>;
+    .all(document.id, revision) as ReturnType<typeof revisionsFor>;
 }
-/** Chunks in a revision. A published one has exactly one passage per chunk (publishLexical
- * writes them in the transaction that sets lexical_ready), so they are counted on an index
- * instead of parsing the chunk JSON; an unpublished one is counted by SQLite. */
-function chunkCount(store: DocumentaryStore, row: { index_key: string; lexical_ready: number }): number {
-  const counted = row.lexical_ready
-    ? store.db.prepare('SELECT COUNT(*) n FROM documentary_passages WHERE index_key=?').get(row.index_key)
-    : store.db.prepare('SELECT json_array_length(chunks_json) n FROM documentary_revisions WHERE index_key=?').get(row.index_key);
-  return (counted as { n: number | null } | undefined)?.n ?? 0;
+/** What `revisionsFor` and `attachmentRevisions` read, for every document of an inventory or a
+ *  scope at once. They were read one source at a time — a statement prepared and run per source,
+ *  then one more per published index key — which was the largest share of the main thread's
+ *  SQLite time in a retrieval round (2026-10-09). The same rows, in the same order per source. */
+interface DocumentaryLookups {
+  revisions: ReturnType<DocumentaryStore['revisionsOf']>;
+  identities: Map<string, DocumentaryIndexIdentity>;
 }
-function attachmentRevisions(document: ResearchCorpusDocument): Array<ReturnType<typeof revisionsFor>> {
+function documentaryLookups(documents: ResearchCorpusDocument[]): DocumentaryLookups {
+  const store = documentaryStore();
+  return { revisions: store.revisionsOf(documents.map(document => document.id)), identities: store.jobIdentities(documents.flatMap(document => document.indexedSource?.indexKeys ?? [])) };
+}
+function attachmentRevisions(document: ResearchCorpusDocument, lookups?: DocumentaryLookups): Array<ReturnType<typeof revisionsFor>> {
   const groups = new Map<string | null, ReturnType<typeof revisionsFor>>();
   const attachments = document.indexedSource ? document.indexedSource.attachments : document.attachments;
-  const published = document.indexedSource?.indexKeys.flatMap(key => documentaryStore().jobIdentity(key) ?? []);
-  for (const row of revisionsFor(document)) {
+  const published = document.indexedSource?.indexKeys.flatMap(key => (lookups ? lookups.identities.get(key) : documentaryStore().jobIdentity(key)) ?? []);
+  for (const row of revisionsFor(document, lookups)) {
     const identity: DocumentaryIndexIdentity = JSON.parse(row.identity_json);
     if (published && !published.some(base => base.attachmentId === identity.attachmentId && base.textFingerprint === identity.textFingerprint
-      && base.chunkerVersion === identity.chunkerVersion && base.processingVersion === identity.processingVersion)) continue;
+      && base.chunkerVersion === identity.chunkerVersion && base.processingVersion === identity.processingVersion && (base.layout ?? null) === (identity.layout ?? null))) continue;
     if (attachments?.length && identity.attachmentId !== null
         && !attachments.some(attachment => attachment.id === identity.attachmentId
           && (!identity.attachmentRevision || attachment.revision === identity.attachmentRevision))) continue;
@@ -332,12 +351,34 @@ function attachmentRevisions(document: ResearchCorpusDocument): Array<ReturnType
   return [...groups.values()];
 }
 export function pinPublishedResearchDocument(document: ResearchCorpusDocument): ResearchCorpusDocument {
-  const store = documentaryStore();
-  const published = store.publishedDocument(document);
-  if (published) return published;
-  // No partially built first revision may leak before the all-attachment switch.
-  const preparing = store.db.prepare('SELECT 1 FROM documentary_requests WHERE document_id=? OR source_id=?').get(document.id, document.id);
-  return preparing ? { ...document, indexedSource: { revision: document.revision, attachmentId: document.attachmentId, attachments: document.attachments, indexKeys: [] } } : document;
+  return pinPublishedResearchDocuments([document])[0];
+}
+/** The latest request naming each document, as its id or as its source, from one statement.
+ *  Picked as `ORDER BY updated_at DESC LIMIT 1` per document picked it. */
+function latestRequests(documentIds: string[]): Map<string, { state: string; error: string | null; revision: string }> {
+  const wanted = new Set(documentIds);
+  const ids = JSON.stringify([...wanted]);
+  const latest = new Map<string, { state: string; error: string | null; revision: string; updated_at: number }>();
+  for (const row of documentaryStore().db.prepare(`SELECT document_id,source_id,state,error,revision,updated_at FROM documentary_requests
+      WHERE document_id IN (SELECT value FROM json_each(?)) OR source_id IN (SELECT value FROM json_each(?))`).all(ids, ids) as Array<{ document_id: string; source_id: string | null; state: string; error: string | null; revision: string; updated_at: number }>) {
+    for (const id of new Set([row.document_id, row.source_id])) {
+      if (id === null || !wanted.has(id)) continue;
+      const prior = latest.get(id);
+      if (!prior || row.updated_at > prior.updated_at) latest.set(id, row);
+    }
+  }
+  return latest;
+}
+/** `pinPublishedResearchDocument` for a whole inventory: two statements instead of up to two per
+ *  source, every time a scope is resolved. */
+export function pinPublishedResearchDocuments(documents: ResearchCorpusDocument[], requests = latestRequests(documents.map(document => document.id))): ResearchCorpusDocument[] {
+  const published = documentaryStore().publishedDocuments(documents);
+  return documents.map(document => {
+    const pinned = published.get(document.id);
+    if (pinned) return pinned;
+    // No partially built first revision may leak before the all-attachment switch.
+    return requests.has(document.id) ? { ...document, indexedSource: { revision: document.revision, attachmentId: document.attachmentId, attachments: document.attachments, indexKeys: [] } } : document;
+  });
 }
 
 export function getResearchPreparationInventory(): ResearchPreparationInventory {
@@ -352,23 +393,32 @@ export function getResearchPreparationInventory(): ResearchPreparationInventory 
       embeddingSpaces.set(id, { id, provider: embedding.provider, model: embedding.model, dimensions: embedding.dimensions, metric: embedding.metric });
     }
   }
-  return { enabled: new DocumentaryCampaigns(store.db).policy(getActiveVault().id).futureAdditions, embeddingSpaces: [...embeddingSpaces.values()], documents: researchCorpusInventory().documents.map(current => {
-    const document = pinPublishedResearchDocument(current);
+  const inventory = researchCorpusInventory().documents;
+  const requests = latestRequests(inventory.map(document => document.id));
+  const pinned = pinPublishedResearchDocuments(inventory, requests);
+  const lookups = documentaryLookups(pinned);
+  const groupsOf = pinned.map(document => attachmentRevisions(document, lookups));
+  const counts = store.chunkCounts(groupsOf.flat(2));
+  const chunkCount = (row: { index_key: string }) => counts.get(row.index_key) ?? 0;
+  const wantedParameters = selectedEmbedding && JSON.stringify(embeddingIdentityParameters(selectedEmbedding));
+  const paused = store.preference('paused');
+  return { enabled: new DocumentaryCampaigns(store.db).policy(getActiveVault().id).futureAdditions, embeddingSpaces: [...embeddingSpaces.values()], documents: inventory.map((current, index) => {
+    const document = pinned[index];
     const stale = document.indexedSource && document.indexedSource.revision !== document.revision;
-    const groups = attachmentRevisions(document);
+    const groups = groupsOf[index];
     const revisions = groups.flatMap(group => group.find(row => row.lexical_ready && !row.embedding_ready) ?? group.find(row => row.lexical_ready) ?? []);
     const revision = revisions[0];
-    const latest = store.db.prepare('SELECT state,error,revision FROM documentary_requests WHERE document_id=? OR source_id=? ORDER BY updated_at DESC LIMIT 1').get(document.id, document.id) as { state: string; error: string | null; revision: string } | undefined;
+    const latest = requests.get(document.id);
     // A request for bytes that have since been replaced says nothing about the current file.
     const request = latest && latest.revision === current.revision ? latest : undefined;
-    const passages = revisions.reduce((sum, row) => sum + chunkCount(store, row), 0);
+    const passages = revisions.reduce((sum, row) => sum + chunkCount(row), 0);
     const compatibleVectors = groups.flatMap(group => group.find(row => {
       const identity = JSON.parse(row.identity_json) as DocumentaryIndexIdentity;
       return row.embedding_ready && selectedEmbedding && identity.embedding?.provider === selectedEmbedding.provider
         && identity.embedding.model === selectedEmbedding.modelId
-        && JSON.stringify(identity.embedding.parameters) === JSON.stringify(embeddingIdentityParameters(selectedEmbedding));
+        && JSON.stringify(identity.embedding.parameters) === wantedParameters;
     }) ?? []);
-    const embedded = compatibleVectors.reduce((sum, row) => sum + chunkCount(store, row), 0);
+    const embedded = compatibleVectors.reduce((sum, row) => sum + chunkCount(row), 0);
     const incompatible = groups.some(group => group.some(row => row.embedding_ready)) && compatibleVectors.length === 0;
     const coverage = revision ? (JSON.parse(revision.identity_json) as DocumentaryIndexIdentity).coverage ?? document.coverage : document.coverage;
     // An error on a request that is still queued or running is a retry in progress,
@@ -378,7 +428,7 @@ export function getResearchPreparationInventory(): ResearchPreparationInventory 
     const textPublished = !!revision && !stale;
     return { ...document, preparation: { documentId: document.id, revision: document.revision, text: coverage === 'abstract' ? 'abstract' : passages ? 'available' : 'missing',
       lexical: revision ? stale ? 'stale' : 'ready' : 'missing', embeddings: embedded === passages && passages > 0 ? stale ? 'stale' : 'ready' : embedded > 0 ? 'partial' : incompatible ? 'stale' : request?.error ? retrying ? request.state as 'queued' | 'running' : 'failed' : 'missing',
-      status: request?.state === 'blocked' ? 'blocked' : request?.state === 'cancelled' ? 'cancelled' : store.preference('paused') ? 'paused' : revision ? 'ready' : request?.state === 'running' ? 'running' : request?.state === 'queued' ? 'queued' : request?.error ? 'failed' : 'catalogued',
+      status: request?.state === 'blocked' ? 'blocked' : request?.state === 'cancelled' ? 'cancelled' : paused ? 'paused' : revision ? 'ready' : request?.state === 'running' ? 'running' : request?.state === 'queued' ? 'queued' : request?.error ? 'failed' : 'catalogued',
       reason: request?.error?.startsWith('documentary_ocr_') ? 'ocr_required' : request?.error === 'documentary_embeddings_unavailable' ? 'no_model' : request?.error && (textPublished || request.error.includes('embedding')) ? 'provider_failed' : request?.error ? 'extraction_failed' : null, error: request?.error ?? null, passages, embedded,
       unpreparedAttachmentIds: unpreparedResearchAttachmentIds(document, revisions.map(row => JSON.parse(row.identity_json) as DocumentaryIndexIdentity)) } };
   }) };
@@ -741,7 +791,10 @@ export function notifyResearchCorpusChanged(): void {
           const policy = repo.policy(vault.id);
           if (!policy.futureAdditions) return;
           const inventory = researchCorpusInventory().documents.filter(document => document.workId && !document.noteId && !document.conversationAttachment);
-          const documents = inventory.filter(document => !policy.known.includes(document.id)
+          // A Set, not `known.includes`: that was one linear scan per library document, on a timer —
+          // 12% of the main thread's busy time in a nine-turn trace (2026-10-09).
+          const known = new Set(policy.known);
+          const documents = inventory.filter(document => !known.has(document.id)
             || (policy.authorized[document.id] !== undefined && policy.authorized[document.id] !== document.revision));
           if (documents.length) await prepareResearchDocuments(documents.map(document => document.id));
           const updated = repo.policy(vault.id);
@@ -796,23 +849,88 @@ async function initializeOwnedDocumentaryPreparation(): Promise<void> {
   if (shared) convertLegacyVectorsInBackground();
 }
 
-export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchScope, query: string, settings: RetrievalSettings, vector: number[] | null, signal?: AbortSignal, read?: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
-  const inventory = researchCorpusInventory();
+/** The documentary retrieval process, shared by every search and kept between them: it holds the
+ *  read-only store open and its vectors cached (see documentaryRetrievalWorker.ts). Stopped after
+ *  a few idle minutes, on a search that never answers, and at shutdown; the next search starts it. */
+interface RetrievalWorker {
+  process: BackgroundProcess;
+  pending: Map<number, { message: (message: any) => void; fail: (error: Error) => void }>;
+  idle?: ReturnType<typeof setTimeout>;
+}
+let retrievalWorker: RetrievalWorker | null = null;
+let retrievalRequests = 0;
+const RETRIEVAL_WORKER_IDLE_MS = 5 * 60_000;
+function documentaryRetrievalWorker(): RetrievalWorker {
+  if (retrievalWorker) {
+    if (retrievalWorker.idle) clearTimeout(retrievalWorker.idle);
+    retrievalWorker.idle = undefined;
+    retrievalWorker.process.setIdle(false);
+    return retrievalWorker;
+  }
+  const packagedWorker = path.join(__dirname, 'documentaryRetrievalWorker.js');
+  const worker: RetrievalWorker = { process: backgroundProcess(fs.existsSync(packagedWorker) ? packagedWorker : path.join(app.getAppPath(), 'dist-electron/documentaryRetrievalWorker.js'), 'Nodus documentary retrieval'), pending: new Map() };
+  const failAll = (error: Error) => {
+    if (retrievalWorker === worker) retrievalWorker = null;
+    if (worker.idle) clearTimeout(worker.idle);
+    for (const request of [...worker.pending.values()]) request.fail(error);
+    worker.pending.clear();
+  };
+  worker.process.on('message', (message: { id?: number }) => { if (typeof message?.id === 'number') worker.pending.get(message.id)?.message(message); });
+  worker.process.once('error', error => failAll(error instanceof Error ? error : new Error(String(error))));
+  worker.process.once('exit', (code: number | null) => {
+    if (worker.pending.size) console.warn(`[documentary] retrieval worker exited with code ${code} before replying`);
+    failAll(new Error('documentary_retrieval_worker_stopped'));
+  });
+  retrievalWorker = worker;
+  return worker;
+}
+/** After a search settles: an idle process no longer holds the app (or a test) open, and is
+ *  stopped once it has been idle for a while. */
+function settleRetrievalWorker(worker: RetrievalWorker): void {
+  if (worker.pending.size || retrievalWorker !== worker) return;
+  worker.process.setIdle(true);
+  if (worker.idle) clearTimeout(worker.idle);
+  worker.idle = setTimeout(() => stopDocumentaryRetrievalWorker(worker), RETRIEVAL_WORKER_IDLE_MS);
+  worker.idle.unref?.();
+}
+function stopDocumentaryRetrievalWorker(worker: RetrievalWorker | null = retrievalWorker): void {
+  if (!worker) return;
+  if (retrievalWorker === worker) retrievalWorker = null;
+  if (worker.idle) clearTimeout(worker.idle);
+  void worker.process.terminate().catch(() => undefined);
+}
+
+export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchScope, query: string, settings: RetrievalSettings, vector: number[] | null, signal?: AbortSignal, read?: ResearchDocumentRead,
+  // A run passes its own, so one search does not build the whole inventory twice more.
+  currentDocuments: () => ReturnType<typeof researchCorpusInventory>['documents'] = () => researchCorpusInventory().documents): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
   const config = currentEmbeddingConfig();
   let parameters: ReturnType<typeof embeddingIdentityParameters> | null = null;
   try { parameters = embeddingIdentityParameters(effectiveEmbeddingConfig()); } catch { /* Lexical retrieval remains available without an endpoint. */ }
   const vectorKeys: string[] = [];
   const indexedDocuments = new Set<string>();
   const incompleteAttachments = new Set<string>();
+  // Per document of the scope, this ran a linear find over the inventory and parsed each revision's
+  // identity up to three times, serialising the same embedding parameters once per row: ~11% of the
+  // main thread's busy time in a nine-turn trace (2026-10-09). An index, one parse per row, and one
+  // serialisation of the constant compare exactly the same things.
+  const inventoryById = documentsById(currentDocuments());
+  const parsedIdentities = new Map<object, DocumentaryIndexIdentity>();
+  const identityOf = (row: { identity_json: string }): DocumentaryIndexIdentity => {
+    let identity = parsedIdentities.get(row);
+    if (!identity) { identity = JSON.parse(row.identity_json) as DocumentaryIndexIdentity; parsedIdentities.set(row, identity); }
+    return identity;
+  };
+  const wantedParameters = JSON.stringify(parameters);
+  const lookups = documentaryLookups(scope.documents);
   const keys = scope.documents.flatMap(document => {
-    assertResearchDocumentPermission(scope, document.id, inventory.documents.find(item => item.id === document.id));
-    const groups = attachmentRevisions(document);
-    const identities = groups.flatMap(group => group.filter(row => row.lexical_ready).map(row => JSON.parse(row.identity_json) as DocumentaryIndexIdentity));
+    assertResearchDocumentPermission(scope, document.id, inventoryById.get(document.id));
+    const groups = attachmentRevisions(document, lookups);
+    const identities = groups.flatMap(group => group.filter(row => row.lexical_ready).map(identityOf));
     if (unpreparedResearchAttachmentIds(document, identities).length) incompleteAttachments.add(document.id);
     return groups.flatMap(revisions => {
     const semantic = revisions.find(row => {
-      const identity: DocumentaryIndexIdentity = JSON.parse(row.identity_json);
-      return row.embedding_ready && identity.embedding?.model === config.model && identity.embedding?.provider === config.provider && identity.embedding?.dimensions === vector?.length && JSON.stringify(identity.embedding.parameters) === JSON.stringify(parameters);
+      const identity = identityOf(row);
+      return row.embedding_ready && identity.embedding?.model === config.model && identity.embedding?.provider === config.provider && identity.embedding?.dimensions === vector?.length && JSON.stringify(identity.embedding.parameters) === wantedParameters;
     });
     if (semantic) vectorKeys.push(semantic.index_key);
     const revision = revisions.find(row => row.lexical_ready && !row.embedding_ready) ?? revisions.find(row => row.lexical_ready);
@@ -824,43 +942,57 @@ export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchS
   const threshold = settings.threshold.mode === 'manual' && settings.threshold.embeddingSpace === space ? settings.threshold.value : -1;
   signal?.throwIfAborted();
   if (!keys.length && !vectorKeys.length) return { evidence: [], traversal: { partial: scope.documents.length > 0, rounds: 1, candidates: 0, evidenceTokens: 0, visited: [] } };
-  const packagedWorker = path.join(__dirname, 'documentaryRetrievalWorker.js');
-  const worker = backgroundProcess(fs.existsSync(packagedWorker) ? packagedWorker : path.join(app.getAppPath(), 'dist-electron/documentaryRetrievalWorker.js'), 'Nodus documentary retrieval');
   const finishSearch = startResearchActivity('nodus', read?.kind === 'search' ? 'search' : read?.kind === 'pages' ? 'pages' : read?.kind === 'context' ? 'expand' : read?.kind === 'references' ? 'references' : 'search', scope.documents.length === 1 ? scope.documents[0].title : query);
   const activities = new Map<string, ReturnType<typeof startResearchActivity>>();
   const result = await new Promise<{ passages: ReturnType<DocumentaryStore['lexicalSearch']>; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }>((resolve, reject) => {
     let settled = false;
+    const retrievalStarted = Date.now();
+    // Diagnostic, off unless asked for: the query text itself, so a trace can tell a repeated
+    // question from a rephrased one. It is the user's own words, so it is never logged by default.
+    const traceQuery = process.env.NODUS_TRACE_QUERIES === '1' ? ` · query ${JSON.stringify(query.slice(0, 240))}` : '';
+    const worker = documentaryRetrievalWorker();
+    const id = ++retrievalRequests;
     const finish = (error: Error | null, value?: { passages: ReturnType<DocumentaryStore['lexicalSearch']>; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }) => {
       if (settled) return;
       settled = true;
+      console.info(`${new Date().toISOString()} [documentary] retrieval ${read?.kind ?? 'search'} ${((Date.now() - retrievalStarted) / 1000).toFixed(1)}s · ${keys.length} lexical / ${vectorKeys.length} vector keys · ${value?.passages.length ?? 0} passages${error ? ` · ${error.message}` : ''}${traceQuery}`);
       clearTimeout(deadline);
       finishSearch(error ? 'failed' : 'completed', value?.passages.length);
       for (const finishActivity of activities.values()) finishActivity(error ? 'failed' : 'completed');
       activities.clear();
       signal?.removeEventListener('abort', abort);
-      void worker.terminate().finally(() => { if (error) reject(error); else resolve(value!); });
+      worker.pending.delete(id);
+      settleRetrievalWorker(worker);
+      if (error) reject(error); else resolve(value!);
     };
+    // A cancelled search leaves the shared process to finish it and discards the answer; a search
+    // that never answers stops the process, which the next search starts again.
     const abort = () => finish(new Error('documentary_retrieval_cancelled'));
-    const deadline = setTimeout(() => finish(new Error('documentary_retrieval_timeout')), 30000);
+    const deadline = setTimeout(() => { finish(new Error('documentary_retrieval_timeout')); stopDocumentaryRetrievalWorker(worker); }, 30000);
     signal?.addEventListener('abort', abort, { once: true });
-    worker.on('message', message => {
-      if (settled) return;
-      if (message.type === 'activity') {
-        if (message.status === 'active') activities.set(message.key, startResearchActivity(message.operation === 'expand' ? 'context' : 'nodus', message.operation));
-        else { activities.get(message.key)?.('completed', message.count); activities.delete(message.key); }
-        return;
-      }
-      finish(message.error ? new Error(message.error) : null, message);
+    worker.pending.set(id, {
+      message: message => {
+        if (message.type === 'activity') {
+          if (message.status === 'active') activities.set(message.key, startResearchActivity(message.operation === 'expand' ? 'context' : 'nodus', message.operation));
+          else { activities.get(message.key)?.('completed', message.count); activities.delete(message.key); }
+          return;
+        }
+        finish(message.error ? new Error(message.error) : null, message);
+      },
+      fail: error => finish(error),
     });
-    worker.once('error', error => finish(error));
-    worker.once('exit', (code: number | null) => { if (!settled) { console.warn(`[documentary] retrieval worker exited with code ${code} before replying`); finish(new Error('documentary_retrieval_worker_stopped')); } });
-    worker.postMessage({ filename: documentaryStore().db.name, query, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
+    worker.process.postMessage({ id, filename: documentaryStore().db.name, query, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
   });
-  const latest = researchCorpusInventory().documents;
-  for (const document of scope.documents) assertResearchDocumentPermission(scope, document.id, latest.find(item => item.id === document.id));
+  const latest = documentsById(currentDocuments());
+  for (const document of scope.documents) assertResearchDocumentPermission(scope, document.id, latest.get(document.id));
+  // Indexed once: a linear search per scope document (and per passage) is quadratic in the library.
+  // The job's identity alone, read once per key: `getJob` also reads its payload, which can hold
+  // the whole extracted text, once per passage.
+  const scopeById = documentsById(scope.documents);
+  const identities = documentaryStore().jobIdentities(result.passages.map(passage => passage.index_key));
   const evidence = result.passages.map(passage => {
-    const document = scope.documents.find(document => document.id === passage.document_id)!;
-    const identity = JSON.parse(documentaryStore().getJob(passage.index_key)!.identity_json) as DocumentaryIndexIdentity;
+    const document = scopeById.get(passage.document_id)!;
+    const identity = identities.get(passage.index_key)!;
     const coverage = identity.coverage ?? document.coverage;
     return { id: passage.id, documentId: document.id, workId: document.workId, attachmentId: identity.attachmentId, attachmentRevision: identity.attachmentRevision,
       revision: identity.revision, text: passage.text, locator: JSON.parse(passage.locator_json),

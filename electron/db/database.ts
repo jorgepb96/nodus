@@ -14,6 +14,7 @@ import { auditQaDatabaseOpen } from '../qa/databaseAudit';
 import { migrateDatabaseSafely } from './migrationSafety';
 import { scheduleMigrationRecoveryRetention } from './migrationRecoveryUtilityHost';
 import { ensureBackupRevisionTriggers } from '../export/backupVaultRevision';
+import { ensureVectorScanGenerationTriggers } from './vectorScanGenerations';
 import { embeddingTextForIdea, embeddingTextHash } from './ideaEmbeddingText';
 
 let db: Database.Database | null = null;
@@ -136,6 +137,8 @@ function openDatabase(file: string): Database.Database {
   // stops a reader from queueing anything: without triggers, nothing can write to
   // server_outbox no matter what the rest of the app believes.
   ensureOutboxTriggers(next, mayQueueMutations(file));
+  // Before the backup triggers, so its counter table is tracked like any other.
+  ensureVectorScanGenerationTriggers(next);
   ensureBackupRevisionTriggers(next);
   // A chat history's folders and projects are checked on every open: a placement that
   // names a folder or project that is gone (or a folder of another project) is cleared

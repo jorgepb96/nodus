@@ -26,6 +26,7 @@ const STUBS = {
   './localReranker': 'export const rerankerAvailable = () => globalThis.__rr.available; export const rerank = async (q, docs) => globalThis.__rr.scores ? globalThis.__rr.scores(docs) : null;',
   '../db/database': 'export const getDb = () => ({ prepare: () => ({ all: () => [] }) });',
   '../db/passagesRepo': `export const findSimilarPassages = () => [];
+export const findSimilarPassagesPaged = async () => [];
 export const lexicalPassageSearch = (query, limit) => { globalThis.__rr.laneSizes.push(limit); return globalThis.__rr.lane; };`,
 };
 const outfile = path.join(tmp, 'evidence.mjs');

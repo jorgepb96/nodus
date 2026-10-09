@@ -1,4 +1,5 @@
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from '../secrets/safeStorageGate';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -31,7 +32,7 @@ export interface CapabilityServiceAdapters {
   };
   python?: {
     ensureRuntime: (runtime: TrustedWorkerRuntime, runtimeId: string, signal: AbortSignal) => Promise<{ ready: boolean; detail?: string }>;
-    run: (runtime: TrustedWorkerRuntime, request: { runtimeId: string; args: string[]; stdin?: string; secret?: string; timeoutMs: number }, signal: AbortSignal) => Promise<{ code: number; stdout: string; stderr: string }>;
+    run: (runtime: TrustedWorkerRuntime, request: { runtimeId: string; args: string[]; stdin?: string; secret?: string; timeoutMs: number; persistent?: boolean }, signal: AbortSignal) => Promise<{ code: number; stdout: string; stderr: string }>;
   };
   subworker?: (runtime: TrustedWorkerRuntime, request: { entry: string; input: unknown; timeoutMs: number }, signal: AbortSignal) => Promise<unknown>;
   /** Bound by the caller to the conversation the invocation belongs to. */
@@ -187,6 +188,27 @@ async function readBounded(response: Response, limit: number): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+/** Refusals a server has sent, for the life of the process, per plugin and declared endpoint.
+ *
+ *  A capability paces its own requests, but its pacing lived in its worker, and each turn — each
+ *  phase of one answer — ran its own worker: a server that had refused this machine was asked
+ *  again by the next worker as if nothing had happened, and PubChem's block grows while requests
+ *  continue. The host sees every request, so it keeps the refusal: after a 429 or a 503, nothing
+ *  is sent to that endpoint for that plugin, from any worker, until the server's Retry-After has
+ *  passed, or else a back-off that doubles with each refusal (from one minute to thirty). A request
+ *  in that window fails at once, without waiting, so it costs a fallback rather than a timeout. */
+const BACKOFF_FIRST_MS = 60_000;
+const BACKOFF_MAX_MS = 30 * 60_000;
+const endpointRefusals = new Map<string, { until: number; next: number }>();
+
+function retryAfterMs(value: string | null, now: number): number {
+  if (!value) return 0;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+  const at = Date.parse(value);
+  return Number.isFinite(at) ? Math.max(0, at - now) : 0;
+}
+
 export function createCapabilityHostServices(adapters: CapabilityServiceAdapters = {}): CapabilityHostServices {
   const mapServices = new Map<string, MapService>();
   return async ({ runtime, channel, method, payload, signal }) => {
@@ -252,9 +274,18 @@ export function createCapabilityHostServices(adapters: CapabilityServiceAdapters
 
     if (channel === 'network') {
       const { url, method: verb, headers, body, endpoint } = await authorizedRequest(runtime, payload);
+      const refusalKey = `${runtime.plugin.id}|${endpoint.id}`;
+      const refused = endpointRefusals.get(refusalKey);
+      if (refused && Date.now() < refused.until) throw new Error(`${url.host} asked this machine to wait; nothing is sent to it before ${new Date(refused.until).toISOString()}.`);
       adapters.beforePaidCall?.();
       const timeout = AbortSignal.timeout(endpoint.timeoutMs);
       const response = await fetch(url, { method: verb, headers, body, redirect: 'error', signal: AbortSignal.any([signal, timeout]) });
+      if (response.status === 429 || response.status === 503) {
+        const now = Date.now();
+        const told = retryAfterMs(response.headers.get('retry-after'), now);
+        const next = refused?.next ?? BACKOFF_FIRST_MS;
+        endpointRefusals.set(refusalKey, { until: now + (told || next), next: Math.min(next * 2, BACKOFF_MAX_MS) });
+      } else if (response.status < 500) endpointRefusals.delete(refusalKey);
       if (method === 'downloadToTemp') {
         if (!(runtime.permissions.storage?.tempBytes ?? 0)) throw new Error('Capability temporary storage is not permitted.');
         const bytes = await readBounded(response, Math.min(endpoint.maxResponseBytes, runtime.permissions.storage!.tempBytes));
@@ -313,7 +344,7 @@ export function createCapabilityHostServices(adapters: CapabilityServiceAdapters
         ? readCapabilitySecret(runtime.plugin.id, runtime.manifest.id, secretId)
         : undefined;
       if (secretId && !secret) throw new Error('That capability credential is not configured.');
-      return adapters.python.run(runtime, { runtimeId, args, stdin: typeof value.stdin === 'string' ? value.stdin : undefined, secret, timeoutMs: Number(value.timeoutMs ?? 120_000) }, signal);
+      return adapters.python.run(runtime, { runtimeId, args, stdin: typeof value.stdin === 'string' ? value.stdin : undefined, secret, timeoutMs: Number(value.timeoutMs ?? 120_000), persistent: value.persistent === true }, signal);
     }
 
     // `nodus:3d`. The core owns the format check and the storage; the capability owns

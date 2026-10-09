@@ -26,6 +26,8 @@ interface Pending {
 const REQUEST_TIMEOUT_MS = 180_000;
 let worker: Worker | null = null;
 let workerUnavailable = false;
+/** Workers stopped on purpose: their exit is not a crash. */
+const retired = new WeakSet<Worker>();
 let nextRequestId = 1;
 const pending = new Map<number, Pending>();
 
@@ -55,7 +57,8 @@ function getWorker(): Worker | null {
   const file = workerFile();
   if (!fs.existsSync(file)) return null;
   try {
-    worker = new Worker(file);
+    const created = new Worker(file);
+    worker = created;
     worker.unref();
     worker.on('message', (reply: WorkerReply) => {
       const request = pending.get(reply.id);
@@ -70,8 +73,8 @@ function getWorker(): Worker | null {
       abandonWorker(error instanceof Error ? error : new Error(String(error)));
     });
     worker.on('exit', (code) => {
-      worker = null;
-      if (code !== 0) {
+      if (worker === created) worker = null;
+      if (code !== 0 && !retired.has(created)) {
         workerUnavailable = true;
         rejectPending(new Error(`El worker de búsqueda vectorial terminó con código ${code}.`));
       }
@@ -115,4 +118,21 @@ export async function scanSimilarInWorker<T>(
     // paged implementation remains responsive and produces the same ranking.
     return null;
   }
+}
+
+/**
+ * Stop the worker and close every connection it holds, before a vault file is replaced in place.
+ *
+ * Its read-only connections stay open between scans, so closing the main connection is not the
+ * last close: SQLite leaves the vault's `-wal` and `-shm` beside it, and a database copied over
+ * the vault then opens THROUGH that old log. Measured 2026-10-09: a restored vault read back the
+ * pre-restore rows, not the backup's. The next scan starts a fresh worker.
+ */
+export async function stopVectorScanWorker(): Promise<void> {
+  const current = worker;
+  if (!current) return;
+  retired.add(current);
+  worker = null;
+  rejectPending(new Error('La búsqueda vectorial se detuvo para sustituir la base de datos.'));
+  await current.terminate().catch(() => undefined);
 }

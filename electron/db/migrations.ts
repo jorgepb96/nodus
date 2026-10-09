@@ -160,7 +160,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 200;
+export const SCHEMA_VERSION = 201;
 
 export const migrations: Migration[] = [
   {
@@ -9605,6 +9605,25 @@ export const migrations: Migration[] = [
       created_at   TEXT NOT NULL,
       PRIMARY KEY (scope_id, key)
     );
+  ` },
+  // The passage search index is found by passage id, not scanned. `passage_id` is UNINDEXED in
+  // `passages_fts`, so the triggers' `DELETE FROM passages_fts WHERE passage_id=old.passage_id`
+  // read every row of the index for each passage deleted or rewritten: replacing or deleting one
+  // work of 100 passages in a 100,000-passage library took 5.4 s, all of it inside the write
+  // transaction (2026-10-09). FTS5 keeps the column in its content table, `c0` there, and an index
+  // on it turns each delete into a lookup (5 ms for the same work). FTS5 maintains the index like
+  // any other on its own writes; dropping the virtual table drops it.
+  { version: 201, up: /* sql */ `
+    CREATE INDEX IF NOT EXISTS passages_fts_content_passage ON passages_fts_content(c0);
+    DROP TRIGGER IF EXISTS passages_document_fts_au;
+    DROP TRIGGER IF EXISTS passages_document_fts_ad;
+    CREATE TRIGGER passages_document_fts_au AFTER UPDATE OF text, nodus_id ON passages BEGIN
+      DELETE FROM passages_fts WHERE rowid IN (SELECT id FROM passages_fts_content WHERE c0=old.passage_id);
+      INSERT INTO passages_fts(passage_id, nodus_id, text) VALUES (new.passage_id, new.nodus_id, new.text);
+    END;
+    CREATE TRIGGER passages_document_fts_ad AFTER DELETE ON passages BEGIN
+      DELETE FROM passages_fts WHERE rowid IN (SELECT id FROM passages_fts_content WHERE c0=old.passage_id);
+    END;
   ` },
 ];
 

@@ -774,8 +774,10 @@ def main():
     write_zst(os.path.join(args.out, 'templates.tsv.zst'),
               '\n'.join(f'{templates[t]}\t{templates_r.get(t, 0)}\t{templates_f.get(t, 0)}\t'
                         f'{",".join(template_samples.get(t, []))}\t{t}' for t in sorted(templates)))
-    write_zst(os.path.join(args.out, 'products.tsv.zst'),
-              '\n'.join(f'{k}\t{products[k]["n"]}\t{",".join(products[k]["k"])}' for k in sorted(products)))
+    # Blocked like the other keyed tables: a products lookup reads one small frame instead of streaming
+    # the whole table (~0.3-0.5 s a call, measured 2026-10-09).
+    write_zst_blocked(os.path.join(args.out, 'products.tsv.zst'),
+                      [f'{k}\t{products[k]["n"]}\t{",".join(products[k]["k"])}' for k in sorted(products)])
     write_zst_blocked(os.path.join(args.out, 'reaction-smiles.tsv.zst'),
                       [f'{k}\t{reaction_meta[k][0]}' for k in sorted(reaction_meta)])
     retro = sorted((t for t in templates if templates[t] >= RETRO_MIN_COUNT and templates_r.get(t, 0) > 0),
@@ -818,7 +820,7 @@ def main():
 
     for name in ('exact.tsv.zst', 'templates.tsv.zst', 'products.tsv.zst', 'reaction-smiles.tsv.zst',
                  'retro-templates.tsv.zst', 'molecules.tsv.zst', 'audit-excluded.tsv.zst', 'audit-flags.tsv.zst', 'exact.tsv.zst.blocks',
-                 'reaction-smiles.tsv.zst.blocks', 'molecules.tsv.zst.blocks'):
+                 'reaction-smiles.tsv.zst.blocks', 'molecules.tsv.zst.blocks', 'products.tsv.zst.blocks'):
         record(name, os.path.join(args.out, name))
 
     fp_vectors = empty_fps = None
@@ -859,6 +861,10 @@ def main():
         with open(fp_path, 'wb') as fh:
             with cctx.stream_writer(fh) as w:
                 w.write(faiss.serialize_index_binary(index))
+        # Also uncompressed, so a lookup can memory-map it rather than unpack 77 MB into 248 MB on every
+        # similarity call. The .zst stays for packages that read only it.
+        faiss.write_index_binary(index, os.path.join(args.out, 'reactions.faiss'))
+        record('reactions.faiss', os.path.join(args.out, 'reactions.faiss'))
         write_zst(os.path.join(args.out, 'reaction-keys.txt.zst'), '\n'.join(keys))
         record('reactions.faiss.zst', fp_path)
         record('reaction-keys.txt.zst', os.path.join(args.out, 'reaction-keys.txt.zst'))

@@ -84,6 +84,26 @@ try {
   assert.equal((await owned(newVault, () => resolve('OTHER01'))).text, otherText.text);
   assert.equal((await owned(oldVault, () => resolve('SHARED01'))).text, oldText.text);
 
+  // A choice can bind the classifier its text came from, so a later classifier leaves it alone.
+  const { createHash } = await import('node:crypto');
+  const choiceKey = (nodusId, ref) => `pdf_declutter:${createHash('sha256').update(JSON.stringify([nodusId, ref])).digest('hex')}`;
+  await owned(newVault, () => {
+    const db = database.getDb();
+    db.prepare("INSERT INTO works(nodus_id,zotero_key,title,authors_json,item_type,resolved_text_hash) VALUES('bound-work','BOUND01','Bound work','[]','book','in-use')").run();
+    db.prepare("INSERT INTO settings(key,value) VALUES(?, 'declutter:layout-2')").run(choiceKey('bound-work', sourceRef));
+    assert.equal(choices.schemeClassifierForWorkSource('BOUND01', sourceRef, false), 'layout-2', 'a bound classifier is kept');
+    assert.equal(choices.schemeClassifierForWorkSource('SHARED01', sourceRef, false), 'layout-4', "a plain 'declutter' choice means the current classifier");
+    assert.equal(choices.schemeClassifierForWorkSource('OTHER01', sourceRef, true), null, 'a plain choice stays plain');
+    db.prepare("UPDATE settings SET value='declutter:layout-99' WHERE key=?").run(choiceKey('bound-work', sourceRef));
+    assert.equal(choices.schemeClassifierForWorkSource('BOUND01', sourceRef, false), 'layout-4', 'an unknown classifier still declutters, with the current one');
+  });
+  assert.equal(choices.declutterCacheKey('/a.pdf', 'layout-2'), '/a.pdf#declutter-layout-2');
+  assert.equal(choices.declutterCacheKey('/a.pdf'), '/a.pdf#declutter-layout-4');
+  const classifiers = load('electron/extraction/schemeClassifiers.ts');
+  const layoutItems = items.map((entry) => ({ ...entry }));
+  assert.deepEqual(classifiers.schemeClassifier('layout-2').pageSchemeLayout(layoutItems, 10), load('electron/extraction/schemeLayout2.ts').pageSchemeLayout(layoutItems, 10));
+  assert.deepEqual(classifiers.schemeClassifier().pageSchemeLayout(layoutItems, 10), load('electron/extraction/schemeLayout.ts').pageSchemeLayout(layoutItems, 10));
+
   const controller = new AbortController();
   let sampled = 0;
   await assert.rejects(() => choices.pdfBodySize({ numPages: 40, getPage: async () => {

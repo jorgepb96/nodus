@@ -65,9 +65,17 @@ export function lexicalPassageSearch(
   // Joining first made SQLite read every match's row — its text, then its embedding blob to
   // reach source_ref — and sort them all before the LIMIT: 14,437 matches of a common word
   // held the main process for 1.1 s. Ties keep the index order, as the sorted join did.
+  //
+  // The ranking is read a page at a time, and only inside the scope: every match's id used to
+  // come back to JavaScript (100,000 of them for a common word) to be filtered by scope here,
+  // although nearly every search is satisfied by its first `wanted` rows. bm25 is computed over
+  // the whole index whatever the WHERE, so the order is the same; the index's nodus_id is kept
+  // equal to the passage's by its triggers.
   const db = getDb();
-  const ranked = db.prepare('SELECT passage_id FROM passages_fts WHERE passages_fts MATCH ? ORDER BY bm25(passages_fts), rowid')
-    .pluck().all(ftsQuery) as string[];
+  const rankedPage = db.prepare(`SELECT passage_id FROM passages_fts WHERE passages_fts MATCH ?${scope ? ' AND nodus_id IN (SELECT value FROM json_each(?))' : ''}
+    ORDER BY bm25(passages_fts), rowid LIMIT ? OFFSET ?`).pluck();
+  const pageSize = Math.max(wanted * 2, 64);
+  const scopeJson = scope ? [JSON.stringify([...scope])] : [];
   const read = db.prepare(
     `SELECT p.passage_id,p.nodus_id,p.text,p.page_label,p.source_ref,p.page_number,
             w.title,w.authors_json,w.year,w.zotero_key
@@ -77,14 +85,18 @@ export function lexicalPassageSearch(
         AND ${PASSAGE_MATCHES_RESOLVED_TEXT}`
   );
   const rows: Array<Omit<SimilarPassage, 'similarity'>> = [];
-  for (let start = 0; start < ranked.length && rows.length < wanted; start += 64) {
-    const batch = ranked.slice(start, start + 64);
-    const found = new Map((read.all(JSON.stringify(batch)) as Array<Omit<SimilarPassage, 'similarity'>>).map(row => [row.passage_id, row]));
-    for (const id of batch) {
-      const row = found.get(id);
-      if (row && (!scope || scope.has(row.nodus_id))) rows.push(row);
-      if (rows.length === wanted) break;
+  for (let offset = 0; rows.length < wanted; offset += pageSize) {
+    const ranked = rankedPage.all(ftsQuery, ...scopeJson, pageSize, offset) as string[];
+    for (let start = 0; start < ranked.length && rows.length < wanted; start += 64) {
+      const batch = ranked.slice(start, start + 64);
+      const found = new Map((read.all(JSON.stringify(batch)) as Array<Omit<SimilarPassage, 'similarity'>>).map(row => [row.passage_id, row]));
+      for (const id of batch) {
+        const row = found.get(id);
+        if (row && (!scope || scope.has(row.nodus_id))) rows.push(row);
+        if (rows.length === wanted) break;
+      }
     }
+    if (ranked.length < pageSize) break;
   }
   // BM25 alone rewards a very frequent generic term. Re-rank its bounded candidate
   // pool by how many distinct roots from this one atomic question the passage

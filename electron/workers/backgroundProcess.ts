@@ -8,6 +8,9 @@ export interface BackgroundProcess extends EventEmitter {
   postMessage(message: unknown): void;
   terminate(): Promise<number>;
   unref(): void;
+  /** A long-lived process between requests: while idle it does not keep the parent running.
+   *  Only a forked child can; a utility process never holds Electron open. */
+  setIdle(idle: boolean): void;
 }
 
 /** CPU/memory-heavy document work has its own OS process, not an isolate inside
@@ -31,6 +34,7 @@ export function backgroundProcess(filename: string, serviceName: string): Backgr
     events.postMessage = message => { if (!stopped) { if (ready) child.postMessage(message); else pending.push(message); } };
     events.terminate = () => { stopped = true; pending.length = 0; child.kill(); return exited; };
     events.unref = () => { /* The bounded operation owns this utility process. */ };
+    events.setIdle = () => { /* See setIdle. */ };
   } else {
     const child = fork(filename, [], { serialization: 'advanced', stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
     Object.defineProperty(events, 'pid', { get: () => child.pid });
@@ -43,6 +47,9 @@ export function backgroundProcess(filename: string, serviceName: string): Backgr
     events.terminate = () => { stopped = true; child.kill(); return exited; };
     // Keep IPC referenced until completion, including in awaited CLI fixtures.
     events.unref = () => child.unref();
+    events.setIdle = idle => {
+      if (idle) { child.unref(); child.channel?.unref(); } else { child.ref(); child.channel?.ref(); }
+    };
   }
   return events;
 }

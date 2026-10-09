@@ -284,6 +284,9 @@ const NOT_SYNCED_TABLES = new Set([
   // backup can reuse a verified snapshot. Moving it to another machine would neither
   // carry user data nor describe the receiver's SQLite file.
   'backup_revision',
+  // Write counters the vector-scan worker keys its cache on (vectorScanGenerations.ts):
+  // they describe this SQLite file's writes, not anything a receiver could use.
+  'vector_scan_generations',
   // Explicitly local, opt-in and content-free beta performance observations.
   'primary_source_local_metrics',
   // Deliberately machine-local: it is THIS computer's record of what its own merges

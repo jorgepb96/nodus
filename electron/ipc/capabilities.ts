@@ -5,7 +5,7 @@ import { validateViewDocument } from '../../packages/capability-api/src/views';
 import { capabilityRegistry, onCapabilityRegistryChanged, rebuildCapabilityRegistry, type CapabilityProvider } from '../capabilities/registry';
 import { contractFences } from '../../packages/capability-api/src/chat';
 import { approvePendingPluginV2, discardPendingPluginV2, listInstalledPluginsV2, pendingPluginPermissions, removePluginV2, resolveTrustedCapability, rollbackPluginV2 } from '../capabilities/pluginStoreV2';
-import { acquireCapabilityWorker, stopCapabilityWorkers } from '../capabilities/workerHost';
+import { acquireCapabilityWorker, stopPluginWorkers } from '../capabilities/workerHost';
 import { createCapabilityHostServices } from '../capabilities/hostServices';
 import { writeCapabilitySecret } from '../capabilities/hostServices';
 import { createCapabilityAdapters } from '../capabilities/runner';
@@ -239,7 +239,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
 
   h('capabilities:approvePlugin', async (_event, pluginId: string) => {
     const state = approvePendingPluginV2(pluginId);
-    await stopCapabilityWorkers(key => key.includes(pluginId));
+    await stopPluginWorkers(pluginId);
     rebuildCapabilityRegistry();
     await activateAfterMigration(pluginId);
     return listInstalledPluginsV2().find(candidate => candidate.id === pluginId) ?? state;
@@ -248,7 +248,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
   /** The other half of asking: a refusal has to be able to undo the staging the question
    *  needed, or declining would cost the user a package stuck half-installed. */
   h('capabilities:discardPendingPlugin', async (_event, pluginId: string) => {
-    await stopCapabilityWorkers(key => key.includes(pluginId));
+    await stopPluginWorkers(pluginId);
     discardPendingPluginV2(pluginId);
     rebuildCapabilityRegistry();
     broadcastMigrationChanged();
@@ -257,7 +257,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
 
   h('capabilities:rollbackPlugin', async (_event, pluginId: string) => {
     const state = rollbackPluginV2(pluginId);
-    await stopCapabilityWorkers(key => key.includes(pluginId));
+    await stopPluginWorkers(pluginId);
     rebuildCapabilityRegistry();
     materializeTrustedPluginSkills(pluginId);
     broadcastMigrationChanged();
@@ -276,7 +276,7 @@ export function registerCapabilitiesIpc(context: IpcContext): void {
   }
 
   h('capabilities:removePlugin', async (_event, pluginId: string, purgeData = false) => {
-    await stopCapabilityWorkers(key => key.includes(pluginId));
+    await stopPluginWorkers(pluginId);
     removePluginV2(pluginId, { purgeData });
     rebuildCapabilityRegistry();
     return listInstalledPluginsV2();

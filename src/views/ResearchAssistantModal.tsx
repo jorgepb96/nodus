@@ -28,7 +28,7 @@ import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
 import { ChatSkillsControl } from '../components/ChatSkillsControl';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import type {
   AppSettings,
   ChatConversationSummary,
@@ -102,6 +102,18 @@ const GENEALOGY_SUGGESTIONS = [
 ];
 
 type UiMessage = ResearchUiMessage;
+
+/** How often a streaming answer is repainted: about 20 times a second, instead of once per
+ *  delta. Short enough to read as live typing. */
+const STREAM_PAINT_MS = 50;
+
+/** An adapter's answer (Study, World, Databases). `renderMessage` builds fresh callback props on
+ *  every call, which defeats the memo inside ChatMarkdown, so without this every streamed delta
+ *  re-parsed the Markdown of every earlier answer. A delta replaces only the streaming message
+ *  object; the others keep their identity and are skipped here. */
+const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, streaming }: { render: (message: UiMessage, streaming: boolean) => ReactNode; message: UiMessage; streaming: boolean }) {
+  return <>{render(message, streaming)}</>;
+});
 
 export function ResearchAssistantModal({
   settings,
@@ -217,6 +229,9 @@ export function ResearchAssistantModal({
   // Id of the assistant message currently streaming — drives the live caret and
   // the "stop" affordance. Null when nothing is in flight.
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  // Set once the main process repaints the turn with its own finished text (skills run, route
+  // checks pending): its drawings are complete blocks and render instead of "Loading…".
+  const [repaintedId, setRepaintedId] = useState<string | null>(null);
   // Id of the last assistant message the user stopped. Its partial text stays and
   // the red notice renders under it instead of replacing the whole answer.
   const [stoppedMessageId, setStoppedMessageId] = useState<string | null>(null);
@@ -237,6 +252,9 @@ export function ResearchAssistantModal({
   // without the stream overwriting the conversation they switched to.
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
+  // Bumped by every conversation load and by "new chat": a load whose answer arrives after a
+  // newer one started (two chats clicked in quick succession) must not replace it.
+  const loadSequenceRef = useRef(0);
 
   const availableModels = useMemo(() => {
     const models: ModelRef[] = [];
@@ -342,6 +360,7 @@ export function ResearchAssistantModal({
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
+    loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
     setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return rest; });
@@ -361,6 +380,7 @@ export function ResearchAssistantModal({
   useEffect(() => {
     if (!initialTarget || initialTarget.nonce === lastInitialTargetRef.current) return;
     lastInitialTargetRef.current = initialTarget.nonce;
+    loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
     setActiveId(null);
@@ -375,13 +395,16 @@ export function ResearchAssistantModal({
 
   const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null): Promise<boolean> => {
     if (attachmentBusyRef.current) return false;
+    const sequence = ++loadSequenceRef.current;
     const conversation = await api.getConversation(id);
+    if (sequence !== loadSequenceRef.current) return false;
     if (!conversation) {
       await refreshConversations();
       setConversationNotice(t('La conversación original ya no está disponible.'));
       return false;
     }
     const storedAttachments = await window.nodus.listResearchAttachments({ surface: attachmentSurface, conversationId: id });
+    if (sequence !== loadSequenceRef.current) return false;
     const referenced = new Set(conversation.messages.flatMap(message => message.attachments?.map(file => file.id) ?? []));
     setAttachments((storedAttachments ?? []).filter(file => !referenced.has(file.id)));
     setAttachmentError('');
@@ -588,6 +611,24 @@ export function ResearchAssistantModal({
 
     let streamed = '';
     let councilResult: ConciliumResult | undefined;
+    // Deltas arrive one IPC message at a time, often faster than the screen refreshes, and
+    // each one used to re-render the timeline and re-parse the growing answer's Markdown.
+    // They are gathered and painted together at most every STREAM_PAINT_MS.
+    let unpainted = '';
+    let paintTimer: number | null = null;
+    const paint = () => {
+      paintTimer = null;
+      const chunk = unpainted;
+      unpainted = '';
+      if (!chunk || activeIdRef.current !== conversationId) return; // user switched away
+      setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: message.content + chunk } : message));
+      window.setTimeout(updateJumpIndicator, 0);
+    };
+    const dropUnpainted = () => {
+      if (paintTimer != null) window.clearTimeout(paintTimer);
+      paintTimer = null;
+      unpainted = '';
+    };
     try {
       if (requestMessages.some(message => message.attachments?.length)) await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
@@ -602,20 +643,18 @@ export function ResearchAssistantModal({
             setMessages(current => current.map(message => message.id === assistantId ? { ...message, concilium: result } : message));
           },
           onReplace: (text) => {
+            // The repaint is the whole turn so far: deltas still waiting to be painted are in it.
+            dropUnpainted();
             streamed = text;
+            setRepaintedId(text ? assistantId : null);
             if (activeIdRef.current !== conversationId) return;
             setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: text } : message));
             window.setTimeout(updateJumpIndicator, 0);
           },
           onDelta: (delta) => {
             streamed += delta;
-            if (activeIdRef.current !== conversationId) return; // user switched away
-            setMessages((current) =>
-              current.map((message) =>
-                message.id === assistantId ? { ...message, content: message.content + delta } : message
-              )
-            );
-            window.setTimeout(updateJumpIndicator, 0);
+            unpainted += delta;
+            if (paintTimer == null) paintTimer = window.setTimeout(paint, STREAM_PAINT_MS);
           },
           onReasoning: (delta) => {
             if (activeIdRef.current !== conversationId) return;
@@ -627,6 +666,9 @@ export function ResearchAssistantModal({
           },
         }
       );
+      // The settled answer below replaces the streamed text; a paint still pending would
+      // append its deltas to it a second time.
+      dropUnpainted();
       // A user-triggered stop resolves with the partial answer; treat an empty
       // partial as "nothing generated" and drop the placeholder bubble.
       const aborted = stopRequestedRef.current || Boolean(response.aborted);
@@ -647,6 +689,7 @@ export function ResearchAssistantModal({
       }
       await persist(conversationId, finalMessages, isFirstExchange);
     } catch (e) {
+      dropUnpainted();
       setActivityRun(current => current?.turnId === assistantId ? { ...current, activities: settleResearchActivities(current.activities, stopRequestedRef.current ? 'cancelled' : 'failed'), outcome: stopRequestedRef.current ? 'cancelled' : 'failed' } : current);
       if (stopRequestedRef.current) {
         // The user stopped the stream: keep the text that already arrived and mark
@@ -680,8 +723,10 @@ export function ResearchAssistantModal({
         await persist(conversationId, finalMessages, false);
       }
     } finally {
+      dropUnpainted();
       setSending(false);
       setStreamingId(null);
+      setRepaintedId(null);
     }
   };
 
@@ -1102,7 +1147,7 @@ export function ResearchAssistantModal({
                       {message.role === 'assistant' && !message.error ? (
                         message.content ? (
                           <div className={message.id === streamingId ? 'stream-body' : undefined}>
-                            {adapter ? adapter.renderMessage(message, message.id === streamingId) : <ChatMarkdown content={message.content} onCitation={handleCitation} streaming={message.id === streamingId} />}
+                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ChatMarkdown content={message.content} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
                             {message.id === streamingId && <span aria-hidden className="stream-caret" />}
                           </div>
                         ) : message.id === streamingId ? (

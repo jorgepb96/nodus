@@ -423,6 +423,14 @@ export function completionTimeoutMs(model: ModelRef): number {
   return runsOnDevice(model.provider) ? ON_DEVICE_COMPLETION_TIMEOUT_MS : CLOUD_COMPLETION_TIMEOUT_MS;
 }
 
+/** A research turn's own short JSON calls (its plan, each supervisor decision): a few hundred
+ *  output tokens, each with a fallback. A cloud provider that stalls one held the turn for the
+ *  full completion timeout, three minutes, before that fallback ran. On-device models keep theirs. */
+export function researchStepTimeoutMs(model?: ModelRef | null): number | undefined {
+  // No model configured: the call itself reports that, not this bound.
+  try { return runsOnDevice(resolveModel(model).provider) ? undefined : 30_000; } catch { return undefined; }
+}
+
 /**
  * Size max_tokens to a local model's real context window, refusing up front when the
  * prompt itself won't fit. Returns the max_tokens to use; throws an actionable AiError
@@ -465,6 +473,8 @@ function nodusLocalMaxTokens(model: ModelRef, opts: CallOpts, requestedMax: numb
   }
   return Math.min(requestedMax, available);
 }
+
+import { withTranscript as __withTranscript, transcriptFetch as __transcriptFetch } from './transcript';
 
 export interface CallOpts {
   /** Backend academic corpus requests only; include all final prompt/output bytes. */
@@ -1867,7 +1877,7 @@ export async function completeText(opts: CallOpts, model?: ModelRef | null): Pro
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
     ? configuredCodexReasoning(resolved)
     : undefined;
-  return deanonymizeResult(await rawComplete(resolved, withPromptContext(opts), false, reasoning, codexReasoning));
+  return __withTranscript(resolved, opts, async () => deanonymizeResult(await rawComplete(resolved, withPromptContext(opts), false, reasoning, codexReasoning)));
 }
 
 /**
@@ -1893,7 +1903,7 @@ export async function completeTextStream(
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
     ? configuredCodexReasoning(resolved)
     : undefined;
-  return rawCompleteStream(resolved, withPromptContext(opts), onDelta, reasoning, signal, codexReasoning);
+  return __withTranscript(resolved, opts, () => rawCompleteStream(resolved, withPromptContext(opts), onDelta, reasoning, signal, codexReasoning));
 }
 
 /**
@@ -2078,7 +2088,8 @@ async function rawCompleteStreamTransport(
 
   if (model.provider === 'anthropic') {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
-    const client = new Anthropic({ apiKey: key, ...(opts.noRetry ? { maxRetries: 0 } : {}), ...(opts.timeoutMs ? { timeout: opts.timeoutMs } : {}) });
+    const __fetch = __transcriptFetch(key);
+    const client = new Anthropic({ apiKey: key, ...(__fetch ? { fetch: __fetch } : {}), ...(opts.noRetry ? { maxRetries: 0 } : {}), ...(opts.timeoutMs ? { timeout: opts.timeoutMs } : {}) });
     // `message_delta` is the final event and the only one carrying `stop_reason`; the thinking
     // token breakdown rides along with it. Kept outside `streamOnce` so a replay (temperature or
     // thinking recovery) overwrites rather than inherits the previous attempt's outcome.
@@ -2432,6 +2443,11 @@ async function requestEmbeddings(
     apiKey: key,
     baseURL: endpoint,
     defaultHeaders: openAiClientHeaders({ provider }),
+    // withProviderRetries owns 429/5xx recovery: the SDK's own two retries inside each of its
+    // attempts made one 503 nine requests, and its ten-minute default, retried twice, let a
+    // stalled endpoint hold a chat search for half an hour. The Gemini path above is bounded alike.
+    maxRetries: 0,
+    timeout: completionTimeoutMs({ provider, model: modelId }),
   });
   try {
     const res = await withProviderRetries(freeTier, () => runEmbeddingRequest(async () => {

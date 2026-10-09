@@ -4,6 +4,8 @@ import { LIMITS, TRUSTED_PROTOCOL } from '../../packages/capability-api/src/limi
 import { validateWorkerToHost, type HostChannel, type HostToWorkerMessage, type WorkerMethod } from '../../packages/capability-api/src/protocol';
 import type { CapabilityManifestV2 } from '../../packages/capability-api/src/manifest';
 import type { TrustedPermissionSetV2 } from '../../packages/capability-api/src/permissions';
+import { stopCapabilitySubworkers } from './subworkerPool';
+import { Semaphore } from './hostLimits';
 
 /** Runs one trusted capability in its own utility process.
  *
@@ -50,7 +52,28 @@ const READY_TIMEOUT_MS = 20_000;
  *  readiness budget: the time before `spawn` belongs to the host, not to the worker. */
 const SPAWN_CEILING_MS = 120_000;
 
-interface Pending { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: NodeJS.Timeout }
+interface Pending {
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+  timer: NodeJS.Timeout;
+  /** The services of the turn that made this call: its host calls are answered with these. */
+  services: CapabilityHostServices;
+  /** Aborted when this call, and only this call, is cancelled or runs out of time. */
+  controller: AbortController;
+}
+
+/** What a call may bring of its own. */
+export interface CapabilityCallOptions {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+  /** The turn's services for this call's host calls; the handle's own when absent. */
+  services?: CapabilityHostServices;
+  /** Admission: at most `limit` calls with this key run at once in this worker (a tool's
+   *  manifest `concurrency`). The deadline starts when the call is admitted. */
+  queue?: { key: string; limit: number };
+  /** Called once the call is admitted, with how long it waited. */
+  onAdmitted?: (waitedMs: number) => void;
+}
 
 /** A start that failed before the worker said anything at all.
  *
@@ -80,9 +103,14 @@ export class CapabilityWorkerHandle {
   private child: UtilityProcess | null = null;
   private ready: Promise<void> | null = null;
   private readonly pending = new Map<string, Pending>();
+  /** Calls the host has given up on and asked the worker to stop, until it confirms. */
+  private readonly cancelling = new Map<string, NodeJS.Timeout>();
   private abort = new AbortController();
   private killTimer: NodeJS.Timeout | null = null;
   private nextCallId = 0;
+  /** Callers waiting for this worker to finish starting. */
+  private starting = 0;
+  private readonly queues = new Map<string, Semaphore>();
 
   constructor(private readonly runtime: TrustedWorkerRuntime, private readonly options: CapabilityWorkerHandleOptions) {}
 
@@ -99,32 +127,49 @@ export class CapabilityWorkerHandle {
    *
    *  Exactly one, and only for work that may be repeated: a retry that hides a worker
    *  which genuinely cannot come up, or that runs a tool twice, is worse than the error. */
-  async call<T>(method: WorkerMethod, payload: unknown, options: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<T> {
-    try { return await this.attempt<T>(method, payload, options); }
-    catch (error) {
-      const retryable = error instanceof WorkerStartFailure
-        || (error instanceof WorkerLostCall && REPEATABLE_METHODS.has(method));
-      if (!retryable) throw error;
-      return this.attempt<T>(method, payload, options);
-    }
+  async call<T>(method: WorkerMethod, payload: unknown, options: CapabilityCallOptions = {}): Promise<T> {
+    // A tool's declared concurrency is what this worker runs of it at once. It was declared in
+    // every manifest and enforced nowhere. Waiting is abortable and is not charged to the call's
+    // deadline, which `attempt` arms once the call has its slot and the worker is ready.
+    const waited = performance.now();
+    const release = options.queue ? await this.queueFor(options.queue).acquire(options.signal) : undefined;
+    options.onAdmitted?.(performance.now() - waited);
+    try {
+      try { return await this.attempt<T>(method, payload, options); }
+      catch (error) {
+        const retryable = error instanceof WorkerStartFailure
+          || (error instanceof WorkerLostCall && REPEATABLE_METHODS.has(method));
+        if (!retryable) throw error;
+        return await this.attempt<T>(method, payload, options);
+      }
+    } finally { release?.(); }
   }
 
-  private async attempt<T>(method: WorkerMethod, payload: unknown, options: { timeoutMs?: number; signal?: AbortSignal }): Promise<T> {
+  private queueFor(queue: { key: string; limit: number }): Semaphore {
+    let semaphore = this.queues.get(queue.key);
+    if (!semaphore) { semaphore = new Semaphore(queue.limit); this.queues.set(queue.key, semaphore); }
+    return semaphore;
+  }
+
+  private async attempt<T>(method: WorkerMethod, payload: unknown, options: CapabilityCallOptions): Promise<T> {
     options.signal?.throwIfAborted();
     const ready = this.start();
     const signal = options.signal;
     let abortStart: (() => void) | undefined;
+    this.starting += 1;
     try {
       if (!signal) await ready;
       else await Promise.race([ready, new Promise<never>((_resolve, reject) => {
         abortStart = () => {
-          this.cancel();
+          // The start belongs to every caller waiting on it: only the last one stops it.
+          if (this.starting <= 1 && !this.pending.size) this.cancel();
           reject(new DOMException('The capability startup was cancelled.', 'AbortError'));
         };
         signal.addEventListener('abort', abortStart, { once: true });
         if (signal.aborted) abortStart();
       })]);
     } finally {
+      this.starting -= 1;
       if (abortStart) signal?.removeEventListener('abort', abortStart);
     }
     // Abort can arrive with the ready frame, before the call listener has been installed.
@@ -140,17 +185,37 @@ export class CapabilityWorkerHandle {
         options.signal?.removeEventListener('abort', onAbort);
         if (error) reject(error); else resolve(value as T);
       };
-      const onAbort = () => { this.cancel(); settle(new DOMException('The capability call was cancelled.', 'AbortError')); };
+      // Cancellation and the deadline are this call's. They used to cancel the whole process —
+      // every call it was carrying, then a kill two seconds later whatever happened — so one
+      // tool past its budget failed the drawings, lookups and checks running beside it.
+      const onAbort = () => { this.cancelCall(callId); settle(new DOMException('The capability call was cancelled.', 'AbortError')); };
       const timer = setTimeout(() => {
-        // A worker past its deadline is not asked politely twice: cancel, then kill.
-        this.cancel();
+        // A call past its deadline is not asked politely twice: cancel it, then kill the
+        // process if the call is still running when the grace period ends.
+        this.cancelCall(callId);
         settle(new Error(`${this.runtime.capabilityId} exceeded ${Math.round(timeoutMs / 1000)} seconds.`));
       }, timeoutMs);
-      this.pending.set(callId, { resolve: value => settle(undefined, value), reject: error => settle(error), timer });
+      this.pending.set(callId, { resolve: value => settle(undefined, value), reject: error => settle(error), timer, services: options.services ?? this.options.services, controller: new AbortController() });
       options.signal?.addEventListener('abort', onAbort, { once: true });
       try { this.post({ type: 'call', callId, method, payload }); }
       catch (error) { settle(error instanceof Error ? error : new Error(String(error))); }
     });
+  }
+
+  /** Stops one call. Its host calls in flight are aborted and any it makes later are refused; the
+   *  worker is asked to abort that call alone; and the process is killed only if the call is still
+   *  running when the grace period ends — a call stuck in synchronous work cannot be stopped any
+   *  other way, and then nothing else in that process can be saved either. */
+  private cancelCall(callId: string): void {
+    this.pending.get(callId)?.controller.abort();
+    if (!this.child || this.cancelling.has(callId)) return;
+    try { this.post({ type: 'cancel', invocationId: callId }); } catch { /* the process is already gone */ }
+    const timer = setTimeout(() => {
+      this.cancelling.delete(callId);
+      this.teardown(new Error(`${this.runtime.capabilityId} did not stop and was terminated.`));
+    }, LIMITS.cancelGraceMs);
+    timer.unref?.();
+    this.cancelling.set(callId, timer);
   }
 
   /** Asks the worker to stop, then kills it if it does not. Pending calls are rejected
@@ -224,14 +289,20 @@ export class CapabilityWorkerHandle {
         }
         if (message.type === 'result') {
           if (message.callId === 'init') { spoke = true; fail(new Error(message.ok ? 'The capability failed to load.' : message.error)); return; }
+          // A cancelled call that has stopped: nothing is waiting for it, and nothing need be killed.
+          const stopping = this.cancelling.get(message.callId);
+          if (stopping) { clearTimeout(stopping); this.cancelling.delete(message.callId); return; }
           const pending = this.pending.get(message.callId);
           if (!pending) return;
           if (message.ok) pending.resolve(message.value);
           else pending.reject(message.code === 'cancelled' ? new DOMException(message.error, 'AbortError') : new Error(message.error));
           return;
         }
-        if (message.type === 'log') { this.options.onLog?.(this.runtime, message); return; }
-        if (message.type === 'host-call') void this.serveHostCall(message.callId, message.channel, message.method, message.payload);
+        // Written to the main log when nobody asked for them: no caller ever passed `onLog`, and a
+        // worker has no other way out (its stdio is ignored), so every line a capability logged
+        // about a fallback it took was dropped here.
+        if (message.type === 'log') { (this.options.onLog ?? writeWorkerLog)(this.runtime, message); return; }
+        if (message.type === 'host-call') void this.serveHostCall(message.callId, message.channel, message.method, message.payload, message.parentCallId);
       });
       child.once('error', error => { fail(new Error(String(error))); this.teardown(new Error(String(error))); });
       child.once('exit', code => {
@@ -249,10 +320,20 @@ export class CapabilityWorkerHandle {
     return this.ready.catch(error => { this.ready = null; throw error; });
   }
 
-  private async serveHostCall(callId: string, channel: HostChannel, method: string, payload: unknown): Promise<void> {
-    const child = this.child, signal = this.abort.signal;
+  private async serveHostCall(callId: string, channel: HostChannel, method: string, payload: unknown, parentCallId?: string): Promise<void> {
+    const child = this.child;
+    // Answered with the services, and under the cancellation, of the call that asked. A host call
+    // whose call is over is refused rather than run: its turn no longer wants it.
+    const owner = parentCallId ? this.pending.get(parentCallId) : undefined;
+    if (parentCallId && !owner) {
+      try { this.post({ type: 'host-result', callId, ok: false, error: 'The capability call this request belongs to has ended.' }); }
+      catch { /* the worker is gone */ }
+      return;
+    }
+    const signal = owner ? AbortSignal.any([owner.controller.signal, this.abort.signal]) : this.abort.signal;
+    const services = owner?.services ?? this.options.services;
     try {
-      const value = await this.options.services({ runtime: this.runtime, channel, method, payload, signal });
+      const value = await services({ runtime: this.runtime, channel, method, payload, signal });
       if (signal.aborted || child !== this.child) return;
       this.post({ type: 'host-result', callId, ok: true, value });
     } catch (error) {
@@ -267,6 +348,8 @@ export class CapabilityWorkerHandle {
   private teardown(reason: Error, lost = false): void {
     this.abort.abort();
     if (this.killTimer) { clearTimeout(this.killTimer); this.killTimer = null; }
+    for (const [, timer] of this.cancelling) clearTimeout(timer);
+    this.cancelling.clear();
     const child = this.child;
     this.child = null;
     this.ready = null;
@@ -276,17 +359,93 @@ export class CapabilityWorkerHandle {
   }
 }
 
+function writeWorkerLog(runtime: TrustedWorkerRuntime, entry: CapabilityWorkerLog): void {
+  if (entry.level === 'debug') return;
+  const detail = entry.detail && Object.keys(entry.detail).length ? ` ${JSON.stringify(entry.detail)}` : '';
+  console[entry.level](`${new Date().toISOString()} [capability] ${runtime.capabilityId} ${entry.message}${detail}`);
+}
+
 const handles = new Map<string, CapabilityWorkerHandle>();
 
 /** One live worker per capability and digest. A package that updates gets a new key, so
- *  a turn already running against the old digest keeps the process it started with. */
+ *  a turn already running against the old digest keeps the process it started with.
+ *
+ *  The key starts with the PLUGIN id. It used to start with the capability id
+ *  (`nodus:chemistry@…`), while every caller that retires a package's workers — approve, discard,
+ *  roll back, remove, update — asked for the keys that contain the plugin id (`chemistry-studio`),
+ *  so none of them ever stopped anything: the old version's processes outlived its update and
+ *  its removal. */
 export function acquireCapabilityWorker(runtime: TrustedWorkerRuntime, options: CapabilityWorkerHandleOptions): CapabilityWorkerHandle {
-  const key = `${runtime.capabilityId}@${runtime.plugin.version}+${runtime.plugin.digest}${options.scopeKey ? `#${options.scopeKey}` : ''}`;
+  const key = `${runtime.plugin.id}/${runtime.capabilityId}@${runtime.plugin.version}+${runtime.plugin.digest}${options.scopeKey ? `#${options.scopeKey}` : ''}`;
   const existing = handles.get(key);
   if (existing) return existing;
   const handle = new CapabilityWorkerHandle(runtime, options);
   handles.set(key, handle);
   return handle;
+}
+
+/** Every worker and kept subworker of one plugin, whatever version, digest or turn. */
+export async function stopPluginWorkers(pluginId: string): Promise<void> {
+  const owned = (key: string) => key.startsWith(`${pluginId}/`);
+  stopCapabilitySubworkers(owned);
+  await stopCapabilityWorkers(owned);
+}
+
+/** A scope's workers are shared by every runner that names it — an answer's evidence gather, its
+ *  route checks and its correction rounds — and live while one of them is open, then this long,
+ *  so the next phase finds the process, its module caches and its request pacing still there. */
+const SCOPE_IDLE_MS = 10 * 60_000;
+/** A scope older than this starts afresh at its next lease rather than carrying a worker's
+ *  caches indefinitely. */
+const SCOPE_MAX_AGE_MS = 60 * 60_000;
+/** Idle scopes kept at once; the oldest is stopped first. */
+const SCOPE_IDLE_MAX = 4;
+
+interface ScopeLease { key: string; count: number; created: number; idle?: NodeJS.Timeout; idleSince?: number }
+const scopes = new Map<string, ScopeLease>();
+let scopeGeneration = 0;
+
+const stopScope = (lease: ScopeLease) => {
+  if (lease.idle) clearTimeout(lease.idle);
+  for (const [name, candidate] of scopes) if (candidate === lease) scopes.delete(name);
+  return stopCapabilityWorkers(key => key.endsWith(`#${lease.key}`));
+};
+
+/** Opens a lease on a scope's workers and returns the scope key to acquire them with, and the
+ *  release. Without a scope name the lease is the runner's own and its workers stop on release,
+ *  as every runner's did before scopes existed. */
+export function leaseCapabilityScope(scope?: string, options: { idleMs?: number } = {}): { scopeKey: string; release: () => Promise<void> } {
+  if (!scope) {
+    const lease: ScopeLease = { key: `runner-${++scopeGeneration}-${Date.now().toString(36)}`, count: 1, created: Date.now() };
+    let released = false;
+    return { scopeKey: lease.key, release: async () => { if (released) return; released = true; await stopScope(lease); } };
+  }
+  let lease = scopes.get(scope);
+  if (lease && !lease.count && Date.now() - lease.created > SCOPE_MAX_AGE_MS) { void stopScope(lease); lease = undefined; }
+  if (!lease) {
+    lease = { key: `scope-${++scopeGeneration}`, count: 0, created: Date.now() };
+    scopes.set(scope, lease);
+  }
+  if (lease.idle) { clearTimeout(lease.idle); lease.idle = lease.idleSince = undefined; }
+  lease.count += 1;
+  const held = lease;
+  let released = false;
+  return {
+    scopeKey: held.key,
+    release: async () => {
+      if (released) return;
+      released = true;
+      held.count -= 1;
+      if (held.count > 0) return;
+      const idleMs = options.idleMs ?? SCOPE_IDLE_MS;
+      if (idleMs <= 0) { await stopScope(held); return; }
+      held.idleSince = Date.now();
+      held.idle = setTimeout(() => { void stopScope(held); }, idleMs);
+      held.idle.unref?.();
+      const waiting = [...new Set(scopes.values())].filter(candidate => !candidate.count && candidate.idleSince !== undefined).sort((a, b) => a.idleSince! - b.idleSince!);
+      for (const oldest of waiting.slice(0, Math.max(0, waiting.length - SCOPE_IDLE_MAX))) await stopScope(oldest);
+    },
+  };
 }
 
 export async function stopCapabilityWorkers(predicate?: (key: string) => boolean): Promise<void> {

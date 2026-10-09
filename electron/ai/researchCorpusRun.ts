@@ -11,15 +11,15 @@ import { getDb } from '../db/database';
 import { getResearchNotebook } from '../db/researchNotebooksRepo';
 import { researchCorpusInventory } from './researchCorpusInventory';
 import { resolveResearchNotebook, resolveAcademicResearchScope } from './researchNotebookService';
-import { assertResearchDocument, assertResearchDocumentPermission, researchFingerprint } from './researchCorpusScope';
+import { assertResearchDocument, assertResearchDocumentPermission, documentsById, researchFingerprint } from './researchCorpusScope';
 import { resolveResearchSourceScope, scopedIdeaEvidencePassages } from './researchSourceScope';
 import { getResearchPreparationInventory, retrieveSharedDocumentaryEvidence } from './documentaryPreparation';
 import { retrieveHierarchical, selectPassageEvidence } from './hierarchicalRetrieval';
-import { embed, resolveModelRef, researchModelContextWindow } from './aiClient';
+import { embed, embedMany, resolveModelRef, researchModelContextWindow } from './aiClient';
 import { createResearchSectionCoverage } from './researchSectionCoverage';
 import { withResearchValidationThinking } from './thinkingEffort';
 import { withResearchRequestBudget } from './researchRequestBudget';
-import { recordScopedSourcePassage, recordScopedLegacyPassage } from '../citations/scopedLegacyCitations';
+import { insertScopedReceipts, recordScopedSourcePassage, recordScopedLegacyPassage, type ScopedReceiptRow } from '../citations/scopedLegacyCitations';
 import { documentaryCitationId } from '../citations/documentaryCitations';
 import { getSettings } from '../db/settingsRepo';
 import { readAutomaticResearchZotero, pinZoteroOriginals, type ZoteroOriginalPins } from '../mcp/researchZotero';
@@ -46,6 +46,8 @@ export interface ResearchChatAgent {
   minSources: number;
   /** A small local window: shorter menus in every decision. */
   compact: boolean;
+  /** A route correction: the opening searches only, no supervisor. */
+  correction?: boolean;
 }
 
 /** Compatibility requests are explicit snapshots of the active vault. A notebook
@@ -89,6 +91,8 @@ export class ResearchCorpusRun {
   private readonly ideaIds: string[];
   private originalPins?: Promise<ZoteroOriginalPins>;
   private graphSnapshot: Pick<WritingWorkshopSnapshot, 'gaps' | 'contradictions' | 'themes'> | null = null;
+  /** Receipts found while investigate() runs, written when it ends. See insertScopedReceipts. */
+  private pendingReceipts?: ScopedReceiptRow[];
   private readonly sourceCoverage: NonNullable<ResearchTraversal['sourceCoverage']>;
   constructor(readonly scope: ResolvedResearchScope, settings: RetrievalSettings, readonly signal?: AbortSignal, readonly pinRevisions = false) {
     this.budget = new ResearchRetrievalBudget(settings);
@@ -108,9 +112,9 @@ export class ResearchCorpusRun {
     this.signal?.throwIfAborted();
     if (getActiveVault().id !== this.scope.vaultId) throw new Error('research_scope_changed');
     if (this.scope.notebookId && getResearchNotebook(this.scope.notebookId)?.revision !== this.scope.notebookRevision) throw new Error('research_scope_changed');
-    const current = researchCorpusInventory().documents;
-    for (const document of this.scope.documents) (this.pinRevisions ? assertResearchDocumentPermission : assertResearchDocument)(this.scope, document.id, current.find(item => item.id === document.id));
-    if (this.pinRevisions && this.scope.documents.some(document => current.find(item => item.id === document.id)?.revision !== document.revision)) {
+    const current = documentsById(researchCorpusInventory().documents);
+    for (const document of this.scope.documents) (this.pinRevisions ? assertResearchDocumentPermission : assertResearchDocument)(this.scope, document.id, current.get(document.id));
+    if (this.pinRevisions && this.scope.documents.some(document => current.get(document.id)?.revision !== document.revision)) {
       // Shared evidence and scoped legacy receipts are immutable. Graph analyses are not;
       // discard their cached copies instead of reading a silently newer revision.
       this.ideas.clear();
@@ -121,6 +125,11 @@ export class ResearchCorpusRun {
   }
   /** Research Chat's agent starts from every query of its plan; other callers from one. */
   async investigate(query: string, model?: ModelRef | null): Promise<void> {
+    this.pendingReceipts = [];
+    try { await this.investigateSteps(query, model); }
+    finally { const rows = this.pendingReceipts; this.pendingReceipts = undefined; insertScopedReceipts(rows); }
+  }
+  private async investigateSteps(query: string, model?: ModelRef | null): Promise<void> {
     if (this.pinRevisions && !this.originalPins) {
       const controller = new AbortController();
       const signal = this.signal ? AbortSignal.any([this.signal, controller.signal]) : controller.signal;
@@ -134,21 +143,24 @@ export class ResearchCorpusRun {
     const queries = this.agent ? [...new Set([query, ...this.agent.plan.queries])].slice(0, 3) : [query];
     const opening = Math.floor((this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens) / 3 / queries.length);
     const limit = this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
-    await this.retrieve(queries[0], 1, limit);
-    // The plan's further queries widen the search; one that fails (a retrieval timeout on a
-    // loaded machine) costs its own evidence, not the turn.
-    for (const each of queries.slice(1)) {
-      try { await this.retrieve(each, 1, limit); }
+    // Each of the chat's opening queries widens the search, the first included; one that fails
+    // (a retrieval timeout on a loaded machine) costs its own evidence, not the turn. A run with no
+    // agent has only the one query, and its failure is still the run's.
+    // The opening queries are embedded in one request rather than one round trip each. A batch
+    // that fails leaves each search to embed its own query, as before.
+    const vectors = queries.length > 1 && (this.layers.ideas || this.layers.documents) ? await researchActivityStep('scope', 'embed', () => embedMany(queries, this.signal)).catch(() => []) : [];
+    for (const [index, each] of queries.entries()) {
+      try { await this.retrieve(each, 1, limit, vectors[index]); }
       catch (error) {
         this.validate();
-        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '')) throw error;
+        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '') || (index === 0 && !this.agent)) throw error;
         this.budget.partial = true; this.limitations.add('research_read_unavailable');
       }
     }
     // The supervisor's decisions read documents: nothing to decide with the documents off.
-    if (this.layers.documents) await deepenResearch(this, query, model);
+    if (this.layers.documents && !this.agent?.correction) await deepenResearch(this, query, model);
   }
-  async retrieve(query: string, expandRounds = 2, roundLimit?: number): Promise<void> {
+  async retrieve(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null): Promise<void> {
     this.validate();
     if (!this.budget.nextRound()) {
       this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: 0, partial: true });
@@ -158,7 +170,7 @@ export class ResearchCorpusRun {
     if (!this.scope.documents.length) return;
     const { ideas: readIdeas, documents: readDocuments } = this.layers;
     if (!readIdeas && !readDocuments) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
-    const vector = await researchActivityStep('scope', 'embed', () => embed(query, this.signal)).catch(() => {
+    const vector = embedded !== undefined ? embedded : await researchActivityStep('scope', 'embed', () => embed(query, this.signal)).catch(() => {
       this.limitations.add('embedding_provider_unavailable'); return null;
     });
     this.validate();
@@ -181,7 +193,7 @@ export class ResearchCorpusRun {
     const separable = readDocuments ? scopedIdeaEvidencePassages(query, stableWorks, settings.candidates) : [];
     const inventory = researchCorpusInventory().documents;
     const legacy = selectPassageEvidence([...hierarchy.passages, ...separable], settings.passagesPerRound, { preferLexical: true, preferSourceDiversity: true }).flatMap(hit => {
-      const receipt = recordScopedLegacyPassage(this.scope, hit.passage_id, inventory);
+      const receipt = recordScopedLegacyPassage(this.scope, hit.passage_id, inventory, this.pendingReceipts);
       return receipt ? [{ id: receipt.passage_id, label: hit.title, summary: receipt.text, nodus_id: hit.nodus_id, pageLabel: receipt.page_label,
         authors: this.scope.documents.find(document => document.workId === hit.nodus_id)?.authors ?? [], year: hit.year, zotero_key: hit.zotero_key,
         citation: `nodus://passage/${encodeURIComponent(receipt.passage_id)}`, score: hit.similarity, reason: 'source' }] : [];
@@ -315,7 +327,7 @@ export class ResearchCorpusRun {
       const receipt = recordScopedSourcePassage(this.scope, document.id, { passage_id: '', nodus_id: document.workId ?? document.id,
         libraryItemId: library?.id ?? null, attachmentId, attachmentRevision, revision: document.revision, provenance: 'source',
         text: page.text, page_label: page.pageLabel, page_number: page.pageNumber, source_ref: sourceRef, chunk_index: 0,
-        work: { title: document.title, authors: document.authors, year: document.year, zotero_key: document.origin.kind === 'zotero' ? document.origin.itemKey : '' } });
+        work: { title: document.title, authors: document.authors, year: document.year, zotero_key: document.origin.kind === 'zotero' ? document.origin.itemKey : '' } }, undefined, this.pendingReceipts);
       if (!receipt || !this.budget.accept(receipt.passage_id, page.text)) continue;
       this.evidence.set(receipt.passage_id, { id: receipt.passage_id, nodus_id: receipt.nodus_id, label: document.title, summary: page.text,
         authors: document.authors, year: document.year, pageLabel: page.pageLabel, zotero_key: receipt.work.zotero_key,

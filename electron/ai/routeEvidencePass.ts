@@ -14,6 +14,8 @@ interface RouteEvidenceOptions {
   signal?: AbortSignal;
   locale?: string;
   evidenceScope?: ChemistryEvidenceScope;
+  /** The conversation's capability scope (see moleculeInspection's InspectOptions). */
+  scope?: string;
 }
 
 /** Per-step evidence pass (route quality, option A): after the first draft of a new route,

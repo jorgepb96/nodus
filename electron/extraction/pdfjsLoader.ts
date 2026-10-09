@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { pageSchemeLayout, type LayoutItem } from './schemeLayout';
+import { type LayoutItem } from './schemeLayout';
+import { schemeClassifier, type SchemeClassifier } from './schemeClassifiers';
 import { SCHEME_PLACEHOLDER } from '@shared/schemeText';
 
 // Single place to load the pdfjs legacy build (no DOM) and open a document.
@@ -47,10 +48,10 @@ export async function pageText(page: any): Promise<string> {
 /** The page text, and with `layout` the lines of it that are reaction schemes, figure labels or
  *  tables and the margin lines (see schemeLayout.ts). `text` is exactly what pageText returns;
  *  `declutteredText` has each run of scheme lines as one "[scheme]" and no margin lines. */
-export async function pageTextWithSchemes(page: any, layout = true, bodyHint?: number): Promise<{ text: string; declutteredText: string; schemeLines: string[]; marginLines: string[] }> {
+export async function pageTextWithSchemes(page: any, layout = true, bodyHint?: number, classifier?: SchemeClassifier): Promise<{ text: string; declutteredText: string; schemeLines: string[]; marginLines: string[] }> {
   const content = await page.getTextContent();
   const items = content.items as any[];
-  const flags = layout ? pageSchemeLayout(items.filter(isLayoutItem), bodyHint) : null;
+  const flags = layout ? schemeClassifier(classifier).pageSchemeLayout(items.filter(isLayoutItem), bodyHint) : null;
   const kindOf = new Map<any, 'scheme' | 'margin'>();
   if (flags) items.filter(isLayoutItem).forEach((item, index) => { if (flags.margin[index]) kindOf.set(item, 'margin'); else if (flags.scheme[index]) kindOf.set(item, 'scheme'); });
   const lines: string[] = [];

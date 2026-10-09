@@ -49,7 +49,12 @@ await build({
     },
   }],
 });
-const { gatherSynthesisEvidence } = await import(pathToFileURL(outfile).href);
+const { gatherSynthesisEvidence, clearSynthesisEvidenceCache } = await import(pathToFileURL(outfile).href);
+// Target-level evidence is remembered between a request and its corrections, so every test here
+// asks about the same target and would otherwise be served the FIRST test's stubbed answer. Each
+// case starts from an empty cache; without this the suite silently stops exercising the gather,
+// which is how the cache was first seen working.
+test.beforeEach(() => clearSynthesisEvidenceCache());
 const { synthesisEvidencePayload } = await import(pathToFileURL(await (async () => {
   const out = path.join(tmp, 'shared.mjs');
   await build({ entryPoints: [path.join(root, 'shared/synthesisEvidence.ts')], outfile: out, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
@@ -271,4 +276,103 @@ test('a route search that fails or times out never blocks the request', async ()
   assert.ok(evidence.passages.length > 0);
   assert.equal(evidence.candidateRoutes, undefined);
   assert.ok(!('candidate_routes' in synthesisEvidencePayload(evidence)));
+});
+
+test('a correction reuses the evidence its request gathered', async () => {
+  // Measured on a real two-turn run: the gather cost 394.4s and then 393.8s and printed identical
+  // counts both times, which is 43% of the clock spent twice on the same target.
+  const first = await scenario({ provider: TOOL, indexDir: '/idx', invoke: () => ({ disconnections: [] }) });
+  const calls = globalThis.__ord.calls;
+  assert.ok(first, 'the request gathers');
+
+  // The same target, reached through the text a correction turn carries. The gather's inputs are
+  // unchanged, so nothing is recomputed.
+  const second = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'the index is not asked a second time');
+  assert.equal(second.target, first.target);
+  assert.deepEqual(second.passages, first.passages);
+
+  // A DIFFERENT target must not be served the first one's evidence, which is the failure mode a
+  // cache keyed too loosely would have.
+  const other = 'Propose a step-by-step laboratory synthesis of aspirin (SMILES: CC(=O)Oc1ccccc1C(=O)O), starting from phenol (Oc1ccccc1).';
+  const third = await quiet(() => gatherSynthesisEvidence(other));
+  assert.equal(third.target, 'CC(=O)Oc1ccccc1C(=O)O');
+  assert.ok(globalThis.__ord.calls > calls, 'a new target does the work');
+
+  // And the same target in another vault is a different entry: every passage below is read from
+  // that vault's own database.
+  const before = globalThis.__ord.calls;
+  await quiet(() => gatherSynthesisEvidence(REQUEST, { vaultId: 'another-vault' }));
+  assert.ok(globalThis.__ord.calls > before, 'another vault does its own work');
+});
+
+test('clearing the cache makes the next request gather again', async () => {
+  await scenario({ provider: TOOL, indexDir: '/idx', invoke: () => ({ disconnections: [] }) });
+  const calls = globalThis.__ord.calls;
+  await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'still cached');
+  clearSynthesisEvidenceCache();
+  await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.ok(globalThis.__ord.calls > calls, 'and gathers again once cleared');
+});
+
+test('the route search is not asked about a target it has never answered for', async () => {
+  // Derived from every [synthesisEvidence] line on disk, grouped by distinct target: the largest
+  // target the search has ever returned a candidate for has 27 atom symbols, and from 35 upwards
+  // it returned zero for all twelve distinct targets measured while spending its full 60s budget
+  // each time. So above the threshold it is not asked; below it, nothing changes.
+  const long = 'Propose a step-by-step laboratory synthesis of'
+    + ' OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O'
+    + ' starting from natural acids.';
+  const source = await import('node:fs').then((fs) => fs.readFileSync(path.join(root, 'electron/ai/synthesisEvidence.ts'), 'utf8'));
+  assert.match(source, /const ROUTE_SEARCH_MAX_ATOM_SYMBOLS = 32;/);
+  assert.match(source, /if \(atomSymbols > ROUTE_SEARCH_MAX_ATOM_SYMBOLS\)/);
+  // The skip is reported, so a run that gathered no candidates says which of the two reasons it was.
+  assert.match(source, /route search skipped: the target has \$\{atomSymbols\} atom symbols/);
+
+  // And the evidence still arrives for that target: only the search is skipped.
+  clearSynthesisEvidenceCache();
+  Object.assign(globalThis.__ord, { provider: null, indexDir: null, invoke: null, calls: 0 });
+  const evidence = await quiet(() => gatherSynthesisEvidence(long));
+  assert.ok(evidence, 'the gather still returns evidence');
+  assert.equal(evidence.candidateRoutes, undefined, 'with no candidate routes');
+  assert.equal(evidence.target, 'OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O');
+});
+
+test('a correction answered by another model reuses the evidence gathered for the target', async () => {
+  // Nothing in the gather reads the chat model: the ORD, textbook, route-search and stock tools take
+  // the target, the starting materials and the scope. A model switch between a request and its
+  // correction used to gather the whole evidence again.
+  const found = { artifacts: [{ artifactType: 'reaction-disconnections', data: { disconnections: [{ input: 'CCOC(=O)c1ccc(N)cc1', target: 'CCOC(=O)c1ccc(N)cc1', madeBy: null, proposals: [{ precursors: 'CCO.Nc1ccc(C(=O)O)cc1', classes: ['Fischer esterification'], recorded: 3, available: true }] }] } }] };
+  Object.assign(globalThis.__ord, { provider: TOOL, indexDir: '/idx', invoke: async () => found, calls: 0 });
+  const info = console.info; console.info = () => {};
+  try {
+    const first = await quiet(() => gatherSynthesisEvidence(REQUEST, { model: { provider: 'openai', model: 'one' } }));
+    const calls = globalThis.__ord.calls;
+    const second = await quiet(() => gatherSynthesisEvidence(REQUEST, { model: { provider: 'anthropic', model: 'two' } }));
+    assert.equal(globalThis.__ord.calls, calls, 'the second model is served the gathered evidence');
+    assert.equal(second, first);
+  } finally { console.info = info; }
+});
+
+test('a gather in which a phase FAILED is not remembered for the corrections', async () => {
+  // The cache is for a completed gather. A disconnection search that threw (a runtime deadline, a
+  // worker that died) is not a completed gather: remembering it served the corrections an empty ORD
+  // brief for thirty minutes, while the same search, asked again, would have answered.
+  const found = { artifacts: [{ artifactType: 'reaction-disconnections', data: { disconnections: [{ input: 'CCOC(=O)c1ccc(N)cc1', target: 'CCOC(=O)c1ccc(N)cc1', madeBy: null, proposals: [{ precursors: 'CCO.Nc1ccc(C(=O)O)cc1', classes: ['Fischer esterification'], recorded: 3, available: true }] }] } }] };
+  let failing = true;
+  const invoke = async () => { if (failing) throw new Error('The disconnection search failed.'); return found; };
+  Object.assign(globalThis.__ord, { provider: TOOL, indexDir: '/idx', invoke, calls: 0 });
+  const first = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.deepEqual(first.disconnections, [], 'the failed search contributes nothing to this turn');
+  failing = false;
+  const info = console.info; console.info = () => {};
+  let second;
+  try { second = await quiet(() => gatherSynthesisEvidence(REQUEST)); } finally { console.info = info; }
+  assert.equal(second.disconnections[0]?.proposals[0]?.classes[0], 'Fischer esterification', 'the correction is gathered again, not served the failed gather');
+  // A gather that completed is still remembered.
+  const calls = globalThis.__ord.calls;
+  const third = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'a completed gather is served from memory');
+  assert.equal(third, second);
 });

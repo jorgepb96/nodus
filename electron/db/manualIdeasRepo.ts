@@ -48,7 +48,8 @@ function createAuthoredIdea(input: { folderId: string | null; title?: string }, 
     content: '',
     kind: 'idea' as const,
     folderId: input.folderId,
-    source: { origin: 'idea' as const, ref: idea.global_id, note: MANUAL_IDEA_MARKER },
+    source: { origin: 'idea' as const, ref: idea.global_id, note: MANUAL_IDEA_MARKER,
+      ...(identity ? { authoredOn: 'mobile' as const } : {}) },
   };
   const note = identity ? createNoteWithIdentity(content, identity.noteId) : createNote(content);
   scheduleManualIndex();

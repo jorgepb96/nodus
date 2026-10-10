@@ -119,7 +119,10 @@ export async function buildIdeaGraph(): Promise<GraphData> {
        JOIN idea_occurrences io ON io.global_id = i.global_id
        JOIN works w ON w.nodus_id = io.nodus_id
        WHERE w.archived = 0
-         AND (w.deep_status = 'done' OR ${manualIdeaVisible('io.global_id')})`
+         AND (w.deep_status = 'done' OR ${manualIdeaVisible('io.global_id')})
+       UNION
+       SELECT i.global_id, i.type, i.label, i.statement, i.created_at
+       FROM ideas i WHERE i.orphaned_at IS NULL AND ${manualIdeaVisible('i.global_id')}`
     )
     .all() as IdeaRow[];
   const themeRows = listGraphThemes();

@@ -23,6 +23,7 @@ import { useFeatureModel } from '../hooks/useFeatureModel';
 import { expandableIdsByDepth } from '../argumentMapTree';
 import { t, tx } from '../i18n';
 import { ArgumentMapCanvas } from '../components/argumentMap/ArgumentMapCanvas';
+import {useCompanionContentRefresh} from '../companionEvents';
 
 const RELATION_LABELS: Record<string, string> = {
   ...EDGE_LABELS,
@@ -151,6 +152,10 @@ export function ArgumentMapView({
     }
   }, []);
 
+  useCompanionContentRefresh(async () => {
+    if (mode === 'auto') await discoverRoutes();
+    else {setIdeaNodes(await window.nodus.listPickerIdeas());setGraphLoaded(true);}
+  });
   useEffect(() => {
     if (mode === 'auto' && suggestions.length === 0 && !suggestionsLoading) {
       void discoverRoutes();

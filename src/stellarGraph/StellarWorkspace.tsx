@@ -15,6 +15,7 @@ import {
   type DetailLoading,
 } from "../components/NodeDetailPanel";
 import { StellarProgress } from "./StellarProgress";
+import {useCompanionContentRefresh} from '../companionEvents';
 import { CorpusContextProgress, CorpusContextControls, useCorpusContext } from "./CorpusContext";
 import { StellarCanvas, ZOOM_STEP, type StellarCanvasApi } from "./StellarCanvas";
 import { Exploration } from "./exploration";
@@ -95,6 +96,11 @@ export function StellarWorkspace(props: StellarWorkspaceProps) {
 
 function StellarTabs(props: StellarWorkspaceProps) {
   const source = useMemo(() => props.workId ? workScopedSource(props.source, props.workId) : props.source, [props.source, props.workId]);
+  const [contentRevision, setContentRevision] = useState(0);
+  useCompanionContentRefresh(() => {
+    source.invalidate?.();
+    setContentRevision(value => value + 1);
+  });
   const scope = `${props.source.key}:${props.workId || "corpus"}`;
   const [saved] = useState(() => props.snapshot?.scope === scope ? props.snapshot : undefined);
   const { initialSeed, initialEdge, initialSearch, author, navigationKey } = props;
@@ -199,7 +205,7 @@ function StellarTabs(props: StellarWorkspaceProps) {
     {fullscreenError && <p role="alert">{t("No se pudo activar la pantalla completa.")}</p>}
     {tabs.map(tab => <div key={tab.id} role="tabpanel" id={`${tabsId}-panel-${tab.id}`} aria-labelledby={`${tabsId}-tab-${tab.id}`} className={active === tab.id ? "stellar-tab-panel" : "hidden"}>
       {tab.mode === "themes" && <div className="stellar-hub-panel">
-        <ThemesOverview source={source} toolbar={props.toolbar} sidebar={active === tab.id ? props.sidebar : undefined} initialIdeaIds={tab.hubIdeaIds} active={active === tab.id}
+        <ThemesOverview source={source} contentRevision={contentRevision} toolbar={props.toolbar} sidebar={active === tab.id ? props.sidebar : undefined} initialIdeaIds={tab.hubIdeaIds} active={active === tab.id}
           onIdeasChange={hubIdeaIds => setTabs(current => current.map(item => item.id === tab.id ? { ...item, hubIdeaIds } : item))}
           onOpenIdea={node => {
             const id = nextId.current++;
@@ -207,7 +213,7 @@ function StellarTabs(props: StellarWorkspaceProps) {
             setActive(id);
           }} onOpen={openTheme} />
       </div>}
-      {tab.mode !== "themes" && <StellarGraphTab {...props} key={tab.themeId || "canvas"} source={source} active={active === tab.id}
+      {tab.mode !== "themes" && <StellarGraphTab {...props} key={tab.themeId || "canvas"} source={source} contentRevision={contentRevision} active={active === tab.id}
             initialSeed={tab.initialSeed} initialEdge={tab.initialEdge}
             initialSearch={tab.initialSearch} author={tab.author}
             themeId={tab.themeId} themeLabel={tab.themeLabel}
@@ -242,8 +248,10 @@ function StellarGraphTab({
   onTitleChange,
   initialState,
   onTabSnapshot,
+  contentRevision,
 }: StellarWorkspaceProps & {
   active: boolean;
+  contentRevision: number;
   /** Theme this tab has drilled into: its ideas load as the visible baseline. */
   themeId?: string;
   themeLabel?: string;
@@ -288,6 +296,7 @@ function StellarGraphTab({
     [follow, setFollow] = useState(true),
     [reload, setReload] = useState(0);
   const selectionEpoch = useRef(0);
+  const detailTarget = useRef<{ kind: "idea" | "edge"; id: string } | null>(null);
   const titleCallback = useRef(onTitleChange);
   titleCallback.current = onTitleChange;
   const tabSnapshotCallback = useRef(onTabSnapshot);
@@ -327,7 +336,7 @@ function StellarGraphTab({
     setData(EMPTY);
     setError("");
     setPositions({});
-    setActiveEdge(null);
+    setActiveEdge(detailTarget.current?.kind === "edge" ? detailTarget.current.id : null);
     setFocusRequest(0);
     setProgress({ loaded: 0, total: 0 });
     setLayoutProgress(1);
@@ -389,7 +398,7 @@ function StellarGraphTab({
       life.current++;
       ready.current = false;
     };
-  }, [source, workId, themeId, themeLabel, initialSeed, initialEdge, reload]);
+  }, [source, workId, themeId, themeLabel, initialSeed, initialEdge, reload, contentRevision]);
   useEffect(() => {
     if (!engine || !ready.current) return;
     const state: StellarSession = {
@@ -496,6 +505,7 @@ function StellarGraphTab({
     return () => clearTimeout(timer);
   }, [playing, busy, next, speed, data]);
   const closeDetail = () => {
+    detailTarget.current = null;
     selectionEpoch.current++;
     engine?.interrupt();
     detailSeq.current++;
@@ -518,6 +528,7 @@ function StellarGraphTab({
       setPlaying(false);
       setAnimating(false);
       setSelected(id);
+      detailTarget.current = { kind: "idea", id };
       if (themeId) setFocal(id);
       setFollow(false);
       setActiveEdge(null);
@@ -553,6 +564,7 @@ function StellarGraphTab({
     [engine, source, onOpenIdea, themeId],
   );
   const openEdge = (id: string) => {
+    detailTarget.current = { kind: "edge", id };
     selectionEpoch.current++;
     engine?.interrupt();
     setPlaying(false);
@@ -585,6 +597,29 @@ function StellarGraphTab({
         }
       });
   };
+  useEffect(() => {
+    const target = detailTarget.current;
+    if (!contentRevision || !target) return;
+    const seq = ++detailSeq.current;
+    const update = async () => {
+      if (target.kind === "idea" && source.idea) {
+        const detail = await source.idea(target.id);
+        if (seq !== detailSeq.current) return;
+        setIdea(detail);
+        if (!detail) { setSelected(null); detailTarget.current = null; }
+      } else if (target.kind === "edge" && source.edge) {
+        const detail = await source.edge(target.id);
+        if (seq !== detailSeq.current) return;
+        setEdge(detail);
+        if (!detail) { setActiveEdge(null); detailTarget.current = null; }
+      }
+      if (seq === detailSeq.current) setDetailLoading(null);
+    };
+    void update().catch(err => {
+      if (seq === detailSeq.current) { setError(errorText(err)); setDetailLoading(null); }
+    });
+    return () => { if (seq === detailSeq.current) detailSeq.current++; };
+  }, [source, contentRevision]);
   const start = async (id: string, node?: GraphNode) => {
     if (!engine || stepping.current) return;
     const generation = life.current;
@@ -638,7 +673,7 @@ function StellarGraphTab({
       : scoped,
     [themeId, scoped, childLimit, engine, activeEdge],
   );
-  const corpusContext = useCorpusContext(source, view, positions, active);
+  const corpusContext = useCorpusContext(source, view, positions, active, contentRevision);
   // Until an idea is selected, neighbourhood mode starts at the most connected idea.
   useEffect(() => {
     if (!themeId || focal || !data.nodes.length) return;

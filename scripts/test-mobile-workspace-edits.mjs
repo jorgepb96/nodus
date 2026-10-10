@@ -20,6 +20,7 @@ try {
   const { markdownToBlockNote } = require('../shared/blockNoteDocument.ts');
   const { applyWorkspaceEdit } = require('../electron/desktopBridge/workspaceEdits.ts');
   const ideas = require('../electron/db/ideasRepo.ts');
+  const graph = require('../electron/graph/graphService.ts'), stellar = require('../electron/graph/stellarService.ts');
   const { manualIndexStatus } = require('../electron/ai/manualIdeaIndex.ts');
   const first = getActiveVault(), other = createVault('Otra bóveda aislada');
   const scoped = work => database.withVaultDatabase(first.id, () => work(database.getDb()));
@@ -83,7 +84,7 @@ try {
     input: { title: 'Idea escrita sin conexión', contentMarkdown: 'Desarrollo creado por el usuario.', nativeDocument: markdownToBlockNote('Desarrollo creado por el usuario.'), schemaVersion: 2, expectedRevision: 0 } };
   const authored = await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation);
   assert.equal(authored.note.kind, 'idea'); assert.equal(authored.note.id, ideaCreation.noteId);
-  assert.deepEqual(authored.note.source, { origin: 'idea', ref: ideaCreation.creation.globalId, note: 'manual-idea' });
+  assert.deepEqual(authored.note.source, { origin: 'idea', ref: ideaCreation.creation.globalId, note: 'manual-idea', authoredOn: 'mobile' });
   assert.deepEqual(authored.editorData.nativeDocument, ideaCreation.input.nativeDocument);
   const canonicalIdea = await scoped(() => ideas.getIdea(ideaCreation.creation.globalId));
   assert.equal(canonicalIdea.label, ideaCreation.input.title); assert.equal(canonicalIdea.statement, ideaCreation.input.contentMarkdown);
@@ -91,6 +92,21 @@ try {
   assert.equal(await scoped(() => ideas.nextGlobalId()), nextDerivedId, 'Offline authored identity never advances the Mac derived counter');
   assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation), authored);
   assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM ideas WHERE global_id=?').get(ideaCreation.creation.globalId).n), 1);
+  const visibleInAuto = async () => {
+    const globalId = ideaCreation.creation.globalId;
+    return await scoped(async () => ({
+      picker: ideas.listPickerIdeas().some(idea => idea.global_id === globalId),
+      catalogue: ideas.listIdeasPage({offset:0,limit:200,sort:'label'}).items.some(idea => idea.id === globalId),
+      graph: (await graph.buildIdeaGraph()).nodes.some(idea => idea.id === globalId),
+      stellar: stellar.stellarPage({kind:'corpus',cursor:0,limit:200}).nodes.some(idea => idea.id === globalId),
+    }));
+  };
+  assert.equal(await scoped(() => require('../electron/db/settingsRepo.ts').getSettings().academicMode),'auto');
+  assert.deepEqual(await visibleInAuto(),{picker:true,catalogue:true,graph:true,stellar:true},'A phone-authored idea with no work occurrences remains visible in every Auto consultation');
+  await scoped(() => notes.trashNotes([ideaCreation.noteId]));
+  assert.deepEqual(await visibleInAuto(),{picker:false,catalogue:false,graph:false,stellar:false},'Trashing its owner hides a companion idea from every consultation');
+  await scoped(() => notes.restoreNotes([ideaCreation.noteId]));
+  assert.deepEqual(await visibleInAuto(),{picker:true,catalogue:true,graph:true,stellar:true},'Restoring its owner restores the same graph identity');
   const ideaCollision = { ...ideaCreation, id: randomUUID(), noteId: randomUUID() };
   await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', ideaCollision), /identity_conflict/);
   assert.equal(await scoped(() => notes.getNote(ideaCollision.noteId)), null);
@@ -106,7 +122,7 @@ try {
     assert.equal(await scoped(() => ideas.getIdea(rejected.creation.globalId)), null, 'The owning note and authored idea roll back together');
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
   }
-  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,derivedCounterUnaffected:true,providerCalls: 0, releaseApproved: false }));
+  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,companionIdeaVisibleInAutoCataloguesAndBothGraphs:true,trashAndRestorePreserveAuthoredIdentity:true,derivedCounterUnaffected:true,providerCalls: 0, releaseApproved: false }));
 } finally {
   try { database?.closeDb(); } catch {}
   fs.rmSync(root, { recursive: true, force: true });

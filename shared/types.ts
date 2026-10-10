@@ -6354,6 +6354,8 @@ export interface NoteSource {
   /** Free-form references back to the originating object (idea id, draft title…). */
   ref?: string | null;
   note?: string | null;
+  /** Companion-authored ideas remain consultable in an Auto academic vault. */
+  authoredOn?: 'mobile';
   /** Structured origin for answers captured from any Research chat surface. */
   researchChat?: NoteResearchChatSource | null;
 }

@@ -6,14 +6,14 @@ import { loadCorpusContext } from "./context";
 import { StellarProgress } from "./StellarProgress";
 import { t, tx } from "../i18n";
 
-const cache = new WeakMap<StellarGraphSource, GraphData>();
+const cache = new WeakMap<StellarGraphSource, { revision: number; data: GraphData }>();
 export interface CorpusLayer {
   data: GraphData;
   positions: Record<string, StellarPosition>;
   opacity: number;
 }
 export function useCorpusContext(source: StellarGraphSource, foreground: GraphData,
-  positions: Record<string, StellarPosition>, active: boolean) {
+  positions: Record<string, StellarPosition>, active: boolean, contentRevision = 0) {
   const [enabled, setEnabled] = useState(false);
   const [opacity, setOpacity] = useState(0.18);
   const [graph, setGraph] = useState<GraphData>();
@@ -32,15 +32,16 @@ export function useCorpusContext(source: StellarGraphSource, foreground: GraphDa
     let cancelled = false;
     setError(false);
     const saved = cache.get(source);
-    if (saved) { setGraph(saved); setLoading(false); return; }
+    if (saved?.revision === contentRevision) { setGraph(saved.data); setLoading(false); return; }
+    setGraph(undefined);
     setLoading(true); setProgress(0);
     void loadCorpusContext(source, () => cancelled, (n, total) => setProgress(total ? n / total : 1))
       .then(data => {
         if (!data || cancelled) return;
-        cache.set(source, data); setGraph(data); setLoading(false);
+        cache.set(source, { revision: contentRevision, data }); setGraph(data); setLoading(false);
       }).catch(() => { if (!cancelled) { setError(true); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [source, enabled, active]);
+  }, [source, enabled, active, contentRevision]);
   // Position the background around the working graph, preserving every working coordinate.
   // New exploration nodes may anchor a new pass; panning, selection and opacity never do.
   const anchors = foreground.nodes.map(node => `${node.id}:${!!positions[node.id]}`).join("|");

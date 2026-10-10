@@ -18,6 +18,7 @@ import { DocumentSkillsControl, useDocumentSkills } from '../components/Document
 // overflow-hidden` box with an explicit height — StellarExcerpt renders `absolute
 // inset-0` and would otherwise escape its card.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {useCompanionContentRefresh} from '../companionEvents';
 import { AnimatePresence, motion } from 'framer-motion';
 import type {
   AppSettings,
@@ -236,6 +237,7 @@ export function ImmersionView({
   useEffect(() => {
     void refreshSessions();
   }, [refreshSessions]);
+  useCompanionContentRefresh(refreshSessions);
   useEffect(() => {
     const refresh = () => {void refreshSessions();};
     window.addEventListener('nodus:mobile-immersion-changed',refresh);

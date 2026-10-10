@@ -2,6 +2,7 @@ import { normalizeAcademicMetadata, cloneAcademicDocument } from '@shared/academ
 import { EditorialCards, EditorialNavigator, CatalogViewControl, EditorialCreateTrigger, EditorialCatalogRow } from '../components/workspace/EditorialChrome';
 import '../components/workspace/editorialWorkspace.css';
 import { notifyDataChanged } from '../hooks';
+import {useCompanionContentRefresh} from '../companionEvents';
 import { ManualIdeaEditor } from './ManualIdeaEditor';
 // El espacio de trabajo de la bóveda académica: notas, ideas y colecciones en una sola
 // vista, y el mismo editor que ya usan Estudio y Docencia.
@@ -575,6 +576,7 @@ export function WorkspaceView({
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useCompanionContentRefresh(refresh);
 
   // The study side of the links reloads on its own: it changes from the study sections
   // too (a note unlinked from a subject), not only from here.

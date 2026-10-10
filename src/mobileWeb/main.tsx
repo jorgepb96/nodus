@@ -31,6 +31,7 @@ import { OPEN_LIBRARY_DOCUMENT_EVENT, requestLibraryDocumentOpen, type OpenLibra
 import { parsePageNumber } from '@shared/pageLocation';
 import { installMobileKeyboard } from './mobileKeyboard';
 import { FeedbackHost } from '../components/feedback';
+import {COMPANION_CONTENT_CHANGED} from '../companionEvents';
 
 type Configuration = { device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
@@ -154,6 +155,11 @@ const streamEvents: Record<string, string> = {
 };
 let activeChat: string | undefined, activeImprove: string | undefined;
 (window as any).nodusMobileEvent = (event: { channel: string; args: unknown[] }) => {
+  if (event.channel === 'mobile:corpus:changed') {
+    window.dispatchEvent(new Event(COMPANION_CONTENT_CHANGED));
+    for(const name of ['onDictionaryChanged','onWritingDraftsChanged']) for(const listener of subscriptions.get(name)??[])listener(null);
+    return;
+  }
   if (event.channel === 'mobile:publication:changed') {
     for (const update of (Array.isArray(event.args[0]) ? event.args[0] : []) as Array<{method:string;state:string;entryId?:string;mode?:string;degraded?:boolean;entityKind?:string;entityId?:string;error?:string}>) {
       if (update.method === 'saveDictionaryGeneratedVersion' && update.entryId) {

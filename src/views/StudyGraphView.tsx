@@ -5,6 +5,7 @@ import { Spinner } from '../components/ui';
 import { errorText, t } from '../i18n';
 import { GraphView } from './GraphView';
 import { createStudyKnowledgeViewSource } from './studyKnowledgeViewSource';
+import {useCompanionContentRefresh} from '../companionEvents';
 import type { StellarWorkspaceSnapshot } from '../stellarGraph/snapshot';
 
 const SUBJECT_KEY = 'nodus.studyKnowledgeSubjectId';
@@ -41,6 +42,7 @@ export function StudyGraphView({
     catch (error) { setError(errorText(error)); }
   };
   useEffect(() => { void load(); }, []);
+  useCompanionContentRefresh(load);
   useEffect(() => {
     if (!workspace?.subjects.length) return;
     if (!workspace.subjects.some((subject) => subject.id === subjectId)) setSubjectId(workspace.subjects[0].id);

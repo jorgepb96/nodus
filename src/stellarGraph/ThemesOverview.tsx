@@ -25,6 +25,7 @@ export function ThemesOverview({
   onIdeasChange,
   onOpenIdea,
   active,
+  contentRevision = 0,
 }: {
   /** A new source identity — a reprocess, a vault change — refetches the hubs. */
   source: StellarGraphSource;
@@ -35,6 +36,7 @@ export function ThemesOverview({
   onIdeasChange(ids: string[]): void;
   onOpenIdea(node: GraphNode): void;
   active: boolean;
+  contentRevision?: number;
 }) {
   const [themes, setThemes] = useState<StellarTheme[] | null>(null);
   const [ideaCount, setIdeaCount] = useState<number | null>(null);
@@ -62,7 +64,7 @@ export function ThemesOverview({
     };
     void restore().catch(err => live && setError(errorText(err)));
     return () => { live = false; };
-  }, [source]);
+  }, [source,contentRevision]);
   const visibleIds = useMemo(() => new Set(pinned.map(node => node.id)), [pinned]);
   const updateIdeas = (nodes: GraphNode[]) => {
     initialIds.current = nodes.map(node => node.id);
@@ -85,7 +87,7 @@ export function ThemesOverview({
     return () => {
       live = false;
     };
-  }, [source]);
+  }, [source,contentRevision]);
 
   const sorted = useMemo(() => sortThemes(themes || []), [themes]);
   const needle = query.trim().toLocaleLowerCase();
@@ -114,7 +116,7 @@ export function ThemesOverview({
     }),
     [shown, pinned],
   );
-  const corpusContext = useCorpusContext(source, data, positions, active);
+  const corpusContext = useCorpusContext(source, data, positions, active, contentRevision);
   const byId = useMemo(() => new Map(shown.map((theme) => [theme.id, theme])), [shown]);
 
   // The rings are decided by the themes on screen, so filtering re-forms the constellation.

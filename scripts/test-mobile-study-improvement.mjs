@@ -25,6 +25,33 @@ try {
   const request={documentId:document.id,text:original,styleId:'builtin:clear',scope:'paragraph',level:'minimal',length:'similar',mode:'preserve',protectedTerms:['García'],model:{provider:'deepseek',model:'phone-owned'}};
   const context=mobile.mobileStudyImprovementContext(request);
   assert.equal(styles.listStudyImprovementLog(document.id).length,0,'Context preparation is read only');
+  const portable=require('../shared/mobileStudyImprovement.ts');
+  const sorted=value=>value && typeof value==='object' ? Array.isArray(value) ? value.map(sorted)
+    : Object.fromEntries(Object.entries(value).filter(([,child])=>child!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([key,child])=>[key,sorted(child)])) : value;
+  const selectedSource=sorted(JSON.parse(JSON.stringify(mobile.mobileStudyImprovementOfflineSource({documentId:document.id}))));
+  const freshRequest={...request,text:'Una selección nueva mantiene 37 datos (García, 2023, p. 8).',styleId:'builtin:concise',length:'shorter',promptLanguage:'en'};
+  const freshContext=await portable.studyImprovementContextFromCopy(sorted(freshRequest),selectedSource);
+  assert.equal(freshContext.offlineSourceVersion,1);
+  assert.equal(freshContext.revision,mobile.mobileStudyImprovementContext(freshRequest,1).revision,'Native key reordering does not change the portable source revision');
+  assert.equal(styles.listStudyImprovementLog(document.id).length,0,'Downloading and deriving a new context remain read only');
+  const freshRaw=core.prepareStudyImprovement(freshRequest,freshContext.style,freshContext.promptLanguage).protectedValue.text.replace('mantiene','conserva');
+  const freshInput={request:freshRequest,revision:freshContext.revision,offlineSourceVersion:1,raw:freshRaw,requestId:'fe71eb0b-c8dc-441b-8dfd-d9000d20e206'};
+  assert.match(mobile.saveMobileStudyImprovement(freshInput).text,/conserva 37 datos/);
+  assert.equal(mobile.saveMobileStudyImprovement(freshInput).logId,freshInput.requestId,'A fresh offline selection is published once');
+  assert.throws(()=>mobile.saveMobileStudyImprovement({...freshInput,offlineSourceVersion:2}),/unsupported_offline_source_version/);
+  await assert.rejects(portable.studyImprovementContextFromCopy({...freshRequest,documentId:'foreign-vault'},selectedSource),/offline_source_unavailable/);
+  await assert.rejects(portable.studyImprovementContextFromCopy({...freshRequest,styleId:'missing-style'},selectedSource),/style_unavailable/);
+  // Keep the historical scenario's own log count independent of this new path.
+  db.prepare('DELETE FROM study_improvement_log WHERE id=?').run(freshInput.requestId);
+  const custom=styles.createStudyStyle({name:'Estilo descargado',prompt:'Conserva el significado y mejora la claridad.'});
+  const customRequest={...freshRequest,styleId:custom.id};
+  const customSource=mobile.mobileStudyImprovementOfflineSource({documentId:document.id});
+  const customContext=await portable.studyImprovementContextFromCopy(customRequest,customSource);
+  const customInput={...freshInput,request:customRequest,revision:customContext.revision,
+    raw:core.prepareStudyImprovement(customRequest,customContext.style,customContext.promptLanguage).protectedValue.text,
+    requestId:'b0c3ed3d-071f-4fdb-9f57-3a4a38082fdb'};
+  styles.updateStudyStyle(custom.id,{prompt:'Nuevo estilo cambiado mientras el móvil estaba fuera.'});
+  assert.throws(()=>mobile.saveMobileStudyImprovement(customInput),/generation_conflict/,'A changed Mac style cannot accept an older offline context');
   assert.throws(()=>mobile.mobileStudyImprovementContext({...request,documentId:'foreign-vault'}),/source_unavailable/);
   assert.throws(()=>mobile.mobileStudyImprovementContext({...request,noteId:'also-note'}),/invalid_study_improvement_target/);
   assert.throws(()=>mobile.mobileStudyImprovementContext({...request,mode:'invalid'}),/invalid_study_improvement_request/);
@@ -56,6 +83,32 @@ try {
   assert.throws(()=>mobile.saveMobileStudyImprovement(input),/generation_conflict/);
   db.prepare('UPDATE study_docs SET content_markdown=? WHERE id=?').run(original,document.id);
   const frontend=require('../src/mobileWeb/autonomousWriting.ts');
+  const offlineCheckpoints=new Map();let offlineProviders=0, macAvailable=false;
+  const offlineCall=async(method,...args)=>{
+    if(method==='getSettings')return {writingModel:request.model};
+    if(method==='mobileGenerationCheckpoint'){
+      if(args[0]==='load')return structuredClone(offlineCheckpoints.get(args[2])??null);
+      offlineCheckpoints.set(args[2],structuredClone(args[3]));return null;
+    }
+    if(method==='getStudyImprovementGenerationContext')throw Object.assign(new Error('Mac unavailable'),{code:'offline'});
+    if(method==='getStudyImprovementOfflineSource'){assert.deepEqual(args[0],{documentId:document.id});return selectedSource;}
+    if(method==='mobileStructuredCompletion'){offlineProviders++;return freshRaw;}
+    if(method==='saveStudyImprovementFromMobile'){
+      if(!macAvailable)throw Object.assign(new Error('Mac unavailable'),{code:'offline'});
+      return mobile.saveMobileStudyImprovement(args[0]);
+    }
+    throw new Error('Unexpected offline method: '+method);
+  };
+  await assert.rejects(frontend.autonomousWriting(offlineCall,freshRequest,()=>{}),error=>error.code==='mobile_publication_pending');
+  assert([...offlineCheckpoints.values()].some(value=>value.context.offlineSourceVersion===1 && value.preview.text.includes('conserva 37 datos') && value.state==='saved'));
+  macAvailable=true;
+  const newlyPublished=await frontend.autonomousWriting(offlineCall,freshRequest,()=>{});
+  assert.equal(offlineProviders,1,'New offline assistance resumes publication without another model call');
+  assert.match(newlyPublished.text,/conserva 37 datos/);
+  db.prepare('UPDATE study_docs SET content_markdown=? WHERE id=?').run('Mac changed while the phone was away',document.id);
+  assert.throws(()=>mobile.saveMobileStudyImprovement(freshInput),/generation_conflict/);
+  db.prepare('UPDATE study_docs SET content_markdown=? WHERE id=?').run(original,document.id);
+  db.prepare('DELETE FROM study_improvement_log WHERE id=?').run(newlyPublished.logId);
   const checkpoints=new Map();let providerCalls=0, failSave=true, pendingReject;
   const call=async(method,...args)=>{
     if(method==='getSettings')return {writingModel:request.model,improveModel:request.model};

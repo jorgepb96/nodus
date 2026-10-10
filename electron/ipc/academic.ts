@@ -229,7 +229,7 @@ import { transcribeStudyAudio as transcribeOpenAiStudyAudio } from '../ai/studyT
 import { diarizeStudyRecording } from '../ai/studyDiarization';
 import { cancelWhisperCpp, deleteWhisperCppModel, downloadWhisperCppModel, getWhisperCppStatus, transcribeWhisperCpp, installWhisperCpp, uninstallWhisperCpp } from '../stt/whisperCpp';
 import { improveStudyText } from '../ai/studyImprove';
-import {mobileStudyImprovementContext, saveMobileStudyImprovement} from '../ai/mobileStudyImprovement';
+import {mobileStudyImprovementContext, mobileStudyImprovementOfflineSource, saveMobileStudyImprovement} from '../ai/mobileStudyImprovement';
 import type {MobileStudyImprovementSave} from '@shared/mobileStudyImprovement';
 import { suggestStudySynonyms } from '../ai/studySynonyms';
 import * as studySearch from '../ai/studySearch';
@@ -1148,6 +1148,7 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('study:stt:whisperCpp:delete', async (_event, model: string) => deleteWhisperCppModel(model));
   h('study:styles:list', async (_e, options?: { includeArchived?: boolean; search?: string }) => studyStyles.listStudyStyles(options));
   h('study:improve:mobile:context', async (_e, request: StudyImproveRequest) => mobileStudyImprovementContext(request));
+  h('study:improve:mobile:offlineSource', async (_e, target) => mobileStudyImprovementOfflineSource(target));
   h('study:improve:mobile:save', async (_e, input: MobileStudyImprovementSave) => saveMobileStudyImprovement(input));
   h('study:styles:create', async (_e, input: StudyStyleInput) => studyStyles.createStudyStyle(input));
   h('study:styles:update', async (_e, id: string, patch: Partial<StudyStyleInput>) => studyStyles.updateStudyStyle(id, patch));

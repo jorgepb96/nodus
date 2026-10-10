@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
+import {webcrypto} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
 
@@ -10,12 +11,21 @@ if (!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-tr
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-translation-contract-'));
 installRuntimeHooks(root);
 const require=createRequire(import.meta.url);
+Object.defineProperty(globalThis,'crypto',{configurable:true,value:webcrypto});
 let database;
 const fetchBefore=globalThis.fetch;
 globalThis.fetch=async()=>{throw new Error('The phone translation contract cannot use Mac providers');};
 try {
   database=require('../electron/db/database.ts'); const db=database.getDb();
   const mobile=require('../electron/ai/mobileTranslation.ts');
+  const {executeMobileOperation}=require('../electron/desktopBridge/operations.ts');
+  const vault=require('../electron/vaults/vaultRegistry.ts').getActiveVault();
+  for (const method of ['getContentTranslationOfflineSource','getContentTranslationGenerationContext','generateContentTranslation',
+    'beginContentTranslationOnMobile','saveContentTranslationFromMobile','failContentTranslationOnMobile']) {
+    const target={entityKind:'study_transcript',entityId:'private-recording'};
+    await assert.rejects(executeMobileOperation(vault.id,['corpus','writing','research-generation'],method,
+      [method==='saveContentTranslationFromMobile'?{request:target}:target]),/permission_denied/,'Translation contexts and copies retain the recordings grant');
+  }
   const core=require('../shared/translationGeneration.ts');
   const repo=require('../electron/db/translationsRepo.ts');
   const draft={title:'Informe',abstract:'',draftMarkdown:'Texto con 37 observaciones de 2024 y [cita](nodus://passage/work%230), $E=mc^2$ y `code(1)`.\n\n| A | B |\n|---|---|\n| Uno | Dos |'};
@@ -25,6 +35,18 @@ try {
   const context=mobile.mobileTranslationContext(request);
   assert.equal(mobile.mobileTranslationContext(request).revision,context.revision);
   assert.equal(repo.listContentTranslations('deep_research','report-1').length,0,'Context preparation writes nothing');
+  const portable=require('../shared/mobileTranslation.ts');
+  const source=mobile.mobileTranslationOfflineSource({entityKind:'deep_research',entityId:'report-1'});
+  const reordered={...source,source:Object.fromEntries(Object.entries(source.source).reverse())};
+  const newLanguage={...request,language:'fr',model:{provider:'openai',model:'another-phone-model'}};
+  const newContext=await portable.translationContextFromCopy(newLanguage,reordered);
+  assert.equal(newContext.offlineSourceVersion,1);
+  assert.equal(newContext.language.code,'fr');
+  assert.equal(newContext.revision,mobile.mobileTranslationContext(newLanguage,1).revision,'A new language and provider use the same canonical revision despite native key reordering');
+  assert.equal(repo.listContentTranslations('deep_research','report-1').length,0,'An offline source copy never starts a translation on the Mac');
+  await assert.rejects(portable.translationContextFromCopy({...newLanguage,entityId:'foreign'},source),/offline_source_unavailable/);
+  await assert.rejects(portable.translationContextFromCopy({...newLanguage,sourceMarkdown:request.sourceMarkdown+'\nInvented'},source),/source_mismatch/);
+  await assert.rejects(portable.translationContextFromCopy({...newLanguage,language:'unknown'},source),/unsupported_translation_language/);
   assert.throws(()=>mobile.mobileTranslationContext({...request,entityId:'another-vault'}),/source_unavailable/);
   assert.throws(()=>mobile.mobileTranslationContext({...request,language:'unknown'}),/unsupported_translation_language/);
   assert.throws(()=>mobile.mobileTranslationContext({...request,sourceMarkdown:request.sourceMarkdown+'\nInvented source'}),/source_mismatch/);
@@ -48,8 +70,14 @@ try {
   assert.equal(saved.status,'ready');assert.equal(saved.title,'Report');assert.equal(saved.model.model,'phone-owned');
   assert.equal(mobile.saveMobileTranslation(input).id,saved.id);assert.equal(repo.listContentTranslations('deep_research','report-1').length,1,'Replayed saves cannot duplicate a translation');
   assert.equal(repo.getContentTranslation(saved.id).markdown,markdown);
+  const freshInput={request:newLanguage,revision:newContext.revision,offlineSourceVersion:1,markdown,requestId:'f998d7a3-9ff1-41bd-a886-dbd6575e3662'};
+  const fresh=mobile.saveMobileTranslation(freshInput);
+  assert.equal(fresh.language,'fr');assert.equal(fresh.model.model,'another-phone-model');
+  assert.equal(mobile.saveMobileTranslation(freshInput).id,fresh.id);
+  assert.throws(()=>mobile.saveMobileTranslation({...freshInput,offlineSourceVersion:2}),/unsupported_offline_source_version/);
   db.prepare('UPDATE writing_saved_drafts SET draft_json=? WHERE id=?').run(JSON.stringify({...draft,draftMarkdown:'Changed source'}),'report-1');
   assert.throws(()=>mobile.saveMobileTranslation(input),/source_mismatch|generation_conflict/);
+  assert.throws(()=>mobile.saveMobileTranslation(freshInput),/source_mismatch|generation_conflict/,'A portable revision still rejects a changed Mac source');
   await assert.rejects(core.translateMarkdownWith({markdown:request.sourceMarkdown,language:context.language},async()=>''),/empty_response/);
   let completed=0;const long='# Long\n\n'+Array.from({length:15},(_,index)=>`Paragraph ${index} `+'words '.repeat(100)).join('\n\n');
   await core.translateMarkdownWith({markdown:long,language:context.language,onProgress:(done)=>{completed=done;}},async prompt=>prompt.user);

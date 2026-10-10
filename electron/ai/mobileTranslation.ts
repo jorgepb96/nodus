@@ -2,7 +2,8 @@ import {createHash} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {TRANSLATION_LANGUAGES, type GenerateTranslationRequest} from '@shared/types';
-import type {MobileTranslationContext, MobileTranslationSave} from '@shared/mobileTranslation';
+import type {MobileTranslationContext, MobileTranslationSave, MobileTranslationOfflineSource} from '@shared/mobileTranslation';
+import {mobileSourceRevisionInput} from '@shared/mobileOfflineSource';
 import {assertTranslationIntegrity, titleFromMarkdown, researchTranslationSource} from '@shared/translationGeneration';
 import {getDb} from '../db/database';
 import {activeVaultDir} from '../vaults/vaultRegistry';
@@ -10,7 +11,7 @@ import * as translations from '../db/translationsRepo';
 
 /** Read only the selected vault. A renderer cannot create translations for a
  * missing entity, and a changed source invalidates a pending phone result. */
-function entitySource(request: GenerateTranslationRequest): unknown {
+function entitySource(request: Pick<GenerateTranslationRequest, 'entityKind' | 'entityId'>): unknown {
   const db = getDb();
   const id = request.entityId;
   switch (request.entityKind) {
@@ -35,7 +36,15 @@ function entitySource(request: GenerateTranslationRequest): unknown {
   }
 }
 
-export function mobileTranslationContext(request: GenerateTranslationRequest): MobileTranslationContext {
+export function mobileTranslationOfflineSource(target: Pick<GenerateTranslationRequest, 'entityKind' | 'entityId'>): MobileTranslationOfflineSource {
+  if (!target || typeof target.entityId !== 'string' || !target.entityId || target.entityId.length > 256) throw new Error('invalid_translation_request');
+  const source = entitySource(target);
+  if (!source) throw new Error('translation_source_unavailable');
+  return {version: 1, entityKind: target.entityKind, entityId: target.entityId, source};
+}
+
+export function mobileTranslationContext(request: GenerateTranslationRequest, offlineSourceVersion?: 1): MobileTranslationContext {
+  if (offlineSourceVersion !== undefined && offlineSourceVersion !== 1) throw new Error('unsupported_offline_source_version');
   if (!request || typeof request.entityId !== 'string' || !request.entityId || request.entityId.length > 256
     || typeof request.sourceTitle !== 'string' || request.sourceTitle.length > 10_000
     || typeof request.sourceMarkdown !== 'string' || !request.sourceMarkdown.trim() || Buffer.byteLength(request.sourceMarkdown) > 5_000_000
@@ -50,8 +59,9 @@ export function mobileTranslationContext(request: GenerateTranslationRequest): M
     if (typeof draft.title !== 'string' || typeof draft.draftMarkdown !== 'string'
       || request.sourceTitle !== draft.title || request.sourceMarkdown !== researchTranslationSource(draft)) throw new Error('translation_source_mismatch');
   }
-  const revision = createHash('sha256').update(JSON.stringify([request.entityKind,request.entityId,source,request.sourceTitle,request.sourceMarkdown])).digest('hex');
-  return {revision, language};
+  const input = [request.entityKind,request.entityId,source,request.sourceTitle,request.sourceMarkdown];
+  const revision = createHash('sha256').update(offlineSourceVersion === 1 ? mobileSourceRevisionInput(input) : JSON.stringify(input)).digest('hex');
+  return {revision, language, ...(offlineSourceVersion === 1 ? {offlineSourceVersion: 1 as const} : {})};
 }
 
 export function beginMobileTranslation(request: GenerateTranslationRequest) {
@@ -62,7 +72,7 @@ export function beginMobileTranslation(request: GenerateTranslationRequest) {
 export function saveMobileTranslation(input: MobileTranslationSave) {
   if (!input || typeof input.markdown !== 'string' || Buffer.byteLength(input.markdown) > 10_000_000
     || typeof input.requestId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input.requestId)) throw new Error('invalid_translation_result');
-  const {revision, language} = mobileTranslationContext(input.request);
+  const {revision, language} = mobileTranslationContext(input.request, input.offlineSourceVersion);
   if (revision !== input.revision) throw new Error('translation_generation_conflict');
   assertTranslationIntegrity(input.request.sourceMarkdown, input.markdown);
   return translations.upsertContentTranslation({...input.request, languageLabel:language.nativeName,

@@ -1,5 +1,5 @@
 import type {StudyImproveRequest, StudyImproveResult} from '@shared/studyImprove';
-import type {MobileStudyImprovementContext} from '@shared/mobileStudyImprovement';
+import {studyImprovementContextFromCopy, type MobileStudyImprovementContext} from '@shared/mobileStudyImprovement';
 import type {ModelRef} from '@shared/types';
 import {prepareStudyImprovement, finishStudyImprovement} from '@shared/studyImprovementGeneration';
 import {structuredPrompt} from './structuredPrompt';
@@ -37,7 +37,14 @@ export async function autonomousWriting(call:Call,request:StudyImproveRequest,on
     const check=()=>{if(running.cancelled)throw new Error('Generación cancelada. El original no se ha modificado.');};
     try {
       check();await save();
-      checkpoint.context ??= await call('getStudyImprovementGenerationContext',request);
+      if (!checkpoint.context) {
+        try { checkpoint.context = await call('getStudyImprovementGenerationContext',request); }
+        catch (error) {
+          if ((error as {code?:string})?.code !== 'offline') throw error;
+          const target = request.noteId ? {noteId: request.noteId} : {documentId: request.documentId};
+          checkpoint.context = await studyImprovementContextFromCopy(request, await call('getStudyImprovementOfflineSource',target));
+        }
+      }
       check();if(!checkpoint.raw){checkpoint.state='running';delete checkpoint.error;await save();}
       const context=checkpoint.context!;
       if (!checkpoint.raw) {
@@ -51,7 +58,7 @@ export async function autonomousWriting(call:Call,request:StudyImproveRequest,on
       // preview is recorded. A complete protected result is emitted once.
       const preview=finishStudyImprovement(request,context.style,checkpoint.raw,context.promptLanguage,context.uiLanguage);
       checkpoint.preview=preview;checkpoint.state='saved';await save();
-      checkpoint.result=await call('saveStudyImprovementFromMobile',{request,revision:context.revision,raw:checkpoint.raw,requestId:checkpoint.id});
+      checkpoint.result=await call('saveStudyImprovementFromMobile',{request,revision:context.revision,offlineSourceVersion:context.offlineSourceVersion,raw:checkpoint.raw,requestId:checkpoint.id});
       check();checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await save();onDelta(preview.text);return checkpoint.result!;
     } catch(error) {
       if(!running.cancelled && preservePendingPublication(checkpoint,error)){await save();throw new PendingPublicationError();}

@@ -34,6 +34,12 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if (['getContentTranslationOfflineSource', 'getContentTranslationGenerationContext', 'generateContentTranslation',
+    'beginContentTranslationOnMobile', 'saveContentTranslationFromMobile', 'failContentTranslationOnMobile'].includes(method)) {
+    const first = args[0] as {entityKind?: unknown; request?: {entityKind?: unknown}} | undefined;
+    const kind = method === 'saveContentTranslationFromMobile' ? first?.request?.entityKind : first?.entityKind;
+    if (kind === 'study_transcript' && !domains.includes('study-recordings')) throw new Error('permission_denied');
+  }
   if (method === 'listAudioClips') {
     const kinds = ['deep_research', 'immersion', 'study_document', 'study_transcript', 'study_assistant', 'study_subject', 'study_question'];
     if (args.length !== 2 || !kinds.includes(String(args[0])) || typeof args[1] !== 'string' || !args[1] || args[1].length > 1024) throw new Error('invalid_arguments');

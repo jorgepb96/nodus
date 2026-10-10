@@ -1,6 +1,6 @@
 import {translateMarkdownWith} from '@shared/translationGeneration';
 import type {ContentTranslationSummary, GenerateTranslationRequest} from '@shared/types';
-import type {MobileTranslationContext} from '@shared/mobileTranslation';
+import {translationContextFromCopy, type MobileTranslationContext} from '@shared/mobileTranslation';
 import {structuredPrompt} from './structuredPrompt';
 import {PendingPublicationError, preservePendingPublication, type PublicationCheckpoint} from './publicationRecovery';
 
@@ -30,7 +30,14 @@ async function execute(call:Call,entityKey:string,request:GenerateTranslationReq
   const save = ()=>call('mobileGenerationCheckpoint','save','translation',entityKey,checkpoint);
   await save();
   try {
-    checkpoint.context ??= await call('getContentTranslationGenerationContext',request);
+    if (!checkpoint.context) {
+      try { checkpoint.context = await call('getContentTranslationGenerationContext',request); }
+      catch (error) {
+        if ((error as {code?:string})?.code !== 'offline') throw error;
+        checkpoint.context = await translationContextFromCopy(request, await call('getContentTranslationOfflineSource',
+          {entityKind:request.entityKind,entityId:request.entityId}));
+      }
+    }
     if (!checkpoint.markdown) {
       try {await call('beginContentTranslationOnMobile',request);} catch(error){if((error as {code?:string})?.code!=='offline')throw error;}
       notify();checkpoint.state='running';delete checkpoint.error;await save();
@@ -42,7 +49,7 @@ async function execute(call:Call,entityKey:string,request:GenerateTranslationReq
       });
       checkpoint.state='saved'; await save();
     }
-    checkpoint.result = await call('saveContentTranslationFromMobile',{request,revision:checkpoint.context!.revision,markdown:checkpoint.markdown,requestId:checkpoint.id});
+    checkpoint.result = await call('saveContentTranslationFromMobile',{request,revision:checkpoint.context!.revision,offlineSourceVersion:checkpoint.context!.offlineSourceVersion,markdown:checkpoint.markdown,requestId:checkpoint.id});
     checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await save();notify();return checkpoint.result!;
   } catch(error) {
     if(preservePendingPublication(checkpoint,error)){await save();notify();throw new PendingPublicationError();}

@@ -38,7 +38,7 @@ import { deleteNodusLocalImageModel, downloadNodusLocalImageModel, getNodusLocal
 import { TRANSLATION_LANGUAGES } from '@shared/types';
 import { listLocalAiDiagnostics } from '../ai/localRequestPlanner';
 import { translateMarkdown, titleFromMarkdown } from '../ai/translate';
-import {mobileTranslationContext, beginMobileTranslation, saveMobileTranslation, failMobileTranslation} from '../ai/mobileTranslation';
+import {mobileTranslationContext, mobileTranslationOfflineSource, beginMobileTranslation, saveMobileTranslation, failMobileTranslation} from '../ai/mobileTranslation';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -389,6 +389,7 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
   );
   h('translations:get', async (_e, id: string) => translationsRepo.getContentTranslation(id));
   h('translations:mobile:context', async (_e, request: GenerateTranslationRequest) => mobileTranslationContext(request));
+  h('translations:mobile:offlineSource', async (_e, target) => mobileTranslationOfflineSource(target));
   h('translations:mobile:begin', async (_e, request: GenerateTranslationRequest) => beginMobileTranslation(request));
   h('translations:mobile:save', async (_e, input) => saveMobileTranslation(input));
   h('translations:mobile:fail', async (_e, request: GenerateTranslationRequest, issue: string) => failMobileTranslation(request, issue));

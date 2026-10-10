@@ -126,3 +126,15 @@
 .nodus-phone .research-history-action{width:44px;height:44px;opacity:1}
 .nodus-phone .research-history-main{font-size:14px}
 .nodus-phone .research-message-actions button{opacity:1}
+
+/* WebKit's viewport can be only 119pt high above the landscape keyboard.
+   Keep the model, draft and every composer action within that visible area. */
+@media(orientation:landscape) and (max-height:240px){
+  .nodus-phone .research-assistant-header{padding-block:0;flex-shrink:0}
+  .nodus-phone .research-composer-footer{padding:3px 8px}
+  .nodus-phone .research-composer{grid-template-columns:44px minmax(0,1fr) auto auto 44px;min-height:56px;padding:4px;gap:4px}
+  .nodus-phone .research-composer-input{max-height:44px;padding:2px 0;line-height:20px}
+  .nodus-phone .research-composer>.research-web-toggle{grid-column:3;grid-row:1}
+  .nodus-phone .research-composer>.research-effort-trigger{grid-column:4;grid-row:1}
+  .nodus-phone .research-composer-send{grid-column:5;grid-row:1}
+}

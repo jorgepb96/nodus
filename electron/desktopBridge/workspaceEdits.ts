@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { withOwningVault } from '../vaults/vaultRegistry';
 import { createNoteWithIdentity, getNote } from '../db/notesRepo';
+import { createManualIdeaWithIdentity } from '../db/manualIdeasRepo';
+import { getIdea } from '../db/ideasRepo';
 import { getWorkspaceNoteEditorData, updateWorkspaceNote } from '../db/workspaceRepo';
 import { canonicalJson } from '../../shared/canonicalJson';
 import type { StudyDocUpdateInput } from '../../shared/studyEditor';
@@ -26,10 +28,12 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
   if (Object.keys(value).some(key => !fields.has(key)) || typeof value.title !== 'string' || value.title.length > 4096 ||
       typeof value.contentMarkdown !== 'string' || !Number.isSafeInteger(value.expectedRevision) || value.expectedRevision! < 0)
     throw new WorkspaceEditFailure('invalid_workspace_edit');
-  const create = creation as { kind: 'markdown'; folderId: string | null; tags: string[] } | undefined;
+  const create = creation as { kind: 'markdown' | 'idea'; folderId: string | null; tags: string[]; globalId?: string } | undefined;
   if (creation !== undefined && (!create || typeof create !== 'object' || Array.isArray(create) ||
-      Object.keys(create).some(key => !['kind', 'folderId', 'tags'].includes(key)) ||
-      create.kind !== 'markdown' || (create.folderId !== null && (typeof create.folderId !== 'string' || !create.folderId || create.folderId.length > 128)) ||
+      Object.keys(create).some(key => !['kind', 'folderId', 'tags', 'globalId'].includes(key)) ||
+      !['markdown', 'idea'].includes(create.kind) ||
+      (create.kind === 'idea' ? typeof create.globalId !== 'string' || !/^manual-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(create.globalId) || create.tags?.length !== 0 : create.globalId !== undefined) ||
+      (create.folderId !== null && (typeof create.folderId !== 'string' || !create.folderId || create.folderId.length > 128)) ||
       !Array.isArray(create.tags) || create.tags.length > 100 || create.tags.some(tag => typeof tag !== 'string' || tag.length > 80) ||
       !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(noteId) ||
       value.expectedRevision !== 0 || !Array.isArray(value.nativeDocument) || value.schemaVersion !== 2))
@@ -46,8 +50,10 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
       }
       let note = getNote(noteId);
       if (create) {
-        if (note) throw new WorkspaceEditFailure('identity_conflict');
-        note = withMobileOperation(() => createNoteWithIdentity({ title: value.title, content: '', kind: 'markdown', folderId: create.folderId, tags: create.tags }, noteId));
+        if (note || (create.kind === 'idea' && getIdea(create.globalId!))) throw new WorkspaceEditFailure('identity_conflict');
+        note = withMobileOperation(() => create.kind === 'idea'
+          ? createManualIdeaWithIdentity({ title: value.title, folderId: create.folderId }, noteId, create.globalId!).note
+          : createNoteWithIdentity({ title: value.title, content: '', kind: 'markdown', folderId: create.folderId, tags: create.tags }, noteId));
       }
       if (!note || note.trashedAt) throw new WorkspaceEditFailure('document_unavailable');
       const current = withMobileOperation(() => getWorkspaceNoteEditorData(noteId));

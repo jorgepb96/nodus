@@ -391,7 +391,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       vaultIds: pairing.vaultIds, domains: pairing.domains,
       vaults: pairing.vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
-      workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, creation: ['markdown'] } : undefined,
+      workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, creation: ['markdown', 'idea'] } : undefined,
       jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);

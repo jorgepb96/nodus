@@ -14,7 +14,7 @@ import type {
 } from '@shared/types';
 import { getDb } from './database';
 import * as ideas from './ideasRepo';
-import { createNote, getNote } from './notesRepo';
+import { createNote, createNoteWithIdentity, getNote } from './notesRepo';
 import { embed } from '../ai/aiClient';
 
 // Mirrors MANUAL_IDEA_MARKER in shared/types.ts (kept local so the electron build
@@ -30,16 +30,27 @@ export function createManualIdea(input: { folderId: string | null; title?: strin
   note: Note;
   globalId: string;
 } {
+  return createAuthoredIdea(input);
+}
+
+/** The companion supplies durable identities, never a derived corpus result. */
+export function createManualIdeaWithIdentity(input: { folderId: string | null; title?: string }, noteId: string, globalId: string): { note: Note; globalId: string } {
+  return createAuthoredIdea(input, { noteId, globalId });
+}
+
+function createAuthoredIdea(input: { folderId: string | null; title?: string }, identity?: { noteId: string; globalId: string }): { note: Note; globalId: string } {
   return getDb().transaction(() => {
   const title = input.title?.trim() || 'Idea sin título';
-  const idea = ideas.createIdea({ type: 'claim', label: title, statement: '', embedding: null });
-  const note = createNote({
+  const authored = { type: 'claim' as const, label: title, statement: '', embedding: null };
+  const idea = identity ? ideas.createIdeaWithIdentity(authored, identity.globalId) : ideas.createIdea(authored);
+  const content = {
     title,
     content: '',
-    kind: 'idea',
+    kind: 'idea' as const,
     folderId: input.folderId,
-    source: { origin: 'idea', ref: idea.global_id, note: MANUAL_IDEA_MARKER },
-  });
+    source: { origin: 'idea' as const, ref: idea.global_id, note: MANUAL_IDEA_MARKER },
+  };
+  const note = identity ? createNoteWithIdentity(content, identity.noteId) : createNote(content);
   scheduleManualIndex();
   return { note, globalId: idea.global_id };
   })();

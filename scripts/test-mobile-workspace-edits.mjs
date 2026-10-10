@@ -19,6 +19,8 @@ try {
   const workspace = require('../electron/db/workspaceRepo.ts');
   const { markdownToBlockNote } = require('../shared/blockNoteDocument.ts');
   const { applyWorkspaceEdit } = require('../electron/desktopBridge/workspaceEdits.ts');
+  const ideas = require('../electron/db/ideasRepo.ts');
+  const { manualIndexStatus } = require('../electron/ai/manualIdeaIndex.ts');
   const first = getActiveVault(), other = createVault('Otra bóveda aislada');
   const scoped = work => database.withVaultDatabase(first.id, () => work(database.getDb()));
   const note = await scoped(() => notes.createNote({ title: 'Documento móvil', content: 'Original' }));
@@ -76,7 +78,35 @@ try {
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(rejected.noteId).n), 0, 'Invalid creations roll back the note and its complete structured editor');
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
   }
-  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,providerCalls: 0, releaseApproved: false }));
+  const nextDerivedId = await scoped(() => ideas.nextGlobalId());
+  const ideaCreation = { id: randomUUID(), noteId: randomUUID(), creation: { kind: 'idea', folderId: folder.id, tags: [], globalId: `manual-${randomUUID()}` },
+    input: { title: 'Idea escrita sin conexión', contentMarkdown: 'Desarrollo creado por el usuario.', nativeDocument: markdownToBlockNote('Desarrollo creado por el usuario.'), schemaVersion: 2, expectedRevision: 0 } };
+  const authored = await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation);
+  assert.equal(authored.note.kind, 'idea'); assert.equal(authored.note.id, ideaCreation.noteId);
+  assert.deepEqual(authored.note.source, { origin: 'idea', ref: ideaCreation.creation.globalId, note: 'manual-idea' });
+  assert.deepEqual(authored.editorData.nativeDocument, ideaCreation.input.nativeDocument);
+  const canonicalIdea = await scoped(() => ideas.getIdea(ideaCreation.creation.globalId));
+  assert.equal(canonicalIdea.label, ideaCreation.input.title); assert.equal(canonicalIdea.statement, ideaCreation.input.contentMarkdown);
+  assert.equal(await scoped(() => manualIndexStatus().state), 'idle', 'Companion creation never starts Desktop-only indexing');
+  assert.equal(await scoped(() => ideas.nextGlobalId()), nextDerivedId, 'Offline authored identity never advances the Mac derived counter');
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', ideaCreation), authored);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM ideas WHERE global_id=?').get(ideaCreation.creation.globalId).n), 1);
+  const ideaCollision = { ...ideaCreation, id: randomUUID(), noteId: randomUUID() };
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', ideaCollision), /identity_conflict/);
+  assert.equal(await scoped(() => notes.getNote(ideaCollision.noteId)), null);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(ideaCollision.id).n), 0);
+  for (const invalid of [
+    { creation: { ...ideaCreation.creation, folderId: randomUUID(), globalId: `manual-${randomUUID()}` } },
+    { input: { ...ideaCreation.input, nativeDocument: [{ id: 'bad-manual', type: 'unsupported-private-block' }] }, creation: { ...ideaCreation.creation, globalId: `manual-${randomUUID()}` } },
+    { creation: { ...ideaCreation.creation, globalId: 'g-0001' } },
+  ]) {
+    const rejected = { ...ideaCreation, ...invalid, id: randomUUID(), noteId: randomUUID() };
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', rejected));
+    assert.equal(await scoped(() => notes.getNote(rejected.noteId)), null);
+    assert.equal(await scoped(() => ideas.getIdea(rejected.creation.globalId)), null, 'The owning note and authored idea roll back together');
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
+  }
+  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,derivedCounterUnaffected:true,providerCalls: 0, releaseApproved: false }));
 } finally {
   try { database?.closeDb(); } catch {}
   fs.rmSync(root, { recursive: true, force: true });

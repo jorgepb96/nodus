@@ -47,7 +47,7 @@
     },
     {
       "id": 372517243,
-      "name": "Presenter native controller — Windows and Linux",
+      "name": "Presenter native controller \u2014 Windows and Linux",
       "path": ".github/workflows/presenter-lan.yml",
       "state": "active"
     },
@@ -268,17 +268,17 @@
       }
     ]
   },
-  "budgetCiSha256": "b6b2ae7a318faae10776183c37f3070e1738736ff8dc1eaed077bb4b7bf6b659",
+  "budgetCiSha256": "16ef34250e0475f2ec2aba68e6682d654dcf236c40da70a3adb5ba54d94e16aa",
   "changedFiles": {
     ".github/workflows/ci.yml": {
       "snapshot": "original-ci.yml",
       "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
-      "restrictedSha256": "b6b2ae7a318faae10776183c37f3070e1738736ff8dc1eaed077bb4b7bf6b659"
+      "restrictedSha256": "16ef34250e0475f2ec2aba68e6682d654dcf236c40da70a3adb5ba54d94e16aa"
     },
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
       "originalSha256": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
-      "restrictedSha256": "591f5d35154d3878b238cd176667d53c8fbb300a2f4b909f802ff101b8f0c550"
+      "restrictedSha256": "7c5acdb45329b187a976984be0f11abe488ecad63f8c7e88e64224b73b609723"
     },
     "scripts/ci-test-shards.mjs": {
       "snapshot": "original-files/scripts/ci-test-shards.mjs",
@@ -309,6 +309,11 @@
       "snapshot": "original-files/site/app/index.html",
       "originalSha256": "e0781627da370fdfe1c9612ccf099b38f62ef6e351faa4623006f0f9e2dfa615",
       "restrictedSha256": "2de6a5c1dfb744c613f848b9b96e63e28c3435acb3ad00723413a1af389531f0"
+    },
+    "scripts/test-e2e-stability.mjs": {
+      "snapshot": "original-files/scripts/test-e2e-stability.mjs",
+      "originalSha256": "69bd62985365e3016c4c9a4bd75a26bb700a6c5ea28c5924f26ead8592547c96",
+      "restrictedSha256": "aadb3fd1582400a4fe476cc5e04aa2323d83206d84a8f32b6f3921afe415b4dc"
     }
   }
 }

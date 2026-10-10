@@ -99,12 +99,18 @@ jobs:
           git checkout FETCH_HEAD
       - name: Both repositories agree and signed packages install
         run: npm run verify:cross-repo
+      # Match the original hash-verified OCR resource rather than letting an
+      # individual test fetch an unpinned language model.
+      - name: Prepare hash-verified local OCR test resource
+        run: node scripts/prepare-research-ocr-fixture.mjs
       - name: Every discovered unit and integration test passes exactly once
         run: |
           xvfb-run --auto-servernum bash -e -c '
             node scripts/ci-test-shards.mjs plan
-            for shard in 1 2 3; do npm run test:ci:shard -- "$shard"; done
-            node scripts/ci-test-shards.mjs verify
+            status=0
+            for shard in 1 2 3; do npm run test:ci:shard -- "$shard" || status=1; done
+            node scripts/ci-test-shards.mjs verify || status=1
+            exit "$status"
           '
       - name: E2E smoke (real app boot)
         timeout-minutes: 10

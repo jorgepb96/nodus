@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   quality-gate:
+    needs: validate-release
     uses: ./.github/workflows/ci.yml
     with:
       ref: ${{ inputs.tag }}

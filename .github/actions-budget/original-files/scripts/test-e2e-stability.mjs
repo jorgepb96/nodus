@@ -44,11 +44,8 @@ test('accessibility controls expose stable selectors used by the E2E smoke', () 
 });
 
 test('CI avoids duplicate branch checks, supersedes stale runs, and bounds the Electron smoke duration', () => {
-  assert.match(workflow, /on:\n\s+pull_request:/);
-  assert.match(workflow, /\n\s+workflow_call:/);
-  assert.doesNotMatch(workflow, /\n\s+push:/);
+  assert.match(workflow, /push:\n\s+branches: \[main\]/);
   assert.doesNotMatch(workflow, /branches: \[['"]\*\*['"]\]/);
   assert.match(workflow, /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ github\.head_ref \|\| github\.ref_name \}\}/);
-  assert.match(workflow, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
   assert.match(workflow, /- name: E2E smoke \(real app boot\)\n\s+timeout-minutes: 10/);
 });

@@ -83,6 +83,9 @@ documents. Table chunks contain at most 15 rows/1 MiB, mutation batches at most 
 pagination at most eight advancing pages per pass. Direct publication objects stop at 8 MiB;
 larger objects use 8 MiB multipart parts. Exact vector sets stop at 32 MiB. Personal Library
 objects stream to R2 with a fixed length and a verified SHA-256, avoiding a full in-memory copy.
+Duplicate Library uploads drain their bounded bodies before acknowledging them, without
+retaining chunks or writing R2 again. The drain also has a 60-second deadline, so a stalled
+upload cannot hang the duplicate response.
 
 R2 writes receive unique physical keys and durable cleanup jobs **before** bytes are uploaded.
 Reference acquisition and queue removal commit together. GC enqueues obsolete keys and removes

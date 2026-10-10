@@ -174,11 +174,16 @@ test('expired chunk uploads queue physical keys before their D1 references disap
 });
 
 test('streamed personal Library objects verify size and checksum without buffering the whole file',async t=>{
-  const {api,DB}=await localCloud(t);const bytes=Buffer.alloc(12*1024*1024,13);const hash=sha(bytes);
-  assert.equal((await api(`library/objects/${hash}`,{user:'writer',method:'PUT',body:bytes})).status,200);
-  assert.equal((await (await api(`library/objects/${hash}`,{user:'writer',method:'PUT',body:bytes})).json()).duplicate,true);
+  const {api,DB,OBJECTS}=await localCloud(t);const bytes=Buffer.alloc(12*1024*1024,13);const hash=sha(bytes);
+  const uploaded=await api(`library/objects/${hash}`,{user:'writer',method:'PUT',body:bytes});
+  assert.equal(uploaded.status,200);assert.equal((await uploaded.json()).duplicate,false);
+  for(let attempt=0;attempt<4;attempt++) {
+    const duplicate=await api(`library/objects/${hash}`,{user:'writer',method:'PUT',body:bytes});
+    assert.equal(duplicate.status,200);assert.equal((await duplicate.json()).duplicate,true);
+  }
   assert.equal((await api(`library/objects/${'a'.repeat(64)}`,{user:'writer',method:'PUT',body:Buffer.from('corrupt')})).status,400);
   assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM library_objects').first()).n,1);
+  assert.equal((await OBJECTS.list()).objects.length,1,'duplicate bodies never write another R2 object');
 });
 
 test('binary mutations travel through the actual API relay, preserve metadata and respect private page ownership',async t=>{

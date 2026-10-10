@@ -145,12 +145,44 @@ export async function postLibraryRecords(env, auth, request) {
   return { accepted, duplicate, conflicts, cursor };
 }
 
+async function drainDuplicateLibraryUpload(request, length) {
+  // Cancelling a large request before returning its acknowledgement can reset
+  // the client's HTTP connection. Drain without retaining chunks or touching R2.
+  const reader = request.body.getReader();
+  let completed = false; let timeout;
+  const deadline = new Promise((_, reject) => {
+    timeout = setTimeout(() => {
+      const error = new HttpError(408, 'upload_timeout', 'The duplicate Library upload exceeded its deadline.');
+      reject(error); void reader.cancel(error).catch(() => {});
+    }, 60000);
+  });
+  try {
+    await Promise.race([deadline, (async () => {
+      let received = 0;
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        received += value.byteLength;
+        if (received > length) throw new HttpError(400, 'length_mismatch', 'The upload exceeds its declared length.');
+      }
+      if (received !== length) throw new HttpError(400, 'length_mismatch', 'The upload does not match its declared length.');
+      completed = true;
+    })()]);
+  } finally {
+    clearTimeout(timeout);
+    if (!completed) void reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
 export async function putLibraryObject(env, auth, hashValue, request) {
   const hash = assertObjectHash(hashValue);
-  const existing = await first(env.DB, 'SELECT * FROM library_objects WHERE user_id=?1 AND hash=?2', auth.user_id, hash);
-  if (existing) { await request.body?.cancel().catch(()=>{}); return {hash,bytes:Number(existing.bytes),duplicate:true}; }
   const length = Number(request.headers.get('content-length'));
   if (!request.body || !Number.isSafeInteger(length) || length<1 || length>MAX_LIBRARY_OBJECT_BYTES) throw new HttpError(411,'length_required','Library uploads need Content-Length between 1 byte and 128 MiB.');
+  const existing = await first(env.DB, 'SELECT * FROM library_objects WHERE user_id=?1 AND hash=?2', auth.user_id, hash);
+  if (existing) {
+    await drainDuplicateLibraryUpload(request, length);
+    return {hash,bytes:Number(existing.bytes),duplicate:true};
+  }
   const objectKey = await stageObject(env, `library/${auth.user_id}/${hash}`);
   const mime = String(request.headers.get('content-type') || 'application/octet-stream').slice(0, 200);
   const stream = new FixedLengthStream(length);

@@ -8,7 +8,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { webcrypto } from 'node:crypto';
 import { postMutations, getMutations } from '../cloudflare/src/sync.mjs';
-import { postLibraryRecords } from '../cloudflare/src/librarySync.mjs';
+import { postLibraryRecords, putLibraryObject } from '../cloudflare/src/librarySync.mjs';
 import { MAX_MUTATION_BATCH } from '../cloudflare/src/util.mjs';
 import { createPublication } from '../cloudflare/src/publications.mjs';
 
@@ -171,6 +171,22 @@ test('retrying an accepted large mutation performs no R2 write even when the led
     }] }) }));
   assert.deepEqual(result.duplicate, ['accepted-overflow']);
   assert.equal(puts, 0);
+});
+
+test('duplicate Library uploads have a bounded drain, reject false lengths and time out even if cancellation stalls', async () => {
+  const env={DB:{prepare:()=>({bind:()=>({first:async()=>({bytes:7})})})},OBJECTS:{put:()=>{throw new Error('A duplicate must not write to R2');}}};
+  const auth={user_id:'user'};const hash='a'.repeat(64);
+  const request=body=>new Request('https://offline.example/library',{method:'PUT',headers:{'content-length':'7'},body,duplex:'half'});
+  await assert.rejects(()=>putLibraryObject(env,auth,hash,request('short')),error=>error.status===400 && error.code==='length_mismatch');
+  await assert.rejects(()=>putLibraryObject(env,auth,hash,request('too many bytes')),error=>error.status===400 && error.code==='length_mismatch');
+  let cancelled=false;
+  const stalled=request(new ReadableStream({cancel(){cancelled=true;return new Promise(()=>{});}}));
+  const original=globalThis.setTimeout;
+  globalThis.setTimeout=(callback,delay,...args)=>original(callback,delay===60000?30:delay,...args);
+  const started=Date.now();
+  try {await assert.rejects(()=>putLibraryObject(env,auth,hash,stalled),error=>error.status===408 && error.code==='upload_timeout');}
+  finally {globalThis.setTimeout=original;}
+  assert.equal(cancelled,true);assert.ok(Date.now()-started<1000,'stalled cancellation cannot hang the acknowledgement');
 });
 
 test('twelve Library versions stay below the Free query limit and duplicates in a batch are idempotent', async () => {

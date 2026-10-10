@@ -1,5 +1,6 @@
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
+import { CLOUDFLARE_SYNC_ERRORS, CLOUDFLARE_SYNC_ERROR_PATTERNS } from './cloudflareSyncErrors';
 
 /**
  * Main-process error sentences that reached non-Spanish readers in Spanish.
@@ -32,6 +33,7 @@ export type MainErrorTranslations = Partial<Record<AppLanguage, string>> & { en:
 /** Messages whose text is fixed, matched exactly. */
 export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   ...SCRIPTOR_RUNTIME_ERRORS,
+  ...CLOUDFLARE_SYNC_ERRORS,
   'La copia de Focus está dañada.': {
     en: 'The Focus backup is corrupted.',
     fr: 'La sauvegarde de Focus est endommagée.',
@@ -4701,6 +4703,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
   ...SCRIPTOR_RUNTIME_ERROR_PATTERNS,
+  ...CLOUDFLARE_SYNC_ERROR_PATTERNS,
   // ── Local providers: the failure this whole table was opened for ─────────────
   {
     pattern: /^No se pudo conectar con (Ollama|LM Studio) en (.+?)\. (.+)$/,

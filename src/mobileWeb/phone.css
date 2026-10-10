@@ -184,7 +184,7 @@
 .nodus-phone .research-history-action{width:44px;height:44px;opacity:1}
 .nodus-phone .research-history-main{font-size:14px}
 .nodus-phone .research-message-actions button{opacity:1}
-.nodus-phone .research-activity.is-minimized{width:44px;height:44px;right:12px;bottom:12px}
+.nodus-phone .research-assistant-header .research-activity.is-minimized{position:static;flex:0 0 44px;width:44px;height:44px;margin:0}
 .nodus-phone .research-activity.is-minimized .research-activity-orb{width:44px;height:44px}
 .nodus-phone .research-activity-sheet .research-activity{position:static;width:100%;max-height:none;border:0;border-radius:0;box-shadow:none}
 .nodus-phone .research-activity-sheet .research-activity>ol{overflow:visible}
@@ -200,4 +200,23 @@
   .nodus-phone .research-composer>.research-web-toggle{grid-column:3;grid-row:1}
   .nodus-phone .research-composer>.research-effort-trigger{grid-column:4;grid-row:1}
   .nodus-phone .research-composer-send{grid-column:5;grid-row:1}
+}
+
+/* iPhone keeps complete dictionary records in cards in either orientation. */
+.nodus-phone .dictionary-mobile .dictionary-rows{overflow-x:visible}
+.nodus-phone .dictionary-mobile .dictionary-row-heading{min-width:0;grid-template-columns:32px 1fr}
+.nodus-phone .dictionary-mobile .dictionary-row-heading>*:nth-child(n+3){display:none}
+.nodus-phone .dictionary-mobile .dictionary-entry-row{min-width:0;grid-template-columns:32px repeat(3,minmax(0,1fr));gap:8px;padding:12px}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>input{grid-column:1;grid-row:1}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>button:nth-child(2){grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>button:nth-child(2) strong{white-space:normal;overflow-wrap:anywhere}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(3){grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(4){grid-column:2}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(7){grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(8){grid-column:2/4}
+.nodus-phone .dictionary-mobile .dictionary-count-label{display:inline}
+@media(orientation:landscape){
+  .nodus-phone .dictionary-mobile>header{padding:6px 12px 0}
+  .nodus-phone .dictionary-mobile>header p{font-size:12px;line-height:1.4}
+  .nodus-phone .dictionary-mobile main{padding:12px}
 }

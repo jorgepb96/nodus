@@ -879,6 +879,7 @@ export function ResearchAssistantModal({
           }} />}
 
           </div>);
+  const activityPanel = !adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={webSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.documents ? [] : ['profiles', 'nodus', 'zotero', 'context'] as const)]} />;
   const historyPanel = (<aside hidden={!phone && !historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
             <ResearchChatSidebar
               conversations={visibleConversations}
@@ -961,6 +962,7 @@ export function ResearchAssistantModal({
           {phone ? <><button className="btn btn-ghost" aria-label={t('Opciones')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(true)}><Icon name="settings" size={18} /></button>
             <MobileSheet open={optionsOpen} title={t('Opciones')} onClose={() => setOptionsOpen(false)}>{chatActions}</MobileSheet></> : chatActions}
 
+          {phone && activityPanel}
           <div className="flex-1" />
           {!embedded && <button className="btn btn-ghost" onClick={onClose} title={t('Cerrar')}>
             <Icon name="x" />
@@ -984,7 +986,7 @@ export function ResearchAssistantModal({
               <button type="button" className="btn btn-ghost text-xs" onClick={() => setEditingProjectInstructions(activeProject)}><Icon name="brain" size={14} />{t('Instrucciones del proyecto')}</button>
             </header>}
             <div className="relative flex-1 min-h-0">
-              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={webSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.documents ? [] : ['profiles', 'nodus', 'zotero', 'context'] as const)]} />}
+              {!phone && activityPanel}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (
                   <div role="status" className="mx-auto max-w-xl rounded-lg border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">

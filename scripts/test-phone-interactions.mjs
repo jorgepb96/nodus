@@ -17,9 +17,9 @@ globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.windo
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 dom.window.HTMLElement.prototype.scrollTo = function() {};
 const require = createRequire(import.meta.url), React = require('react'), { createRoot } = require('react-dom/client');
-const fixture = await build({ stdin: { contents: `export {NodeDetailPanel} from './src/components/NodeDetailPanel'; export {ResearchAssistantModal} from './src/views/ResearchAssistantModal'; export {DEFAULT_APP_SETTINGS} from './shared/defaultAppSettings'; export {setActiveLang} from './src/i18n'; export {installMobileKeyboard} from './src/mobileWeb/mobileKeyboard'; export * from './shared/touchCamera';`, resolveDir: process.cwd(), loader:'ts' }, bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react','react/jsx-runtime','react-dom','react-dom/client'],loader:{'.css':'empty','.svg':'dataurl'} });
+const fixture = await build({ stdin: { contents: `export {NodeDetailPanel} from './src/components/NodeDetailPanel'; export {ArgumentMapCanvas} from './src/components/argumentMap/ArgumentMapCanvas'; export {ResearchAssistantModal} from './src/views/ResearchAssistantModal'; export {DEFAULT_APP_SETTINGS} from './shared/defaultAppSettings'; export {setActiveLang} from './src/i18n'; export {installMobileKeyboard} from './src/mobileWeb/mobileKeyboard'; export * from './shared/touchCamera';`, resolveDir: process.cwd(), loader:'ts' }, bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react','react/jsx-runtime','react-dom','react-dom/client'],loader:{'.css':'empty','.svg':'dataurl'} });
 const module = new Module(path.join(process.cwd(),'scripts','phone-interactions-fixture.cjs')); module.paths=Module._nodeModulePaths(process.cwd()); module._compile(fixture.outputFiles[0].text,module.id);
-const {NodeDetailPanel,ResearchAssistantModal,DEFAULT_APP_SETTINGS,setActiveLang,installMobileKeyboard,touchPair,pinchTranslation,pinchWorldCamera}=module.exports;
+const {NodeDetailPanel,ArgumentMapCanvas,ResearchAssistantModal,DEFAULT_APP_SETTINGS,setActiveLang,installMobileKeyboard,touchPair,pinchTranslation,pinchWorldCamera}=module.exports;
 setActiveLang('es'); after(()=>dom.window.close());
 
 async function mount(Component, props, device='phone') {
@@ -53,6 +53,27 @@ test('phone graph/argument details occupy a modal sheet and restore the existing
 test('tablet keeps the shared desktop detail column',async()=>{
   const view=await mount(NodeDetailPanel,{ideaDetail:null,edgeDetail:null,loading:{kind:'idea',id:'a',label:'Idea'},width:384,fontSize:14,onWidthChange:()=>{},onFontChange:()=>{},onClose:()=>{}},'tablet');
   try {assert.ok(view.container.querySelector('.graph-detail-panel'));assert.equal(document.querySelector('.nodus-mobile-sheet'),null);} finally {await view.close();}
+});
+
+test('a dense phone argument map opens with a readable central card instead of fitting every branch', async()=>{
+  const originalObserver=globalThis.ResizeObserver;
+  globalThis.ResizeObserver=class {
+    constructor(callback){this.callback=callback;}
+    observe(){this.callback([{contentRect:{width:390,height:550}}]);}
+    disconnect(){}
+  };
+  const root={id:'root',ideaId:'idea-root',label:'Idea central',statement:'Una afirmación con fuentes.',type:'claim',relation:'root',children:Array.from({length:12},(_,index)=>({id:`branch-${index}`,ideaId:`idea-${index}`,label:`Rama ${index}`,statement:'Otra afirmación.',type:'claim',relation:'supports',children:[]}))};
+  const props={map:{root,seedLabel:root.label,ideaCount:13,overview:'Resumen del recorrido.'},onSelect:()=>{},fullscreen:false,onToggleFullscreen:()=>{},fullscreenError:false};
+  const scale=container=>Number(container.querySelector('.argument-world').style.transform.match(/scale\(([^)]+)\)/)[1]);
+  try {
+    const phone=await mount(ArgumentMapCanvas,props);
+    try {
+      assert.ok(scale(phone.container)>=.85,'the first phone view must let the central card be read');
+      assert.equal(phone.container.querySelector('.argument-phone-summary').open,false,'the overview can be opened without occupying the canvas initially');
+    } finally {await phone.close();}
+    const tablet=await mount(ArgumentMapCanvas,props,'tablet');
+    try {assert.ok(scale(tablet.container)<.5,'the tablet keeps its existing full-map overview');assert.equal(tablet.container.querySelector('.argument-phone-summary'),null);} finally {await tablet.close();}
+  } finally {globalThis.ResizeObserver=originalObserver;}
 });
 
 test('phone chat history opens separately, preserves the draft, and leaves the model and composer visible',async()=>{

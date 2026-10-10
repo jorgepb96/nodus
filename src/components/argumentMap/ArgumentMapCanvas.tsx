@@ -7,6 +7,7 @@ import { fitArgumentCamera, focusArgumentCamera, restoreArgumentCamera, type Cam
 import './argumentMap.css';
 import { useCanvasPinch } from '../../hooks/useCanvasPinch';
 import { pinchTranslation } from '@shared/touchCamera';
+import { isPhoneSurface } from '../../mobileWeb/phoneLayout';
 
 const COLORS: Record<string, string> = {
   supports: '#63cbb0', refutes: '#ee91a6', contradicts: '#ee91a6', extends: '#8caef4',
@@ -24,6 +25,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
   onToggleFullscreen: () => void;
   fullscreenError: boolean;
 }) {
+  const phone = isPhoneSurface();
   const [expanded, setExpanded] = useState(() => new Set([map.root.id]));
   const [relation, setRelation] = useState('');
   const [selected, setSelected] = useState(map.root.id);
@@ -31,7 +33,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
   const [autoFocus, setAutoFocus] = useState(() => localStorage.getItem(AUTO_FOCUS_KEY) !== 'false');
-  const [navigation, setNavigation] = useState<CameraNavigation>({ kind: 'overview' });
+  const [navigation, setNavigation] = useState<CameraNavigation>(() => phone ? { kind: 'focus', id: map.root.id } : { kind: 'overview' });
   const [history, setHistory] = useState<{ camera: Camera; size: Viewport }[]>([]);
   const [animateCamera, setAnimateCamera] = useState(false);
   const previousSize = useRef<Viewport>({ width: 0, height: 0 });
@@ -137,7 +139,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       <div><div className="argument-eyebrow">{t('CARTOGRAFÍA DEL ARGUMENTO')}</div><h2>{map.seedLabel}</h2></div>
       <span className="argument-map-count"><i />{tx('{n} ideas', { n: map.ideaCount })}</span>
     </div>
-    {map.overview && <p className="argument-overview">{map.overview}</p>}
+    {map.overview && (phone ? <details className="argument-phone-summary"><summary>{t('Resumen')}</summary><p className="argument-overview">{map.overview}</p></details> : <p className="argument-overview">{map.overview}</p>)}
     <div className="argument-relations" aria-label={t('Relaciones')}>
       <button aria-pressed={!relation} onClick={() => chooseRelation('')}>{t('Todas las ramas')} <span>{map.root.children.length}</span></button>
       {relations.map(([key, count]) => <button key={key} aria-pressed={relation === key} onClick={() => chooseRelation(relation === key ? '' : key)} style={{ '--branch-color': COLORS[key] ?? COLORS.related } as CSSProperties}><i />{relationLabel(key)}<span>{count}</span></button>)}
@@ -215,7 +217,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         <button title={t('Acercar')} aria-label={t('Acercar')} onClick={() => zoomAt(1.2, size.width / 2, size.height / 2)}><Icon name="plus" size={15} /></button>
         <button onClick={previousView} disabled={!history.length} title={t('Recuperar el encuadre anterior sin cerrar las ramas')}>{t('Vista anterior')}</button>
         <button onClick={fit}>{t('Encuadrar')}</button>
-        <button onClick={() => { fit(); setRelation(''); setExpanded(new Set([map.root.id])); setSelected(map.root.id); }}>{t('Volver al inicio')}</button>
+        <button onClick={() => { fit(); if (phone) { setCamera({ x: 0, y: 0, zoom: 1 }); setNavigation({ kind: 'focus', id: map.root.id }); } setRelation(''); setExpanded(new Set([map.root.id])); setSelected(map.root.id); }}>{t('Volver al inicio')}</button>
       </div>
     </div>
     <footer className="argument-atlas-footer"><span>{tx('{n} ideas visibles', { n: nodes.length })} · {t('Relaciones respecto a la idea de origen')}</span><span>{map.truncated ? t('subgrafo recortado') : t('Arrastra para explorar · Rueda para ampliar')}</span></footer>

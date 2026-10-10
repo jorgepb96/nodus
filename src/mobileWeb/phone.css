@@ -66,6 +66,16 @@
 .nodus-phone .reader-selection-actions .reader-selection-divider{display:none}
 
 /* Chat keeps the conversation and keyboard primary. Advanced controls live in Options. */
+.nodus-phone .argument-phone-summary{padding:0 12px;color:var(--atlas-muted);font-size:13px}
+.nodus-phone .argument-phone-summary>summary{min-height:44px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.nodus-phone .argument-phone-summary>summary::before{content:'›';font-size:20px;transform:rotate(0deg)}
+.nodus-phone .argument-phone-summary[open]>summary::before{transform:rotate(90deg)}
+.nodus-phone .argument-phone-summary .argument-overview{padding:0 0 8px;max-height:100px;display:block}
+.nodus-phone .argument-node-content{padding:6px 12px 4px}
+.nodus-phone .argument-node-content strong{font-size:16px;line-height:1.25;margin-top:4px}
+.nodus-phone .argument-node-statement{font-size:14px;line-height:1.3;margin-top:4px}
+.nodus-phone .argument-node-footer{min-height:44px;padding:0 8px}
+.nodus-phone .argument-node-footer button{min-width:44px;min-height:44px;justify-content:center}
 .nodus-phone .research-assistant-header{padding:6px 8px;gap:4px;flex-wrap:nowrap}
 .nodus-phone .research-assistant-header>div:first-of-type{display:none}
 .nodus-phone .research-assistant-header>select{order:0;flex:1;min-width:0;max-width:100%;height:44px}

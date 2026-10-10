@@ -35,6 +35,7 @@ import type { StudyDocumentKind, StudyTag } from '@shared/studyOrg';
 import { STUDY_DOCUMENT_KINDS } from '@shared/studyOrg';
 import type { EditorDocument, EditorDocumentPort } from './documentPort';
 import { studyDocumentPort } from './documentPort';
+import { refreshSavedEditor, type EditorRefreshSnapshot } from './remoteEditorRefresh';
 import type { StudyImproveScope, StudyStyle } from '@shared/studyImprove';
 import { studyStyleIcon } from '@shared/studyImprove';
 import type { StudySentenceContext, StudySynonymAlternative } from '@shared/studySynonyms';
@@ -575,6 +576,56 @@ export function StudyEditor({
   activeIdRef.current = active?.id ?? '';
   latestSignatureRef.current = currentSignature;
   rawRef.current = raw;
+  const remoteRefreshRef = useRef<EditorRefreshSnapshot>({ documentId: '', revision: 0, signature: '', baseline: '', ready: false, blocked: true });
+  const remoteDocumentRef = useRef(active); remoteDocumentRef.current = active;
+  const savedCallbackRef = useRef(onSaved); savedCallbackRef.current = onSaved;
+  remoteRefreshRef.current = {
+    documentId: active?.id ?? '', revision: revisionRef.current.get(active?.id ?? '') ?? 0,
+    signature: currentSignature, baseline: baselineRef.current,
+    ready: Boolean(active && data && hydratedIdRef.current === active.id),
+    blocked: saveState !== 'saved' || Boolean(saveError) || recoveredDraft || editingTitle,
+  };
+  useEffect(() => {
+    let alive = true, reading = false;
+    const refresh = async () => {
+      if (reading || document.hidden) return;
+      reading = true;
+      try {
+        await refreshSavedEditor(
+          () => ({ ...remoteRefreshRef.current, documentId: activeIdRef.current,
+            revision: revisionRef.current.get(activeIdRef.current) ?? 0,
+            signature: latestSignatureRef.current, baseline: baselineRef.current,
+            blocked: !alive || remoteRefreshRef.current.blocked || improvementRunning.current }),
+          id => port.loadEditorData(id),
+          next => {
+            if (typeof next.documentTitle !== 'string' || typeof next.contentMarkdown !== 'string') return;
+            const id = activeIdRef.current;
+            const nextTitle = next.documentTitle;
+            const nextContent = next.contentMarkdown;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent);
+            const metadata = normalizeAcademicMetadata(next.academicMetadata);
+            revisionRef.current.set(id, next.revision ?? 0);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native,
+              academicMetadata: metadata, style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(id, signature);
+            nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native);
+            setAcademicMetadata(metadata); setStyle(next.style); setSaveState('saved');
+            setSelectedVersion(null); setLastImprovement(null); setHistoryState({ canUndo: false, canRedo: false });
+            setEditorRevision(value => value + 1);
+            const current = remoteDocumentRef.current;
+            if (current?.id === id) savedCallbackRef.current({ ...current, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          },
+        );
+      } catch { /* Keep the current document and recovery draft when the connection is unavailable. */ }
+      finally { reading = false; }
+    };
+    const timer = window.setInterval(() => void refresh(), 3_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { alive = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [active?.id, port]);
   useEffect(() => {
     if (!active || !data || hydratedIdRef.current !== active.id || improveStreamingStyleId) return;
     if (currentSignature === baselineRef.current) {

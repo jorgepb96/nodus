@@ -8,7 +8,7 @@ import { app, safeStorage } from 'electron';
 import { getDb, withVaultDatabase } from '../db/database';
 import { ensureLanCert, lanAddresses } from '../localServer/lanCert';
 import { getVault } from '../vaults/vaultRegistry';
-import { serveLiveCorpus } from './liveCorpus';
+import { isReadOnlyCorpusQuery, serveLiveCorpus } from './liveCorpus';
 import { authorizeMobileOperation, executeMobileOperation } from './operations';
 import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOperations';
 import { BridgeJobStore, type BridgeJob } from './jobs';
@@ -467,12 +467,13 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     } catch (error) { reply(response, 400, { error: error instanceof Error ? error.message : 'operation_failed' }); }
     return;
   }
-  if ((request.method === 'GET' || request.method === 'HEAD') && corpus) {
+  if (corpus && (request.method === 'GET' || request.method === 'HEAD' || isReadOnlyCorpusQuery(request.method, corpus[2]))) {
     const vaultId = decodeURIComponent(corpus[1]);
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('corpus')) {
       reply(response, 403, { error: 'permission_denied' }); return;
     }
-    await serveLiveCorpus(request, response, url, vaultId, (corpus[2] || '').split('/').filter(Boolean).map(decodeURIComponent));
+    const query = request.method === 'POST' ? await body(request, 256 * 1024) : undefined;
+    await serveLiveCorpus(request, response, url, vaultId, (corpus[2] || '').split('/').filter(Boolean).map(decodeURIComponent), query);
     return;
   }
   const file = /^\/bridge\/v2\/vaults\/([^/]+)\/files\/([^/]+)\/([^/]+)\/(descriptor|content)$/.exec(url.pathname);

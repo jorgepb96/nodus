@@ -4,11 +4,22 @@ import { getDb, withVaultDatabase } from '../db/database';
 import { getVault } from '../vaults/vaultRegistry';
 import { statSync } from 'node:fs';
 import { invalidateLiveLibrary, serveLiveLibrary } from './liveLibrary';
+import { buildVectorSet, describeVectorSet, type VectorKind } from '../serverSync/serverVectors';
+// @ts-expect-error The provider-free queries are JavaScript, bundled by Vite.
+import { semanticReadQuery, contextReadQuery, validQueryKind } from '../../server/lib/core/corpusQueries.mjs';
+// @ts-expect-error The vector wire decoder is JavaScript, bundled by Vite.
+import { decodeVectorSet } from '../../server/lib/core/vectors.mjs';
+// @ts-expect-error Existing Mac vectors use the same explicit legacy contract as Server.
+import { migrateLegacyVectorV1Header, fingerprintEmbeddingContract, embeddingContractsCompatible } from '../../server/lib/core/embeddingContract.mjs';
 // The private live transport uses the same tested read projection as Nodus Server.
 // @ts-expect-error The server module is JavaScript and is bundled by Vite.
 import { createCorpusRoutes } from '../../server/lib/routes/corpus.mjs';
 
-const snapshots = new Map<string, { stamp: string; value: BuiltSnapshot; document: unknown }>();
+type LiveSnapshot = { stamp: string; value: BuiltSnapshot; document: unknown; vectors: Map<VectorKind, ReturnType<typeof decodeVectorSet>> };
+const snapshots = new Map<string, LiveSnapshot>();
+export function isReadOnlyCorpusQuery(method: string | undefined, path: string | undefined): boolean {
+  return method === 'POST' && (path === 'search/semantic' || path === 'context');
+}
 function databaseStamp(file: string): string {
   return [file, `${file}-wal`].map(name => {
     try { const stat = statSync(name, { bigint: true }); return `${stat.size}:${stat.mtimeNs}`; }
@@ -17,7 +28,7 @@ function databaseStamp(file: string): string {
 }
 export function invalidateLiveCorpus(vaultId: string): void { snapshots.delete(vaultId); invalidateLiveLibrary(vaultId); }
 
-export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[]): Promise<void> {
+export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[], input?: Record<string, unknown>): Promise<void> {
   const vault = getVault(vaultId);
   if (!vault) { res.writeHead(404); res.end(); return; }
   if (segments[0] === 'library') { await serveLiveLibrary(req, res, url, vaultId, segments.slice(1)); return; }
@@ -28,13 +39,47 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
       // Private domains remain separately granted, never part of this corpus projection.
       nodusServerIncludePrimarySources: false, nodusServerIncludeTestimonies: false,
     }, getDb()));
-    cached = { stamp: databaseStamp(vault.path), value, document: JSON.parse(value.buffer.toString('utf8')) };
+    cached = { stamp: databaseStamp(vault.path), value, document: JSON.parse(value.buffer.toString('utf8')), vectors: new Map() };
     snapshots.delete(vaultId); snapshots.set(vaultId, cached);
     if (snapshots.size > 2) snapshots.delete(snapshots.keys().next().value!);
   }
   const built = cached.value;
   res.setHeader('x-nodus-revision', built.revision);
   res.setHeader('cache-control', 'no-store');
+  if (isReadOnlyCorpusQuery(req.method, segments.join('/'))) {
+    if (!input) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'invalid_query' })); return; }
+    let result;
+    if (segments[0] === 'context') result = contextReadQuery(cached.document, input, built.revision);
+    else {
+      if (!validQueryKind(input)) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'invalid_vector_kind' })); return; }
+      const kind = String(input.kind || 'ideas') as VectorKind;
+      const snapshot = cached;
+      const { set, locked } = await withVaultDatabase(vaultId, () => {
+        const summary = describeVectorSet(getDb(), kind);
+        if (!summary) return { set: null, locked: null };
+        const header = { ...summary, format: 'nodus.vectors', version: 1, quant: 'int8-l2' };
+        const contract = migrateLegacyVectorV1Header(header);
+        const locked = { contract, fingerprint: fingerprintEmbeddingContract(contract) };
+        // A settings identity probe needs only metadata, never a second copy
+        // of a potentially large matrix. Build the matrix only for a query.
+        let set = { header, dim: summary.dim, count: summary.count, ids: [], matrix: new Int8Array() };
+        const compatible = input.embeddingContract ? embeddingContractsCompatible(contract, input.embeddingContract)
+          : input.provider === summary.provider && input.model === summary.model && Number(input.dim) === summary.dim;
+        if (Array.isArray(input.vector) && input.vector.length === summary.dim &&
+            input.vector.every(value => typeof value === 'number' && Number.isFinite(value)) && compatible) {
+          set = snapshot.vectors.get(kind);
+          if (!set) {
+            const payload = buildVectorSet(getDb(), kind);
+            if (!payload) throw new Error('vector_index_unavailable');
+            set = decodeVectorSet(payload.buffer); snapshot.vectors.set(kind, set);
+          }
+        }
+        return { set, locked };
+      });
+      result = await semanticReadQuery(cached.document, input, set, locked);
+    }
+    res.writeHead(result.status, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(result.body)); return;
+  }
   if (segments[0] === 'snapshot') {
     res.writeHead(200, { 'content-type': 'application/vnd.nodus.snapshot+json' });
     res.end(req.method === 'HEAD' ? undefined : built.buffer); return;

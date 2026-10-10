@@ -1,3 +1,4 @@
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ChatConversationSummary, ResearchChatProject } from '@shared/types';
@@ -218,7 +219,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
       <div className="flex-1 min-h-0 flex flex-col" {...(supportsProjects ? outsideDropProps(folderActions, run) : {})}>
       <VirtualList
         items={rows}
-        itemHeight={row => row.kind === 'header' ? 30 : 38}
+        itemHeight={row => row.kind === 'header' ? 30 : isPhoneSurface() ? 52 : 38}
         // A pinned chat in a project shows twice, pinned and inside its project: two keys.
         getKey={row => row.kind === 'project' ? `p:${row.project.id}` : row.kind === 'chat' ? `${row.nested ? 'nc' : 'c'}:${row.conversation.id}` : row.kind === 'notebook' ? `n:${row.notebook.id}`
           : row.kind === 'folder' ? (row.row.kind === 'folder' ? `f:${row.row.folder.id}` : `f:${row.row.kind}:${row.row.projectId}`) : row.id}

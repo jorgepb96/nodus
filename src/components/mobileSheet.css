@@ -1,0 +1,17 @@
+.nodus-mobile-sheet-layer{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end}
+.nodus-mobile-sheet-layer[hidden]{display:none}
+.nodus-mobile-sheet-backdrop{position:absolute;inset:0;background:rgb(0 0 0 / .5);border:0}
+.nodus-mobile-sheet{position:relative;display:flex;flex-direction:column;width:100%;height:min(85dvh,900px);max-height:100%;min-height:0;border-radius:22px 22px 0 0;background:var(--app-panel,#18181b);color:var(--app-text,#e4e4e7);box-shadow:0 -8px 40px #0003;padding-bottom:env(safe-area-inset-bottom)}
+.nodus-mobile-sheet-header{position:relative;display:flex;align-items:center;gap:12px;flex-shrink:0;padding:16px 12px 6px;border-bottom:1px solid var(--app-border,#3f3f46);touch-action:none}
+.nodus-mobile-sheet-header strong{flex:1;min-width:0;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nodus-mobile-sheet-header button{display:grid;place-items:center;width:44px;min-width:44px;height:44px;border-radius:50%;background:var(--app-canvas,#27272a)}
+.nodus-mobile-sheet-handle{position:absolute;top:6px;left:calc(50% - 18px);width:36px;height:4px;border-radius:4px;background:var(--app-muted,#71717a)}
+.nodus-mobile-sheet-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.nodus-mobile-sheet .graph-detail-panel{width:100%!important;height:100%;border:0;background:var(--app-panel,#18181b)}
+.nodus-mobile-sheet .graph-detail-panel>[role="separator"],.nodus-mobile-sheet [data-testid="graph-close-detail"]{display:none}
+.nodus-mobile-sheet .graph-detail-header{padding:6px 12px;background:var(--app-panel,#18181b);flex-wrap:wrap}
+.nodus-mobile-sheet .graph-detail-header button{min-height:44px;min-width:44px}
+.nodus-mobile-sheet .graph-detail-scroll{margin-top:0;padding:16px;overflow-x:hidden;overflow-wrap:anywhere}
+.nodus-mobile-sheet .research-chat-history{height:100%;max-height:none;width:100%;border:0}
+.nodus-mobile-sheet button,.nodus-mobile-sheet input,.nodus-mobile-sheet select{min-height:44px}
+@media(orientation:landscape){.nodus-mobile-sheet{height:100%;border-radius:0}.nodus-mobile-sheet-header{padding-top:6px}.nodus-mobile-sheet-handle{display:none}}

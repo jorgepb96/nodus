@@ -9,6 +9,8 @@ import { NODE_COLORS, NODE_LABELS, RELATIONS, relation, relationColor, nodeColor
 import { t } from "../i18n";
 import "./stellar.css";
 import type { CorpusLayer } from "./CorpusContext";
+import { useCanvasPinch } from '../hooks/useCanvasPinch';
+import { pinchWorldCamera } from '@shared/touchCamera';
 type Camera = StellarSession["camera"];
 export interface StellarCanvasApi {
   fit(): void;
@@ -129,6 +131,11 @@ export function StellarCanvas(props: Props) {
   const routes = useRef<{ id: string; points: StellarPosition[] }[]>([]);
   const cameraFrame = useRef(0);
   const stopCamera = () => cancelAnimationFrame(cameraFrame.current);
+  const pinchCamera = useRef(props.camera);
+  const pinching = useCanvasPinch(host, () => {
+    stopCamera(); drag.current = null; pinchCamera.current = live.current.camera;
+    live.current.onManualCamera?.();
+  }, (start, next) => live.current.onCamera(pinchWorldCamera(pinchCamera.current, start, next, size)));
   useEffect(() => () => stopCamera(), []);
   useEffect(() => {
     stopCamera();
@@ -644,6 +651,7 @@ export function StellarCanvas(props: Props) {
         "Canvas de ideas. Arrastra para navegar; usa la rueda para ampliar.",
       )}
       onPointerDown={(e) => {
+        if (pinching.current) return;
         if (e.button !== 0) return;
         const button = (e.target as HTMLElement).closest<HTMLElement>(
           "[data-node]",
@@ -671,6 +679,7 @@ export function StellarCanvas(props: Props) {
         e.currentTarget.setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
+        if (pinching.current) return;
         const d = drag.current;
         if (!d) return;
         const p = local(e),
@@ -697,6 +706,7 @@ export function StellarCanvas(props: Props) {
           });
       }}
       onPointerUp={(e) => {
+        if (pinching.current) { drag.current = null; return; }
         const d = drag.current;
         drag.current = null;
         if (!d || d.moved) return;

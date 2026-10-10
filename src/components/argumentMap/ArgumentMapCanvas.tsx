@@ -5,6 +5,8 @@ import { t, tx } from '../../i18n';
 import { CARD_HEIGHT, CARD_WIDTH, layoutArgumentMap } from './layout';
 import { fitArgumentCamera, focusArgumentCamera, restoreArgumentCamera, type Camera, type Viewport } from './camera';
 import './argumentMap.css';
+import { useCanvasPinch } from '../../hooks/useCanvasPinch';
+import { pinchTranslation } from '@shared/touchCamera';
 
 const COLORS: Record<string, string> = {
   supports: '#63cbb0', refutes: '#ee91a6', contradicts: '#ee91a6', extends: '#8caef4',
@@ -114,6 +116,10 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       return { zoom, x: x - (x - current.x) * zoom / current.zoom, y: y - (y - current.y) * zoom / current.zoom };
     });
   }, [takeManualControl]);
+  const pinchCamera = useRef(camera);
+  const pinching = useCanvasPinch(stage, () => {
+    drag.current = null; pinchCamera.current = cameraRef.current; takeManualControl();
+  }, (start, next) => setCamera(pinchTranslation(pinchCamera.current, start, next)));
   useEffect(() => {
     const element = stage.current;
     if (!element) return;
@@ -149,6 +155,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         }
       }}
       onPointerDown={event => {
+        if (pinching.current) return;
         if ((event.target as HTMLElement).closest('button') || event.button !== 0) return;
         event.preventDefault();
         takeManualControl();
@@ -157,6 +164,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         event.currentTarget.setPointerCapture(event.pointerId);
       }}
       onPointerMove={event => {
+        if (pinching.current) return;
         const start = drag.current;
         if (start) setCamera({ ...start.camera, x: start.camera.x + event.clientX - start.x, y: start.camera.y + event.clientY - start.y });
       }}

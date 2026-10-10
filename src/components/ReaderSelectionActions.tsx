@@ -750,6 +750,35 @@ export const ReaderSelectionActions = forwardRef<
     [captureSelection, createHighlight, highlighterColor],
   );
 
+  useEffect(() => {
+    const root = targetRef.current;
+    if (!root || !(window as unknown as { nodusMobileConfig?: unknown }).nodusMobileConfig) return;
+    root.dataset.readerManagedSelection = 'true';
+    let frame = 0;
+    const update = () => {
+      const selected = !!selectionInside(root);
+      const host = window as unknown as { nodusMobileCall?: (method: string, selected: boolean) => Promise<unknown> };
+      void host.nodusMobileCall?.('readerSelectionState', selected);
+      cancelAnimationFrame(frame);
+      if (selected) frame = requestAnimationFrame(() => {
+        // Moving iOS selection handles updates one ribbon, without saving a
+        // second highlight for every intermediate selection range.
+        const selection = captureSelection();
+        if (selection) setActive(selection);
+      });
+      else setActive(null);
+    };
+    document.addEventListener('selectionchange', update);
+    document.addEventListener('nodus-reader-selection', update);
+    return () => {
+      cancelAnimationFrame(frame); delete root.dataset.readerManagedSelection;
+      document.removeEventListener('selectionchange', update);
+      document.removeEventListener('nodus-reader-selection', update);
+      const host = window as unknown as { nodusMobileCall?: (method: string, selected: boolean) => Promise<unknown> };
+      void host.nodusMobileCall?.('readerSelectionState', false);
+    };
+  }, [captureSelection, targetRef]);
+
   const updateMarginPositions = useCallback(() => {
     const root = targetRef.current;
     if (!root) {

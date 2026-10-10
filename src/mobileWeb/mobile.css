@@ -5,6 +5,9 @@ body{-webkit-text-size-adjust:100%;touch-action:manipulation;background:var(--ap
 .mobile-loading{display:grid;place-items:center;color:var(--mobile-accent)}
 .mobile-error{padding:12px;display:flex;gap:12px;align-items:center;background:#fef2f2;color:#991b1b;z-index:100}
 .mobile-error button{padding:8px;flex-shrink:0}
+.mobile-error>div{min-width:0;overflow-wrap:anywhere;font-size:13px;line-height:1.4}
+.mobile-error details{margin-top:4px;font-size:12px}
+.dark .mobile-error{background:#3b1721;color:#fda4af}
 .mobile-unavailable-audio{font-size:calc(12px * var(--nodus-mobile-text-scale,1));line-height:1.4;color:var(--app-muted);padding:8px 0}
 .mobile-saved-audio{margin:12px 0;padding:12px;border:1px solid var(--app-border);border-radius:12px;font-size:14px}
 .mobile-saved-audio h3{font-weight:600;margin-bottom:8px}

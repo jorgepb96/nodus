@@ -420,8 +420,8 @@ export function ArgumentMapView({
               ) : suggestions.length === 0 && !catalogError ? (
                 <div className="grid h-48 place-items-center p-8 text-center text-sm text-neutral-500"><div><Icon name="map" size={32} className="mx-auto text-neutral-300 dark:text-neutral-700" /><p className="mt-3">{t('No hay ideas conectadas todavía. Analiza tus obras (escaneo profundo) para que el grafo genere conexiones entre ideas.')}</p></div></div>
               ) : (
-                <div className="min-w-[1120px]">
-                  <div className="grid h-10 items-center border-b border-neutral-200 px-4 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-600" style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}>
+                <div className="argument-routes-list min-w-[1120px]">
+                  <div className="argument-route-sorting grid h-10 items-center border-b border-neutral-200 px-4 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-600" style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}>
                     <RouteSortHeader label="Idea" sort="label" active={routeSort} onSort={setRouteSort} />
                     <RouteSortHeader label="Tipo" sort="type" active={routeSort} onSort={setRouteSort} />
                     <RouteSortHeader label="Nº de conexiones" sort="connections" active={routeSort} onSort={setRouteSort} />
@@ -438,7 +438,7 @@ export function ArgumentMapView({
                           key={s.ideaId}
                           data-testid={`argument-route-${s.ideaId}`}
                           data-anchor-id={s.ideaId}
-                          className="grid min-h-[76px] w-full items-center border-b border-neutral-100 px-4 text-left text-xs transition-colors hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55"
+                          className="argument-route-row grid min-h-[76px] w-full items-center border-b border-neutral-100 px-4 text-left text-xs transition-colors hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55"
                           style={{ gridTemplateColumns: 'minmax(260px,2fr) 7rem 7rem 6rem 7rem minmax(190px,1.25fr) minmax(230px,1.5fr) 2.5rem' }}
                           onClick={() => build(s.ideaId)}
                           title={t('Trazar el esquema desde esta idea')}
@@ -450,10 +450,10 @@ export function ArgumentMapView({
                               {s.statement && <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-neutral-500">{s.statement}</p>}
                             </div>
                           </div>
-                          <span className="text-neutral-600 dark:text-neutral-400">{t(NODE_LABELS[s.type as IdeaType]) ?? s.type}</span>
-                          <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.degree}</span>
-                          <span className={s.debateCount > 0 ? 'font-medium tabular-nums text-red-600 dark:text-red-400' : 'tabular-nums text-neutral-400 dark:text-neutral-600'}>{s.debateCount}</span>
-                          <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.avgConfidence.toFixed(2)}</span>
+                          <span data-label={t('Tipo')} className="text-neutral-600 dark:text-neutral-400">{t(NODE_LABELS[s.type as IdeaType]) ?? s.type}</span>
+                          <span data-label={t('Nº de conexiones')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.degree}</span>
+                          <span data-label={t('Debates')} className={s.debateCount > 0 ? 'font-medium tabular-nums text-red-600 dark:text-red-400' : 'tabular-nums text-neutral-400 dark:text-neutral-600'}>{s.debateCount}</span>
+                          <span data-label={t('Confianza')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{s.avgConfidence.toFixed(2)}</span>
                           <div className="flex min-w-0 flex-wrap gap-1 pr-3">{s.topRelations.slice(0, 3).map((relation) => <span key={relation.type} className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">{t(EDGE_LABELS[relation.type as EdgeType]) ?? relation.type} ×{relation.count}</span>)}</div>
                           <span className="truncate pr-3 text-[11px] text-neutral-500">{s.neighborLabels.join(' · ') || '—'}</span>
                           <Icon name="chevronRight" size={15} className="text-neutral-400 dark:text-neutral-600" />

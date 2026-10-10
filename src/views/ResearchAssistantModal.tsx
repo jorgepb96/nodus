@@ -52,6 +52,8 @@ import { useFeatureModel } from '../hooks/useFeatureModel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import { researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
 import './researchAssistant.css';
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
+import { MobileSheet } from '../components/MobileSheet';
 
 const DEFAULT_SELECTION: ResearchContextSelection = {
   ideas: false,
@@ -133,12 +135,14 @@ export function ResearchAssistantModal({
   studyNoteDestination?: StudyNoteDestination | null;
   onOpenSavedNote?: (noteId: string) => void;
 }) {
+  const phone = isPhoneSurface();
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const api = adapter ?? window.nodus;
   const apiRef = useRef(api);
   apiRef.current = api;
   const panelKey = adapter?.id ?? 'research';
-  const [historyOpen, setHistoryOpen] = useState(() => !embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) === '1');
-  const [contextOpen, setContextOpen] = useState(() => embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
+  const [historyOpen, setHistoryOpen] = useState(() => !phone && (!embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) === '1'));
+  const [contextOpen, setContextOpen] = useState(() => !phone && embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
   const toggleHistory = () => setHistoryOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatHistoryOpen`, open ? '0' : '1'); return !open; });
   const toggleContext = () => setContextOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatContextOpen`, open ? '0' : '1'); return !open; });
   const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(LAYERED_SELECTION));
@@ -841,6 +845,81 @@ export function ResearchAssistantModal({
     setCitation({ kind: c.kind, id: c.id });
   }, []);
 
+  const chatActions = (
+    <div className="research-assistant-actions">
+          {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-md border research-accent-soft px-2 py-1 text-xs research-accent-text"
+              title={t('El asistente usa el contexto familiar: personas, parentescos, eventos, documentos y evidencia.')}
+            >
+              <Icon name="tree" size={13} /> <span className="hidden sm:inline">{t('Contexto familiar')}</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              ref={contextTriggerRef}
+              data-testid="research-context-trigger"
+              className={`chat-skills-trigger research-context-trigger ${sourceFilterOn ? 'is-filtered' : ''}`}
+              title={sourceFilterOn ? `${t('Elegir qué partes del corpus ve el asistente')} · ${t('Biblioteca filtrada')}` : t('Elegir qué partes del corpus ve el asistente')}
+              aria-haspopup="dialog"
+              aria-expanded={showContext}
+              onClick={() => setShowContext((value) => !value)}
+            >
+              <Icon name="layers" size={15} />
+              <span className="hidden min-w-0 truncate sm:inline">{t('Contexto')}</span>
+              {sourceFilterOn && <Icon name="library" size={12} aria-label={t('Biblioteca filtrada')} />}
+              <span className="chat-skills-count">{selectedCount}</span>
+            </button>
+          )}
+          <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={sending || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
+          <ChatSkillsControl surface="assistant" disabled={sending} />
+          {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending} onChange={next => {
+            setConcilium(next);
+            if (next) setSelectedModel(next.models[next.chairman]);
+          }} />}
+
+          </div>);
+  const historyPanel = (<aside hidden={!phone && !historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
+            <ResearchChatSidebar
+              conversations={visibleConversations}
+              projects={projects}
+              notebooks={adapterNotebooks ? adapterNotebooks.entries : researchNotebooks.notebooks}
+              supportsProjects={supportsProjects}
+              notebooksOn={adapterNotebooks ? true : researchNotebooks.available}
+              notebookKind={adapterNotebooks?.kind}
+              notebookCollections={!adapterNotebooks}
+              notebookLocksMoves={adapterNotebooks ? adapterNotebooks.locksMoves : true}
+              activeId={activeId}
+              activeProjectId={activeProjectId}
+              sending={sending}
+              archivedCount={archivedCount}
+              showArchived={showArchived}
+              onToggleArchived={() => setShowArchived((value) => !value)}
+              onNewConversation={() => { startNewConversation(); if (phone) setHistoryOpen(false); }}
+              onNewNotebook={adapterNotebooks ? adapterNotebooks.create && (() => { adapterNotebooks.create!(openNotebook); if (phone) setHistoryOpen(false); }) : () => { setEditingNotebook('new'); if (phone) setHistoryOpen(false); }}
+              onNewProject={createProject}
+              onOpenConversation={(id) => { void loadConversation(id); if (phone) setHistoryOpen(false); }}
+              onOpenProject={id => { openProject(id); if (phone) setHistoryOpen(false); }}
+              activeNotebookId={activeNotebookId}
+              onOpenNotebook={id => { openNotebook(id); if (phone) setHistoryOpen(false); }}
+              onEditNotebook={adapterNotebooks
+                ? adapterNotebooks.editSources && (notebook => { adapterNotebooks.editSources!(notebook.id); if (phone) setHistoryOpen(false); })
+                : notebook => { setEditingNotebook(researchNotebooks.notebooks.find(item => item.id === notebook.id) ?? null); if (phone) setHistoryOpen(false); }}
+              onUpdateNotebook={!adapterNotebooks || adapterNotebooks.update ? updateNotebook : undefined}
+              onDeleteNotebook={!adapterNotebooks || adapterNotebooks.remove ? deleteNotebook : undefined}
+              onRenameConversation={renameApi ? renameConversation : undefined}
+              onPinConversation={pinConversation}
+              onArchiveConversation={api.archiveConversation ? archiveConversation : undefined}
+              onDeleteConversation={conversation => { setPendingDelete(conversation); if (phone) setHistoryOpen(false); }}
+              onMoveConversation={moveConversation}
+              onUpdateProject={updateProject}
+              onEditProjectInstructions={project => { setEditingProjectInstructions(project); if (phone) setHistoryOpen(false); }}
+              onDeleteProject={deleteProject}
+              folderTree={folderTree}
+              folderActions={folderActions}
+            />
+          </aside>);
+
   return (
     <div className={embedded ? "research-chat-surface research-chat-view h-full min-h-0 flex flex-col" : "research-chat-surface fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"} data-testid={embedded ? "research-chat-view" : undefined}>
       <div
@@ -879,39 +958,9 @@ export function ResearchAssistantModal({
               </option>
             ))}
           </select>
-          <div className="research-assistant-actions">
-          {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
-            <span
-              className="inline-flex items-center gap-1.5 rounded-md border research-accent-soft px-2 py-1 text-xs research-accent-text"
-              title={t('El asistente usa el contexto familiar: personas, parentescos, eventos, documentos y evidencia.')}
-            >
-              <Icon name="tree" size={13} /> <span className="hidden sm:inline">{t('Contexto familiar')}</span>
-            </span>
-          ) : (
-            <button
-              type="button"
-              ref={contextTriggerRef}
-              data-testid="research-context-trigger"
-              className={`chat-skills-trigger research-context-trigger ${sourceFilterOn ? 'is-filtered' : ''}`}
-              title={sourceFilterOn ? `${t('Elegir qué partes del corpus ve el asistente')} · ${t('Biblioteca filtrada')}` : t('Elegir qué partes del corpus ve el asistente')}
-              aria-haspopup="dialog"
-              aria-expanded={showContext}
-              onClick={() => setShowContext((value) => !value)}
-            >
-              <Icon name="layers" size={15} />
-              <span className="hidden min-w-0 truncate sm:inline">{t('Contexto')}</span>
-              {sourceFilterOn && <Icon name="library" size={12} aria-label={t('Biblioteca filtrada')} />}
-              <span className="chat-skills-count">{selectedCount}</span>
-            </button>
-          )}
-          <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={sending || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
-          <ChatSkillsControl surface="assistant" disabled={sending} />
-          {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending} onChange={next => {
-            setConcilium(next);
-            if (next) setSelectedModel(next.models[next.chairman]);
-          }} />}
+          {phone ? <><button className="btn btn-ghost" aria-label={t('Opciones')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(true)}><Icon name="settings" size={18} /></button>
+            <MobileSheet open={optionsOpen} title={t('Opciones')} onClose={() => setOptionsOpen(false)}>{chatActions}</MobileSheet></> : chatActions}
 
-          </div>
           <div className="flex-1" />
           {!embedded && <button className="btn btn-ghost" onClick={onClose} title={t('Cerrar')}>
             <Icon name="x" />
@@ -920,46 +969,7 @@ export function ResearchAssistantModal({
 
         <div className="flex-1 min-h-0 flex flex-col md:flex-row">
           {/* Conversation history */}
-          <aside hidden={!historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
-            <ResearchChatSidebar
-              conversations={visibleConversations}
-              projects={projects}
-              notebooks={adapterNotebooks ? adapterNotebooks.entries : researchNotebooks.notebooks}
-              supportsProjects={supportsProjects}
-              notebooksOn={adapterNotebooks ? true : researchNotebooks.available}
-              notebookKind={adapterNotebooks?.kind}
-              notebookCollections={!adapterNotebooks}
-              notebookLocksMoves={adapterNotebooks ? adapterNotebooks.locksMoves : true}
-              activeId={activeId}
-              activeProjectId={activeProjectId}
-              sending={sending}
-              archivedCount={archivedCount}
-              showArchived={showArchived}
-              onToggleArchived={() => setShowArchived((value) => !value)}
-              onNewConversation={startNewConversation}
-              onNewNotebook={adapterNotebooks ? adapterNotebooks.create && (() => adapterNotebooks.create!(openNotebook)) : () => setEditingNotebook('new')}
-              onNewProject={createProject}
-              onOpenConversation={(id) => void loadConversation(id)}
-              onOpenProject={openProject}
-              activeNotebookId={activeNotebookId}
-              onOpenNotebook={openNotebook}
-              onEditNotebook={adapterNotebooks
-                ? adapterNotebooks.editSources && (notebook => adapterNotebooks.editSources!(notebook.id))
-                : notebook => setEditingNotebook(researchNotebooks.notebooks.find(item => item.id === notebook.id) ?? null)}
-              onUpdateNotebook={!adapterNotebooks || adapterNotebooks.update ? updateNotebook : undefined}
-              onDeleteNotebook={!adapterNotebooks || adapterNotebooks.remove ? deleteNotebook : undefined}
-              onRenameConversation={renameApi ? renameConversation : undefined}
-              onPinConversation={pinConversation}
-              onArchiveConversation={api.archiveConversation ? archiveConversation : undefined}
-              onDeleteConversation={setPendingDelete}
-              onMoveConversation={moveConversation}
-              onUpdateProject={updateProject}
-              onEditProjectInstructions={setEditingProjectInstructions}
-              onDeleteProject={deleteProject}
-              folderTree={folderTree}
-              folderActions={folderActions}
-            />
-          </aside>
+          {phone ? <MobileSheet open={historyOpen} title={t('Historial de chats')} onClose={() => setHistoryOpen(false)}>{historyPanel}</MobileSheet> : historyPanel}
 
           <section className={`flex-1 min-w-0 min-h-0 flex flex-col ${projectHome || notebookHome ? 'research-project-home' : ''}`} data-testid={projectHome ? 'research-project-home' : notebookHome ? 'research-notebook-home' : undefined}>
             {notebookHome && activeNotebook && <NotebookHomeHeader notebook={activeNotebook} onEdit={() => setEditingNotebook(activeNotebook)} />}
@@ -1032,7 +1042,7 @@ export function ResearchAssistantModal({
                             : 'bg-neutral-900 border-neutral-800 text-neutral-200'
                       }`}
                     >
-                      <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                      <div className="research-message-actions absolute right-2 top-2 flex items-center gap-0.5">
                         {message.role === 'assistant' &&
                           (!message.error || message.concilium) &&
                           message.id === lastMessageId &&
@@ -1186,7 +1196,7 @@ export function ResearchAssistantModal({
                         return;
                       }
                     }
-                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    if (e.key === 'Enter' && !phone && !e.shiftKey && !e.nativeEvent.isComposing) {
                       e.preventDefault();
                       void send();
                     }
@@ -1216,7 +1226,7 @@ export function ResearchAssistantModal({
                 )}
               </div>
               </div>
-              <div className="mt-1.5 flex items-center gap-1 px-1 text-[11px] text-neutral-400">
+              <div className="research-composer-keyboard-hint mt-1.5 flex items-center gap-1 px-1 text-[11px] text-neutral-400">
                 <kbd className="composer-kbd">Enter</kbd>
                 <span>{t('para enviar')}</span>
                 <span className="text-neutral-700">·</span>

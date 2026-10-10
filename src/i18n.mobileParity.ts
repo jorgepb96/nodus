@@ -9,6 +9,7 @@ const KEYS = [
   'No se pudo cargar la fuente.', 'La obra enlaza ideas que no están disponibles en este corpus.',
   'La traducción ya no está disponible.', 'Leer traducción a {lang}', 'Regenerar traducción a {lang}',
   'Mejorar documento completo',
+  "La conexión actual no permite acceder a este vault. Renueva la vinculación en Ajustes.", "Estado de los trabajos",
 ] as const;
 
 function table(values: string[]): Record<string, string> {
@@ -28,6 +29,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'The source could not be loaded.', 'The work links to ideas that are unavailable in this corpus.',
     'The translation is no longer available.', 'Read {lang} translation', 'Regenerate {lang} translation',
     'Improve entire document',
+    "The current connection cannot access this vault. Renew the pairing in Settings.", "Job status",
   ]),
   fr: table([
     'Associer un appareil mobile',
@@ -40,6 +42,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'La source n’a pas pu être chargée.', 'L’œuvre renvoie à des idées indisponibles dans ce corpus.',
     'La traduction n’est plus disponible.', 'Lire la traduction en {lang}', 'Régénérer la traduction en {lang}',
     'Améliorer le document entier',
+    "La connexion actuelle ne permet pas d’accéder à cet espace. Renouvelez l’association dans les réglages.", "État des tâches",
   ]),
   de: table([
     'Mobilgerät verbinden',
@@ -52,6 +55,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Die Quelle konnte nicht geladen werden.', 'Das Werk verweist auf Ideen, die in diesem Korpus nicht verfügbar sind.',
     'Die Übersetzung ist nicht mehr verfügbar.', 'Übersetzung auf {lang} lesen', 'Übersetzung auf {lang} neu erstellen',
     'Gesamtes Dokument verbessern',
+    "Die aktuelle Verbindung kann nicht auf diesen Vault zugreifen. Erneuern Sie die Kopplung in den Einstellungen.", "Auftragsstatus",
   ]),
   pt: table([
     'Vincular dispositivo móvel',
@@ -64,6 +68,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Não foi possível carregar a fonte.', 'A obra liga a ideias que não estão disponíveis neste corpus.',
     'A tradução já não está disponível.', 'Ler tradução em {lang}', 'Regenerar tradução em {lang}',
     'Melhorar o documento completo',
+    "A ligação atual não permite aceder a este vault. Renove a vinculação nas Definições.", "Estado dos trabalhos",
   ]),
   'pt-BR': table([
     'Vincular dispositivo móvel',
@@ -76,6 +81,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Não foi possível carregar a fonte.', 'A obra vincula ideias que não estão disponíveis neste corpus.',
     'A tradução não está mais disponível.', 'Ler tradução em {lang}', 'Regenerar tradução em {lang}',
     'Melhorar o documento completo',
+    "A conexão atual não permite acessar este vault. Renove a vinculação em Ajustes.", "Status dos trabalhos",
   ]),
   it: table([
     'Collega dispositivo mobile',
@@ -88,6 +94,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Impossibile caricare la fonte.', 'L’opera rimanda a idee non disponibili in questo corpus.',
     'La traduzione non è più disponibile.', 'Leggi la traduzione in {lang}', 'Rigenera la traduzione in {lang}',
     'Migliora il documento completo',
+    "La connessione attuale non consente di accedere a questo vault. Rinnova l’associazione nelle impostazioni.", "Stato delle attività",
   ]),
   tr: table([
     'Mobil cihazı bağla',
@@ -100,6 +107,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Kaynak yüklenemedi.', 'Eser, bu derlemde bulunmayan fikirlere bağlantı veriyor.',
     'Çeviri artık mevcut değil.', '{lang} çevirisini oku', '{lang} çevirisini yeniden oluştur',
     'Belgenin tamamını iyileştir',
+    "Mevcut bağlantı bu kasaya erişemiyor. Ayarlar’dan eşleştirmeyi yenileyin.", "İş durumu",
   ]),
   'zh-CN': table([
     '关联移动设备',
@@ -112,6 +120,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '无法加载来源。', '该作品链接的观点在此语料库中不可用。',
     '该译文已不可用。', '阅读 {lang} 译文', '重新生成 {lang} 译文',
     '改进整个文档',
+    "当前连接无法访问此资料库。请在设置中更新关联。", "任务状态",
   ]),
   'zh-TW': table([
     '連結行動裝置',
@@ -124,6 +133,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '無法載入來源。', '此作品連結的觀點在此語料庫中無法使用。',
     '此譯文已無法使用。', '閱讀 {lang} 譯文', '重新產生 {lang} 譯文',
     '改進整份文件',
+    "目前的連線無法存取此資料庫。請在設定中更新關聯。", "工作狀態",
   ]),
   ja: table([
     'モバイル端末を連携',
@@ -136,6 +146,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '資料を読み込めませんでした。', 'この著作が参照するアイデアは、このコーパスでは利用できません。',
     '翻訳は利用できなくなりました。', '{lang} の翻訳を読む', '{lang} の翻訳を再生成',
     '文書全体を改善',
+    "現在の接続ではこの保管庫にアクセスできません。設定でペアリングを更新してください。", "ジョブの状態",
   ]),
   ko: table([
     '모바일 기기 연결',
@@ -148,5 +159,6 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '자료를 불러올 수 없습니다.', '이 저작이 연결하는 아이디어는 이 코퍼스에서 사용할 수 없습니다.',
     '번역을 더 이상 사용할 수 없습니다.', '{lang} 번역 읽기', '{lang} 번역 다시 생성',
     '문서 전체 개선',
+    "현재 연결로는 이 보관함에 접근할 수 없습니다. 설정에서 연결을 갱신하세요.", "작업 상태",
   ]),
 };

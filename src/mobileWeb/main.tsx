@@ -6,6 +6,7 @@ import {StudyGraphView} from '../views/StudyGraphView';
 import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
 import './mobile.css';
+import './phone.css';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { StellarWorkspace } from '../stellarGraph/StellarWorkspace';
@@ -16,7 +17,7 @@ import { ArgumentMapView } from '../views/ArgumentMapView';
 import { DeepResearchView } from '../views/DeepResearchView';
 import { ImmersionView } from '../views/ImmersionView';
 import { ResearchAssistantModal } from '../views/ResearchAssistantModal';
-import { setActiveLang } from '../i18n';
+import { setActiveLang, t } from '../i18n';
 import type { AppSettings, GraphData } from '@shared/types';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
@@ -30,7 +31,7 @@ import { parsePageNumber } from '@shared/pageLocation';
 import { installMobileKeyboard } from './mobileKeyboard';
 import { FeedbackHost } from '../components/feedback';
 
-type Configuration = { surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -197,6 +198,7 @@ setActiveLang(config.language);
 document.documentElement.classList.toggle('dark', config.theme === 'dark');
 document.documentElement.classList.toggle('light', config.theme !== 'dark');
 document.documentElement.classList.add(config.vaultType);
+document.documentElement.classList.toggle('nodus-phone', config.device === 'phone');
 document.documentElement.style.setProperty('--mobile-accent', config.accent);
 document.documentElement.style.fontSize = `${16 * config.textScale}px`;
 document.documentElement.style.setProperty('--nodus-mobile-text-scale', String(config.textScale));
@@ -226,9 +228,16 @@ const source: StellarGraphSource = config.live ? {
   idea: id => call('getIdeaDetail', id), edge: id => call('getEdgeDetail', id),
 } : { ...memorySource('mobile-local', offlineGraph), readOnly: true };
 
+function SurfaceIssue({issue,title}: {issue: string; title?: string}) {
+  const denied = /permission_denied|operation_forbidden|does not grant access/i.test(issue);
+  return <div role="alert" className="mobile-error"><div>{title && <strong>{title}</strong>}<p>{denied ? t('La conexión actual no permite acceder a este vault. Renueva la vinculación en Ajustes.') : issue}</p>
+    {denied && <details><summary>{t('Detalles')}</summary><p>{issue}</p></details>}</div><button onClick={() => location.reload()}>{t('Reintentar')}</button></div>;
+}
+
 function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [error, setError] = useState('');
+  const [jobError, setJobError] = useState('');
   useEffect(() => {
     if (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType)) void call('getSettings').then(setSettings).catch(error => setError(String(error)));
     const listener = (event: ErrorEvent) => setError(event.message);
@@ -245,6 +254,7 @@ function App() {
       polling = true;
       void call(method).then(jobs => {
       if (!active) return;
+      setJobError('');
       const nextRevision = JSON.stringify(jobs);
       if (revision === nextRevision) return;
       revision = nextRevision;
@@ -255,11 +265,12 @@ function App() {
         for (const listener of subscriptions.get('onDeepResearchQueue') ?? []) listener(jobs);
         for (const listener of subscriptions.get('onWritingDraftsChanged') ?? []) listener(null);
       }
-    }).catch(error => { if (active) setError(String(error)); }).finally(() => { polling = false; }); }, 2000);
+    }).catch(error => { if (active) setJobError(String(error)); }).finally(() => { polling = false; }); }, 2000);
     return () => { active = false; clearInterval(timer); };
   }, []);
   return <main className="mobile-surface" data-surface={config.surface}>
-    {error && <div role="alert" className="mobile-error"><span>{error}</span><button onClick={() => location.reload()}>Reintentar</button></div>}
+    {error && <SurfaceIssue issue={error} />}
+    {jobError && <SurfaceIssue issue={jobError} title={t('Estado de los trabajos')} />}
     {config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
       ? !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
         : <StudyGraphView mobile settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}

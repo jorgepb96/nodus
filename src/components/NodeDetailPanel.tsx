@@ -6,6 +6,8 @@ import { buildEdgeNote, buildIdeaNote } from '../notes';
 import { parsePageNumber } from '@shared/pageLocation';
 import { openEvidenceAtPage } from '../evidenceJump';
 import { t } from '../i18n';
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
+import { MobileSheet } from './MobileSheet';
 
 // Persisted detail-panel sizing, shared by the graph view and the argument map.
 export const DETAIL_WIDTH_KEY = 'nodus.graph.detailWidth';
@@ -112,7 +114,7 @@ export function NodeDetailPanel({
     window.addEventListener('pointerup', onUp, { once: true });
   };
 
-  return (
+  const panel = (
     <div className="relative flex min-h-0 shrink-0 flex-col border-l border-neutral-800 bg-neutral-900 graph-detail-panel" style={{ width, '--detail-font-size': `${fontSize}px` } as React.CSSProperties}>
       <div
         className="absolute left-0 top-0 h-full w-2 -translate-x-1/2 cursor-col-resize hover:bg-indigo-500/25"
@@ -304,6 +306,7 @@ export function NodeDetailPanel({
       )}
     </div>
   );
+  return isPhoneSurface() ? <MobileSheet title={ideaDetail?.idea.label ?? loading?.label ?? edgeDetail?.fromLabel ?? t('Idea seleccionada')} onClose={onClose}>{panel}</MobileSheet> : panel;
 }
 
 /**

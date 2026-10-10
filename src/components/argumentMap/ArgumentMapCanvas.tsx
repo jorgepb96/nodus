@@ -191,8 +191,8 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
           className={`argument-node ${parentId ? '' : 'is-root'} ${selected === block.id ? 'is-selected' : ''}`}
           style={{ left: x - CARD_WIDTH / 2, top: y - CARD_HEIGHT / 2, width: CARD_WIDTH, height: CARD_HEIGHT, '--branch-color': COLORS[block.relation] ?? COLORS.related } as CSSProperties}>
           <button className="argument-node-content" aria-pressed={selected === block.id} aria-label={[parentId ? relationLabel(block.relation) : t('IDEA CENTRAL'), block.label, block.statement || block.summary].filter(Boolean).join('. ')} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
-            <span className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
-            <strong>{block.label}</strong><span className="argument-node-statement">{block.statement || block.summary}</span>
+            <span aria-hidden="true" className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
+            <strong aria-hidden="true">{block.label}</strong><span aria-hidden="true" className="argument-node-statement">{block.statement || block.summary}</span>
           </button>
           <div className="argument-node-footer"><span>{t(block.type === 'framing' ? 'encuadre' : NODE_LABELS[block.type])}</span>
             {block.children.length > 0 && <button aria-expanded={expanded.has(block.id)} aria-label={`${expanded.has(block.id) ? t('Contraer rama') : t('Desplegar rama')}: ${block.label}`} onClick={() => setExpanded(current => { const next = new Set(current); if (next.has(block.id)) next.delete(block.id); else next.add(block.id); return next; })}><Icon name={expanded.has(block.id) ? 'minus' : 'plus'} size={11} />{block.children.length}</button>}

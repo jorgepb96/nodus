@@ -776,6 +776,7 @@ export function StellarCanvas(props: Props) {
             className={`stellar-node-label ${featured.has(n.id) ? "featured" : (props.selected || active) && !closeNodes.has(n.id) ? "dim" : ""}`}
             data-endpoint={active?.source === n.id ? "source" : active?.target === n.id ? "target" : undefined}
             title={n.statement || n.label}
+            aria-label={`${featured.has(n.id) ? t(active?.source === n.id ? "Origen" : "Destino") : props.nodeMeta ? props.nodeMeta(n) : `${t(NODE_LABELS[n.type] || n.type)} · ${n.workCount} ${t(n.workCount === 1 ? "fuente" : "fuentes")}`} · ${n.label}`}
             style={
               {
                 left: labelX,
@@ -785,14 +786,14 @@ export function StellarCanvas(props: Props) {
             }
             onClick={(e) => { if (e.detail === 0) props.onNode(n.id); }}
           >
-            <small>
+            <small aria-hidden="true">
               {featured.has(n.id)
                 ? t(active?.source === n.id ? "Origen" : "Destino")
                 : props.nodeMeta
                   ? props.nodeMeta(n)
                   : `${t(NODE_LABELS[n.type] || n.type)} · ${n.workCount} ${t(n.workCount === 1 ? "fuente" : "fuentes")}`}
             </small>
-            <span>{n.label}</span>
+            <span aria-hidden="true">{n.label}</span>
           </button>
         ))}
         {props.data.edges

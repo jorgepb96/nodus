@@ -35,6 +35,11 @@
 .nodus-phone .mobile-surface[data-surface="graph"] :is(.stellar-player select,.stellar-legend summary){min-height:44px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-legend summary{display:flex;align-items:center}
 .nodus-phone .mobile-surface[data-surface="graph"] :is(.stellar-tab-close,.stellar-new-tab){min-width:44px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player{width:calc(100% - 24px);max-width:420px;padding:8px;bottom:12px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player-line{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player label{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:0;font-size:11px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player select{width:100%;min-width:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-legend{bottom:112px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-body{position:relative}
 .nodus-phone .mobile-surface[data-surface="workspace"] .editorial-editor-header{height:auto;flex-wrap:wrap}
 .nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-status{white-space:normal}
@@ -48,6 +53,13 @@
   .nodus-phone .deep-research-reader-header>.deep-research-reader-disclosure[open]{grid-column:1/-1;grid-row:2}
   .nodus-phone .deep-research-reader-title>span{-webkit-line-clamp:1}
   .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header h2{font-size:13px}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header{flex-wrap:nowrap;padding:4px 12px}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-heading{display:none}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-breadcrumb{flex-basis:auto}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header-actions{width:auto;flex:1}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player label{flex-direction:row;align-items:center}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player select{width:auto;flex:1}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-legend{bottom:84px}
 }
 
 /* The reading column owns its width; links and citation pills cannot widen it. */
@@ -128,6 +140,15 @@
 .nodus-phone .argument-camera-controls>button:first-child,.nodus-phone .argument-camera-controls>button:nth-of-type(2){min-width:44px;flex-shrink:0}
 .nodus-phone .argument-atlas-footer{padding:6px 12px;font-size:10px}
 @media(orientation:landscape){
+  .nodus-phone [data-testid="argument-map-workspace"]>header{padding:0 12px}
+  .nodus-phone [data-testid="argument-map-workspace"]>header>div:first-child{display:none}
+  .nodus-phone .argument-view-switch{padding:0 12px;min-height:44px}
+  .nodus-phone .argument-view-switch button{padding-block:6px}
+  .nodus-phone .argument-atlas{position:relative;display:grid;grid-template-columns:100px minmax(0,1fr);grid-template-rows:44px minmax(0,1fr)}
+  .nodus-phone .argument-phone-summary{grid-column:1;grid-row:1;padding-inline:8px;font-size:12px}
+  .nodus-phone .argument-phone-summary[open] .argument-overview{position:absolute;top:44px;left:8px;z-index:5;width:min(380px,calc(100% - 16px));max-height:120px;padding:12px;background:var(--atlas-card);border:1px solid var(--atlas-line);border-radius:12px}
+  .nodus-phone .argument-relations{grid-column:2;grid-row:1;padding:0 6px;gap:4px}
+  .nodus-phone .argument-stage{grid-column:1/-1;grid-row:2}
   .nodus-phone .argument-atlas-heading,.nodus-phone .argument-overview,.nodus-phone .argument-atlas-footer{display:none}
   .nodus-phone .reader-selection-actions{width:auto;max-width:calc(100vw - 16px)}
   .nodus-phone .reader-selection-colors{flex:0 0 auto}

@@ -17,6 +17,7 @@ body{-webkit-text-size-adjust:100%;touch-action:manipulation;background:var(--ap
 .mobile-saved-audio li>button>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
 .mobile-saved-audio [role="alert"] p{color:#b91c1c}.dark .mobile-saved-audio [role="alert"] p{color:#fb7185}
 button,input,select,textarea{font-size:inherit}
+.mobile-surface .graph-detail-header>button{min-width:44px;min-height:44px;flex-shrink:0}
 @media(max-width:600px){button{min-height:44px}input,select{min-height:44px}.stellar-detail{max-width:90vw}.mobile-surface .min-w-\[800px\]{min-width:100%}.mobile-surface .px-6{padding-inline:12px}}
 
 /* A dossier can narrow an iPad canvas as much as a phone. Reserve real rows
@@ -35,7 +36,6 @@ button,input,select,textarea{font-size:inherit}
   .mobile-surface[data-surface="graph"] .stellar-header-actions>.stellar-search{flex:1 1 160px;min-width:160px}
   .mobile-surface[data-surface="graph"] .stellar-body{position:relative}
   .mobile-surface[data-surface="graph"] .graph-detail-panel{position:absolute;inset:0 0 0 auto;width:min(92%,420px)!important;z-index:30;box-shadow:-12px 0 32px color-mix(in srgb,var(--app-text) 15%,transparent)}
-  .mobile-surface[data-surface="graph"] .graph-detail-header>button{min-width:44px;min-height:44px}
 }
 
 /* iOS zooms focused inputs below 16px, clipping Desktop panels beyond the viewport. */

@@ -32,6 +32,16 @@
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions{flex-wrap:wrap;min-width:0;gap:8px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions>.stellar-search{flex:1 1 160px;min-width:0;width:auto}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions>select{min-width:0;max-width:100%}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-tabs-header{padding:4px 12px 0;gap:4px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-fullscreen{width:44px;min-width:44px;justify-content:center;padding-inline:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-fullscreen>span{display:none}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header{display:grid;grid-template-columns:auto minmax(0,1fr)}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-breadcrumb{grid-row:1;grid-column:1;flex-basis:auto;margin:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-breadcrumb>span{display:none}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-heading{grid-row:1;grid-column:2;min-width:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-heading .stellar-eyebrow{display:none}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-heading h2{font-size:1rem;margin:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header-actions{grid-row:2;grid-column:1/-1}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-navigation button{min-width:44px}
 .nodus-phone .mobile-surface[data-surface="graph"] :is(.stellar-player select,.stellar-legend summary){min-height:44px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-legend summary{display:flex;align-items:center}
@@ -54,7 +64,7 @@
   .nodus-phone .deep-research-reader-header>.deep-research-reader-disclosure[open]{grid-column:1/-1;grid-row:2}
   .nodus-phone .deep-research-reader-title>span{-webkit-line-clamp:1}
   .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header h2{font-size:13px}
-  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header{flex-wrap:nowrap;padding:4px 12px}
+  .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header{display:flex;flex-wrap:nowrap;padding:4px 12px}
   .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-heading{display:none}
   .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-breadcrumb{flex-basis:auto}
   .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-header-actions{width:auto;flex:1}

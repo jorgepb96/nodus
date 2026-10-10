@@ -192,8 +192,8 @@ function StellarTabs(props: StellarWorkspaceProps) {
         </div>)}
       </div>
       <button className="stellar-new-tab" onClick={addTab} title={t("Nuevo grafo")} aria-label={t("Nuevo grafo")}><Icon name="plus" size={18} /></button>
-      <button className="stellar-fullscreen" onClick={() => void toggleFullscreen()} aria-pressed={fullscreen} title={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}>
-        <Icon name={fullscreen ? "minimize" : "maximize"} size={15} />{t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}
+      <button className="stellar-fullscreen" onClick={() => void toggleFullscreen()} aria-pressed={fullscreen} aria-label={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")} title={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}>
+        <Icon name={fullscreen ? "minimize" : "maximize"} size={15} /><span>{t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}</span>
       </button>
     </div>
     {fullscreenError && <p role="alert">{t("No se pudo activar la pantalla completa.")}</p>}

@@ -59,6 +59,11 @@ jobs:
           restore-keys: |
             checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
       - name: Materialize Electron once and rebuild native modules
+        # Match the proven Linux release toolchain; Electron 43 headers do not
+        # compile with Ubuntu 22.04's default GCC.
+        env:
+          CC: clang-15
+          CXX: clang++-15
         run: |
           node scripts/prepare-electron-tests.mjs
           npx electron-builder install-app-deps

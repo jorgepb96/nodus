@@ -1034,6 +1034,9 @@ export function ResearchAssistantModal({
                     className={`msg-in flex rounded-lg transition-shadow duration-500 ${highlightedMessageId === message.id ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-950' : ''} ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
+                      role={message.role === 'assistant' ? 'group' : undefined}
+                      aria-label={message.role === 'assistant' ? t('Respuesta del asistente') : undefined}
+                      aria-busy={message.role === 'assistant' ? message.id === streamingId : undefined}
                       className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? 'pr-24' : 'pr-16'} ${
                         message.role === 'user'
                           ? 'research-accent-solid text-white whitespace-pre-wrap'

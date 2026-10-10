@@ -287,6 +287,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
               {renaming === key
                 ? <RenameField value={conversation.title} onDone={title => { setRenaming(null); if (title && title !== conversation.title && props.onRenameConversation) run(() => props.onRenameConversation!(conversation, title)); }} />
                 : <button type="button" className="research-history-main" aria-current={conversation.id === activeId ? 'page' : undefined}
+                  aria-label={tx('Abrir {name}', { name: conversation.title })}
                   title={`${formatRelative(conversation.updated_at)} · ${tx('{n} mensaje(s)', { n: conversation.messageCount })}`}
                   onClick={() => { if (!sending) props.onOpenConversation(conversation.id); }}>
                   <MarqueeText text={conversation.title} className={`min-w-0 flex-1 ${conversation.archived ? 'italic text-neutral-500' : ''}`} />

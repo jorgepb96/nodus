@@ -217,6 +217,11 @@
 .nodus-phone .dictionary-mobile .dictionary-count-label{display:inline}
 @media(orientation:landscape){
   .nodus-phone .dictionary-mobile>header{padding:6px 12px 0}
-  .nodus-phone .dictionary-mobile>header p{font-size:12px;line-height:1.4}
+  .nodus-phone .dictionary-mobile>header>div:first-child{gap:8px;margin-bottom:4px}
+  .nodus-phone .dictionary-mobile>header>div:first-child>div:nth-child(2){flex:0 1 auto;min-width:0}
+  .nodus-phone .dictionary-mobile>header>div:first-child>div.flex-1{display:none}
+  .nodus-phone .dictionary-mobile>header p{display:none}
+  .nodus-phone .dictionary-mobile>header .dictionary-model-options{order:0;flex-basis:auto;margin-left:auto}
+  .nodus-phone .dictionary-mobile>header [data-testid="dictionary-new"]{white-space:nowrap;font-size:12px;padding-inline:10px}
   .nodus-phone .dictionary-mobile main{padding:12px}
 }

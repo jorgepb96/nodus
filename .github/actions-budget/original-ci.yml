@@ -1,0 +1,390 @@
+name: CI
+
+# Build this commit once, run the entire suite in three isolated macOS groups,
+# and boot the real app in the smaller third group. The final `test` check verifies that every
+# discovered test file completed exactly once and all prerequisite jobs passed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # Keep only the newest run for a PR branch (or main) without creating a
+  # second, cancelled check for every commit pushed to an open PR.
+  group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    outputs:
+      artifact_id: ${{ steps.share-build.outputs.artifact-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Sitemap freshness is derived from the latest commit touching each
+          # content source, so the test needs history rather than a shallow tip.
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify citation metadata
+        run: npm run citation:check
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The test suite re-execs under Electron-as-Node, so native modules
+      # (better-sqlite3) must match Electron's ABI, not the system Node's.
+      - name: Rebuild native modules for Electron
+        run: npx electron-builder install-app-deps
+
+      - name: Package this run's Electron native rebuild
+        run: node scripts/ci-native-artifact.mjs pack
+
+      - name: Restore incremental check caches
+        uses: actions/cache@v6
+        with:
+          path: .ci/cache
+          key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
+          restore-keys: |
+            checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
+
+      - name: Lint
+        run: npm run lint:ci
+
+      - name: Build (includes typecheck)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build:ci
+
+      # The Server Web suites drive the compiled app and ask the server for its SPA
+      # shell, so without this the published-record routes answer 404 and the
+      # Chromium checks have nothing to open.
+      - name: Build the Server Web bundle
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build:server-web
+
+      - name: Assign every test file to exactly one group
+        run: node scripts/ci-test-shards.mjs plan
+
+      - name: Compile component test styles once from current sources
+        run: node scripts/lib/component-test-styles.mjs prepare-ci
+
+      - name: Package this commit's build with a SHA-256 manifest
+        run: node scripts/ci-build-artifact.mjs pack
+
+      - name: Share this run's build and complete test plan
+        id: share-build
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-build-${{ github.run_attempt }}
+          path: |
+            .ci/build.tgz
+            .ci/build-manifest.json
+            .ci/native.tgz
+            .ci/native-manifest.json
+            .ci/plan.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  unit:
+    needs: build
+    env:
+      NODUS_CI_COMPONENT_STYLES: .ci/component-styles.css
+    strategy:
+      # A failing group must not cancel the others or hide their results.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download this run's build
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: .ci
+          merge-multiple: true
+      - name: Restore and verify this commit's build
+        run: |
+          tar -xzf .ci/build.tgz
+          node scripts/ci-build-artifact.mjs verify
+      - name: Restore and verify the identical Electron native runtime
+        run: |
+          tar -xzf .ci/native.tgz
+          node scripts/ci-native-artifact.mjs verify
+      - name: Check all native dependencies for Electron
+        # Verified rebuild metadata avoids recompiling the shared binaries;
+        # electron-builder still discovers/checks every current dependency.
+        run: npx electron-builder install-app-deps
+      - name: Prepare hash-verified local OCR test resource
+        run: node scripts/prepare-research-ocr-fixture.mjs
+      - name: Verify audio measurement tools for the complete suite
+        # Runner images can lack working FFmpeg binaries. The audio fixture
+        # must measure duration/channels/seams rather than introduce a new skip.
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          requires_audio=$(node -e "const plan = require('./.ci/plan.json'); const group = plan.shards.find(s => s.index === Number(process.env.SHARD_INDEX)); if (!group) throw Error('Missing test group'); console.log(group.files.includes('scripts/test-drift-assets.mjs'));")
+          if [ "$requires_audio" != true ]; then
+            exit 0
+          fi
+          if ! ffmpeg -version >/dev/null 2>&1 || ! ffprobe -version >/dev/null 2>&1; then
+            if brew list --versions ffmpeg >/dev/null 2>&1; then
+              brew reinstall ffmpeg
+            else
+              brew install ffmpeg
+            fi
+          fi
+          ffmpeg -version >/dev/null
+          ffprobe -version >/dev/null
+      - name: Unit and integration tests
+        # Keep the proven two-file memory bound on each independent runner.
+        run: npm run test:ci:shard -- ${{ matrix.shard }}
+      - name: Materialize Electron before real-app checks
+        if: matrix.shard == 3
+        run: node scripts/prepare-electron-tests.mjs
+      - name: E2E smoke (real app boot)
+        timeout-minutes: 10
+        if: matrix.shard == 3
+        run: npm run test:e2e
+
+      - name: Stellar canvas E2E (isolated demonstration profile)
+        timeout-minutes: 5
+        if: matrix.shard == 3
+        run: npm run test:e2e:stellar
+
+      - name: Graph tabs E2E (isolated demonstration profile)
+        timeout-minutes: 5
+        if: matrix.shard == 3
+        run: npm run test:e2e:stellar-tabs
+
+      - name: Argument map E2E (isolated demonstration profile)
+        timeout-minutes: 5
+        if: matrix.shard == 3
+        run: npm run test:e2e:argument-map
+
+      - name: Preserve execution inventory and timing, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          # A failed-job rerun replaces only this group's report; successful
+          # groups and the successful build remain usable for the same commit.
+          name: ci-tests-${{ matrix.shard }}
+          overwrite: true
+          path: .ci/reports/shard-${{ matrix.shard }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  e2e:
+    # The third macOS group executes all four real-app checks. Preserve this
+    # check name and reject failed/cancelled prerequisites.
+    if: always()
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All test groups and real-app checks succeeded
+        env:
+          UNIT_RESULT: ${{ needs.unit.result }}
+        run: test "$UNIT_RESULT" = success
+
+  test:
+    # Preserve the existing check name; a skipped/cancelled prerequisite fails
+    # this gate, even when the matrix never produced a report artifact.
+    if: always()
+    needs: [build, unit, e2e, cross-repo]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every quality-gate job succeeded
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['JOB_RESULTS'])
+          failed = {name: job['result'] for name, job in results.items() if job['result'] != 'success'}
+          if failed:
+              raise SystemExit(f'Incomplete quality gate: {failed}')
+          PY
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Download the complete test plan
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: .ci
+          merge-multiple: true
+      - name: Download all group execution reports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ci-tests-*
+          path: .ci/reports
+          merge-multiple: true
+      - name: Every discovered test file passed exactly once
+        run: node scripts/ci-test-shards.mjs verify
+
+  # Capability API v2 is a contract split across two repositories, and everything that can
+  # drift between them fails silently in both. This job checks them against each other:
+  # the shared contract, the trusted keys, the catalog, a reproducible build of the real
+  # packages, and installing them — signed with a key generated for the run — through the
+  # application's own store. It is a separate required job rather than a step, so the
+  # marketplace checkout is visibly part of the gate rather than an optional extra.
+  cross-repo:
+    # Every platform Nodus ships for, because a package is built per platform and the
+    # checks that matter here — an archive verified and extracted, a worker started, a
+    # migration run — are the ones most likely to differ between them.
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, macos-14, windows-latest]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    steps:
+      - name: Checkout Nodus
+        uses: actions/checkout@v7
+
+      # The marketplace's own checkout. Not optional and not conditional: without it this
+      # job fails, rather than turning into a green run that compared nothing.
+      - name: Checkout the marketplace
+        uses: actions/checkout@v7
+        with:
+          repository: NodusResearch/nodus-research-skill-marketplace
+          path: .marketplace
+
+      # A change can span both repositories, and then this branch has to be checked against
+      # the marketplace branch that carries the other half. `.github/marketplace-ref` names
+      # it, and only a pull request may use it: a push to main is always checked against
+      # the marketplace's default branch, which is what a released Nodus installs from. So
+      # a paired change that merges here before it merges there fails on main, loudly,
+      # instead of being carried by a pairing nobody remembered to remove.
+      # A pairing outlives its purpose silently. `.github/marketplace-ref` reached main with
+      # the change it was paired to, and every pull request afterwards was checked against a
+      # marketplace branch frozen at that moment — still comparing, still green, no longer
+      # meaning anything. It surfaced only because a bootstrap pinned a version that branch
+      # had never heard of, and it read as a version mismatch rather than as a stale pairing.
+      #
+      # The rule that prevents it is the one the file already implies: a pairing is for the
+      # pull request that needs it, so it must be gone before that pull request merges.
+      - name: A pairing never reaches main
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          if [ -f .github/marketplace-ref ]; then
+            echo ".github/marketplace-ref is a pull-request-only pairing and is still here on $GITHUB_REF_NAME." >&2
+            echo "Delete it in the pull request that paired the two repositories; until then every" >&2
+            echo "later pull request is checked against a marketplace branch that has stopped moving." >&2
+            exit 1
+          fi
+
+      - name: Use the paired marketplace branch on a pull request
+        if: github.event_name == 'pull_request'
+        working-directory: .marketplace
+        shell: bash
+        run: |
+          set -euo pipefail
+          REF_FILE="$GITHUB_WORKSPACE/.github/marketplace-ref"
+          [ -f "$REF_FILE" ] || { echo "No paired marketplace branch; checking against its default branch."; exit 0; }
+          BRANCH=$(tr -d ' \t\r\n' < "$REF_FILE")
+          [ -n "$BRANCH" ] && [ "$BRANCH" != 'main' ] || { echo "Paired with main; nothing to switch."; exit 0; }
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            echo ".github/marketplace-ref names $BRANCH, which does not exist in the marketplace." >&2
+            echo "Point it at an existing branch, or delete it once the paired change has merged." >&2
+            exit 1
+          fi
+          git fetch --depth 1 origin "$BRANCH"
+          git checkout FETCH_HEAD
+          echo "Checking against the marketplace branch $BRANCH."
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Both repositories agree, and a signed package installs
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:cross-repo
+
+      # The rest needs a real Electron, and a real display for it to refuse to open.
+      - name: Install Electron runtime
+        run: node node_modules/electron/install.js
+
+      # Electron refuses to start on Linux unless its setuid sandbox helper is owned by
+      # root, and npm cannot install it that way. Fixed here rather than by passing
+      # --no-sandbox, which would run these checks under weaker isolation than a user gets.
+      - name: Let Electron use its sandbox helper
+        if: runner.os == 'Linux'
+        run: |
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+
+      # These two run the packages' own workers in real utility processes: the migration
+      # ladder, the registry gate, the journal, and the refusals. They need the packages
+      # built, which the step above has just done in the marketplace checkout.
+      # Linux runners have no display, and Electron wants one even for a process that
+      # never opens a window.
+      - name: Each package installs, migrates, registers and uninstalls
+        if: runner.os == 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: xvfb-run --auto-servernum npm run verify:capability-packages
+
+      - name: A 5.3.1 profile migrates, fails and retries
+        if: runner.os == 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: xvfb-run --auto-servernum npm run verify:capability-migration
+
+      - name: Each package installs, migrates, registers and uninstalls
+        if: runner.os != 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:capability-packages
+
+      - name: A 5.3.1 profile migrates, fails and retries
+        if: runner.os != 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:capability-migration
+
+      # The credential handling and the runtime locks, on the platform whose credential
+      # store and wheel tags are being relied on.
+      - name: The credential reaches the interpreter and nothing else does
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: node --test scripts/test-capability-python-runtime.mjs

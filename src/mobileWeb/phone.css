@@ -27,6 +27,7 @@
 .nodus-phone .deep-research-reader-document{padding-inline:0}
 
 /* Keep wide phone graph controls tappable without installing a desktop sidebar. */
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-workspace{min-height:0}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header{padding:8px 12px;gap:8px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions{flex-wrap:wrap;min-width:0;gap:8px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions>.stellar-search{flex:1 1 160px;min-width:0;width:auto}
@@ -38,7 +39,7 @@
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player{width:calc(100% - 24px);max-width:420px;padding:8px;bottom:12px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player-line{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player label{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:0;font-size:11px}
-.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player select{width:100%;min-width:0}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player select{width:100%;min-width:0;height:44px;flex-shrink:0}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-legend{bottom:112px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-body{position:relative}
 .nodus-phone .mobile-surface[data-surface="workspace"] .editorial-editor-header{height:auto;flex-wrap:wrap}

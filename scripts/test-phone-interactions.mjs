@@ -70,6 +70,19 @@ test('a dense phone argument map opens with a readable central card instead of f
     try {
       assert.ok(scale(phone.container)>=.85,'the first phone view must let the central card be read');
       assert.equal(phone.container.querySelector('.argument-phone-summary').open,false,'the overview can be opened without occupying the canvas initially');
+      const zoomIn=phone.container.querySelector('button[aria-label="Acercar"]');
+      for(let i=0;i<4;i++)await React.act(async()=>zoomIn.click());
+      assert.equal(scale(phone.container),1.8,'manual zoom reaches its supported upper limit');
+      const reset=[...phone.container.querySelectorAll('button')].find(button=>button.textContent==='Volver al inicio');
+      await React.act(async()=>reset.click());
+      assert.ok(scale(phone.container)<=1.1,'returning to the beginning must reset the phone camera to its readable initial scale');
+      const automatic=phone.container.querySelector('[role="switch"]');
+      await React.act(async()=>automatic.click());
+      assert.equal(automatic.getAttribute('aria-checked'),'false');
+      const previous=phone.container.querySelector('.argument-world').style.transform;
+      await React.act(async()=>phone.container.querySelector('.argument-node-content').click());
+      assert.equal(phone.container.querySelector('.argument-world').style.transform,previous,
+        'manual selection must preserve the explored camera when automatic zoom is disabled');
     } finally {await phone.close();}
     const tablet=await mount(ArgumentMapCanvas,props,'tablet');
     try {assert.ok(scale(tablet.container)<.5,'the tablet keeps its existing full-map overview');assert.equal(tablet.container.querySelector('.argument-phone-summary'),null);} finally {await tablet.close();}

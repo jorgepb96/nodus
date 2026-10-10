@@ -1168,10 +1168,11 @@ export function DeepResearchView({
         <button className="btn btn-ghost gap-1.5 border border-neutral-700" onClick={() => setShowTutorial((v) => !v)}>
           <Icon name="help" /> {showTutorial ? t('Ocultar tutorial') : t('Tutorial')}
         </button>
-        {savedDrafts.length > 0 && (
+        {(mobile || savedDrafts.length > 0) && (
           <button
             className={`btn btn-ghost gap-1.5 border ${selecting ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
             onClick={startDownload}
+            disabled={loadingSavedDrafts || savedDrafts.length === 0}
             title={t('Descargar en un ZIP los informes seleccionados')}
           >
             <Icon name="download" /> {t('Descargar')}

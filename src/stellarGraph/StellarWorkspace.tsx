@@ -802,10 +802,11 @@ function StellarGraphTab({
           )}
           <div className="stellar-navigation">
             <CorpusContextControls context={corpusContext} onFit={() => api.current?.fitContext()} />
-            <button title={t("Alejar")} onClick={() => api.current?.zoom(1 / ZOOM_STEP)}>
+            <button aria-label={t("Alejar")} title={t("Alejar")} onClick={() => api.current?.zoom(1 / ZOOM_STEP)}>
               −
             </button>
             <button
+              aria-label={t("Acercar")}
               title={t("Acercar")}
               onClick={() => api.current?.zoom(ZOOM_STEP)}
             >

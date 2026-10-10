@@ -32,6 +32,9 @@
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions>.stellar-search{flex:1 1 160px;min-width:0;width:auto}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-header-actions>select{min-width:0;max-width:100%}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-navigation button{min-width:44px}
+.nodus-phone .mobile-surface[data-surface="graph"] :is(.stellar-player select,.stellar-legend summary){min-height:44px}
+.nodus-phone .mobile-surface[data-surface="graph"] .stellar-legend summary{display:flex;align-items:center}
+.nodus-phone .mobile-surface[data-surface="graph"] :is(.stellar-tab-close,.stellar-new-tab){min-width:44px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-body{position:relative}
 .nodus-phone .mobile-surface[data-surface="workspace"] .editorial-editor-header{height:auto;flex-wrap:wrap}
 .nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-status{white-space:normal}

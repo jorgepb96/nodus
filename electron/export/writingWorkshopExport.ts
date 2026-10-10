@@ -103,7 +103,7 @@ function figureResolver(files: Array<{ name: string; base64: string }>): (url: s
 }
 
 /** One report rendered to bytes, in every requested format. */
-async function archiveEntries(
+export async function renderSavedWritingFiles(
   saved: WritingWorkshopSavedDraft,
   base: string,
   format: DeepResearchArchiveRequest['format'],
@@ -178,7 +178,7 @@ export async function exportDeepResearchArchive(
     try {
       // Staged first, added second: a report whose PDF fails must not leave a lone
       // Markdown file behind while being reported as failed.
-      for (const entry of await archiveEntries(saved, base, format, request.includeCheatSheets === true)) {
+      for (const entry of await renderSavedWritingFiles(saved, base, format, request.includeCheatSheets === true)) {
         zip.addFile(entry.name, entry.bytes);
       }
     } catch (error) {

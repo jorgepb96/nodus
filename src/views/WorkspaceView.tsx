@@ -1159,8 +1159,6 @@ export function WorkspaceView({
                   key={note.id}
                   data-testid={`workspace-item-${note.id}`}
                   data-anchor-id={note.id}
-                  role="button"
-                  tabIndex={0}
                   draggable={scope.kind !== 'trash'}
                   onDragStart={(event) => {
                     if (scope.kind === 'trash') return;
@@ -1169,7 +1167,6 @@ export function WorkspaceView({
                   }}
                   className={`grid min-h-[62px] w-full grid-cols-[28px_22px_minmax(0,1fr)_minmax(120px,0.45fr)_72px] items-center border-b border-neutral-900 px-4 text-left text-xs hover:bg-neutral-900/60 ${selected.has(note.id) ? 'bg-indigo-500/10' : openIds.includes(note.id) ? 'bg-neutral-900/40' : ''}`}
                   onClick={(event) => { if ((event.target as HTMLElement).closest('input,button')) return; if (scope.kind === 'trash') toggleSelected(note.id); else openNote(note.id); }}
-                  onKeyDown={(event) => { if (event.key !== 'Enter' && event.key !== ' ') return; event.preventDefault(); if (scope.kind === 'trash') toggleSelected(note.id); else openNote(note.id); }}
                   onContextMenu={(event) => {
                     event.preventDefault();
                     setItemContextMenu({ noteId: note.id, x: Math.max(8, Math.min(event.clientX, window.innerWidth - 250)), y: Math.max(8, Math.min(event.clientY, window.innerHeight - 340)) });
@@ -1178,7 +1175,7 @@ export function WorkspaceView({
                   <input type="checkbox" checked={selected.has(note.id)} onChange={(event) => toggleSelected(note.id, event.target.checked)} onClick={(event) => event.stopPropagation()} aria-label={tx('Seleccionar {name}', { name: note.title })} />
                   <Icon name={KIND_ICON[kind]} size={14} className={`mt-0.5 shrink-0 ${kind === 'idea' ? 'text-amber-400' : 'text-neutral-500'}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm">{note.title}</span><small className="text-[10px] text-neutral-500">{tree.folders.find(folder => folder.id === note.folderId)?.name ?? t('Sin colección')}</small>
+                    <button className="block w-full truncate text-left text-sm" aria-label={tx('Abrir {name}', { name: note.title })} onClick={event => { event.stopPropagation(); if (scope.kind === 'trash') toggleSelected(note.id); else void openNote(note.id); }}>{note.title}</button><small className="text-[10px] text-neutral-500">{tree.folders.find(folder => folder.id === note.folderId)?.name ?? t('Sin colección')}</small>
                     <span className="mt-0.5 block truncate text-[11px] text-neutral-500">{plainSnippet(note.content) || t('Sin contenido')}</span>
                   </span>
                   <span className="flex min-w-0 flex-wrap gap-1 pr-2">

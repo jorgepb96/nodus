@@ -272,6 +272,7 @@ export function StudyEditor({
   const [dictionaryWord, setDictionaryWord] = useState('');
   const [textDialog, setTextDialog] = useState<{ kind: 'comment' | 'tag'; selectedText?: string; from?: number; anchor?: StudyBlockAnchor } | null>(null);
   const [showImprovePrompts, setShowImprovePrompts] = useState(false);
+  const [documentImprovement, setDocumentImprovement] = useState<{ style: StudyStyle; target: ImproveTarget } | null>(null);
   const [quickImproveStyles, setQuickImproveStyles] = useState<StudyStyle[]>([]);
   const [selectionImprove, setSelectionImprove] = useState<{ x: number; y: number; target: ImproveTarget } | null>(null);
   const [selectionToolbar, setSelectionToolbar] = useState<HTMLElement | null>(null);
@@ -402,7 +403,6 @@ export function StudyEditor({
       if (from >= 0 || (!raw && snapshot)) return { from: Math.max(0, from), to: Math.max(0, from) + selection.length, text: selection, scope: 'selection', visual: !raw, range: snapshot?.range };
     }
     if (!allowFallback) return null;
-    if (!window.confirm(t('No hay texto seleccionado. ¿Quieres mejorar el documento completo?'))) return null;
     return { from: 0, to: draft.length, text: draft, scope: 'document' };
   };
 
@@ -969,7 +969,7 @@ export function StudyEditor({
         <div className={`editorial-writing-column relative min-w-0 flex-1 overflow-hidden ${split ? 'grid grid-cols-2 divide-x divide-neutral-800' : ''}`}>
           <div className="editorial-improvement-feedback">
       {improveStreamingStyleId && <section data-testid="study-improve-streaming" className="editorial-improvement-preview" aria-label={t('Mejorando texto…')}><header><Spinner label={t('Mejorando texto…')} /><span>{quickImproveStyles.find((style) => style.id === improveStreamingStyleId)?.name}</span><button data-testid="study-improve-cancel" onClick={() => { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); }}>{t('Cancelar')}</button></header><p data-testid="study-improve-preview" aria-live="off">{improvePreview || t('Preparando…')}</p></section>}
-      {lastImprovement && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {lastImprovement && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
           <div className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
             <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={Boolean(improveStreamingStyleId)} />
@@ -1147,7 +1147,22 @@ export function StudyEditor({
           onCancel={() => setTextDialog(null)}
         />
       )}
-      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => setShowImprovePrompts(false)} onToolbarChanged={setQuickImproveStyles} onApply={prompt => { setShowImprovePrompts(false); const target = improveTargetRef.current ?? resolveImproveSelection(true); if (target) void runQuickImprovement(prompt, target); }} />, document.body)}
+      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => setShowImprovePrompts(false)} onToolbarChanged={setQuickImproveStyles} onApply={prompt => {
+        const target = improveTargetRef.current ?? resolveImproveSelection(true);
+        setShowImprovePrompts(false);
+        if (!target) return;
+        // Keep the original selection and text while the dialog closes. Native
+        // WKWebView confirmations can be suppressed during that focus change.
+        if (target.scope === 'document') setDocumentImprovement({ style: prompt, target });
+        else void runQuickImprovement(prompt, target);
+      }} />, document.body)}
+      {documentImprovement && <ConfirmModal title={t('Mejorar documento completo')}
+        message={t('No hay texto seleccionado. ¿Quieres mejorar el documento completo?')}
+        confirmLabel={t('Mejorar documento completo')} autoFocusConfirm={false}
+        onCancel={() => setDocumentImprovement(null)} onConfirm={() => {
+          const pending = documentImprovement; setDocumentImprovement(null);
+          void runQuickImprovement(pending.style, pending.target);
+        }} />}
     </div>
   );
 }

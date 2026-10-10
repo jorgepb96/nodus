@@ -44,6 +44,10 @@ export interface DeepResearchQueueVault {
 export interface DeepResearchJobInput {
   request: DeepResearchRequest;
   origin: DeepResearchJobOrigin;
+  /** Trusted owner from the mobile adapter, never inferred from a public space id. */
+  vault?: DeepResearchQueueVault;
+  bridgeJobId?: string;
+  requireExisting?: boolean;
   /** Store the finished report as a Nodus writing draft. */
   save: boolean;
   /** Draft title; the report's own title is used when omitted. */
@@ -51,6 +55,10 @@ export interface DeepResearchJobInput {
 }
 
 export interface DeepResearchQueueDeps {
+  /** Private mobile requests keep their vault and execution boundary even while Desktop switches. */
+  runDesktop?: (work: () => Promise<void>) => Promise<void>;
+  executionVault?: () => DeepResearchQueueVault;
+  runMobile?: (vault: DeepResearchQueueVault, work: () => Promise<void>) => Promise<void>;
   generate: (
     request: DeepResearchRequest,
     onProgress: (progress: DeepResearchProgress) => void,
@@ -78,6 +86,7 @@ export interface DeepResearchPersistedJob {
 }
 
 interface QueuedJob {
+  needsRecovery?: boolean;
   record: DeepResearchJobRecord;
   request: DeepResearchRequest;
   save: boolean;
@@ -100,6 +109,8 @@ const MAX_RETAINED_REPORTS = 5;
 const jobs: QueuedJob[] = [];
 let deps: DeepResearchQueueDeps | null = null;
 let draining = false;
+let executing: QueuedJob | null = null;
+let deliver: (() => void) | null = null;
 let sequence = 0;
 
 export function configureDeepResearchQueue(next: DeepResearchQueueDeps): void {
@@ -213,9 +224,11 @@ function restorePersistedJobs(persisted: DeepResearchPersistedJob[]): void {
     if (!stored?.record?.id || !stored.request?.objective) continue;
     const wasRunning = stored.record.status === 'running';
     jobs.push({
+      needsRecovery: stored.record.origin === 'mobile' && stored.record.status === 'queued',
       record: {
         ...stored.record,
-        status: wasRunning ? 'queued' : stored.record.status,
+        status: wasRunning && stored.record.origin === 'mobile' ? 'failed' : wasRunning ? 'queued' : stored.record.status,
+        error: wasRunning && stored.record.origin === 'mobile' ? 'Mac restarted. Review saved reports before starting this request again.' : stored.record.error,
         progress: wasRunning
           ? {
               phase: 'queued',
@@ -264,14 +277,15 @@ function reportQueuePositions(): void {
 
 function settle(job: QueuedJob, outcome: { report: DeepResearchReport } | { error: string }): void {
   job.record.finishedAt = new Date().toISOString();
+  const resolve = job.resolve, reject = job.reject;
+  const complete = () => { if ('report' in outcome) resolve?.(outcome.report); else reject?.(new Error(outcome.error)); };
+  if (executing === job) deliver = complete; else complete();
   if ('report' in outcome) {
     job.record.status = 'completed';
     job.report = outcome.report;
-    job.resolve?.(outcome.report);
   } else {
     if (job.record.status !== 'cancelled') job.record.status = 'failed';
     job.record.error = outcome.error;
-    job.reject?.(new Error(outcome.error));
   }
   job.resolve = null;
   job.reject = null;
@@ -296,7 +310,7 @@ function vaultChangedMessage(job: QueuedJob, current: DeepResearchQueueVault): s
 }
 
 function enqueueJob(input: DeepResearchJobInput, waiter: Pick<QueuedJob, 'listener' | 'resolve' | 'reject'>): QueuedJob {
-  const vault = requireDeps().activeVault();
+  const vault = input.vault ?? requireDeps().activeVault();
   const deepResearchVersion = parseDeepResearchRequestVersion(input.request.deepResearchVersion);
   // A complete study guide is validated before it waits in the lane (an empty
   // selection fails now, not minutes later) and gets its run id here, so a job
@@ -306,6 +320,7 @@ function enqueueJob(input: DeepResearchJobInput, waiter: Pick<QueuedJob, 'listen
     record: {
       id: `drj-${Date.now()}-${++sequence}`,
       origin: input.origin,
+      ...(input.origin === 'mobile' && input.bridgeJobId ? { bridgeJobId: input.bridgeJobId } : {}),
       vaultId: vault.id,
       vaultName: vault.name,
       objective: input.request.objective,
@@ -351,6 +366,15 @@ function enqueueJob(input: DeepResearchJobInput, waiter: Pick<QueuedJob, 'listen
 
 /** Queue a report and return immediately. Used by MCP, where the caller polls. */
 export function enqueueDeepResearchJob(input: DeepResearchJobInput): DeepResearchJobRecord {
+  if (input.origin === 'mobile' && input.bridgeJobId) {
+    const existing = jobs.find(job => job.record.bridgeJobId === input.bridgeJobId && job.record.vaultId === input.vault?.id);
+    if (existing) {
+      existing.needsRecovery = false;
+      void drain();
+      return { ...existing.record };
+    }
+    if (input.requireExisting) throw new Error('The original research job is unavailable. Review saved reports before starting a new request.');
+  }
   const job = enqueueJob(input, { listener: null, resolve: null, reject: null });
   const index = jobs.indexOf(job);
   return { ...job.record, ahead: job.record.status === 'queued' ? aheadOf(index) : null };
@@ -392,10 +416,10 @@ export function cancelDeepResearchJob(id: string): boolean {
 }
 
 /** Forget the finished tail (completed, failed and cancelled alike). */
-export function clearFinishedDeepResearchJobs(): number {
+export function clearFinishedDeepResearchJobs(vaultId?: string): number {
   let removed = 0;
   for (let i = jobs.length - 1; i >= 0; i--) {
-    if (!terminal(jobs[i].record.status)) continue;
+    if (!terminal(jobs[i].record.status) || (vaultId && jobs[i].record.vaultId !== vaultId)) continue;
     jobs.splice(i, 1);
     removed += 1;
   }
@@ -418,11 +442,14 @@ export function cancelDeepResearchJobsForOtherVaults(activeVaultId: string): num
 async function drain(): Promise<void> {
   if (draining) return;
   const active = requireDeps().activeVault();
-  const job = jobs.find((entry) => entry.record.status === 'queued' && entry.record.vaultId === active.id);
+  const job = jobs.find((entry) => !entry.needsRecovery && entry.record.status === 'queued' && (entry.record.vaultId === active.id || (entry.record.origin === 'mobile' && requireDeps().runMobile)));
   if (!job) return;
-  draining = true;
+  draining = true; executing = job;
 
   try {
+    const run = async () => {
+    const executionVault = () => job.record.origin === 'mobile' && requireDeps().executionVault ? requireDeps().executionVault!() : requireDeps().activeVault();
+    const active = executionVault();
     // The vault may have changed while this job waited its turn. Running it now would
     // research a corpus nobody asked about, so it is cancelled instead.
     if (active.id !== job.record.vaultId) {
@@ -457,7 +484,7 @@ async function drain(): Promise<void> {
 
       // Checked again on the way out: a switch mid-generation would otherwise save
       // this report as a draft of the vault that is open *now*.
-      const afterwards = requireDeps().activeVault();
+      const afterwards = executionVault();
       if (afterwards.id !== job.record.vaultId) {
         settle(job, { error: vaultChangedMessage(job, afterwards) });
         return;
@@ -485,10 +512,16 @@ async function drain(): Promise<void> {
           : messageFromError(error),
       });
     }
+    };
+    if (job.record.origin === 'mobile' && requireDeps().runMobile) await requireDeps().runMobile!({ id: job.record.vaultId, name: job.record.vaultName }, run);
+    else if (requireDeps().runDesktop) await requireDeps().runDesktop!(run);
+    else await run();
   } finally {
     draining = false;
+    const complete = deliver; deliver = null; executing = null;
     reportQueuePositions();
     notifyChange();
+    complete?.();
     void drain();
   }
 }
@@ -497,6 +530,6 @@ async function drain(): Promise<void> {
 export function __resetDeepResearchQueueForTest(): void {
   jobs.length = 0;
   deps = null;
-  draining = false;
+  draining = false; executing = null; deliver = null;
   sequence = 0;
 }

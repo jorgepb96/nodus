@@ -45,7 +45,7 @@ import { startInboxPolling, stopInboxPolling } from './serverSync/inboxPoller';
 import { startReplicaSync, stopReplicaSync } from './serverSync/replicaService';
 import { killMcpTunnelSync, startMcpServer, startMcpTunnelIfConfigured, stopMcpServer } from './mcp';
 import { killLocalServerSync, startLocalServerIfEnabled } from './localServer/process';
-import { stopDesktopBridge } from './desktopBridge/server';
+import { resumeDesktopBridge, stopDesktopBridge } from './desktopBridge/server';
 import { holdAwake, releaseAllPower } from './localServer/power';
 import { setCopilotWindowProvider, startCopilotServer, stopCopilotServer } from './copilot/server';
 import { setZoteroPluginWindowProvider, startZoteroPluginServer, stopZoteroPluginServer } from './zotero-plugin/server';
@@ -1095,6 +1095,10 @@ app.whenReady().then(async () => {
   stopDocumentaryPreparation = closeDocumentaryPreparation;
   stopResearchZotero = (await import('./mcp/researchZotero')).closeResearchZotero;
   await initializeDocumentaryPreparation();
+  // Existing mobile grants are an explicit connection, including in an isolated
+  // acceptance workspace. Reopen their endpoint before skipping integrations and
+  // background generation; this does not create a grant or a pairing offer.
+  void resumeDesktopBridge();
   if (process.env.NODUS_ISOLATED_ROOT || process.env.NODUS_STELLAR_PREVIEW === '1') return;
   // Existing installs may have one full database copy per historical schema update.
   // Queue every registered vault after the window exists; the utility worker applies

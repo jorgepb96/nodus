@@ -15,7 +15,8 @@
     "better-sqlite3": "^12.11.1",
     "esbuild": "^0.28.2",
     "pdf-lib": "^1.17.1",
+    "playwright-core": "1.61.1",
     "subset-font": "^2.7.0",
-    "playwright-core": "1.61.1"
+    "ws": "^8.22.0"
   }
 }

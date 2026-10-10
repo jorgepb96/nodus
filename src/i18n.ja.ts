@@ -83,7 +83,12 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * Translate endpoint the demo generator already uses, so they carry a
  * translator's review debt and should be treated as a first pass.
  */
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const JA: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["ja"],
+  'No se pudieron cargar los documentos guardados.': '保存済みの文書を読み込めませんでした。',
+  'El catálogo de documentos guardados tiene un formato inválido.': '保存済み文書の一覧の形式が無効です。',
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ja,
   ...CALENDAR_SYNC_TRANSLATIONS["ja"],
@@ -8257,6 +8262,8 @@ export const JA: Record<string, string> = {
   "Ciencia": "科学",
   "Arte": "アート",
   "Favoritos": "お気に入り",
+  "Dispositivos vinculados": "リンク済みのデバイス",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device} がリンクされました。モバイル端末からワークスペースを利用できます。",
   "Conexión móvil": "モバイル接続",
   "Navegador web": "Webブラウザ",
   "App iPhone–iPad": "iPhone–iPadアプリ",
@@ -8264,4 +8271,30 @@ export const JA: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "ネイティブ接続は利用できません。macOSとローカルネットワークの許可が必要です。",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter で読み取ってください。コンピューターとスマートフォンを同じローカルネットワークに接続してください。",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "アプリへの接続を利用できません。ネットワーク接続を確認し、プレゼンテーションを再開してください。",
+  "Móvil": "モバイル",
+  "Pedido desde el móvil": "モバイルからのリクエスト",
+  "Título del informe": "レポートのタイトル",
+  "Ver título completo": "タイトル全体を表示",
+  "Datos del informe": "レポートの詳細",
+  "Opciones del informe": "レポートのオプション",
+  "Generación cancelada.": "生成をキャンセルしました。",
+  "Contenido del informe": "レポートの内容",
+  "Renovar conexión": "接続を更新",
+  "Nueva vinculación": "新しいペアリング",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "既存の接続を更新しても、保管庫、権限、ローカルデータは保持されます。",
+  "Buscar dispositivos": "端末を検索",
+  "No hay dispositivos que coincidan con la búsqueda.": "検索に一致する端末はありません。",
+  "Todavía no hay dispositivos vinculados.": "連携済みの端末はまだありません。",
+  "Vinculado": "連携済み",
+  "Última actividad": "最終アクティビティ",
+  "Conexión caducada": "接続の有効期限切れ",
+  "Renovar conexión de {device}": "{device} の接続を更新",
+  "Revocar conexión de {device}": "{device} の接続を解除",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "この端末は、この接続のすべての保管庫と権限へのアクセスを失います。Nodus から再度連携できます。",
+  "Servidor avanzado": "高度なサーバー設定",
+  "Vincular con mi Nodus": "自分の Nodus を連携",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "QR を読み取るか Nodus モバイルにコードを入力して、ワークスペース全体を接続します。",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Nodus を開いたままにし、両方の端末を同じネットワークか Tailscale などの VPN に接続してください。Live はこの Mac のモデルを使用します。",
+  "Todo tu workspace": "ワークスペース全体",
+  "Generar código y QR": "コードと QR を生成",
 };

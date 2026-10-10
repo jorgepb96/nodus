@@ -78,7 +78,12 @@ import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 
 /** Complete static Turkish interface table; coverage prohibits runtime fallbacks. */
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const TR: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["tr"],
+  'No se pudieron cargar los documentos guardados.': 'Kaydedilen belgeler yüklenemedi.',
+  'El catálogo de documentos guardados tiene un formato inválido.': 'Kaydedilen belge kataloğunun biçimi geçersiz.',
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.tr,
   ...CALENDAR_SYNC_TRANSLATIONS["tr"],
@@ -8646,6 +8651,8 @@ export const TR: Record<string, string> = {
   "Ciencia": "Bilim",
   "Arte": "Sanat",
   "Favoritos": "Favoriler",
+  "Dispositivos vinculados": "Bağlı cihazlar",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device} bağlandı. Artık çalışma alanınızı mobil cihazınızdan kullanabilirsiniz.",
   "Conexión móvil": "Mobil bağlantı",
   "Navegador web": "Web tarayıcısı",
   "App iPhone–iPad": "iPhone–iPad uygulaması",
@@ -8653,4 +8660,30 @@ export const TR: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "Yerel uygulama bağlantısı kullanılamıyor. macOS ve yerel ağ izni gerekir.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter ile tarayın. Bilgisayarı ve telefonu aynı yerel ağa bağlayın.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "Uygulama bağlantısı kullanılamıyor. Ağ bağlantısını kontrol edip sunumu yeniden başlatın.",
+  "Móvil": "Mobil",
+  "Pedido desde el móvil": "Mobil cihazdan istendi",
+  "Título del informe": "Rapor başlığı",
+  "Ver título completo": "Tam başlığı görüntüle",
+  "Datos del informe": "Rapor bilgileri",
+  "Opciones del informe": "Rapor seçenekleri",
+  "Generación cancelada.": "Oluşturma iptal edildi.",
+  "Contenido del informe": "Rapor içeriği",
+  "Renovar conexión": "Bağlantıyı yenile",
+  "Nueva vinculación": "Yeni eşleştirme",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "Mevcut bağlantı yenilenirken kasalar, izinler ve yerel veriler korunur.",
+  "Buscar dispositivos": "Cihaz ara",
+  "No hay dispositivos que coincidan con la búsqueda.": "Aramayla eşleşen cihaz yok.",
+  "Todavía no hay dispositivos vinculados.": "Henüz bağlı cihaz yok.",
+  "Vinculado": "Bağlandı",
+  "Última actividad": "Son etkinlik",
+  "Conexión caducada": "Bağlantının süresi doldu",
+  "Renovar conexión de {device}": "{device} bağlantısını yenile",
+  "Revocar conexión de {device}": "{device} bağlantısını iptal et",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "Bu cihaz, bu bağlantıdaki tüm kasalara ve izinlere erişimini kaybeder. Nodus üzerinden yeniden bağlayabilirsiniz.",
+  "Servidor avanzado": "Gelişmiş sunucu",
+  "Vincular con mi Nodus": "Nodus’umu bağla",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "Tüm çalışma alanınızı bağlamak için QR’ı tarayın veya kodu Nodus mobilde girin.",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Nodus’u açık tutun ve iki cihazı aynı ağa veya Tailscale gibi bir VPN’e bağlayın. Live, bu Mac’in modellerini kullanır.",
+  "Todo tu workspace": "Tüm çalışma alanınız",
+  "Generar código y QR": "Kod ve QR oluştur",
 };

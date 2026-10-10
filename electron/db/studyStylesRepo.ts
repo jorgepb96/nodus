@@ -264,8 +264,7 @@ export function resolveStudyStyleDefault(subjectId?: string | null, documentKind
   return 'builtin:academic';
 }
 
-export function recordStudyImprovement(input: Omit<StudyImprovementLog, 'id' | 'createdAt'>): StudyImprovementLog {
-  const id = crypto.randomUUID();
+export function recordStudyImprovement(input: Omit<StudyImprovementLog, 'id' | 'createdAt'>, id: string = crypto.randomUUID()): StudyImprovementLog {
   const createdAt = now();
   getDb().prepare(`INSERT INTO study_improvement_log
     (id, document_id, note_id, style_id, scope, mode, level, length_mode, model_provider, model_name, original_hash,

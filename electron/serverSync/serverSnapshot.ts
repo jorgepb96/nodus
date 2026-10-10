@@ -359,15 +359,16 @@ function tableNames(db: Database.Database): Set<string> {
   return new Set((db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map((row) => row.name));
 }
 
-function safeValue(column: string, value: unknown): unknown {
+function safeValue(column: string, value: unknown, table?: string): unknown {
   const normalized = column.toLowerCase();
   // `secret_id` is the stable foreign key of a fictional Worldbuilding entity,
   // not credential material. Its prose/content still passes through the normal
   // publication policy, but removing the id would break `secret_knowers` and
   // every reader-side relation to that entity.
   const fictionalSecretId = normalized === 'secret_id';
+  const dictionaryRelevance = table === 'dictionary_evidence' && normalized === 'score';
   if (
-    (!fictionalSecretId && DENIED_COLUMN_PATTERN.test(normalized)) ||
+    (!fictionalSecretId && !dictionaryRelevance && DENIED_COLUMN_PATTERN.test(normalized)) ||
     OMIT_COLUMNS.has(normalized) ||
     normalized.endsWith('_path') ||
     /(^|_)(api_key|access_token|refresh_token|password|credential|credentials)(_|$)/.test(normalized) ||
@@ -398,7 +399,7 @@ export function stripUnpublishableColumns(row: Record<string, unknown>): Record<
 function readTable(db: Database.Database, table: string): Record<string, unknown>[] {
   return (db.prepare(`SELECT * FROM "${table.replace(/"/g, '""')}"`).all() as Record<string, unknown>[]).map((row) =>
     Object.fromEntries(Object.entries(row).flatMap(([column, value]) => {
-      const safe = safeValue(column, value);
+      const safe = safeValue(column, value, table);
       return safe === undefined ? [] : [[column, safe]];
     }))
   );

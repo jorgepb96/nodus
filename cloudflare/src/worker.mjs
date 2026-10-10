@@ -62,6 +62,8 @@ import {
 } from './oauth.mjs';
 import { adminAction, dashboard, login, loginPage, recoveryKeyIndex, recoveryKeyManifest, recoveryKeyObject, recoveryKeyRows, recoveryKeySnapshot, recoveryManifest, recoveryObject, recoveryRows } from './admin.mjs';
 import { handleMcp } from './mcp.mjs';
+import { handleBridgeRelay } from './bridgeRelay.mjs';
+export { NodusBridgeRelay } from './bridgeRelay.mjs';
 
 function method(request, allowed) {
   if (!allowed.includes(request.method)) throw new HttpError(405, 'method_not_allowed', `Use ${allowed.join(' or ')}.`);
@@ -85,11 +87,11 @@ async function capabilityDocument(env, request) {
     snapshotVersions: [1, 2], assets: true, libraryDocuments: true, mutations: true, vectors: true,
     spaceActions: { schemaVersion: 1, statuses: ['queued', 'claimed', 'running', 'applied', 'refused', 'failed', 'cancelled'] },
     accountLibrarySync: { schemaVersion: 1, immutableVersions: true, objects: 'sha256-r2', maxRecordBatch: 12 },
-    desktopBridge: { protocol: '/bridge/v1', relay: false, transport: 'private-tls' },
+    desktopBridge: { protocol: '/bridge/v2', relay: Boolean(env.BRIDGE_RELAY), relayProtocolVersion: 1, transport: 'end-to-end-encrypted-websocket', endpoint: '/api/v1/bridge-relay' },
     resources: { api: `${new URL(request.url).origin}/api/v1`, mcp: `${new URL(request.url).origin}/mcp` },
     publication: { generations: true, resumable: true, tableChunkRows: TABLE_CHUNK_ROWS, tableChunkBytes: TABLE_CHUNK_BYTES, objectPartBytes: OBJECT_PART_BYTES, maxMutationBytes: MAX_MUTATION_BYTES, maxMutationBatch: MAX_MUTATION_BATCH },
     storage: { structured: 'd1', objects: 'r2', vectorSearch: vectorizeDimensions.length ? ['vectorize', 'r2-exact', 'lexical'] : ['r2-exact', 'lexical'], vectorizeDimensions },
-    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, mutations: true, spaceActions: true, desktopBridgeRelay: false, nodiNotes: true, oauth: true, mcp: true, recovery: true },
+    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, mutations: true, spaceActions: true, desktopBridgeRelay: Boolean(env.BRIDGE_RELAY), nodiNotes: true, oauth: true, mcp: true, recovery: true },
     maxAssetBytes: 8 * 1024 * 1024, maxSpaceAssetBytes: 1024 * 1024 * 1024,
     maxLibraryPackageBytes: 128 * 1024 * 1024, maxSpaceLibraryBytes: 4 * 1024 * 1024 * 1024,
     maxSnapshotBytes: 512 * 1024 * 1024, maxSnapshotJsonBytes: 512 * 1024 * 1024,
@@ -101,6 +103,7 @@ async function api(env, request, segments) {
   const apiResource = `${new URL(request.url).origin}/api/v1`;
   const apiAuthorize = (options) => authorize(env, request, { resource: apiResource, ...options });
   const [head, ...rest] = segments;
+  if (head === 'bridge-relay') return handleBridgeRelay(env, request, rest, apiAuthorize);
   if (head === 'capabilities') { method(request, ['GET']); return json(await capabilityDocument(env, request)); }
   if (head === 'bootstrap') { method(request, ['POST']); return json(await bootstrap(env, request), 201); }
   if (head === 'pair') { method(request, ['POST']); return json(await pairDevice(env, request)); }

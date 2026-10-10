@@ -333,22 +333,41 @@ function MissingPanel({ children }: { children: React.ReactNode }) {
   return <div className="grid min-h-72 place-items-center rounded-xl border border-dashed border-neutral-800 p-8 text-center"><div><Icon name="warning" size={22} className="mx-auto text-amber-400" /><p className="mt-3 text-sm text-neutral-400">{children}</p></div></div>;
 }
 
+function useSourceFailure() {
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const fail = useCallback((value: unknown) => setError(value instanceof Error ? value.message : String(value)), []);
+  const reset = useCallback(() => setError(null), []);
+  const retry = useCallback(() => { setError(null); setAttempt(value => value + 1); }, []);
+  return { error, attempt, fail, reset, retry };
+}
+
+function SourceError({ message, retry }: { message: string; retry: () => void }) {
+  return <div role="alert" className="space-y-3 rounded-xl border border-amber-500/30 p-5" data-testid="source-citation-error">
+    <p className="text-sm font-medium">{t('No se pudo cargar la fuente.')}</p>
+    <p className="break-words text-sm text-neutral-500">{message}</p>
+    <button type="button" className="btn btn-ghost" onClick={retry}>{t('Reintentar')}</button>
+  </div>;
+}
+
 function IdeaPanel({ globalId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { globalId: string }) {
   const [detail, setDetail] = useState<IdeaDetail | null>(null);
   const [edges, setEdges] = useState<EdgeDetail[]>([]);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
 
   useEffect(() => {
     let active = true;
-    setDetail(null); setEdges([]); setMissing(false);
+    setDetail(null); setEdges([]); setMissing(false); failure.reset();
     void Promise.all([window.nodus.getIdeaDetail(globalId), window.nodus.getIdeaEdges(globalId)]).then(([next, nextEdges]) => {
       if (!active) return;
       if (!next) { setMissing(true); return; }
       setDetail(next); setEdges(nextEdges); onTitle(next.idea.label);
-    });
+    }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [globalId, onTitle]);
+  }, [globalId, onTitle, failure.attempt, failure.fail, failure.reset]);
 
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró la idea citada en el corpus actual.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
 
@@ -392,23 +411,41 @@ function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork 
   const [ideas, setIdeas] = useState<IdeaByWorkPage | null>(null);
   const [synthesis, setSynthesis] = useState<WorkIdeaSynthesis | null>(null);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
+  const [ideasError, setIdeasError] = useState<string | null>(null);
+  const currentWork = useRef(nodusId); currentWork.current = nodusId;
 
   useEffect(() => {
     let active = true;
     setWork(null); setMeta(null); setSummary(null); setIdeas(null); setSynthesis(null); setMissing(false);
+    setLoadingIdeas(false); setIdeasError(null); failure.reset();
     void window.nodus.getWork(nodusId).then(async (next) => {
       if (!active) return;
       if (!next) { setMissing(true); return; }
-      setWork(next); onTitle(next.title);
       const [nextMeta, nextSummary, nextIdeas, nextSynthesis] = await Promise.all([
         window.nodus.getWorkMeta(nodusId), window.nodus.getWorkSummary(nodusId), window.nodus.getIdeasByWork(nodusId, 50, 0), window.nodus.getWorkIdeaSynthesis(nodusId),
       ]);
       if (!active) return;
-      setMeta(nextMeta); setSummary(nextSummary); setIdeas(nextIdeas); setSynthesis(nextSynthesis);
-    });
+      setWork(next); onTitle(next.title); setMeta(nextMeta); setSummary(nextSummary); setIdeas(nextIdeas); setSynthesis(nextSynthesis);
+    }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [nodusId, onTitle]);
+  }, [nodusId, onTitle, failure.attempt, failure.fail, failure.reset]);
 
+  const loadMoreIdeas = async () => {
+    if (!ideas || loadingIdeas) return;
+    const id = nodusId, offset = ideas.ideas.length;
+    setLoadingIdeas(true); setIdeasError(null);
+    try {
+      const next = await window.nodus.getIdeasByWork(id, 50, offset);
+      if (currentWork.current !== id) return;
+      if (!next.ideas.length && offset < next.total) throw new Error(t('La obra enlaza ideas que no están disponibles en este corpus.'));
+      setIdeas(previous => previous ? { total: next.total, ideas: [...previous.ideas, ...next.ideas] } : previous);
+    } catch (error) { if (currentWork.current === id) setIdeasError(error instanceof Error ? error.message : String(error)); }
+    finally { if (currentWork.current === id) setLoadingIdeas(false); }
+  };
+
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró la obra citada.')}</MissingPanel>;
   if (!work) return <LoadingPanel />;
 
@@ -433,9 +470,11 @@ function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork 
       </Section>}
 
       <Section icon="bulb" title={t('Ideas de la obra')} count={ideas?.total ?? work.ideaCount}>
+        {ideas && ideas.total > ideas.ideas.length && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-neutral-800 p-2"><p className="text-xs text-neutral-500">{tx('Se muestran {n} ideas', { n: ideas.ideas.length })} / {ideas.total}</p><button type="button" className="btn btn-ghost" data-testid="source-citation-load-more-ideas" disabled={loadingIdeas} onClick={() => void loadMoreIdeas()}>{loadingIdeas ? t('Cargando…') : t('Cargar más')}</button></div>}
+        {ideasError && <p role="alert" className="mb-3 text-sm text-amber-600 dark:text-amber-300">{ideasError}</p>}
         {ideas?.ideas.length ? <div className="space-y-2">{ideas.ideas.map((idea) => (
           <button key={idea.global_id} className="group w-full rounded-lg border border-neutral-800 bg-neutral-950/55 p-3 text-left hover:border-indigo-500/50" onClick={() => onOpenTarget({ kind: 'idea', id: idea.global_id }, idea.label)}><span className="flex items-center gap-2"><Badge color="indigo">{t(NODE_LABELS[idea.type]) ?? idea.type}</Badge><span className="text-[10px] text-neutral-600">{idea.role}</span></span><span className="mt-2 block text-sm font-medium text-neutral-200 group-hover:text-indigo-700 dark:group-hover:text-indigo-200">{idea.label}</span><span className="mt-1 block text-xs leading-5 text-neutral-500">{idea.statement}</span></button>
-        ))}{(ideas?.total ?? 0) > ideas.ideas.length && <p className="pt-1 text-center text-[10px] text-neutral-600">{tx('Se muestran {n} ideas', { n: ideas.ideas.length })}</p>}</div> : <EmptyLine>{t('Esta obra todavía no tiene ideas extraídas.')}</EmptyLine>}
+        ))}</div> : <EmptyLine>{t('Esta obra todavía no tiene ideas extraídas.')}</EmptyLine>}
       </Section>
 
       {(work.themes.length > 0 || meta?.doi || meta?.url) && <Section icon="info" title={t('Ficha bibliográfica')}>
@@ -449,18 +488,20 @@ function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork 
 function AuthorPanel({ authorId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { authorId: string }) {
   const [dossier, setDossier] = useState<AuthorDossier | null>(null);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
 
   useEffect(() => {
     let active = true;
-    setDossier(null); setMissing(false);
+    setDossier(null); setMissing(false); failure.reset();
     void window.nodus.getAuthorDossier(authorId).then((next) => {
       if (!active) return;
       if (!next) { setMissing(true); return; }
       setDossier(next); onTitle(next.fullName || next.author.name);
-    });
+    }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [authorId, onTitle]);
+  }, [authorId, onTitle, failure.attempt, failure.fail, failure.reset]);
 
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró la ficha del autor.')}</MissingPanel>;
   if (!dossier) return <LoadingPanel />;
 
@@ -495,12 +536,14 @@ function AuthorPanel({ authorId, onOpenTarget, onTitle, authors, onOpenLibraryWo
 function GapPanel({ gapId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { gapId: string }) {
   const [detail, setDetail] = useState<GapDetail | null>(null);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
   useEffect(() => {
     let active = true;
-    setDetail(null); setMissing(false);
-    void window.nodus.getGapDetail(gapId).then((next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(`${t('Hueco')}: ${t(GAP_LABELS[next.gap.kind])}`); });
+    setDetail(null); setMissing(false); failure.reset();
+    void window.nodus.getGapDetail(gapId).then((next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(`${t('Hueco')}: ${t(GAP_LABELS[next.gap.kind])}`); }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [gapId, onTitle]);
+  }, [gapId, onTitle, failure.attempt, failure.fail, failure.reset]);
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró el hueco citado.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
   return (
@@ -517,12 +560,14 @@ function ContradictionPanel({ edgeId, onOpenTarget, onTitle, authors, onOpenLibr
   const [detail, setDetail] = useState<EdgeDetail | null>(null);
   const [sourceWork, setSourceWork] = useState<WorkView | null>(null);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
   useEffect(() => {
     let active = true;
-    setDetail(null); setSourceWork(null); setMissing(false);
-    void window.nodus.getEdgeDetail(edgeId).then(async (next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(`${next.fromLabel} × ${next.toLabel}`); if (next.edge.source_work) { const work = await window.nodus.getWork(next.edge.source_work); if (active) setSourceWork(work); } });
+    setDetail(null); setSourceWork(null); setMissing(false); failure.reset();
+    void window.nodus.getEdgeDetail(edgeId).then(async (next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(`${next.fromLabel} × ${next.toLabel}`); if (next.edge.source_work) { const work = await window.nodus.getWork(next.edge.source_work); if (active) setSourceWork(work); } }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [edgeId, onTitle]);
+  }, [edgeId, onTitle, failure.attempt, failure.fail, failure.reset]);
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró la contradicción citada.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
   return (
@@ -538,12 +583,14 @@ function ContradictionPanel({ edgeId, onOpenTarget, onTitle, authors, onOpenLibr
 function PassagePanel({ passageId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { passageId: string }) {
   const [detail, setDetail] = useState<PassageDetail | null>(null);
   const [missing, setMissing] = useState(false);
+  const failure = useSourceFailure();
   useEffect(() => {
     let active = true;
-    setDetail(null); setMissing(false);
-    void window.nodus.getPassage(passageId).then((next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(next.work.title); });
+    setDetail(null); setMissing(false); failure.reset();
+    void window.nodus.getPassage(passageId).then((next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(next.work.title); }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
-  }, [passageId, onTitle]);
+  }, [passageId, onTitle, failure.attempt, failure.fail, failure.reset]);
+  if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró el pasaje citado. Puede haberse reindexado.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;
   const page = detail.page_number ?? parsePageNumber(detail.page_label);

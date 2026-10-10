@@ -596,11 +596,15 @@ function folderSubtree(folders, rootId) {
 }
 
 function isDeepResearchDraft(row) {
-  try {
-    return JSON.parse(row.brief_json || '{}')?.kind === 'deep_research';
-  } catch {
-    return false;
-  }
+  const brief = JSON.parse(row.brief_json || '{}');
+  if (!brief || typeof brief !== 'object' || Array.isArray(brief)) throw new Error('invalid_saved_report');
+  return brief.kind === 'deep_research';
+}
+
+function readResearchDraft(row) {
+  const draft = JSON.parse(row.draft_json || 'null');
+  if (!draft || typeof draft !== 'object' || Array.isArray(draft)) throw new Error('invalid_saved_report');
+  return draft;
 }
 
 function draftSummary(row) {
@@ -2244,7 +2248,19 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
     if (head === 'deep-research') {
       const snapshot = requireSnapshot(res, json, space.id);
       if (!snapshot) return true;
-      const drafts = rows(snapshot, 'writing_saved_drafts').filter(isDeepResearchDraft);
+      let drafts;
+      try {
+        drafts = rows(snapshot, 'writing_saved_drafts').filter(isDeepResearchDraft);
+        // Validate before pagination or ETag handling: an unreadable row must never
+        // disappear from a supposedly complete catalogue, including later pages.
+        for (const row of drafts) readResearchDraft(row);
+      } catch {
+        json(res, 422, {
+          error: 'invalid_saved_reports',
+          error_description: 'Some saved reports have an invalid format. Their original contents are preserved; the catalogue could not be loaded completely.',
+        });
+        return true;
+      }
       const readAt = new Map(rows(snapshot, 'writing_draft_reads')
         .map((entry) => [String(entry.draft_id), entry.updated_at ?? null]));
       const assets = new Map(
@@ -2260,8 +2276,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
       const wanted = decodeURIComponent(rest[0]);
       const row = drafts.find((candidate) => String(candidate.id) === wanted);
       if (!row) return missing(res, json);
-      let draft = null;
-      try { draft = JSON.parse(row.draft_json || 'null'); } catch { draft = null; }
+      const draft = readResearchDraft(row);
 
       // ── The styled document ───────────────────────────────────────────────
       //

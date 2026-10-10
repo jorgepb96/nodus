@@ -1,6 +1,7 @@
 import { currentResearchRequestBudget, researchPromptUpperBound } from './researchRequestBudget';
 import { documentedContextWindow } from '@shared/providerContextWindows';
 import { withJobThinking } from './thinkingEffort';
+import { generationSignal } from './generationSignal';
 import { researchReasoningBody, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
 import { getSettings } from '../db/settingsRepo';
 import { documentVisualPlanningPrompt } from './documentVisualContext';
@@ -1220,7 +1221,9 @@ async function rawComplete(
   codexReasoning?: CodexReasoningEffort | null
 ): Promise<string> {
   // A Deep Research or Immersion job carries the thinking level chosen in its form.
-  return rawCompleteTransport(model, withJobThinking(model, opts), jsonMode, reasoning, codexReasoning);
+  const signal = generationSignal(opts.signal);
+  signal?.throwIfAborted();
+  return rawCompleteTransport(model, withJobThinking(model, { ...opts, signal }), jsonMode, reasoning, codexReasoning);
 }
 
 async function rawCompleteTransport(
@@ -1916,7 +1919,9 @@ async function rawCompleteStream(
   signal?: AbortSignal,
   codexReasoning?: CodexReasoningEffort | null
 ): Promise<string> {
-  return rawCompleteStreamTransport(model, withJobThinking(model, opts), onDelta, reasoning, signal, codexReasoning);
+  const effectiveSignal = generationSignal(signal);
+  effectiveSignal?.throwIfAborted();
+  return rawCompleteStreamTransport(model, withJobThinking(model, opts), onDelta, reasoning, effectiveSignal, codexReasoning);
 }
 
 async function rawCompleteStreamTransport(

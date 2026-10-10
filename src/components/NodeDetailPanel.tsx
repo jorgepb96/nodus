@@ -88,7 +88,7 @@ export function NodeDetailPanel({
   onEditIdea?: (ideaId: string) => void;
   /** Called after the user sets/clears an audit verdict, so the host view can refresh its graph. */
   onEdgeFeedback?: (verdict: 'rejected' | 'confirmed' | null) => void;
-  onOpenEvidence?: (sourceRef: string, location: string | null) => void;
+  onOpenEvidence?: (sourceRef: string, location: string | null, quote?: string) => void;
   showEdgeAudit?: boolean;
   onSaveIdea?: (detail: IdeaDetail) => Promise<void>;
   onSaveEdge?: (detail: EdgeDetail) => Promise<void>;
@@ -157,14 +157,14 @@ export function NodeDetailPanel({
             <Icon name="notebook" size={13} /> {t(savingExternal ? 'Guardando…' : 'Guardar en notas')}
           </button>
         )}
-        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-xs" title={t('Disminuir texto')} onClick={() => onFontChange(-1)}>
+        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-xs" aria-label={t('Disminuir texto')} title={t('Disminuir texto')} onClick={() => onFontChange(-1)}>
           a
         </button>
-        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-sm font-semibold" title={t('Aumentar texto')} onClick={() => onFontChange(1)}>
+        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-sm font-semibold" aria-label={t('Aumentar texto')} title={t('Aumentar texto')} onClick={() => onFontChange(1)}>
           A
         </button>
-        <button className="ml-2 text-neutral-500 hover:text-white" title={t('Cerrar')} onClick={onClose}>
-          ✕
+        <button className="ml-2 inline-flex items-center justify-center text-neutral-500 hover:text-white" data-testid="graph-close-detail" aria-label={t('Cerrar')} title={t('Cerrar')} onClick={onClose}>
+          <Icon name="x" size={18}/>
         </button>
       </div>
       <div className="graph-detail-scroll mt-6 min-h-0 flex-1 overflow-y-auto px-4 pb-4">
@@ -250,7 +250,7 @@ export function NodeDetailPanel({
               <div className="text-xs uppercase text-neutral-500 mb-1">{t('Evidencia anclada')}</div>
               {ideaDetail.evidence.map((ev) => (
                 <blockquote key={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
-                  “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} suffix={` · ${ev.kind}`} onOpen={onOpenEvidence} />
+                  “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} quote={ev.quote} sourceRef={ev.source_ref} pageNumber={ev.page_number} suffix={` · ${ev.kind}`} onOpen={onOpenEvidence} />
                 </blockquote>
               ))}
             </div>
@@ -286,7 +286,7 @@ export function NodeDetailPanel({
           )}
           {edgeDetail.evidence.map((ev) => (
             <blockquote key={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
-              “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} onOpen={onOpenEvidence} />
+              “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} quote={ev.quote} sourceRef={ev.source_ref} pageNumber={ev.page_number} onOpen={onOpenEvidence} />
             </blockquote>
           ))}
           {showEdgeAudit && <EdgeAuditControls edgeDetail={edgeDetail} onEdgeFeedback={onEdgeFeedback} />}
@@ -317,6 +317,7 @@ export function EvidenceLocationLink({
   sourceRef = null,
   pageNumber = null,
   suffix = '',
+  quote,
   onOpen,
 }: {
   nodusId: string;
@@ -324,7 +325,8 @@ export function EvidenceLocationLink({
   sourceRef?: string | null;
   pageNumber?: number | null;
   suffix?: string;
-  onOpen?: (sourceRef: string, location: string | null) => void;
+  quote?: string;
+  onOpen?: (sourceRef: string, location: string | null, quote?: string) => void;
 }) {
   const page = pageNumber ?? parsePageNumber(location);
   if ((!window.nodus && !onOpen) || (page === null && !sourceRef && !onOpen)) {
@@ -336,7 +338,7 @@ export function EvidenceLocationLink({
         className="inline-flex items-center gap-0.5 text-indigo-400 hover:text-indigo-300"
         title={t('Abrir fuente')}
         onClick={() => onOpen
-          ? onOpen(sourceRef ?? nodusId, location)
+          ? onOpen(sourceRef ?? nodusId, location, quote)
           : void openEvidenceAtPage(nodusId, { location, sourceRef, pageNumber: page })}
       >
         <Icon name="external" size={11} /> {location || t('Abrir fuente')}

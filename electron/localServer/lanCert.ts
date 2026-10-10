@@ -59,7 +59,8 @@ export function lanAddresses(): string[] {
       const isPrivate = a === 10
         || (a === 172 && b >= 16 && b <= 31)
         || (a === 192 && b === 168);
-      if (isPrivate) found.add(entry.address);
+      const isTailnet = a === 100 && b >= 64 && b <= 127;
+      if (isPrivate || isTailnet) found.add(entry.address);
     }
   }
   return [...found].sort();

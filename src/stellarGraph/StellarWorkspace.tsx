@@ -81,11 +81,13 @@ export interface StellarWorkspaceProps {
   sidebar?: ReactNode;
   onOpenIdea?(id: string): void;
   onEditIdea?(id: string): void;
-  openEvidence?(ref: string, location: string | null): void;
+  openEvidence?(ref: string, location: string | null, quote?: string): void;
   saveIdea?(detail: IdeaDetail): Promise<void>;
   saveEdge?(detail: EdgeDetail): Promise<void>;
   audit?: boolean;
   baseline?: boolean;
+  /** Native mobile hosts own the app chrome instead of the browser fullscreen API. */
+  onFullscreenChange?(fullscreen: boolean): Promise<void>;
 }
 export function StellarWorkspace(props: StellarWorkspaceProps) {
   return <StellarTabs key={`${props.source.key}:${props.workId || "corpus"}`} {...props} />;
@@ -144,6 +146,7 @@ function StellarTabs(props: StellarWorkspaceProps) {
   const toggleFullscreen = async () => {
     setFullscreenError(false);
     try {
+      if (props.onFullscreenChange) { await props.onFullscreenChange(!fullscreen); setFullscreen(!fullscreen); return; }
       if (document.fullscreenElement === host.current) await document.exitFullscreen();
       else await host.current?.requestFullscreen();
     } catch { setFullscreenError(true); }
@@ -770,7 +773,7 @@ function StellarGraphTab({
               <span> · {tx("{n} ocultas por el límite", { n: hiddenRelations.toLocaleString() })}</span>}
             {workId && <span> / {t("Grafo de la obra")}</span>}
           </div>
-          {!loading && !view.nodes.length && !corpusContext.layer && (
+          {!loading && !error && !view.nodes.length && !corpusContext.layer && (
             <div className="stellar-empty stellar-empty-hint">
               {t(themeId
                 ? "Este tema todavía no anida ninguna idea analizada."

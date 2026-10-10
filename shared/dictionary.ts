@@ -238,6 +238,7 @@ export interface DictionaryEntryDetail {
   proposedVersion: DictionaryVersion | null;
   /** Present only when the latest generation attempt degraded. It is never current. */
   latestDegradedVersion: DictionaryVersion | null;
+  relations?: Array<DictionaryRelation & {entry: Pick<DictionaryEntrySummary, 'id' | 'name'>; direction: 'incoming' | 'outgoing'}>;
 }
 
 export interface DictionaryDuplicateMatch {
@@ -286,4 +287,9 @@ export interface DictionaryRelation {
   status: "suggested" | "confirmed" | "dismissed";
   createdAt: string;
   updatedAt: string;
+}
+
+export function normalizeDictionaryTerm(value: string): string {
+  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
 }

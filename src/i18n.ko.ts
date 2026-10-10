@@ -83,7 +83,12 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * Translate endpoint the demo generator already uses, so they carry a
  * translator's review debt and should be treated as a first pass.
  */
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const KO: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["ko"],
+  'No se pudieron cargar los documentos guardados.': '저장된 문서를 불러올 수 없습니다.',
+  'El catálogo de documentos guardados tiene un formato inválido.': '저장된 문서 목록의 형식이 잘못되었습니다.',
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,
   ...CALENDAR_SYNC_TRANSLATIONS["ko"],
@@ -8257,6 +8262,8 @@ export const KO: Record<string, string> = {
   "Ciencia": "과학",
   "Arte": "예술",
   "Favoritos": "즐겨찾기",
+  "Dispositivos vinculados": "연결된 기기",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device}이(가) 연결되었습니다. 이제 모바일 기기에서 워크스페이스를 사용할 수 있습니다.",
   "Conexión móvil": "모바일 연결",
   "Navegador web": "웹 브라우저",
   "App iPhone–iPad": "iPhone–iPad 앱",
@@ -8264,4 +8271,30 @@ export const KO: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "네이티브 연결을 사용할 수 없습니다. macOS와 로컬 네트워크 권한이 필요합니다.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter로 스캔하세요. 컴퓨터와 휴대폰을 같은 로컬 네트워크에 연결하세요.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "앱 연결을 사용할 수 없습니다. 네트워크 연결을 확인하고 프레젠테이션을 다시 시작하세요.",
+  "Móvil": "모바일",
+  "Pedido desde el móvil": "모바일에서 요청됨",
+  "Título del informe": "보고서 제목",
+  "Ver título completo": "전체 제목 보기",
+  "Datos del informe": "보고서 세부 정보",
+  "Opciones del informe": "보고서 옵션",
+  "Generación cancelada.": "생성이 취소되었습니다.",
+  "Contenido del informe": "보고서 내용",
+  "Renovar conexión": "연결 갱신",
+  "Nueva vinculación": "새 페어링",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "기존 연결을 갱신해도 보관함, 권한 및 로컬 데이터가 유지됩니다.",
+  "Buscar dispositivos": "기기 검색",
+  "No hay dispositivos que coincidan con la búsqueda.": "검색과 일치하는 기기가 없습니다.",
+  "Todavía no hay dispositivos vinculados.": "아직 연결된 기기가 없습니다.",
+  "Vinculado": "연결됨",
+  "Última actividad": "최근 활동",
+  "Conexión caducada": "연결 만료",
+  "Renovar conexión de {device}": "{device} 연결 갱신",
+  "Revocar conexión de {device}": "{device} 연결 해제",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "이 기기는 이 연결의 모든 보관함과 권한에 대한 접근을 잃습니다. Nodus에서 다시 연결할 수 있습니다.",
+  "Servidor avanzado": "고급 서버",
+  "Vincular con mi Nodus": "내 Nodus 연결",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "QR을 스캔하거나 Nodus 모바일에 코드를 입력해 전체 작업 공간을 연결하세요.",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Nodus를 열어 두고 두 기기를 같은 네트워크나 Tailscale 같은 VPN에 연결하세요. Live는 이 Mac의 모델을 사용합니다.",
+  "Todo tu workspace": "전체 작업 공간",
+  "Generar código y QR": "코드 및 QR 생성",
 };

@@ -339,12 +339,24 @@ export function ModelPicker({
     };
     const currentLabel = value ? modelLabel(value) : emptyLabel ? t(emptyLabel) : t('Sin modelo seleccionado');
     const closeAndRestoreFocus = () => { setOpen(false); setQuery(''); triggerRef.current?.focus(); };
+    const closeOnFocusOutside = (destination: EventTarget | null) => {
+      if (destination) {
+        if (!rootRef.current?.contains(destination as Node)) { setOpen(false); setQuery(''); }
+        return;
+      }
+      // WebKit can omit relatedTarget during a popover focus transition. Wait
+      // for focus to settle before treating that transition as leaving the menu.
+      window.setTimeout(() => {
+        const root = rootRef.current;
+        if (root && !root.contains(document.activeElement)) { setOpen(false); setQuery(''); }
+      });
+    };
     const openAndFocusSearch = () => {
       if (disabled) return;
       setOpen(true);
     };
     return <div ref={rootRef} className={`model-picker-menu${compact ? ' compact' : ''} ${className}`} onBlur={(event) => {
-      if (!event.currentTarget.contains(event.relatedTarget as Node)) { setOpen(false); setQuery(''); }
+      closeOnFocusOutside(event.relatedTarget);
     }} onKeyDown={(event) => {
       if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); closeAndRestoreFocus(); }
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
@@ -364,7 +376,7 @@ export function ModelPicker({
         <span>{value ? (triggerModelOnly ? value.model : currentLabel) : currentLabel}</span><Icon name="chevronDown" size={14} />
       </button>
       {open && !disabled && <div ref={popupRef} className="model-picker-options">
-        <label className="model-picker-search">
+        <div className="model-picker-search">
           <Icon name="search" size={13} />
           <input
             ref={searchRef}
@@ -383,10 +395,10 @@ export function ModelPicker({
             aria-label={t('Buscar modelo…')}
             data-testid="model-picker-search"
           />
-        </label>
+        </div>
         <div ref={optionsRef} className="model-picker-list" role="listbox" aria-label={ariaLabel}>
-          {showEmptyOption && <button type="button" role="option" aria-selected={!value} className={!value ? 'selected' : ''} onClick={() => choose(null)}>{emptyOptionLabel}</button>}
-          {filteredModels.map((model) => <button type="button" role="option" aria-selected={sameModel(model, value)} disabled={blocked(model)} title={blocked(model) ? optionText(model) : undefined} className={sameModel(model, value) ? 'selected' : ''} key={serialize(model)} onClick={() => { if (!blocked(model)) choose(model); }}><span>{optionText(model)}</span>{sameModel(model, value) && <Icon name="check" size={13} />}</button>)}
+          {showEmptyOption && <button type="button" role="option" aria-label={emptyOptionLabel} aria-selected={!value} className={!value ? 'selected' : ''} onClick={() => choose(null)}>{emptyOptionLabel}</button>}
+          {filteredModels.map((model) => <button type="button" role="option" aria-label={optionText(model)} aria-selected={sameModel(model, value)} disabled={blocked(model)} title={blocked(model) ? optionText(model) : undefined} className={sameModel(model, value) ? 'selected' : ''} key={serialize(model)} onClick={() => { if (!blocked(model)) choose(model); }}><span>{optionText(model)}</span>{sameModel(model, value) && <Icon name="check" size={13} />}</button>)}
           {!normalizedQuery && !models.length && !allowEmpty && <span className="model-picker-empty">{t('No hay modelos favoritos configurados.')}</span>}
           {normalizedQuery && !filteredModels.length && !showEmptyOption && <span className="model-picker-empty">{tx('Ningún modelo coincide con «{query}».', { query: query.trim() })}</span>}
         </div>

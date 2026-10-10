@@ -6,7 +6,7 @@ import test from 'node:test';
 const root = process.cwd();
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Desktop Bridge is explicit, pinned and unavailable through Cloudflare', () => {
+test('Desktop Bridge stays pinned and private while Cloudflare carries only the encrypted relay', () => {
   const bridge = read('electron/desktopBridge/server.ts');
   const worker = read('cloudflare/src/worker.mjs');
   assert.match(bridge, /createServer\(\{ cert: certPem, key:/);
@@ -15,7 +15,8 @@ test('Desktop Bridge is explicit, pinned and unavailable through Cloudflare', ()
   assert.doesNotMatch(bridge, /b64:|createServer\(\(request/);
   assert.match(bridge, /createDesktopBridgeOffer[\s\S]+await ensureServer\(\)/);
   assert.doesNotMatch(worker, /pathname.*bridge\/v1|resource === ['"]bridge['"]|head === ['"]bridge['"]/i);
-  assert.match(worker, /desktopBridgeRelay: false/);
+  assert.match(worker, /desktopBridgeRelay: Boolean\(env\.BRIDGE_RELAY\)/);
+  assert.match(worker, /head === 'bridge-relay'[\s\S]+handleBridgeRelay/);
 });
 
 test('private tables have fixed domain grants and are absent from the public mutation registry', () => {

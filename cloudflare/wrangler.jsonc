@@ -3,7 +3,9 @@
   "name": "nodus-cloud",
   "main": "src/worker.mjs",
   "compatibility_date": "2026-08-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "workers_dev": true,
   "d1_databases": [
     {
@@ -25,6 +27,24 @@
     "NODUS_ENVIRONMENT": "production"
   },
   "triggers": {
-    "crons": ["17 3 * * *"]
-  }
+    "crons": [
+      "17 3 * * *"
+    ]
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BRIDGE_RELAY",
+        "class_name": "NodusBridgeRelay"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "bridge-relay-v1",
+      "new_sqlite_classes": [
+        "NodusBridgeRelay"
+      ]
+    }
+  ]
 }

@@ -118,7 +118,7 @@ export interface PlatformApi {
   /** Disable system sleep so a closed lid keeps serving. Raises the system's own admin dialog. */
   setLocalServerLidServing(enable: boolean): Promise<LocalServerPowerStatus>;
   getDesktopBridgeStatus(): Promise<DesktopBridgeStatus>;
-  createDesktopBridgeOffer(vaultIds: string[], domains: DesktopBridgeDomain[]): Promise<DesktopBridgeOffer>;
+  createDesktopBridgeOffer(vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport?: 'direct' | 'automatic'): Promise<DesktopBridgeOffer>;
   revokeDesktopBridgePairing(id: string): Promise<DesktopBridgeStatus>;
   getCopilotStatus(): Promise<CopilotServerStatus>;
   regenerateCopilotToken(): Promise<string>;

@@ -287,6 +287,7 @@ export function createApiRoutes(ctx) {
       snapshotVersions: [1, 2],
       assets: true,
       libraryDocuments: true,
+      desktopBridge: { protocol: '/bridge/v2', relay: true, relayProtocolVersion: 1, transport: 'end-to-end-encrypted-websocket', endpoint: '/api/v1/bridge-relay' },
       mutations: true,
       documentUpdates: 'content-addressed-binary',
       sharedBlobs: { transport: 'resumable-chunks', chunkBytes: SHARED_BLOB_CHUNK_BYTES, maxBytes: limits.maxLibraryPackageBytes },

@@ -320,7 +320,18 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       notifyHistory();
     },
   }));
-  return <div ref={root} className="nodus-blocknote" data-document-id={documentId} onKeyDown={event=>{const target=event.target as HTMLElement;if((event.key==='Enter'||event.key===' ')&&target.matches('[data-academic-citation],[data-academic-note],[data-academic-target]')){event.preventDefault();target.click();}}} onClickCapture={event => {
+  return <div ref={root} className="nodus-blocknote" data-document-id={documentId} onTouchEnd={event => {
+    // Embedded WebKit can leave DOM focus on the catalogue control after a touch
+    // selects an editable paragraph. Focus within the same user gesture, preserving
+    // the browser's caret and letting noneditable formula/media controls keep focus.
+    const target = event.target as HTMLElement;
+    if (editable && target.isContentEditable && !editor.prosemirrorView.hasFocus()) {
+      const touch = event.changedTouches[0];
+      const position = touch && editor.prosemirrorView.posAtCoords({ left: touch.clientX, top: touch.clientY });
+      if (position) editor.transact(tr => tr.setSelection(TextSelection.near(tr.doc.resolve(position.pos))));
+      editor.focus();
+    }
+  }} onKeyDown={event=>{const target=event.target as HTMLElement;if((event.key==='Enter'||event.key===' ')&&target.matches('[data-academic-citation],[data-academic-note],[data-academic-target]')){event.preventDefault();target.click();}}} onClickCapture={event => {
     const target = event.target as HTMLElement;
     const cite=target.closest<HTMLElement>('[data-academic-citation]');if(cite&&editable){event.preventDefault();onAcademicAction?.('cite',cite.dataset.academicCitation);return;}
     const note=target.closest<HTMLElement>('[data-academic-note]');if(note&&editable){event.preventDefault();onAcademicAction?.('note',note.dataset.academicNote);return;}

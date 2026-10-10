@@ -89,6 +89,7 @@ const parseColor = (value: string, fallback: number[]) => {
 };
 const fallbackColor = (value: string) => parseColor(value, [0.65, 0.73, 0.98]);
 interface CanvasPalette {
+  light: boolean;
   star: number[];
   context: number[];
   nodes: Record<string, number[]>;
@@ -104,6 +105,7 @@ export function StellarCanvas(props: Props) {
     [error, setError] = useState(""),
     [generation, setGeneration] = useState(0);
   const palette = useRef<CanvasPalette>({
+    light: false,
     star: fallbackColor("#a4bbfa"),
     context: fallbackColor("#a6a8d1"),
     nodes: Object.fromEntries(Object.entries(NODE_COLORS).map(([type, color]) => [type, fallbackColor(color)])),
@@ -272,15 +274,26 @@ export function StellarCanvas(props: Props) {
   useEffect(() => {
     const el = canvas.current!;
     const readPalette = () => {
-      const styles = getComputedStyle(host.current || el);
-      const read = (name: string, fallback: string) => parseColor(styles.getPropertyValue(name), fallbackColor(fallback));
+      // Custom properties retain color-mix() as text. Resolve an actual color
+      // property in this workspace so WebGL receives the same light/dark and
+      // vault palette as the labels, instead of silently using bright fallbacks.
+      const probe = document.createElement("span");
+      probe.style.display = "none";
+      (host.current || el.parentElement || document.body).appendChild(probe);
+      const read = (name: string, fallback: string) => {
+        probe.style.color = `var(${name}, ${fallback})`;
+        return parseColor(getComputedStyle(probe).color, fallbackColor(fallback));
+      };
+      const background = read("--stellar-bg", "#0a0a0a");
       palette.current = {
+        light: background[0] * .2126 + background[1] * .7152 + background[2] * .0722 > .55,
         star: read("--stellar-canvas-star", "#a4bbfa"),
         context: read("--stellar-canvas-context", "#a6a8d1"),
         nodes: Object.fromEntries(Object.entries(NODE_COLORS).map(([type, color]) => [type, read(`--stellar-node-${type}`, color)])),
         edges: Object.fromEntries(Object.entries(RELATIONS).map(([type, value]) => [type, read(`--stellar-edge-${type}`, value.color)])),
         edgeDefault: read("--stellar-accent-soft", "#adb8d9"),
       };
+      probe.remove();
     };
     readPalette();
     const themeObserver = new MutationObserver(() => {
@@ -464,9 +477,10 @@ export function StellarCanvas(props: Props) {
           color,
           alpha,
           (featured || n.id === p.selected ? 130 : 96) *
-            (featured ? 1 : Math.max(0.4, Math.min(1.3, p.camera.zoom))),
+            (featured ? 1 : Math.max(0.025, Math.min(1.3, p.camera.zoom))),
         );
-        vertex(stars, s, [1, 1, 1], alpha, featured ? 14 : 12 * Math.max(0.5, p.camera.zoom));
+        vertex(stars, s, palette.current.light ? color : [1, 1, 1], alpha,
+          featured ? 14 : Math.max(2, 12 * Math.min(1.3, p.camera.zoom)));
       }
       gpu.draw(el.width, el.height, lines, stars, p.camera.zoom < 0.3 && !active);
       if (performance.now() < until && !reduce.matches)
@@ -729,7 +743,8 @@ export function StellarCanvas(props: Props) {
           onClick={() => props.onContextNode?.(n)}>{n.label}</button>)}
         {labels
           .filter(
-            ({ n }) => props.labelPolicy === "all" || props.camera.zoom >= 0.3 || n.id === props.selected || featured.has(n.id),
+            ({ n, x, y }) => x >= 0 && x <= size.w && y >= 0 && y <= size.h &&
+              (props.labelPolicy === "all" || props.camera.zoom >= 0.3 || n.id === props.selected || featured.has(n.id)),
           )
           .map(({ n, x, y }) => (
             <button
@@ -739,12 +754,9 @@ export function StellarCanvas(props: Props) {
               style={{ left: x, top: y }}
               title={n.label}
               aria-label={n.label}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  props.onNode(n.id);
-                }
-              }}
+              // Native button activation covers keyboard and VoiceOver. Pointer
+              // activation is already handled by the canvas's drag recognizer.
+              onClick={(e) => { if (e.detail === 0) props.onNode(n.id); }}
             />
           ))}
         {visibleLabels.map(({ n, labelX, labelY }) => (
@@ -761,12 +773,7 @@ export function StellarCanvas(props: Props) {
                 "--node-color": nodeColor(n.type),
               } as React.CSSProperties
             }
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                props.onNode(n.id);
-              }
-            }}
+            onClick={(e) => { if (e.detail === 0) props.onNode(n.id); }}
           >
             <small>
               {featured.has(n.id)

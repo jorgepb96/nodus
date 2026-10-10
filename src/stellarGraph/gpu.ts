@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-/** One small GPU program for additive star sprites and colored relationship paths. */
+/** One small GPU program for star sprites and colored relationship paths. */
 export class StellarGPU {
   gl: WebGL2RenderingContext;
   program: WebGLProgram;
@@ -8,7 +8,7 @@ export class StellarGPU {
     const gl = canvas.getContext("webgl2", {
       alpha: true,
       antialias: true,
-      premultipliedAlpha: false,
+      premultipliedAlpha: true,
     });
     if (!gl)
       throw new Error(
@@ -74,7 +74,10 @@ export class StellarGPU {
       gl.vertexAttribPointer(loc, size, gl.FLOAT, false, stride, offset);
     }
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // The transparent buffer contains premultiplied RGB. Preserve source alpha
+    // rather than multiplying it by itself: squaring alpha makes thin paths
+    // and small stars almost invisible over a light background in WebKit.
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     const thick: number[] = [];
     for (let i = 0; i < (simple ? 0 : lines.length); i += 14) {
       const ax = lines[i],

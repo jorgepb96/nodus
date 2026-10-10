@@ -1064,6 +1064,42 @@ try {
     "insufficient evidence is explicit without calling AI",
   );
 
+  const contextEntry = repo.createDictionaryEntry({name:'Memoria autónoma',aliases:['memoria'],focusPrompt:'',scope:{kind:'vault'},outputLanguage:'es',detailLevel:'concise'});
+  repo.upsertDictionaryEvidence(contextEntry.id, [evidence('idea','idea-1','included','Memoria','La memoria se construye socialmente.'), evidence('passage','work-1#0','included','Obra Uno','La memoria colectiva cambia entre generaciones.')]);
+  const evidenceBeforePreparation = db.prepare('SELECT COUNT(*) AS n FROM dictionary_evidence').get().n;
+  const autonomousContext = ai.dictionaryMobileGenerationContext(contextEntry.id,'off');
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dictionary_evidence').get().n,evidenceBeforePreparation,'preparing phone-owned generation is a read-only corpus operation');
+  assert(autonomousContext.evidence.length >= 2);
+  const definition = {...generated,entryId:contextEntry.id,evidence:autonomousContext.evidence.map(item=>({kind:item.kind,id:item.id})),model:{provider:'deepseek',model:'phone-owned-model'}};
+  const input = {definition,contextRevision:autonomousContext.revision,webSearch:'off'};
+  const versionsBeforeRejected = repo.listDictionaryVersions(contextEntry.id).length;
+  assert.throws(()=>ai.saveMobileDictionaryDefinition({...input,contextRevision:'0'.repeat(64)}),/dictionary_generation_conflict/);
+  for (const invalid of [
+    {...definition,evidence:[null]}, {...definition,citations:[null]}, {...definition,authorSummaries:[null]},
+    {...definition,state:'degraded'}, {...definition,contentMarkdown:''}, {...definition,insufficientEvidence:'false'},
+    {...definition,generationProblems:[null]}, {...definition,model:{provider:'deepseek',model:''}},
+  ]) assert.throws(()=>ai.saveMobileDictionaryDefinition({...input,definition:invalid}),/invalid_dictionary_definition/);
+  assert.throws(()=>ai.saveMobileDictionaryDefinition({...input,definition:{...definition,evidence:[{kind:'idea',id:'foreign-vault-source'}]}}),/invalid_dictionary_evidence/);
+  assert.equal(repo.listDictionaryVersions(contextEntry.id).length,versionsBeforeRejected,'conflict and foreign evidence never create a saved version');
+  const phoneVersion = ai.saveMobileDictionaryDefinition(input);
+  assert.equal(phoneVersion.model.model,'phone-owned-model');
+  assert.equal(repo.getDictionaryEntry(contextEntry.id).currentVersionId,phoneVersion.id);
+  assert.throws(()=>ai.saveMobileDictionaryDefinition(input),/dictionary_generation_conflict/,'an already-applied context cannot create a duplicate version');
+
+  const scanned = repo.createDictionaryEntry({name:'Memoria de consulta autónoma',aliases:['memoria'],focusPrompt:'',scope:{kind:'vault'},outputLanguage:'es',detailLevel:'concise'});
+  const scanText='La memoria de consulta conserva las decisiones de inclusión.';
+  db.prepare("INSERT INTO passages(passage_id,nodus_id,chunk_index,text,char_len,content_hash,created_at) VALUES('work-1#scan','work-1',999,?,?,?,'2026-01-01')").run(scanText,scanText.length,db.prepare('SELECT resolved_text_hash,deep_hash FROM works WHERE nodus_id=?').get('work-1').resolved_text_hash ?? db.prepare('SELECT deep_hash FROM works WHERE nodus_id=?').get('work-1').deep_hash ?? 'hash');
+  repo.upsertDictionaryEvidence(scanned.id,[evidence('idea','idea-1','excluded','Memoria','La memoria se construye socialmente.')]);
+  const countsBeforeScan = db.prepare('SELECT (SELECT COUNT(*) FROM ideas) AS ideas,(SELECT COUNT(*) FROM passages) AS passages').get();
+  const scannedDetail = ai.scanMobileDictionaryEvidence(scanned.id);
+  assert(scannedDetail.entry.newEvidenceCount>0,'autonomous consultation can retrieve stored corpus evidence without including it automatically');
+  assert.equal(db.prepare('SELECT decision FROM dictionary_evidence WHERE entry_id=? AND kind=? AND ref_id=?').get(scanned.id,'idea','idea-1').decision,'excluded','a phone scan preserves explicit exclusions');
+  assert.equal(db.prepare('SELECT decision FROM dictionary_evidence WHERE entry_id=? AND kind=? AND ref_id=?').get(scanned.id,'passage','work-1#scan').decision,'unused','new scan receipts require explicit inclusion');
+  const receiptCount = db.prepare('SELECT COUNT(*) AS n FROM dictionary_evidence WHERE entry_id=?').get(scanned.id).n;
+  ai.scanMobileDictionaryEvidence(scanned.id);
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dictionary_evidence WHERE entry_id=?').get(scanned.id).n,receiptCount,'repeated scans create no duplicate receipts');
+  assert.deepEqual(db.prepare('SELECT (SELECT COUNT(*) FROM ideas) AS ideas,(SELECT COUNT(*) FROM passages) AS passages').get(),countsBeforeScan,'the phone scan starts no derivation or extraction');
+
   database.closeDb();
   parentPort.postMessage({ ok: true });
 } catch (error) {

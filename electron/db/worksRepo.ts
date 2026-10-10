@@ -638,6 +638,38 @@ export function setDeepResult(
   markLibraryAnalysisFreshness(db, nodusId, 'deep', status === 'done' ? 'current' : status === 'failed' ? 'failed' : status === 'skipped_no_text' ? 'unavailable' : 'queued', hash);
 }
 
+/**
+ * Clear a deep scan's Documentary Index failure once the Documentary Index has since
+ * succeeded. A deep scan runs the Documentary Index step too; when that step fails, the
+ * scan records `deep_error = 'documentary_…'` and freshness 'failed' while keeping the
+ * committed analysis (deep_status stays 'done'). A later successful run goes through the
+ * document-index queue, which never touched either, so the work stayed under "With
+ * errors" with nothing wrong. Only a `documentary_` error on an intact analysis is
+ * cleared, and only when a current profile was published after the failed attempt; any
+ * other deep failure stays visible. Pass a work id after a job completes, or none to
+ * sweep the vault. Returns how many works were cleared.
+ */
+export function clearResolvedDocumentaryDeepErrors(nodusId?: string): number {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT w.nodus_id, w.deep_hash FROM works w
+     WHERE w.deep_status = 'done' AND w.deep_hash IS NOT NULL
+       AND w.deep_error LIKE 'documentary\\_%' ESCAPE '\\'
+       AND EXISTS (SELECT 1 FROM document_profile_state s
+                    WHERE s.nodus_id = w.nodus_id AND s.status = 'current'
+                      AND (w.deep_at IS NULL OR s.updated_at > w.deep_at))
+       ${nodusId ? 'AND w.nodus_id = ?' : ''}
+  `).all(...(nodusId ? [nodusId] : [])) as { nodus_id: string; deep_hash: string }[];
+  const clear = db.prepare('UPDATE works SET deep_error = NULL WHERE nodus_id = ?');
+  db.transaction(() => {
+    for (const row of rows) {
+      clear.run(row.nodus_id);
+      markLibraryAnalysisFreshness(db, row.nodus_id, 'deep', 'current', row.deep_hash);
+    }
+  })();
+  return rows.length;
+}
+
 /** Replace the locally-resolved text inventory without touching the last deep result. */
 export function setResolvedTextState(nodusId: string, state: ResolvedTextState): void {
   const db = getDb();

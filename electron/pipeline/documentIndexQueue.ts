@@ -8,6 +8,7 @@ import type {
 } from '@shared/types';
 import { getDb, withVaultDatabase } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
+import { clearResolvedDocumentaryDeepErrors } from '../db/worksRepo';
 import {
   claimNextDocumentIndexJob,
   cancelDocumentIndexJob,
@@ -118,6 +119,7 @@ class DocumentIndexQueue {
     for (const vault of listVaults().filter((item) => writable(item) && !this.maintenanceVaults.has(item.id))) {
       await withVaultDatabase(vault.id, async () => {
         recoverInterruptedDocumentJobs();
+        clearResolvedDocumentaryDeepErrors();
         const settings = getSettings();
         if (!isManualAcademic() && DOCUMENT_INDEX_CONTINUOUS_AVAILABLE && settings.documentIndexingEnabled) {
           await this.ensureContinuousCampaignInside(vault.id, settings.documentIndexIncludeArchived);
@@ -534,6 +536,8 @@ class DocumentIndexQueue {
           status: 'completed', phase: 'done', progress: 1, error: null,
           progressMessage: null, currentUnit: null, totalUnits: null,
         });
+        // A deep scan whose Documentary Index step failed left its error on the work.
+        clearResolvedDocumentaryDeepErrors(job.nodusId);
         // The document's own green line is written by the profile scan, which is the only
         // place that knows how many sections and vectors were published.
         this.logCampaignOutcome(vault, job.campaignId);

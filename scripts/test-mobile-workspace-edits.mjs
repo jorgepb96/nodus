@@ -49,7 +49,34 @@ try {
   await assert.rejects(applyWorkspaceEdit(other.id, 'phone-grant', request), /document_unavailable/);
   database.closeDb(); setActiveVault(other.id);
   assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', request), saved, 'A restart and active-vault switch retain the original scoped receipt');
-  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, providerCalls: 0, releaseApproved: false }));
+  const folder = await scoped(() => notes.createNoteFolder({ name: 'Creación companion' }));
+  const createdId = randomUUID();
+  const createdNativeDocument = markdownToBlockNote(markdown);
+  const creation = { id: randomUUID(), noteId: createdId, creation: { kind: 'markdown', folderId: folder.id, tags: ['offline'] },
+    input: { ...request.input, nativeDocument: createdNativeDocument, title: 'Creada en el móvil', expectedRevision: 0 } };
+  const created = await applyWorkspaceEdit(first.id, 'phone-grant', creation);
+  assert.equal(created.note.id, createdId); assert.equal(created.note.folderId, folder.id);
+  assert.deepEqual(created.note.tags, ['offline']); assert.deepEqual(created.editorData.nativeDocument, createdNativeDocument);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', creation), created, 'Creation replays its canonical receipt without another note');
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(createdId).n), 1);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(createdId))).versions.length, created.editorData.versions.length);
+  const collision = { ...creation, id: randomUUID() };
+  await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', collision), /identity_conflict/);
+  assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(collision.id).n), 0);
+  for (const invalidCreation of [{ ...creation.creation, kind: 'idea' }, { ...creation.creation, source: { ref: 'private' } }, { ...creation.creation, tags: [37] }]) {
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { ...creation, id: randomUUID(), noteId: randomUUID(), creation: invalidCreation }), /invalid_workspace_creation/);
+  }
+  for (const invalid of [
+    { creation: { ...creation.creation, folderId: randomUUID() } },
+    { input: { ...creation.input, nativeDocument: [{ id: 'invalid-block', type: 'unsupported-private-block' }] } },
+    { input: { ...creation.input, nativeDocument } },
+  ]) {
+    const rejected = { ...creation, ...invalid, id: randomUUID(), noteId: randomUUID() };
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', rejected));
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(rejected.noteId).n), 0, 'Invalid creations roll back the note and its complete structured editor');
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
+  }
+  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,providerCalls: 0, releaseApproved: false }));
 } finally {
   try { database?.closeDb(); } catch {}
   fs.rmSync(root, { recursive: true, force: true });

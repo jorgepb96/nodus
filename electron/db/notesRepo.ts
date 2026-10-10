@@ -241,8 +241,13 @@ export function getNote(id: string): Note | null {
 }
 
 export function createNote(input: CreateNoteInput): Note {
+  return createNoteWithIdentity(input, uuid());
+}
+
+/** Internal companion creation keeps its UUID when an acknowledgement is lost. */
+export function createNoteWithIdentity(input: CreateNoteInput, id: string): Note {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id)) throw new Error('Invalid note identity');
   const now = new Date().toISOString();
-  const id = uuid();
   const folderId = input.folderId ?? null;
   if (folderId && !getNoteFolder(folderId)) throw new Error('La carpeta destino no existe');
   const title = input.title.trim() || 'Nota sin título';

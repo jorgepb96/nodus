@@ -119,6 +119,7 @@ export function WorkspaceTabStrip({
           <button
             type="button"
             role="tab"
+            aria-label={homeLabel}
             aria-selected={activeKey === null}
             tabIndex={activeKey === null ? 0 : -1}
             data-testid={homeTestId}

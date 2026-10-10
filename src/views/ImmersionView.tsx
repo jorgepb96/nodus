@@ -37,6 +37,8 @@ import type {
   WritingDraftAnnotationInput,
 } from '@shared/types';
 import { DECORATIVE_IMAGE_STYLES } from '@shared/imageStyles';
+import type {PromptLanguage} from '@shared/types';
+import {normalizePromptLanguage, PROMPT_LANGUAGE_OPTIONS} from '@shared/promptLanguageOptions';
 import { immersionAnnotationDocumentId } from '@shared/readerAnnotations';
 import type { ImmersionSnapshot } from '../app/viewSnapshots';
 import { useListPlacement } from '../listPlacement';
@@ -192,9 +194,7 @@ export function ImmersionView({
   const [includeImage, setIncludeImage] = useState(false);
   const documentSkills = useDocumentSkills();
   const [imageStyle, setImageStyle] = useState<DecorativeImageStyle>(settings.imageStyle);
-  // The immersion *content* is generated in Spanish or English only; a UI language
-  // without a matching content language (French) defaults to English.
-  const [language, setLanguage] = useState<'es' | 'en'>(settings.uiLanguage === 'es' ? 'es' : 'en');
+  const [language, setLanguage] = useState<PromptLanguage>(normalizePromptLanguage(settings.promptLanguage ?? settings.uiLanguage));
   const [model, setModel] = useFeatureModel(settings, 'immersionModel');
   // The thinking level for that model, shared with the Research chat's memory.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, model ?? null);
@@ -979,7 +979,7 @@ export function ImmersionComposerModal({
   includeQuiz: boolean;
   includeImage: boolean;
   imageStyle: DecorativeImageStyle;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   model: AppSettings['immersionModel'];
   thinkingEffort: ResearchEffort;
   onThinkingEffort: (effort: ResearchEffort) => void;
@@ -991,7 +991,7 @@ export function ImmersionComposerModal({
   onIncludeQuiz: (v: boolean) => void;
   onIncludeImage: (v: boolean) => void;
   onImageStyle: (v: DecorativeImageStyle) => void;
-  onLanguage: (v: 'es' | 'en') => void;
+  onLanguage: (v: PromptLanguage) => void;
   onModel: (m: AppSettings['immersionModel']) => void;
   onExplore: () => void;
   onClose: () => void;
@@ -1088,9 +1088,8 @@ export function ImmersionComposerModal({
                 {DECORATIVE_IMAGE_STYLES.map((style) => <option key={style.id} value={style.id}>{t(style.label)}</option>)}
               </select>
             )}
-            <select className="input !py-1.5 text-xs" value={language} onChange={(e) => onLanguage(e.target.value as 'es' | 'en')}>
-              <option value="es">Español</option>
-              <option value="en">English</option>
+            <select aria-label={t('Idioma')} className="input !py-1.5 text-xs" value={language} onChange={(e) => onLanguage(normalizePromptLanguage(e.target.value))}>
+              {PROMPT_LANGUAGE_OPTIONS.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
             </select>
             <div className="flex w-full min-w-0 items-center gap-2">
               <div className="min-w-0 flex-1"><ModelPicker settings={settings} value={model} onChange={onModel} compact menu /></div>

@@ -235,7 +235,7 @@ test('new study materials use a remembered in-app AI processing decision', async
   const [notice, settings, defaults, preload, apiTypes, ipc, consent, policy, knowledge] = await Promise.all([
     read('src/privacyNotices.tsx'),
     read('src/views/Settings.tsx'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('@bridge'),
     read('@api'),
     read('@main'),
@@ -347,18 +347,20 @@ test('a replica can only send back content its own user authored', async () => {
 });
 
 test('the server never receives an AI provider key', async () => {
-  const [api, corpus] = await Promise.all([
+  const [api, corpus, queries] = await Promise.all([
     read('server/lib/routes/api.mjs'),
     read('server/lib/routes/corpus.mjs'),
+    read('server/lib/core/corpusQueries.mjs'),
   ]);
-  for (const source of [api, corpus]) {
+  for (const source of [api, corpus, queries]) {
     assert.doesNotMatch(source, /apiKey|api_key|OPENAI_API_KEY|anthropic/i);
   }
   // The chat endpoint hands over retrieval and a budget, and the client calls its own
   // provider. A server that produced answers would be the first place in this project to
   // hold a third-party credential.
   assert.match(api, /contextPackage/);
-  assert.match(api, /citationScheme/);
+  assert.match(api, /contextReadQuery\(snapshot, input, space\.revision\)/);
+  assert.match(queries, /citationScheme/);
 });
 
 test('a connected vault has a screen, and a revoked one says so', async () => {

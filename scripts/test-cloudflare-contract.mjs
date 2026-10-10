@@ -109,14 +109,14 @@ test('release package includes every migration and public deployment configurati
   execFileSync(process.execPath, [path.join(root, 'scripts', 'build-cloudflare-worker.mjs')]);
   const manifest = JSON.parse(read('cloudflare/dist/migrations.json'));
   assert.equal(manifest.schemaVersion, 1);
-  assert.deepEqual(manifest.migrations, ['0001_initial.sql', '0002_mobile_parity.sql', '0003_document_vectors.sql', '0004_private_mutation_ownership.sql']);
+  assert.deepEqual(manifest.migrations, fs.readdirSync(path.join(root, 'cloudflare/migrations')).filter(name => name.endsWith('.sql')).sort());
   for (const name of [...manifest.migrations, 'catalog-config.json', 'pricing.v1.json']) {
     assert.ok(fs.statSync(path.join(root, 'cloudflare', 'dist', name)).size > 0, `${name} is missing from the packaged resources`);
   }
   assert.equal(fs.existsSync(path.join(root, 'cloudflare', 'dist', 'oauth-client.json')), false);
 });
 
-test('mobile parity routes are typed, account-isolated and never relay private Bridge data', () => {
+test('publication routes stay account-isolated and the optional Bridge relay transports sealed frames', () => {
   const worker = read('cloudflare/src/worker.mjs');
   const actions = read('cloudflare/src/actions.mjs');
   const library = read('cloudflare/src/librarySync.mjs');
@@ -126,7 +126,13 @@ test('mobile parity routes are typed, account-isolated and never relay private B
   assert.doesNotMatch(actions, /ipc|sql|methodName/i);
   assert.match(library, /WHERE user_id=\?1/);
   assert.match(library, /hash_mismatch/);
-  assert.match(worker, /desktopBridgeRelay: false/);
+  assert.match(worker, /desktopBridgeRelay: Boolean\(env\.BRIDGE_RELAY\)/);
+  assert.match(worker, /transport: 'end-to-end-encrypted-websocket'/);
+  const relay = read('cloudflare/src/bridgeRelay.mjs');
+  assert.match(relay, /auth\.space_role !== 'owner' \|\| auth\.device_kind !== 'publisher'/);
+  assert.match(relay, /WHERE owner_device_id=\?1/);
+  assert.match(relay, /typeof frame\.sealed !== 'string'/);
+  assert.doesNotMatch(relay, /executeMobileOperation|ipcRenderer|JSON\.parse\(frame\.sealed\)/);
   assert.doesNotMatch(worker, /head === ['"]bridge['"]|resource === ['"]bridge['"]|pathname.*bridge\/v1/i);
   const privateTables = [
     'testimony_interviews', 'testimony_transcripts', 'teaching_students',

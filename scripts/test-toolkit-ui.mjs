@@ -121,7 +121,7 @@ test('the Toolkit hub, real sidebar and Settings editor share the pin contract',
     read('src/views/ToolkitView.tsx'),
     read('src/App.tsx'),
     read('src/views/Settings.tsx'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
   ]);
   assert.match(view, /onTogglePinned=\{\(\) => void togglePinned\(tool\.page\)\}/);

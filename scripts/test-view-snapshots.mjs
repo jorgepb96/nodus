@@ -681,7 +681,8 @@ test('a section walking back into what it had open never paints its gallery on t
   // Reopening means reading the report or the session back, which takes frames. What
   // is painted in those frames used to be the gallery, and a gallery that appears and
   // is replaced by the item it lists looks like the app clicking that item itself.
-  assert.match(deep, /if \(mode === 'reader' && !openDraft\) return <RestoringPane \/>;/);
+  assert.match(deep, /if \(mode === 'reader' && !openDraft\) \{[\s\S]*return galleryFailure[\s\S]*: <RestoringPane \/>;/);
+  assert.match(deep, /data-testid="deep-research-catalog-error"/);
   // Inmersión decides at mount, not in an effect: an effect runs after the first
   // paint, and the first paint is the one that must not be the gallery.
   assert.match(immersion, /useState<'home' \| 'scope' \| 'player'>\(\(\) => \(resumeTarget \? 'player' : 'home'\)\)/);

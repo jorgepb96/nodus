@@ -81,11 +81,13 @@ export interface StellarWorkspaceProps {
   sidebar?: ReactNode;
   onOpenIdea?(id: string): void;
   onEditIdea?(id: string): void;
-  openEvidence?(ref: string, location: string | null): void;
+  openEvidence?(ref: string, location: string | null, quote?: string): void;
   saveIdea?(detail: IdeaDetail): Promise<void>;
   saveEdge?(detail: EdgeDetail): Promise<void>;
   audit?: boolean;
   baseline?: boolean;
+  /** Native mobile hosts own the app chrome instead of the browser fullscreen API. */
+  onFullscreenChange?(fullscreen: boolean): Promise<void>;
 }
 export function StellarWorkspace(props: StellarWorkspaceProps) {
   return <StellarTabs key={`${props.source.key}:${props.workId || "corpus"}`} {...props} />;
@@ -144,6 +146,7 @@ function StellarTabs(props: StellarWorkspaceProps) {
   const toggleFullscreen = async () => {
     setFullscreenError(false);
     try {
+      if (props.onFullscreenChange) { await props.onFullscreenChange(!fullscreen); setFullscreen(!fullscreen); return; }
       if (document.fullscreenElement === host.current) await document.exitFullscreen();
       else await host.current?.requestFullscreen();
     } catch { setFullscreenError(true); }
@@ -189,8 +192,8 @@ function StellarTabs(props: StellarWorkspaceProps) {
         </div>)}
       </div>
       <button className="stellar-new-tab" onClick={addTab} title={t("Nuevo grafo")} aria-label={t("Nuevo grafo")}><Icon name="plus" size={18} /></button>
-      <button className="stellar-fullscreen" onClick={() => void toggleFullscreen()} aria-pressed={fullscreen} title={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}>
-        <Icon name={fullscreen ? "minimize" : "maximize"} size={15} />{t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}
+      <button className="stellar-fullscreen" onClick={() => void toggleFullscreen()} aria-pressed={fullscreen} aria-label={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")} title={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}>
+        <Icon name={fullscreen ? "minimize" : "maximize"} size={15} /><span>{t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}</span>
       </button>
     </div>
     {fullscreenError && <p role="alert">{t("No se pudo activar la pantalla completa.")}</p>}
@@ -770,7 +773,7 @@ function StellarGraphTab({
               <span> · {tx("{n} ocultas por el límite", { n: hiddenRelations.toLocaleString() })}</span>}
             {workId && <span> / {t("Grafo de la obra")}</span>}
           </div>
-          {!loading && !view.nodes.length && !corpusContext.layer && (
+          {!loading && !error && !view.nodes.length && !corpusContext.layer && (
             <div className="stellar-empty stellar-empty-hint">
               {t(themeId
                 ? "Este tema todavía no anida ninguna idea analizada."
@@ -799,10 +802,11 @@ function StellarGraphTab({
           )}
           <div className="stellar-navigation">
             <CorpusContextControls context={corpusContext} onFit={() => api.current?.fitContext()} />
-            <button title={t("Alejar")} onClick={() => api.current?.zoom(1 / ZOOM_STEP)}>
+            <button aria-label={t("Alejar")} title={t("Alejar")} onClick={() => api.current?.zoom(1 / ZOOM_STEP)}>
               −
             </button>
             <button
+              aria-label={t("Acercar")}
               title={t("Acercar")}
               onClick={() => api.current?.zoom(ZOOM_STEP)}
             >

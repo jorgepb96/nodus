@@ -18,7 +18,7 @@ export function listResearchNotebooks() {
   if (getActiveVault().type !== 'academic') return [];
   return notebooks.listResearchNotebooks();
 }
-export function saveResearchNotebook(input: ResearchNotebookInput) {
+export function saveResearchNotebook(input: ResearchNotebookInput, options: { prepare?: boolean } = {}) {
   const inventory = researchCorpusInventory();
   const old = input.id ? notebooks.getResearchNotebook(input.id) : null;
   const unchangedSelection = old?.mode === input.mode && researchFingerprint([old.sources, old.exclusions]) === researchFingerprint([input.sources, input.exclusions]);
@@ -28,7 +28,7 @@ export function saveResearchNotebook(input: ResearchNotebookInput) {
   for (const controller of active.get(key(result.id)) ?? []) controller.abort();
   notifyAuthoredResearchSourceChanged();
   // What the collections hold and is not indexed yet goes to the queue straight away.
-  void ensureNotebookPrepared(result.id).catch(() => undefined);
+  if (options.prepare !== false) void ensureNotebookPrepared(result.id).catch(() => undefined);
   return result;
 }
 export function updateResearchNotebookAppearance(id: string, patch: { name?: string; icon?: string | null; color?: string | null }) {

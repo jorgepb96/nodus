@@ -3,7 +3,7 @@
 //
 // One durable lane receives reports from this window and from MCP clients. The strip
 // only needs their presentation shape and keeps the real job id for cancellation.
-import type { DeepResearchProgress } from '@shared/types';
+import type { DeepResearchJobOrigin, DeepResearchProgress } from '@shared/types';
 import { deepResearchProgressPercent } from '@shared/deepResearchProgress';
 import { Icon } from './ui';
 import { errorText, t, tr, tx } from '../i18n';
@@ -21,18 +21,18 @@ export interface QueueStripItem {
   percent?: number | null;
   detail?: string | null;
   error: string | null;
-  origin: 'app' | 'mcp';
+  origin: DeepResearchJobOrigin;
   enqueuedAt: string;
 }
 
 /** Marks a report someone asked for through MCP, so a queue the user did not fill is not a mystery. */
-function OriginBadge() {
+function OriginBadge({ origin }: { origin: 'mcp' | 'mobile' }) {
   return (
     <span
       className="shrink-0 rounded border border-indigo-800/70 bg-indigo-950/40 px-1 py-px text-[10px] font-semibold uppercase tracking-wide text-indigo-300"
-      title={t('Pedido desde un cliente MCP')}
+      title={origin === 'mobile' ? t('Pedido desde el móvil') : t('Pedido desde un cliente MCP')}
     >
-      {t('MCP')}
+      {origin === 'mobile' ? t('Móvil') : t('MCP')}
     </span>
   );
 }
@@ -114,12 +114,12 @@ export function DeepResearchQueueStrip({
   const displayTitle = (item: QueueStripItem): string => item.title === 'Informe sin título' ? t(item.title) : item.title;
   return (
     <div className="border-b border-neutral-800 bg-indigo-950/15 px-4 py-2.5">
-      <div className="mb-1.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-300">
+      <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-indigo-300">
         <Icon name={running ? 'sync' : 'layers'} size={12} className={running ? 'animate-spin' : ''} />
         {tx('Cola de generación · {n} en curso', { n: active.length })}
-        {totalElapsed && <span className="font-medium normal-case tabular-nums text-neutral-500">· {t('Total')} {totalElapsed}</span>}
+        {totalElapsed && <span className="whitespace-nowrap font-medium normal-case tabular-nums text-neutral-500">· {t('Total')} {totalElapsed}</span>}
         {failed.length > 0 && (
-          <button className="ml-auto text-[11px] font-medium text-neutral-500 hover:text-neutral-300" onClick={onClearFinished}>
+          <button className="ml-auto text-[11px] font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200" onClick={onClearFinished}>
             {t('Limpiar fallidos')}
           </button>
         )}
@@ -130,7 +130,7 @@ export function DeepResearchQueueStrip({
           const percent = item.status === 'running' ? item.percent ?? deepResearchProgressPercent(item.progress) : null;
           return (
             <div key={item.id} className="rounded-md border border-neutral-800 bg-neutral-950/40 px-2.5 py-1.5 text-xs">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className="w-5 shrink-0 text-center text-[11px] font-semibold tabular-nums text-indigo-300"
                   aria-label={`${t('En cola')} ${queuePosition}`}
@@ -138,23 +138,23 @@ export function DeepResearchQueueStrip({
                 >
                   {queuePosition}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-neutral-300" title={displayTitle(item)}>{displayTitle(item)}</span>
-                {item.origin === 'mcp' && <OriginBadge />}
+                <span className="min-w-0 flex-1 truncate text-neutral-300 max-md:basis-[calc(100%-2rem)]" title={displayTitle(item)}>{displayTitle(item)}</span>
+                {item.origin !== 'app' && <OriginBadge origin={item.origin} />}
                 <span className="shrink-0 text-[11px] tabular-nums text-neutral-500">
                   {elapsedTimeLabel(item.enqueuedAt, null, now)}
                 </span>
                 {item.status === 'running' ? (
                   <>
-                    <span className="shrink-0 text-[11px] text-indigo-300">{item.detail ?? progressDetail(item.progress) ?? t('Generando…')}</span>
+                    <span className="min-w-0 text-[11px] text-indigo-300 max-md:order-last max-md:basis-full max-md:break-words md:max-w-[45%] md:truncate" title={item.detail ?? progressDetail(item.progress) ?? undefined}>{item.detail ?? progressDetail(item.progress) ?? t('Generando…')}</span>
                     {percent !== null && (
-                      <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-indigo-400">{percent}%</span>
+                      <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-indigo-400">{`${percent}%`}</span>
                     )}
                   </>
                 ) : (
                   <span className="shrink-0 text-[11px] text-neutral-500">{t('En cola')}</span>
                 )}
                 <button
-                  className="shrink-0 rounded p-0.5 text-neutral-500 hover:bg-red-950/50 hover:text-red-400"
+                  className="shrink-0 rounded p-0.5 text-neutral-500 hover:bg-red-950/50 hover:text-red-400 max-md:min-h-11 max-md:min-w-11"
                   onClick={() => onRemove(item)}
                   title={t('Quitar de la cola')}
                   aria-label={t('Quitar de la cola')}
@@ -168,16 +168,16 @@ export function DeepResearchQueueStrip({
           );
         })}
         {failed.map((item) => (
-          <div key={item.id} className="flex items-center gap-2 rounded-md border border-red-900/50 bg-red-950/20 px-2.5 py-1.5 text-xs">
-            <Icon name="alert" size={12} className="text-red-400" />
+          <div key={item.id} className="flex items-center gap-2 max-md:flex-wrap rounded-md border border-red-900/50 bg-red-950/20 px-2.5 py-1.5 text-xs">
+            <Icon name="alert" size={12} className="text-red-700 dark:text-red-300" />
             <span
-              className="min-w-0 flex-1 truncate text-red-300"
+              className="min-w-0 flex-1 truncate text-red-700 dark:text-red-300"
               title={item.error ? errorText(item.error) : displayTitle(item)}
             >
               {displayTitle(item)}
             </span>
-            {item.origin === 'mcp' && <OriginBadge />}
-            <span className="max-w-[45%] shrink-0 truncate text-[11px] text-red-400/80" title={item.error ? errorText(item.error) : undefined}>
+            {item.origin !== 'app' && <OriginBadge origin={item.origin} />}
+            <span className="max-w-[45%] shrink-0 truncate text-[11px] text-red-700 dark:text-red-300 max-md:max-w-full max-md:basis-full max-md:whitespace-normal max-md:break-words" title={item.error ? errorText(item.error) : undefined}>
               {item.error ? `${t('Falló')}: ${errorText(item.error)}` : t('Falló')}
             </span>
           </div>

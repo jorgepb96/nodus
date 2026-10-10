@@ -226,10 +226,10 @@ export function ThemesOverview({
           </div>
           <div className="stellar-navigation">
             <CorpusContextControls context={corpusContext} onFit={() => api.current?.fitContext()} />
-            <button title={t("Alejar")} onClick={() => api.current?.zoom(1 / 1.55)}>
+            <button aria-label={t("Alejar")} title={t("Alejar")} onClick={() => api.current?.zoom(1 / 1.55)}>
               −
             </button>
-            <button title={t("Acercar")} onClick={() => api.current?.zoom(1.55)}>
+            <button aria-label={t("Acercar")} title={t("Acercar")} onClick={() => api.current?.zoom(1.55)}>
               +
             </button>
             <button onClick={() => api.current?.fit()}>{t("Encuadrar")}</button>

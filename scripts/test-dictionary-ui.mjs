@@ -23,7 +23,7 @@ const [
     readFile(path.join(root, "src/app/views/corpus.tsx"), "utf8"),
     readFile(path.join(root, "src/navigation.ts"), "utf8"),
     readFile(path.join(root, "src/views/AuthorsView.tsx"), "utf8"),
-    readFile(path.join(root, "electron/ai/dictionary.ts"), "utf8"),
+    Promise.all([readFile(path.join(root, "electron/ai/dictionary.ts"), "utf8"), readFile(path.join(root, "shared/dictionaryGenerationCore.ts"), "utf8")]).then(files => files.join("\n")),
     readFile(path.join(root, "electron/ipc/academic.ts"), "utf8"),
     readFile(
       path.join(root, "electron/ai/dictionaryGenerationQueue.ts"),
@@ -194,7 +194,7 @@ assert.match(
 );
 assert.match(
   view,
-  /listDictionaryEntries\(\{[\s\S]*?query,[\s\S]*?letter:[\s\S]*?sort:/,
+  /readDictionaryCatalogue\(request => window\.nodus\.listDictionaryEntries\(request\), \{[\s\S]*?query,[\s\S]*?letter:[\s\S]*?sort:/,
   "overview sends search, filters and sorting through IPC",
 );
 assert.match(view, /updateDictionaryEntry/, "manual editing is wired");
@@ -320,7 +320,7 @@ assert.match(
 );
 assert.match(
   generationQueue,
-  /setImmediate\([\s\S]*this\.#run\(request, token\)/,
+  /const execute = this\.bindExecution\(\(\) => this\.#run\(request, token\)\)[\s\S]*setImmediate\(\(\) => \{ void execute\(\)/,
   "every entry gets its own independently scheduled background execution",
 );
 assert.match(
@@ -358,11 +358,10 @@ assert.match(
   /restoreDictionaryVersion/,
   "version restoration is available",
 );
-const generatedAt = ai.indexOf("generated = await generator");
-const savedAt = ai.indexOf("return saveDictionaryVersion", generatedAt);
-assert.ok(
-  generatedAt >= 0 && savedAt > generatedAt,
-  "provider generation completes before any version is saved, so failure preserves current content",
+assert.match(
+  ai,
+  /return saveDictionaryVersion\(await generateDictionaryDefinition\(/,
+  "the owning vault saves only after the shared generation and verification core completes",
 );
 assert.match(
   view,
@@ -416,8 +415,12 @@ assert.match(
 );
 assert.match(
   ai,
-  /applyCitationPolicy[\s\S]*extractCitationClaims[\s\S]*aiVerifyCitations/,
-  "generation reuses Deep Research citation validation",
+  /applyCitationPolicy\(generated\.descriptionMarkdown, maps\)[\s\S]*extractCitationClaims\(cleaned, maps\)[\s\S]*await verifyCitations\(claims, model\)/,
+  "the shared core validates retained citations after applying citation policy",
+);
+assert.match(
+  ai, /verifyCitations: typeof aiVerifyCitations = aiVerifyCitations/,
+  "Desktop supplies the actual AI citation verifier to the shared core",
 );
 assert.match(
   ai,

@@ -9,8 +9,12 @@ import { ResearchAssistantModal } from '../src/views/ResearchAssistantModal';
 import { setActiveLang } from '../src/i18n';
 import type { AppSettings } from '../shared/types';
 import '../src/index.css';
+import '../src/mobileWeb/mobile.css';
+import '../src/mobileWeb/phone.css';
+import {installMobileKeyboard} from '../src/mobileWeb/mobileKeyboard';
 const params = new URLSearchParams(location.search);
 const view = params.get('view');
+if (params.get('device') === 'phone') { (window as any).nodusMobileConfig = {device:'phone'}; installMobileKeyboard(document); }
 const vaultType = params.get('vault') ?? ({ database: 'databases', study: 'estudio', teaching: 'docencia', world: 'worldbuilding' }[view ?? ''] ?? 'academic');
 // `?memory=` stands in for a relaunch: the composer then reads the levels a previous session
 // saved, keyed provider:model, instead of an empty map.
@@ -139,7 +143,7 @@ window.nodus = new Proxy({
   listConversations: async () => [...conversations.values()],
   getConversation: async (id: string) => conversations.get(id),
   saveConversationMessages: async (id: string, messages: any[], meta: any) => {
-    win.saved.push({ id, messages, meta }); Object.assign(conversations.get(id), meta, { messages });
+    win.saved.push({ id, messages, meta }); Object.assign(conversations.get(id), meta, { messages, messageCount: messages.length });
   },
   updateSettings: async (patch: any) => { win.updates.push(patch); return Object.assign(settings, patch); },
   researchChatStream: async (request: any, handlers: any) => {
@@ -152,7 +156,7 @@ window.nodus = new Proxy({
   },
 }, { get(target: any, key: string) { return target[key] ?? (key.startsWith('on') ? () => () => {} : async () => []); } });
 setActiveLang(params.get('lang') === 'en' || params.get('concilium') ? 'en' : 'es');
-document.documentElement.className = `${params.get('theme') === 'dark' ? 'dark' : 'light'} ${vaultType}`;
+document.documentElement.className = `${params.get('theme') === 'dark' ? 'dark' : 'light'} ${vaultType} ${params.get('device') === 'phone' ? 'nodus-phone' : ''}`;
 if (params.get('fallback') === 'chat') delete (settings as any).synthesisModel;
 const onEvidence = (id: string) => { win.openedEvidence = id; };
-ReactDOM.createRoot(document.getElementById('root')!).render(<div style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} />}</div>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<div className={params.get('device') === 'phone' ? 'mobile-surface' : undefined} style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} />}</div>);

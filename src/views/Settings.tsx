@@ -1,4 +1,5 @@
 import { openResearchPreparation } from '../components/ResearchPreparationWelcome';
+import { MobilePairingSettings } from '../components/MobilePairingSettings';
 // SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
 // SPDX-License-Identifier: AGPL-3.0-only
 
@@ -112,7 +113,7 @@ function themeDraftFrom(theme?: CustomAppTheme): Omit<CustomAppTheme, 'id'> {
   };
 }
 
-type SettingsTabId = 'providers' | 'models' | 'library' | 'extraction' | 'interface' | 'integrations' | 'browser' | 'server' | 'system' | 'data' | 'about' | 'updates';
+type SettingsTabId = 'providers' | 'models' | 'library' | 'extraction' | 'interface' | 'integrations' | 'browser' | 'mobile' | 'server' | 'system' | 'data' | 'about' | 'updates';
 
 const GRAPH_HEALTH_KEYWORDS = 'salud grafo integridad comprobar reparar ideas temas relaciones huérfanas zombis graph health integrity repair';
 
@@ -124,7 +125,8 @@ const SETTINGS_TABS: { id: SettingsTabId; label: string; icon: string; keywords:
   { id: 'interface', label: 'Interfaz', icon: 'palette', keywords: 'idioma tema claro oscuro animaciones barra lateral menu navegacion accesibilidad contraste escala fuente lectura enfoque' },
   { id: 'integrations', label: 'Integraciones', icon: 'link', keywords: 'mcp servidor token puerto chatgpt openai tunnel tunel word copilot certificado addin' },
   { id: 'browser', label: 'Nodus Browser', icon: 'compass', keywords: 'navegador browser web cookies cache almacenamiento datos permisos sitios descargas privacidad' },
-  { id: 'server', label: 'Servidor', icon: 'globe', keywords: 'servidor docker compartir vault boveda estudiantes investigadores dominio subdominio oauth claude chatgpt reverse proxy caddy nginx publicar sincronizar' },
+  { id: 'mobile', label: 'Conexión móvil', icon: 'link', keywords: 'movil mobile iphone ipad workspace conectar vincular codigo qr red lan vpn tailscale live escritorio' },
+  { id: 'server', label: 'Servidor avanzado', icon: 'globe', keywords: 'servidor avanzado cloud cloudflare docker compartir vault boveda estudiantes investigadores dominio subdominio oauth claude chatgpt reverse proxy caddy nginx publicar sincronizar' },
   { id: 'system', label: 'Tutoriales', icon: 'graduation', keywords: 'sistema ayuda tutorial' },
   { id: 'data', label: 'Backup / copia de seguridad', icon: 'download', keywords: 'datos backup exportar importar demo copia cifrada peligro reinicializar grafo borrar' },
   { id: 'about', label: 'Acerca de Nodus Research', icon: 'info', keywords: 'acerca proyecto codigo abierto open source gratuito privacidad privacy rgpd gdpr datos alumnado inteligencia artificial licencia terceros legal redes sociales social reddit youtube comunidad' },
@@ -983,6 +985,7 @@ export function Settings({
     visibleSettingsSection('system', 'Ayuda', 'tutorial uso avanzado actualizaciones version update reiniciar'),
     visibleSettingsSection('integrations', 'Servidor MCP', 'mcp servidor puerto token cliente conexion chatgpt openai tunnel tunel'),
     visibleSettingsSection('browser', 'Nodus Browser', 'navegador browser web cookies cache almacenamiento datos permisos sitios descargas privacidad'),
+    visibleSettingsSection('mobile', 'Conexión móvil', 'movil mobile iphone ipad codigo qr lan vpn tailscale live workspace escritorio'),
     visibleSettingsSection('server', 'Nodus Server', 'docker compartir vault boveda estudiantes investigadores dominio oauth reverse proxy caddy nginx sincronizacion remota'),
     visibleSettingsSection('integrations', 'Copiloto de escritura Word', 'word copilot addin certificado token localhost'),
     visibleSettingsSection('integrations', 'Copiloto de escritura LibreOffice', 'libreoffice copilot macro python install instalacion instalando'),
@@ -2122,6 +2125,12 @@ export function Settings({
         </Section>
       )}
 
+      {visibleSettingsSection('mobile', 'Conexión móvil', 'movil mobile iphone ipad codigo qr lan vpn tailscale live workspace escritorio') && (
+        <Section title={t('Conexión móvil')}>
+          <MobilePairingSettings />
+          <button className="btn btn-ghost mt-3 text-sm" onClick={() => { setSettingsTab('server'); setSettingsQuery(''); }}>{t('Servidor avanzado')}</button>
+        </Section>
+      )}
       {visibleSettingsSection('server', 'Nodus Server', 'docker compartir vault boveda estudiantes investigadores dominio oauth reverse proxy caddy nginx sincronizacion remota') && (
         <Section title={t('Nodus Server')}>
           <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
@@ -2140,7 +2149,7 @@ export function Settings({
               onClick={() => setServerMode('cloudflare')}
               className={`rounded-xl border p-3 text-left transition ${serverMode === 'cloudflare' ? 'border-sky-400 bg-sky-50 dark:border-sky-600 dark:bg-sky-950/30' : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700'}`}
             >
-              <span className="flex items-center gap-2 text-sm font-medium"><Icon name="globe" /> {t('Cloudflare · recomendado')}</span>
+              <span className="flex items-center gap-2 text-sm font-medium"><Icon name="globe" /> Cloudflare</span>
               <span className="mt-1 block text-xs leading-5 text-neutral-600 dark:text-neutral-400">{t('Disponible siempre, sin servidor, Docker, dominio ni conocimientos técnicos.')}</span>
             </button>
             <button

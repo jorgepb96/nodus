@@ -83,7 +83,12 @@ import { ADAPTIVE_CONCURRENCY_TRANSLATIONS } from './i18n.adaptiveConcurrency';
 import { DATABASE_DEEP_RESEARCH_TRANSLATIONS } from './i18n.databaseDeepResearch';
 import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const PT: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["pt"],
+  'No se pudieron cargar los documentos guardados.': 'Não foi possível carregar os documentos guardados.',
+  'El catálogo de documentos guardados tiene un formato inválido.': 'O catálogo de documentos guardados tem um formato inválido.',
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.pt,
   ...CALENDAR_SYNC_TRANSLATIONS["pt"],
@@ -8837,6 +8842,8 @@ export const PT: Record<string, string> = {
   "Ciencia": "Ciência",
   "Arte": "Arte",
   "Favoritos": "Favoritos",
+  "Dispositivos vinculados": "Dispositivos associados",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device} está associado. Já podes usar o teu espaço de trabalho no telemóvel.",
   "Conexión móvil": "Ligação móvel",
   "Navegador web": "Navegador web",
   "App iPhone–iPad": "App iPhone–iPad",
@@ -8844,4 +8851,30 @@ export const PT: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "A ligação nativa não está disponível. Requer macOS e permissão de rede local.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Lê com o Nodus Presenter. Liga o computador e o telemóvel à mesma rede local.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "A ligação à app não está disponível. Verifica a ligação de rede e reinicia a apresentação.",
+  "Móvil": "Telemóvel",
+  "Pedido desde el móvil": "Pedido a partir do telemóvel",
+  "Título del informe": "Título do relatório",
+  "Ver título completo": "Ver título completo",
+  "Datos del informe": "Dados do relatório",
+  "Opciones del informe": "Opções do relatório",
+  "Generación cancelada.": "Geração cancelada.",
+  "Contenido del informe": "Conteúdo do relatório",
+  "Renovar conexión": "Renovar ligação",
+  "Nueva vinculación": "Nova associação",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "A renovação da ligação existente conserva os seus cofres, permissões e dados locais.",
+  "Buscar dispositivos": "Procurar dispositivos",
+  "No hay dispositivos que coincidan con la búsqueda.": "Nenhum dispositivo corresponde à pesquisa.",
+  "Todavía no hay dispositivos vinculados.": "Ainda não há dispositivos vinculados.",
+  "Vinculado": "Vinculado",
+  "Última actividad": "Última atividade",
+  "Conexión caducada": "Ligação expirada",
+  "Renovar conexión de {device}": "Renovar ligação de {device}",
+  "Revocar conexión de {device}": "Revogar ligação de {device}",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "Este dispositivo perderá o acesso a todos os vaults e permissões desta ligação. Poderá vinculá-lo novamente a partir do Nodus.",
+  "Servidor avanzado": "Servidor avançado",
+  "Vincular con mi Nodus": "Vincular o meu Nodus",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "Leia o QR ou introduza o código no Nodus móvel para ligar todo o seu espaço de trabalho.",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Mantenha o Nodus aberto e ambos os dispositivos na mesma rede ou VPN, como o Tailscale. O modo live usa os modelos deste Mac.",
+  "Todo tu workspace": "Todo o seu espaço de trabalho",
+  "Generar código y QR": "Gerar código e QR",
 };

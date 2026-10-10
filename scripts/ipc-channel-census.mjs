@@ -70,6 +70,22 @@ export function ipcCensus() {
   const main = sources.filter((entry) => !entry.bridge);
   const bridge = sources.filter((entry) => entry.bridge);
 
+  // The typed mobile Bridge dispatches this closed vocabulary to the same
+  // registered handlers. Export operations instead have their own renderer;
+  // derive that exception from the actual export dispatcher, not a test list.
+  const mobileFile = 'shared/mobileOperations.ts';
+  const mobileCode = readFileSync(path.join(repoRoot, mobileFile), 'utf8');
+  const mobileRegistry = mobileCode.slice(mobileCode.indexOf('MOBILE_OPERATIONS = {'), mobileCode.indexOf('} as const'));
+  const exportsCode = readFileSync(path.join(repoRoot, 'electron/desktopBridge/exports.ts'), 'utf8');
+  const exportsSet = exportsCode.match(/MOBILE_EXPORT_METHODS = new Set\(\[([^\]]+)\]\)/);
+  if (!exportsSet) throw new Error('The direct mobile export vocabulary must remain literal.');
+  const directExports = new Set([...exportsSet[1].matchAll(/['"]([^'"]+)['"]/g)].map(match => match[1]));
+  const mobileEntries = [...mobileRegistry.matchAll(/\b([A-Za-z0-9_]+):\s*\[\s*(['"])([^'"\n]+)\2\s*,/g)]
+    .map(match => ({ method: match[1], channel: match[3], file: mobileFile }));
+  if (!mobileEntries.length || [...directExports].some(method => !mobileEntries.some(entry => entry.method === method)))
+    throw new Error('The typed mobile operation census is incomplete.');
+  const mobileInvoked = mobileEntries.filter(entry => !directExports.has(entry.method));
+
   // The NodusApi surface, wherever it is declared: the interface in
   // shared/types.ts plus the per-domain slices in shared/api/.
   const apiFiles = [path.join(repoRoot, 'shared/types.ts')];
@@ -86,7 +102,7 @@ export function ipcCensus() {
   cached = {
     handled: [...collect(HANDLE, main), ...collect(IPC_MAIN_HANDLE, main)],
     listened: [...collect(IPC_MAIN_ON, main), ...collect(WEB_CONTENTS_IPC_ON, main)],
-    invoked: collect(RENDERER_INVOKE, bridge),
+    invoked: [...collect(RENDERER_INVOKE, bridge), ...mobileInvoked],
     sent: collect(RENDERER_SEND, bridge),
     subscribed: collect(RENDERER_ON, bridge),
     apiMethods,

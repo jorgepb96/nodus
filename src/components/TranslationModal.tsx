@@ -118,7 +118,8 @@ function TranslationPanel({
     setError(null);
     try {
       const full = await window.nodus.getContentTranslation(summary.id);
-      if (full) onApply(full);
+      if (!full) throw new Error(t('La traducción ya no está disponible.'));
+      onApply(full);
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   };
 
@@ -144,12 +145,12 @@ function TranslationPanel({
         {loading && !list.length ? <li className="py-5 text-center text-xs text-neutral-500">{t('Cargando traducciones…')}</li> : list.map((item) => {
           const working = item.status === 'generating'; const failed = item.status === 'error'; const active = activeTranslationId === item.id;
           return <li key={item.id} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${active ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30' : failed ? 'border-red-300 dark:border-red-900/60' : 'border-neutral-200 dark:border-neutral-800'}`}>
-            <button className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default" disabled={working || failed} onClick={() => void apply(item)}>
+            <button aria-label={tx('Leer traducción a {lang}', {lang:item.languageLabel})} className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default" disabled={working || failed} onClick={() => void apply(item)}>
               <Icon name={working ? 'sync' : failed ? 'alert' : 'book'} size={14} className={working ? 'animate-spin text-indigo-400' : failed ? 'text-red-400' : 'text-neutral-400'} />
               <span className="min-w-0"><span className="block truncate text-sm font-medium">{item.languageLabel}</span><span className={`block truncate text-[11px] ${failed ? 'text-red-400' : 'text-neutral-500'}`}>{working ? t('Traduciendo…') : failed ? item.error || t('No se pudo completar') : item.title}</span></span>
             </button>
             {active && <span className="text-[10px] font-semibold uppercase text-indigo-500">{t('Aplicado')}</span>}
-            <button className="btn btn-ghost !py-1" title={t('Regenerar esta traducción')} disabled={working} onClick={() => generate(item.language)}><Icon name={working ? 'sync' : 'refresh'} size={12} className={working ? 'animate-spin' : ''} /></button>
+            <button className="btn btn-ghost !py-1" aria-label={tx('Regenerar traducción a {lang}', {lang:item.languageLabel})} title={t('Regenerar esta traducción')} disabled={working} onClick={() => generate(item.language)}><Icon name={working ? 'sync' : 'refresh'} size={12} className={working ? 'animate-spin' : ''} /></button>
             <button className="btn btn-ghost !py-1 text-neutral-500 hover:text-red-400" title={t('Eliminar traducción')} disabled={working} onClick={() => void remove(item)}><Icon name="trash" size={12} /></button>
           </li>;
         })}

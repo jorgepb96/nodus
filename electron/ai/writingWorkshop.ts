@@ -98,6 +98,8 @@ interface WorkshopSemanticRanking {
 export type WorkshopRetrievalMode = 'hierarchical' | 'idea_first' | 'legacy';
 
 interface WorkshopSnapshotOptions {
+  /** A device-owned provider may read the stored corpus without invoking a Mac provider. */
+  lexicalOnly?: boolean;
   /**
    * `idea_first` deliberately recreates the pre-document retrieval boundary for
    * Deep Research planning: idea/work vectors may rank the graph, but document
@@ -186,7 +188,9 @@ export async function buildWritingWorkshopSnapshot(
     : `${brief.objective} ${kindLabel(brief.kind)}`;
   const tokens = tokenize(lexicalQuery);
   const retrievalMode = options.retrievalMode ?? 'hierarchical';
-  const semantic = await buildSemanticRanking([brief.objective, ...extraProbes], retrievalMode);
+  const semantic: WorkshopSemanticRanking = options.lexicalOnly
+    ? { active: false, ideaScores: new Map(), workScores: new Map(), passages: [] }
+    : await buildSemanticRanking([brief.objective, ...extraProbes], retrievalMode);
   const ideas = rankedIdeas(tokens, semantic);
   const themes = rankedThemes(tokens, semantic);
   const gaps = rankedGaps(tokens, brief.kind, semantic);

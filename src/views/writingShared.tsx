@@ -161,7 +161,7 @@ export function DraftResultMain({
     <div className={`mx-auto space-y-5 ${wide ? 'max-w-none' : 'max-w-4xl'}`}>
       <div className="space-y-3">
         <div className="min-w-0">
-          <h2 className="text-xl font-semibold break-words">{draft.title}</h2>
+          <h2 className="draft-result-title text-xl font-semibold break-words">{draft.title}</h2>
           {draft.abstract && <div data-testid="draft-abstract" className={`text-sm text-neutral-400 mt-1 ${justify ? 'text-justify' : ''}`}>
             <Markdown content={draft.abstract} onCitation={onCitation} onStudyDocument={onStudyDocument} onStudyMaterial={onStudyMaterial} onStudyRecording={onStudyRecording} onGuideEvidence={onGuideEvidence} />
           </div>}

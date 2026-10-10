@@ -84,7 +84,12 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  */
 
 /** Traditional Chinese UI table. Keys are the Spanish source strings (see i18n.ts). */
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const ZH_TW: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["zh-TW"],
+  'No se pudieron cargar los documentos guardados.': '無法載入已儲存的文件。',
+  'El catálogo de documentos guardados tiene un formato inválido.': '已儲存文件目錄的格式無效。',
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-TW'],
   ...CALENDAR_SYNC_TRANSLATIONS["zh-TW"],
@@ -7902,6 +7907,8 @@ export const ZH_TW: Record<string, string> = {
   "Arte": "藝術",
   "Favoritos": "收藏",
   "Inicio": "首頁",
+  "Dispositivos vinculados": "已連結裝置",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device} 已連結。現在可以在行動裝置上使用整個工作區。",
   "Conexión móvil": "行動連線",
   "Navegador web": "網頁瀏覽器",
   "App iPhone–iPad": "iPhone–iPad App",
@@ -7909,4 +7916,30 @@ export const ZH_TW: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "原生連線無法使用。需要 macOS 和區域網路權限。",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "使用 Nodus Presenter 掃描。請將電腦和手機連線至同一個區域網路。",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "App 連線無法使用。請檢查網路連線並重新開始簡報。",
+  "Móvil": "手機",
+  "Pedido desde el móvil": "從手機發起的請求",
+  "Título del informe": "報告標題",
+  "Ver título completo": "查看完整標題",
+  "Datos del informe": "報告詳情",
+  "Opciones del informe": "報告選項",
+  "Generación cancelada.": "產生已取消。",
+  "Contenido del informe": "報告內容",
+  "Renovar conexión": "更新連線",
+  "Nueva vinculación": "新增配對",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "更新現有連線會保留其資料庫、權限及本機資料。",
+  "Buscar dispositivos": "搜尋裝置",
+  "No hay dispositivos que coincidan con la búsqueda.": "沒有符合搜尋條件的裝置。",
+  "Todavía no hay dispositivos vinculados.": "尚未連結任何裝置。",
+  "Vinculado": "已連結",
+  "Última actividad": "最近活動",
+  "Conexión caducada": "連線已到期",
+  "Renovar conexión de {device}": "更新 {device} 的連線",
+  "Revocar conexión de {device}": "撤銷 {device} 的連線",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "此裝置將失去此連線中所有資料庫與權限的存取權。你可以從 Nodus 重新連結。",
+  "Servidor avanzado": "進階伺服器",
+  "Vincular con mi Nodus": "連結我的 Nodus",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "掃描 QR 碼或在 Nodus 行動版輸入代碼，即可連接整個工作區。",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "保持 Nodus 開啟，並讓兩台裝置使用相同網路或 Tailscale 等 VPN。Live 使用此 Mac 上的模型。",
+  "Todo tu workspace": "整個工作區",
+  "Generar código y QR": "產生代碼及 QR 碼",
 };

@@ -37,6 +37,7 @@ export class DictionaryGenerationQueue {
   constructor(
     private readonly execute: DictionaryGenerationExecutor,
     private readonly publish: DictionaryGenerationProgressReporter,
+    private readonly bindExecution: (work: () => Promise<void>) => () => Promise<void> = work => work,
   ) {}
 
   start(request: DictionaryGenerationRequest): DictionaryProgress {
@@ -53,9 +54,8 @@ export class DictionaryGenerationQueue {
     this.#tokens.set(request.entryId, token);
     this.#set(queued, token);
 
-    setImmediate(() => {
-      void this.#run(request, token);
-    });
+    const execute = this.bindExecution(() => this.#run(request, token));
+    setImmediate(() => { void execute(); });
     return queued;
   }
 

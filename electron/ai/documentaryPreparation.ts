@@ -1,4 +1,5 @@
 import { listResearchNotebooks } from '../db/researchNotebooksRepo';
+import { assertDesktopPreparation } from '../desktopBridge/executionBoundary';
 import { selectResearchDocuments } from './researchCorpusScope';
 import { researchActivityEnabled, startResearchActivity } from './researchActivity';
 import { app } from 'electron';
@@ -419,6 +420,7 @@ export function embeddingConfigurationUsable(config: Pick<EmbeddingExecutionConf
   return ['ollama', 'lmstudio', 'nodus'].includes(config.provider) || !!getSettings().providerKeys[config.provider];
 }
 export async function prepareResearchDocuments(documentIds: string[], mode: 'embeddings' | 'text' = 'embeddings'): Promise<void> {
+  assertDesktopPreparation();
   // Callers rely on the queue being written synchronously; only a running maintenance defers it.
   if (maintenance) await maintenance;
   const store = documentaryStore();

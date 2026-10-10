@@ -131,10 +131,10 @@ function publicCollection(value: LibraryCollectionView): PublishedLibraryCollect
   };
 }
 
-function allItems(): LibraryCatalogItem[] {
+export function allServerLibraryItems(vaultId?: string): LibraryCatalogItem[] {
   const values: LibraryCatalogItem[] = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    const page = listGlobalLibraryItems({ limit: PAGE_SIZE, offset, includeFacets: false, sort: [{ field: 'title', direction: 'asc' }] });
+    const page = listGlobalLibraryItems({ vaultId, limit: PAGE_SIZE, offset, includeFacets: false, sort: [{ field: 'title', direction: 'asc' }] });
     values.push(...page.items);
     if (values.length >= page.total || page.items.length === 0) break;
   }
@@ -287,16 +287,21 @@ function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
 }
 
 /** Build the complete global-library projection for one opted-in space. */
-export function buildServerLibraryPublication(now = new Date().toISOString()): BuiltServerLibraryPublication {
+export function buildServerLibraryPublication(now = new Date().toISOString(), options: { items?: LibraryCatalogItem[]; includePackages?: boolean } = {}): BuiltServerLibraryPublication {
   const packages: ServerLibraryPackage[] = [];
   const documents: PublishedLibraryDocument[] = [];
   const personalAnnotations: ServerPersonalLibraryAnnotation[] = [];
-  for (const item of allItems()) {
+  for (const item of options.items ?? allServerLibraryItems()) {
     const record = getGlobalLibraryItem(item.id);
     if (!record || record.deletedAt) continue;
-    const built = packageFor(item, record);
-    if (built.value) packages.push(built.value);
     const original = originalMetadata(record);
+    const raw = options.includePackages === false ? getLibraryReaderRawContent(item.id) : null;
+    const built = options.includePackages === false ? {
+      value: null, wordCount: raw?.markdown.split(/\s+/u).filter(Boolean).length ?? 0,
+      figureCount: raw ? markdownFigures(raw.markdown).length : 0,
+      cleanAvailable: Boolean(raw?.markdown.trim()), originalIncluded: original.available,
+    } : packageFor(item, record);
+    if (built.value) packages.push(built.value);
     const annotations = listLibraryReaderAnnotations(item.id);
     for (const annotation of annotations) {
       personalAnnotations.push({ documentId: item.id, annotation: annotation as unknown as Record<string, unknown> });

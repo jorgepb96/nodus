@@ -82,7 +82,12 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * Grouped by surface for maintainability. English is the mandatory fallback for
  * every non-Spanish interface language.
  */
+import { MOBILE_PARITY_TRANSLATIONS } from './i18n.mobileParity';
+
 export const EN: Record<string, string> = {
+  ...MOBILE_PARITY_TRANSLATIONS["en"],
+  'No se pudieron cargar los documentos guardados.': 'Saved documents could not be loaded.',
+  'El catálogo de documentos guardados tiene un formato inválido.': 'The saved document catalogue has an invalid format.',
   ...CALENDAR_SYNC_TRANSLATIONS["en"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["en"],
   // Nodus Tools catalogue
@@ -9122,6 +9127,8 @@ export const EN: Record<string, string> = {
   "Ciencia": "Science",
   "Arte": "Art",
   "Favoritos": "Favorites",
+  "Dispositivos vinculados": "Linked devices",
+  "{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.": "{device} is linked. You can now use your workspace from your mobile device.",
   "Conexión móvil": "Mobile connection",
   "Navegador web": "Web browser",
   "App iPhone–iPad": "iPhone–iPad app",
@@ -9129,4 +9136,30 @@ export const EN: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "The native connection is unavailable. It requires macOS and local network permission.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Scan using Nodus Presenter. Connect the computer and phone to the same local network.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "The app connection is unavailable. Check the network connection and restart the presentation.",
+  "Móvil": "Mobile",
+  "Pedido desde el móvil": "Requested from mobile",
+  "Título del informe": "Report title",
+  "Ver título completo": "View full title",
+  "Datos del informe": "Report details",
+  "Opciones del informe": "Report options",
+  "Generación cancelada.": "Generation cancelled.",
+  "Contenido del informe": "Report content",
+  "Renovar conexión": "Renew connection",
+  "Nueva vinculación": "New pairing",
+  "Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.": "Renewing the existing connection preserves its vaults, permissions and local data.",
+  "Buscar dispositivos": "Search devices",
+  "No hay dispositivos que coincidan con la búsqueda.": "No devices match the search.",
+  "Todavía no hay dispositivos vinculados.": "No devices have been linked yet.",
+  "Vinculado": "Linked",
+  "Última actividad": "Last activity",
+  "Conexión caducada": "Connection expired",
+  "Renovar conexión de {device}": "Renew connection for {device}",
+  "Revocar conexión de {device}": "Revoke connection for {device}",
+  "Este dispositivo perderá acceso a todas las bóvedas y permisos de esta conexión. Podrás vincularlo de nuevo desde Nodus.": "This device will lose access to every vault and permission in this connection. You can link it again from Nodus.",
+  "Servidor avanzado": "Advanced server",
+  "Vincular con mi Nodus": "Link my Nodus",
+  "Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.": "Scan the QR or enter the code in Nodus mobile to connect your entire workspace.",
+  "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Keep Nodus open and both devices on the same network or VPN, such as Tailscale. Live uses the models on this Mac.",
+  "Todo tu workspace": "Your entire workspace",
+  "Generar código y QR": "Generate code and QR",
 };

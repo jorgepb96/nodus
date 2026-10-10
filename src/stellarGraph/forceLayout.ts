@@ -10,9 +10,9 @@ const IDEAL = 260;
  * Tuned on a real 3.8k-idea theme for relations about as long as the gap between
  * unrelated neighbours — which is what makes a connection legible on screen.
  */
-const FAR_FIELD = Number(process.env.NODUS_FAR_FIELD ?? 0.08);
+const FAR_FIELD = Number(typeof process !== 'undefined' ? process.env.NODUS_FAR_FIELD ?? 0.08 : 0.08);
 /** No two ideas end up closer than this, so every node keeps room for its label. */
-const MIN_GAP = Number(process.env.NODUS_MIN_GAP ?? 240);
+const MIN_GAP = Number(typeof process !== 'undefined' ? process.env.NODUS_MIN_GAP ?? 240 : 240);
 
 export interface ForceLayoutOptions {
   iterations?: number;

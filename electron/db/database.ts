@@ -253,6 +253,8 @@ export async function withVaultDatabase<T>(vaultId: string, work: () => Promise<
  * caller that reports which vault it is serving must ask here rather than trust the
  * registry.
  */
+export function scopedDbPath(): string | null { return jobDatabase.getStore()?.name ?? null; }
+
 export function openDbPath(): string | null {
   return db ? db.name : null;
 }

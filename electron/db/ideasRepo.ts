@@ -159,8 +159,20 @@ export interface NewIdeaInput {
 }
 
 export function createIdea(input: NewIdeaInput): Idea {
+  return insertIdea(input, nextGlobalId());
+}
+
+/** Offline authored ideas keep their identity before joining the Mac corpus.
+ * They never reserve or advance the Mac's sequential derived-idea counter. */
+export function createIdeaWithIdentity(input: NewIdeaInput, globalId: string): Idea {
+  if (!/^manual-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(globalId)) {
+    throw new Error('Invalid authored idea identity');
+  }
+  return insertIdea(input, globalId);
+}
+
+function insertIdea(input: NewIdeaInput, global_id: string): Idea {
   const db = getDb();
-  const global_id = nextGlobalId();
   const created_at = new Date().toISOString();
   const embeddingText = input.embeddingText ?? embeddingTextForIdea(input);
   const meta = input.embedding ? embeddingMetaFor(embeddingText, input.embedding) : null;

@@ -24,6 +24,8 @@ export function GraphView({
   snapshot,
   onSnapshotChange,
   onEditManualIdea,
+  mobile = false,
+  onFullscreenChange,
 }: {
   onEditManualIdea?: (noteId: string) => void;
   settings: AppSettings;
@@ -34,6 +36,8 @@ export function GraphView({
   testId?: string;
   snapshot?: StellarWorkspaceSnapshot;
   onSnapshotChange?(snapshot: StellarWorkspaceSnapshot): void;
+  mobile?: boolean;
+  onFullscreenChange?(fullscreen: boolean): Promise<void>;
 }) {
   const [tutorTarget, setTutorTarget] = useState<GraphNavigationTarget | null>(
     null,
@@ -41,12 +45,14 @@ export function GraphView({
   const [modal, setModal] = useState(target?.openTutor ? "tutor" : ""),
     [revision, setRevision] = useState(0);
   const source = useMemo(
-    () =>
-      desktopSource(
+    () => {
+      const source = desktopSource(
         dataSource,
         `${dataSource.key}:${target?.workId || "corpus"}`,
-      ),
-    [dataSource, target?.workId, revision],
+      );
+      return mobile ? {...source, readOnly: true, restore: undefined, save: undefined} : source;
+    },
+    [dataSource, target?.workId, revision, mobile],
   );
   useEffect(
     () => dataSource.subscribe?.(() => setRevision((v) => v + 1)),
@@ -74,6 +80,7 @@ export function GraphView({
     <div className="h-full min-h-0" data-testid={testId || "graph-view"}>
       <StellarWorkspace
         source={source}
+        onFullscreenChange={onFullscreenChange}
         onEditIdea={settings.academicMode === 'manual' ? onEditManualIdea : undefined}
         snapshot={snapshot}
         onSnapshotChange={onSnapshotChange}
@@ -88,8 +95,8 @@ export function GraphView({
         author={target?.preset === "authors" ? target?.label : undefined}
         title={target?.workTitle}
         openEvidence={dataSource.openEvidence}
-        saveIdea={dataSource.saveIdea}
-        saveEdge={dataSource.saveEdge}
+        saveIdea={mobile ? undefined : dataSource.saveIdea}
+        saveEdge={mobile ? undefined : dataSource.saveEdge}
         audit={settings.academicMode !== 'manual' && dataSource.capabilities.audit}
         sidebar={modal === "tutor" ? (
           <TutorPanel

@@ -1,3 +1,4 @@
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ChatConversationSummary, ResearchChatProject } from '@shared/types';
@@ -218,7 +219,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
       <div className="flex-1 min-h-0 flex flex-col" {...(supportsProjects ? outsideDropProps(folderActions, run) : {})}>
       <VirtualList
         items={rows}
-        itemHeight={row => row.kind === 'header' ? 30 : 38}
+        itemHeight={row => row.kind === 'header' ? 30 : isPhoneSurface() ? 52 : 38}
         // A pinned chat in a project shows twice, pinned and inside its project: two keys.
         getKey={row => row.kind === 'project' ? `p:${row.project.id}` : row.kind === 'chat' ? `${row.nested ? 'nc' : 'c'}:${row.conversation.id}` : row.kind === 'notebook' ? `n:${row.notebook.id}`
           : row.kind === 'folder' ? (row.row.kind === 'folder' ? `f:${row.row.folder.id}` : `f:${row.row.kind}:${row.row.projectId}`) : row.id}
@@ -286,6 +287,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
               {renaming === key
                 ? <RenameField value={conversation.title} onDone={title => { setRenaming(null); if (title && title !== conversation.title && props.onRenameConversation) run(() => props.onRenameConversation!(conversation, title)); }} />
                 : <button type="button" className="research-history-main" aria-current={conversation.id === activeId ? 'page' : undefined}
+                  aria-label={tx('Abrir {name}', { name: conversation.title })}
                   title={`${formatRelative(conversation.updated_at)} · ${tx('{n} mensaje(s)', { n: conversation.messageCount })}`}
                   onClick={() => { if (!sending) props.onOpenConversation(conversation.id); }}>
                   <MarqueeText text={conversation.title} className={`min-w-0 flex-1 ${conversation.archived ? 'italic text-neutral-500' : ''}`} />

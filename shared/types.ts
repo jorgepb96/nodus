@@ -4745,6 +4745,9 @@ export interface LocalServerStatus {
 }
 
 export type DesktopBridgeDomain =
+  | 'corpus'
+  | 'writing'
+  | 'research-generation'
   | 'testimonies'
   | 'teaching-roster'
   | 'teaching-grades'
@@ -4762,6 +4765,7 @@ export interface DesktopBridgePairingSummary {
   expiresAt: string | null;
   revokedAt: string | null;
   lastSeenAt: string | null;
+  renewedAt?: string;
 }
 
 export interface DesktopBridgeStatus {
@@ -4770,10 +4774,12 @@ export interface DesktopBridgeStatus {
   origins: string[];
   certificateFingerprint: string | null;
   pairings: DesktopBridgePairingSummary[];
+  relay?: { state: string; origin?: string };
   error: string | null;
 }
 
 export interface DesktopBridgeOffer {
+  renewalPairingId?: string;
   id: string;
   code: string;
   origins: string[];
@@ -4781,6 +4787,8 @@ export interface DesktopBridgeOffer {
   vaultIds: string[];
   domains: DesktopBridgeDomain[];
   expiresAt: string;
+  pairingURL: string;
+  qrURL?: string;
 }
 
 /** Which sleep defences are currently held, and whether the platform can hold them. */
@@ -7645,7 +7653,7 @@ export interface DeepResearchProgress {
 export type DeepResearchJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /** Who asked for a queued report: the Nodus window, or an MCP client. */
-export type DeepResearchJobOrigin = 'app' | 'mcp';
+export type DeepResearchJobOrigin = 'app' | 'mcp' | 'mobile';
 
 /**
  * One report in the single generation lane (electron/ai/deepResearchQueue.ts), as seen
@@ -7655,6 +7663,8 @@ export type DeepResearchJobOrigin = 'app' | 'mcp';
 export interface DeepResearchJobRecord {
   id: string;
   origin: DeepResearchJobOrigin;
+  /** Trusted private Bridge job identity; links its durable request to this lane. */
+  bridgeJobId?: string;
   vaultId: string;
   vaultName: string;
   objective: string;
@@ -8230,7 +8240,7 @@ export interface ImmersionScope {
 export interface ImmersionRequest {
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
   topic: string;
-  language?: 'es' | 'en';
+  language?: PromptLanguage;
   /** Total time budget for the whole immersion, in minutes. */
   minutes: number;
   /** Whether stations and the final exam carry retrieval questions (always skippable). */
@@ -8366,7 +8376,7 @@ export interface ImmersionPlan {
   documentVisualHints?: string[];
   topic: string;
   title: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   generatedAt: string;
   model: ModelRef | null;
@@ -8415,7 +8425,7 @@ export interface ImmersionProgress {
 export interface ImmersionSession {
   id: string;
   topic: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   model: ModelRef | null;
   plan: ImmersionPlan;
@@ -8429,7 +8439,7 @@ export interface ImmersionSessionSummary {
   id: string;
   topic: string;
   title: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   stats: ImmersionPlanStats;
   progressPct: number;

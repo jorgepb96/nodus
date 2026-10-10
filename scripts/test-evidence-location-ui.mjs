@@ -13,7 +13,7 @@ assert.match(
 );
 assert.match(
   source,
-  /onOpen\(sourceRef \?\? nodusId, location\)/,
+  /onOpen\(sourceRef \?\? nodusId, location, quote\)/,
   'custom evidence navigators receive the exact source rather than the work id',
 );
 assert.match(

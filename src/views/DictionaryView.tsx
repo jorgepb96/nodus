@@ -55,6 +55,7 @@ import { Icon, Spinner } from "../components/ui";
 import { useFeatureModel } from "../hooks/useFeatureModel";
 import { errorText, getActiveLang, pick, t as appT, tr } from "../i18n";
 import { DICTIONARY_TRANSLATIONS } from "../i18n.dictionary";
+import { readDictionaryCatalogue, readDictionaryEvidence } from '@shared/dictionaryPagination';
 import type { DictionarySnapshot } from "../app/viewSnapshots";
 
 export type DictionaryDetailTab =
@@ -62,7 +63,8 @@ export type DictionaryDetailTab =
   | "evidence"
   | "authors"
   | "works"
-  | "versions";
+  | "versions"
+  | "relations";
 type DictionaryTranslationTable = Record<string, string>;
 const t = (es: string): string => {
   const language = getActiveLang();
@@ -277,7 +279,10 @@ function dictionaryProgressText(value: string): string {
 }
 
 function dictionaryVersionText(value: string): string {
-  const key = value.replaceAll("_", " ");
+  const key = ({ creation: "Creación", update: "Actualización", regeneration: "Regeneración",
+    manual_edit: "Edición manual", restore: "Restauración", applied: "Aplicada",
+    proposed: "Propuesta", degraded: "Degradada", degradada: "Degradada" } as Record<string, string>)[value]
+    ?? value.replaceAll("_", " ");
   return t(key);
 }
 
@@ -311,7 +316,7 @@ function StatusPill({ status }: { status: string }) {
         : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${classes}`}
+      className={`dictionary-status-pill inline-flex w-fit max-w-full justify-self-start rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${classes}`}
     >
       {dictionaryStatusLabel(
         status === "active" || status === "archived" ? status : "draft",
@@ -1040,6 +1045,7 @@ function CreationDialog({
 
 export function DictionaryView({
   settings,
+  mobile = false,
   snapshot,
   onSnapshotChange,
   onOpenIdea,
@@ -1047,6 +1053,7 @@ export function DictionaryView({
   onOpenLibraryWork,
 }: {
   settings: AppSettings;
+  mobile?: boolean;
   /** Where this section was last left. Read once, at mount, and never again. */
   snapshot?: DictionarySnapshot;
   onSnapshotChange?: (patch: Partial<DictionarySnapshot>) => void;
@@ -1056,10 +1063,13 @@ export function DictionaryView({
 }) {
   const [model, setModel] = useFeatureModel(settings, "dictionaryModel");
   const [thinkingEffort, onThinkingEffort] = useResearchEffort(settings, model);
-  const [webSearch, onWebSearch] = useState<ResearchWebSearchMode>('auto');
+  const [webSearch, onWebSearch] = useState<ResearchWebSearchMode>(
+    () => settings.researchWebSearch ?? 'auto',
+  );
   const research = { thinkingEffort, onThinkingEffort, webSearch, onWebSearch };
   const [entries, setEntries] = useState<DictionaryEntrySummary[]>([]);
   const [total, setTotal] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [facets, setFacets] = useState<DictionaryFacets>({
     letters: [],
     tags: [],
@@ -1155,7 +1165,7 @@ export function DictionaryView({
       setError(null);
       try {
         const [page, nextFacets] = await Promise.all([
-          window.nodus.listDictionaryEntries({
+          readDictionaryCatalogue(request => window.nodus.listDictionaryEntries(request), {
             query,
             letter: letter || undefined,
             tags: tag ? [tag] : undefined,
@@ -1165,8 +1175,6 @@ export function DictionaryView({
             hasNewEvidence: newOnly || undefined,
             insufficientEvidence: insufficientOnly || undefined,
             sort: { key: sortKey, dir: sortDir },
-            offset: 0,
-            limit: 500,
           }),
           window.nodus.listDictionaryFacets(),
         ]);
@@ -1332,7 +1340,7 @@ export function DictionaryView({
   return (
     <div
       data-testid="dictionary-workspace"
-      className="dictionary-workspace theme-workspace-surface flex h-full min-h-0 flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
+      className={`dictionary-workspace ${mobile ? 'dictionary-mobile' : ''} theme-workspace-surface flex h-full min-h-0 flex-col bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100`}
     >
       <header className="shrink-0 border-b border-neutral-200 px-5 pt-4 dark:border-neutral-800">
         <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -1348,7 +1356,9 @@ export function DictionaryView({
             </p>
           </div>
           <div className="flex-1" />
-          <span className="text-xs text-neutral-500">
+          <details open={mobile ? undefined : true} className="dictionary-model-options">
+          <summary>{t("Modelo de síntesis")}</summary>
+          <span className="dictionary-model-label text-xs text-neutral-500">
             {t("Modelo de síntesis")}
           </span>
           <ModelPicker
@@ -1361,6 +1371,7 @@ export function DictionaryView({
             menu
           />
           <DictionaryResearchControls model={model} research={research} />
+          </details>
           {selected.size > 0 && (
             <button
               className="btn btn-ghost border border-red-200 text-red-600 dark:border-red-900/70 dark:text-red-400"
@@ -1397,6 +1408,7 @@ export function DictionaryView({
       {activeId ? (
         <DictionaryEntryView
           key={activeId}
+          mobile={mobile}
           entryId={activeId}
           restoredTab={detailTabs[activeId]}
           onTabChange={(tab) =>
@@ -1435,6 +1447,7 @@ export function DictionaryView({
           onOpenIdea={onOpenIdea}
           onOpenAuthor={onOpenAuthor}
           onOpenLibraryWork={onOpenLibraryWork}
+          onOpenEntry={openEntry}
         />
       ) : (
         <main className="min-h-0 flex-1 overflow-auto p-5">
@@ -1455,6 +1468,8 @@ export function DictionaryView({
                   )}
                 />
               </div>
+              {mobile && <button className="btn btn-ghost" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(value => !value)}>{t("Filtros")}</button>}
+              <div className={`dictionary-facets ${mobile && !filtersOpen ? 'dictionary-filters-hidden' : ''}`}>
               <select
                 className="input"
                 value={status}
@@ -1501,8 +1516,9 @@ export function DictionaryView({
                   </option>
                 ))}
               </select>
+              </div>
             </div>
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className={`mb-4 flex flex-wrap items-center gap-2 ${mobile && !filtersOpen ? 'dictionary-filters-hidden' : ''}`}>
               <div className="flex flex-wrap gap-1">
                 <button
                   className={`dictionary-filter-button btn btn-ghost h-7 px-2 ${!letter ? "is-selected text-indigo-600 dark:text-indigo-300" : ""}`}
@@ -1695,9 +1711,9 @@ function DictionaryRows({
   const columns =
     "grid-cols-[2.25rem_minmax(300px,2.4fr)_minmax(150px,0.8fr)_5rem_5rem_6rem_minmax(180px,1fr)_8rem_2rem]";
   return (
-    <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950/40">
+    <div className="dictionary-rows overflow-x-auto rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950/40">
       <div
-        className={`grid min-w-[960px] ${columns} items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/65`}
+        className={`dictionary-row-heading grid min-w-[960px] ${columns} items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/65`}
       >
         <input
           type="checkbox"
@@ -1716,7 +1732,7 @@ function DictionaryRows({
       {entries.map((entry) => (
         <div
           key={entry.id}
-          className={`grid min-w-[960px] ${columns} items-center gap-3 border-b border-neutral-100 px-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55 ${compact ? "py-2" : "py-3"} ${selected.has(entry.id) ? "bg-indigo-50/60 dark:bg-indigo-950/20" : ""}`}
+          className={`dictionary-entry-row grid min-w-[960px] ${columns} items-center gap-3 border-b border-neutral-100 px-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55 ${compact ? "py-2" : "py-3"} ${selected.has(entry.id) ? "bg-indigo-50/60 dark:bg-indigo-950/20" : ""}`}
         >
           <input
             type="checkbox"
@@ -1755,10 +1771,10 @@ function DictionaryRows({
             progress={generationJobs.get(entry.id)}
             status={entry.status}
           />
-          <span className="text-xs text-neutral-500">{entry.authorCount}</span>
-          <span className="text-xs text-neutral-500">{entry.workCount}</span>
+          <span className="text-xs text-neutral-500"><span className="dictionary-count-label">{t("Autores")} · </span>{entry.authorCount}</span>
+          <span className="text-xs text-neutral-500"><span className="dictionary-count-label">{t("Obras")} · </span>{entry.workCount}</span>
           <span className="text-xs text-neutral-500">
-            {entry.evidenceCount}
+            <span className="dictionary-count-label">{t("Evidencia")} · </span>{entry.evidenceCount}
           </span>
           <div className="flex flex-wrap gap-1">
             {entry.tags.slice(0, compact ? 2 : 5).map((item) => (
@@ -1778,6 +1794,16 @@ function DictionaryRows({
       ))}
     </div>
   );
+}
+
+function DictionaryDetailActions({ mobile, children }: { mobile: boolean; children: ReactNode }) {
+  const className = "dictionary-detail-actions ml-auto grid w-full max-w-full gap-2 xl:w-[620px]";
+  return mobile ? (
+    <details className={className} data-testid="dictionary-entry-options">
+      <summary>{t("Opciones de la entrada")}</summary>
+      {children}
+    </details>
+  ) : <div className={className}>{children}</div>;
 }
 
 function DictionaryGenerationState({
@@ -1843,6 +1869,7 @@ function DictionaryGenerationState({
 
 function DictionaryEntryView({
   entryId,
+  mobile = false,
   restoredTab,
   onTabChange,
   progress,
@@ -1855,8 +1882,10 @@ function DictionaryEntryView({
   onOpenIdea,
   onOpenAuthor,
   onOpenLibraryWork,
+  onOpenEntry,
 }: {
   entryId: string;
+  mobile?: boolean;
   restoredTab?: DictionaryDetailTab;
   onTabChange: (tab: DictionaryDetailTab) => void;
   progress?: DictionaryProgress;
@@ -1869,6 +1898,7 @@ function DictionaryEntryView({
   onOpenIdea: (id: string) => void;
   onOpenAuthor: (id: string, name: string) => void;
   onOpenLibraryWork: OpenCitationLibraryWork;
+  onOpenEntry: (entry: Pick<DictionaryEntrySummary, 'id' | 'name'>) => void;
 }) {
   const [detail, setDetail] = useState<DictionaryEntryDetail | null>(null);
   const [tab, setTab] = useState<DictionaryDetailTab>(
@@ -1967,6 +1997,7 @@ function DictionaryEntryView({
     },
     { id: "works", label: t("Obras"), icon: "book", count: entry.workCount },
     { id: "versions", label: t("Versiones"), icon: "clock" },
+    { id: "relations", label: appT("Relaciones"), icon: "link", count: detail.relations?.length ?? 0 },
   ];
   const regenerationBusy =
     busy === mode ||
@@ -2005,9 +2036,12 @@ function DictionaryEntryView({
                   ? entry.aliases.join(" · ")
                   : t("Sin aliases")}
               </p>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-neutral-600 dark:text-neutral-400">
+              {mobile ? <details className="dictionary-entry-focus mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                <summary className="cursor-pointer py-2">{appT("Foco de la entrada")}</summary>
+                <p className="leading-6">{entry.focusPrompt || t("Sin foco adicional.")}</p>
+              </details> : <p className="mt-2 max-w-4xl text-sm leading-6 text-neutral-600 dark:text-neutral-400">
                 {entry.focusPrompt || t("Sin foco adicional.")}
-              </p>
+              </p>}
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600 dark:text-neutral-400">
                 <span className="rounded-full bg-white px-2 py-1 dark:bg-neutral-800">
                   {tx("{n} evidencias", { n: entry.evidenceCount })}
@@ -2025,9 +2059,16 @@ function DictionaryEntryView({
                 )}
               </div>
             </div>
-            <div className="ml-auto grid w-full max-w-full gap-2 xl:w-[620px]">
+            {mobile && progress && (
+              <div className="w-full min-w-0" aria-live="polite">
+                <DictionaryGenerationState progress={progress} status={entry.status} />
+              </div>
+            )}
+            <DictionaryDetailActions mobile={mobile}>
+              <details open={mobile ? undefined : true} className="dictionary-model-options">
+              <summary aria-label={mobile ? t("Modelo de síntesis de la entrada") : undefined}>{t("Modelo de síntesis")}</summary>
               <div className="flex min-h-9 flex-wrap items-center justify-end gap-3">
-                {progress && (
+                {!mobile && progress && (
                   <div className="min-w-0 flex-1" aria-live="polite">
                     <DictionaryGenerationState progress={progress} status={entry.status} />
                   </div>
@@ -2044,6 +2085,7 @@ function DictionaryEntryView({
                 />
                 <DictionaryResearchControls model={model} research={research} disabled={!!busy || backgroundBusy} />
               </div>
+              </details>
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(118px,0.58fr)_minmax(118px,0.58fr)] gap-2">
                 <button
                   className="btn btn-ghost h-9 min-w-0 justify-center whitespace-nowrap border border-neutral-300 text-xs dark:border-neutral-700"
@@ -2094,7 +2136,7 @@ function DictionaryEntryView({
                   )}
                 </button>
               </div>
-            </div>
+            </DictionaryDetailActions>
           </div>
         </section>
         {backgroundFailure && <ErrorNotice>{backgroundFailure}</ErrorNotice>}
@@ -2111,7 +2153,7 @@ function DictionaryEntryView({
             <Icon name="chevronRight" className="ml-auto" />
           </button>
         )}
-        <div className="flex min-w-0 gap-1 overflow-x-auto border-b border-neutral-200 dark:border-neutral-800">
+        <div className="dictionary-detail-tabs flex min-w-0 gap-1 overflow-x-auto border-b border-neutral-200 dark:border-neutral-800">
           {tabs.map((item) => (
             <button
               key={item.id}
@@ -2157,6 +2199,13 @@ function DictionaryEntryView({
             />
           ) : tab === "works" ? (
             <WorksTab detail={detail} onOpenLibraryWork={(id) => onOpenLibraryWork(id, "vault")} />
+          ) : tab === "relations" ? (
+            <div className="space-y-3">
+              {(detail.relations ?? []).map(relation => <button key={relation.id} aria-label={`${appT("Abrir entrada relacionada")}: ${relation.entry.name}`} className={`${panel} flex w-full items-center gap-3 p-4 text-left`} onClick={() => onOpenEntry(relation.entry)}>
+                <Icon name="thesaurus" /><span className="min-w-0 flex-1"><strong className="block">{relation.entry.name}</strong><span className="text-xs text-neutral-500">{appT(({related:'Relacionado',broader:'Más general',narrower:'Más específico',synonym:'Sinónimo',opposing:'Contrapuesto',historically_related:'Relación histórica',frequently_co_occurring:'Aparecen juntos'} as const)[relation.direction === 'incoming' && relation.type === 'broader' ? 'narrower' : relation.direction === 'incoming' && relation.type === 'narrower' ? 'broader' : relation.type])}</span></span><Icon name="chevronRight" />
+              </button>)}
+              {!detail.relations?.length && <p className="text-sm text-neutral-500">{appT("Esta entrada aún no tiene relaciones.")}</p>}
+            </div>
           ) : (
             <VersionsTab
               detail={detail}
@@ -2521,7 +2570,7 @@ function EvidenceTab({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const page = await window.nodus.listDictionaryEvidence({
+      const page = await readDictionaryEvidence(request => window.nodus.listDictionaryEvidence(request), {
         entryId,
         query,
         decisions: decision
@@ -2531,8 +2580,6 @@ function EvidenceTab({
         authorIds: authorId ? [authorId] : undefined,
         workIds: workId ? [workId] : undefined,
         tags: tag ? [tag] : undefined,
-        offset: 0,
-        limit: 500,
       });
       setItems(page.items);
     } catch (reason) {
@@ -2545,10 +2592,8 @@ function EvidenceTab({
     async () =>
       setAll(
         (
-          await window.nodus.listDictionaryEvidence({
+          await readDictionaryEvidence(request => window.nodus.listDictionaryEvidence(request), {
             entryId,
-            offset: 0,
-            limit: 500,
           })
         ).items,
       ),
@@ -2911,12 +2956,12 @@ function WorksTab({
       {detail.works.map((work) => (
         <article
           key={work.id}
-          className={`${panel} flex flex-wrap items-start gap-3 p-4`}
+          className={`${panel} dictionary-work-card flex flex-wrap items-start gap-3 p-4`}
         >
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
             <Icon name="book" />
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="dictionary-work-copy min-w-0 flex-1">
             <h3 className="text-sm font-medium">{work.title}</h3>
             <p className="mt-1 text-xs text-neutral-500">
               {work.authors.join(", ") || t("Autor no disponible")} ·{" "}
@@ -2967,10 +3012,15 @@ function VersionsTab({
     detail.entry.proposedVersionId,
   );
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(
-    async () =>
-      setVersions(await window.nodus.listDictionaryVersions(detail.entry.id)),
+    async () => {
+      setLoading(true);
+      try { setVersions(await window.nodus.listDictionaryVersions(detail.entry.id)); setError(null); }
+      catch (reason) { setError(message(reason)); }
+      finally { setLoading(false); }
+    },
     [detail.entry.id],
   );
   useEffect(() => {
@@ -2991,6 +3041,7 @@ function VersionsTab({
   return (
     <div className="space-y-3">
       {error && <ErrorNotice>{error}</ErrorNotice>}
+      {loading && <Spinner label={t("Cargando…")} />}
       {detail.proposedVersion && (
         <div className="rounded-xl border border-cyan-300 bg-cyan-50 p-4 dark:border-cyan-900 dark:bg-cyan-950/20">
           <div className="flex flex-wrap items-center gap-3">
@@ -3028,6 +3079,7 @@ function VersionsTab({
           className={`${panel} p-4 ${version.id === detail.entry.currentVersionId ? "!border-emerald-300 dark:!border-emerald-900" : version.state === "proposed" ? "!border-cyan-300 dark:!border-cyan-900" : version.outcome === "degraded" ? "!border-amber-300 dark:!border-amber-900" : ""}`}
         >
           <button
+            aria-label={`${t("Versión")} · ${dictionaryVersionText(version.trigger)} · ${date(version.generatedAt)}`}
             className="flex w-full items-center gap-3 text-left"
             onClick={() => setOpen(open === version.id ? null : version.id)}
           >

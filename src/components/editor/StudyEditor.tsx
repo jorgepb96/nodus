@@ -35,6 +35,7 @@ import type { StudyDocumentKind, StudyTag } from '@shared/studyOrg';
 import { STUDY_DOCUMENT_KINDS } from '@shared/studyOrg';
 import type { EditorDocument, EditorDocumentPort } from './documentPort';
 import { studyDocumentPort } from './documentPort';
+import { refreshSavedEditor, type EditorRefreshSnapshot } from './remoteEditorRefresh';
 import type { StudyImproveScope, StudyStyle } from '@shared/studyImprove';
 import { studyStyleIcon } from '@shared/studyImprove';
 import type { StudySentenceContext, StudySynonymAlternative } from '@shared/studySynonyms';
@@ -272,6 +273,7 @@ export function StudyEditor({
   const [dictionaryWord, setDictionaryWord] = useState('');
   const [textDialog, setTextDialog] = useState<{ kind: 'comment' | 'tag'; selectedText?: string; from?: number; anchor?: StudyBlockAnchor } | null>(null);
   const [showImprovePrompts, setShowImprovePrompts] = useState(false);
+  const [documentImprovement, setDocumentImprovement] = useState<{ style: StudyStyle; target: ImproveTarget } | null>(null);
   const [quickImproveStyles, setQuickImproveStyles] = useState<StudyStyle[]>([]);
   const [selectionImprove, setSelectionImprove] = useState<{ x: number; y: number; target: ImproveTarget } | null>(null);
   const [selectionToolbar, setSelectionToolbar] = useState<HTMLElement | null>(null);
@@ -402,7 +404,6 @@ export function StudyEditor({
       if (from >= 0 || (!raw && snapshot)) return { from: Math.max(0, from), to: Math.max(0, from) + selection.length, text: selection, scope: 'selection', visual: !raw, range: snapshot?.range };
     }
     if (!allowFallback) return null;
-    if (!window.confirm(t('No hay texto seleccionado. ¿Quieres mejorar el documento completo?'))) return null;
     return { from: 0, to: draft.length, text: draft, scope: 'document' };
   };
 
@@ -575,6 +576,56 @@ export function StudyEditor({
   activeIdRef.current = active?.id ?? '';
   latestSignatureRef.current = currentSignature;
   rawRef.current = raw;
+  const remoteRefreshRef = useRef<EditorRefreshSnapshot>({ documentId: '', revision: 0, signature: '', baseline: '', ready: false, blocked: true });
+  const remoteDocumentRef = useRef(active); remoteDocumentRef.current = active;
+  const savedCallbackRef = useRef(onSaved); savedCallbackRef.current = onSaved;
+  remoteRefreshRef.current = {
+    documentId: active?.id ?? '', revision: revisionRef.current.get(active?.id ?? '') ?? 0,
+    signature: currentSignature, baseline: baselineRef.current,
+    ready: Boolean(active && data && hydratedIdRef.current === active.id),
+    blocked: saveState !== 'saved' || Boolean(saveError) || recoveredDraft || editingTitle,
+  };
+  useEffect(() => {
+    let alive = true, reading = false;
+    const refresh = async () => {
+      if (reading || document.hidden) return;
+      reading = true;
+      try {
+        await refreshSavedEditor(
+          () => ({ ...remoteRefreshRef.current, documentId: activeIdRef.current,
+            revision: revisionRef.current.get(activeIdRef.current) ?? 0,
+            signature: latestSignatureRef.current, baseline: baselineRef.current,
+            blocked: !alive || remoteRefreshRef.current.blocked || improvementRunning.current }),
+          id => port.loadEditorData(id),
+          next => {
+            if (typeof next.documentTitle !== 'string' || typeof next.contentMarkdown !== 'string') return;
+            const id = activeIdRef.current;
+            const nextTitle = next.documentTitle;
+            const nextContent = next.contentMarkdown;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent);
+            const metadata = normalizeAcademicMetadata(next.academicMetadata);
+            revisionRef.current.set(id, next.revision ?? 0);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native,
+              academicMetadata: metadata, style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(id, signature);
+            nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native);
+            setAcademicMetadata(metadata); setStyle(next.style); setSaveState('saved');
+            setSelectedVersion(null); setLastImprovement(null); setHistoryState({ canUndo: false, canRedo: false });
+            setEditorRevision(value => value + 1);
+            const current = remoteDocumentRef.current;
+            if (current?.id === id) savedCallbackRef.current({ ...current, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          },
+        );
+      } catch { /* Keep the current document and recovery draft when the connection is unavailable. */ }
+      finally { reading = false; }
+    };
+    const timer = window.setInterval(() => void refresh(), 3_000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { alive = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [active?.id, port]);
   useEffect(() => {
     if (!active || !data || hydratedIdRef.current !== active.id || improveStreamingStyleId) return;
     if (currentSignature === baselineRef.current) {
@@ -625,7 +676,7 @@ export function StudyEditor({
           reason: snapshot.reason,
         });
         const next = await port.loadEditorData(snapshot.id);
-        revisionRef.current.set(snapshot.id, updated.editorRevision ?? next.revision ?? 0);
+        revisionRef.current.set(snapshot.id, next.revision ?? updated.editorRevision ?? 0);
         savedSignaturesRef.current.set(snapshot.id,snapshot.signature);
         onSaved(updated);
         if (snapshot.id === activeIdRef.current) {
@@ -854,7 +905,7 @@ export function StudyEditor({
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
 {nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
         {headerContent}
       {showTabs ? (
         <div className="study-editor-tabs flex min-h-10 items-end gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-2 pt-1 dark:border-neutral-800 dark:bg-neutral-950">
@@ -890,6 +941,28 @@ export function StudyEditor({
         </div>
       </>} />
       <EditorialActionBar actions={actions} pins={pinnedActionIds} beforeAction={restoreSelection} onPreserveSelection={preserveSelection} status={`${stats.words} ${t('palabras')} · ${stats.readingMinutes} min`} />
+      {data?.mobileSyncState === 'conflict' && <div className="editorial-save-error" role="alert">
+        <span>{t('Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.')}</span>
+        <button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button>
+        {[true, false].map(keepMobile => <button key={String(keepMobile)} onClick={() => void (async () => {
+          if (!port.resolveMobileConflict || !await save('manual')) return;
+          try {
+            const next = await port.resolveMobileConflict(active.id, keepMobile);
+            if (activeIdRef.current !== active.id) return;
+            const nextTitle = next.documentTitle ?? title, nextContent = next.contentMarkdown ?? draft;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent), metadata = normalizeAcademicMetadata(next.academicMetadata);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native, academicMetadata: metadata,
+              style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            revisionRef.current.set(active.id, next.revision ?? 0); baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(active.id, signature); nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native); setAcademicMetadata(metadata);
+            setStyle(next.style); setSaveState('saved'); setSaveError(''); setRecoveredDraft(false); clearEditorialDraft(draftScope, active.id);
+            setSelectedVersion(null); setHistoryState({ canUndo: false, canRedo: false }); setEditorRevision(value => value + 1);
+            onSaved({ ...active, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          } catch (error) { setSaveError(error instanceof Error ? error.message : String(error)); }
+        })()}>{t(keepMobile ? 'Usar mi versión del móvil' : 'Usar la versión del Mac')}</button>)}
+      </div>}
+      {data?.mobileSyncState === 'blocked' && <div className="editorial-save-error" role="alert"><span>{t('Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.')}{data.mobileSyncIssue && ` ${data.mobileSyncIssue}`}</span><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button></div>}
       {(saveError || recoveredDraft) && <div className={`editorial-save-error${saveError ? '' : ' editorial-draft-recovered'}`} role={saveError ? 'alert' : 'status'}><span>{saveError || t('Se ha recuperado tu borrador local.')}</span><button onClick={() => void save('manual')}>{t(saveError ? 'Reintentar' : 'Guardar')}</button><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Recuperar borrador')}</button><button onClick={() => void (async () => {
         const next = await loadData(active.id,true); const native = next.nativeDocument ?? markdownToBlockNote(next.contentMarkdown ?? active.contentMarkdown);
         setAcademicMetadata(normalizeAcademicMetadata(next.academicMetadata));
@@ -969,7 +1042,7 @@ export function StudyEditor({
         <div className={`editorial-writing-column relative min-w-0 flex-1 overflow-hidden ${split ? 'grid grid-cols-2 divide-x divide-neutral-800' : ''}`}>
           <div className="editorial-improvement-feedback">
       {improveStreamingStyleId && <section data-testid="study-improve-streaming" className="editorial-improvement-preview" aria-label={t('Mejorando texto…')}><header><Spinner label={t('Mejorando texto…')} /><span>{quickImproveStyles.find((style) => style.id === improveStreamingStyleId)?.name}</span><button data-testid="study-improve-cancel" onClick={() => { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); }}>{t('Cancelar')}</button></header><p data-testid="study-improve-preview" aria-live="off">{improvePreview || t('Preparando…')}</p></section>}
-      {lastImprovement && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {lastImprovement && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
           <div className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
             <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={Boolean(improveStreamingStyleId)} />
@@ -1147,7 +1220,22 @@ export function StudyEditor({
           onCancel={() => setTextDialog(null)}
         />
       )}
-      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => setShowImprovePrompts(false)} onToolbarChanged={setQuickImproveStyles} onApply={prompt => { setShowImprovePrompts(false); const target = improveTargetRef.current ?? resolveImproveSelection(true); if (target) void runQuickImprovement(prompt, target); }} />, document.body)}
+      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => setShowImprovePrompts(false)} onToolbarChanged={setQuickImproveStyles} onApply={prompt => {
+        const target = improveTargetRef.current ?? resolveImproveSelection(true);
+        setShowImprovePrompts(false);
+        if (!target) return;
+        // Keep the original selection and text while the dialog closes. Native
+        // WKWebView confirmations can be suppressed during that focus change.
+        if (target.scope === 'document') setDocumentImprovement({ style: prompt, target });
+        else void runQuickImprovement(prompt, target);
+      }} />, document.body)}
+      {documentImprovement && <ConfirmModal title={t('Mejorar documento completo')}
+        message={t('No hay texto seleccionado. ¿Quieres mejorar el documento completo?')}
+        confirmLabel={t('Mejorar documento completo')} autoFocusConfirm={false}
+        onCancel={() => setDocumentImprovement(null)} onConfirm={() => {
+          const pending = documentImprovement; setDocumentImprovement(null);
+          void runQuickImprovement(pending.style, pending.target);
+        }} />}
     </div>
   );
 }

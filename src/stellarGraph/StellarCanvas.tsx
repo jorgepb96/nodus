@@ -9,6 +9,8 @@ import { NODE_COLORS, NODE_LABELS, RELATIONS, relation, relationColor, nodeColor
 import { t } from "../i18n";
 import "./stellar.css";
 import type { CorpusLayer } from "./CorpusContext";
+import { useCanvasPinch } from '../hooks/useCanvasPinch';
+import { pinchWorldCamera } from '@shared/touchCamera';
 type Camera = StellarSession["camera"];
 export interface StellarCanvasApi {
   fit(): void;
@@ -89,6 +91,7 @@ const parseColor = (value: string, fallback: number[]) => {
 };
 const fallbackColor = (value: string) => parseColor(value, [0.65, 0.73, 0.98]);
 interface CanvasPalette {
+  light: boolean;
   star: number[];
   context: number[];
   nodes: Record<string, number[]>;
@@ -104,6 +107,7 @@ export function StellarCanvas(props: Props) {
     [error, setError] = useState(""),
     [generation, setGeneration] = useState(0);
   const palette = useRef<CanvasPalette>({
+    light: false,
     star: fallbackColor("#a4bbfa"),
     context: fallbackColor("#a6a8d1"),
     nodes: Object.fromEntries(Object.entries(NODE_COLORS).map(([type, color]) => [type, fallbackColor(color)])),
@@ -127,6 +131,11 @@ export function StellarCanvas(props: Props) {
   const routes = useRef<{ id: string; points: StellarPosition[] }[]>([]);
   const cameraFrame = useRef(0);
   const stopCamera = () => cancelAnimationFrame(cameraFrame.current);
+  const pinchCamera = useRef(props.camera);
+  const pinching = useCanvasPinch(host, () => {
+    stopCamera(); drag.current = null; pinchCamera.current = live.current.camera;
+    live.current.onManualCamera?.();
+  }, (start, next) => live.current.onCamera(pinchWorldCamera(pinchCamera.current, start, next, size)));
   useEffect(() => () => stopCamera(), []);
   useEffect(() => {
     stopCamera();
@@ -272,15 +281,26 @@ export function StellarCanvas(props: Props) {
   useEffect(() => {
     const el = canvas.current!;
     const readPalette = () => {
-      const styles = getComputedStyle(host.current || el);
-      const read = (name: string, fallback: string) => parseColor(styles.getPropertyValue(name), fallbackColor(fallback));
+      // Custom properties retain color-mix() as text. Resolve an actual color
+      // property in this workspace so WebGL receives the same light/dark and
+      // vault palette as the labels, instead of silently using bright fallbacks.
+      const probe = document.createElement("span");
+      probe.style.display = "none";
+      (host.current || el.parentElement || document.body).appendChild(probe);
+      const read = (name: string, fallback: string) => {
+        probe.style.color = `var(${name}, ${fallback})`;
+        return parseColor(getComputedStyle(probe).color, fallbackColor(fallback));
+      };
+      const background = read("--stellar-bg", "#0a0a0a");
       palette.current = {
+        light: background[0] * .2126 + background[1] * .7152 + background[2] * .0722 > .55,
         star: read("--stellar-canvas-star", "#a4bbfa"),
         context: read("--stellar-canvas-context", "#a6a8d1"),
         nodes: Object.fromEntries(Object.entries(NODE_COLORS).map(([type, color]) => [type, read(`--stellar-node-${type}`, color)])),
         edges: Object.fromEntries(Object.entries(RELATIONS).map(([type, value]) => [type, read(`--stellar-edge-${type}`, value.color)])),
         edgeDefault: read("--stellar-accent-soft", "#adb8d9"),
       };
+      probe.remove();
     };
     readPalette();
     const themeObserver = new MutationObserver(() => {
@@ -464,9 +484,10 @@ export function StellarCanvas(props: Props) {
           color,
           alpha,
           (featured || n.id === p.selected ? 130 : 96) *
-            (featured ? 1 : Math.max(0.4, Math.min(1.3, p.camera.zoom))),
+            (featured ? 1 : Math.max(0.025, Math.min(1.3, p.camera.zoom))),
         );
-        vertex(stars, s, [1, 1, 1], alpha, featured ? 14 : 12 * Math.max(0.5, p.camera.zoom));
+        vertex(stars, s, palette.current.light ? color : [1, 1, 1], alpha,
+          featured ? 14 : Math.max(2, 12 * Math.min(1.3, p.camera.zoom)));
       }
       gpu.draw(el.width, el.height, lines, stars, p.camera.zoom < 0.3 && !active);
       if (performance.now() < until && !reduce.matches)
@@ -626,10 +647,9 @@ export function StellarCanvas(props: Props) {
       data-context-nodes={props.context?.data.nodes.length || 0}
       data-context-edges={props.context?.data.edges.length || 0}
       tabIndex={0}
-      aria-label={t(
-        "Canvas de ideas. Arrastra para navegar; usa la rueda para ampliar.",
-      )}
+      aria-label={`${t("Canvas de ideas. Arrastra para navegar; usa la rueda para ampliar.")} ${t("Zoom")}: ${Math.round(props.camera.zoom * 100)}%`}
       onPointerDown={(e) => {
+        if (pinching.current) return;
         if (e.button !== 0) return;
         const button = (e.target as HTMLElement).closest<HTMLElement>(
           "[data-node]",
@@ -657,6 +677,7 @@ export function StellarCanvas(props: Props) {
         e.currentTarget.setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
+        if (pinching.current) return;
         const d = drag.current;
         if (!d) return;
         const p = local(e),
@@ -683,6 +704,7 @@ export function StellarCanvas(props: Props) {
           });
       }}
       onPointerUp={(e) => {
+        if (pinching.current) { drag.current = null; return; }
         const d = drag.current;
         drag.current = null;
         if (!d || d.moved) return;
@@ -729,7 +751,8 @@ export function StellarCanvas(props: Props) {
           onClick={() => props.onContextNode?.(n)}>{n.label}</button>)}
         {labels
           .filter(
-            ({ n }) => props.labelPolicy === "all" || props.camera.zoom >= 0.3 || n.id === props.selected || featured.has(n.id),
+            ({ n, x, y }) => x >= 0 && x <= size.w && y >= 0 && y <= size.h &&
+              (props.labelPolicy === "all" || props.camera.zoom >= 0.3 || n.id === props.selected || featured.has(n.id)),
           )
           .map(({ n, x, y }) => (
             <button
@@ -739,12 +762,9 @@ export function StellarCanvas(props: Props) {
               style={{ left: x, top: y }}
               title={n.label}
               aria-label={n.label}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  props.onNode(n.id);
-                }
-              }}
+              // Native button activation covers keyboard and VoiceOver. Pointer
+              // activation is already handled by the canvas's drag recognizer.
+              onClick={(e) => { if (e.detail === 0) props.onNode(n.id); }}
             />
           ))}
         {visibleLabels.map(({ n, labelX, labelY }) => (
@@ -754,6 +774,7 @@ export function StellarCanvas(props: Props) {
             className={`stellar-node-label ${featured.has(n.id) ? "featured" : (props.selected || active) && !closeNodes.has(n.id) ? "dim" : ""}`}
             data-endpoint={active?.source === n.id ? "source" : active?.target === n.id ? "target" : undefined}
             title={n.statement || n.label}
+            aria-label={`${featured.has(n.id) ? t(active?.source === n.id ? "Origen" : "Destino") : props.nodeMeta ? props.nodeMeta(n) : `${t(NODE_LABELS[n.type] || n.type)} · ${n.workCount} ${t(n.workCount === 1 ? "fuente" : "fuentes")}`} · ${n.label}`}
             style={
               {
                 left: labelX,
@@ -761,21 +782,16 @@ export function StellarCanvas(props: Props) {
                 "--node-color": nodeColor(n.type),
               } as React.CSSProperties
             }
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                props.onNode(n.id);
-              }
-            }}
+            onClick={(e) => { if (e.detail === 0) props.onNode(n.id); }}
           >
-            <small>
+            <small aria-hidden="true">
               {featured.has(n.id)
                 ? t(active?.source === n.id ? "Origen" : "Destino")
                 : props.nodeMeta
                   ? props.nodeMeta(n)
                   : `${t(NODE_LABELS[n.type] || n.type)} · ${n.workCount} ${t(n.workCount === 1 ? "fuente" : "fuentes")}`}
             </small>
-            <span>{n.label}</span>
+            <span aria-hidden="true">{n.label}</span>
           </button>
         ))}
         {props.data.edges

@@ -86,6 +86,9 @@ export interface StudyDocLink {
 }
 
 export interface StudyDocEditorData {
+  mobileSyncState?: 'pending' | 'conflict' | 'blocked';
+  mobileSyncIssue?: string | null;
+  mobileConflictRemote?: StudyDocEditorData;
   academicMetadata?: AcademicMetadata;
   documentTitle?: string;
   contentMarkdown?: string;

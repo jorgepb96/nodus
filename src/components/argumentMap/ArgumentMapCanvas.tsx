@@ -5,6 +5,9 @@ import { t, tx } from '../../i18n';
 import { CARD_HEIGHT, CARD_WIDTH, layoutArgumentMap } from './layout';
 import { fitArgumentCamera, focusArgumentCamera, restoreArgumentCamera, type Camera, type Viewport } from './camera';
 import './argumentMap.css';
+import { useCanvasPinch } from '../../hooks/useCanvasPinch';
+import { pinchTranslation } from '@shared/touchCamera';
+import { isPhoneSurface } from '../../mobileWeb/phoneLayout';
 
 const COLORS: Record<string, string> = {
   supports: '#63cbb0', refutes: '#ee91a6', contradicts: '#ee91a6', extends: '#8caef4',
@@ -22,6 +25,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
   onToggleFullscreen: () => void;
   fullscreenError: boolean;
 }) {
+  const phone = isPhoneSurface();
   const [expanded, setExpanded] = useState(() => new Set([map.root.id]));
   const [relation, setRelation] = useState('');
   const [selected, setSelected] = useState(map.root.id);
@@ -29,7 +33,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
   const cameraRef = useRef(camera);
   cameraRef.current = camera;
   const [autoFocus, setAutoFocus] = useState(() => localStorage.getItem(AUTO_FOCUS_KEY) !== 'false');
-  const [navigation, setNavigation] = useState<CameraNavigation>({ kind: 'overview' });
+  const [navigation, setNavigation] = useState<CameraNavigation>(() => phone ? { kind: 'focus', id: map.root.id } : { kind: 'overview' });
   const [history, setHistory] = useState<{ camera: Camera; size: Viewport }[]>([]);
   const [animateCamera, setAnimateCamera] = useState(false);
   const previousSize = useRef<Viewport>({ width: 0, height: 0 });
@@ -114,6 +118,10 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       return { zoom, x: x - (x - current.x) * zoom / current.zoom, y: y - (y - current.y) * zoom / current.zoom };
     });
   }, [takeManualControl]);
+  const pinchCamera = useRef(camera);
+  const pinching = useCanvasPinch(stage, () => {
+    drag.current = null; pinchCamera.current = cameraRef.current; takeManualControl();
+  }, (start, next) => setCamera(pinchTranslation(pinchCamera.current, start, next)));
   useEffect(() => {
     const element = stage.current;
     if (!element) return;
@@ -131,7 +139,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       <div><div className="argument-eyebrow">{t('CARTOGRAFÍA DEL ARGUMENTO')}</div><h2>{map.seedLabel}</h2></div>
       <span className="argument-map-count"><i />{tx('{n} ideas', { n: map.ideaCount })}</span>
     </div>
-    {map.overview && <p className="argument-overview">{map.overview}</p>}
+    {map.overview && (phone ? <details className="argument-phone-summary"><summary>{t('Resumen')}</summary><p className="argument-overview">{map.overview}</p></details> : <p className="argument-overview">{map.overview}</p>)}
     <div className="argument-relations" aria-label={t('Relaciones')}>
       <button aria-pressed={!relation} onClick={() => chooseRelation('')}>{t('Todas las ramas')} <span>{map.root.children.length}</span></button>
       {relations.map(([key, count]) => <button key={key} aria-pressed={relation === key} onClick={() => chooseRelation(relation === key ? '' : key)} style={{ '--branch-color': COLORS[key] ?? COLORS.related } as CSSProperties}><i />{relationLabel(key)}<span>{count}</span></button>)}
@@ -149,6 +157,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         }
       }}
       onPointerDown={event => {
+        if (pinching.current) return;
         if ((event.target as HTMLElement).closest('button') || event.button !== 0) return;
         event.preventDefault();
         takeManualControl();
@@ -157,6 +166,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         event.currentTarget.setPointerCapture(event.pointerId);
       }}
       onPointerMove={event => {
+        if (pinching.current) return;
         const start = drag.current;
         if (start) setCamera({ ...start.camera, x: start.camera.x + event.clientX - start.x, y: start.camera.y + event.clientY - start.y });
       }}
@@ -180,9 +190,9 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         {nodes.map(({ block, x, y, parentId }) => <article key={block.id} data-block-id={block.id}
           className={`argument-node ${parentId ? '' : 'is-root'} ${selected === block.id ? 'is-selected' : ''}`}
           style={{ left: x - CARD_WIDTH / 2, top: y - CARD_HEIGHT / 2, width: CARD_WIDTH, height: CARD_HEIGHT, '--branch-color': COLORS[block.relation] ?? COLORS.related } as CSSProperties}>
-          <button className="argument-node-content" aria-pressed={selected === block.id} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
-            <span className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
-            <strong>{block.label}</strong><span className="argument-node-statement">{block.statement || block.summary}</span>
+          <button className="argument-node-content" aria-current={selected === block.id ? true : undefined} aria-label={[parentId ? relationLabel(block.relation) : t('IDEA CENTRAL'), block.label, block.statement || block.summary].filter(Boolean).join('. ')} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
+            <span aria-hidden="true" className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
+            <strong aria-hidden="true">{block.label}</strong><span aria-hidden="true" className="argument-node-statement">{block.statement || block.summary}</span>
           </button>
           <div className="argument-node-footer"><span>{t(block.type === 'framing' ? 'encuadre' : NODE_LABELS[block.type])}</span>
             {block.children.length > 0 && <button aria-expanded={expanded.has(block.id)} aria-label={`${expanded.has(block.id) ? t('Contraer rama') : t('Desplegar rama')}: ${block.label}`} onClick={() => setExpanded(current => { const next = new Set(current); if (next.has(block.id)) next.delete(block.id); else next.add(block.id); return next; })}><Icon name={expanded.has(block.id) ? 'minus' : 'plus'} size={11} />{block.children.length}</button>}
@@ -203,11 +213,11 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       {fullscreenError && <p className="argument-fullscreen-error" role="alert">{t('No se pudo activar la pantalla completa.')}</p>}
       <div className="argument-camera-controls">
         <button title={t('Alejar')} aria-label={t('Alejar')} onClick={() => zoomAt(1 / 1.2, size.width / 2, size.height / 2)}><Icon name="minus" size={15} /></button>
-        <span>{Math.round(camera.zoom * 100)}%</span>
+        <span role="status" aria-label={`${t('Zoom')}: ${Math.round(camera.zoom * 100)}%`}>{Math.round(camera.zoom * 100)}%</span>
         <button title={t('Acercar')} aria-label={t('Acercar')} onClick={() => zoomAt(1.2, size.width / 2, size.height / 2)}><Icon name="plus" size={15} /></button>
         <button onClick={previousView} disabled={!history.length} title={t('Recuperar el encuadre anterior sin cerrar las ramas')}>{t('Vista anterior')}</button>
         <button onClick={fit}>{t('Encuadrar')}</button>
-        <button onClick={() => { fit(); setRelation(''); setExpanded(new Set([map.root.id])); setSelected(map.root.id); }}>{t('Volver al inicio')}</button>
+        <button onClick={() => { fit(); if (phone) { setCamera({ x: 0, y: 0, zoom: 1 }); setNavigation({ kind: 'focus', id: map.root.id }); } setRelation(''); setExpanded(new Set([map.root.id])); setSelected(map.root.id); }}>{t('Volver al inicio')}</button>
       </div>
     </div>
     <footer className="argument-atlas-footer"><span>{tx('{n} ideas visibles', { n: nodes.length })} · {t('Relaciones respecto a la idea de origen')}</span><span>{map.truncated ? t('subgrafo recortado') : t('Arrastra para explorar · Rueda para ampliar')}</span></footer>

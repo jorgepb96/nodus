@@ -3,7 +3,7 @@
   "version": "5.8.1",
   "description": "Local-first desktop app that turns a Zotero library into a navigable graph of ideas and authors.",
   "author": {
-    "name": "Jorge Pérez Burgueño",
+    "name": "Jorge P\u00e9rez Burgue\u00f1o",
     "url": "https://orcid.org/0000-0002-1150-1930"
   },
   "license": "AGPL-3.0-only",
@@ -180,7 +180,8 @@
     "build:apple-calendar": "node scripts/build-apple-calendar.cjs",
     "build:presenter-native": "node scripts/build-presenter-native.cjs",
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
-    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs"
+    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs",
+    "test:cloud-relay": "npm --prefix cloudflare ci --ignore-scripts && node --test scripts/acceptance-cloudflare-bridge-relay.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -390,16 +391,17 @@
         }
       ],
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Nodus Research usa el micrófono únicamente cuando inicias un dictado o una grabación de estudio.",
-        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la cámara únicamente después de que lo autorices para ese sitio.",
-        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicación de presentaciones instalada únicamente para convertir a PDF el archivo que elijas importar.",
+        "NSMicrophoneUsageDescription": "Nodus Research usa el micr\u00f3fono \u00fanicamente cuando inicias un dictado o una grabaci\u00f3n de estudio.",
+        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la c\u00e1mara \u00fanicamente despu\u00e9s de que lo autorices para ese sitio.",
+        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicaci\u00f3n de presentaciones instalada \u00fanicamente para convertir a PDF el archivo que elijas importar.",
         "NSDockTilePlugIn": "NodusDockTile.docktileplugin",
-        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta función.",
+        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta funci\u00f3n.",
         "NSCalendarsFullAccessUsageDescription": "Nodus necesita acceso completo para crear, actualizar y eliminar las copias de tus eventos en el calendario de Apple que elijas.",
-        "NSLocalNetworkUsageDescription": "Nodus enlaza Presenter con tu iPhone o iPad únicamente mientras presentas.",
+        "NSLocalNetworkUsageDescription": "Nodus vincula tu iPhone o iPad con los vaults y permisos que elijas y conecta Presenter mientras presentas.",
         "NSBonjourServices": [
           "_nodus-presenter._tcp",
-          "_nodus-peer._tcp"
+          "_nodus-peer._tcp",
+          "_nodus-mobile._tcp"
         ]
       },
       "target": [

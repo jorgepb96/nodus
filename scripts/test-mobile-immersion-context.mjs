@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
+import {webcrypto} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {installRuntimeHooks, requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
 
@@ -12,6 +13,7 @@ const runtime=installRuntimeHooks(root);
 runtime.app.once=()=>{};
 runtime.app.on=()=>{};
 const require=createRequire(import.meta.url);
+Object.defineProperty(globalThis,'crypto',{configurable:true,value:webcrypto});
 let database;
 const originalFetch=globalThis.fetch;
 let providerRequests=0;
@@ -39,6 +41,29 @@ try {
   assert.equal((await ai.mobileImmersionGenerationContext(request)).revision,context.revision,'Read-only context fingerprints must be stable');
   assert.deepEqual(db.prepare('SELECT (SELECT COUNT(*) FROM ideas) ideas,(SELECT COUNT(*) FROM passages) passages,(SELECT COUNT(*) FROM immersion_sessions) sessions').get(),before);
   assert.equal(providerRequests,0,'Context preparation must use no Mac provider');
+  const portable=require('../shared/mobileImmersion.ts');
+  const source=await ai.mobileImmersionOfflineSource({topic:request.topic,language:request.language});
+  const sorted=value=>value && typeof value==='object' ? Array.isArray(value) ? value.map(sorted)
+    : Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,child])=>[key,sorted(child)])) : value;
+  const copied=sorted(JSON.parse(JSON.stringify(source)));
+  const longRequest={...request,minutes:240,includeQuiz:true,model:{provider:'openai',model:'other-phone-model'}};
+  const offlineContext=await portable.immersionContextFromCopy(longRequest,copied);
+  assert.equal(offlineContext.offlineSourceVersion,1);
+  assert.equal(offlineContext.scope.estimatedStations,core.resolveStationCount(240,source.material.ideas.length));
+  assert.equal(offlineContext.revision,(await ai.mobileImmersionGenerationContext(longRequest,1)).revision,'Duration, quiz and provider changes retain the same evidence revision despite native key reordering');
+  assert.deepEqual(offlineContext.material.passages,source.material.passages,'Literal downloaded quotes remain exact');
+  await assert.rejects(portable.immersionContextFromCopy({...longRequest,topic:'A topic never downloaded'},copied),/offline_source_unavailable/);
+  await assert.rejects(portable.immersionContextFromCopy({...longRequest,language:'fr'},copied),/offline_source_unavailable/);
+  const phone=require('../src/mobileWeb/autonomousImmersion.ts');
+  const call=async(method,...args)=>{
+    if(method==='getImmersionGenerationContext')throw Object.assign(new Error('Mac unavailable'),{code:'offline'});
+    if(method==='getImmersionOfflineSource'){assert.deepEqual(args[0],{topic:request.topic,language:'es'});return copied;}
+    throw new Error('Unexpected method '+method);
+  };
+  assert.deepEqual((await phone.autonomousImmersionContext(call,longRequest)).material,offlineContext.material,'A new offline request uses its selected topic rather than an exact prior query');
+  await assert.rejects(phone.autonomousImmersionContext(async()=>{throw Object.assign(new Error('Revoked'),{code:'permission_denied'});},longRequest),/Revoked/);
+  assert.deepEqual(db.prepare('SELECT (SELECT COUNT(*) FROM ideas) ideas,(SELECT COUNT(*) FROM passages) passages,(SELECT COUNT(*) FROM immersion_sessions) sessions').get(),before);
+  assert.equal(providerRequests,0,'Preparing a topic and new offline scope must not call Mac providers or indexers');
   // This suite validates persistence and provenance. Real provider generation
   // is independently required by the iPhone acceptance campaign.
   const plan=await core.orchestrateImmersion(request,{
@@ -65,6 +90,12 @@ try {
   db.prepare('UPDATE immersion_sessions SET language=? WHERE id=?').run('fr',saved.id);
   assert.equal(repo.getImmersionSession(saved.id).language,'fr','Reading a French immersion must preserve its persisted language');
   assert.equal(repo.listImmersionSessions().find(row=>row.id===saved.id).language,'fr');
+  const portableContext=await portable.immersionContextFromCopy(request,copied);
+  const portableSaved=await ai.saveMobileImmersion({...input,revision:portableContext.revision,offlineSourceVersion:1});
+  assert.equal(repo.getImmersionSession(portableSaved.id).plan.stations[0].citations[0].text,text);
+  await assert.rejects(ai.saveMobileImmersion({...input,revision:portableContext.revision,offlineSourceVersion:2}),/unsupported_offline_source_version/);
+  db.prepare('UPDATE passages SET text=? WHERE passage_id=?').run(text+' Una edición nueva del Mac.','work-1#0');
+  await assert.rejects(ai.saveMobileImmersion({...input,revision:portableContext.revision,offlineSourceVersion:1}),/immersion_generation_conflict/,'A source edit after download rejects the saved phone plan');
   assert.equal(providerRequests,0);
   console.log(JSON.stringify({executed:1,passed:1,failed:0,skipped:0,contextReadOnly:true,macProviderRequests:0,sourceQuotePreserved:true,foreignEvidenceRejected:true,phoneModelPersisted:true}));
 } finally {

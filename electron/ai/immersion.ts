@@ -1,5 +1,7 @@
 import {createImmersionAIDependencies, IMMERSION_PROMPT_LANGUAGES} from '@shared/immersionGeneration';
 import { createHash } from 'node:crypto';
+import {immersionScopeFromMaterial, type MobileImmersionOfflineSource} from '@shared/mobileImmersion';
+import {mobileSourceRevisionInput} from '@shared/mobileOfflineSource';
 export {immersionPromptPack, IMMERSION_PROMPT_PACKS} from '@shared/immersionGeneration';
 import { withJobThinkingEffort } from './thinkingEffort';
 import { generationSignal } from './generationSignal';
@@ -36,7 +38,6 @@ import {
   IMMERSION_LIMITS,
   orchestrateImmersion,
   buildCitationCatalog,
-  resolveStationCount,
   labels,
   type ImmersionDeps,
   type ImmersionMaterial,
@@ -401,7 +402,7 @@ export async function buildImmersionMaterial(
 /** Phase 0 — the territory map shown before anything is generated. Pure, no AI. */
 export async function buildImmersionScope(request: ImmersionScopeRequest): Promise<ImmersionScope> {
   const settings = getSettings();
-  const language = normalizeImmersionLanguage(settings.promptLanguage);
+  const language = normalizeImmersionLanguage(request.language ?? settings.promptLanguage);
   const material = await buildImmersionMaterial(request.topic, language);
   const warnings: string[] = [];
   const plannedModel = settings.immersionModel ?? settings.synthesisModel ?? null;
@@ -422,54 +423,26 @@ export async function buildImmersionScope(request: ImmersionScopeRequest): Promi
   if (material.ideas.length < IDEA_MIN_KEEP / 2) {
     warnings.push(immersionScopeWarning(language, 'sparse'));
   }
-  return scopeFromImmersionMaterial(request, material, aiKeyAvailable, warnings);
+  return immersionScopeFromMaterial(request, material, aiKeyAvailable, warnings);
 }
 
-function scopeFromImmersionMaterial(request: ImmersionScopeRequest, material: ImmersionMaterial, aiKeyAvailable: boolean, warnings: string[]): ImmersionScope {
-  return {
-    topic: material.topic,
-    generatedAt: new Date().toISOString(),
-    embeddingAvailable: material.embeddingAvailable,
-    aiKeyAvailable,
-    ideas: material.ideas.map((i) => ({
-      id: i.id,
-      type: i.type as ImmersionScope['ideas'][number]['type'],
-      label: i.label,
-      statement: i.statement,
-      score: i.score,
-      themes: i.themes,
-      authors: i.authors,
-      workIds: i.works.map((w) => w.nodusId),
-    })),
-    works: material.works.map((w) => ({
-      nodusId: w.nodusId,
-      title: w.title,
-      authors: w.authors,
-      year: w.year,
-      zoteroKey: w.zoteroKey,
-      score: w.score,
-      ideaCount: w.ideaCount,
-    })),
-    authors: material.authors,
-    themes: material.themes,
-    debateCount: material.debates.length,
-    gapCount: material.gaps.length,
-    passageCount: material.passages.length,
-    graph: material.graph,
-    estimatedStations: resolveStationCount(request.minutes ?? 150, material.ideas.length),
-    warnings,
-  };
-}
-
-export async function mobileImmersionGenerationContext(request: ImmersionRequest) {
+export async function mobileImmersionGenerationContext(request: ImmersionRequest, offlineSourceVersion?: 1) {
+  if (offlineSourceVersion !== undefined && offlineSourceVersion !== 1) throw new Error('unsupported_offline_source_version');
   if (!request || typeof request.topic !== 'string' || !request.topic.trim() || request.topic.length > 10_000
     || !Number.isFinite(request.minutes) || request.minutes < 1 || request.minutes > 1440) throw new Error('invalid_immersion_request');
   const material = await buildImmersionMaterial(request.topic, normalizeImmersionLanguage(request.language), undefined, {lexicalOnly:true});
-  const revision = createHash('sha256').update(JSON.stringify(material)).digest('hex');
-  return {material, revision, scope:scopeFromImmersionMaterial(request, material, true, [immersionScopeWarning(normalizeImmersionLanguage(request.language), 'embeddings')])};
+  const revision = createHash('sha256').update(offlineSourceVersion === 1 ? mobileSourceRevisionInput(material) : JSON.stringify(material)).digest('hex');
+  return {material, revision, ...(offlineSourceVersion === 1 ? {offlineSourceVersion: 1 as const} : {}),
+    scope:immersionScopeFromMaterial(request, material, true, [immersionScopeWarning(normalizeImmersionLanguage(request.language), 'embeddings')])};
 }
 
-export async function saveMobileImmersion(input: {request: ImmersionRequest; revision: string; plan: import('@shared/types').ImmersionPlan; model: ModelRef}) {
+export async function mobileImmersionOfflineSource(target: {topic: string; language?: PromptLanguage}): Promise<MobileImmersionOfflineSource> {
+  const request = {...target, minutes: 150, includeQuiz: false};
+  const context = await mobileImmersionGenerationContext(request, 1);
+  return {version: 1, topic: context.material.topic, language: normalizeImmersionLanguage(target.language), material: context.material, warnings: context.scope.warnings};
+}
+
+export async function saveMobileImmersion(input: {request: ImmersionRequest; revision: string; plan: import('@shared/types').ImmersionPlan; model: ModelRef; offlineSourceVersion?: 1}) {
   const plan = input?.plan;
   const string = (value: unknown) => typeof value === 'string';
   const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(string);
@@ -498,7 +471,7 @@ export async function saveMobileImmersion(input: {request: ImmersionRequest; rev
       || !strings(station.takeaways) || !questions(station.quiz) || !Array.isArray(station.positions)
       || station.positions.some(position => !position || !string(position.name) || !string(position.position) || !strings(position.ideaIds)))
     || typeof input.revision !== 'string' || !/^[a-f0-9]{64}$/.test(input.revision)) throw new Error('invalid_immersion_plan');
-  const context = await mobileImmersionGenerationContext(input.request);
+  const context = await mobileImmersionGenerationContext(input.request, input.offlineSourceVersion);
   if (context.revision !== input.revision) throw new Error('immersion_generation_conflict');
   const ideas = new Set(context.material.ideas.map(item => item.id));
   const passages = new Map(context.material.passages.map(item => [item.id,item]));

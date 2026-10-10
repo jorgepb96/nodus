@@ -8186,6 +8186,7 @@ export interface StudySession {
 
 export interface ImmersionScopeRequest {
   topic: string;
+  language?: PromptLanguage;
   /** Chosen time budget, so the station estimate matches the depth tier. */
   minutes?: number;
 }

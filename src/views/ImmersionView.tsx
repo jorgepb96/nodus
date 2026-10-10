@@ -300,7 +300,7 @@ export function ImmersionView({
     setScoping(true);
     setScope(null);
     try {
-      const result = await window.nodus.buildImmersionScope({ topic: topic.trim(), minutes });
+      const result = await window.nodus.buildImmersionScope({ topic: topic.trim(), language, minutes });
       setScope(result);
       setComposerOpen(false);
       setMode('scope');

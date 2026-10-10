@@ -216,7 +216,7 @@ import { getCachedWorkIdeaSynthesis, synthesizeWorkIdeas } from '../ai/workIdeaS
 import { exportAuthorSyntheses } from '../export/authorSynthesisExport';
 import { setAuthorSaved } from '../db/savedAuthorsRepo';
 import { buildStudyPlan, generateStudySession } from '../ai/studyGuide';
-import { buildImmersionScope, evaluateImmersionAnswer, generateImmersionSession, mobileImmersionGenerationContext, saveMobileImmersion } from '../ai/immersion';
+import { buildImmersionScope, evaluateImmersionAnswer, generateImmersionSession, mobileImmersionGenerationContext, mobileImmersionOfflineSource, saveMobileImmersion } from '../ai/immersion';
 import * as immersionRepo from '../db/immersionRepo';
 import { generateHypothesisLab } from '../ai/hypothesisLab';
 import * as studyProgress from '../db/studyProgressRepo';
@@ -1594,6 +1594,7 @@ export function registerAcademicIpc(context: IpcContext): void {
   // inmersión (guided topic mastery: scope → generate → resume/replay forever)
   h('immersion:scope', async (_e, request: ImmersionScopeRequest) => buildImmersionScope(request));
   h('immersion:mobile:context', async (_e, request: ImmersionRequest) => mobileImmersionGenerationContext(request));
+  h('immersion:mobile:offlineSource', async (_e, target) => mobileImmersionOfflineSource(target));
   h('immersion:mobile:save', async (_e, input: Parameters<typeof saveMobileImmersion>[0]) => saveMobileImmersion(input));
   h('immersion:generate', async (e, requestId: string, request: ImmersionRequest) => {
     const session = await generateImmersionSession(request, (p) =>

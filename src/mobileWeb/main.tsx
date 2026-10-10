@@ -1,5 +1,5 @@
 import { autonomousDictionary } from './autonomousDictionary';
-import { autonomousImmersion } from './autonomousImmersion';
+import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
 import { autonomousTranslation } from './autonomousTranslation';
 import {autonomousWriting, cancelAutonomousWriting} from './autonomousWriting';
 import {StudyGraphView} from '../views/StudyGraphView';
@@ -207,7 +207,8 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
     for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(entryId);
     return detail;
   };
-  if (method === 'buildImmersionScope' && native.nodusMobileConfig.executionMode === 'autonomous') return async (request: unknown) => (await call('getImmersionGenerationContext', request)).scope;
+  if (method === 'buildImmersionScope' && native.nodusMobileConfig.executionMode === 'autonomous') return async (request: {topic:string;minutes?:number;language?:Parameters<typeof autonomousImmersionContext>[1]['language']}) =>
+    (await autonomousImmersionContext(call,{...request,minutes:request.minutes ?? 150})).scope;
   if (method === 'generateImmersionSession' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousImmersion>[1], handlers: {onProgress?: Parameters<typeof autonomousImmersion>[2]} = {}) => autonomousImmersion(call, request, handlers.onProgress ?? (()=>{}));
   if (native.nodusMobileConfig.executionMode === 'autonomous' && ['listModels','getModelCatalog'].includes(method)) return async (provider: Parameters<typeof mobileModelInformation>[0]) => {
     const result=await call(method,provider);

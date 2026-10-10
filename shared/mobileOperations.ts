@@ -100,6 +100,7 @@ export const MOBILE_OPERATIONS = {
   setImmersionProgress: ['immersion:progress:set', 'writing'], answerImmersionQuestion: ['immersion:answer', 'writing'],
   generateImmersionSession: ['immersion:generate', 'research-generation'], deleteImmersionSession: ['immersion:delete', 'writing'],
   getImmersionGenerationContext: ['immersion:mobile:context', 'corpus'], saveImmersionGeneratedSession: ['immersion:mobile:save', 'writing'],
+  getImmersionOfflineSource: ['immersion:mobile:offlineSource', 'corpus'],
   getWritingWorkshopSnapshot: ['writing:snapshot', 'corpus'], generateWritingWorkshopDraft: ['writing:draft', 'research-generation'],
   researchChat: ['research:chat', 'research-generation'], researchChatStream: ['research:chatStream', 'research-generation'],
   improveStudyText: ['study:improve', 'research-generation'], suggestStudySynonyms: ['study:synonyms', 'research-generation'],

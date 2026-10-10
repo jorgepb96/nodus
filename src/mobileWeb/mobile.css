@@ -19,12 +19,15 @@ body{-webkit-text-size-adjust:100%;touch-action:manipulation;background:var(--ap
 button,input,select,textarea{font-size:inherit}
 @media(max-width:600px){button{min-height:44px}input,select{min-height:44px}.stellar-detail{max-width:90vw}.mobile-surface .min-w-\[800px\]{min-width:100%}.mobile-surface .px-6{padding-inline:12px}}
 
-/* A phone needs a separate band for graph status and navigation. Desktop's
-   floating controls otherwise cover the theme captions at the centre. */
+/* A dossier can narrow an iPad canvas as much as a phone. Reserve real rows
+   for its status and controls using the pane width, including wrapped text. */
+.mobile-surface[data-surface="graph"] .stellar-stage{container-type:inline-size;container-name:nodus-graph-pane;display:grid;grid-template-rows:auto auto minmax(0,1fr);min-height:0}
+@container nodus-graph-pane (max-width:600px){
+  .mobile-surface[data-surface="graph"] .stellar-stage>.stellar-canvas{position:relative;inset:auto;grid-row:3;grid-column:1;min-height:0;width:100%;height:100%}
+  .mobile-surface[data-surface="graph"] .stellar-meta{position:relative;inset:auto;grid-row:1;grid-column:1;margin:10px 12px 8px;font-size:.6875rem;line-height:1.4;overflow-wrap:anywhere}
+  .mobile-surface[data-surface="graph"] .stellar-navigation{position:relative;inset:auto;grid-row:2;grid-column:1;justify-self:end;max-width:calc(100% - 24px);margin:0 12px 8px}
+}
 @media(max-width:600px){
-  .mobile-surface[data-surface="graph"] .stellar-stage>.stellar-canvas{top:90px}
-  .mobile-surface[data-surface="graph"] .stellar-meta{top:10px;left:12px;right:12px;font-size:11px}
-  .mobile-surface[data-surface="graph"] .stellar-navigation{top:34px;right:12px}
   .mobile-surface[data-surface="graph"] .stellar-hit{width:44px;height:44px}
   .mobile-surface[data-surface="graph"] .stellar-progress{top:100px;left:12px;right:12px}
   .mobile-surface[data-surface="graph"] .stellar-header-actions{flex-wrap:wrap}

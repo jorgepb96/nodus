@@ -647,9 +647,7 @@ export function StellarCanvas(props: Props) {
       data-context-nodes={props.context?.data.nodes.length || 0}
       data-context-edges={props.context?.data.edges.length || 0}
       tabIndex={0}
-      aria-label={t(
-        "Canvas de ideas. Arrastra para navegar; usa la rueda para ampliar.",
-      )}
+      aria-label={`${t("Canvas de ideas. Arrastra para navegar; usa la rueda para ampliar.")} ${t("Zoom")}: ${Math.round(props.camera.zoom * 100)}%`}
       onPointerDown={(e) => {
         if (pinching.current) return;
         if (e.button !== 0) return;

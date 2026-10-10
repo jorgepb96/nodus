@@ -4,9 +4,10 @@ import type { DictionaryEntry, DictionaryEvidenceItem, DictionaryGenerationReque
 import type { CitationClaim, CitationVerdict } from '../../electron/ai/deepResearchCore';
 import { deepResearchQualityPromptPack } from '@shared/deepResearchQualityPromptPacks';
 import {structuredPrompt} from './structuredPrompt';
+import {preservePendingPublication, pendingPublicationMessage, type PublicationCheckpoint} from './publicationRecovery';
 
 type Call = (method: string, ...args: unknown[]) => Promise<any>;
-type Checkpoint = { id: string; request: DictionaryGenerationRequest; state: 'accepted' | 'running' | 'saved' | 'available' | 'failed'; context?: {entry: DictionaryEntry; evidence: DictionaryEvidenceItem[]; revision: string}; definition?: Awaited<ReturnType<typeof generateDictionaryDefinition>>; error?: string };
+type Checkpoint = PublicationCheckpoint & { id: string; request: DictionaryGenerationRequest; state: 'accepted' | 'running' | 'saved' | 'available' | 'failed'; context?: {entry: DictionaryEntry; evidence: DictionaryEvidenceItem[]; revision: string}; definition?: Awaited<ReturnType<typeof generateDictionaryDefinition>>; error?: string };
 const active = new Map<string, Promise<DictionaryProgress>>();
 function parseStructured(text: string): unknown {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
@@ -22,6 +23,13 @@ async function execute(call: Call, emit: (progress: DictionaryProgress) => void,
   if (!request.model) throw new Error('Elige un modelo y configura su proveedor en los ajustes del móvil.');
   if (request.webSearch && request.webSearch !== 'off') throw new Error('La búsqueda web autónoma requiere un proveedor web configurado en este dispositivo. Desactívala para investigar el corpus descargado.');
   const previous = await call('mobileDictionaryCheckpoint', 'load', request.entryId);
+  if (previous?.state === 'available' && previous.recoveredPublication) {
+    delete previous.recoveredPublication;
+    await call('mobileDictionaryCheckpoint', 'save', request.entryId, previous);
+    const result:DictionaryProgress = {entryId:request.entryId,mode:previous.request.mode,
+      phase:previous.definition?.outcome === 'degraded' ? 'degraded' : 'done',message:'Definición sincronizada con Nodus'};
+    emit(result);return result;
+  }
   const checkpoint: Checkpoint = previous && previous.state !== 'available' && previous.request.mode === request.mode
     ? previous : { id: crypto.randomUUID(), request, state: 'accepted' };
   request = checkpoint.request;
@@ -30,7 +38,7 @@ async function execute(call: Call, emit: (progress: DictionaryProgress) => void,
   await save(); emit(progress('retrieving', 'Leyendo las evidencias del corpus'));
   try {
     checkpoint.context ??= await call('getDictionaryGenerationContext', request.entryId, request.webSearch ?? 'off');
-    checkpoint.state = 'running'; await save();
+    if (!checkpoint.definition) {checkpoint.state = 'running';delete checkpoint.error;await save();}
     const context = checkpoint.context!;
     const completion = async <T>(prompt: {system:string;user:string;temperature:number;maxTokens:number}, valid: (value:unknown) => value is T, _model: unknown = null, validation=false): Promise<T> => {
       const response = await call('mobileStructuredCompletion', {...structuredPrompt(prompt,request.model!,validation?'standard':request.thinkingEffort), generationId:checkpoint.id});
@@ -63,10 +71,13 @@ async function execute(call: Call, emit: (progress: DictionaryProgress) => void,
       checkpoint.state = 'saved'; await save();
     }
     await call('saveDictionaryGeneratedVersion', {definition:checkpoint.definition, contextRevision:context.revision, webSearch:request.webSearch ?? 'off', requestId:checkpoint.id});
-    checkpoint.state='available'; await save();
+    checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await save();
     const result = progress(checkpoint.definition!.outcome === 'degraded' ? 'degraded' : 'done', checkpoint.definition!.outcome === 'degraded' ? 'La síntesis necesita revisión' : 'Definición guardada');
     emit(result); return result;
   } catch (error) {
+    if (preservePendingPublication(checkpoint,error)) {
+      await save();const pending=progress('saving',pendingPublicationMessage);emit(pending);return pending;
+    }
     checkpoint.state='failed'; checkpoint.error=String(error); await save(); emit(progress('failed','La generación no pudo completarse.',String(error))); throw error;
   }
 }

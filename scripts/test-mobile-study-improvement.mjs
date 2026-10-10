@@ -70,17 +70,26 @@ try {
       return raw;
     }
     if(method==='saveStudyImprovementFromMobile'){
-      if(failSave){failSave=false;throw new Error('Mac disconnected before saving');}
+      if(failSave){failSave=false;throw Object.assign(new Error('Mac disconnected before saving'),{code:'offline'});}
       return mobile.saveMobileStudyImprovement(args[0]);
     }
     if(method==='cancelAutonomousGeneration'){pendingReject?.(new Error('Provider cancelled'));return null;}
     throw new Error('Unexpected method: '+method);
   };
-  await assert.rejects(frontend.autonomousWriting(call,{...request,model:{provider:'codex',model:'Mac-only'}},()=>{}),/Mac disconnected/);
-  assert.equal(providerCalls,1);assert([...checkpoints.values()].some(value=>value.raw===raw && value.state==='failed'),'Interrupted save retains generated result');
+  await assert.rejects(frontend.autonomousWriting(call,{...request,model:{provider:'codex',model:'Mac-only'}},()=>{}),error=>error.code==='mobile_publication_pending');
+  assert.equal(providerCalls,1);assert([...checkpoints.values()].some(value=>value.raw===raw && value.state==='saved' && value.publicationPending && value.preview.text.includes('produjo')),'Interrupted save remains a readable complete response awaiting synchronization');
   let preview='';
   const resumed=await frontend.autonomousWriting(call,request,text=>{preview+=text;});
   assert.equal(providerCalls,1,'Resuming a completed phone response does not regenerate it');assert.equal(preview,resumed.text);
+  const recovered=[...checkpoints.entries()].find(([,value])=>value.result?.logId===resumed.logId);
+  checkpoints.set(recovered[0],{...recovered[1],recoveredPublication:true});
+  let restored='';assert.equal((await frontend.autonomousWriting(call,request,text=>{restored+=text;})).logId,resumed.logId);
+  assert.equal(restored,resumed.text);assert.equal(providerCalls,1,'Reopening a publication acknowledged during reconnection never regenerates it');
+  const recovery=require('../src/mobileWeb/publicationRecovery.ts');
+  const providerFailure={state:'running',error:'Provider unreachable'};
+  assert.equal(recovery.preservePendingPublication(providerFailure,{code:'offline'}),false,'A failed provider call is not a completed response');
+  assert.equal(recovery.preservePendingPublication({state:'saved'},{code:'permission_denied'}),false,'Grant rejection is never a pending transport save');
+  assert.equal(recovery.preservePendingPublication({state:'saved'},{code:'translation_generation_conflict'}),false,'A source conflict is never reported as offline success');
   const cancelling=frontend.autonomousWriting(call,{...request,text:'Cancelar esta generación'},()=>{throw new Error('Cancelled preview must never be emitted');});
   while(!pendingReject)await new Promise(resolve=>setTimeout(resolve,5));
   await frontend.cancelAutonomousWriting(call);await assert.rejects(cancelling,/cancelled/);

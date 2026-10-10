@@ -2,9 +2,10 @@ import { createImmersionAIDependencies } from '@shared/immersionGeneration';
 import { orchestrateImmersion, type ImmersionMaterial } from '../../electron/ai/immersionCore';
 import type { ImmersionBuildProgress, ImmersionPlan, ImmersionRequest, ImmersionSession } from '@shared/types';
 import {structuredPrompt} from './structuredPrompt';
+import {PendingPublicationError, preservePendingPublication, type PublicationCheckpoint} from './publicationRecovery';
 
 type Call = (method:string,...args:unknown[])=>Promise<any>;
-type Checkpoint = {id:string;entityKey:string;request:ImmersionRequest;state:'accepted'|'running'|'saved'|'available'|'failed';context?:{material:ImmersionMaterial;revision:string};plan?:ImmersionPlan;result?:ImmersionSession;error?:string};
+type Checkpoint = PublicationCheckpoint & {id:string;entityKey:string;request:ImmersionRequest;state:'accepted'|'running'|'saved'|'available'|'failed';context?:{material:ImmersionMaterial;revision:string};plan?:ImmersionPlan;result?:ImmersionSession;error?:string};
 const active = new Map<string,Promise<ImmersionSession>>();
 export async function autonomousImmersion(call:Call, request:ImmersionRequest, onProgress:(progress:ImmersionBuildProgress)=>void):Promise<ImmersionSession> {
   const identity = JSON.stringify([request.topic.trim(),request.language??'es',request.minutes,request.includeQuiz,request.model?.provider,request.model?.model,request.thinkingEffort]);
@@ -15,13 +16,16 @@ export async function autonomousImmersion(call:Call, request:ImmersionRequest, o
 async function execute(call:Call,entityKey:string,request:ImmersionRequest,onProgress:(progress:ImmersionBuildProgress)=>void):Promise<ImmersionSession> {
   if (!request.model) throw new Error('Elige un modelo y configura su proveedor en los ajustes del móvil.');
   const previous=await call('mobileGenerationCheckpoint','load','immersion',entityKey) as Checkpoint|null;
+  if(previous?.state==='available' && previous.recoveredPublication && previous.result){
+    delete previous.recoveredPublication;await call('mobileGenerationCheckpoint','save','immersion',entityKey,previous);return previous.result;
+  }
   const checkpoint:Checkpoint=previous && previous.state !== 'available' ? previous : {id:crypto.randomUUID(),entityKey,request,state:'accepted'};
   request=checkpoint.request;
   const save=()=>call('mobileGenerationCheckpoint','save','immersion',entityKey,checkpoint);
   await save();
   try {
     checkpoint.context??=await call('getImmersionGenerationContext',request);
-    checkpoint.state='running';await save();
+    if(!checkpoint.plan){checkpoint.state='running';delete checkpoint.error;await save();}
     const complete=async<T>(prompt:{system:string;user:string;temperature:number;maxTokens:number},valid:(value:unknown)=>value is T):Promise<T>=>{
       const response=await call('mobileStructuredCompletion',{...structuredPrompt(prompt,request.model!,request.thinkingEffort),generationId:checkpoint.id});
       let result:unknown;
@@ -33,6 +37,9 @@ async function execute(call:Call,entityKey:string,request:ImmersionRequest,onPro
       checkpoint.state='saved';await save();
     }
     checkpoint.result=await call('saveImmersionGeneratedSession',{request,revision:checkpoint.context!.revision,plan:checkpoint.plan,model:request.model,requestId:checkpoint.id});
-    checkpoint.state='available';await save();return checkpoint.result!;
-  }catch(error){checkpoint.state='failed';checkpoint.error=String(error);await save();throw error;}
+    checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await save();return checkpoint.result!;
+  }catch(error){
+    if(preservePendingPublication(checkpoint,error)){await save();throw new PendingPublicationError();}
+    checkpoint.state='failed';checkpoint.error=String(error);await save();throw error;
+  }
 }

@@ -236,6 +236,11 @@ export function ImmersionView({
   useEffect(() => {
     void refreshSessions();
   }, [refreshSessions]);
+  useEffect(() => {
+    const refresh = () => {void refreshSessions();};
+    window.addEventListener('nodus:mobile-immersion-changed',refresh);
+    return () => window.removeEventListener('nodus:mobile-immersion-changed',refresh);
+  }, [refreshSessions]);
 
   useEffect(() => {
     if (!sessionsRead) return;

@@ -65,6 +65,7 @@ function studyTables() {
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
   if (method === 'getActiveVault') return native.nodusMobileCall('surfaceVaultContext');
+  if (method === 'listDictionaryGenerationJobs' && native.nodusMobileConfig.live && native.nodusMobileConfig.executionMode === 'autonomous') return native.nodusMobileCall('mobileDictionaryGenerationJobs');
   if (!native.nodusMobileConfig.live) {
     if (method === 'getGlobalLibraryItem' || method === 'getLibraryReaderDocument') return native.nodusMobileCall('publishedSourceDocument', String(args[0]), method);
     if (method === 'getSettings') return native.nodusMobileCall('mobileSettings', {...DEFAULT_APP_SETTINGS,
@@ -153,6 +154,26 @@ const streamEvents: Record<string, string> = {
 };
 let activeChat: string | undefined, activeImprove: string | undefined;
 (window as any).nodusMobileEvent = (event: { channel: string; args: unknown[] }) => {
+  if (event.channel === 'mobile:publication:changed') {
+    for (const update of (Array.isArray(event.args[0]) ? event.args[0] : []) as Array<{method:string;state:string;entryId?:string;mode?:string;degraded?:boolean;entityKind?:string;entityId?:string;error?:string}>) {
+      if (update.method === 'saveDictionaryGeneratedVersion' && update.entryId) {
+        const phase = update.state === 'available' ? update.degraded ? 'degraded' : 'done'
+          : ['failed','interrupted','cancelled'].includes(update.state) ? 'failed' : 'saving';
+        for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener({entryId:update.entryId,mode:update.mode,phase,
+          message:update.error ?? (update.state === 'available' ? 'Definición sincronizada con Nodus' : 'Guardado en este dispositivo · pendiente de sincronizar'),
+          ...(update.error ? {error:update.error} : {})});
+        if (update.state === 'available') for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(update.entryId);
+      }
+      if (update.method === 'saveContentTranslationFromMobile' && update.state === 'available') {
+        for (const listener of subscriptions.get('onContentTranslationsChanged') ?? []) listener(update.entityKind,update.entityId);
+      }
+      if (update.state === 'available') {
+        if (['enqueueDeepResearchJob','generateWritingWorkshopDraft'].includes(update.method)) for (const listener of subscriptions.get('onWritingDraftsChanged') ?? []) listener(null);
+        if (update.method === 'saveImmersionGeneratedSession') window.dispatchEvent(new Event('nodus:mobile-immersion-changed'));
+      }
+    }
+    return;
+  }
   if (event.channel === 'mobile:dictionary:progress') {
     for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(event.args[0]);
     if (['done', 'degraded'].includes((event.args[0] as { phase?: string })?.phase ?? '')) for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null);
@@ -262,7 +283,7 @@ function App() {
     window.addEventListener('error', listener); return () => window.removeEventListener('error', listener);
   }, []);
   useEffect(() => {
-    if (!config.live || config.executionMode !== 'live' || !['dictionary', 'deepResearch'].includes(config.surface)) return;
+    if (!config.live || !['dictionary', 'deepResearch'].includes(config.surface)) return;
     let active = true;
     let revision: string | undefined;
     let polling = false;

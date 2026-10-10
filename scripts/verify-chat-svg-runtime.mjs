@@ -64,7 +64,7 @@ await build({
   outfile: file, bundle: true, platform: 'node', format: 'cjs', external: ['electron'], logLevel: 'silent',
   plugins: [{ name: 'qa-only', setup(api) {
     api.onResolve({ filter: /^\.\/aiClient$/ }, () => ({ path: 'ai', namespace: 'mock' }));
-    api.onLoad({ filter: /.*/, namespace: 'mock' }, () => ({ contents: 'export const completeText = () => { throw new Error("Unexpected model call"); };', loader: 'js' }));
+    api.onLoad({ filter: /.*/, namespace: 'mock' }, () => ({ contents: 'export const completeText = () => { throw new Error("Unexpected model call"); }; export const resolveModelRef = () => { throw new Error("Unexpected model resolution"); };', loader: 'js' }));
     api.onResolve({ filter: /^@shared\// }, ({ path: specifier }) => ({ path: path.join(root, 'shared', specifier.slice(8) + '.ts') }));
   } }],
 });

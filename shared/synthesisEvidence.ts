@@ -12,6 +12,7 @@
 
 import type { TextbookPreparation } from './textbookSchemes';
 import { conditionsPlainText, normalizeReactionConditions } from './reactionConditions';
+import { auditNote, normalizeAuditFlags, recordLabel, RECORD_ID } from './recordAudit';
 
 /** The payload key the evidence travels under, next to `estructura_objetivo_verificada`. */
 export const SYNTHESIS_EVIDENCE_KEY = 'evidencia_para_la_ruta';
@@ -98,6 +99,8 @@ export interface DisconnectionProposal {
   templates?: string[];
   /** For a recorded disconnection, what its most recorded sample was run with (one plain line). */
   conditions?: string;
+  /** The bond-edit audit's note when this disconnection is a flagged record (see recordAudit). */
+  audit?: string;
 }
 
 export interface TargetDisconnections {
@@ -107,7 +110,7 @@ export interface TargetDisconnections {
   /** ORD reactions that make this molecule, most recorded first. */
   /** `conditions`: what the most recorded sample was run with, one plain line (absent without an
    *  index conditions table). */
-  recordedRoutes: Array<{ precursors: string; count: number; conditions?: string }>;
+  recordedRoutes: Array<{ precursors: string; count: number; conditions?: string; audit?: string }>;
   proposals: DisconnectionProposal[];
 }
 
@@ -118,7 +121,7 @@ function stockVendors(inStock: unknown): string[] {
   return lists.reduce((common, vendors) => common.filter((vendor) => vendors.includes(vendor)));
 }
 
-const ORD_ID = /^ord-[0-9a-f]{32}$/;
+const ORD_ID = RECORD_ID;
 
 /** The first well-formed recorded conditions as one plain line, for the model's payload. */
 function firstConditions(value: unknown): string | undefined {
@@ -146,7 +149,8 @@ export function normalizeDisconnections(data: unknown, perTarget = 6): TargetDis
       const precursors = smiles.split('>>')[0];
       if (!precursors || recordedRoutes.some((route) => route.precursors === precursors)) continue;
       const conditions = firstConditions((reaction as Record<string, unknown>).conditions);
-      recordedRoutes.push({ precursors, count: asNumber((reaction as Record<string, unknown>).count), ...(conditions ? { conditions } : {}) });
+      const audit = auditNote(normalizeAuditFlags((reaction as Record<string, unknown>).auditFlags));
+      recordedRoutes.push({ precursors, count: asNumber((reaction as Record<string, unknown>).count), ...(conditions ? { conditions } : {}), ...(audit ? { audit } : {}) });
       if (recordedRoutes.length >= 3) break;
     }
     const proposals: DisconnectionProposal[] = [];
@@ -162,6 +166,7 @@ export function normalizeDisconnections(data: unknown, perTarget = 6): TargetDis
         ...(typeof proposal.fromStarts === 'boolean' ? { fromStarts: proposal.fromStarts } : {}),
         ...(proposal.purchasable === true ? { purchasable: true, vendors: stockVendors(proposal.inStock) } : {}),
         ...(firstConditions(proposal.conditions) ? { conditions: firstConditions(proposal.conditions) } : {}),
+        ...(auditNote(normalizeAuditFlags(proposal.auditFlags)) ? { audit: auditNote(normalizeAuditFlags(proposal.auditFlags)) } : {}),
         ...(Array.isArray(proposal.templates) && proposal.templates.length
           ? { templates: proposal.templates.filter((smarts): smarts is string => typeof smarts === 'string').slice(0, 3) } : {}),
       });
@@ -418,7 +423,7 @@ export interface CandidateRoute {
 const CANDIDATE_ROUTES = 3;
 const CANDIDATE_STEPS = 6;
 const STEP_CITATIONS = 2;
-const ORD_SAMPLE = /^ord-[0-9a-f]{32}$/;
+const ORD_SAMPLE = RECORD_ID;
 const TEXTBOOK_SAMPLE = /^tb-[0-9a-f]{32}$/;
 
 /** Reads `candidate-routes` data (the worker's route search): each route's steps in synthesis
@@ -445,7 +450,8 @@ export function candidateRoutes(
       const samples = Array.isArray(step.samples) ? step.samples.filter((id): id is string => typeof id === 'string') : [];
       const templates = Array.isArray(step.templates) ? step.templates.filter((t): t is string => typeof t === 'string' && t.includes('>>')) : [];
       let citations: string[] = [];
-      if (basis === 'recorded' && source === 'ORD') citations = samples.filter((id) => ORD_SAMPLE.test(id)).slice(0, STEP_CITATIONS);
+      // A patent record is cited by its number (and paragraph), linked; an ORD record by its id.
+      if (basis === 'recorded' && source === 'ORD') citations = samples.filter((id) => ORD_SAMPLE.test(id)).slice(0, STEP_CITATIONS).map((id) => recordLabel(id).replace(/^`|`$/g, ''));
       else if (basis === 'recorded' && source === 'textbook' && citeTextbook) citations = citeTextbook(samples.filter((id) => TEXTBOOK_SAMPLE.test(id))).slice(0, STEP_CITATIONS);
       else if (basis === 'template' && source === 'textbook' && citeTemplates && templates.length) citations = citeTemplates(templates).slice(0, STEP_CITATIONS);
       steps.push({

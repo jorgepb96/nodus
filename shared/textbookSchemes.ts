@@ -1,5 +1,6 @@
 import type { PrecedentContext, ReactionPrecedent } from './moleculeInspection';
 import { similarityBand } from './reactionSimilarity';
+import { auditNote, normalizeAuditFlags } from './recordAudit';
 
 /**
  * Reactions transcribed from the reaction schemes in the user's own textbooks (tools/scheme-scan):
@@ -25,6 +26,9 @@ export interface TextbookSchemeRecord {
    *  name and formula agreed on. */
   status: 'confirmed' | 'repaired';
   reaction: string;
+  /** The bond-edit audit's flags: a scheme it flagged stays cited (a book records real
+   *  rearrangements and radical steps whose conditions need not name them). */
+  audit?: string[];
 }
 
 /** A record ready to cite: where it is and, when the app has the book's text, a passage link to
@@ -38,6 +42,8 @@ export interface TextbookCitation {
   yield: string | null;
   status: TextbookSchemeRecord['status'];
   link: string | null;
+  /** The audit's flags on the record, when it raised any. */
+  audit?: string[];
 }
 
 const MAX_CONDITIONS = 160;
@@ -58,6 +64,7 @@ export function textbookCitation(id: string, record: TextbookSchemeRecord, link:
     yield: clip(record.yield, 60),
     status: record.status,
     link,
+    ...(normalizeAuditFlags(record.audit).length ? { audit: normalizeAuditFlags(record.audit) } : {}),
   };
 }
 
@@ -74,7 +81,8 @@ export function formatTextbookCitation(citation: TextbookCitation): string {
   if (citation.reagents) parts.push(`conditions: ${citation.reagents}`);
   if (citation.yield) parts.push(`yield ${citation.yield}`);
   const note = citation.status === 'repaired' ? ' (a structure was corrected from its name and formula)' : '';
-  return `${parts.join(' · ')}${note}`;
+  const audit = citation.audit?.length ? ` ${auditNote(citation.audit)}` : '';
+  return `${parts.join(' · ')}${note}${audit}`;
 }
 
 const TEXTBOOK_FOOTNOTE = '_Read from the scheme drawings in your textbooks by a vision model; each structure was checked against the name and formula read with it. Conditions are as drawn. Similarity compares which bonds change (DRFP, Tanimoto), not the molecules._';

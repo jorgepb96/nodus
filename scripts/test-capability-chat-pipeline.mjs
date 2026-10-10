@@ -211,7 +211,10 @@ test('a failing or truncated request becomes inert text, never a re-readable req
 
   const failing = runnerOf({ invoke: () => { throw new Error('OPSIN could not resolve `that`\nname'); } });
   const output = await runTrustedChatPipeline('```chemistry-plan\n{}\n```', registryOf(chemistry), failing, { onProblem: () => {} });
-  assert.match(output, /Capability error: OPSIN could not resolve  that  name/);
+  assert.match(output, /Capability error, from the application and not the model: OPSIN could not resolve  that  name/);
+  // Attributed on purpose: the failure replaces the directive where it stood, so an unattributed
+  // line there reads as the model's own words to a reader, a replay or a blind reviewer.
+  assert.match(output, /_Capability error, from the application and not the model: [^\n]*_/);
   assert.doesNotMatch(output, /```/, 'the error carries no fence for the next turn to act on');
 
   const truncated = runnerOf();
@@ -278,7 +281,7 @@ test('a nested mistake in a tool input is named by path', async () => {
     { plan: 'x', source: { label: 'Ethanol', license: 'CC0' }, period: {} },
   ]) {
     const answer = await runTrustedChatPipeline('```chemistry-plan\n' + JSON.stringify(input) + '\n```', registryOf(chemistry), runner, { onProblem: () => {} });
-    refusals.push(/Capability error: ([^\n]+)/.exec(answer)?.[1] ?? 'no refusal');
+    refusals.push(/Capability error, from the application and not the model: ([^\n]+)/.exec(answer)?.[1] ?? 'no refusal');
   }
   assert.match(refusals[0], /the input\.source is missing required property "license"/, refusals[0]);
   assert.match(refusals[1], /the input\.source has unknown property "extra"; allowed: label, license/, refusals[1]);

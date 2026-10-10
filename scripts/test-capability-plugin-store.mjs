@@ -201,6 +201,48 @@ test('a signed package installs, registers its capability and pins its own diges
   assert.deepEqual(pins.pins.get('nodus:chemistry'), { version: '2.0.0', digest: outcome.state.active.digest });
 });
 
+test('a slot that holds newer content reports BOTH the content version and the slot label', () => {
+  reset();
+  const outcome = lib.installVerifiedPlugin(download(), { approvePermissions: true });
+  assert.equal(outcome.state.active.version, '2.0.0', 'the slot was created for 2.0.0');
+  const digest = outcome.state.active.digest;
+  const slot = path.join(profile, 'plugins', 'installed', 'chemistry-studio', 'versions', `2.0.0-${digest}`);
+
+  // A sideload replaces what a slot HOLDS without renaming the slot, so the directory keeps the
+  // version it was created with while the manifests inside it move on. Reproduce exactly that.
+  // Both manifests are rewritten because the reader requires them to agree.
+  for (const relative of [['plugin.json'], ['capabilities', 'chemistry', 'capability.json']]) {
+    const file = path.join(slot, ...relative);
+    const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+    manifest.version = '2.0.9';
+    fs.writeFileSync(file, JSON.stringify(manifest, null, 2));
+  }
+
+  const provider = lib.rebuildCapabilityRegistry().providers.get('nodus:chemistry');
+  assert.ok(provider, 'the capability is still registered');
+
+  // The CONTENT's version, which is what an artifact is stamped with so an archive of runs can
+  // say which build produced it.
+  assert.equal(provider.version, '2.0.9', 'the provider reports the version of the content');
+
+  // The SLOT's label, which is what IDENTIFIES the installation. This one must not follow the
+  // content: it is the turn pin, and resolveTrustedCapability both matches it against
+  // state.active and builds `<version>-<digest>` from it.
+  assert.equal(provider.plugin.version, '2.0.0', 'the plugin identity stays the slot label');
+  assert.equal(provider.plugin.digest, digest);
+
+  // THE REGRESSION GUARD. Stamping provider.plugin with the content version type-checked, passed
+  // a stamp-only assertion, and still broke every capability call: the pin stopped matching
+  // state.active and the slot path stopped existing, so the plugin reported itself "no longer
+  // installed". Only a round trip through the pin catches that.
+  const pin = lib.pinCapabilitiesForTurn().pins.get('nodus:chemistry');
+  assert.deepEqual(pin, { version: '2.0.0', digest }, 'the pin carries the slot label');
+  const runtime = lib.resolveTrustedCapability('nodus:chemistry', pin);
+  assert.ok(runtime, 'the pinned capability still resolves');
+  assert.ok(runtime.entryPath.includes(`2.0.0-${digest}`), 'through the slot directory that exists');
+  assert.equal(runtime.manifest.version, '2.0.9', 'and the manifest it loads is the newer content');
+});
+
 test('nothing installs without a signature that verifies against a trusted key', () => {
   reset();
   const good = download();

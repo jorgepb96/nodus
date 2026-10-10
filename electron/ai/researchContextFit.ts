@@ -16,9 +16,12 @@ export const CONTEXT_DROP_ORDER = [
   // yield before ideas and literal passages in a small Nodi/local-model window.
   'orientacion_documental',
   'temas_principales',
+  'huecos',
   'huecos_de_investigacion',
   'contradicciones',
+  'obras',
   'ideas_generadas',
+  'pasajes_web',
   'pasajes_relevantes',
 ];
 
@@ -27,11 +30,10 @@ export const CONTEXT_DROP_ORDER = [
  * sections from least to most query-relevant and, for each, prune its elements one
  * relevance-ordered chunk at a time; only when a section is emptied do we drop it whole.
  * This keeps the MOST relevant section (ideas / passages) partially alive on a tiny local
- * window instead of vanishing, so the model still has something to ground on. On cloud
- * budgets nothing here fires.
+ * window instead of vanishing, so the model still has something to ground on. A
+ * custom `size` can measure the complete serialized request in UTF-8 bytes instead.
  */
-export function enforceContextBudget(context: SectionPayload, maxChars: number): { truncated: boolean } {
-  const size = () => JSON.stringify(context).length;
+export function enforceContextBudget(context: SectionPayload, maxChars: number, size = () => JSON.stringify(context).length): { truncated: boolean } {
   if (size() <= maxChars) return { truncated: false };
 
   // We WILL cut, so add the "context was trimmed" annotation up front and let it count
@@ -49,7 +51,7 @@ export function enforceContextBudget(context: SectionPayload, maxChars: number):
   for (const key of CONTEXT_DROP_ORDER) {
     if (size() <= maxChars) break;
     if (context[key] == null) continue;
-    if (pruneSectionToFit(context, key, maxChars)) pruned = true;
+    if (pruneSectionToFit(context, key, maxChars, size)) pruned = true;
     if (isSectionEmpty(context[key])) {
       delete context[key];
       dropped.push(key);
@@ -77,10 +79,9 @@ function isSectionEmpty(value: unknown): boolean {
 
 /** Pop relevance-ordered elements off a section's fattest array, a proportional chunk at
  *  a time, until the whole payload fits `maxChars` or the section is exhausted. */
-function pruneSectionToFit(context: SectionPayload, key: string, maxChars: number): boolean {
+function pruneSectionToFit(context: SectionPayload, key: string, maxChars: number, size: () => number): boolean {
   const arrays = sectionArrays(context[key]);
   if (arrays.length === 0) return false;
-  const size = () => JSON.stringify(context).length;
   let pruned = false;
   let guard = 0;
   while (size() > maxChars && guard++ < 5000) {

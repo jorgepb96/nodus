@@ -5,7 +5,8 @@
 // Opt-in live Zotero smoke test. It launches the real Zotero binary with a
 // disposable profile, enables foreign-extension scanning only in that profile,
 // and proves that the built XPI is registered, active and actually reaches its
-// bootstrap startup, opens its evidence database, and exits normally. The user's
+// bootstrap startup, opens its evidence database, persists encrypted credentials
+// across a restart, and exits normally. The user's
 // Zotero profile and library are never opened.
 import { spawn } from 'node:child_process';
 import {
@@ -89,6 +90,32 @@ function startup() {
         }
         const stats = await store.evidenceCacheStats();
         if (!(await IOUtils.exists(stats.database))) throw new Error('Evidence database missing');
+        const phase = await IOUtils.readUTF8(${JSON.stringify(quitRequestPath)});
+        function expect(value, message) { if (!value) throw new Error(message); }
+        if (phase === 'save-credentials') {
+          expect(typeof Services.logins.addLoginAsync === 'function', 'Async Login Manager API missing');
+          expect(await store.setKey('openai', 'nodus-smoke-first-key'), 'First API key save failed');
+          expect(await store.setKey('openai', 'nodus-smoke-updated-key'), 'API key update failed');
+          expect(await store.getKey('openai') === 'nodus-smoke-updated-key', 'Updated API key read failed');
+          Zotero.Prefs.set('nodus.key.gemini', 'nodus-smoke-legacy-key');
+          expect(await store.getKey('gemini') === 'nodus-smoke-legacy-key', 'Legacy API key migration failed');
+          expect(Zotero.Prefs.get('nodus.key.gemini') === '', 'Migrated API key remains in prefs');
+          Zotero.Prefs.set('nodus.port', 4321);
+          Zotero.Prefs.set('nodus.token', 'nodus-smoke-legacy-token');
+          const migrated = await store.getManual();
+          expect(migrated.port === 4321 && migrated.token === 'nodus-smoke-legacy-token', 'Legacy bridge migration failed');
+          expect(await store.setManual(4322, 'nodus-smoke-bridge-token'), 'Manual bridge update failed');
+          expect(Zotero.Prefs.get('nodus.key.openai') === '' && Zotero.Prefs.get('nodus.token') === '', 'Plaintext credentials remain in prefs');
+          Zotero.debug('[Nodus smoke] encrypted credential saves, updates and migrations passed on Zotero ' + Zotero.version);
+        } else if (phase === 'verify-credentials') {
+          expect(await store.getKey('openai') === 'nodus-smoke-updated-key', 'API key lost after restart');
+          expect(await store.getKey('gemini') === 'nodus-smoke-legacy-key', 'Migrated key lost after restart');
+          const manual = await store.getManual();
+          expect(manual.port === 4322 && manual.token === 'nodus-smoke-bridge-token', 'Bridge lost after restart');
+          expect(await store.setKey('openai', '') && await store.setKey('gemini', '') && await store.setManual(0, ''), 'Credential deletion failed');
+          expect(await store.getKey('openai') === '' && await store.getKey('gemini') === '' && (await store.getManual()).token === '', 'Deleted credentials remain readable');
+          Zotero.debug('[Nodus smoke] encrypted credential restart and deletion passed');
+        }
         Zotero.debug('[Nodus smoke] UI and evidence database ready; requesting normal quit');
         Services.startup.quit(Components.interfaces.nsIAppStartup.eAttemptQuit);
         return;
@@ -201,19 +228,40 @@ try {
   if (!started) {
     throw new Error(`Zotero did not start the registered add-on within ${timeoutMs} ms\nstate=${JSON.stringify(readState())}\n${diagnostic()}`);
   }
-  writeFileSync(quitRequestPath, 'quit');
+  writeFileSync(quitRequestPath, 'save-credentials');
   const shutdownDeadline = Date.now() + 20_000;
   while (child.exitCode === null && child.signalCode === null && Date.now() < shutdownDeadline) {
     if (output.includes('[Nodus smoke] FAILED:')) throw new Error(diagnostic());
     await wait(100);
   }
   if (child.exitCode !== 0 || child.signalCode !== null
-    || !output.includes('[Nodus smoke] UI and evidence database ready; requesting normal quit')) {
+    || !output.includes('[Nodus smoke] UI and evidence database ready; requesting normal quit')
+    || !output.includes('[Nodus smoke] encrypted credential saves, updates and migrations passed')) {
     throw new Error(`Zotero did not exit normally after opening the evidence database\n${diagnostic()}`);
+  }
+  const encryptedLogins = JSON.parse(readFileSync(path.join(profileDir, 'logins.json'), 'utf8'));
+  const providerLogins = encryptedLogins.logins.filter((login) => login.hostname === 'chrome://nodus');
+  if (providerLogins.length !== 3 || providerLogins.some((login) => !login.encryptedUsername || !login.encryptedPassword)
+    || JSON.stringify(encryptedLogins).includes('nodus-smoke-')) {
+    throw new Error('Credentials were not persisted encrypted in logins.json');
+  }
+
+  // Phase 3: use the same disposable profile after a normal restart to prove
+  // that credentials survive on disk and can still be removed securely.
+  writeFileSync(quitRequestPath, 'verify-credentials');
+  child = startZotero();
+  const restartDeadline = Date.now() + timeoutMs;
+  while (child.exitCode === null && child.signalCode === null && Date.now() < restartDeadline) {
+    if (output.includes('[Nodus smoke] FAILED:')) throw new Error(diagnostic());
+    await wait(100);
+  }
+  if (child.exitCode !== 0 || child.signalCode !== null
+    || !output.includes('[Nodus smoke] encrypted credential restart and deletion passed')) {
+    throw new Error(`Credential verification after restart failed\n${diagnostic()}`);
   }
   succeeded = true;
   console.log(`Zotero live smoke passed: ${addon.id} v${manifest.version}`);
-  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true');
+  console.log('registered=true active=true appDisabled=false userDisabled=false backgroundUpdates=disabled startup=true ui=true evidence=true normalShutdown=true credentials=encrypted migration=true credentialRestart=true credentialDeletion=true');
 } finally {
   await stopZotero();
   writeFileSync(path.join(profileDir, 'smoke.log'), output);

@@ -2,8 +2,23 @@ import { skillHasCapability } from '@shared/chatSkills';
 import { sanitizeChatSvg } from '@shared/chatSvg';
 import { serializeChatVisualPart, splitChatVisuals, type ChatSkill } from '@shared/chatSkills';
 import type { ModelRef } from '@shared/types';
-import { completeText } from './aiClient';
+import { completeText, resolveModelRef } from './aiClient';
+import { withinModelOutput } from '@shared/researchRetrievalBudget';
 import { evaluateInSvgSandbox } from './svgSandboxWindow';
+
+/** Output tokens for one SVG repair. The model is asked to return the WHOLE drawing, so the
+ *  budget has to hold the drawing: a flat 10,000 could not, and a chemistry scheme runs to
+ *  126,837 characters — roughly 32,000 tokens on SVG's dense punctuation. The repair then came
+ *  back truncated, failed the completeness check, and was dropped without a word, so a drawing
+ *  too big to repair looked like one that needed no repair.
+ *
+ *  Sized from the drawing itself at a conservative 2.5 characters per token, with headroom for a
+ *  repair that legitimately grows, and held under the model's own output ceiling. */
+function svgRepairTokens(svg: string, model: ModelRef): number {
+  const needed = Math.ceil(svg.length / 2.5) + 2_000;
+  const budget = Math.max(10_000, needed);
+  return withinModelOutput(budget, model.provider, model.model, 10_000);
+}
 
 /** Inspect actual font metrics in an isolated, offscreen document whose CSP blocks page scripts. */
 export async function inspectChatSvg(svg: string): Promise<string[]> {
@@ -53,14 +68,25 @@ export async function refineChatSvg(answer: string, options: { question: string;
       let issues = await inspectChatSvg(part.content);
       for (let attempt = 0; issues.length && attempt < (options.maxRepairs ?? 2); attempt++) {
         options.signal?.throwIfAborted();
+        // Freeze the effective model for both sizing and dispatch, including the
+        // configured synthesis default when no complete override was supplied.
+        const model = resolveModelRef(options.model);
+        const maxTokens = svgRepairTokens(part.content, model);
         options.beforeRepair?.();
         const repaired = await completeText({
           system: `You are the visual quality editor for SVG Studio. Repair the supplied SVG, preserving the user's intended content and all correct relationships. Return only one complete fenced svg block.\n${skill.instructions}\nActual SVG checks found the issues listed below. Fix every listed issue with a simpler, more spacious layout. Prefer a vertical legend with one short explanation per row over a crowded horizontal legend. Increase canvas height or wrap text with tspan when needed; never hide, truncate, shrink to unreadable type, or delete required labels. Use explicit Arial, sans-serif typography. Preserve factual content. No external resources or scripts.`,
           user: JSON.stringify({ request: options.question, issues, svg: part.content }),
-          maxTokens: 10_000, temperature: 0.2, reasoning: 'off', plainContext: true, signal: options.signal, noRetry: Boolean(options.beforeRepair),
-        }, options.model);
+          maxTokens, temperature: 0.2, reasoning: 'off', plainContext: true, signal: options.signal, noRetry: Boolean(options.beforeRepair),
+        }, model);
         const replacement = splitChatVisuals(repaired).find(item => item.kind === 'svg' && item.complete);
-        if (!replacement) break;
+        if (!replacement) {
+          // A repair that came back truncated or unparseable leaves the original drawing in
+          // place, which is right — but it used to do so without a word, so a drawing that could
+          // never be repaired looked like a drawing that needed no repair.
+          console.warn(`[svgQuality] repair discarded: ${repaired.length} chars back for a ${part.content.length}-char drawing`
+            + ` (budget ${maxTokens} tokens); keeping the original`);
+          break;
+        }
         const nextIssues = await inspectChatSvg(replacement.content);
         // Never replace a drawing with a measurably worse repair.
         if (nextIssues.length <= issues.length) { part.content = replacement.content; part.complete = true; issues = nextIssues; }

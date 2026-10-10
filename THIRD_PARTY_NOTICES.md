@@ -1,6 +1,6 @@
 # Nodus third-party notices
 
-Nodus 5.8.0 is free software distributed exclusively under the GNU Affero
+Nodus 5.8.1 is free software distributed exclusively under the GNU Affero
 General Public License v3.0 (`AGPL-3.0-only`). Versions through 3.2.7 remain
 available under MIT. Nodus includes or interoperates with the components and
 data described below. Those components keep their own licenses and their

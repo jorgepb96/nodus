@@ -23,7 +23,7 @@ Document corrections to previously released behaviour under Fixes.
 Generate the complete English release description:
 
 ```sh
-npm run release:notes -- v5.8.0 /tmp/nodus-release-notes.md
+npm run release:notes -- v5.8.1 /tmp/nodus-release-notes.md
 ```
 
 The tag must match `package.json`. Missing modal notes, missing translations,

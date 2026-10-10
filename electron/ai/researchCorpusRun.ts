@@ -307,6 +307,11 @@ export class ResearchCorpusRun {
     this.validate(); assertResearchDocument(this.scope, documentId, researchCorpusInventory().documents.find(item => item.id === documentId));
     const evidence: ResearchEvidence[] = [];
     for (const page of pages) {
+      // Ask the budget before the row is written. The receipt has to come first for its id, so a
+      // page the budget then refused still consumed a receipt row and the receipt count stopped
+      // equalling the evidence used. The capacity check does not reserve anything; `accept` below
+      // still does that, and still handles the duplicate case.
+      if (!this.budget.wouldAccept(page.text)) { this.budget.partial = true; continue; }
       const receipt = recordScopedSourcePassage(this.scope, document.id, { passage_id: '', nodus_id: document.workId ?? document.id,
         libraryItemId: library?.id ?? null, attachmentId, attachmentRevision, revision: document.revision, provenance: 'source',
         text: page.text, page_label: page.pageLabel, page_number: page.pageNumber, source_ref: sourceRef, chunk_index: 0,
@@ -560,7 +565,8 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       run.validate();
       const window = await (windowPromise ??= model ? researchModelContextWindow(resolveModelRef(model)) : Promise.resolve({ tokens: 32768, known: false }));
       // Reserve three quarters for instructions, planning/history, tool framing
-      // and output; every actual completion checks its complete final envelope.
+      // and output; every actual completion checks its complete final envelope using
+      // the same byte-as-token bound. No characters/token conversion applies here.
       run.budget.constrainToWindow(window.tokens, Math.ceil(window.tokens * 0.75));
       const result = await withResearchRequestBudget(window.tokens, () => { run.budget.partial = true; }, () => value(...args));
       run.validate(); return result;

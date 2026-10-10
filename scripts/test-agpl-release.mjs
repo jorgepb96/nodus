@@ -14,7 +14,7 @@ const json = async (relative) => JSON.parse(await read(relative));
 
 const AGPL_SHA256 = '0d96a4ff68ad6d4b6f1f30f713b18d5184912ba8dd389f86aa7710db079abcb0';
 const LICENSE_ID = 'AGPL-3.0-only';
-const VERSION = '5.8.0';
+const VERSION = '5.8.1';
 
 test('Nodus 5 carries the unmodified GNU AGPL v3 license text', async () => {
   const license = await read('LICENSE');
@@ -23,7 +23,7 @@ test('Nodus 5 carries the unmodified GNU AGPL v3 license text', async () => {
   assert.match(license, /13\. Remote Network Interaction/);
 });
 
-test('all first-party release metadata identifies 5.8.0 as AGPL-3.0-only', async () => {
+test('all first-party release metadata identifies 5.8.1 as AGPL-3.0-only', async () => {
   const [pkg, lock, serverPkg, plugin, citation] = await Promise.all([
     json('package.json'),
     json('package-lock.json'),

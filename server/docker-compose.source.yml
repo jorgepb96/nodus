@@ -26,7 +26,7 @@ services:
       NODUS_ADMIN_EMAIL: ${NODUS_ADMIN_EMAIL:-}
       NODUS_ADMIN_PASSWORD: ${NODUS_ADMIN_PASSWORD:-}
       NODUS_SETUP_TOKEN: ${NODUS_SETUP_TOKEN:-}
-      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.0}
+      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.1}
       # Optional ceilings. Left unset they default to 8 MiB per image, 2 GiB of images per
       # space, and the snapshot limits documented in the README.
       NODUS_MAX_ASSET_BYTES: ${NODUS_MAX_ASSET_BYTES:-}

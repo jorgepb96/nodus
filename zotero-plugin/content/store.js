@@ -96,7 +96,7 @@
       return login;
     } catch (e) { return null; }
   }
-  function writeSecureKey(provider, value) {
+  async function writeSecureKey(provider, value) {
     const storage = loginManager();
     if (!storage.manager) return false;
     try {
@@ -108,21 +108,22 @@
       const next = newProviderLogin(provider, value);
       if (!next) return false;
       if (existing) storage.manager.modifyLogin(existing, next);
+      // Current Zotero exposes addLoginAsync; its obsolete addLogin stub throws.
+      else if (typeof storage.manager.addLoginAsync === "function") await storage.manager.addLoginAsync(next);
       else storage.manager.addLogin(next);
       return true;
     } catch (e) { return false; }
   }
-  function getKey(provider) {
+  async function getKey(provider) {
     const login = providerLogin(provider);
     if (login && login.password) return String(login.password);
     const legacy = P("key." + provider, "") || "";
-    if (legacy && writeSecureKey(provider, legacy)) { S("key." + provider, ""); return legacy; }
+    if (legacy && await writeSecureKey(provider, legacy)) { S("key." + provider, ""); return legacy; }
     return "";
   }
-  function setKey(provider, value) {
+  async function setKey(provider, value) {
     const clean = String(value || "");
-    if (!clean) { writeSecureKey(provider, ""); S("key." + provider, ""); return true; }
-    if (writeSecureKey(provider, clean)) { S("key." + provider, ""); return true; }
+    if (await writeSecureKey(provider, clean)) { S("key." + provider, ""); return true; }
     return false;
   }
   function getSecretStorageStatus() { return loginManager().kind; }
@@ -175,17 +176,16 @@
 
   // ---- conversation manual (nodus) connection override (advanced) ----
   const MANUAL_TOKEN_LOGIN = "__nodus_bridge_manual__";
-  function getManual() {
+  async function getManual() {
     const login = providerLogin(MANUAL_TOKEN_LOGIN);
     if (login && login.password) return { port: Number(P("port", 0)) || 0, token: String(login.password) };
     const legacy = P("token", "") || "";
-    if (legacy && writeSecureKey(MANUAL_TOKEN_LOGIN, legacy)) { S("token", ""); return { port: Number(P("port", 0)) || 0, token: legacy }; }
+    if (legacy && await writeSecureKey(MANUAL_TOKEN_LOGIN, legacy)) { S("token", ""); return { port: Number(P("port", 0)) || 0, token: legacy }; }
     return { port: Number(P("port", 0)) || 0, token: "" };
   }
-  function setManual(port, token) {
+  async function setManual(port, token) {
     const clean = String(token || "");
-    if (clean && !writeSecureKey(MANUAL_TOKEN_LOGIN, clean)) return false;
-    if (!clean) writeSecureKey(MANUAL_TOKEN_LOGIN, "");
+    if (!(await writeSecureKey(MANUAL_TOKEN_LOGIN, clean))) return false;
     S("port", Number(port) || 0); S("token", "");
     return true;
   }

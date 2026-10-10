@@ -250,7 +250,7 @@ const NOT_SYNCED_TABLES = new Set([
   // Scope receipts authorize evidence against THIS profile's revisions and
   // permissions. Importing them would incorrectly trust another device's history.
   // Publication fencing likewise belongs to the local passage writer.
-  'research_run_scopes', 'research_conversation_provenance', 'passage_publications',
+  'research_run_scopes', 'research_scope_receipts', 'research_conversation_provenance', 'passage_publications',
   // Web receipts are what THIS machine read; another device verifies its own.
   'research_web_passages',
   // Complete study guide working state and evidence sidecars: run checkpoints and the

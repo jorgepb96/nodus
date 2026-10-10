@@ -190,7 +190,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         {nodes.map(({ block, x, y, parentId }) => <article key={block.id} data-block-id={block.id}
           className={`argument-node ${parentId ? '' : 'is-root'} ${selected === block.id ? 'is-selected' : ''}`}
           style={{ left: x - CARD_WIDTH / 2, top: y - CARD_HEIGHT / 2, width: CARD_WIDTH, height: CARD_HEIGHT, '--branch-color': COLORS[block.relation] ?? COLORS.related } as CSSProperties}>
-          <button className="argument-node-content" aria-pressed={selected === block.id} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
+          <button className="argument-node-content" aria-pressed={selected === block.id} aria-label={[parentId ? relationLabel(block.relation) : t('IDEA CENTRAL'), block.label, block.statement || block.summary].filter(Boolean).join('. ')} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
             <span className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
             <strong>{block.label}</strong><span className="argument-node-statement">{block.statement || block.summary}</span>
           </button>
@@ -213,7 +213,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
       {fullscreenError && <p className="argument-fullscreen-error" role="alert">{t('No se pudo activar la pantalla completa.')}</p>}
       <div className="argument-camera-controls">
         <button title={t('Alejar')} aria-label={t('Alejar')} onClick={() => zoomAt(1 / 1.2, size.width / 2, size.height / 2)}><Icon name="minus" size={15} /></button>
-        <span>{Math.round(camera.zoom * 100)}%</span>
+        <span role="status" aria-label={`${t('Zoom')}: ${Math.round(camera.zoom * 100)}%`}>{Math.round(camera.zoom * 100)}%</span>
         <button title={t('Acercar')} aria-label={t('Acercar')} onClick={() => zoomAt(1.2, size.width / 2, size.height / 2)}><Icon name="plus" size={15} /></button>
         <button onClick={previousView} disabled={!history.length} title={t('Recuperar el encuadre anterior sin cerrar las ramas')}>{t('Vista anterior')}</button>
         <button onClick={fit}>{t('Encuadrar')}</button>

@@ -184,6 +184,11 @@
 .nodus-phone .research-history-action{width:44px;height:44px;opacity:1}
 .nodus-phone .research-history-main{font-size:14px}
 .nodus-phone .research-message-actions button{opacity:1}
+.nodus-phone .research-activity.is-minimized{width:44px;height:44px;right:12px;bottom:12px}
+.nodus-phone .research-activity.is-minimized .research-activity-orb{width:44px;height:44px}
+.nodus-phone .research-activity-sheet .research-activity{position:static;width:100%;max-height:none;border:0;border-radius:0;box-shadow:none}
+.nodus-phone .research-activity-sheet .research-activity>ol{overflow:visible}
+.nodus-phone .research-activity-sheet .research-activity header button{width:44px;height:44px}
 
 /* WebKit's viewport can be only 119pt high above the landscape keyboard.
    Keep the model, draft and every composer action within that visible area. */

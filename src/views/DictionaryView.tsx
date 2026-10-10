@@ -316,7 +316,7 @@ function StatusPill({ status }: { status: string }) {
         : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${classes}`}
+      className={`dictionary-status-pill inline-flex w-fit max-w-full justify-self-start rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider ${classes}`}
     >
       {dictionaryStatusLabel(
         status === "active" || status === "archived" ? status : "draft",

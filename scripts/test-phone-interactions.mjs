@@ -17,9 +17,9 @@ globalThis.cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.windo
 globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 dom.window.HTMLElement.prototype.scrollTo = function() {};
 const require = createRequire(import.meta.url), React = require('react'), { createRoot } = require('react-dom/client');
-const fixture = await build({ stdin: { contents: `export {NodeDetailPanel} from './src/components/NodeDetailPanel'; export {ArgumentMapCanvas} from './src/components/argumentMap/ArgumentMapCanvas'; export {ResearchAssistantModal} from './src/views/ResearchAssistantModal'; export {DEFAULT_APP_SETTINGS} from './shared/defaultAppSettings'; export {setActiveLang} from './src/i18n'; export {installMobileKeyboard} from './src/mobileWeb/mobileKeyboard'; export * from './shared/touchCamera';`, resolveDir: process.cwd(), loader:'ts' }, bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react','react/jsx-runtime','react-dom','react-dom/client'],loader:{'.css':'empty','.svg':'dataurl'} });
+const fixture = await build({ stdin: { contents: `export {ResearchActivityPanel} from './src/components/ResearchActivityPanel'; export {NodeDetailPanel} from './src/components/NodeDetailPanel'; export {ArgumentMapCanvas} from './src/components/argumentMap/ArgumentMapCanvas'; export {ResearchAssistantModal} from './src/views/ResearchAssistantModal'; export {DEFAULT_APP_SETTINGS} from './shared/defaultAppSettings'; export {setActiveLang} from './src/i18n'; export {installMobileKeyboard} from './src/mobileWeb/mobileKeyboard'; export * from './shared/touchCamera';`, resolveDir: process.cwd(), loader:'ts' }, bundle:true, write:false, platform:'node', format:'cjs', jsx:'automatic', external:['react','react/jsx-runtime','react-dom','react-dom/client'],loader:{'.css':'empty','.svg':'dataurl'} });
 const module = new Module(path.join(process.cwd(),'scripts','phone-interactions-fixture.cjs')); module.paths=Module._nodeModulePaths(process.cwd()); module._compile(fixture.outputFiles[0].text,module.id);
-const {NodeDetailPanel,ArgumentMapCanvas,ResearchAssistantModal,DEFAULT_APP_SETTINGS,setActiveLang,installMobileKeyboard,touchPair,pinchTranslation,pinchWorldCamera}=module.exports;
+const {ResearchActivityPanel,NodeDetailPanel,ArgumentMapCanvas,ResearchAssistantModal,DEFAULT_APP_SETTINGS,setActiveLang,installMobileKeyboard,touchPair,pinchTranslation,pinchWorldCamera}=module.exports;
 setActiveLang('es'); after(()=>dom.window.close());
 
 async function mount(Component, props, device='phone') {
@@ -53,6 +53,22 @@ test('phone graph/argument details occupy a modal sheet and restore the existing
 test('tablet keeps the shared desktop detail column',async()=>{
   const view=await mount(NodeDetailPanel,{ideaDetail:null,edgeDetail:null,loading:{kind:'idea',id:'a',label:'Idea'},width:384,fontSize:14,onWidthChange:()=>{},onFontChange:()=>{},onClose:()=>{}},'tablet');
   try {assert.ok(view.container.querySelector('.graph-detail-panel'));assert.equal(document.querySelector('.nodus-mobile-sheet'),null);} finally {await view.close();}
+});
+
+test('phone research activity leaves the conversation visible and opens in a dismissible sheet',async()=>{
+  const props={activities:[{id:'turn-a',layer:'response',operation:'write',status:'completed',startedAt:1}],outcome:'completed'};
+  const phone=await mount(ResearchActivityPanel,props);
+  try {
+    assert.ok(phone.container.querySelector('.research-activity.is-minimized'));
+    assert.equal(phone.container.querySelector('ol'),null,'completed activity cannot cover the answer');
+    await React.act(async()=>phone.container.querySelector('[aria-label="Ampliar actividad"]').click());
+    const sheet=document.querySelector('[role="dialog"][aria-label="Actividad del Research chat"]');
+    assert.ok(sheet); assert.equal(phone.container.inert,true); assert.ok(sheet.querySelector('ol'));
+    await React.act(async()=>sheet.querySelector('[data-sheet-close]').click());
+    assert.equal(phone.container.inert,false); assert.ok(phone.container.querySelector('.research-activity.is-minimized'));
+  } finally {await phone.close();}
+  const tablet=await mount(ResearchActivityPanel,props,'tablet');
+  try {assert.ok(tablet.container.querySelector('.research-activity:not(.is-minimized) ol'));assert.equal(document.querySelector('.nodus-mobile-sheet'),null);} finally {await tablet.close();}
 });
 
 test('a dense phone argument map opens with a readable central card instead of fitting every branch', async()=>{

@@ -1209,6 +1209,8 @@ export function DeepResearchView({
         <div className="relative min-w-[14rem] flex-1 max-w-md">
           <Icon name="search" size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
+            type="search"
+            aria-label={t(copy.searchPlaceholder)}
             className="input input-with-leading-icon w-full !py-1.5 text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}

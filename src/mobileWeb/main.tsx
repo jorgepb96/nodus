@@ -200,6 +200,7 @@ document.documentElement.classList.toggle('light', config.theme !== 'dark');
 document.documentElement.classList.add(config.vaultType);
 document.documentElement.classList.toggle('nodus-phone', config.device === 'phone');
 document.documentElement.style.setProperty('--mobile-accent', config.accent);
+document.documentElement.style.setProperty('--vault-accent', config.accent);
 document.documentElement.style.fontSize = `${16 * config.textScale}px`;
 document.documentElement.style.setProperty('--nodus-mobile-text-scale', String(config.textScale));
 installMobileKeyboard(document);

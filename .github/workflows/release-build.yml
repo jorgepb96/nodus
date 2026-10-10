@@ -146,7 +146,7 @@ jobs:
 
       - name: Verify platform-specific macOS contracts
         if: runner.os == 'macOS'
-        run: node --test scripts/test-calendar-integrations.mjs scripts/test-mac-bundle-name.mjs scripts/test-research-isolation.mjs
+        run: node --test scripts/test-calendar-integrations.mjs scripts/test-mac-bundle-name.mjs scripts/test-research-isolation.mjs scripts/test-unsigned-mac-update.mjs scripts/test-presenter-multipeer.mjs
 
       - name: Checkout the marketplace for native platform checks
         if: runner.os != 'Linux'

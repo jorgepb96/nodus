@@ -465,6 +465,7 @@ test('the app page documents the current desktop builds and available vaults', (
   const app = read('app/index.html');
   for (const asset of [
     'Nodus-mac-arm64.dmg',
+    'Nodus-mac-x64.dmg',
     'Nodus-win-x64.exe',
     'Nodus-linux-x86_64.AppImage',
     'Nodus-linux-amd64.deb',
@@ -472,7 +473,6 @@ test('the app page documents the current desktop builds and available vaults', (
   ]) {
     assert.match(app, new RegExp(`https://github\\.com/jorgepb96/nodus/releases/latest/download/${asset.replaceAll('.', '\\.')}`), `${asset} uses the stable release URL`);
   }
-  assert.match(app, /https:\/\/github\.com\/jorgepb96\/nodus\/releases\/download\/v5\.8\.1\/Nodus-mac-x64\.dmg/, 'Intel remains available from its last supported release');
   for (const vault of ['Academic', 'Teaching', 'Study', 'Databases', 'Genealogy', 'Worldbuilding', 'Primary Sources', 'Testimony', 'Prosopography']) {
     assert.match(app, new RegExp(`\\b${vault}\\b`), `${vault} is represented on the app page`);
   }

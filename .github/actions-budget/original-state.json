@@ -278,12 +278,12 @@
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
       "originalSha256": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
-      "restrictedSha256": "7c5acdb45329b187a976984be0f11abe488ecad63f8c7e88e64224b73b609723"
+      "restrictedSha256": "5d391e7c7917acd76023a75166554c67a45b5b32baf2291ad4a786b365f2dc20"
     },
     "scripts/ci-test-shards.mjs": {
       "snapshot": "original-files/scripts/ci-test-shards.mjs",
       "originalSha256": "976e019622950aed82d7ab2d32f750215f3c289b280e02151b867d751e3e07fc",
-      "restrictedSha256": "dd572ab48a5888e13b999da5d3d5c49c304a3710419155b2900d5c1428c29b33"
+      "restrictedSha256": "a472575ec7350cc580140658a608e1885e7d10d3013c3a7e99f1ebf5b0e2e6d3"
     },
     "scripts/test-ci-quality-gate.mjs": {
       "snapshot": "original-files/scripts/test-ci-quality-gate.mjs",
@@ -314,6 +314,32 @@
       "snapshot": "original-files/scripts/test-e2e-stability.mjs",
       "originalSha256": "69bd62985365e3016c4c9a4bd75a26bb700a6c5ea28c5924f26ead8592547c96",
       "restrictedSha256": "aadb3fd1582400a4fe476cc5e04aa2323d83206d84a8f32b6f3921afe415b4dc"
+    },
+    "scripts/test-unsigned-mac-update.mjs": {
+      "snapshot": "original-files/scripts/test-unsigned-mac-update.mjs",
+      "originalSha256": "ff1b5d88d68fbf619eceaf6e631fe113329469566fdec2ce62f8ed983f2c4ade",
+      "restrictedSha256": "089d0023634a92870dfbc117756aa67d3b2b5397b6f6765fb290e033660751ee"
+    },
+    "scripts/test-presenter-multipeer.mjs": {
+      "snapshot": "original-files/scripts/test-presenter-multipeer.mjs",
+      "originalSha256": "4af1ef6e9506934b72d485833877090b947fcccaee5c97f8847deac448f0e15d",
+      "restrictedSha256": "57eea24cd1bb1a0312194c902aedb8228c9260b86e2a40ba0d8d19a8f98023af"
+    },
+    "scripts/test-site-pages.mjs": {
+      "snapshot": "original-files/scripts/test-site-pages.mjs",
+      "originalSha256": "69b8fccea8d47d4142e52c6e5298470b5202091e9b00ae0c49c0cae9060a8509",
+      "restrictedSha256": "0c8239896b115a2c1ffc66aeeabb608b93a9266b0ad64ee6033018aab011e715"
+    },
+    "scripts/test-nodi-notes-sync.mjs": {
+      "snapshot": "original-files/scripts/test-nodi-notes-sync.mjs",
+      "originalSha256": "d41b4e02ddf9dd10fd7544417f22809f63ad71e02c8d063456b5604e927160ca",
+      "restrictedSha256": "1f3a049d2a2294563bf1d05f4bfdbb691289408dbd5549e6738bc0bad1bf5f8e"
+    },
+    "site/sitemap.xml": {
+      "snapshot": "original-files/site/sitemap.xml",
+      "originalSha256": "b6fcb39034089acbad15d58132bd32334fbdafb45c1cfa4cf8633a9a34f43b93",
+      "restrictedSha256": "97d7a1060bb35e23d5789bd47d85d3cf79a2e6de400b70b1f654b8fb512a93bf",
+      "regenerateAfterRestore": true
     }
   }
 }

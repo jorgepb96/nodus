@@ -15,7 +15,7 @@ se ejecuta exactamente una vez. Se mantienen cachés, concurrencia limitada de
 los tests, fallo ante omisiones y cancelación de PR obsoletos. No se repite el CI
 al fusionar en `main` ni se transfieren builds entre varios runners.
 
-Solo los siete casos que dependen de APIs nativas de macOS se aplazan en Linux,
+Solo los nueve casos que dependen de APIs nativas de macOS se aplazan en Linux,
 con una lista explícita por archivo, nombre y razón; pasan a ser comprobaciones
 obligatorias en la release de Apple silicon. Ninguna omisión nueva es aceptada.
 Todas las pruebas siguen conservadas. El workflow tiene `workflow_call` para
@@ -66,11 +66,16 @@ los 16 workflows registrados y snapshots completos de ambos rulesets.
 Después de recibir la petición explícita de restaurar:
 
 1. Ejecutar `python3 .github/actions-budget/restore.py restore-files`.
-2. Revisar, confirmar y fusionar los archivos restaurados en `main`. Mantener los
-   workflows secundarios deshabilitados hasta terminar esta fusión.
+2. Revisar y confirmar los archivos restaurados. Después ejecutar
+   `node scripts/build-sitemap.mjs` y confirmar la fecha regenerada: el sitemap
+   fecha el commit que recupera la página, no su antigua modificación. Este dato
+   generado es la única excepción a la restauración byte por byte; los workflows,
+   triggers, pruebas y contenido de las páginas sí recuperan sus bytes originales.
+   Fusionar conservando los commits y actualizar este checkout al nuevo `main`.
+   Mantener los workflows secundarios deshabilitados hasta terminar esta fusión.
 3. Ejecutar `python3 .github/actions-budget/restore.py restore-github`. Comprueba
    los archivos originales de `main` antes de habilitar los workflows y restaurar
-   exactamente el ruleset de CLA.
+   exactamente el ruleset de CLA; exige también el sitemap válido en ese checkout.
 4. Verificar triggers, runners, estados y reglas y validar el CI original.
 
 La restauración completa reproduce la configuración original, incluida la matriz

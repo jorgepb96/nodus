@@ -19,9 +19,11 @@ const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
 ]);
-// These seven native macOS cases run as mandatory release checks on Apple
+// These nine native macOS cases run as mandatory release checks on Apple
 // silicon. Linux still runs their files and every platform-independent case.
 const macOnlySkips = new Map([
+  ['unsigned macOS updates survive force quit and report interrupted installation', 'scripts/test-unsigned-mac-update.mjs'],
+  ['macOS Multipeer transport completes the native peer protocol', 'scripts/test-presenter-multipeer.mjs'],
   ['macOS service keeps vaults isolated, persists opt-in, preserves events on disable and retries on restart', 'scripts/test-calendar-integrations.mjs'],
   ['THE USER-VISIBLE BUG: the released helper cannot install a renamed bundle', 'scripts/test-mac-bundle-name.mjs'],
   ['the current helper installs a renamed bundle, so this cannot recur after 4.2.4', 'scripts/test-mac-bundle-name.mjs'],

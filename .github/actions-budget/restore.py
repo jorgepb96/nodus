@@ -41,7 +41,7 @@ def restore_files():
         originals[filename] = original
     for filename, original in originals.items():
         (ROOT / filename).write_bytes(original)
-    print("Restored all changed files byte for byte. Commit and merge before restore-github.")
+    print("Restored all changed files byte for byte. Commit first, regenerate the sitemap, then commit and merge before restore-github.")
 
 
 def restore_github():
@@ -53,8 +53,17 @@ def restore_github():
             f"Original workflow not present on main: {filename}"
     for filename, saved in STATE["changedFiles"].items():
         file = api(f"contents/{filename}?ref=main")
-        assert digest(base64.b64decode(file["content"])) == saved["originalSha256"], \
-            f"Original file not present on main: {filename}"
+        if saved.get("regenerateAfterRestore"):
+            assert digest(base64.b64decode(file["content"])) == digest((ROOT / filename).read_bytes()), \
+                f"Generated file differs from the restored main checkout: {filename}"
+        else:
+            assert digest(base64.b64decode(file["content"])) == saved["originalSha256"], \
+                f"Original file not present on main: {filename}"
+    # The sitemap dates the commit that restores each page. Keeping its old
+    # generated date would break the original CI even with identical page bytes.
+    assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip() == api("commits/main")["sha"], \
+        "Use the restored main checkout before restore-github."
+    subprocess.run(["node", "--test", "scripts/test-site-sitemap.mjs"], cwd=ROOT, check=True)
     original_ruleset = next(rule for rule in STATE["rulesets"] if rule["id"] == 22341821)
     current = ruleset_payload(api("rulesets/22341821"))
     assert current in (STATE["pausedRulesetPayload"], ruleset_payload(original_ruleset)), \

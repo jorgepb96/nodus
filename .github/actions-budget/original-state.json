@@ -268,5 +268,47 @@
       }
     ]
   },
-  "budgetCiSha256": "c62c7b8312bffc18885bd3b4772b1ab8bd5857205c228e3a6707b3f1594c4535"
+  "budgetCiSha256": "541b8e91c5a6124a0342a3376bed36b0cd9c58d917987b0f24138c221bdc9dbb",
+  "changedFiles": {
+    ".github/workflows/ci.yml": {
+      "snapshot": "original-ci.yml",
+      "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
+      "restrictedSha256": "541b8e91c5a6124a0342a3376bed36b0cd9c58d917987b0f24138c221bdc9dbb"
+    },
+    ".github/workflows/release-build.yml": {
+      "snapshot": "original-files/.github/workflows/release-build.yml",
+      "originalSha256": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
+      "restrictedSha256": "591f5d35154d3878b238cd176667d53c8fbb300a2f4b909f802ff101b8f0c550"
+    },
+    "scripts/ci-test-shards.mjs": {
+      "snapshot": "original-files/scripts/ci-test-shards.mjs",
+      "originalSha256": "976e019622950aed82d7ab2d32f750215f3c289b280e02151b867d751e3e07fc",
+      "restrictedSha256": "dd572ab48a5888e13b999da5d3d5c49c304a3710419155b2900d5c1428c29b33"
+    },
+    "scripts/test-ci-quality-gate.mjs": {
+      "snapshot": "original-files/scripts/test-ci-quality-gate.mjs",
+      "originalSha256": "9a207bd8c9f5562db4092dcdc7de37678b2b9df8d53c619046015b7ab33cee94",
+      "restrictedSha256": "6dedc5e8c677923295b9f695fc240bd73bb861fbd09fb921ecb195754a00dc6b"
+    },
+    "scripts/test-update-channels.mjs": {
+      "snapshot": "original-files/scripts/test-update-channels.mjs",
+      "originalSha256": "102a9ba1e170d26ff17a1abb8e2b5418f21a9b089fdc5a12e1fb5f45e1052e67",
+      "restrictedSha256": "c28cd97dc8b600d677dd04b7260b32041264bae15b2603b824665e56b9f55348"
+    },
+    "scripts/test-release-artifact-names.mjs": {
+      "snapshot": "original-files/scripts/test-release-artifact-names.mjs",
+      "originalSha256": "5a6aebdd8dc16de90ad9c9b5cc2f4ae11ba955839cb8c916bcbb16518d9e1973",
+      "restrictedSha256": "97c926aba58b4d452c47efb0f9c6ee4e4107de3724a4512a06f00e0ae8607aa6"
+    },
+    "README.md": {
+      "snapshot": "original-files/README.md",
+      "originalSha256": "1309d01ef861d7b6bb68a04d9a21da4261c47e67f023334dc83a43e3c123ce36",
+      "restrictedSha256": "5eba3c84c44fcdc4895a1e68e9fd7f862795acb13bea0f501467d28b2f747cc9"
+    },
+    "site/app/index.html": {
+      "snapshot": "original-files/site/app/index.html",
+      "originalSha256": "e0781627da370fdfe1c9612ccf099b38f62ef6e351faa4623006f0f9e2dfa615",
+      "restrictedSha256": "2de6a5c1dfb744c613f848b9b96e63e28c3435acb3ad00723413a1af389531f0"
+    }
+  }
 }

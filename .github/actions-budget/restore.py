@@ -32,13 +32,16 @@ def ruleset_payload(ruleset):
 
 
 def restore_files():
-    original = (DIRECTORY / "original-ci.yml").read_bytes()
-    target = ROOT / ".github/workflows/ci.yml"
-    assert digest(original) == STATE["workflowSha256"][".github/workflows/ci.yml"]
-    assert digest(target.read_bytes()) in (digest(original), STATE["budgetCiSha256"]), \
-        "CI changed since the restriction; review those changes before restoring."
-    target.write_bytes(original)
-    print("Restored ci.yml byte for byte. Commit and merge it before restore-github.")
+    originals = {}
+    for filename, saved in STATE["changedFiles"].items():
+        original = (DIRECTORY / saved["snapshot"]).read_bytes()
+        assert digest(original) == saved["originalSha256"], f"Corrupt snapshot: {filename}"
+        assert digest((ROOT / filename).read_bytes()) in (digest(original), saved["restrictedSha256"]), \
+            f"Changed since the restriction; review before restoring: {filename}"
+        originals[filename] = original
+    for filename, original in originals.items():
+        (ROOT / filename).write_bytes(original)
+    print("Restored all changed files byte for byte. Commit and merge before restore-github.")
 
 
 def restore_github():
@@ -48,6 +51,10 @@ def restore_github():
         file = api(f"contents/{filename}?ref=main")
         assert digest(base64.b64decode(file["content"])) == expected, \
             f"Original workflow not present on main: {filename}"
+    for filename, saved in STATE["changedFiles"].items():
+        file = api(f"contents/{filename}?ref=main")
+        assert digest(base64.b64decode(file["content"])) == saved["originalSha256"], \
+            f"Original file not present on main: {filename}"
     original_ruleset = next(rule for rule in STATE["rulesets"] if rule["id"] == 22341821)
     current = ruleset_payload(api("rulesets/22341821"))
     assert current in (STATE["pausedRulesetPayload"], ruleset_payload(original_ruleset)), \

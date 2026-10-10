@@ -1,28 +1,38 @@
 name: CI
 
-# Temporary Actions budget restriction, requested 2026-10-11.
-# Exact original workflow and GitHub settings: .github/actions-budget/.
-# Restore only when the repository owner explicitly requests it.
+# Temporary Linux-only PR validation. Preserve the complete suite and quality
+# gate; install/build once on one runner to avoid repeated native rebuilds.
+# Exact original configuration: .github/actions-budget/ (explicit restore only).
 on:
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+      NODUS_CI_COMPONENT_STYLES: .ci/component-styles.css
+      NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
@@ -30,30 +40,91 @@ jobs:
           cache: npm
       - name: Verify citation metadata
         run: npm run citation:check
-      # The essential suite uses Node and mocks; skip native/Electron downloads
-      # and rebuilds, which are only needed by the temporarily paused suites.
+      - name: Install Linux test tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y xvfb openbox ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
+          ffmpeg -version >/dev/null
+          ffprobe -version >/dev/null
+          test -x /usr/bin/google-chrome
       - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Restore incremental check caches
+        run: npm ci --no-audit --no-fund
+      - name: Restore incremental checks and Electron download cache
         uses: actions/cache@v6
         with:
-          path: .ci/cache
+          path: |
+            .ci/cache
+            ~/.cache/electron
           key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
           restore-keys: |
             checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
+      - name: Materialize Electron once and rebuild native modules
+        run: |
+          node scripts/prepare-electron-tests.mjs
+          npx electron-builder install-app-deps
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
       - name: Lint
         run: npm run lint:ci
       - name: Build (includes typecheck)
         run: npm run build:ci
-      - name: Essential concurrency contracts
-        run: npm run test:adaptive-concurrency
-      - name: Essential safety and core contracts
+      - name: Build the Server Web bundle
+        run: npm run build:server-web
+      - name: Compile component test styles
+        run: node scripts/lib/component-test-styles.mjs prepare-ci
+      - name: Checkout the marketplace
+        uses: actions/checkout@v7
+        with:
+          repository: NodusResearch/nodus-research-skill-marketplace
+          path: .marketplace
+      - name: A pairing never reaches main or a release
+        if: github.event_name != 'pull_request'
+        run: test ! -f .github/marketplace-ref
+      - name: Use the paired marketplace branch on a pull request
+        if: github.event_name == 'pull_request'
+        working-directory: .marketplace
         run: |
-          node --test --test-concurrency=2 \
-            scripts/test-ci-quality-gate.mjs \
-            scripts/test-ipc-contract.mjs \
-            scripts/test-privacy-compliance.mjs \
-            scripts/test-backup-password-policy.mjs \
-            scripts/test-backup-file-streaming.mjs \
-            scripts/test-sync-hlc.mjs \
-            scripts/test-capability-api-v2.mjs
+          set -euo pipefail
+          REF_FILE="$GITHUB_WORKSPACE/.github/marketplace-ref"
+          [ -f "$REF_FILE" ] || exit 0
+          BRANCH=$(tr -d ' \t\r\n' < "$REF_FILE")
+          [ -n "$BRANCH" ] && [ "$BRANCH" != main ] || exit 0
+          git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null
+          git fetch --depth 1 origin "$BRANCH"
+          git checkout FETCH_HEAD
+      - name: Both repositories agree and signed packages install
+        run: npm run verify:cross-repo
+      - name: Every discovered unit and integration test passes exactly once
+        run: |
+          xvfb-run --auto-servernum bash -e -c '
+            node scripts/ci-test-shards.mjs plan
+            for shard in 1 2 3; do npm run test:ci:shard -- "$shard"; done
+            node scripts/ci-test-shards.mjs verify
+          '
+      - name: E2E smoke (real app boot)
+        timeout-minutes: 10
+        run: xvfb-run --auto-servernum npm run test:e2e
+      - name: Stellar canvas E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum npm run test:e2e:stellar
+      - name: Graph tabs E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum npm run test:e2e:stellar-tabs
+      - name: Argument map E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:argument-map'
+      - name: Each package installs, migrates, registers and uninstalls
+        run: xvfb-run --auto-servernum npm run verify:capability-packages
+      - name: A 5.3.1 profile migrates, fails and retries
+        run: xvfb-run --auto-servernum npm run verify:capability-migration
+      - name: Preserve complete execution inventory, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-tests-${{ github.run_attempt }}
+          path: |
+            .ci/plan.json
+            .ci/reports/*.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 3

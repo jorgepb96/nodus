@@ -15,10 +15,18 @@ const link=desktopPairingQR(fixture);
 const encoded=JSON.parse(Buffer.from(new URL(link).searchParams.get('q'),'base64url'));
 assert.deepEqual(encoded[8],fixture.vaults.map(vault=>[vault.id,vault.name,vault.type]));assert.deepEqual(encoded[9],fixture.relay);assert.equal(encoded[10],fixture.macDeviceId);
 const png=await QRCode.toBuffer(link,{width:720,margin:4,errorCorrectionLevel:'M'});
-const destination=path.resolve('../nodus-mobile/ios/Packages/NodusKit/Tests/NodusKitTests/Fixtures');
+const destination=path.resolve('scripts/fixtures/mobile-pairing');
+const mobileDestination=path.resolve('../nodus-mobile/ios/Packages/NodusKit/Tests/NodusKitTests/Fixtures');
 if(process.argv.includes('--write-fixture')){
  fs.mkdirSync(destination,{recursive:true});fs.writeFileSync(path.join(destination,'desktop-pairing-qr.png'),png);fs.writeFileSync(path.join(destination,'desktop-pairing-qr.json'),JSON.stringify({link,vaultIds:fixture.vaults.map(vault=>vault.id),macDeviceId:fixture.macDeviceId},null,2)+'\n');
 }else{
  const saved=JSON.parse(fs.readFileSync(path.join(destination,'desktop-pairing-qr.json'),'utf8'));assert.equal(saved.link,link,'Node fixture must match the current wire encoder');assert.deepEqual(fs.readFileSync(path.join(destination,'desktop-pairing-qr.png')),png);
+}
+// Desktop's unit campaign is self-contained. The cross-repository campaign
+// explicitly requires the Swift fixture; absence never counts as interop proof.
+if(process.argv.includes('--verify-mobile-fixture')){
+ const saved=JSON.parse(fs.readFileSync(path.join(mobileDestination,'desktop-pairing-qr.json'),'utf8'));
+ assert.equal(saved.link,link,'Swift must decode the current Desktop wire fixture');
+ assert.deepEqual(fs.readFileSync(path.join(mobileDestination,'desktop-pairing-qr.png')),png);
 }
 console.log(JSON.stringify({suite:'mobile-pairing-qr',passed:true,vaults:12,bytes:Buffer.byteLength(link),pngBytes:png.length,allGrantsPreserved:true,relayPreserved:true}));

@@ -415,8 +415,12 @@ assert.match(
 );
 assert.match(
   ai,
-  /applyCitationPolicy[\s\S]*extractCitationClaims[\s\S]*aiVerifyCitations/,
-  "generation reuses Deep Research citation validation",
+  /applyCitationPolicy\(generated\.descriptionMarkdown, maps\)[\s\S]*extractCitationClaims\(cleaned, maps\)[\s\S]*await verifyCitations\(claims, model\)/,
+  "the shared core validates retained citations after applying citation policy",
+);
+assert.match(
+  ai, /verifyCitations: typeof aiVerifyCitations = aiVerifyCitations/,
+  "Desktop supplies the actual AI citation verifier to the shared core",
 );
 assert.match(
   ai,

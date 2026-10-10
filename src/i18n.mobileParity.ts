@@ -10,6 +10,7 @@ const KEYS = [
   'La traducción ya no está disponible.', 'Leer traducción a {lang}', 'Regenerar traducción a {lang}',
   'Mejorar documento completo',
   "La conexión actual no permite acceder a este vault. Renueva la vinculación en Ajustes.", "Estado de los trabajos",
+  "Las pistas guardadas se consultan con una conexión al Mac.", "Narración guardada", "Este contenido no tiene pistas guardadas en el Mac.", "Descargando audio…", "El archivo de esta pista no está disponible en el Mac.",
 ] as const;
 
 function table(values: string[]): Record<string, string> {
@@ -30,6 +31,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'The translation is no longer available.', 'Read {lang} translation', 'Regenerate {lang} translation',
     'Improve entire document',
     "The current connection cannot access this vault. Renew the pairing in Settings.", "Job status",
+    "Saved tracks are available through a connection to the Mac.", "Saved narration", "This content has no saved tracks on the Mac.", "Downloading audio…", "This track’s file is unavailable on the Mac.",
   ]),
   fr: table([
     'Associer un appareil mobile',
@@ -43,6 +45,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'La traduction n’est plus disponible.', 'Lire la traduction en {lang}', 'Régénérer la traduction en {lang}',
     'Améliorer le document entier',
     "La connexion actuelle ne permet pas d’accéder à cet espace. Renouvelez l’association dans les réglages.", "État des tâches",
+    "Les pistes enregistrées sont accessibles avec une connexion au Mac.", "Narration enregistrée", "Ce contenu n’a aucune piste enregistrée sur le Mac.", "Téléchargement de l’audio…", "Le fichier de cette piste est indisponible sur le Mac.",
   ]),
   de: table([
     'Mobilgerät verbinden',
@@ -56,6 +59,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Die Übersetzung ist nicht mehr verfügbar.', 'Übersetzung auf {lang} lesen', 'Übersetzung auf {lang} neu erstellen',
     'Gesamtes Dokument verbessern',
     "Die aktuelle Verbindung kann nicht auf diesen Vault zugreifen. Erneuern Sie die Kopplung in den Einstellungen.", "Auftragsstatus",
+    "Gespeicherte Audiospuren sind über eine Verbindung zum Mac verfügbar.", "Gespeicherte Erzählung", "Dieser Inhalt hat keine gespeicherten Audiospuren auf dem Mac.", "Audio wird heruntergeladen…", "Die Datei dieser Audiospur ist auf dem Mac nicht verfügbar.",
   ]),
   pt: table([
     'Vincular dispositivo móvel',
@@ -69,6 +73,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'A tradução já não está disponível.', 'Ler tradução em {lang}', 'Regenerar tradução em {lang}',
     'Melhorar o documento completo',
     "A ligação atual não permite aceder a este vault. Renove a vinculação nas Definições.", "Estado dos trabalhos",
+    "As faixas guardadas estão disponíveis através de uma ligação ao Mac.", "Narração guardada", "Este conteúdo não tem faixas guardadas no Mac.", "A descarregar áudio…", "O ficheiro desta faixa não está disponível no Mac.",
   ]),
   'pt-BR': table([
     'Vincular dispositivo móvel',
@@ -82,6 +87,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'A tradução não está mais disponível.', 'Ler tradução em {lang}', 'Regenerar tradução em {lang}',
     'Melhorar o documento completo',
     "A conexão atual não permite acessar este vault. Renove a vinculação em Ajustes.", "Status dos trabalhos",
+    "As faixas salvas estão disponíveis por uma conexão com o Mac.", "Narração salva", "Este conteúdo não tem faixas salvas no Mac.", "Baixando áudio…", "O arquivo desta faixa não está disponível no Mac.",
   ]),
   it: table([
     'Collega dispositivo mobile',
@@ -95,6 +101,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'La traduzione non è più disponibile.', 'Leggi la traduzione in {lang}', 'Rigenera la traduzione in {lang}',
     'Migliora il documento completo',
     "La connessione attuale non consente di accedere a questo vault. Rinnova l’associazione nelle impostazioni.", "Stato delle attività",
+    "Le tracce salvate sono disponibili tramite una connessione al Mac.", "Narrazione salvata", "Questo contenuto non ha tracce salvate sul Mac.", "Download dell’audio…", "Il file di questa traccia non è disponibile sul Mac.",
   ]),
   tr: table([
     'Mobil cihazı bağla',
@@ -108,6 +115,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     'Çeviri artık mevcut değil.', '{lang} çevirisini oku', '{lang} çevirisini yeniden oluştur',
     'Belgenin tamamını iyileştir',
     "Mevcut bağlantı bu kasaya erişemiyor. Ayarlar’dan eşleştirmeyi yenileyin.", "İş durumu",
+    "Kayıtlı ses parçalarına Mac bağlantısıyla erişilebilir.", "Kayıtlı anlatım", "Bu içeriğin Mac’te kayıtlı ses parçası yok.", "Ses indiriliyor…", "Bu ses parçasının dosyası Mac’te kullanılamıyor.",
   ]),
   'zh-CN': table([
     '关联移动设备',
@@ -121,6 +129,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '该译文已不可用。', '阅读 {lang} 译文', '重新生成 {lang} 译文',
     '改进整个文档',
     "当前连接无法访问此资料库。请在设置中更新关联。", "任务状态",
+    "连接 Mac 后可访问已保存的音轨。", "已保存的旁白", "此内容在 Mac 上没有已保存的音轨。", "正在下载音频…", "此音轨的文件在 Mac 上不可用。",
   ]),
   'zh-TW': table([
     '連結行動裝置',
@@ -134,6 +143,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '此譯文已無法使用。', '閱讀 {lang} 譯文', '重新產生 {lang} 譯文',
     '改進整份文件',
     "目前的連線無法存取此資料庫。請在設定中更新關聯。", "工作狀態",
+    "連接 Mac 後可存取已儲存的音軌。", "已儲存的旁白", "此內容在 Mac 上沒有已儲存的音軌。", "正在下載音訊…", "此音軌的檔案在 Mac 上無法使用。",
   ]),
   ja: table([
     'モバイル端末を連携',
@@ -147,6 +157,7 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '翻訳は利用できなくなりました。', '{lang} の翻訳を読む', '{lang} の翻訳を再生成',
     '文書全体を改善',
     "現在の接続ではこの保管庫にアクセスできません。設定でペアリングを更新してください。", "ジョブの状態",
+    "Mac に接続すると、保存済みの音声を利用できます。", "保存済みのナレーション", "このコンテンツの音声は Mac に保存されていません。", "音声をダウンロード中…", "この音声ファイルは Mac で利用できません。",
   ]),
   ko: table([
     '모바일 기기 연결',
@@ -160,5 +171,6 @@ export const MOBILE_PARITY_TRANSLATIONS = {
     '번역을 더 이상 사용할 수 없습니다.', '{lang} 번역 읽기', '{lang} 번역 다시 생성',
     '문서 전체 개선',
     "현재 연결로는 이 보관함에 접근할 수 없습니다. 설정에서 연결을 갱신하세요.", "작업 상태",
+    "Mac에 연결하면 저장된 오디오를 이용할 수 있습니다.", "저장된 내레이션", "이 콘텐츠는 Mac에 저장된 오디오가 없습니다.", "오디오 다운로드 중…", "이 오디오 파일은 Mac에서 사용할 수 없습니다.",
   ]),
 };

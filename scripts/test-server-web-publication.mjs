@@ -40,7 +40,7 @@ test('primary-source/testimony projections and permanent denylist are explicit',
 
 test('primary-source and testimony opt-ins travel from Desktop settings to both publishers', () => {
   const types = read('shared/types.ts');
-  const defaults = read('electron/db/settingsRepo.ts');
+  const defaults = read('shared/defaultAppSettings.ts');
   const shared = read('electron/serverSync/serverSyncShared.ts');
   const cloudflare = read('electron/serverSync/cloudflarePublisher.ts');
   const settings = read('src/views/Settings.tsx');

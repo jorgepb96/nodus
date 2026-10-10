@@ -235,7 +235,7 @@ test('new study materials use a remembered in-app AI processing decision', async
   const [notice, settings, defaults, preload, apiTypes, ipc, consent, policy, knowledge] = await Promise.all([
     read('src/privacyNotices.tsx'),
     read('src/views/Settings.tsx'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('@bridge'),
     read('@api'),
     read('@main'),

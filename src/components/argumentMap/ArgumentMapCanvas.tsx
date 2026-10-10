@@ -190,7 +190,7 @@ export function ArgumentMapCanvas({ map, onSelect, fullscreen, onToggleFullscree
         {nodes.map(({ block, x, y, parentId }) => <article key={block.id} data-block-id={block.id}
           className={`argument-node ${parentId ? '' : 'is-root'} ${selected === block.id ? 'is-selected' : ''}`}
           style={{ left: x - CARD_WIDTH / 2, top: y - CARD_HEIGHT / 2, width: CARD_WIDTH, height: CARD_HEIGHT, '--branch-color': COLORS[block.relation] ?? COLORS.related } as CSSProperties}>
-          <button className="argument-node-content" aria-pressed={selected === block.id} aria-label={[parentId ? relationLabel(block.relation) : t('IDEA CENTRAL'), block.label, block.statement || block.summary].filter(Boolean).join('. ')} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
+          <button className="argument-node-content" aria-current={selected === block.id ? true : undefined} aria-label={[parentId ? relationLabel(block.relation) : t('IDEA CENTRAL'), block.label, block.statement || block.summary].filter(Boolean).join('. ')} onClick={() => select(block)} title={[block.label, block.statement || block.summary].filter(Boolean).join('\n')}>
             <span aria-hidden="true" className="argument-node-relation"><i />{parentId ? relationLabel(block.relation) : t('IDEA CENTRAL')}{!parentId && <Icon name="map" size={13} />}</span>
             <strong aria-hidden="true">{block.label}</strong><span aria-hidden="true" className="argument-node-statement">{block.statement || block.summary}</span>
           </button>

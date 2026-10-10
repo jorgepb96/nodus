@@ -32,7 +32,7 @@
 .argument-node { position: absolute; display: flex; flex-direction: column; border: 1px solid color-mix(in srgb, var(--branch-color) 27%, var(--atlas-card)); border-radius: 12px; background: var(--atlas-card); box-shadow: 0 9px 30px #00000020; overflow: hidden; cursor: default; animation: argument-arrive .35s ease-out both; }
 .argument-node:hover, .argument-node.is-selected { border-color: var(--branch-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--branch-color) 8%, transparent), 0 12px 32px #00000025; }
 .argument-node.is-root { background: linear-gradient(135deg, #2b2445, #1a2036); border-color: #ae91df90; box-shadow: 0 0 65px #a889db18; }
-.argument-node-content { text-align: left; display: flex; flex-direction: column; width: 100%; flex: 1; min-height: 0; padding: 13px 16px 7px; }
+.argument-node-content { text-align: left; display: flex; flex-direction: column; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; contain: paint; flex: 1; min-height: 0; padding: 13px 16px 7px; }
 .argument-node-relation { display: flex; align-items: center; gap: 6px; color: var(--branch-color); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
 .argument-node-relation svg { margin-left: auto; }
 .argument-node-content strong { font-size: 13px; font-weight: 550; line-height: 1.35; margin-top: 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

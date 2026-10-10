@@ -10,6 +10,9 @@ import { isPublishing, markVaultDirty, noteVaultInbox } from './serverSyncServic
 import { fetchWithTimeout, normalizeUrl, readVaultConfig } from './serverSyncShared';
 import { drainOneSpaceAction } from './spaceActionProcessor';
 import { drainAccountLibrary } from './accountLibrarySync';
+import { advancingCloudflareCursor, cloudflareSyncGate } from './cloudflareSyncSafety';
+import { hydrateBinaryMutations, applyBinaryMutation } from './binaryMutationSync';
+import { requireCloudflareSafety, ServerHttpError } from './serverNetwork';
 
 /**
  * Drain the mutation ledger on this desktop's own timer.
@@ -109,30 +112,57 @@ async function tick(): Promise<void> {
   try { base = normalizeUrl(config.url); } catch { return; }
   const endpoint = `${base}/api/v1/spaces/${encodeURIComponent(config.spaceId)}/mutations`;
   const db = getDb();
+  const gate = config.kind === 'cloudflare' ? cloudflareSyncGate(`inbox:${config.vaultId}`, base, token) : null;
+  const streamId = `cloudflare-inbox:${base}:${config.spaceId}`;
+  let cursor = gate ? Number((db.prepare('SELECT cursor FROM sync_snapshot_cursors WHERE stream_id = ?').get(streamId) as { cursor: number } | undefined)?.cursor ?? 0) : 0;
+  if (gate && !gate.begin()) return;
+  let failed = false;
+  let failureStatus: number | undefined;
 
   draining = true;
   try {
+    if (gate) await requireCloudflareSafety(base);
     // Both server transports expose the typed action endpoint. Older deployments answer 404;
     // mutation delivery proceeds exactly as before in that case.
-    await drainOneSpaceAction(config).catch(() => undefined);
-    await drainAccountLibrary(config).catch(() => undefined);
+    if (gate) {
+      await drainOneSpaceAction(config);
+      await drainAccountLibrary(config);
+    } else {
+      await drainOneSpaceAction(config).catch(() => undefined);
+      await drainAccountLibrary(config).catch(() => undefined);
+    }
     for (let batch = 0; batch < MAX_BATCHES_PER_TICK; batch += 1) {
       // No `since`. ledger.compact removes the file once it empties and nextSeq recomputes
       // from what is left, so sequence numbers RESTART AT 1 after a full compaction — a
       // remembered cursor would then skip real work. Everything still in the ledger is, by
       // construction, everything not yet acknowledged. This looks like an oversight and is
       // not one.
-      const response = await fetchWithTimeout(`${endpoint}?limit=${BATCH}`, {
+      const response = await fetchWithTimeout(`${endpoint}?limit=${BATCH}${gate ? `&since=${cursor}` : ''}`, {
         headers: { authorization: `Bearer ${token}` },
       });
       // A server that predates the ledger has no such route, and a device without the
       // right to read it gets 403. Neither is worth retrying inside this tick.
-      if (response.status === 404 || response.status === 403 || !response.ok) return;
-      const value = await response.json() as { mutations?: IncomingMutation[]; hasMore?: boolean };
+      if (!response.ok) {
+        if (gate) throw new ServerHttpError(response.status, `Cloudflare inbox: HTTP ${response.status}`);
+        return;
+      }
+      const value = await response.json() as { mutations?: IncomingMutation[]; cursor?: number; hasMore?: boolean };
+      const nextCursor = gate ? advancingCloudflareCursor(cursor, value.cursor, Boolean(value.hasMore)) : cursor;
       const mutations = value.mutations ?? [];
-      if (mutations.length === 0) return;
+      if (mutations.length === 0) {
+        if (gate && nextCursor > cursor) {
+          // Hidden private rows need no owner-side apply, but must be acknowledged
+          // to release pending quota; their bodies remain in the replica relay.
+          const ack=await fetchWithTimeout(`${endpoint}/ack`,{method:'POST',headers:{authorization:`Bearer ${token}`,'content-type':'application/json'},body:JSON.stringify({cursor:nextCursor})});
+          if (!ack.ok) throw new ServerHttpError(ack.status,'Cloudflare no confirmó la página privada del inbox.');
+          cursor = nextCursor; saveCursor();
+        }
+        if (gate && value.hasMore) continue;
+        return;
+      }
 
       await hydrateImageMutations(mutations, base, config.spaceId, token);
+      await hydrateBinaryMutations(db,mutations,base,config.spaceId,token,Boolean(gate));
 
       // The user can switch vaults across any of these awaits, and `db` was resolved before
       // the first one. Applying one space's mutations to a different corpus would be a
@@ -142,7 +172,7 @@ async function tick(): Promise<void> {
 
       // Synchronous, and deliberately so: applyIncomingMutations opens a transaction per
       // mutation, and better-sqlite3 forbids awaiting inside a db.transaction() callback.
-      const summary = applyIncomingMutations(db, mutations, { external: applyPublishedLibraryAnnotationMutation });
+      const summary = applyIncomingMutations(db, mutations, { external: (mutation) => applyBinaryMutation(db,mutation) ?? applyPublishedLibraryAnnotationMutation(mutation) });
       recordServerInbox(summary.entries, { spaceId: config.spaceId });
       noteVaultInbox(config.vaultId, {
         applied: summary.applied,
@@ -151,13 +181,19 @@ async function tick(): Promise<void> {
         refused: summary.refused.length,
       });
 
-      if (summary.cursor > 0) {
+      const acknowledgedCursor=gate && !summary.retryable.length ? nextCursor : summary.cursor;
+      if (acknowledgedCursor > 0) {
         const acknowledgement = await fetchWithTimeout(`${endpoint}/ack`, {
           method: 'POST',
           headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-          body: JSON.stringify({ cursor: summary.cursor }),
+          body: JSON.stringify({ cursor: acknowledgedCursor }),
         });
-        if (!acknowledgement.ok) throw new Error(`El servidor no confirmó la recepción (HTTP ${acknowledgement.status}).`);
+        if (!acknowledgement.ok) throw new ServerHttpError(acknowledgement.status, `El servidor no confirmó la recepción (HTTP ${acknowledgement.status}).`);
+      }
+      if (gate) {
+        if (summary.retryable.length) throw new Error('Cloudflare contiene un cambio que no se pudo aplicar.');
+        cursor = nextCursor;
+        saveCursor();
       }
       // What arrived has to travel back out to everyone else, and only a publication does
       // that. This is what publishVault's own collect step used to guarantee.
@@ -200,10 +236,20 @@ async function tick(): Promise<void> {
       // freezes for the duration. It reads like ceremony. It is not.
       await new Promise((resolve) => { setImmediate(resolve); });
     }
-  } catch {
+  } catch (error) {
+    failed = true;
+    failureStatus = error instanceof ServerHttpError ? error.status : undefined;
     // Nothing was acknowledged, so nothing was lost; the next tick asks again.
   } finally {
     draining = false;
+    gate?.finish(failed, failureStatus);
+    if (gate?.paused) console.warn('[cloudflare-sync] inbox paused after repeated failures');
+  }
+
+  function saveCursor(): void {
+    db.prepare(`INSERT INTO sync_snapshot_cursors (stream_id, cursor, updated_at) VALUES (?, ?, ?)
+      ON CONFLICT(stream_id) DO UPDATE SET cursor = excluded.cursor, updated_at = excluded.updated_at`)
+      .run(streamId, cursor, new Date().toISOString());
   }
 }
 

@@ -57,4 +57,5 @@ export type ServerPublishWorkerResponse = {
   kind: 'error';
   id: number;
   error: string;
+  status?: number;
 };

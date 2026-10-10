@@ -19,7 +19,7 @@ import type {
 } from '@shared/types';
 import { normalizeUiLanguage } from '@shared/uiLanguage';
 import { lightweightVaultRevision, type SnapshotAsset } from './serverSnapshot';
-import { buildServerLibraryPublication, type ServerLibraryPackage } from './serverLibrary';
+import { buildServerLibraryPublicationAsync, type ServerLibraryPackage } from './serverLibrary';
 import type { VectorKind } from './serverVectors';
 import { onGlobalLibraryChanged } from '../library/libraryRuntime';
 import { nodiNotesPending, syncNodiNotes } from './nodiNotesSync';
@@ -38,7 +38,9 @@ import {
   notePublishFailure,
   publishRetryIsDue,
 } from './publishRetryPolicy';
-import { buildServerSnapshotInUtility, publishVaultToCloudflareInUtility } from './serverPublishWorkerHost';
+import { buildServerSnapshotInUtility, publishVaultToCloudflareInUtility, cancelCloudflarePublications } from './serverPublishWorkerHost';
+import { cloudflareSyncGate } from './cloudflareSyncSafety';
+import { requireCloudflareSafety, ServerHttpError } from './serverNetwork';
 import { publishSourceRevision } from './publishSourceRevision';
 import {
   personalImportEndpoint,
@@ -100,6 +102,8 @@ let lastNodiNotesSyncAt = 0;
 const NODI_NOTES_INTERVAL_MS = 60_000;
 let firstTimer: ReturnType<typeof setTimeout> | null = null;
 let publishing = false;
+let ticking = false;
+let syncGeneration = 0;
 
 function ensureRuntime(vaultId: string): VaultRuntime {
   let rt = runtimes.get(vaultId);
@@ -462,7 +466,7 @@ async function publishVectors(
 }
 
 /** Upload one vault's filtered snapshot. Serialized: at most one publish at a time. */
-async function publishVault(vaultId: string): Promise<void> {
+async function publishVault(vaultId: string, automatic = false): Promise<void> {
   if (publishing) return;
   const vault = getVault(vaultId);
   if (!vault) { runtimes.delete(vaultId); return; }
@@ -472,8 +476,11 @@ async function publishVault(vaultId: string): Promise<void> {
 
   const db = vault.active ? getDb() : openReadOnly(vault.path);
   if (!db) return;
+  const cloudGate = config.kind === 'cloudflare' ? cloudflareSyncGate(`publish:${vaultId}`, config.url, token) : null;
+  if (cloudGate && !cloudGate.begin(!automatic)) return;
 
   publishing = true;
+  const publicationGeneration = syncGeneration;
   const rt = ensureRuntime(vaultId);
   rt.lastUploadStartedAt = Date.now();
   rt.phase = 'syncing';
@@ -487,7 +494,8 @@ async function publishVault(vaultId: string): Promise<void> {
         clearPublishRetry(rt);
         return;
       }
-      const library = config.includeLibraryDocuments ? buildServerLibraryPublication() : null;
+      const library = config.includeLibraryDocuments ? await buildServerLibraryPublicationAsync() : null;
+      if (publicationGeneration !== syncGeneration) throw new Error('La publicación se ha detenido.');
       const result = await publishVaultToCloudflareInUtility({
         vaultPath: vault.path,
         vault,
@@ -532,7 +540,8 @@ async function publishVault(vaultId: string): Promise<void> {
       clearPublishRetry(rt);
       return;
     }
-    const library = publicationConfig.includeLibraryDocuments ? buildServerLibraryPublication() : null;
+    const library = publicationConfig.includeLibraryDocuments ? await buildServerLibraryPublicationAsync() : null;
+    if (publicationGeneration !== syncGeneration) throw new Error('La publicación se ha detenido.');
     let publishPhaseStartedAt = process.hrtime.bigint();
     const snapshot = await buildServerSnapshotInUtility({
       vaultPath: vault.path,
@@ -630,7 +639,13 @@ async function publishVault(vaultId: string): Promise<void> {
     rt.pending = false;
     rt.dirtySince = 0;
     notePublishFailure(rt);
+    if (cloudGate) {
+      cloudGate.finish(true, error instanceof ServerHttpError ? error.status : undefined);
+      if (error instanceof ServerHttpError && (error.status === 401 || error.status === 403)) clearNodusServerTokenFor(vaultId);
+      if (cloudGate.paused) rt.lastError += ' La sincronización automática se ha detenido para evitar llamadas repetidas. Vuelve a conectar o sincroniza manualmente tras resolver el error.';
+    }
   } finally {
+    if (cloudGate && rt.phase !== 'error') cloudGate.finish();
     publishing = false;
   }
 }
@@ -647,13 +662,29 @@ async function tickNodiNotes(configs: VaultServerConfig[]): Promise<void> {
   if (!target) return;
   const token = getNodusServerTokenFor(target.vaultId);
   if (!token) return;
+  const gate = target.kind === 'cloudflare' ? cloudflareSyncGate('nodi-notes', target.url, token) : null;
   if (Date.now() - lastNodiNotesSyncAt < NODI_NOTES_INTERVAL_MS && !nodiNotesPending(target.url)) return;
+  if (gate && !gate.begin()) return;
   lastNodiNotesSyncAt = Date.now();
-  await syncNodiNotes({ url: target.url, token });
+  try {
+    if (gate) await requireCloudflareSafety(target.url);
+    const result = await syncNodiNotes({ url: target.url, token });
+    gate?.finish(Boolean(result.error), result.status ?? undefined);
+  } catch (error) {
+    gate?.finish(true,error instanceof ServerHttpError ? error.status : undefined);
+    throw error;
+  }
 }
 
 async function tick(): Promise<void> {
-  if (publishing) return;
+  if (publishing || ticking) return;
+  ticking = true;
+  try { await tickOnce(); }
+  catch (error) { console.warn('[server-sync] background pass failed', error); }
+  finally { ticking = false; }
+}
+
+async function tickOnce(): Promise<void> {
   const configs = listVaultConfigs().filter((config) => config.configured && config.enabled);
   if (configs.length === 0) return;
 
@@ -695,9 +726,11 @@ async function tick(): Promise<void> {
     .find((config) => {
       if (!config || !config.autoSync) return false;
       const rt = ensureRuntime(config.vaultId);
-      return rt.pending && mayAttemptPublish(rt, selectionNow);
+      const token = getNodusServerTokenFor(config.vaultId);
+      return rt.pending && mayAttemptPublish(rt, selectionNow)
+        && (config.kind !== 'cloudflare' || Boolean(token && cloudflareSyncGate(`publish:${config.vaultId}`, config.url, token).ready(selectionNow)));
     });
-  if (target) await publishVault(target.vaultId);
+  if (target) await publishVault(target.vaultId, true);
 }
 
 export function startNodusServerSync(): void {
@@ -737,9 +770,11 @@ onGlobalLibraryChanged(() => {
 });
 
 export function stopNodusServerSync(): void {
+  syncGeneration += 1;
   if (timer) clearInterval(timer);
   if (firstTimer) clearTimeout(firstTimer);
   timer = null; firstTimer = null;
+  cancelCloudflarePublications();
   closeReadOnlyPool();
 }
 
@@ -790,6 +825,15 @@ export async function pairNodusServer(urlValue: string, code: string): Promise<N
 
 /** Publish one vault right now (ignores the debounce and autoSync, honors the pause switch). */
 export async function syncNodusServerVaultNow(vaultId: string): Promise<NodusServerOverview> {
+  const vault = getVault(vaultId);
+  const token = getNodusServerTokenFor(vaultId);
+  if (vault && token) {
+    const config = readVaultConfig(vault);
+    if (config.kind === 'cloudflare') {
+      cloudflareSyncGate(`inbox:${vaultId}`, config.url, token).resume();
+      cloudflareSyncGate('nodi-notes', config.url, token).resume();
+    }
+  }
   await publishVault(vaultId);
   return getNodusServerOverview();
 }

@@ -7,6 +7,7 @@ import type { VaultSummary } from '@shared/types';
 import type { VaultServerConfig } from './serverSyncShared';
 import type { CloudflarePublishResult } from './cloudflarePublisher';
 import type { VectorKind, VectorSetSummary } from './serverVectors';
+import { ServerHttpError } from './serverNetwork';
 import type {
   CloudflarePublishWorkerRequest,
   ServerPublishWorkerRequest,
@@ -16,6 +17,11 @@ import type {
 
 let nextRequestId = 1;
 const WORKER_TIMEOUT_MS = 30 * 60_000;
+const activeCloudflarePublications = new Set<() => void>();
+
+export function cancelCloudflarePublications(): void {
+  for (const cancel of activeCloudflarePublications) cancel();
+}
 
 function workerFile(): string {
   return process.env.NODUS_SERVER_PUBLISH_WORKER_FILE
@@ -97,14 +103,17 @@ function runUtility(request: ServerPublishWorkerRequest): Promise<ServerPublishW
       if (settled) return;
       settled = true;
       clearTimeout(timeout);
+      activeCloudflarePublications.delete(cancel);
       child.kill();
       if (error) reject(error);
       else resolve(result!);
     };
+    const cancel = () => finish(new Error('La publicación de Cloudflare se ha detenido.'));
+    if (request.kind === 'publish-cloudflare') activeCloudflarePublications.add(cancel);
     child.on('message', (message: ServerPublishWorkerResponse) => {
       if (!message || message.id !== request.id) return;
       if (message.kind === 'error') {
-        finish(new Error(message.error));
+        finish(message.status ? new ServerHttpError(message.status, message.error) : new Error(message.error));
         return;
       }
       finish(undefined, message);

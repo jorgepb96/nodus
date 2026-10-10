@@ -53,6 +53,7 @@ function load(file) {
 
 const { localizeRuntimeError, localizeIpcPayload } = load('shared/uiLanguage.ts');
 const { MAIN_PROCESS_ERRORS, MAIN_PROCESS_ERROR_PATTERNS } = load('shared/mainProcessErrors.ts');
+const { CLOUDFLARE_SYNC_ERRORS } = load('shared/cloudflareSyncErrors.ts');
 
 /** Every language the interface offers, minus Spanish (the source). */
 const LANGUAGES = ['en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-CN'];
@@ -187,6 +188,43 @@ test('every parameterized pattern keeps its runtime values and translates around
     const translations = translate(...Array.from({ length: 4 }, () => '1'));
     for (const language of LANGUAGES) {
       assert.ok(translations[language], `${pattern} is missing a ${language} translation`);
+    }
+  }
+});
+
+test('Cloudflare safety errors preserve their cause and recovery instruction through IPC in every UI language', () => {
+  const languages = [...LANGUAGES, 'zh-TW', 'ja', 'ko'];
+  for (const [message, translations] of Object.entries(CLOUDFLARE_SYNC_ERRORS)) {
+    for (const language of languages) {
+      assert.ok(translations[language], `${message} needs a ${language} translation`);
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.equal(localized.error, translations[language]);
+      assert.ok(!GENERIC.has(localized.error));
+    }
+  }
+  const cause = 'La publicación alcanzó el límite de seguridad de llamadas a Cloudflare.';
+  const suffixes = [
+    'La sincronización automática se ha detenido para evitar llamadas repetidas.',
+    'La sincronización automática se ha detenido para evitar llamadas repetidas. Vuelve a conectar o sincroniza manualmente tras resolver el error.',
+  ];
+  for (const language of languages) {
+    for (const suffix of suffixes) {
+      const message = `${cause} ${suffix}`;
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.equal(localized.error, `${CLOUDFLARE_SYNC_ERRORS[cause][language]} ${CLOUDFLARE_SYNC_ERRORS[suffix][language]}`);
+      assert.equal(localizeRuntimeError(message, 'es'), message);
+      assert.equal(localizeRuntimeError(`HTTP 429 ${suffix}`, language), `HTTP 429 ${CLOUDFLARE_SYNC_ERRORS[suffix][language]}`);
+    }
+    for (const [message, value] of [
+      ['El índice ideas-768 supera el límite seguro de búsqueda exacta de Cloudflare.', 'ideas-768'],
+      ['El proceso auxiliar de réplica terminó sin completar la importación (SIGKILL).', 'SIGKILL'],
+      ['No se pudieron verificar las protecciones de Cloudflare (HTTP 503).', '503'],
+      ['Cloudflare no devolvió el relay (HTTP 429).', '429'],
+    ]) {
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.ok(localized.error.includes(value), `${language} preserves ${value}`);
+      assert.notEqual(localized.error, message);
+      assert.ok(!GENERIC.has(localized.error));
     }
   }
 });

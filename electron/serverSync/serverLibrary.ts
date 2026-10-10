@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { setImmediate as yieldToMain } from 'node:timers/promises';
 import AdmZip from 'adm-zip';
 import type { LibraryCatalogItem, LibraryCollectionView, LibraryItemRecord } from '@shared/libraryTypes';
 import type { WritingDraftAnnotation } from '@shared/types';
@@ -131,14 +132,14 @@ function publicCollection(value: LibraryCollectionView): PublishedLibraryCollect
   };
 }
 
-function allItems(): LibraryCatalogItem[] {
-  const values: LibraryCatalogItem[] = [];
+function* allItems(): Generator<LibraryCatalogItem> {
+  let count = 0;
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const page = listGlobalLibraryItems({ limit: PAGE_SIZE, offset, includeFacets: false, sort: [{ field: 'title', direction: 'asc' }] });
-    values.push(...page.items);
-    if (values.length >= page.total || page.items.length === 0) break;
+    yield* page.items;
+    count += page.items.length;
+    if (count >= page.total || page.items.length === 0) break;
   }
-  return values;
 }
 
 function staysInside(root: string, candidate: string): boolean {
@@ -209,13 +210,17 @@ function originalMetadata(record: LibraryItemRecord): {
   };
 }
 
-function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
+interface PackageResult {
   value: ServerLibraryPackage | null;
   wordCount: number;
   figureCount: number;
   cleanAvailable: boolean;
   originalIncluded: boolean;
-} {
+}
+
+// The same packaging flow supports synchronous inventory callers and asynchronous
+// publication: large file reads and ZIP compression must yield the main event loop.
+function* packageSteps(item: LibraryCatalogItem, record: LibraryItemRecord): Generator<string | AdmZip, PackageResult, Buffer> {
   const raw = getLibraryReaderRawContent(item.id);
   const original = originalMetadata(record);
   const markdown = raw?.markdown.trim() ? raw.markdown.replace(/\r\n/g, '\n') : null;
@@ -238,7 +243,7 @@ function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
       try { stat = fs.statSync(source); } catch { continue; }
       if (!stat.isFile() || stat.size <= 0 || stat.size > MAX_FIGURE_BYTES) continue;
       if (packageBytes + stat.size > MAX_PACKAGE_BYTES) break;
-      const bytes = fs.readFileSync(source);
+      const bytes = yield source;
       zip.addFile(relative, bytes);
       packageBytes += bytes.length;
       figureCount += 1;
@@ -248,7 +253,7 @@ function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
   if (original.available && original.path && original.bytes && packageBytes + original.bytes <= MAX_PACKAGE_BYTES) {
     const extension = path.extname(original.path).toLowerCase();
     const packagePath = `original/document${extension}`;
-    const bytes = fs.readFileSync(original.path);
+    const bytes = yield original.path;
     zip.addFile(packagePath, bytes);
     packageBytes += bytes.length;
     packagedOriginal = {
@@ -272,7 +277,7 @@ function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
   // same Clean Markdown produces the same package hash on every publication.
   const deterministicTime = new Date('1980-01-01T00:00:00.000Z');
   for (const entry of zip.getEntries()) entry.header.time = deterministicTime;
-  const data = zip.toBuffer();
+  const data = yield zip;
   if (data.length > MAX_PACKAGE_BYTES) {
     return { value: null, wordCount: 0, figureCount: 0, cleanAvailable: false, originalIncluded: false };
   }
@@ -286,15 +291,35 @@ function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): {
   };
 }
 
-/** Build the complete global-library projection for one opted-in space. */
-export function buildServerLibraryPublication(now = new Date().toISOString()): BuiltServerLibraryPublication {
+function packageFor(item: LibraryCatalogItem, record: LibraryItemRecord): PackageResult {
+  const steps = packageSteps(item, record);
+  let step = steps.next();
+  while (!step.done) {
+    step = steps.next(typeof step.value === 'string' ? fs.readFileSync(step.value) : step.value.toBuffer());
+  }
+  return step.value;
+}
+
+async function packageForAsync(item: LibraryCatalogItem, record: LibraryItemRecord): Promise<PackageResult> {
+  const steps = packageSteps(item, record);
+  let step = steps.next();
+  while (!step.done) {
+    const data = typeof step.value === 'string'
+      ? await fs.promises.readFile(step.value)
+      : await step.value.toBufferPromise();
+    step = steps.next(data);
+  }
+  return step.value;
+}
+
+function* publicationSteps(now: string): Generator<{ item: LibraryCatalogItem; record: LibraryItemRecord }, BuiltServerLibraryPublication, PackageResult> {
   const packages: ServerLibraryPackage[] = [];
   const documents: PublishedLibraryDocument[] = [];
   const personalAnnotations: ServerPersonalLibraryAnnotation[] = [];
   for (const item of allItems()) {
     const record = getGlobalLibraryItem(item.id);
     if (!record || record.deletedAt) continue;
-    const built = packageFor(item, record);
+    const built = yield { item, record };
     if (built.value) packages.push(built.value);
     const original = originalMetadata(record);
     const annotations = listLibraryReaderAnnotations(item.id);
@@ -356,4 +381,23 @@ export function buildServerLibraryPublication(now = new Date().toISOString()): B
     packages,
     personalAnnotations,
   };
+}
+
+/** Build the complete global-library projection for synchronous local callers. */
+export function buildServerLibraryPublication(now = new Date().toISOString()): BuiltServerLibraryPublication {
+  const steps = publicationSteps(now);
+  let step = steps.next();
+  while (!step.done) step = steps.next(packageFor(step.value.item, step.value.record));
+  return step.value;
+}
+
+/** Publish without compressing large originals on the main event-loop thread. */
+export async function buildServerLibraryPublicationAsync(now = new Date().toISOString()): Promise<BuiltServerLibraryPublication> {
+  const steps = publicationSteps(now);
+  let step = steps.next();
+  while (!step.done) {
+    await yieldToMain();
+    step = steps.next(await packageForAsync(step.value.item, step.value.record));
+  }
+  return step.value;
 }

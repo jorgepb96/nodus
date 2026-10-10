@@ -23,6 +23,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { installRuntimeHooks, requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
+import { replicaUtilityHarness } from './lib/replicaUtilityHarness.mjs';
 import { withServer } from './lib/nodusServerHarness.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,7 +46,10 @@ if (externalQaProfile) {
 } else {
   userData = await mkdtemp(path.join(os.tmpdir(), 'nodus-replica-userdata-'));
 }
-installRuntimeHooks(userData);
+const replicaHarness = await replicaUtilityHarness(userData);
+process.env.NODUS_SERVER_REPLICA_WORKER_FILE = replicaHarness.worker;
+installRuntimeHooks(userData, { utilityProcess: replicaHarness.utilityProcess });
+process.on('exit', () => replicaHarness.cleanup());
 
 const { runMigrations } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
 const databaseRuntime = require(path.join(repoRoot, 'electron/db/database.ts'));

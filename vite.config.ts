@@ -358,6 +358,7 @@ export default defineConfig({
       utilityBuild('recoveryProbeUtilityWorker', 'electron/recovery/recoveryProbeUtilityWorker.ts'),
       utilityBuild('migrationRecoveryUtilityWorker', 'electron/db/migrationRecoveryUtilityWorker.ts'),
       utilityBuild('serverPublishWorker', 'electron/serverSync/serverPublishWorker.ts'),
+      utilityBuild('serverReplicaWorker', 'electron/serverSync/serverReplicaWorker.ts'),
     ]),
     renderer(),
   ],

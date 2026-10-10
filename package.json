@@ -180,7 +180,8 @@
     "build:apple-calendar": "node scripts/build-apple-calendar.cjs",
     "build:presenter-native": "node scripts/build-presenter-native.cjs",
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
-    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs"
+    "test:presenter-lan": "node scripts/verify-presenter-lan.cjs",
+    "test:cloudflare-safety": "node --test scripts/test-cloudflare-sync-safety.mjs scripts/test-cloudflare-local-safety.mjs scripts/test-replica-utility-safety.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -277,6 +278,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^8.57.1",
     "jsdom": "^23.2.0",
+    "miniflare": "4.20260730.0",
     "node-api-headers": "^1.9.0",
     "playwright-core": "^1.61.1",
     "postcss": "^8.4.49",

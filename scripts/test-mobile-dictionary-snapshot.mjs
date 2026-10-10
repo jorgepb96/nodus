@@ -18,6 +18,7 @@ try {
   database=require('../electron/db/database.ts');const db=database.getDb();
   const repo=require('../electron/db/dictionaryRepo.ts');
   const {dictionarySnapshot}=require('../shared/dictionarySnapshot.ts');
+  const {companionDictionary}=require('../shared/dictionaryCompanion.ts');
   const {snapshotCitations}=require('../shared/snapshotCitations.ts');
   const {verifyCitations,previewCitation}=require('../electron/citations/verifyCitations.ts');
   const {getPassageDetail}=require('../electron/db/passagesRepo.ts');
@@ -45,6 +46,10 @@ try {
   assert.equal(snapshot.tables.dictionary_evidence[0].score,.95,'Dictionary relevance must survive publication');
   assert.deepEqual(stripUnpublishableColumns({score:1,student_score:2,password:'secret',name:'allowed'}),{name:'allowed'},'The exception must not widen the generic publication boundary');
   const projection=await dictionarySnapshot(snapshot.tables);
+  const companion=companionDictionary({version:1,entries:created.map(id=>({
+    detail:repo.getDictionaryEntryDetail(id),evidence:repo.listDictionaryEvidence({entryId:id,offset:0,limit:200}).items,
+    versions:repo.listDictionaryVersions(id),
+  }))});
   const citations=snapshotCitations(snapshot.tables);
   const refs=[{kind:'idea',id:'idea-1'},{kind:'work',id:'work-1'},{kind:'passage',id:'work-1#current'},{kind:'passage',id:'work-1#stale'},...['idea','work','passage','gap','contradiction'].map(kind=>({kind,id:'missing'}))];
   assert.deepEqual(citations.verify(refs),verifyCitations(refs));
@@ -55,17 +60,27 @@ try {
   const queries=['','concepto','alias 240','árbol','arbol','%','0_0','[especial]','memoria','Autora Uno','\\'];
   const filters=[{}, {letter:'#'}, {letter:'C'}, {statuses:['archived']}, {hasNewEvidence:true}, {hasNewEvidence:false}, {insufficientEvidence:true}, {tags:['grupo A']}, {authorIds:['author-1']}, {workIds:['work-1']}];
   for(const query of queries)for(const filter of filters)for(const key of ['name','created','updated','authors','works','evidence'])for(const dir of ['asc','desc'])for(const offset of [0,200]) {
-    const request={query,...filter,sort:{key,dir},offset,limit:37};assert.deepEqual(projection.list(request),repo.listDictionaryEntries(request),JSON.stringify(request));catalogues++;
+    const request={query,...filter,sort:{key,dir},offset,limit:37};
+    const canonical=repo.listDictionaryEntries(request);
+    assert.deepEqual(projection.list(request),canonical,JSON.stringify(request));
+    assert.deepEqual(companion.list(request),canonical,`selected companion ${JSON.stringify(request)}`);catalogues++;
   }
   assert.deepEqual(projection.facets(),repo.listDictionaryFacets());
+  assert.deepEqual(companion.facets(),repo.listDictionaryFacets());
   for(const id of created) {
     assert.deepEqual(projection.detail(id),repo.getDictionaryEntryDetail(id),id);details++;
+    assert.deepEqual(companion.detail(id),repo.getDictionaryEntryDetail(id),id);
     assert.deepEqual(projection.listVersions(id),repo.listDictionaryVersions(id));
+    assert.deepEqual(companion.listVersions(id),repo.listDictionaryVersions(id));
     for(const filter of [{},{kinds:['passage']},{decisions:['included']},{newOnly:true},{query:'MEMORIA'},{authorIds:['author-1'],tags:['memoria']},{workIds:['work-1']}]) {
-      const request={entryId:id,...filter,offset:0,limit:2};assert.deepEqual(projection.listEvidence(request),repo.listDictionaryEvidence(request));evidencePages++;
+      const request={entryId:id,...filter,offset:0,limit:2};
+      assert.deepEqual(projection.listEvidence(request),repo.listDictionaryEvidence(request));
+      assert.deepEqual(companion.listEvidence(request),repo.listDictionaryEvidence(request));evidencePages++;
     }
   }
   assert.equal(projection.detail('missing'),null);
+  assert.throws(()=>companion.detail('missing'),/no está descargada/);
+  assert.throws(()=>companionDictionary({version:1,entries:[{detail:companion.detail(created[0]),evidence:[{entryId:'other-vault'}],versions:[]}]}),/invalid_companion_dictionary/);
   await assert.rejects(()=>dictionarySnapshot({...snapshot.tables,dictionary_entries:undefined}),/no incluye la tabla/);
   await assert.rejects(()=>dictionarySnapshot({...snapshot.tables,dictionary_evidence:snapshot.tables.dictionary_evidence.map(({score,...row})=>row)}),/relevancia/);
   assert.equal(db.prepare('SELECT total_changes() n').get().n,changes,'Consultation must not mutate or schedule retrieval');

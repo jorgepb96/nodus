@@ -74,6 +74,8 @@ export const MOBILE_OPERATIONS = {
   listModels: ['ai:listModels', 'corpus'], getModelCatalog: ['ai:modelCatalog', 'corpus'],
   discoverArgumentRoutes: ['argumentMap:discover', 'corpus'], buildArgumentMap: ['argumentMap:build', 'research-generation'],
   listWritingWorkshopDrafts: ['writing:saved:list', 'corpus'],
+  listWritingWorkshopDownloadCatalogue: ['writing:saved:downloadCatalogue', 'corpus'],
+  getWritingWorkshopDraft: ['writing:saved:get', 'corpus'],
   listDeepResearchJobs: ['research:deep:queue:list', 'corpus'], enqueueDeepResearchJob: ['research:deep:queue:enqueue-mobile', 'research-generation'],
   clearFinishedDeepResearchJobs: ['research:deep:queue:clear-mobile', 'research-generation'],
   cancelDeepResearchJob: ['research:deep:queue:cancel', 'research-generation'],

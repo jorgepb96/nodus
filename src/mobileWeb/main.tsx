@@ -23,6 +23,7 @@ import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
 import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
 import { dictionarySnapshot } from '@shared/dictionarySnapshot';
+import {companionDictionary, companionDictionaryMethods, type CompanionDictionaryCopy} from '@shared/dictionaryCompanion';
 import { localCatalogue } from './localCatalogue';
 import { snapshotCitations } from '@shared/snapshotCitations';
 import { snapshotSourceDetails } from '@shared/snapshotSourceDetails';
@@ -123,7 +124,23 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
       }
     }
   }
-  return native.nodusMobileCall(method, ...args);
+  try { return await native.nodusMobileCall(method, ...args); }
+  catch (error) {
+    // Only the native transport can declare a disconnection. Permission,
+    // certificate, format and server errors must never become a local catalogue.
+    if ((error as {code?: string})?.code === 'offline' && companionDictionaryMethods.has(method)) {
+      const copy = await native.nodusMobileCall('companionDictionaryCopy') as CompanionDictionaryCopy | null;
+      if (!copy) throw error;
+      const projection = companionDictionary(copy);
+      native.webkit.messageHandlers.nodus.postMessage({id: 'downloaded-dictionary', method: 'surfaceOfflineCopy', args: []});
+      if (method === 'listDictionaryEntries') return projection.list(args[0] as Parameters<typeof projection.list>[0]);
+      if (method === 'listDictionaryFacets') return projection.facets();
+      if (method === 'getDictionaryEntry') return projection.detail(String(args[0]));
+      if (method === 'listDictionaryVersions') return projection.listVersions(String(args[0]));
+      return projection.listEvidence(args[0] as Parameters<typeof projection.listEvidence>[0]);
+    }
+    throw error;
+  }
 };
 const subscriptions = native.nodusMobileSubscriptions;
 const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();

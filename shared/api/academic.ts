@@ -751,6 +751,12 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
     onProgress?: (done: number, total: number, title: string) => void
   ): Promise<DeepResearchArchiveResult | null>;
   listWritingWorkshopDrafts(): Promise<WritingWorkshopSavedDraft[]>;
+  /** Bounded discovery for selected companion downloads; no report bodies. */
+  listWritingWorkshopDownloadCatalogue(request: {offset: number; limit: number}): Promise<{
+    items: Array<Pick<WritingWorkshopSavedDraft, 'id' | 'title' | 'createdAt' | 'updatedAt'>>;
+    total: number; offset: number; limit: number;
+  }>;
+  getWritingWorkshopDraft(id: string): Promise<WritingWorkshopSavedDraft | null>;
   saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest): Promise<WritingWorkshopSavedDraft>;
   /**
    * Mark a saved report read, or take the mark back. Resolves to the report as it now

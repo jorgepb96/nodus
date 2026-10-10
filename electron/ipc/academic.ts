@@ -1811,6 +1811,18 @@ export function registerAcademicIpc(context: IpcContext): void {
     })
   );
   h('writing:saved:list', async () => writingDrafts.listWritingWorkshopDrafts({ requireComplete: true }));
+  h('writing:saved:downloadCatalogue', async (_e, request: {offset: number; limit: number}) => {
+    if (!request || !Number.isSafeInteger(request.offset) || request.offset < 0 ||
+        !Number.isSafeInteger(request.limit) || request.limit < 1 || request.limit > 200 ||
+        Object.keys(request).some(key => !['offset', 'limit'].includes(key))) throw new Error('invalid_writing_download_page');
+    const page = writingDrafts.listWritingWorkshopDraftSummaries(request);
+    return {items: page.drafts.map(({id, title, createdAt, updatedAt}) => ({id, title, createdAt, updatedAt})),
+      total: page.total, offset: request.offset, limit: request.limit};
+  });
+  h('writing:saved:get', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 256) throw new Error('invalid_writing_draft_id');
+    return writingDrafts.getWritingWorkshopDraft(id);
+  });
   h('writing:saved:save', async (e, request: WritingWorkshopSaveDraftRequest) => {
     const saved = writingDrafts.saveWritingWorkshopDraft(request);
     announceWritingDrafts();

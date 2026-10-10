@@ -676,7 +676,7 @@ export function StudyEditor({
           reason: snapshot.reason,
         });
         const next = await port.loadEditorData(snapshot.id);
-        revisionRef.current.set(snapshot.id, updated.editorRevision ?? next.revision ?? 0);
+        revisionRef.current.set(snapshot.id, next.revision ?? updated.editorRevision ?? 0);
         savedSignaturesRef.current.set(snapshot.id,snapshot.signature);
         onSaved(updated);
         if (snapshot.id === activeIdRef.current) {
@@ -905,7 +905,7 @@ export function StudyEditor({
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
 {nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
         {headerContent}
       {showTabs ? (
         <div className="study-editor-tabs flex min-h-10 items-end gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-2 pt-1 dark:border-neutral-800 dark:bg-neutral-950">
@@ -941,6 +941,28 @@ export function StudyEditor({
         </div>
       </>} />
       <EditorialActionBar actions={actions} pins={pinnedActionIds} beforeAction={restoreSelection} onPreserveSelection={preserveSelection} status={`${stats.words} ${t('palabras')} · ${stats.readingMinutes} min`} />
+      {data?.mobileSyncState === 'conflict' && <div className="editorial-save-error" role="alert">
+        <span>{t('Este documento también cambió en el Mac. Elige qué versión sincronizar; tu copia local se conserva hasta que decidas.')}</span>
+        <button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button>
+        {[true, false].map(keepMobile => <button key={String(keepMobile)} onClick={() => void (async () => {
+          if (!port.resolveMobileConflict || !await save('manual')) return;
+          try {
+            const next = await port.resolveMobileConflict(active.id, keepMobile);
+            if (activeIdRef.current !== active.id) return;
+            const nextTitle = next.documentTitle ?? title, nextContent = next.contentMarkdown ?? draft;
+            const native = next.nativeDocument ?? markdownToBlockNote(nextContent), metadata = normalizeAcademicMetadata(next.academicMetadata);
+            const signature = JSON.stringify({ title: nextTitle, content: nextContent, nativeDocument: native, academicMetadata: metadata,
+              style: next.style, language: next.spellcheckLanguage, dictionary: next.customDictionary });
+            revisionRef.current.set(active.id, next.revision ?? 0); baselineRef.current = signature; latestSignatureRef.current = signature;
+            savedSignaturesRef.current.set(active.id, signature); nativeRef.current = native; academicRef.current = metadata;
+            setData(next); setTitle(nextTitle); setDraftState(nextContent); setNativeDocument(native); setAcademicMetadata(metadata);
+            setStyle(next.style); setSaveState('saved'); setSaveError(''); setRecoveredDraft(false); clearEditorialDraft(draftScope, active.id);
+            setSelectedVersion(null); setHistoryState({ canUndo: false, canRedo: false }); setEditorRevision(value => value + 1);
+            onSaved({ ...active, title: nextTitle, contentMarkdown: nextContent, editorRevision: next.revision });
+          } catch (error) { setSaveError(error instanceof Error ? error.message : String(error)); }
+        })()}>{t(keepMobile ? 'Usar mi versión del móvil' : 'Usar la versión del Mac')}</button>)}
+      </div>}
+      {data?.mobileSyncState === 'blocked' && <div className="editorial-save-error" role="alert"><span>{t('Tu documento está guardado en este dispositivo, pero el Mac no ha aceptado la sincronización.')}{data.mobileSyncIssue && ` ${data.mobileSyncIssue}`}</span><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Descargar copia local')}</button></div>}
       {(saveError || recoveredDraft) && <div className={`editorial-save-error${saveError ? '' : ' editorial-draft-recovered'}`} role={saveError ? 'alert' : 'status'}><span>{saveError || t('Se ha recuperado tu borrador local.')}</span><button onClick={() => void save('manual')}>{t(saveError ? 'Reintentar' : 'Guardar')}</button><button onClick={() => downloadEditorialDraft({ title, contentMarkdown: draft, nativeDocument: nativeRef.current, academicMetadata, style })}>{t('Recuperar borrador')}</button><button onClick={() => void (async () => {
         const next = await loadData(active.id,true); const native = next.nativeDocument ?? markdownToBlockNote(next.contentMarkdown ?? active.contentMarkdown);
         setAcademicMetadata(normalizeAcademicMetadata(next.academicMetadata));

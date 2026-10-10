@@ -64,3 +64,19 @@ test('equal, older or unversioned responses never reset the editor or its undo h
 test('an unavailable connection leaves the current document intact', async () => {
   await assert.rejects(refreshSavedEditor(clean, async () => { throw Error('Mac disconnected'); }, () => { throw Error('lost offline document'); }), /Mac disconnected/);
 });
+
+test('a confirmed Mac revision replaces a saved local revision after synchronization', async () => {
+  const local = () => ({ ...clean(), revision: -3 });
+  let adopted;
+  const document = { revision: 5, nativeDocument: [{ type: 'table' }] };
+  assert.equal(await refreshSavedEditor(local, async () => document, value => { adopted = value; }), 'updated');
+  assert.equal(adopted, document);
+});
+
+test('a local conflict update refreshes its saved draft and status without requiring a Mac revision', async () => {
+  const local = () => ({ ...clean(), revision: -1 });
+  let adopted;
+  const conflict = { revision: -2, mobileSyncState: 'conflict', contentMarkdown: 'Same local content' };
+  assert.equal(await refreshSavedEditor(local, async () => conflict, value => { adopted = value; }), 'updated');
+  assert.equal(adopted, conflict);
+});

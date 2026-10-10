@@ -13,6 +13,7 @@ import { authorizeMobileOperation, executeMobileOperation } from './operations';
 import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOperations';
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
+import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
 import { DesktopRelayHost, type RelayConfiguration } from './relayHost';
@@ -390,6 +391,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       vaultIds: pairing.vaultIds, domains: pairing.domains,
       vaults: pairing.vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
+      workspaceEdits: pairing.domains.includes('writing') ? { version: 1, structured: true } : undefined,
       jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
@@ -427,6 +429,18 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 16 * 1024 * 1024);
     reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations)); return;
+  }
+  const workspaceEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/workspace-edits$/.exec(url.pathname);
+  if (request.method === 'POST' && workspaceEdit) {
+    const vaultId = decodeURIComponent(workspaceEdit[1]);
+    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    const input = await body(request, 4 * 1024 * 1024);
+    try { reply(response, 200, await applyWorkspaceEdit(vaultId, pairing.id, input)); }
+    catch (error) {
+      if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
+      else reply(response, 400, { error: 'invalid_document', error_description: error instanceof Error ? error.message : 'The document could not be saved.' });
+    }
+    return;
   }
   const operation = /^\/bridge\/v2\/vaults\/([^/]+)\/operations$/.exec(url.pathname);
   if (request.method === 'POST' && operation) {

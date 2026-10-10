@@ -20,7 +20,8 @@ export async function refreshSavedEditor<T extends { revision?: number }>(
   if (!after.ready || after.blocked || after.documentId !== before.documentId ||
       after.revision !== before.revision || after.baseline !== before.baseline ||
       after.signature !== after.baseline) return 'deferred';
-  if (typeof document.revision !== 'number' || document.revision <= after.revision) return 'unchanged';
+  if (typeof document.revision !== 'number' || document.revision === after.revision ||
+      (document.revision >= 0 && after.revision >= 0 && document.revision < after.revision)) return 'unchanged';
   adopt(document);
   return 'updated';
 }

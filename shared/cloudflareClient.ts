@@ -1,4 +1,10 @@
 import type { CloudflareCapabilityDocument } from './cloudflare';
+import { hasCloudflareSafetyFeatures, CLOUDFLARE_SAFETY_UPGRADE_MESSAGE } from './cloudflare';
+
+async function cloudFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const timeout = AbortSignal.timeout(60_000);
+  return fetch(url, { ...init, signal: init.signal ? AbortSignal.any([init.signal, timeout]) : timeout, redirect: 'error' });
+}
 
 export interface NodusCloudCredentials {
   origin: string;
@@ -22,7 +28,7 @@ export class NodusCloudClient {
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const headers = new Headers(init.headers); headers.set('authorization', `Bearer ${this.credentials.deviceToken}`); headers.set('accept', 'application/json');
     if (init.body && !headers.has('content-type')) headers.set('content-type', 'application/json');
-    const response = await fetch(`${this.origin}${path}`, { ...init, headers });
+    const response = await cloudFetch(`${this.origin}${path}`, { ...init, headers });
     if (!response.ok) {
       const problem = await response.json().catch(() => ({})) as { error?: string; error_description?: string; code?: string; title?: string; detail?: string };
       throw new NodusCloudError(response.status, problem.error || problem.code || 'request_failed', problem.error_description || problem.detail || problem.title || `HTTP ${response.status}`, problem);
@@ -31,16 +37,17 @@ export class NodusCloudClient {
   }
 
   static async capabilities(value: string): Promise<CloudflareCapabilityDocument> {
-    const response = await fetch(`${origin(value)}/api/v3/capabilities`, { headers: { accept: 'application/json' } });
+    const response = await cloudFetch(`${origin(value)}/api/v3/capabilities`, { headers: { accept: 'application/json' } });
     if (!response.ok) throw new NodusCloudError(response.status, 'capabilities_failed', `HTTP ${response.status}`);
     const result = await response.json() as CloudflareCapabilityDocument;
     if (result.service !== 'nodus-cloudflare' || result.protocolVersion < 3) throw new Error('This address is not a compatible Nodus Cloud deployment.');
+    if (!hasCloudflareSafetyFeatures(result)) throw new NodusCloudError(426,'safety_upgrade_required',CLOUDFLARE_SAFETY_UPGRADE_MESSAGE);
     return result;
   }
 
   static async pair(value: string, code: string, deviceName: string, deviceKind = 'replica') {
     const base = origin(value);
-    const response = await fetch(`${base}/api/v3/auth/pair`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ code, deviceName, deviceKind }) });
+    const response = await cloudFetch(`${base}/api/v3/auth/pair`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ code, deviceName, deviceKind }) });
     const result = await response.json().catch(() => ({})) as { deviceToken?: string; space?: { id: string; name: string; vault: unknown }; user?: { email: string; role: string }; server?: { name: string; language: string }; error?: string; error_description?: string; detail?: string };
     if (!response.ok || !result.deviceToken || !result.space) throw new NodusCloudError(response.status, result.error || 'pair_failed', result.error_description || result.detail || `HTTP ${response.status}`, result);
     return {
@@ -54,7 +61,7 @@ export class NodusCloudClient {
 
   static async signIn(value: string, email: string, password: string) {
     const base = origin(value);
-    const response = await fetch(`${base}/api/v3/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ email, password }) });
+    const response = await cloudFetch(`${base}/api/v3/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ email, password }) });
     const result = await response.json().catch(() => ({})) as { ticket?: string; spaces?: unknown[]; serverName?: string; userEmail?: string; error?: string; error_description?: string; detail?: string };
     if (!response.ok || !result.ticket) throw new NodusCloudError(response.status, result.error || 'login_failed', result.error_description || result.detail || `HTTP ${response.status}`, result);
     return {
@@ -68,7 +75,7 @@ export class NodusCloudClient {
 
   static async selectSpace(value: string, ticket: string, spaceId: string, deviceName: string) {
     const base = origin(value);
-    const response = await fetch(`${base}/api/v3/auth/device`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ ticket, spaceId, deviceName }) });
+    const response = await cloudFetch(`${base}/api/v3/auth/device`, { method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ ticket, spaceId, deviceName }) });
     const result = await response.json().catch(() => ({})) as { deviceToken?: string; role?: string; userEmail?: string; space?: { id: string; name: string; vault: unknown }; error?: string; error_description?: string; detail?: string };
     if (!response.ok || !result.deviceToken || !result.space) throw new NodusCloudError(response.status, result.error || 'space_failed', result.error_description || result.detail || `HTTP ${response.status}`, result);
     return {
@@ -84,7 +91,7 @@ export class NodusCloudClient {
 
   async snapshot(etag?: string): Promise<{ unchanged: boolean; etag: string | null; revision: string | null; bytes: ArrayBuffer | null }> {
     const headers = new Headers({ authorization: `Bearer ${this.credentials.deviceToken}` }); if (etag) headers.set('if-none-match', etag);
-    const response = await fetch(`${this.origin}/api/v3/spaces/${encodeURIComponent(this.credentials.spaceId)}/snapshot`, { headers });
+    const response = await cloudFetch(`${this.origin}/api/v3/spaces/${encodeURIComponent(this.credentials.spaceId)}/snapshot`, { headers });
     if (response.status === 304) return { unchanged: true, etag: etag ?? null, revision: response.headers.get('x-nodus-revision'), bytes: null };
     if (!response.ok) { const problem = await response.json().catch(() => ({})) as { error?: string; error_description?: string; detail?: string; code?: string }; throw new NodusCloudError(response.status, problem.error || problem.code || 'snapshot_failed', problem.error_description || problem.detail || `HTTP ${response.status}`, problem); }
     return { unchanged: false, etag: response.headers.get('etag'), revision: response.headers.get('x-nodus-revision'), bytes: await response.arrayBuffer() };
@@ -105,7 +112,7 @@ export class NodusCloudClient {
 
   async asset(hash: string, etag?: string): Promise<{ unchanged: boolean; etag: string | null; mime: string | null; bytes: ArrayBuffer | null }> {
     const headers = new Headers({ authorization: `Bearer ${this.credentials.deviceToken}` }); if (etag) headers.set('if-none-match', etag);
-    const response = await fetch(`${this.origin}/api/v3/spaces/${encodeURIComponent(this.credentials.spaceId)}/assets/${encodeURIComponent(hash)}`, { headers });
+    const response = await cloudFetch(`${this.origin}/api/v3/spaces/${encodeURIComponent(this.credentials.spaceId)}/assets/${encodeURIComponent(hash)}`, { headers });
     if (response.status === 304) return { unchanged: true, etag: etag ?? null, mime: null, bytes: null };
     if (!response.ok) {
       const problem = await response.json().catch(() => ({})) as { error?: string; error_description?: string };

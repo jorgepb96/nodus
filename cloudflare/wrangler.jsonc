@@ -5,6 +5,7 @@
   "compatibility_date": "2026-08-14",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "limits": { "cpu_ms": 5000 },
   "d1_databases": [
     {
       "binding": "DB",

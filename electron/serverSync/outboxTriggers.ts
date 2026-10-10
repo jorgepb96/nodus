@@ -151,22 +151,7 @@ export function ensureOutboxTriggers(db: Database.Database, enabled: boolean): v
  * The states of existing entries are untouched, which is why this is not simply
  * `ensureOutboxTriggers(db, false)`: that one deliberately rejects what is pending.
  */
-export function withOutboxSuppressed<T>(db: Database.Database, work: () => T): T {
-  const existing = db
-    .prepare(`SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND ${TRIGGER_LIKE}`)
-    .all() as { name: string; sql: string | null }[];
-  if (existing.length === 0) return work();
-  for (const trigger of existing) db.exec(`DROP TRIGGER IF EXISTS ${quoteIdentifier(trigger.name)}`);
-  try {
-    return work();
-  } finally {
-    for (const trigger of existing) {
-      if (trigger.sql) {
-        try { db.exec(trigger.sql); } catch { /* re-created on the next open */ }
-      }
-    }
-  }
-}
+export { withOutboxSuppressed } from './outboxSuppression';
 
 export interface OutboxEntry {
   id: string;

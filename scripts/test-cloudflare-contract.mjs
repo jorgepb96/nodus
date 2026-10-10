@@ -109,7 +109,7 @@ test('release package includes every migration and public deployment configurati
   execFileSync(process.execPath, [path.join(root, 'scripts', 'build-cloudflare-worker.mjs')]);
   const manifest = JSON.parse(read('cloudflare/dist/migrations.json'));
   assert.equal(manifest.schemaVersion, 1);
-  assert.deepEqual(manifest.migrations, ['0001_initial.sql', '0002_mobile_parity.sql', '0003_document_vectors.sql', '0004_private_mutation_ownership.sql']);
+  assert.deepEqual(manifest.migrations, ['0001_initial.sql', '0002_mobile_parity.sql', '0003_document_vectors.sql', '0004_private_mutation_ownership.sql', '0005_sync_safety.sql']);
   for (const name of [...manifest.migrations, 'catalog-config.json', 'pricing.v1.json']) {
     assert.ok(fs.statSync(path.join(root, 'cloudflare', 'dist', name)).size > 0, `${name} is missing from the packaged resources`);
   }
@@ -142,8 +142,9 @@ test('publication object validation uses bounded D1 and R2 operations', () => {
   const source = read('cloudflare/src/publications.mjs');
   assert.match(source, /json_each\(\?1\)/);
   assert.match(source, /SELECT DISTINCT json_extract\(requested\.value, '\$\.hash'\)/);
-  assert.match(source, /RETURNING object_key/);
-  assert.match(source, /OBJECTS\.delete\(keys\)/);
+  assert.match(source, /INSERT OR IGNORE INTO r2_delete_queue/);
+  assert.match(source, /env\.DB\.batch/);
+  assert.match(read('cloudflare/src/objectLifecycle.mjs'), /LIMIT 10000/);
   assert.doesNotMatch(source, /for \(const object of obsoleteObjects\)/);
   assert.doesNotMatch(source, /for \(const entry of objects\)[\s\S]{0,500}SELECT 1 AS value FROM objects/);
 });

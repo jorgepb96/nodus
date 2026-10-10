@@ -1,3 +1,4 @@
+import { stageObject } from './objectLifecycle.mjs';
 import {
   HttpError,
   all,
@@ -6,7 +7,6 @@ import {
   first,
   nowIso,
   randomId,
-  readBody,
   readJson,
   run,
   sha256Hex,
@@ -87,6 +87,11 @@ export async function postLibraryRecords(env, auth, request) {
   const accepted = [];
   const duplicate = [];
   const conflicts = [];
+  // One lookup for the batch leaves room for twelve version/record upserts and
+  // authentication under D1's fifty-query Free limit.
+  const existingVersions = new Map((await all(env.DB, `SELECT * FROM library_record_versions
+    WHERE user_id=?1 AND version_id IN (SELECT value FROM json_each(?2))`,
+  auth.user_id, JSON.stringify(records.map((item) => String(item.versionId || ''))))).map((row) => [row.version_id, row]));
   for (const item of records) {
     const recordId = String(item.recordId || '');
     const versionId = String(item.versionId || '');
@@ -101,7 +106,7 @@ export async function postLibraryRecords(env, auth, request) {
       throw new HttpError(400, 'bad_payload', 'A live Library version needs an object payload.');
     }
     const payloadJson = deleted ? null : JSON.stringify(item.payload);
-    const existing = await first(env.DB, 'SELECT * FROM library_record_versions WHERE user_id=?1 AND version_id=?2', auth.user_id, versionId);
+    const existing = existingVersions.get(versionId);
     if (existing) {
       if (existing.record_id !== recordId || existing.hlc !== hlc || existing.payload_json !== payloadJson || Boolean(existing.deleted) !== deleted) {
         throw new HttpError(409, 'version_conflict', 'That immutable version identifier already names different content.');
@@ -133,6 +138,7 @@ export async function postLibraryRecords(env, auth, request) {
         conflicted=MAX(library_records.conflicted, excluded.conflicted),
         updated_at=excluded.updated_at`, auth.user_id, recordId, versionId, hlc, payloadJson, deleted ? 1 : 0, conflicted ? 1 : 0, now);
     accepted.push(versionId);
+    existingVersions.set(versionId, { record_id: recordId, hlc, payload_json: payloadJson, deleted: deleted ? 1 : 0 });
     if (conflicted) conflicts.push({ recordId, versionId, currentWinnerVersionId: previous.winner_version_id });
   }
   const cursor = Number((await first(env.DB, 'SELECT MAX(sequence) AS cursor FROM library_record_versions WHERE user_id=?1', auth.user_id))?.cursor || 0);
@@ -141,21 +147,29 @@ export async function postLibraryRecords(env, auth, request) {
 
 export async function putLibraryObject(env, auth, hashValue, request) {
   const hash = assertObjectHash(hashValue);
-  const bytes = await readBody(request, MAX_LIBRARY_OBJECT_BYTES);
-  if (await sha256Hex(bytes) !== hash) throw new HttpError(409, 'hash_mismatch', 'The object bytes do not match their SHA-256 address.');
   const existing = await first(env.DB, 'SELECT * FROM library_objects WHERE user_id=?1 AND hash=?2', auth.user_id, hash);
-  if (existing) return { hash, bytes: Number(existing.bytes), duplicate: true };
-  const objectKey = `library/${auth.user_id}/${hash}`;
+  if (existing) { await request.body?.cancel().catch(()=>{}); return {hash,bytes:Number(existing.bytes),duplicate:true}; }
+  const length = Number(request.headers.get('content-length'));
+  if (!request.body || !Number.isSafeInteger(length) || length<1 || length>MAX_LIBRARY_OBJECT_BYTES) throw new HttpError(411,'length_required','Library uploads need Content-Length between 1 byte and 128 MiB.');
+  const objectKey = await stageObject(env, `library/${auth.user_id}/${hash}`);
   const mime = String(request.headers.get('content-type') || 'application/octet-stream').slice(0, 200);
-  await env.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType: mime }, customMetadata: { sha256: hash } });
+  const stream = new FixedLengthStream(length);
+  const abort = new AbortController();
+  const timeout = setTimeout(()=>abort.abort(new Error('Library upload timed out')),60000);
+  let results;
   try {
-    await run(env.DB, `INSERT INTO library_objects (user_id,hash,object_key,mime,bytes,created_at)
-      VALUES (?1,?2,?3,?4,?5,?6)`, auth.user_id, hash, objectKey, mime, bytes.byteLength, nowIso());
-  } catch (error) {
-    try { await env.OBJECTS.delete(objectKey); } catch { /* best effort */ }
-    throw error;
-  }
-  return { hash, bytes: bytes.byteLength, duplicate: false };
+    results = await Promise.allSettled([
+      request.body.pipeTo(stream.writable,{signal:abort.signal}).catch(error=>{abort.abort(error);throw error;}),
+      env.OBJECTS.put(objectKey,stream.readable,{sha256:hash,httpMetadata:{contentType:mime},customMetadata:{sha256:hash}}).catch(error=>{abort.abort(error);throw error;}),
+    ]);
+  } finally {clearTimeout(timeout);}
+  if (results.some(result=>result.status==='rejected')) throw new HttpError(400,'hash_mismatch','The streamed object did not match its declared size and SHA-256.');
+  await env.DB.batch([
+    env.DB.prepare(`INSERT OR IGNORE INTO library_objects(user_id,hash,object_key,mime,bytes,created_at) VALUES(?1,?2,?3,?4,?5,?6)`)
+      .bind(auth.user_id,hash,objectKey,mime,length,nowIso()),
+    env.DB.prepare(`DELETE FROM r2_delete_queue WHERE object_key=?1 AND EXISTS(SELECT 1 FROM library_objects WHERE object_key=?1)`).bind(objectKey),
+  ]);
+  return { hash, bytes: length, duplicate: false };
 }
 
 export async function getLibraryObject(env, auth, hashValue, request) {

@@ -41,6 +41,45 @@ test.after(async () => {
   await rm(userData, { recursive: true, force: true });
 });
 
+test('more than 200 pending notes survive an advancing server cursor without being skipped', async () => {
+  const originalFetch = globalThis.fetch;
+  const target = { url: 'https://offline-note-batches.example', token: 'fake-token' };
+  const received = new Set();
+  const stamp = Date.now() - 1000;
+  for (let index = 0; index < 250; index += 1) dbModule.upsertNote({
+    id: `batch-${index}`, title: `Note ${index}`, titleExplicit: true, content: 'Pending',
+    createdAt: stamp, updatedAt: stamp, deletedAt: null,
+  });
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).hostname, 'offline-note-batches.example');
+    for (const note of JSON.parse(init.body).notes) received.add(note.id);
+    return Response.json({ notes: [], serverTime: Date.now() + 100_000, rejected: [] });
+  };
+  try {
+    await syncModule.syncNodiNotes(target);
+    assert.equal(syncModule.nodiNotesPending(target.url), true);
+    await syncModule.syncNodiNotes(target);
+    assert.equal(received.size, 250);
+    assert.equal(syncModule.nodiNotesPending(target.url), false);
+  } finally { globalThis.fetch = originalFetch; dbModule.getNodiDb().prepare("DELETE FROM nodi_notes WHERE id LIKE 'batch-%'").run(); }
+});
+
+test('an acknowledged note with a future clock does not stay pending forever', async () => {
+  const originalFetch = globalThis.fetch;
+  const target = { url: 'https://offline-future-note.example', token: 'fake-token' };
+  const future = Date.now() + 86400_000;
+  dbModule.upsertNote({ id: 'future-clock', title: 'Future', titleExplicit: true, content: 'Content',
+    createdAt: future, updatedAt: future, deletedAt: null });
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).hostname, 'offline-future-note.example');
+    return Response.json({ notes: JSON.parse(init.body).notes.map((note) => ({ ...note, updatedAt: Date.now() })), serverTime: Date.now(), rejected: [] });
+  };
+  try {
+    for (let batch = 0; batch < 3; batch += 1) await syncModule.syncNodiNotes(target);
+    assert.equal(syncModule.nodiNotesPending(target.url), false);
+  } finally { globalThis.fetch = originalFetch; dbModule.getNodiDb().prepare("DELETE FROM nodi_notes WHERE id = 'future-clock'").run(); }
+});
+
 test('a note written on the desktop reaches the server, and one written elsewhere comes back', async () => {
   await withServer({ label: 'nodi-desktop' }, async (context) => {
     const spaceId = await context.createSpace('Principal');

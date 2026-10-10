@@ -8,6 +8,12 @@
 
 export const NODUS_CLOUDFLARE_PROTOCOL = 3 as const;
 export const NODUS_CLOUDFLARE_SERVICE = 'nodus-cloudflare' as const;
+
+export const CLOUDFLARE_SAFETY_UPGRADE_MESSAGE = 'Actualiza el Worker de Nodus Cloud y aplica sus migraciones antes de sincronizar: esta instalación todavía no anuncia los límites acumulados y la limpieza persistente.';
+export function hasCloudflareSafetyFeatures(value: unknown): boolean {
+  const features = (value as { features?: Record<string, unknown> } | null)?.features;
+  return ['syncBudget','durableObjectCleanup','binarySync','mutationRelay'].every((name)=>features?.[name]===true);
+}
 export const NODUS_CLOUDFLARE_WORKER_VERSION = '1.0.0' as const;
 export const NODUS_CLOUDFLARE_TEMPLATE_URL = 'https://github.com/jorgepb96/nodus/tree/main/cloudflare' as const;
 export const NODUS_CLOUDFLARE_DEPLOY_ORIGIN = 'https://deploy.workers.cloudflare.com' as const;
@@ -48,6 +54,10 @@ export interface CloudflareCapabilityDocument {
     library: true;
     vectors: true;
     mutations: true;
+    binarySync?: true;
+    mutationRelay?: true;
+    syncBudget?: true;
+    durableObjectCleanup?: true;
     nodiNotes: true;
     oauth: true;
     mcp: true;

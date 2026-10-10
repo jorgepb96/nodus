@@ -1,18 +1,16 @@
 import { createHash, randomUUID } from 'node:crypto';
 import os from 'node:os';
-import { gunzipSync } from 'node:zlib';
 import Database from 'better-sqlite3';
 import { ensureWorkspaceDevice, getDb, withDatabaseContext } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
-import * as pages from '../db/pagesRepo';
 import { SCHEMA_VERSION } from '../db/migrations';
 import { quoteIdentifier, identityColumns } from '../db/rowIdentity';
 import { createVault, deleteVault, getVault, listVaults, updateVaultRemote } from '../vaults/vaultRegistry';
 import { clearNodusServerTokenFor, getNodusServerTokenFor, setNodusServerTokenFor } from '../secrets/secretStore';
 import type { ReplicaPresenceInput, ReplicaPresenceParticipant, VaultRemote, VaultRemoteRole, VaultSummary, VaultType } from '@shared/types';
 import { normalizeVaultType } from '@shared/vaultTypes';
-import { applySnapshotToReplica, downloadReplicaAssets } from './replicaApply';
-import { stripUnpublishableColumns, type SnapshotAssetRef } from './serverSnapshot';
+import { downloadReplicaAssets, storedReplicaAssets } from './replicaApply';
+import { stripUnpublishableColumns } from './serverSnapshot';
 import {
   countOutbox, ensureOutboxTriggers, listPendingOutbox, markOutboxRejected, markOutboxSent, MUTABLE_TABLES, pruneSentOutbox,
   withOutboxSuppressed,
@@ -20,6 +18,10 @@ import {
 import { applyIncomingMutations, type IncomingMutation } from './mutationInbox';
 import { recordServerInbox } from '../db/serverInboxRepo';
 import { syncServerProfilePreferencesForVault } from './profilePreferencesSync';
+import { advancingCloudflareCursor, cloudflareSyncGate } from './cloudflareSyncSafety';
+import { hydrateBinaryMutations, applyBinaryMutation } from './binaryMutationSync';
+import { importReplicaSnapshotInUtility, cancelReplicaImports } from './serverReplicaWorkerHost';
+import { serverFetchWithTimeout, ServerHttpError, requireCloudflareSafety } from './serverNetwork';
 import {
   LEGACY_SERVER_MUTATION_LIMITS,
   negotiateRemoteMutationLimits,
@@ -41,7 +43,6 @@ import {
 
 const CHECK_INTERVAL_MS = 30_000;
 const FIRST_TICK_MS = 7_000;
-const REQUEST_TIMEOUT_MS = 60_000;
 const OUTBOX_BATCH = 100;
 const SHARED_BLOB_CHUNK_BYTES = 1024 * 1024;
 
@@ -56,6 +57,9 @@ let eventWatchersStopped = true;
 const eventControllers = new Map<string, AbortController>();
 const eventReconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const eventWakeTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const unsupportedEventStreams = new Set<string>();
+const pullingVaults = new Set<string>();
+const drainingOutboxes = new Set<string>();
 
 export type ReplicaPhase = 'idle' | 'syncing' | 'ok' | 'error' | 'revoked' | 'paused';
 
@@ -92,7 +96,7 @@ function normalizeUrl(value: string): string {
 }
 
 async function request(url: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  return serverFetchWithTimeout(url, init);
 }
 
 function deviceName(): string {
@@ -196,6 +200,7 @@ export async function createConnectedVault(input: {
   try {
     setNodusServerTokenFor(vault.id, session.deviceToken);
     await pullReplica(vault.id, { force: true });
+    if (runtimeFor(vault.id).phase==='error') throw new Error(runtimeFor(vault.id).lastError || 'No se pudo importar la réplica.');
   } catch (error) {
     // A hydration that never completed leaves a vault that looks connected and holds
     // nothing. Roll it back rather than leave that behind.
@@ -259,12 +264,17 @@ function handleRevocation(vaultId: string, runtime: ReplicaRuntime): void {
 }
 
 async function pullRelayOperations(vault: VaultSummary, token: string, db: Database.Database, snapshotRevision: string | null): Promise<void> {
+  const cloudflare = vault.remote?.serverKind==='cloudflare';
+  const stream = cloudflare ? `cloudflare-relay:${normalizeUrl(vault.remote!.url)}:${vault.remote!.spaceId}` : `server:${vault.remote!.spaceId}`;
+  let cursor = Number((db.prepare('SELECT cursor FROM sync_snapshot_cursors WHERE stream_id=?').get(stream) as {cursor:number}|undefined)?.cursor || 0);
   const endpoint = `${normalizeUrl(vault.remote!.url)}/api/v1/spaces/${encodeURIComponent(vault.remote!.spaceId)}/mutations`;
   for (let batch = 0; batch < 8; batch += 1) {
-    const response = await request(`${endpoint}?limit=50`, { headers: { authorization: `Bearer ${token}` } });
-    if (response.status === 401 || response.status === 403 || response.status === 404 || !response.ok) return;
-    const value = await response.json() as { mutations?: IncomingMutation[]; hasMore?: boolean };
-    const mutations = value.mutations ?? []; if (!mutations.length) return;
+    const response = await request(cloudflare ? `${endpoint}?relay=1&since=${cursor}&limit=32` : `${endpoint}?limit=50`, { headers: { authorization: `Bearer ${token}` } });
+    if (!response.ok) { if (cloudflare) throw new ServerHttpError(response.status,`Cloudflare no devolvió el relay (HTTP ${response.status}).`); return; }
+    const value = await response.json() as { mutations?: IncomingMutation[]; hasMore?: boolean; cursor?: number };
+    const mutations = value.mutations ?? [];
+    const nextCursor = cloudflare ? advancingCloudflareCursor(cursor,value.cursor,Boolean(value.hasMore)) : cursor;
+    if (!mutations.length && !cloudflare) return;
     for (const mutation of mutations) {
       if (mutation.kind !== 'upsert' || !['world_images', 'map_images'].includes(mutation.table)) continue;
       const hash = String(mutation.assets?.[0]?.hash ?? '');
@@ -278,86 +288,23 @@ async function pullRelayOperations(vault: VaultSummary, token: string, db: Datab
       if (createHash('sha256').update(bytes).digest('hex') !== hash) throw new Error('Una imagen de mundo no coincide con su hash.');
       mutation.row = { ...(mutation.row ?? {}), blob: bytes, bytes: bytes.length };
     }
-    for (const mutation of mutations) {
-      if (mutation.table !== 'page_document_updates' || mutation.kind !== 'upsert') continue;
-      const hash = String(mutation.documentHash ?? mutation.row?.update_hash ?? '');
-      if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error('El servidor entregó una actualización Yjs sin hash válido.');
-      const binary = await request(
-        `${normalizeUrl(vault.remote!.url)}/api/v1/spaces/${encodeURIComponent(vault.remote!.spaceId)}/document-updates/${hash}`,
-        { headers: { authorization: `Bearer ${token}` } },
-      );
-      if (!binary.ok) throw new Error(`No se pudo descargar la actualización Yjs ${hash.slice(0, 12)} (HTTP ${binary.status}).`);
-      const bytes = Buffer.from(await binary.arrayBuffer());
-      if (createHash('sha256').update(bytes).digest('hex') !== hash) throw new Error('Una actualización Yjs no coincide con su hash.');
-      mutation.row = { ...(mutation.row ?? {}), update_blob: bytes, update_hash: hash };
-    }
-    for (const mutation of mutations) {
-      if (mutation.table !== 'db_attachments' || mutation.kind !== 'upsert') continue;
-      const hash = String(mutation.blobHash ?? mutation.row?.blob_hash ?? '');
-      if (!hash) continue;
-      if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error('El servidor entregó un adjunto sin hash válido.');
-      if (db.prepare('SELECT 1 FROM db_blobs WHERE hash = ?').get(hash)) continue;
-      const expected = Number(mutation.row?.bytes ?? 0);
-      const chunks: Buffer[] = [];
-      for (let start = 0; start < expected; start += SHARED_BLOB_CHUNK_BYTES) {
-        const end = Math.min(expected - 1, start + SHARED_BLOB_CHUNK_BYTES - 1);
-        const part = await request(
-          `${normalizeUrl(vault.remote!.url)}/api/v1/spaces/${encodeURIComponent(vault.remote!.spaceId)}/blobs/${hash}`,
-          { headers: { authorization: `Bearer ${token}`, range: `bytes=${start}-${end}` } },
-        );
-        if (part.status !== 206 && !(start === 0 && part.status === 200)) throw new Error(`No se pudo reanudar el adjunto ${hash.slice(0, 12)}.`);
-        chunks.push(Buffer.from(await part.arrayBuffer()));
-      }
-      const bytes = Buffer.concat(chunks);
-      if (bytes.length !== expected || createHash('sha256').update(bytes).digest('hex') !== hash) throw new Error('Un adjunto descargado no coincide con su checksum.');
-      const timestamp = new Date().toISOString();
-      db.prepare(
-        `INSERT OR IGNORE INTO db_blobs
-          (hash, bytes, mime_type, data, revision, created_by, updated_by, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)`,
-      ).run(hash, bytes.length, mutation.row?.mime_type ?? null, bytes, mutation.actorId || 'remote', mutation.actorId || 'remote', timestamp, timestamp);
-    }
+    await hydrateBinaryMutations(db,mutations,vault.remote!.url,vault.remote!.spaceId,token,vault.remote?.serverKind==='cloudflare');
     const summary = withOutboxSuppressed(db, () => withDatabaseContext(db, () => applyIncomingMutations(db, mutations, {
-      external: (mutation) => {
-        if (mutation.table === 'page_revisions' && mutation.kind === 'upsert') {
-          const pageId = String(mutation.row?.page_id ?? '');
-          const revision = Number(mutation.row?.revision ?? 0);
-          if (pageId && revision > 0 && db.prepare('SELECT 1 FROM page_revisions WHERE page_id = ? AND revision = ?').get(pageId, revision)) {
-            return { outcome: 'keptLocal', entityKind: 'page_revision' };
-          }
-        }
-        if (mutation.table !== 'page_document_updates' || mutation.kind !== 'upsert') return null;
-        const hash = String(mutation.documentHash ?? mutation.row?.update_hash ?? '');
-        const pageId = String(mutation.row?.page_id ?? '');
-        const bytes = mutation.row?.update_blob;
-        if (!pageId || !Buffer.isBuffer(bytes)) throw new Error('La actualización Yjs está incompleta.');
-        if (db.prepare('SELECT 1 FROM page_document_update_receipts WHERE update_hash = ?').get(hash)
-          || db.prepare('SELECT 1 FROM page_document_updates WHERE page_id = ? AND update_hash = ?').get(pageId, hash)) {
-          db.prepare(
-            'INSERT OR IGNORE INTO page_document_update_receipts (update_hash, page_id, operation_id, applied_at) VALUES (?, ?, ?, ?)',
-          ).run(hash, pageId, mutation.id, new Date().toISOString());
-          return { outcome: 'keptLocal' };
-        }
-        const current = pages.getPageDocument(pageId);
-        if (!current) throw new Error('La página de la actualización Yjs no existe todavía.');
-        const applied = pages.applyPageDocumentUpdate(pageId, new Uint8Array(bytes), current.revision, mutation.actorId || 'remote');
-        if (!applied.ok) throw new Error('La página cambió mientras se aplicaba su actualización Yjs.');
-        db.prepare(
-          'INSERT OR IGNORE INTO page_document_update_receipts (update_hash, page_id, operation_id, applied_at) VALUES (?, ?, ?, ?)',
-        ).run(hash, pageId, mutation.id, new Date().toISOString());
-        return { outcome: 'applied', entityKind: 'page_update', title: applied.document.page.title };
-      },
+      external: (mutation) => applyBinaryMutation(db,mutation),
     })));
     if (vault.active && summary.entries.length) recordServerInbox(summary.entries, { spaceId: vault.remote!.spaceId });
-    if (summary.cursor > 0) {
-      const ack = await request(`${endpoint}/ack`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ cursor: summary.cursor }) });
-      if (!ack.ok) return;
+    const acknowledged = cloudflare && !summary.retryable.length ? nextCursor : summary.cursor;
+    if (acknowledged > cursor) {
+      const ack = await request(`${endpoint}/ack${cloudflare ? '?relay=1' : ''}`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ cursor: acknowledged }) });
+      if (!ack.ok) { if (cloudflare) throw new ServerHttpError(ack.status,'Cloudflare no confirmó el cursor del relay.'); return; }
       db.prepare(`INSERT INTO sync_snapshot_cursors (stream_id, cursor, snapshot_revision, hydrated_at, updated_at)
         VALUES (?, ?, ?, ?, ?) ON CONFLICT(stream_id) DO UPDATE SET cursor = MAX(cursor, excluded.cursor),
           snapshot_revision = excluded.snapshot_revision, hydrated_at = COALESCE(sync_snapshot_cursors.hydrated_at, excluded.hydrated_at),
           updated_at = excluded.updated_at`)
-        .run(`server:${vault.remote!.spaceId}`, summary.cursor, snapshotRevision, new Date().toISOString(), new Date().toISOString());
+        .run(stream, acknowledged, snapshotRevision, new Date().toISOString(), new Date().toISOString());
     }
+    cursor = Math.max(cursor,acknowledged);
+    if (cloudflare && summary.retryable.length) throw new Error('Un cambio del relay no pudo aplicarse.');
     if (summary.retryable.length || summary.refused.length || !value.hasMore) return;
     await new Promise((resolve) => { setImmediate(resolve); });
   }
@@ -391,6 +338,7 @@ function scheduleEventReconnect(vaultId: string): void {
  */
 async function watchReplicaEvents(vault: VaultSummary): Promise<void> {
   if (eventWatchersStopped || eventControllers.has(vault.id) || !vault.remote) return;
+  if (vault.remote.serverKind === 'cloudflare' || unsupportedEventStreams.has(vault.id)) return;
   const token = getNodusServerTokenFor(vault.id);
   if (!token) return;
   const controller = new AbortController();
@@ -401,6 +349,12 @@ async function watchReplicaEvents(vault: VaultSummary): Promise<void> {
       headers: { authorization: `Bearer ${token}`, accept: 'text/event-stream' },
       signal: controller.signal,
     });
+    if (response.status === 404 || response.status === 405
+        || (response.ok && !response.headers.get('content-type')?.startsWith('text/event-stream'))) {
+      unsupportedEventStreams.add(vault.id);
+      await response.body?.cancel();
+      return;
+    }
     if (response.status === 401 || response.status === 403) {
       handleRevocation(vault.id, runtimeFor(vault.id));
       return;
@@ -426,7 +380,7 @@ async function watchReplicaEvents(vault: VaultSummary): Promise<void> {
     if (!controller.signal.aborted) runtimeFor(vault.id).lastError = error instanceof Error ? error.message : String(error);
   } finally {
     if (eventControllers.get(vault.id) === controller) eventControllers.delete(vault.id);
-    if (!controller.signal.aborted) scheduleEventReconnect(vault.id);
+    if (!controller.signal.aborted && !unsupportedEventStreams.has(vault.id)) scheduleEventReconnect(vault.id);
   }
 }
 
@@ -447,7 +401,23 @@ function stopReplicaEventWatchers(): void {
   eventWakeTimers.clear();
 }
 
+async function hydrateReplicaImages(vault: VaultSummary,token: string,db: Database.Database,assets: import('./serverSnapshot').SnapshotAssetRef[]) {
+  return downloadReplicaAssets(db, assets, async (hash) => {
+      try {
+        const response = await request(`${normalizeUrl(vault.remote!.url)}/api/v1/spaces/${encodeURIComponent(vault.remote!.spaceId)}/assets/${hash}`, { headers: { authorization: `Bearer ${token}` } });
+        if (!response.ok) { if (vault.remote?.serverKind==='cloudflare') throw new ServerHttpError(response.status,'Cloudflare no devolvió una imagen.'); return null; }
+        return Buffer.from(await response.arrayBuffer());
+      } catch (error) {
+        if (vault.remote?.serverKind==='cloudflare') throw error;
+        // One unreachable image must not abort a publication that is otherwise complete;
+        // the next pull sees the blob still missing and tries again.
+        return null;
+      }
+    });
+}
+
 export async function pullReplica(vaultId: string, options: { force?: boolean } = {}): Promise<void> {
+  if (pullingVaults.has(vaultId)) return;
   const vault = getVault(vaultId);
   if (!vault || vault.origin !== 'connected' || !vault.remote) return;
   const runtime = runtimeFor(vaultId);
@@ -455,10 +425,16 @@ export async function pullReplica(vaultId: string, options: { force?: boolean } 
   if (vault.remote.state === 'paused' && !options.force) { runtime.phase = 'paused'; return; }
   const token = getNodusServerTokenFor(vaultId);
   if (!token) { runtime.phase = 'error'; runtime.lastError = 'Falta la credencial de este vault conectado. Vuelve a iniciar sesión en el servidor.'; return; }
-
   const endpoint = `${normalizeUrl(vault.remote.url)}/api/v1/spaces/${encodeURIComponent(vault.remote.spaceId)}`;
+  const gate = vault.remote.serverKind === 'cloudflare' ? cloudflareSyncGate(`replica:${vaultId}`, vault.remote.url, token) : null;
+  if (gate && !gate.begin(options.force)) return;
+  pullingVaults.add(vaultId);
+  let failed = false;
+  let failureStatus: number | undefined;
+
   runtime.phase = 'syncing';
   try {
+    if (gate) await requireCloudflareSafety(vault.remote.url);
     // Refresh the role first: a downgrade has to reach ensureOutboxTriggers before anything
     // else runs, or a demoted account keeps queueing until its next restart.
     await refreshRole(vault, token);
@@ -473,7 +449,10 @@ export async function pullReplica(vaultId: string, options: { force?: boolean } 
     if (response.status === 401 || response.status === 403) { handleRevocation(vaultId, runtime); return; }
     if (response.status === 304) {
       const db = openReplicaDb(vault);
-      if (db) await pullRelayOperations(vault, token, db, vault.remote.lastPulledRevision);
+      if (db) {
+        await pullRelayOperations(vault, token, db, vault.remote.lastPulledRevision);
+        runtime.lastImages=await hydrateReplicaImages(vault,token,db,storedReplicaAssets(db));
+      }
       runtime.phase = 'ok';
       runtime.lastError = null;
       await drainOutbox(vaultId);
@@ -484,48 +463,39 @@ export async function pullReplica(vaultId: string, options: { force?: boolean } 
       runtime.lastError = 'El espacio remoto todavía no ha recibido ninguna publicación.';
       return;
     }
-    if (!response.ok) throw new Error(`El servidor respondió con HTTP ${response.status}.`);
-
-    const raw = Buffer.from(await response.arrayBuffer());
-    // fetch() transparently decompresses, but a proxy may hand the bytes over untouched.
-    const text = raw[0] === 0x1f && raw[1] === 0x8b ? gunzipSync(raw).toString('utf8') : raw.toString('utf8');
-    const snapshot = JSON.parse(text) as { schemaVersion?: number; revision?: string; tables?: Record<string, unknown>; assets?: SnapshotAssetRef[] };
-
-    if (Number(snapshot.schemaVersion) > SCHEMA_VERSION) {
-      throw new Error(`Este espacio se publica con un esquema más reciente (v${snapshot.schemaVersion}) que el de esta instalación (v${SCHEMA_VERSION}). Actualiza Nodus para recibirlo.`);
-    }
+    if (!response.ok) throw new ServerHttpError(response.status, `El servidor respondió con HTTP ${response.status}.`);
 
     const db = openReplicaDb(vault);
     if (!db) throw new Error('No se ha podido abrir la base de datos de la réplica.');
-    applySnapshotToReplica(db, snapshot);
+    const connections = [db];
+    if (vault.active && getDb().name === db.name) connections.push(getDb());
+    const snapshot = await importReplicaSnapshotInUtility(response, db, SCHEMA_VERSION, connections);
+    const revision = response.headers.get('x-nodus-revision') || snapshot.revision || null;
+    // Commit the imported revision before optional images: a failed image must not
+    // force another full snapshot download and rewrite on the next pass.
+    updateVaultRemote(vaultId, { lastPulledRevision: revision, lastPulledAt: new Date().toISOString() });
     await pullRelayOperations(vault, token, db, snapshot.revision ?? vault.remote.lastPulledRevision);
 
     // The JSON carries no binary by design, so the illustration of every Deep Research
     // report arrives as a row saying "ready" with nothing behind it. Fetch the bytes and
     // put them back, skipping whatever this replica already holds.
-    const images = await downloadReplicaAssets(db, snapshot.assets ?? [], async (hash) => {
-      try {
-        const response = await request(`${endpoint}/assets/${hash}`, { headers: { authorization: `Bearer ${token}` } });
-        if (!response.ok) return null;
-        return Buffer.from(await response.arrayBuffer());
-      } catch {
-        // One unreachable image must not abort a publication that is otherwise complete;
-        // the next pull sees the blob still missing and tries again.
-        return null;
-      }
-    });
+    const images = await hydrateReplicaImages(vault,token,db,snapshot.assets);
     runtime.lastImages = images;
 
-    const revision = response.headers.get('x-nodus-revision') || snapshot.revision || null;
-    updateVaultRemote(vaultId, { lastPulledRevision: revision, lastPulledAt: new Date().toISOString() });
     runtime.phase = 'ok';
     runtime.lastError = null;
     runtime.lastPulledAt = new Date().toISOString();
 
     await drainOutbox(vaultId);
   } catch (error) {
+    failed = true;
+    failureStatus = error instanceof ServerHttpError ? error.status : undefined;
     runtime.phase = 'error';
     runtime.lastError = error instanceof Error ? error.message : String(error);
+  } finally {
+    pullingVaults.delete(vaultId);
+    gate?.finish(failed || Boolean(runtime.lastError && runtime.phase === 'ok' && runtime.pendingMutations > 0), failureStatus);
+    if (gate?.paused) runtime.lastError = `${runtime.lastError || 'Error de sincronización.'} La sincronización automática se ha detenido para evitar llamadas repetidas.`;
   }
 }
 
@@ -603,6 +573,13 @@ function readRow(db: Database.Database, table: string, rowKey: string): Record<s
 }
 
 export async function drainOutbox(vaultId: string): Promise<void> {
+  if (drainingOutboxes.has(vaultId)) return;
+  drainingOutboxes.add(vaultId);
+  try { await drainOutboxOnce(vaultId); }
+  finally { drainingOutboxes.delete(vaultId); }
+}
+
+async function drainOutboxOnce(vaultId: string): Promise<void> {
   const vault = getVault(vaultId);
   if (!vault || vault.origin !== 'connected' || !vault.remote) return;
   const runtime = runtimeFor(vaultId);
@@ -643,6 +620,7 @@ export async function drainOutbox(vaultId: string): Promise<void> {
         markOutboxRejected(db, [entry.id], 'No se encuentran los bytes de esta actualización Yjs.');
         continue;
       }
+      if (vault.remote.serverKind==='cloudflare' && stored.update_blob.length>8*1024*1024) { runtime.lastError='La actualización Yjs supera el límite de Cloudflare de 8 MiB.'; return; }
       documentHash = stored.update_hash || createHash('sha256').update(stored.update_blob).digest('hex');
       if (row) row.update_hash = documentHash;
       try {
@@ -674,6 +652,7 @@ export async function drainOutbox(vaultId: string): Promise<void> {
         markOutboxRejected(db, [entry.id], 'El archivo adjunto local no coincide con su hash.');
         continue;
       }
+      if (vault.remote.serverKind==='cloudflare' && stored.data.length>32*1024*1024) { runtime.lastError='El adjunto supera el límite de Cloudflare de 32 MiB.'; return; }
       const blobEndpoint = `${normalizeUrl(vault.remote.url)}/api/v1/spaces/${encodeURIComponent(vault.remote.spaceId)}/blobs/${blobHash}`;
       try {
         const status = await request(`${blobEndpoint}/status`, { headers: { authorization: `Bearer ${token}` } });
@@ -842,6 +821,7 @@ export function startReplicaSync(): void {
 }
 
 export function stopReplicaSync(): void {
+  cancelReplicaImports();
   if (timer) clearInterval(timer);
   if (firstTimer) clearTimeout(firstTimer);
   timer = null;

@@ -1,15 +1,17 @@
 export const API_PREFIX = '/api/v1';
 export const MAX_JSON_BYTES = 8 * 1024 * 1024;
-// A row uses one D1 statement and one FTS statement. Twenty rows plus the
+// A row uses three D1 statements. Fifteen rows plus the
 // authorization/metadata queries remain below the 50-query Free-plan ceiling.
 export const TABLE_CHUNK_ROWS = 15;
 export const TABLE_CHUNK_BYTES = 1024 * 1024;
 export const OBJECT_PART_BYTES = 8 * 1024 * 1024;
 export const MAX_MUTATION_BYTES = 256 * 1024;
 // Authentication and validation consume a handful of D1 statements too. Keeping the
-// mutation page below the Free-plan 50-query invocation ceiling makes the same contract
+// mutation batch below the Free-plan 50-query invocation ceiling (including ownership
+// lookups and writes for private child rows) makes the same contract
 // reliable on both free and paid accounts.
-export const MAX_MUTATION_BATCH = 32;
+export const MAX_MUTATION_BATCH = 3;
+export const MAX_MUTATION_READ_BATCH = 32;
 
 const encoder = new TextEncoder();
 
@@ -94,8 +96,18 @@ export function redirect(location, status = 303) {
 export async function readBody(request, maxBytes = MAX_JSON_BYTES) {
   const announced = Number(request.headers.get('content-length') || 0);
   if (Number.isFinite(announced) && announced > maxBytes) throw new HttpError(413, 'payload_too_large', `The request is larger than ${maxBytes} bytes.`);
-  const bytes = new Uint8Array(await request.arrayBuffer());
-  if (bytes.byteLength > maxBytes) throw new HttpError(413, 'payload_too_large', `The request is larger than ${maxBytes} bytes.`);
+  if (!request.body) return new Uint8Array();
+  const reader = request.body.getReader(); const chunks = []; let total = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) throw new HttpError(413, 'payload_too_large', `The request is larger than ${maxBytes} bytes.`);
+      chunks.push(value);
+    }
+  } catch (error) { await reader.cancel().catch(() => {}); throw error; }
+  const bytes = new Uint8Array(total); let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   return bytes;
 }
 

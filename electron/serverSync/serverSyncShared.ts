@@ -1,3 +1,4 @@
+import { initializeCloudflareGatePersistence } from './cloudflareGatePersistence';
 import Database from 'better-sqlite3';
 import { getSettings } from '../db/settingsRepo';
 import { hasNodusServerTokenFor } from '../secrets/secretStore';
@@ -5,6 +6,7 @@ import { listVaults } from '../vaults/vaultRegistry';
 import type { AppLanguage, AppSettings, VaultSummary } from '@shared/types';
 import type { NodusServerKind } from '@shared/cloudflare';
 import { normalizeUiLanguage } from '@shared/uiLanguage';
+import { serverFetchWithTimeout } from './serverNetwork';
 
 /**
  * What both halves of the Nodus Server conversation need: where the server is, how to ask
@@ -16,7 +18,7 @@ import { normalizeUiLanguage } from '@shared/uiLanguage';
  * be reaching into the other's module for a URL parser.
  */
 
-const REQUEST_TIMEOUT_MS = 60_000;
+initializeCloudflareGatePersistence();
 
 export function normalizeUrl(value: string): string {
   const clean = value.trim().replace(/\/+$/, '');
@@ -29,7 +31,7 @@ export function normalizeUrl(value: string): string {
 }
 
 export async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
-  return fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  return serverFetchWithTimeout(url, init);
 }
 
 // ── Per-vault configuration reads ───────────────────────────────────────────

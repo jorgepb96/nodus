@@ -1,6 +1,9 @@
+import { stageObject } from './objectLifecycle.mjs';
+import { referenceMutationBinary } from './binaries.mjs';
 import {
   HttpError,
   MAX_MUTATION_BATCH,
+  MAX_MUTATION_READ_BATCH,
   MAX_MUTATION_BYTES,
   all,
   clampInteger,
@@ -160,16 +163,16 @@ async function validationContext(env, spaceId, batch) {
     ? mutation.assets.map((asset) => String(asset?.hash || '')).filter(Boolean) : []))];
   let existingAssets = new Set();
   if (assets.length) {
-    const placeholders = assets.map((_, index) => `?${index + 2}`).join(',');
-    const rows = await all(env.DB, `SELECT hash FROM objects WHERE space_id = ?1 AND kind = 'asset' AND hash IN (${placeholders})`, spaceId, ...assets);
+    const rows = await all(env.DB, `SELECT hash FROM objects WHERE space_id = ?1 AND kind = 'asset'
+      AND hash IN (SELECT value FROM json_each(?2))`, spaceId, JSON.stringify(assets));
     existingAssets = new Set(rows.map((row) => row.hash));
   }
   const current = await first(env.DB, 'SELECT active_generation FROM spaces WHERE id = ?1', spaceId);
   const knownColumns = new Map();
   if (current?.active_generation != null) {
     const rows = await all(env.DB, `SELECT table_name, row_json FROM published_rows
-      WHERE space_id = ?1 AND generation = ?2 AND table_name IN (${Object.keys(MUTABLE_TABLES).map((_, index) => `?${index + 3}`).join(',')})
-      GROUP BY table_name`, spaceId, current.active_generation, ...Object.keys(MUTABLE_TABLES));
+      WHERE space_id = ?1 AND generation = ?2 AND table_name IN (SELECT value FROM json_each(?3))
+      GROUP BY table_name`, spaceId, current.active_generation, JSON.stringify(Object.keys(MUTABLE_TABLES)));
     for (const row of rows) knownColumns.set(row.table_name, new Set(Object.keys(safeJsonParse(row.row_json, {}))));
   }
   return { existingAssets, knownColumns };
@@ -180,12 +183,9 @@ export async function postMutations(env, auth, request) {
   const batch = Array.isArray(input.mutations) ? input.mutations : [];
   if (!batch.length) throw new HttpError(400, 'empty_batch', 'Send at least one mutation.');
   if (batch.length > MAX_MUTATION_BATCH) throw new HttpError(413, 'batch_too_large', `Send at most ${MAX_MUTATION_BATCH} mutations per request.`);
-  const pending = await first(env.DB, `SELECT COALESCE(SUM(LENGTH(body_json)), 0) AS bytes FROM mutations
-    WHERE space_id = ?1 AND acknowledged_at IS NULL`, auth.space_id);
-  const incomingBytes = utf8Bytes(JSON.stringify(batch));
-  if (Number(pending?.bytes || 0) + incomingBytes > MAX_LEDGER_BYTES) {
-    throw new HttpError(507, 'ledger_full', 'The owner must open Nodus before more changes can be accepted.', { limitBytes: MAX_LEDGER_BYTES });
-  }
+  const storedIds = new Set((await all(env.DB, `SELECT id FROM mutations WHERE space_id = ?1
+    AND id IN (SELECT value FROM json_each(?2))`, auth.space_id,
+  JSON.stringify(batch.map((mutation) => String(mutation?.id || ''))))).map((row) => row.id));
   const context = await validationContext(env, auth.space_id, batch);
   const accepted = [];
   const duplicate = [];
@@ -193,6 +193,7 @@ export async function postMutations(env, auth, request) {
   const missing = new Set();
   const valid = [];
   for (const mutation of batch) {
+    if (storedIds.has(mutation?.id)) { duplicate.push(mutation.id); continue; }
     const verdict = validateMutation(mutation, context.knownColumns, context.existingAssets);
     if (!verdict.ok) {
       if (verdict.missing) missing.add(verdict.missing);
@@ -202,6 +203,16 @@ export async function postMutations(env, auth, request) {
     valid.push({ mutation, verdict });
   }
   if (missing.size) throw new HttpError(409, 'missing_assets', 'Upload referenced images before their mutations.', { missing: [...missing] });
+  // Overflow bodies have body_json=NULL. Counting only that column made the
+  // advertised 50 MiB limit ineffective for the most expensive mutations.
+  // Use the per-mutation ceiling as a conservative bound for existing R2 bodies.
+  const pending = await first(env.DB, `SELECT COALESCE(SUM(CASE WHEN body_object_key IS NOT NULL
+    THEN ?2 ELSE LENGTH(CAST(body_json AS BLOB)) END), 0) AS bytes FROM mutations
+    WHERE space_id = ?1 AND acknowledged_at IS NULL`, auth.space_id, MAX_MUTATION_BYTES);
+  const incomingBytes = valid.reduce((sum, { verdict }) => sum + verdict.bytes, 0);
+  if (incomingBytes && Number(pending?.bytes || 0) + incomingBytes > MAX_LEDGER_BYTES) {
+    throw new HttpError(507, 'ledger_full', 'The owner must open Nodus before more changes can be accepted.', { limitBytes: MAX_LEDGER_BYTES });
+  }
   const ownershipCache = new Map();
   const pendingPages = new Map();
   const pendingComments = new Map();
@@ -223,6 +234,7 @@ export async function postMutations(env, auth, request) {
   const ownershipCount = await first(env.DB, 'SELECT COUNT(*) AS count FROM private_mutation_ownership WHERE space_id = ?1', auth.space_id);
   let privateOwnershipRows = Number(ownershipCount?.count || 0);
   for (const { mutation, verdict } of valid) {
+    if (storedIds.has(mutation.id)) { duplicate.push(mutation.id); continue; }
     const privateOwners = await privateOwnersForMutation(env, auth, mutation, ownershipCache, pendingPages, pendingComments);
     if (privateOwners.size && !privateOwners.has(String(auth.user_id))) {
       rejected.push({ id: mutation.id, reason: 'private_parent_forbidden' });
@@ -239,34 +251,52 @@ export async function postMutations(env, auth, request) {
       rejected.push({ id: mutation.id, reason: 'private_ownership_capacity' });
       continue;
     }
+    const binary = await referenceMutationBinary(env,auth,mutation,ownerScope);
     const body = JSON.stringify({
       id: String(mutation.id), clientId: String(mutation.clientId || ''), kind: mutation.kind,
       table: verdict.table, key: mutation.key, row: mutation.kind === 'upsert' ? mutation.row : null,
       assets: Array.isArray(mutation.assets) ? mutation.assets : [], schemaVersion: Number(mutation.schemaVersion) || 0,
       createdAt: String(mutation.createdAt || nowIso()), userId: auth.user_id, ownerScope,
+      actorId: String(mutation.actorId || ''), deviceId: String(mutation.deviceId || ''), hlc: String(mutation.hlc || ''),
+      documentHash: mutation.documentHash || null, blobHash: mutation.blobHash || null,
     });
     let bodyJson = body;
     let bodyObjectKey = null;
     if (utf8Bytes(body) > MUTATION_BODY_INLINE_BYTES) {
-      bodyObjectKey = `spaces/${auth.space_id}/mutations/${await sha256Hex(body)}.json`;
+      bodyObjectKey = await stageObject(env, `spaces/${auth.space_id}/mutations/${await sha256Hex(body)}`);
       await env.OBJECTS.put(bodyObjectKey, body, { httpMetadata: { contentType: 'application/json' } });
       bodyJson = null;
     }
-    const result = await run(env.DB, `INSERT OR IGNORE INTO mutations
-      (id, space_id, client_id, user_id, kind, table_name, row_key, body_json, body_object_key, schema_version, created_at)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`,
-    String(mutation.id), auth.space_id, String(mutation.clientId || ''), auth.user_id, mutation.kind, verdict.table,
-    rowKey(mutation.key), bodyJson, bodyObjectKey, Number(mutation.schemaVersion) || 0, String(mutation.createdAt || nowIso()));
+    const insert = env.DB.prepare(`INSERT OR IGNORE INTO mutations
+      (id, space_id, client_id, user_id, kind, table_name, row_key, body_json, body_object_key, schema_version, created_at,body_bytes)
+      SELECT ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11,?12
+      WHERE COALESCE((SELECT bytes FROM mutation_ledger_usage WHERE space_id=?2),0)+?12<=?13`
+    ).bind(String(mutation.id), auth.space_id, String(mutation.clientId || ''), auth.user_id, mutation.kind, verdict.table,
+    rowKey(mutation.key), bodyJson, bodyObjectKey, Number(mutation.schemaVersion) || 0, String(mutation.createdAt || nowIso()),utf8Bytes(body),MAX_LEDGER_BYTES);
+    const results = await env.DB.batch([
+      insert,
+      ...unseen.map(target=>env.DB.prepare(`INSERT OR IGNORE INTO private_mutation_ownership(space_id,namespace,local_key,user_id,created_at)
+        SELECT ?1,?2,?3,?4,?5 WHERE EXISTS(SELECT 1 FROM mutations WHERE id=?6 AND space_id=?1 AND user_id=?4 AND (body_json=?7 OR body_object_key=?8))`)
+        .bind(auth.space_id,target.namespace,target.key,auth.user_id,nowIso(),String(mutation.id),bodyJson,bodyObjectKey)),
+      ...(binary ? [env.DB.prepare(`UPDATE binary_objects SET shared=MAX(shared,?5),referenced_at=?6
+        WHERE space_id=?1 AND kind=?2 AND hash=?3 AND user_id=?4
+        AND EXISTS(SELECT 1 FROM mutations WHERE id=?7 AND space_id=?1 AND user_id=?4 AND (body_json=?8 OR body_object_key=?9))`)
+        .bind(auth.space_id,binary.kind,binary.hash,auth.user_id,binary.shared,nowIso(),String(mutation.id),bodyJson,bodyObjectKey)] : []),
+      ...(bodyObjectKey ? [env.DB.prepare(`DELETE FROM r2_delete_queue WHERE object_key=?1 AND EXISTS(SELECT 1 FROM mutations WHERE body_object_key=?1)`).bind(bodyObjectKey)] : []),
+    ]);
+    const result = results[0];
     if (Number(result?.meta?.changes || 0)) {
       accepted.push(String(mutation.id));
+      storedIds.add(String(mutation.id));
       for (const target of unseen) {
-        await run(env.DB, `INSERT OR IGNORE INTO private_mutation_ownership
-          (space_id, namespace, local_key, user_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5)`,
-        auth.space_id, target.namespace, target.key, auth.user_id, nowIso());
         ownershipCache.get(`${target.namespace}:${target.key}`)?.add(String(auth.user_id));
       }
       privateOwnershipRows += unseen.length;
-    } else duplicate.push(String(mutation.id));
+    } else {
+      const existing=await first(env.DB,'SELECT id FROM mutations WHERE space_id=?1 AND id=?2',auth.space_id,String(mutation.id));
+      if (existing) duplicate.push(String(mutation.id));
+      else throw new HttpError(507,'ledger_capacity','The pending mutation ledger is full; retry after the owner acknowledges changes.');
+    }
   }
   const cursor = accepted.length ? await first(env.DB, 'SELECT MAX(sequence) AS value FROM mutations WHERE space_id = ?1', auth.space_id) : null;
   return { accepted, duplicate, rejected, cursor: cursor?.value == null ? null : Number(cursor.value) };
@@ -282,15 +312,22 @@ async function mutationBody(env, row) {
 
 export async function getMutations(env, auth, request) {
   const url = new URL(request.url);
-  const since = Math.max(0, Number(url.searchParams.get('since') || 0));
-  const limit = clampInteger(url.searchParams.get('limit'), 1, MAX_MUTATION_BATCH, MAX_MUTATION_BATCH);
-  const rows = await all(env.DB, `SELECT * FROM mutations WHERE space_id = ?1 AND sequence > ?2
-    ORDER BY sequence LIMIT ?3`, auth.space_id, since, limit + 1);
+  const relay = url.searchParams.get('relay')==='1';
+  const deviceId = auth.device_id || `oauth:${auth.user_id}`;
+  const saved = relay ? await first(env.DB,'SELECT cursor FROM mutation_relay_cursors WHERE space_id=?1 AND device_id=?2',auth.space_id,deviceId) : null;
+  const requested = Number(url.searchParams.get('since') || 0);
+  if (!Number.isSafeInteger(requested) || requested<0) throw new HttpError(400,'bad_cursor','The cursor is invalid.');
+  // An explicit local cursor allows recovery from an older local backup. A device
+  // checkpoint is the fallback, not permission to skip locally missing changes.
+  const since = url.searchParams.has('since') ? requested : Number(saved?.cursor || 0);
+  const limit = clampInteger(url.searchParams.get('limit'), 1, MAX_MUTATION_READ_BATCH, MAX_MUTATION_READ_BATCH);
+  const rows = await all(env.DB, `SELECT * FROM mutations WHERE space_id = ?1 AND sequence > ?2 AND (?4=1 OR acknowledged_at IS NULL)
+    ORDER BY sequence LIMIT ?3`, auth.space_id, since, limit + 1, relay ? 1 : 0);
   const selected = rows.slice(0, limit);
   const mutations = [];
   for (const row of selected) {
     const body = await mutationBody(env, row);
-    if (!body) continue;
+    if (!body) throw new HttpError(503,'mutation_unavailable','A mutation body is missing; retry without advancing the cursor.');
     const explicitlyPrivate = String(body.ownerScope || '').startsWith('user:');
     const privateEntry = explicitlyPrivate || isUserScopedMutationEntry(body);
     const owner = explicitlyPrivate ? String(body.ownerScope).slice(5) : String(row.user_id || body.userId || '');
@@ -305,13 +342,18 @@ export async function getMutations(env, auth, request) {
 
 export async function ackMutations(env, auth, request) {
   const input = await readJson(request, 64 * 1024);
-  const cursor = Math.max(0, Number(input.cursor || 0));
-  const rows = await all(env.DB, `SELECT sequence, body_object_key FROM mutations
-    WHERE space_id = ?1 AND sequence <= ?2 AND acknowledged_at IS NULL`, auth.space_id, cursor);
-  const objectKeys = rows.map((row) => row.body_object_key).filter(Boolean);
-  if (objectKeys.length) await env.OBJECTS.delete(objectKeys);
-  await run(env.DB, `UPDATE mutations SET acknowledged_at = ?1, body_object_key = NULL
-    WHERE space_id = ?2 AND sequence <= ?3 AND acknowledged_at IS NULL`, nowIso(), auth.space_id, cursor);
+  const cursor = Number(input.cursor || 0);
+  if (!Number.isSafeInteger(cursor) || cursor<0) throw new HttpError(400,'bad_cursor','The cursor is invalid.');
+  const maximum = await first(env.DB,'SELECT COALESCE(MAX(sequence),0) AS cursor FROM mutations WHERE space_id=?1',auth.space_id);
+  if (cursor>Number(maximum.cursor)) throw new HttpError(400,'bad_cursor','The cursor exceeds the ledger.');
+  if (new URL(request.url).searchParams.get('relay')==='1') {
+    await run(env.DB,`INSERT INTO mutation_relay_cursors(space_id,device_id,cursor) VALUES(?1,?2,?3)
+      ON CONFLICT(space_id,device_id) DO UPDATE SET cursor=MAX(cursor,excluded.cursor)`,auth.space_id,auth.device_id || `oauth:${auth.user_id}`,cursor);
+    return {ok:true,cursor};
+  }
+  // Keep acknowledged bodies for replica relay; only bounded retention cleanup
+  // removes them, with R2 deletions durably queued in the same transaction.
+  await run(env.DB,`UPDATE mutations SET acknowledged_at=?1 WHERE space_id=?2 AND sequence<=?3 AND acknowledged_at IS NULL`,nowIso(),auth.space_id,cursor);
   const pending = await first(env.DB, 'SELECT COUNT(*) AS count FROM mutations WHERE space_id = ?1 AND acknowledged_at IS NULL', auth.space_id);
   return { ok: true, cursor, pending: Number(pending?.count || 0) };
 }
@@ -395,6 +437,13 @@ export async function postNodiNotes(env, auth, request) {
 }
 
 export async function cleanupSync(env) {
-  const old = new Date(Date.now() - 30 * 86400_000).toISOString();
-  return run(env.DB, 'DELETE FROM mutations WHERE acknowledged_at IS NOT NULL AND acknowledged_at < ?1', old);
+  const old = nowIso(Date.now()-30*86400_000);
+  return env.DB.batch([
+    env.DB.prepare(`INSERT OR IGNORE INTO r2_delete_queue(object_key,not_before,created_at)
+      SELECT body_object_key,?2,?2 FROM mutations WHERE sequence IN
+      (SELECT sequence FROM mutations WHERE acknowledged_at IS NOT NULL AND acknowledged_at<?1 LIMIT 1000)
+      AND body_object_key IS NOT NULL`).bind(old,nowIso()),
+    env.DB.prepare(`DELETE FROM mutations WHERE sequence IN
+      (SELECT sequence FROM mutations WHERE acknowledged_at IS NOT NULL AND acknowledged_at<?1 LIMIT 1000)`).bind(old),
+  ]);
 }

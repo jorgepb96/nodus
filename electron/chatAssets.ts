@@ -63,7 +63,13 @@ export function storeCapabilityFile(owner: string, input: { bytes: Buffer; mimeT
 }
 export function getCapabilityFile(source: string): { blob: Buffer; mimeType: string; name: string; title: string } | null {
   const match = /^nodus-capability:\/\/chat\/([a-f0-9]{64}\/[a-f0-9-]{36})$/.exec(source); if (!match) return null;
-  try { const metadata = JSON.parse(fs.readFileSync(path.join(root(), `${match[1]}.capability.json`), 'utf8')); return { blob: fs.readFileSync(path.join(root(), `${match[1]}.capability`)), ...metadata }; }
+  try {
+    const file=path.join(root(),`${match[1]}.capability`),meta=path.join(root(),`${match[1]}.capability.json`),stat=fs.lstatSync(file),metaStat=fs.lstatSync(meta);
+    if(!stat.isFile()||stat.isSymbolicLink()||stat.size>64*1024*1024||!metaStat.isFile()||metaStat.isSymbolicLink()||metaStat.size>32*1024)return null;
+    const metadata=JSON.parse(fs.readFileSync(meta,'utf8'));
+    if(typeof metadata.mimeType!=='string'||typeof metadata.name!=='string'||typeof metadata.title!=='string')return null;
+    return {blob:fs.readFileSync(file),mimeType:metadata.mimeType,name:metadata.name,title:metadata.title};
+  }
   catch { return null; }
 }
 /** Remove images dropped by regeneration, message truncation, or history retention.

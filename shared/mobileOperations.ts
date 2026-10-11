@@ -153,6 +153,8 @@ export const MOBILE_OPERATIONS = {
   listStudyAssistantSources: ['study:assistant:sources','corpus'], getMobileStudyChatSourcePack: ['study:assistant:mobileSources','corpus'], getMobileStudyChatCatalogue: ['study:assistant:mobileCatalogue','corpus'], getStudyMaterial: ['study:materials:get','corpus'],
   createStudyFolder: ['study:folder:create','writing'], updateStudyEntity: ['study:entity:update','writing'],
   getMobileStudyChatOriginal: ['study:assistant:mobileOriginal','corpus'],
+  getMobileChatResultArtifact: ['chatHistory:mobileResultArtifact','corpus'],
+  getMobileChatReadResource: ['chatHistory:mobileReadResource','corpus'],
   listStudyAssistantConversations: ['study:assistant:list','corpus'], getStudyAssistantConversation: ['study:assistant:get','corpus'],
   createStudyAssistantConversation: ['study:assistant:create','writing'], updateStudyAssistantConversation: ['study:assistant:update','writing'],
   deleteStudyAssistantConversation: ['study:assistant:delete','writing'], streamStudyAssistant: ['study:assistant:stream','research-generation'],

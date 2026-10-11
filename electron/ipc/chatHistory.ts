@@ -4,6 +4,7 @@ import { databaseChatOrganizer, renameDatabaseChatConversation, setDatabaseChatC
 import { renameWorldChatConversation, setWorldChatConversationArchived, worldChatOrganizer } from '../db/worldChatRepo';
 import * as study from '../ai/studyChatHistory';
 import { updateStudyAssistantConversation } from '../ai/studyAssistant';
+import {getMobileChatResultArtifact,getMobileChatReadResource} from '../desktopBridge/chatResultAssets';
 
 /*
  * The chat-history channels of the Databases, Worldbuilding and Study (Teaching) chats.
@@ -64,6 +65,8 @@ function notebookOrganizer(surface: unknown): typeof databaseChatOrganizer {
 }
 
 export function registerChatHistoryIpc({ h }: IpcContext): void {
+  h('chatHistory:mobileResultArtifact',async (_event,request:unknown,locale?:string)=>getMobileChatResultArtifact(request,locale));
+  h('chatHistory:mobileReadResource',async (_event,request:unknown,locale?:string)=>getMobileChatReadResource(request,locale));
   h('chatHistory:projects:list', async (_e, surface: ChatHistorySurface) => organizer(surface).listProjects());
   h('chatHistory:projects:create', async (_e, surface: ChatHistorySurface, input: { name: string; icon?: string | null; color?: string | null; instructions?: string }) => organizer(surface).createProject(input));
   h('chatHistory:projects:update', async (_e, surface: ChatHistorySurface, id: string, patch: { name?: string; icon?: string | null; color?: string | null; instructions?: string }) => organizer(surface).updateProject(id, patch));

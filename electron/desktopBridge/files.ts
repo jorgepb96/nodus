@@ -11,6 +11,7 @@ import {listGlobalLibraryVaultLinks} from '../library/libraryService';
 import {getLibraryReaderDocument, libraryReaderOriginalPath, libraryReaderAttachmentPath} from '../libraryReader/libraryReaderStore';
 import {registeredAudioClip} from '../audio/audioService';
 import {serveCorpusImage} from './corpusImages';
+import {serveChatCapabilityFile} from './chatResultAssets';
 
 /** Saved narration uses an opaque clip ID and bounded, verified file chunks. */
 async function serveAudioClip(request: IncomingMessage, response: ServerResponse, url: URL,
@@ -144,11 +145,13 @@ export async function serveBridgeFile(request: IncomingMessage, response: Server
   const reader = ['libraryOriginal', 'libraryAttachment'].includes(kind);
   const audio = kind === 'audioClip';
   const image = kind === 'corpusImage';
-  if ((!spec && !reader && !audio && !image) || !domains.includes(reader || audio || image ? 'corpus' : spec.domain)) { json(403, { error: 'permission_denied' }); return; }
+  const chat = kind === 'chatCapability';
+  if ((!spec && !reader && !audio && !image && !chat) || !domains.includes(reader || audio || image || chat ? 'corpus' : spec.domain)) { json(403, { error: 'permission_denied' }); return; }
   if (!['descriptor', 'content'].includes(action)) { json(404, { error: 'not_found' }); return; }
   if (reader) { await serveReaderFile(request, response, url, vaultId, kind, id, action); return; }
   if (audio) { await serveAudioClip(request, response, url, vaultId, domains, id, action); return; }
   if (image) { await serveCorpusImage(request,response,url,vaultId,domains,id,action); return; }
+  if (chat) { await serveChatCapabilityFile(request,response,url,vaultId,domains,id,action); return; }
   await withVaultDatabase(vaultId, async () => {
     const db = getDb();
     const deleted = 'deleted' in spec ? ` AND ${spec.deleted} IS NULL` : '';

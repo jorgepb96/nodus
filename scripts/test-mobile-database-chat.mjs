@@ -36,6 +36,12 @@ try {
     assert.throws(()=>portable.prepareDatabaseChat({...input,packs:[altered]}),/source_pack/);
     const old=structuredClone(pack);delete old.databases[0].chat;
     const core=require('../shared/databaseResearchEngine.ts'),packs=require('../shared/mobileDatabaseResearch.ts');
+    const newer=structuredClone(pack),older=structuredClone(pack);
+    newer.capturedAt='2026-10-10T12:00:00.000Z';older.capturedAt='2026-10-09T12:00:00.000Z';
+    newer.databases[0].database.name=newer.databases[0].chat.name='Newest selected capture';older.databases[0].database.name=older.databases[0].chat.name='Older selected capture';
+    newer.id=core.sha256Snapshot(packs.databaseSourcePackPayload(newer));older.id=core.sha256Snapshot(packs.databaseSourcePackPayload(older));
+    assert.deepEqual(portable.prepareDatabaseChat({...input,packs:[newer,older]}),portable.prepareDatabaseChat({...input,packs:[older,newer]}),'Overlapping selected copies always retain the newest full profile');
+    assert(portable.prepareDatabaseChat({...input,packs:[newer,older]}).user.includes('Newest selected capture'));
     old.id=core.sha256Snapshot(packs.databaseSourcePackPayload(old));
     assert.throws(()=>portable.prepareDatabaseChat({...input,packs:[old]}),/perfil completo/);
     const id=randomUUID(),edit={version:1,id:randomUUID(),conversationId:id,expectedRevision:null,action:'save',draft:{title:'Chat móvil numérico',archived:false,messages:[{role:'user',content:'Métrica completa'}],databaseIds:[source.id]},companion:null};

@@ -15,10 +15,13 @@ export {prepareWorldChat,validateMobileWorldChatSourcePack,validateMobileWorldCh
 export function prepareDatabaseChat(input:{packs:MobileDatabaseSourcePack[];databaseIds:string[];question:string;history:DbChatTurn[];language:PromptLanguage;vaultId:string}) {
   if(!input.packs.length||!input.databaseIds.length||input.databaseIds.length>30||new Set(input.databaseIds).size!==input.databaseIds.length||!input.question.trim())throw new Error('invalid_database_chat_request');
   const sources=new Map<string,DatabaseChatSource>();
+  const captureTimes=new Map<string,number>();
   for(const pack of input.packs) {
     validateMobileDatabaseSourcePack(pack);
     if(pack.vaultId!==input.vaultId)throw new Error('database_chat_vault_mismatch');
-    for(const source of pack.databases)if(source.chat)sources.set(source.database.id,source.chat);
+    for(const source of pack.databases)if(source.chat&&(!captureTimes.has(source.database.id)||Date.parse(pack.capturedAt)>captureTimes.get(source.database.id)!)) {
+      sources.set(source.database.id,source.chat);captureTimes.set(source.database.id,Date.parse(pack.capturedAt));
+    }
   }
   const selected=input.databaseIds.map(id=>{
     const source=sources.get(id);if(!source)throw new Error('Descarga de nuevo la base seleccionada: esta copia no incluye su perfil completo de chat.');return source;

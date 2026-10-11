@@ -61,6 +61,15 @@ function rawConversation(kind: MobileChatKind,id: string): Record<string,unknown
   const value = kind === 'research' ? research.getConversation(id) : kind === 'world' ? world.getWorldChatConversation(id) : kind === 'database' ? database.getDatabaseChatConversation(id) : getStudyAssistantConversation(id);
   return value ? value as unknown as Record<string,unknown> : null;
 }
+export function mobileChatAssetOwner(kind:string,id:string,domains:readonly string[]) {
+  assertKind(kind);
+  if(!domains.includes('corpus')||!identity(id))throw new MobileChatFailure(403,'permission_denied');
+  const data=rawConversation(kind,id);if(!data)throw new MobileChatFailure(404,'chat_unavailable');
+  const protectedRecording=kind==='study'&&Array.isArray(data.messages)&&data.messages.some(message=>object(message)&&(String(message.content).includes('nodus://study/recording/')||Array.isArray(message.citations)&&message.citations.some(citation=>object(citation)&&citation.kind==='transcript')));
+  if(protectedRecording&&!domains.includes('study-recordings'))throw new MobileChatFailure(403,'permission_denied');
+  const surface={research:'assistant',world:'world-assistant',database:'database',study:'study'}[kind];
+  return {owner:chatAssetOwner(surface,id,getActiveVault().id),data,requiredDomains:['corpus',...(protectedRecording?['study-recordings']:[])]};
+}
 function snapshot(kind: MobileChatKind,id: string,store?: StudyAssistantStore): MobileChatDocument {
   const data = rawConversation(kind,id);
   if (!data) throw new MobileChatFailure(404,'chat_unavailable');
@@ -75,6 +84,7 @@ function snapshot(kind: MobileChatKind,id: string,store?: StudyAssistantStore): 
 export async function readMobileChat(vaultId: string,kind: string,id: string,domains: readonly string[]) {
   return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
     assertKind(kind);if (!id || id.length > 256) throw new MobileChatFailure(400,'invalid_chat');
+    mobileChatAssetOwner(kind,id,domains);
     const result = snapshot(kind,id);
     if (Buffer.byteLength(JSON.stringify(result),'utf8') > MOBILE_CHAT_MAX_BYTES) throw new MobileChatFailure(413,'chat_too_large');
     return result;

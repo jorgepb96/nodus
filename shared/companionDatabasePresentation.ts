@@ -190,7 +190,7 @@ function temporal(source:CompanionDatabasePresentationSource,input:DatabaseTempo
   }
   events.sort(order);return {events,revision:source.revision,truncated,sourceRowsScanned:Math.min(candidates.length,sourceLimit),windowStart:input.windowStart,windowEnd:input.windowEnd};
 }
-async function rows(source:CompanionDatabasePresentationSource,input:DatabaseRowQuery){
+async function rows(source:CompanionDatabasePresentationSource,input:DatabaseRowQuery,all=false){
   const view=input.viewId?source.views.find(view=>view.id===input.viewId):null;if(input.viewId&&!view)throw new Error('La vista guardada ya no existe.');
   const filter=input.filter===undefined?view?.config.filter:input.filter,sorts=input.sorts??view?.config.sorts??[];
   const identity={databaseId:source.databaseId,revision:source.revision,localRevision:source.localRevision??null,filter:filter??null,sorts,groups:input.groups??view?.config.groups??[],rowSort:input.rowSort??'position'};
@@ -199,7 +199,7 @@ async function rows(source:CompanionDatabasePresentationSource,input:DatabaseRow
   const condition=filter?.type==='condition'?filter:filter?.type==='group'&&filter.operator==='and'&&filter.children.length===1&&filter.children[0].type==='condition'?filter.children[0]:null;
   const fast=condition&&source.columns.find(column=>column.id===condition.columnId)?.type==='number'&&['equals','notEquals','gt','gte','lt','lte'].includes(condition.op)&&Number.isFinite(Number(condition.value))&&identity.groups.length===0&&rules.length===1&&rules[0].columnId===condition.columnId;
   const ordered=sqliteRowsOrder(source,filtered(source,filter),rules,input.rowSort,Boolean(fast));
-  const maximum=limit(input.limit,500);let offset=0;
+  const maximum=all?ordered.length:limit(input.limit,500);let offset=0;
   if(input.cursor){let decoded:any;try{decoded=JSON.parse(atob(input.cursor));}catch{throw new Error('Cursor descargado no válido.');}if(decoded.v!==1||decoded.queryHash!==queryHash||!Number.isSafeInteger(decoded.offset)||decoded.offset<0||decoded.offset>ordered.length)throw new Error('La consulta descargada ha cambiado.');offset=decoded.offset;}
   if(input.direction==='backward')offset=Math.max(0,offset-maximum);
   const cursor=(offset:number)=>btoa(JSON.stringify({v:1,queryHash,offset}));
@@ -222,6 +222,7 @@ export async function queryCompanionDatabasePresentation(source:CompanionDatabas
   switch(action){
     case 'metadata':return {database:source.database,columns:source.columns,views:source.views,revision:source.revision,columnRevisions:source.columnRevisions??{}};
     case 'rows':return rows(source,input as DatabaseRowQuery);
+    case 'allRows':return rows(source,input as DatabaseRowQuery,true);
     case 'chart':return chart(source,input as DatabaseChartQuery);
     case 'map':return map(source,input as DatabaseMapQuery);
     case 'feed':return feed(source,input as DatabaseFeedQuery);

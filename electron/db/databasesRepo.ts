@@ -101,6 +101,7 @@ import {
   DATABASE_CONTAINER_CURSOR_VERSION,
   automaticDatabaseSourcePropertyMap,
   clampDatabaseContainerLimit,
+  combinedDatabaseContainerFilter,
   type AttachDatabaseViewSourceInput,
   type DatabaseContainerDefinition,
   type DatabaseContainerProperty,
@@ -3401,37 +3402,6 @@ export function getDatabaseContainer(viewId: string, readOnly = false): Database
     sources, properties: [...properties.values()] };
 }
 
-type FilterTranslation = { kind: 'true' } | { kind: 'false' } | { kind: 'node'; node: FilterNode };
-
-function translateContainerFilter(node: FilterNode | null | undefined, source: DatabaseViewDataSource,
-  primaryInverse: Map<string, string>): FilterTranslation {
-  if (!node) return { kind: 'true' };
-  if (node.type === 'condition') {
-    const canonical = source.propertyMap[node.columnId] ? node.columnId : primaryInverse.get(node.columnId) ?? node.columnId;
-    const columnId = source.propertyMap[canonical];
-    return columnId ? { kind: 'node', node: { ...node, columnId } } : { kind: 'false' };
-  }
-  const children = node.children.map((child) => translateContainerFilter(child, source, primaryInverse));
-  if (node.operator === 'and') {
-    if (children.some((child) => child.kind === 'false')) return { kind: 'false' };
-    const nodes = children.flatMap((child) => child.kind === 'node' ? [child.node] : []);
-    return nodes.length ? { kind: 'node', node: { type: 'group', operator: 'and', children: nodes } } : { kind: 'true' };
-  }
-  if (children.some((child) => child.kind === 'true')) return { kind: 'true' };
-  const nodes = children.flatMap((child) => child.kind === 'node' ? [child.node] : []);
-  return nodes.length ? { kind: 'node', node: { type: 'group', operator: 'or', children: nodes } } : { kind: 'false' };
-}
-
-function combinedSourceFilter(viewFilter: FilterNode | null, localFilter: FilterNode | null | undefined,
-  source: DatabaseViewDataSource, primaryInverse: Map<string, string>): FilterTranslation {
-  const view = translateContainerFilter(viewFilter, source, primaryInverse);
-  const local = translateContainerFilter(localFilter, source, primaryInverse);
-  if (view.kind === 'false' || local.kind === 'false') return { kind: 'false' };
-  const nodes = [view, local].flatMap((entry) => entry.kind === 'node' ? [entry.node] : []);
-  return nodes.length === 0 ? { kind: 'true' } : nodes.length === 1 ? { kind: 'node', node: nodes[0] }
-    : { kind: 'node', node: { type: 'group', operator: 'and', children: nodes } };
-}
-
 interface ContainerCursor { v: 1; queryHash: string; revision: string; sourceIndex: number; innerCursor: string | null }
 function encodeContainerCursor(cursor: ContainerCursor): string { return Buffer.from(JSON.stringify(cursor)).toString('base64url'); }
 function decodeContainerCursor(value: string): ContainerCursor {
@@ -3470,7 +3440,7 @@ export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery, {re
   if (cursor && cursor.queryHash !== queryHashValue) throw new Error('El cursor pertenece a otra consulta de contenedor.');
   if (cursor && cursor.revision !== revision) throw new Error('Las fuentes cambiaron; reinicia la paginación del contenedor.');
   const limit = clampDatabaseContainerLimit(input.limit); const translations = sources.map((source) => ({ source,
-    filter: combinedSourceFilter(view.config.filter, input.localFilter, source, primaryInverse) }));
+    filter: combinedDatabaseContainerFilter(view.config.filter, input.localFilter, source, primaryInverse) }));
   let totalCount = 0;
   for (const entry of translations) if (entry.filter.kind !== 'false') totalCount += queryDatabaseRows({ databaseId: entry.source.databaseId,
     filter: entry.filter.kind === 'node' ? entry.filter.node : null, limit: 1 },{readOnly}).totalCount;

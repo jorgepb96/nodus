@@ -17,6 +17,7 @@ try{
   const vaults=require('../electron/vaults/vaultRegistry.ts'),vault=vaults.createVault('Vistas móviles aisladas','databases');
   const repo=require('../electron/db/databasesRepo.ts'),{mobileDatabasePresentationRead}=require('../electron/desktopBridge/databasePresentation.ts');
   const {queryCompanionDatabasePresentation}=require('../shared/companionDatabasePresentation.ts'),{defaultDatabaseViewConfig}=require('../shared/databaseViewConfig.ts');
+  const {queryCompanionDatabaseContainer}=require('../shared/companionDatabaseContainer.ts');
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
     const db=repo.createDatabase('Consultas completas'),title=repo.createColumn(db.id,'Título','title'),group=repo.createColumn(db.id,'Grupo','text'),amount=repo.createColumn(db.id,'Cantidad','number');
     const place=repo.createColumn(db.id,'Ubicación','location'),date=repo.createColumn(db.id,'Fecha','date'),dependency=repo.createColumn(db.id,'Depende de','relation',{relationTargetKind:'db_row',relationTargetDatabaseId:db.id});
@@ -65,6 +66,55 @@ try{
     const before=database.getDb().prepare('SELECT count(*) AS n FROM db_rows').get().n;
     for(const [action,input] of queries)read(action,input);
     assert.equal(database.getDb().prepare('SELECT count(*) AS n FROM db_rows').get().n,before);
+    const linked=repo.createDatabase('Fuente enlazada'),linkedTitle=repo.createColumn(linked.id,'Nombre','title'),linkedGroup=repo.createColumn(linked.id,'Categoría','text'),linkedAmount=repo.createColumn(linked.id,'Valor','number');
+    for(let index=0;index<37;index++){
+      const row=repo.createRow(linked.id,`drow_linked_${index}`);
+      repo.setCell(row.id,linkedTitle.id,`Enlazado ${index}`);repo.setCell(row.id,linkedGroup.id,index%2?'B':'A');repo.setCell(row.id,linkedAmount.id,String(36-index));
+    }
+    const partial=repo.createDatabase('Fuente sin categoría'),partialTitle=repo.createColumn(partial.id,'Título','title');
+    for(let index=0;index<2;index++){const row=repo.createRow(partial.id,`drow_partial_${index}`);repo.setCell(row.id,partialTitle.id,`Otra ${index}`);}
+    let saved=repo.createView(db.id,{name:'Contenedor completo',layout:'board',filter:{conjunction:'and',conditions:[]},sorts:[],config:defaultDatabaseViewConfig('board')});
+    repo.attachDatabaseViewSource(saved.id,linked.id,{alias:'Fuente enlazada',propertyMap:{title:linkedTitle.id,text:linkedGroup.id,number:linkedAmount.id}});
+    repo.attachDatabaseViewSource(saved.id,partial.id,{alias:'Fuente sin categoría',propertyMap:{title:partialTitle.id}});
+    const capture=id=>{
+      const get=(action,input)=>mobileDatabasePresentationRead(vault.id,{action,input:{databaseId:id,...input}}).data;
+      const copy={version:1,vaultId:vault.id,databaseId:id,...get('metadata',{}),rows:[],pages:{},dependencies:{}};
+      let cursor=null;do{const page=get('sourceRows',{cursor,limit:200});copy.rows.push(...page.rows);Object.assign(copy.pages,page.pages);Object.assign(copy.dependencies,page.dependencies);cursor=page.nextCursor;}while(cursor);
+      return copy;
+    };
+    const canonical=(sourceId=null,localFilter=null)=>{
+      let cursor=null;const all=[];
+      do{const page=repo.queryDatabaseContainerRows({viewId:saved.id,sourceId,localFilter,cursor,limit:30},{readOnly:true});all.push(...page.rows);cursor=page.nextCursor;}while(cursor);
+      return all;
+    };
+    const category={type:'condition',columnId:group.id,op:'equals',value:'A'},titleFilter={type:'condition',columnId:title.id,op:'contains',value:'Otra'};
+    for(const filter of [null,category,{type:'group',operator:'and',children:[category,titleFilter]},{type:'group',operator:'or',children:[category,titleFilter]}]){
+      saved=repo.updateView(saved.id,{config:{...saved.config,filter,sorts:[{columnId:amount.id,dir:'desc'}]}});
+      const definition=repo.getDatabaseContainer(saved.id,true),sources=Object.fromEntries([db.id,linked.id,partial.id].map(id=>[id,capture(id)]));
+      const input={version:1,vaultId:vault.id,viewId:saved.id,definition,sources};
+      for(const sourceId of [null,definition.sources[1].sourceId]){
+        const actual=canonical(sourceId),offline=await queryCompanionDatabaseContainer({...input,sourceId});
+        assert.deepEqual(offline.rows,actual,`complete mapped query ${JSON.stringify(filter)} / ${sourceId}`);
+        if(!filter&&!sourceId)assert.equal(offline.rows.length,562,'All sources survive more than 500 rows');
+      }
+      assert.deepEqual((await queryCompanionDatabaseContainer({...input,localFilter:category})).rows,canonical(null,category));
+      await assert.rejects(()=>queryCompanionDatabaseContainer({...input,sources:{[db.id]:sources[db.id]}}),/Falta una fuente vinculada/);
+      await assert.rejects(()=>queryCompanionDatabaseContainer({...input,sources:{...sources,[linked.id]:{...sources[linked.id],vaultId:'foreign'}}}),/Falta una fuente vinculada/);
+      await assert.rejects(()=>queryCompanionDatabaseContainer({...input,sourceId:'not-attached'}),/fuente no pertenece/);
+    }
+    saved=repo.updateView(saved.id,{config:{...saved.config,filter:category,sorts:[{columnId:amount.id,dir:'desc'}]}});
+    const definition=repo.getDatabaseContainer(saved.id,true),copies=Object.fromEntries([db.id,linked.id,partial.id].map(id=>[id,capture(id)]));
+    const originalCopy=JSON.stringify(copies[db.id]);
+    const edited=structuredClone(copies);edited[db.id].localChanges=true;edited[db.id].localRevision='actual-pending-edits';
+    edited[db.id].rows.find(row=>row.id===rows[2]).cells[group.id]='B';
+    repo.setCell(rows[2],group.id,'B');
+    const created=repo.createRow(db.id,'drow_created_offline');repo.setCell(created.id,title.id,'Nuevo local');repo.setCell(created.id,group.id,'A');repo.setCell(created.id,amount.id,'999');
+    edited[db.id].rows.push(capture(db.id).rows.find(row=>row.id===created.id));
+    const offline=await queryCompanionDatabaseContainer({version:1,vaultId:vault.id,viewId:saved.id,definition,sources:edited});
+    const content=rows=>rows.map(({id,cells,databaseId,rowId})=>({id,cells,databaseId,rowId}));
+    assert.deepEqual(content(offline.rows),content(canonical()),'Pending cells remove a filtered row; local creation is sorted into its actual group');
+    assert.equal(offline.rows[0].rowId,created.id);assert.equal(JSON.stringify(copies[db.id]),originalCopy,'Queries do not mutate the retained copy');
+    await assert.rejects(()=>queryCompanionDatabaseContainer({version:1,vaultId:vault.id,viewId:saved.id,definition:{...definition,revision:definition.revision+1},sources:copies}),/vista cambió/);
   }));
   console.log('Prepared database presentation contract: real queries, complete selected data, portable projections, filters, cursors and typed boundary.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

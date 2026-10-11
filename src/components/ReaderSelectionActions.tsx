@@ -34,7 +34,7 @@ interface ReaderMark {
   text: string;
 }
 
-interface ReaderAnchor {
+export interface ReaderAnchor {
   startOffset: number;
   endOffset: number;
   selectedText: string;
@@ -178,7 +178,7 @@ interface ReaderTextIndex {
 
 const READER_TEXT_INDICES = new WeakMap<HTMLElement, ReaderTextIndex>();
 
-function readerTextIndex(root: HTMLElement): ReaderTextIndex {
+export function readerTextIndex(root: HTMLElement): ReaderTextIndex {
   const cached = READER_TEXT_INDICES.get(root);
   if (cached) return cached;
   const nodes = textNodes(root);
@@ -216,7 +216,7 @@ function nodeIndexAtOffset(index: ReaderTextIndex, value: number): number {
   return result;
 }
 
-function rangeFromOffsets(
+export function rangeFromOffsets(
   root: HTMLElement,
   start: number,
   end: number,
@@ -246,7 +246,7 @@ function rangeFromOffsets(
   return range;
 }
 
-function findAnchoredText(
+export function findAnchoredText(
   root: HTMLElement,
   anchor: ReaderAnchor,
 ): Range | null {
@@ -364,7 +364,7 @@ function selectionOffsets(
   };
 }
 
-function anchorFromRange(
+export function anchorFromRange(
   root: HTMLElement,
   range: Range,
   selectedText: string,
@@ -378,6 +378,11 @@ function anchorFromRange(
     prefix: content.slice(Math.max(0, start - 64), start),
     suffix: content.slice(end, end + 64),
   };
+}
+
+/** Embedded readers use the same index and anchor contract as Desktop. */
+export function invalidateReaderTextIndex(root: HTMLElement): void {
+  READER_TEXT_INDICES.delete(root);
 }
 
 function wordAtPoint(event: MouseEvent, root: HTMLElement): Range | null {

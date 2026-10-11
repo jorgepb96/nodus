@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buildServerSnapshot, type BuiltSnapshot } from '../serverSync/serverSnapshot';
+import { mobileConsultationSnapshot } from '../../shared/mobileConsultationSnapshot';
 import { getDb, withVaultDatabase } from '../db/database';
 import { getVault } from '../vaults/vaultRegistry';
 import { statSync } from 'node:fs';
@@ -110,8 +111,13 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
     res.writeHead(result.status, { 'content-type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(result.body)); return;
   }
   if (segments[0] === 'snapshot') {
+    const projection = url.searchParams.get('projection');
+    if (projection !== null && projection !== 'dictionary' && projection !== 'sources') {
+      res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'invalid_snapshot_projection' })); return;
+    }
     res.writeHead(200, { 'content-type': 'application/vnd.nodus.snapshot+json' });
-    res.end(req.method === 'HEAD' ? undefined : built.buffer); return;
+    res.end(req.method === 'HEAD' ? undefined : projection
+      ? JSON.stringify(mobileConsultationSnapshot(cached.document as Record<string, unknown>, projection)) : built.buffer); return;
   }
   // The server owns this binary route separately from createCorpusRoutes.
   // Live HTTPS must expose the same explicitly published image hashes.

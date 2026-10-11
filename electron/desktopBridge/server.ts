@@ -15,7 +15,7 @@ import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
-import {validateCompanionSpaceAction,companionActionKey,companionActionResponse} from './spaceActions';
+import {validateCompanionSpaceAction,validateCompanionActionJob,companionActionKey,companionActionResponse} from './spaceActions';
 import {listMobileChats,readMobileChat,saveMobileChat,MobileChatFailure} from './chatHistory';
 import {MOBILE_CHAT_MAX_BYTES} from '../../shared/mobileChatHistory';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
@@ -210,7 +210,7 @@ function jobStore(): BridgeJobStore {
 }
 function jobResponse(job: BridgeJob, cursor = 0): unknown {
   return { id: job.id, vaultId: job.vaultId, method: job.method, state: job.state,
-    createdAt: job.createdAt, updatedAt: job.updatedAt, nextSequence: job.nextSequence,
+    createdAt: job.createdAt, updatedAt: job.updatedAt, actionSequence: job.actionSequence, nextSequence: job.nextSequence,
     events: job.events.filter(event => event.sequence > cursor), result: job.result ?? null, error: job.error ?? null };
 }
 
@@ -420,7 +420,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
         const method = String(input.method || ''); authorizeMobileOperation(pairing.domains, method);
         if(method!=='streamMobileCompanionChat'&&Buffer.byteLength(JSON.stringify(input),'utf8')>4*1024*1024)throw new Error('request_too_large');
         if (!MOBILE_JOB_OPERATIONS.has(method) || !Array.isArray(input.args) || input.args.length > 12) throw new Error('invalid_job');
-        if(method==='runMobileSpaceAction'){if(input.args.length!==1)throw new Error('invalid_space_action');validateCompanionSpaceAction(input.args[0],pairing.domains);}
+        if(method==='runMobileSpaceAction')validateCompanionActionJob(input.args,pairing.domains,input.idempotencyKey);
         const job = jobStore().submit({ deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') });
         reply(response, 202, { job: jobResponse(job) }); return;
       }

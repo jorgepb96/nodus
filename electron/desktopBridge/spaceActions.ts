@@ -24,6 +24,12 @@ export function validateCompanionSpaceAction(raw:unknown,domains:readonly string
   return value;
 }
 export function companionActionKey(key:string){return createHash('sha256').update(`companion-action:${key}`).digest('hex');}
+export function validateCompanionActionJob(args:unknown[],domains:readonly string[],key:unknown){
+  if(args.length!==1)throw new Error('invalid_space_action');
+  const action=validateCompanionSpaceAction(args[0],domains);
+  if(key!==companionActionKey(action.idempotencyKey))throw new Error('invalid_space_action_identity');
+  return action;
+}
 export function companionActionResponse(job:BridgeJob){
   const action=job.args[0] as CompanionSpaceAction;
   return {id:job.id,sequence:job.actionSequence??0,spaceId:job.vaultId,idempotencyKey:action.idempotencyKey,kind:action.kind,schemaVersion:1,payload:action.payload,actorUserId:job.deviceGrant,createdByDevice:job.deviceGrant,inputRevision:action.inputRevision??null,inputFingerprint:action.inputFingerprint??null,

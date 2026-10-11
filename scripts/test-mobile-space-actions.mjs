@@ -22,6 +22,10 @@ try{
   assert.throws(()=>actions.validateCompanionSpaceAction({...action('author.synthesis.generate'),executionMode:'live'},['corpus','writing']),/permission_denied/);
   assert.equal(actions.validateCompanionSpaceAction({...action('author.synthesis.generate'),executionMode:'live'},domains).executionMode,'live');
   assert.equal(actions.validateCompanionSpaceAction(action('pages.restoreRevision'),['corpus','writing']).kind,'pages.restoreRevision');
+  const identityAction=action('pages.restoreRevision');
+  assert.equal(actions.validateCompanionActionJob([identityAction],domains,actions.companionActionKey(identityAction.idempotencyKey)),identityAction);
+  assert.throws(()=>actions.validateCompanionActionJob([identityAction],domains,randomUUID()),/invalid_space_action_identity/);
+  assert.throws(()=>actions.validateCompanionActionJob([identityAction,identityAction],domains,actions.companionActionKey(identityAction.idempotencyKey)),/invalid_space_action/);
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
     const original=pages.createPage({title:'Historia',blocks:[{id:'original',type:'paragraph',content:{text:'Contenido original'}}]});
     const changed=pages.savePageDocument({pageId:original.page.id,expectedRevision:original.revision,blocks:[{id:'original',type:'paragraph',content:{text:'Contenido posterior'}}]});assert.equal(changed.ok,true);

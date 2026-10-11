@@ -1,5 +1,6 @@
 /** Closed operation vocabulary. Browser, tools, extraction and indexers have no mobile route. */
 export const MOBILE_OPERATIONS = {
+  runMobileSpaceAction:['mobile:space:action','writing'],
   getWork: ['works:get', 'corpus'],
   getThemes: ['graph:themes', 'corpus'],
   getIdeasByWork: ['works:ideasByWork', 'corpus'],
@@ -178,6 +179,7 @@ export const MOBILE_OPERATIONS = {
 } as const;
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
+  'runMobileSpaceAction',
   'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
   'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',

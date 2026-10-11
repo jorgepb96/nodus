@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {randomUUID} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-space-actions'))process.exit(0);
+const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-actions-'));
+const runtime=installRuntimeHooks(directory);runtime.app.on=()=>{};runtime.app.once=()=>{};
+const require=createRequire(import.meta.url),fetch=globalThis.fetch;let database,calls=0;
+globalThis.fetch=async()=>{calls++;throw new Error('These writing actions must not invoke a provider or cloud relay');};
+try{
+  database=require('../electron/db/database.ts');database.getDb();const vaults=require('../electron/vaults/vaultRegistry.ts'),vault=vaults.createVault('Acciones companion aisladas','databases');
+  const actions=require('../electron/desktopBridge/spaceActions.ts'),pages=require('../electron/db/pagesRepo.ts'),{BridgeJobStore}=require('../electron/desktopBridge/jobs.ts');
+  const domains=['corpus','writing','research-generation'];
+  const action=(kind,payload={})=>({kind,schemaVersion:1,payload,idempotencyKey:`fixture:${randomUUID()}`,inputRevision:null,inputFingerprint:null});
+  for(const kind of ['toolkit.desktopRun','academic.recompute','library.importToSpace','pages.automationRun'])assert.throws(()=>actions.validateCompanionSpaceAction(action(kind),domains),/desktop_only_action/);
+  assert.throws(()=>actions.validateCompanionSpaceAction(action('author.synthesis.generate'),domains),/explicit_live_mode_required/);
+  assert.throws(()=>actions.validateCompanionSpaceAction({...action('author.synthesis.generate'),executionMode:'autonomous'},domains),/explicit_live_mode_required/);
+  assert.throws(()=>actions.validateCompanionSpaceAction({...action('author.synthesis.generate'),executionMode:'live'},['corpus','writing']),/permission_denied/);
+  assert.equal(actions.validateCompanionSpaceAction({...action('author.synthesis.generate'),executionMode:'live'},domains).executionMode,'live');
+  assert.equal(actions.validateCompanionSpaceAction(action('pages.restoreRevision'),['corpus','writing']).kind,'pages.restoreRevision');
+  await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
+    const original=pages.createPage({title:'Historia',blocks:[{id:'original',type:'paragraph',content:{text:'Contenido original'}}]});
+    const changed=pages.savePageDocument({pageId:original.page.id,expectedRevision:original.revision,blocks:[{id:'original',type:'paragraph',content:{text:'Contenido posterior'}}]});assert.equal(changed.ok,true);
+    const restored=await actions.runCompanionSpaceAction(vault.id,domains,action('pages.restoreRevision',{pageId:original.page.id,revision:1}),randomUUID());
+    assert.equal(restored.pageId,original.page.id);assert.equal(pages.getPageDocument(original.page.id).blocks[0].content.text,'Contenido original');
+    const cancelled=new AbortController();cancelled.abort();
+    await assert.rejects(()=>actions.runCompanionSpaceAction(vault.id,domains,action('hypothesis.saveToNotes',{title:'No guardar',markdown:'Cancelado'}),randomUUID(),cancelled.signal));
+    const request=action('hypothesis.saveToNotes',{title:'Desde el companion',markdown:'Nota literal'}),before=database.getDb().prepare('SELECT COUNT(*) AS n FROM notes').get().n;
+    const store=new BridgeJobStore(path.join(directory,'jobs'),job=>actions.runCompanionSpaceAction(job.vaultId,job.domains,job.args[0],job.id));
+    const input={deviceGrant:'grant',vaultId:vault.id,domains,method:'runMobileSpaceAction',args:[request],idempotencyKey:actions.companionActionKey(request.idempotencyKey)};
+    const job=store.submit(input),duplicate=store.submit(input);assert.equal(duplicate.id,job.id);assert.equal(job.actionSequence,1);
+    for(let n=0;n<200&&!['available','failed'].includes(job.state);n++)await new Promise(resolve=>setTimeout(resolve,10));
+    assert.equal(job.state,'available',job.error);assert.equal(database.getDb().prepare('SELECT COUNT(*) AS n FROM notes').get().n,before+1);
+    const dto=actions.companionActionResponse(job);assert.equal(dto.status,'applied');assert.equal(dto.spaceId,vault.id);assert.equal(dto.sequence,1);assert(dto.result.noteId);
+    assert.equal(store.get(job.id,'other-grant',vault.id),undefined);assert.equal(store.get(job.id,'grant','other-vault'),undefined);
+    assert.throws(()=>store.submit({...input,args:[{...request,payload:{title:'Cambio',markdown:'No duplicar'}}]}),/idempotency_conflict/);
+    const reopened=new BridgeJobStore(path.join(directory,'jobs'),async()=>{throw new Error('A saved action must not execute again');});assert.equal(reopened.get(job.id,'grant',vault.id).state,'available');
+  }));
+  assert.equal(calls,0);console.log('Actual direct page restoration, durable note actions, explicit live AI scope, cancellation, receipts and desktop-only exclusions: PASS');
+}finally{globalThis.fetch=fetch;database?.closeDb();runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

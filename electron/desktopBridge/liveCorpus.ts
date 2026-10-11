@@ -30,6 +30,12 @@ function databaseStamp(file: string): string {
 }
 export function invalidateLiveCorpus(vaultId: string): void { snapshots.delete(vaultId); invalidateLiveLibrary(vaultId); }
 
+export async function liveCorpusRevision(vaultId:string):Promise<string>{
+  const vault=getVault(vaultId);if(!vault)throw new Error('vault_not_found');
+  const built=await withVaultDatabase(vaultId,()=>buildServerSnapshot(vault,{nodusServerIncludePassages:true,nodusServerIncludeUserContent:true,nodusServerIncludePrimarySources:false,nodusServerIncludeTestimonies:false},getDb()));
+  return built.revision;
+}
+
 export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[], input?: Record<string, unknown>, domains: readonly string[] = []): Promise<void> {
   const vault = getVault(vaultId);
   if (!vault) { res.writeHead(404); res.end(); return; }

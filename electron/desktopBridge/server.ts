@@ -15,6 +15,7 @@ import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
+import {validateCompanionSpaceAction,companionActionKey,companionActionResponse} from './spaceActions';
 import {listMobileChats,readMobileChat,saveMobileChat,MobileChatFailure} from './chatHistory';
 import {MOBILE_CHAT_MAX_BYTES} from '../../shared/mobileChatHistory';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
@@ -419,6 +420,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
         const method = String(input.method || ''); authorizeMobileOperation(pairing.domains, method);
         if(method!=='streamMobileCompanionChat'&&Buffer.byteLength(JSON.stringify(input),'utf8')>4*1024*1024)throw new Error('request_too_large');
         if (!MOBILE_JOB_OPERATIONS.has(method) || !Array.isArray(input.args) || input.args.length > 12) throw new Error('invalid_job');
+        if(method==='runMobileSpaceAction'){if(input.args.length!==1)throw new Error('invalid_space_action');validateCompanionSpaceAction(input.args[0],pairing.domains);}
         const job = jobStore().submit({ deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') });
         reply(response, 202, { job: jobResponse(job) }); return;
       }
@@ -538,6 +540,40 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       }
       reply(response, 200, { result: result ?? null });
     } catch (error) { reply(response, 400, { error: error instanceof Error ? error.message : 'operation_failed' }); }
+    return;
+  }
+  const actionPath=corpus&&/^actions(?:\/([a-f0-9-]+)(\/cancel)?)?$/i.exec(corpus[2]||'');
+  if(corpus&&actionPath){
+    const vaultId=decodeURIComponent(corpus[1]);
+    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')){reply(response,403,{error:'permission_denied'});return;}
+    try{
+      const store=jobStore();
+      if(request.method==='POST'&&!actionPath[1]){
+        const raw=await body(request,2*1024*1024);
+        if(Object.keys(raw).some(key=>!['id','kind','schemaVersion','payload','idempotencyKey','inputRevision','inputFingerprint','executionMode'].includes(key))||typeof raw.id!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(raw.id))throw new Error('invalid_space_action');
+        const {id:_,...input}=raw;const action=validateCompanionSpaceAction(input,pairing.domains);
+        const key=companionActionKey(action.idempotencyKey),duplicate=store.list(pairing.id,vaultId).some(job=>job.idempotencyKey===key);
+        const job=store.submit({deviceGrant:pairing.id,vaultId,domains:pairing.domains,method:'runMobileSpaceAction',args:[action],idempotencyKey:key});
+        reply(response,202,{action:companionActionResponse(job),duplicate});return;
+      }
+      if(request.method==='GET'&&!actionPath[1]){
+        const since=Number(url.searchParams.get('since')||0),limit=Number(url.searchParams.get('limit')||50);
+        if(!Number.isSafeInteger(since)||since<0||!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('invalid_action_cursor');
+        const all=store.list(pairing.id,vaultId).filter(job=>job.method==='runMobileSpaceAction'&&(job.actionSequence??0)>since).sort((a,b)=>a.actionSequence!-b.actionSequence!);
+        const page=all.slice(0,limit);reply(response,200,{actions:page.map(companionActionResponse),cursor:page.at(-1)?.actionSequence??since,hasMore:all.length>limit});return;
+      }
+      const job=actionPath[1]&&store.get(actionPath[1],pairing.id,vaultId);
+      if(!job||job.method!=='runMobileSpaceAction'){reply(response,404,{error:'action_not_found'});return;}
+      if(request.method==='GET'&&!actionPath[2]){reply(response,200,{action:companionActionResponse(job)});return;}
+      if(request.method==='POST'&&actionPath[2]&&pairing.domains.includes('writing')){
+        const input=await body(request,1024);if(Object.keys(input).length)throw new Error('invalid_action_cancellation');
+        reply(response,200,{action:companionActionResponse(store.cancel(job.id,pairing.id,vaultId)!)});return;
+      }
+      reply(response,403,{error:'permission_denied'});
+    }catch(error){
+      const code=error instanceof Error?error.message:'invalid_space_action';
+      reply(response,code==='permission_denied'?403:code==='idempotency_conflict'||code==='explicit_live_mode_required'?409:400,{error:code,...(code==='explicit_live_mode_required'?{error_description:'Esta operación utiliza los modelos del Mac. Selecciona el modo live para ejecutarla con Nodus.'}:{})});
+    }
     return;
   }
   if (corpus && (request.method === 'GET' || request.method === 'HEAD' || isReadOnlyCorpusQuery(request.method, corpus[2]))) {

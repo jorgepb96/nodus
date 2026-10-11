@@ -11,6 +11,7 @@ export interface BridgeJob {
   state: BridgeJobState; createdAt: string; updatedAt: string;
   events: BridgeJobEvent[]; nextSequence: number; result?: unknown; error?: string;
   recoveryProtocol?: number; mayHaveStarted?: boolean;
+  actionSequence?:number;
 }
 type Runner = (job: BridgeJob, emit: (channel: string, ...args: unknown[]) => void, signal: AbortSignal) => Promise<unknown>;
 const recoverableQueues=new Set(['enqueueDeepResearchJob','enqueueDatabaseDeepResearch']);
@@ -84,6 +85,7 @@ export class BridgeJobStore {
       return existing;
     }
     const job: BridgeJob = { ...input, id: randomUUID(), payloadHash, state: 'accepted', createdAt: new Date().toISOString(), updatedAt: '', events: [], nextSequence: 1,
+      ...(input.method==='runMobileSpaceAction'?{actionSequence:[...this.jobs.values()].reduce((maximum,job)=>Math.max(maximum,job.actionSequence??0),0)+1}:{}),
       ...(recoverableQueues.has(input.method) ? { recoveryProtocol: 1 } : {}) };
     writeFileSync(this.eventFile(job.id), '', { mode: 0o600 });
     this.persist(job); this.jobs.set(job.id, job);

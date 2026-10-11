@@ -277,6 +277,14 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
   }
 }
 
+/** The direct companion only enters the content/research subset; remote toolkit,
+ * extraction, recomputation and automation cases cannot cross this boundary. */
+export async function executeCompanionSpaceAction(action:ClaimedAction):Promise<ActionResult>{
+  const allowed=new Set(['idea.delete','idea.saveToNotes','deepResearch.saveToNotes','hypothesis.saveToNotes','projects.create','projects.update','projects.section.update','projects.chapter.import','worldbuilding.entityDelete','pages.restoreRevision','databases.importCSV','author.synthesis.generate','authors.matrix.generate','argumentMap.generate','writing.generate','worldbuilding.continuity','worldbuilding.proseReview']);
+  if(!allowed.has(action.kind))throw new Error('desktop_only_action');
+  return execute(action,{base:'',token:''});
+}
+
 class TypedRefusal extends Error {}
 
 async function report(base: string, spaceId: string, token: string, id: string, status: Exclude<ActionStatus, 'queued' | 'claimed' | 'cancelled'>, extra: Record<string, unknown> = {}): Promise<void> {

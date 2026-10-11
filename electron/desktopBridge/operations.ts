@@ -6,6 +6,7 @@ import { withOwningVault } from '../vaults/vaultRegistry';
 import { invalidateLiveCorpus } from './liveCorpus';
 import { withGenerationSignal } from '../ai/generationSignal';
 import { withMobileOperation } from './executionBoundary';
+import {runCompanionSpaceAction} from './spaceActions';
 import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
@@ -40,6 +41,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(method==='runMobileSpaceAction'){
+    if(args.length!==1||!bridgeJobId||!jobIdentity)throw new Error('job_required');
+    return runCompanionSpaceAction(vaultId,domains,args[0],bridgeJobId,signal);
+  }
   if (method === 'getMobileDossierFiles') {
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileDossierFiles(vaultId, domains, args[0])));

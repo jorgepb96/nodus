@@ -782,12 +782,34 @@ export function DatabaseDeepResearchView({
     setJobs(loadedJobs);
     setReports(loadedReports);
   }, [loadReportSummaries]);
+  useEffect(()=>{
+    const unsubscribe=window.nodus.onDatabaseDeepResearchReportAnnotationsChanged(()=>{
+      void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+    });
+    return unsubscribe;
+  },[loadJobsAndReports]);
+  useEffect(()=>{
+    setReader(current=>{
+      if(!current) return current;
+      const report=reports.find(item=>item.id===current.id);
+      return report&&report.readAt!==current.readAt?{...current,readAt:report.readAt}:current;
+    });
+  },[reports]);
   useEffect(() => {
-    void load().catch((error) => setPreviewError(t((error as Error).message)));
+    if (!mobile) void load().catch((error) => setPreviewError(t((error as Error).message)));
     void loadJobsAndReports().catch((error) =>
       setPreviewError(t((error as Error).message)),
     );
-  }, [load, loadJobsAndReports]);
+  }, [load, loadJobsAndReports,mobile]);
+  useEffect(()=>{
+    if(!mobile) return;
+    const refresh=()=>{ void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error)))); };
+    window.addEventListener('nodus:mobile-database-reading-changed',refresh);
+    return ()=>window.removeEventListener('nodus:mobile-database-reading-changed',refresh);
+  },[mobile,loadJobsAndReports]);
+  useEffect(()=>{
+    if(mobile&&composerOpen) void load().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+  },[mobile,composerOpen,load]);
   useEffect(
     () =>
       window.nodus.onDatabaseDeepResearchProgress(

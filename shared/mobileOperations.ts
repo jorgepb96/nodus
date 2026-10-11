@@ -128,6 +128,7 @@ export const MOBILE_OPERATIONS = {
   listDatabases: ['db:list','corpus'], getDatabaseDetail: ['db:detail','corpus'],
   listDatabaseRows: ['db:listRows','corpus'], listDatabaseViews: ['db:listViews','corpus'],
   listMobileDatabaseDeepResearchReports: ['db:deepResearch:mobileCatalogue','corpus'],
+  getMobileDatabaseResearchReader: ['db:deepResearch:mobileReader','corpus'],
   listDatabaseDeepResearchReports: ['db:deepResearch:reports:list','corpus'], getDatabaseDeepResearchReport: ['db:deepResearch:report:get','corpus'],
   listDatabaseDeepResearchJobs: ['db:deepResearch:jobs:list','corpus'], previewDatabaseDeepResearch: ['db:deepResearch:preview','corpus'],
   enqueueDatabaseDeepResearch: ['db:deepResearch:enqueue','research-generation'],

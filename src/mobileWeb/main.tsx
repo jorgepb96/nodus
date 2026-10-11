@@ -160,6 +160,10 @@ const streamEvents: Record<string, string> = {
 };
 let activeChat: string | undefined, activeImprove: string | undefined;
 (window as any).nodusMobileEvent = (event: { channel: string; args: unknown[] }) => {
+  if(event.channel==='mobile:databaseReading:changed') {
+    for(const listener of subscriptions.get('onDatabaseDeepResearchReportAnnotationsChanged')??[]) listener(null);
+    window.dispatchEvent(new Event('nodus:mobile-database-reading-changed')); return;
+  }
   if (event.channel === 'mobile:corpus:changed') {
     window.dispatchEvent(new Event(COMPANION_CONTENT_CHANGED));
     for(const name of ['onDictionaryChanged','onWritingDraftsChanged']) for(const listener of subscriptions.get(name)??[])listener(null);

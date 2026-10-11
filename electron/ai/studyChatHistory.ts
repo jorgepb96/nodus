@@ -32,6 +32,8 @@ export interface StudyAssistantStore {
   conversations: StudyAssistantConversation[];
   projects: StudyChatStoredProject[];
   folders: StudyChatStoredFolder[];
+  /** Private companion receipts commit with the authored history in this file. */
+  mobileCompanion?: { documents: Record<string,Record<string,unknown>|null>; receipts: Record<string,{hash:string;json:string}> };
 }
 
 const now = () => new Date().toISOString();
@@ -76,16 +78,18 @@ export function repairStudyChatStore(store: StudyAssistantStore): { store: Study
     repaired = true;
     return { ...conversation, projectId, folderId };
   });
-  return { store: { version: 1, conversations, projects, folders }, repaired };
+  return { store: { ...store, version: 1, conversations, projects, folders }, repaired };
 }
 
 export function readStudyChatStore(): StudyAssistantStore {
   let parsed: Partial<StudyAssistantStore>;
   try {
     parsed = JSON.parse(fs.readFileSync(studyChatStorePath(), 'utf8')) as Partial<StudyAssistantStore>;
-  } catch {
-    return { version: 1, conversations: [], projects: [], folders: [] };
+  } catch(error) {
+    if(error && typeof error==='object' && 'code' in error && error.code==='ENOENT') return { version: 1, conversations: [], projects: [], folders: [] };
+    throw new Error('study_chat_history_unreadable',{cause:error});
   }
+  if(!parsed || typeof parsed!=='object' || !Array.isArray(parsed.conversations)) throw new Error('study_chat_history_invalid');
   const raw: StudyAssistantStore = {
     version: 1,
     conversations: Array.isArray(parsed.conversations) ? parsed.conversations.map((conversation) => ({
@@ -93,6 +97,7 @@ export function readStudyChatStore(): StudyAssistantStore {
     })) : [],
     projects: Array.isArray(parsed.projects) ? parsed.projects : [],
     folders: Array.isArray(parsed.folders) ? parsed.folders : [],
+    ...(parsed.mobileCompanion ? { mobileCompanion: parsed.mobileCompanion } : {}),
   };
   const { store, repaired } = repairStudyChatStore(raw);
   if (repaired) {

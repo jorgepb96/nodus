@@ -14,6 +14,8 @@ import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOpe
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
+import {listMobileChats,readMobileChat,saveMobileChat,MobileChatFailure} from './chatHistory';
+import {MOBILE_CHAT_MAX_BYTES} from '../../shared/mobileChatHistory';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
@@ -402,6 +404,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
       workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
+      chatHistory: {version:1,maxRequestBytes:MOBILE_CHAT_MAX_BYTES,conflicts:true,idempotent:true,pageSize:100,kinds:['research','world','database','study']},
       jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
@@ -439,6 +442,22 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 16 * 1024 * 1024);
     reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations)); return;
+  }
+  const chatHistory = /^\/bridge\/v2\/vaults\/([^/]+)\/chat-history\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
+  if(chatHistory && ['GET','POST'].includes(request.method??'')) {
+    const vaultId=decodeURIComponent(chatHistory[1]),kind=decodeURIComponent(chatHistory[2]),id=chatHistory[3]&&decodeURIComponent(chatHistory[3]);
+    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')||(request.method==='POST'&&!pairing.domains.includes('writing'))) {reply(response,403,{error:'permission_denied'});return;}
+    try {
+      if(request.method==='GET') reply(response,200,id ? await readMobileChat(vaultId,kind,id,pairing.domains) : await listMobileChats(vaultId,kind,Number(url.searchParams.get('cursor')??'0'),pairing.domains,url.searchParams.get('revision')??undefined));
+      else {
+        if(id) throw new MobileChatFailure(400,'invalid_chat_route');
+        reply(response,200,await saveMobileChat(vaultId,pairing.id,kind,await body(request,MOBILE_CHAT_MAX_BYTES),pairing.domains));
+      }
+    } catch(error) {
+      if(error instanceof MobileChatFailure) reply(response,error.status,{error:error.code,...(error.remote?{remote:error.remote}:{})});
+      else throw error;
+    }
+    return;
   }
   const workspaceEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/workspace-edits$/.exec(url.pathname);
   if (request.method === 'POST' && workspaceEdit) {

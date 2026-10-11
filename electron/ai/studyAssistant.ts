@@ -107,7 +107,9 @@ export function updateStudyAssistantConversation(id: string, patch: StudyAssista
     pinnedAt: fields.archived ? null : current.pinnedAt ?? null,
     title: patch.title !== undefined ? (patch.title.trim().slice(0, 120) || studyAssistantPromptPack(promptLanguage(getSettings().promptLanguage)).conversationTitle) : current.title,
     selection: patch.selection ? normalizeSelection(patch.selection) : current.selection,
-    messages: patch.messages ? patch.messages.slice(-100) : current.messages,
+    // Retrieval bounds the model context separately. Saving a follow-up must
+    // never silently delete older authored turns from the readable history.
+    messages: patch.messages ?? current.messages,
     updatedAt: now(),
     messageCount: patch.messages?.length ?? current.messages.length,
   };

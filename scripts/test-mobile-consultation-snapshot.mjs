@@ -44,5 +44,12 @@ assert.equal(sources.capabilities.includesPassages, false);
 assert.equal(sources.formatVersion, 2);
 assert.deepEqual(sources.vault, document.vault);
 assert.equal(JSON.stringify(document), before, 'Selecting a consultation must never change the cached full snapshot');
+const historical = mobileConsultationSnapshot({ tables: {
+  dictionary_versions: [{ content_markdown: '[Tensión](nodus://contradiction/edge-old)' }],
+  edges: [{ id: 'edge-old', from_id: 'source', to_id: 'target' }],
+  ideas: ['source', 'target', 'unrelated'].map(id => ({ global_id: id, statement: `Enunciado de ${id}` })),
+} }, 'dictionary');
+assert.deepEqual(historical.tables.ideas.map(row => row.statement), ['Enunciado de source', 'Enunciado de target']);
+assert.equal(historical.tables.edges.length, 1);
 assert.throws(() => mobileConsultationSnapshot({ tables: [] }, 'dictionary'), /invalid_snapshot_tables/);
 console.log('PASS live consultation projections: complete historical citations, uncited dossiers, bounded payload and private-domain exclusion');

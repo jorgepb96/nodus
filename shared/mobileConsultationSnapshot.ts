@@ -34,6 +34,13 @@ export function mobileConsultationSnapshot(document: Record<string, unknown>, pr
         }
       }
     }
+    // A contradiction preview names both ideas and their actual statements.
+    // Keeping only the edge would leave historical citations with raw identifiers.
+    for (const edge of tables.edges ?? []) {
+      if (typeof edge.id === 'string' && refs.get('contradiction')?.has(edge.id)) {
+        for (const field of ['from_id', 'to_id']) if (typeof edge[field] === 'string') add('idea', edge[field] as string);
+      }
+    }
     for (const [table, kind, field] of [['ideas', 'idea', 'global_id'], ['passages', 'passage', 'passage_id'], ['gaps', 'gap', 'id'], ['edges', 'contradiction', 'id']]) {
       if (Array.isArray(tables[table])) selected[table] = tables[table].filter(row => typeof row[field] === 'string' && refs.get(kind)?.has(row[field] as string));
     }

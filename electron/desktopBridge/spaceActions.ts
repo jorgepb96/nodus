@@ -7,8 +7,8 @@ import {withMobileOperation} from './executionBoundary';
 import {withGenerationSignal} from '../ai/generationSignal';
 import {invalidateLiveCorpus,liveCorpusRevision} from './liveCorpus';
 
-export const COMPANION_CONTENT_ACTIONS=new Set(['idea.delete','idea.saveToNotes','deepResearch.saveToNotes','hypothesis.saveToNotes','projects.create','projects.update','projects.section.update','projects.chapter.import','worldbuilding.entityDelete','pages.restoreRevision','databases.importCSV']);
-export const COMPANION_RESEARCH_ACTIONS=new Set(['author.synthesis.generate','authors.matrix.generate','argumentMap.generate','writing.generate','worldbuilding.continuity','worldbuilding.proseReview']);
+export const COMPANION_CONTENT_ACTIONS=new Set(['idea.delete','idea.saveToNotes','deepResearch.saveToNotes','hypothesis.saveToNotes','projects.create','projects.update','projects.section.update','projects.chapter.import','worldbuilding.entityDelete','pages.restoreRevision','databases.importCSV','worldbuilding.continuity']);
+export const COMPANION_RESEARCH_ACTIONS=new Set(['author.synthesis.generate','authors.matrix.generate','argumentMap.generate','writing.generate','worldbuilding.proseReview']);
 export type CompanionSpaceAction={kind:string;schemaVersion:1;payload:Record<string,unknown>;idempotencyKey:string;inputRevision:string|null;inputFingerprint:string|null;executionMode?:string};
 export function validateCompanionSpaceAction(raw:unknown,domains:readonly string[]):CompanionSpaceAction {
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||Buffer.byteLength(JSON.stringify(raw),'utf8')>2*1024*1024)throw new Error('invalid_space_action');

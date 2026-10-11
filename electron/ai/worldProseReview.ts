@@ -10,7 +10,6 @@
 
 import { completeText } from './aiClient';
 import { getSettings } from '../db/settingsRepo';
-import { getSceneText } from '../db/worldManuscriptRepo';
 import { beatsForScene } from '../db/worldThreadsRepo';
 import { getDb } from '../db/database';
 import {
@@ -22,17 +21,17 @@ import {
 import { worldOperationSystemPrompt } from '@shared/worldOperationPrompts';
 import { BEAT_MARK_LABEL } from '@shared/worldThreads';
 import { stripWorldLinks } from '@shared/worldManuscript';
-import type { ProseReviewResult } from '@shared/types';
+import type { ProseReviewResult,PromptLanguage } from '@shared/types';
 import { proseReviewContextCopy } from '@shared/worldContextPromptPacks';
 
-export async function reviewWorldProse(sceneId: string): Promise<ProseReviewResult> {
+export function prepareWorldProseReview(sceneId:string,requestedLanguage?:PromptLanguage){
   const scene = getDb().prepare('SELECT title FROM world_scenes WHERE scene_id = ?').get(sceneId) as
     | { title: string }
     | undefined;
   if (!scene) throw new Error('Escena no encontrada.');
 
   const settings = getSettings();
-  const language = settings.promptLanguage ?? 'es';
+  const language = requestedLanguage??settings.promptLanguage ?? 'es';
   const promptCopy = proseReviewContextCopy(language);
   const beats = beatsForScene(sceneId);
   const sources: ProseReviewSources = {
@@ -44,14 +43,10 @@ export async function reviewWorldProse(sceneId: string): Promise<ProseReviewResu
     })),
     // The model reads what a reader would read, so the internal links go out first: a
     // `nodus://` URL mid-sentence is noise it would try to interpret.
-    prose: stripWorldLinks(getSceneText(sceneId).text),
+    prose: stripWorldLinks((getDb().prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get(sceneId) as {text:string}|undefined)?.text??''),
   };
 
-  if (!hasProseReviewMaterial(sources)) return { beats: [], noMaterial: true };
-
-  const model = settings.synthesisModel ?? settings.extractionModel ?? null;
-  const completion = await completeText(
-    {
+  return {sceneId,beats,sources,noMaterial:!hasProseReviewMaterial(sources),prompt:{
       system: worldOperationSystemPrompt('proseReview', language),
       user: composeProseReviewContext(sources, language),
       plainContext: true,
@@ -59,9 +54,11 @@ export async function reviewWorldProse(sceneId: string): Promise<ProseReviewResu
       // already on the page.
       temperature: 0.2,
       maxTokens: 600,
-    },
-    model
-  );
+    }};
+}
+
+export function finishWorldProseReview(source:ReturnType<typeof prepareWorldProseReview>,completion:string):ProseReviewResult{
+  if(source.noMaterial)return {beats:[],noMaterial:true};
 
   // Zipped by POSITION, and short-circuited when the model returned fewer lines than beats:
   // a beat with no verdict comes back as unread rather than as a guess. Telling an author
@@ -69,7 +66,7 @@ export async function reviewWorldProse(sceneId: string): Promise<ProseReviewResu
   // avoid.
   const verdicts = parseProseReview(completion);
   return {
-    beats: beats.map((beat, index) => ({
+    beats: source.beats.map((beat, index) => ({
       threadKind: beat.threadKind,
       threadId: beat.threadId,
       threadTitle: beat.threadTitle,
@@ -79,4 +76,11 @@ export async function reviewWorldProse(sceneId: string): Promise<ProseReviewResu
     })),
     noMaterial: false,
   };
+}
+
+export async function reviewWorldProse(sceneId:string):Promise<ProseReviewResult>{
+  const source=prepareWorldProseReview(sceneId);
+  if(source.noMaterial)return {beats:[],noMaterial:true};
+  const settings=getSettings(),model=settings.synthesisModel??settings.extractionModel??null;
+  return finishWorldProseReview(source,await completeText(source.prompt,model));
 }

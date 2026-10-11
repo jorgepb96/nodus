@@ -66,6 +66,8 @@ export const MOBILE_OPERATIONS = {
   getStudyImprovementOfflineSource: ['study:improve:mobile:offlineSource', 'corpus'],
   saveStudyImprovementFromMobile: ['study:improve:mobile:save', 'writing'],
   getWritingWorkshopMobileSource: ['writing:mobile:source', 'corpus'],
+  getMobileAcademicSource: ['mobile:academic:source','corpus'],
+  saveMobileAcademicResult: ['mobile:academic:save','writing'],
   getWritingWorkshopMobileCatalogue: ['writing:mobile:catalogue', 'corpus'],
   getWritingWorkshopMobileDraftCatalogue: ['writing:mobile:drafts', 'corpus'],
   saveWritingWorkshopFromMobile: ['writing:mobile:save', 'writing'],
@@ -180,6 +182,7 @@ export const MOBILE_OPERATIONS = {
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'runMobileSpaceAction',
+  'saveMobileAcademicResult',
   'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
   'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',

@@ -69,6 +69,58 @@ try {
   assert.equal(participant.root.display_name,'Persona privada'); assert.equal(participantRows.rows[0].biographical_note,'Biografía privada elegida');
   await assert.rejects(() => readPrivateSource(vault,'corpus','testimony-participant','private-person'),{status:403});
   await assert.rejects(() => readPrivateSource(vault,'prosopography-private','testimony-participant','private-person'),{status:403});
+  const addInterview = db.prepare('INSERT INTO testimony_interviews(id,short_id,title,abstract,created_at,updated_at) VALUES(?,?,?,?,?,?)');
+  const addSession = db.prepare('INSERT INTO testimony_sessions(id,short_id,interview_id,title,field_notes,created_at,updated_at) VALUES(?,?,?,?,?,?,?)');
+  const addMedia = db.prepare('INSERT INTO testimony_media(id,short_id,session_id,file_name,mime_type,content_blob,created_at) VALUES(?,?,?,?,?,?,?)');
+  const addTranscript = db.prepare('INSERT INTO testimony_transcripts(id,short_id,media_id,content_markdown,created_at,updated_at) VALUES(?,?,?,?,?,?)');
+  for (const label of ['chosen','foreign']) {
+    addInterview.run(label,`INT-${label}`,`Entrevista ${label}`,`Resumen ${label}`,stamp,stamp);
+    addSession.run(`${label}-session`,`SES-${label}`,label,`Sesión ${label}`,`Notas ${label}`,stamp,stamp);
+    addMedia.run(`${label}-media`,`MED-${label}`,`${label}-session`,`${label}.m4a`,'audio/mp4',audio,stamp);
+    addTranscript.run(`${label}-transcript`,`TRN-${label}`,`${label}-media`,`Texto literal completo ${label}`,stamp,stamp);
+  }
+  db.prepare('INSERT INTO testimony_interview_participants(interview_id,person_id,role,created_at) VALUES(?,?,?,?)').run('chosen','private-person','narrator',stamp);
+  const addSegment = db.prepare('INSERT INTO testimony_transcript_segments(id,short_id,transcript_id,t_start,t_end,text,speaker_person_id,position,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)');
+  for (let i=0;i<121;i++) addSegment.run(`chosen-segment-${i}`,`SEG-${i}`,'chosen-transcript',i,i+1,`Fragmento literal ${i}`,'private-person',i,stamp,stamp);
+  addSegment.run('foreign-segment','SEG-foreign','foreign-transcript',0,1,'Contenido de otra entrevista','private-person',0,stamp,stamp);
+  db.prepare('INSERT INTO testimony_annotations(id,short_id,interview_id,transcript_id,segment_id,quote_snapshot,memo,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').run('chosen-annotation','ANN-chosen','chosen','chosen-transcript','chosen-segment-37','Fragmento literal 37','Interpretación vinculada',stamp,stamp);
+  db.prepare('INSERT INTO testimony_codes(id,label,normalized_label,created_at,updated_at) VALUES(?,?,?,?,?)').run('chosen-code','Código utilizado','codigo utilizado',stamp,stamp);
+  db.prepare('INSERT INTO testimony_annotation_codes(annotation_id,code_id,created_at) VALUES(?,?,?)').run('chosen-annotation','chosen-code',stamp);
+  db.prepare('INSERT INTO testimony_agreements(id,interview_id,restrictions_markdown,created_at,updated_at) VALUES(?,?,?,?,?)').run('chosen-agreement','chosen','Acuerdo privado vigente',stamp,stamp);
+  db.prepare('INSERT INTO testimony_contrasts(id,short_id,title,memo_markdown,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('chosen-contrast','CON-chosen','Contraste elegido','Memo completo del contraste',stamp,stamp);
+  db.prepare('INSERT INTO testimony_contrast_items(contrast_id,annotation_id,note,created_at) VALUES(?,?,?,?)').run('chosen-contrast','chosen-annotation','Fragmento fijado',stamp);
+  db.prepare('INSERT INTO testimony_note_links(note_id,target_kind,target_id,created_at) VALUES(?,?,?,?)').run('selected-note','testimony_annotation','chosen-annotation',stamp);
+  for (const [kind,id] of [['testimony-interview','chosen'],['testimony-transcript','chosen-transcript'],['testimony-contrast','chosen-contrast']]) {
+    const dossier = await readPrivateSource(vault,'testimonies',kind,id);
+    for (const group of dossier.groups) {
+      let cursor=0, more=true; const owned=[];
+      while (more) {
+        const page=await readPrivateSource(vault,'testimonies',kind,id,{group:group.key,cursor,limit:100,revision:group.revision});
+        owned.push(...page.rows); cursor=page.cursor; more=page.hasMore;
+      }
+      assert.equal(owned.length,group.total);
+      assert.equal(JSON.stringify(owned).includes('foreign'),false,`foreign ${kind}/${group.key}`);
+      assert.equal(JSON.stringify(owned).includes('content_blob'),false);
+      if (group.key==='segments') { assert.equal(owned.length,121); assert.equal(owned.at(-1).text,'Fragmento literal 120'); }
+      if (group.key==='noteLinks' && kind==='testimony-interview') assert.equal(owned[0].note_id,'selected-note');
+      if (group.key==='items') assert.equal(owned[0].quote_snapshot,'Fragmento literal 37');
+      if (group.key==='participants') assert.equal(owned[0].display_name,'Persona privada');
+    }
+    await assert.rejects(() => readPrivateSource(vault,'corpus',kind,id),{status:403});
+  }
+  const interviewSearch = await listPrivateSources(vault,'testimonies','testimony-interview',{offset:0,limit:100,query:'literal completo chosen'});
+  assert.equal(interviewSearch.total,1); assert.equal(interviewSearch.items[0].id,'chosen');
+  assert.equal(JSON.stringify(interviewSearch).includes('content_markdown'),false);
+  const transcriptSource = await readPrivateSource(vault,'testimonies','testimony-transcript','chosen-transcript');
+  assert.equal(transcriptSource.root.interview_id,'chosen'); assert.equal(transcriptSource.root.session_id,'chosen-session');
+  const transcriptCatalogue = await listPrivateSources(vault,'testimonies','testimony-transcript',{offset:0,limit:100,query:'literal completo chosen'});
+  assert.equal(transcriptCatalogue.total,1); assert.equal(transcriptCatalogue.items[0].id,'chosen-transcript');
+  const newParticipant = await readPrivateSource(vault,'testimonies','testimony-participant','private-person');
+  const involvement = newParticipant.groups.find(group=>group.key==='participation');
+  assert.equal((await readPrivateSource(vault,'testimonies','testimony-participant','private-person',{group:'participation',cursor:0,limit:100,revision:involvement.revision})).rows[0].interview_title,'Entrevista chosen');
+  db.prepare('UPDATE testimony_transcript_segments SET text=? WHERE id=?').run('Corrección literal posterior','chosen-segment-37');
+  const originalSegments = transcriptSource.groups.find(group=>group.key==='segments');
+  await assert.rejects(() => readPrivateSource(vault,'testimonies','testimony-transcript','chosen-transcript',{group:'segments',cursor:0,limit:100,revision:originalSegments.revision}),{code:'source_changed'});
   db.prepare('INSERT INTO prosop_person_profiles(person_id,created_at,updated_at) VALUES(?,?,?)').run('private-person',stamp,stamp);
   db.prepare('INSERT INTO prosop_sources(source_id,title,source_kind,created_at,updated_at) VALUES(?,?,?,?,?)').run('source','Fuente concreta','document',stamp,stamp);
   db.prepare('INSERT INTO prosop_source_segments(segment_id,source_id,locator_display,quoted_text,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('literal','source','p.37','Evidencia literal íntegra',stamp,stamp);

@@ -9,7 +9,37 @@ type Plan = { domain: string; table: string; primaryKey: string; groups: Group[]
 const group = (key: string, title: string, table: string, where: string): Group => ({ key, title, table, where });
 const sourceFactoids = 'r.source_id = ?';
 const personFactoids = "EXISTS (SELECT 1 FROM prosop_statements s JOIN prosop_statement_entities e ON e.statement_id = s.statement_id WHERE s.factoid_id = r.factoid_id AND e.entity_kind = 'person' AND e.entity_id = ?)";
+const interviewMedia = 'EXISTS (SELECT 1 FROM testimony_sessions s WHERE s.id = r.session_id AND s.interview_id = ?)';
+const interviewTranscripts = 'EXISTS (SELECT 1 FROM testimony_media m JOIN testimony_sessions s ON s.id = m.session_id WHERE m.id = r.media_id AND s.interview_id = ?)';
+const interviewSegments = 'EXISTS (SELECT 1 FROM testimony_transcripts t JOIN testimony_media m ON m.id = t.media_id JOIN testimony_sessions s ON s.id = m.session_id WHERE t.id = r.transcript_id AND s.interview_id = ?)';
+const contrastAnnotations = 'EXISTS (SELECT 1 FROM testimony_contrast_items c WHERE c.annotation_id = r.id AND c.contrast_id = ?)';
 const plans: Record<string, Plan> = {
+  'testimony-interview': { domain: 'testimonies', table: 'testimony_interviews', primaryKey: 'id', groups: [
+    group('participants', 'Participantes', 'testimony_interview_participants', 'r.interview_id = ?'),
+    group('sessions', 'Sesiones', 'testimony_sessions', 'r.interview_id = ?'),
+    group('media', 'Archivos', 'testimony_media', interviewMedia),
+    group('transcripts', 'Transcripciones', 'testimony_transcripts', interviewTranscripts),
+    group('segments', 'Fragmentos de transcripción', 'testimony_transcript_segments', interviewSegments),
+    group('agreements', 'Acuerdos y versiones', 'testimony_agreements', 'r.interview_id = ?'),
+    group('annotations', 'Anotaciones', 'testimony_annotations', 'r.interview_id = ?'),
+    group('codes', 'Códigos utilizados', 'testimony_codes', 'EXISTS (SELECT 1 FROM testimony_annotation_codes c JOIN testimony_annotations a ON a.id = c.annotation_id WHERE c.code_id = r.id AND a.interview_id = ?)'),
+    group('annotationCodes', 'Codificación de fragmentos', 'testimony_annotation_codes', 'EXISTS (SELECT 1 FROM testimony_annotations a WHERE a.id = r.annotation_id AND a.interview_id = ?)'),
+    group('noteLinks', 'Notas vinculadas', 'testimony_note_links', "EXISTS (SELECT 1 FROM testimony_interviews i WHERE i.id = ? AND ((r.target_kind = 'testimony_interview' AND r.target_id = i.id) OR (r.target_kind = 'testimony_annotation' AND EXISTS (SELECT 1 FROM testimony_annotations a WHERE a.id = r.target_id AND a.interview_id = i.id))))"),
+  ] },
+  'testimony-transcript': { domain: 'testimonies', table: 'testimony_transcripts', primaryKey: 'id', groups: [
+    group('media', 'Archivo de origen', 'testimony_media', 'EXISTS (SELECT 1 FROM testimony_transcripts t WHERE t.media_id = r.id AND t.id = ?)'),
+    group('segments', 'Fragmentos de transcripción', 'testimony_transcript_segments', 'r.transcript_id = ?'),
+    group('annotations', 'Anotaciones', 'testimony_annotations', 'r.transcript_id = ?'),
+    group('codes', 'Códigos utilizados', 'testimony_codes', 'EXISTS (SELECT 1 FROM testimony_annotation_codes c JOIN testimony_annotations a ON a.id = c.annotation_id WHERE c.code_id = r.id AND a.transcript_id = ?)'),
+    group('annotationCodes', 'Codificación de fragmentos', 'testimony_annotation_codes', 'EXISTS (SELECT 1 FROM testimony_annotations a WHERE a.id = r.annotation_id AND a.transcript_id = ?)'),
+  ] },
+  'testimony-contrast': { domain: 'testimonies', table: 'testimony_contrasts', primaryKey: 'id', groups: [
+    group('items', 'Fragmentos fijados', 'testimony_contrast_items', 'r.contrast_id = ?'),
+    group('annotations', 'Anotaciones originales', 'testimony_annotations', contrastAnnotations),
+    group('transcripts', 'Transcripciones de los fragmentos', 'testimony_transcripts', 'EXISTS (SELECT 1 FROM testimony_annotations a JOIN testimony_contrast_items c ON c.annotation_id = a.id WHERE a.transcript_id = r.id AND c.contrast_id = ?)'),
+    group('media', 'Archivos de los fragmentos', 'testimony_media', 'EXISTS (SELECT 1 FROM testimony_transcripts t JOIN testimony_annotations a ON a.transcript_id = t.id JOIN testimony_contrast_items c ON c.annotation_id = a.id WHERE t.media_id = r.id AND c.contrast_id = ?)'),
+    group('noteLinks', 'Notas vinculadas', 'testimony_note_links', "r.target_kind = 'testimony_contrast' AND r.target_id = ?"),
+  ] },
   'testimony-participant': { domain: 'testimonies', table: 'persons', primaryKey: 'person_id', groups: [
     group('profile', 'Perfil del participante', 'testimony_participant_profiles', 'r.person_id = ?'),
     group('participation', 'Participación en entrevistas', 'testimony_interview_participants', 'r.person_id = ?'),
@@ -71,14 +101,19 @@ function projection(db: Database, table: string): string {
 }
 function digest(value: unknown): string { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
 function root(db: Database, plan: Plan, id: string): RecordRow {
-  const row = db.prepare(`SELECT ${projection(db, plan.table)} FROM "${plan.table}" r WHERE r."${plan.primaryKey}" = ?`).get(id) as RecordRow | undefined;
+  const row = db.prepare(`SELECT ${projection(db, plan.table)}${sourceLabels(plan.table)} FROM "${plan.table}" r WHERE r."${plan.primaryKey}" = ?`).get(id) as RecordRow | undefined;
   if (!row) throw new PrivateSourceReadError(404, 'source_not_found');
   return row;
 }
 function query(db: Database, item: Group): string {
-  const title = item.table === 'testimony_interview_participants'
-    ? ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title' : '';
-  return `SELECT r.rowid AS _bridge_cursor, ${projection(db, item.table)}${title} FROM "${item.table}" r WHERE (${item.where})`;
+  return `SELECT r.rowid AS _bridge_cursor, ${projection(db, item.table)}${sourceLabels(item.table)} FROM "${item.table}" r WHERE (${item.where})`;
+}
+function sourceLabels(table: string): string {
+  if (table === 'testimony_interview_participants') return ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title, (SELECT p.display_name FROM persons p WHERE p.person_id = r.person_id) AS display_name';
+  if (table === 'testimony_transcripts') return ', (SELECT s.interview_id FROM testimony_media m JOIN testimony_sessions s ON s.id = m.session_id WHERE m.id = r.media_id) AS interview_id, (SELECT m.file_name FROM testimony_media m WHERE m.id = r.media_id) AS file_name, (SELECT m.session_id FROM testimony_media m WHERE m.id = r.media_id) AS session_id';
+  if (table === 'testimony_annotations') return ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title';
+  if (table === 'testimony_contrast_items') return ', (SELECT a.quote_snapshot FROM testimony_annotations a WHERE a.id = r.annotation_id) AS quote_snapshot, (SELECT a.interview_id FROM testimony_annotations a WHERE a.id = r.annotation_id) AS interview_id, (SELECT a.transcript_id FROM testimony_annotations a WHERE a.id = r.annotation_id) AS transcript_id, (SELECT a.t_start FROM testimony_annotations a WHERE a.id = r.annotation_id) AS t_start';
+  return '';
 }
 function metadata(db: Database, item: Group, id: string) {
   const hash = createHash('sha256'); let total = 0;
@@ -128,22 +163,30 @@ export async function listPrivateSources(vaultId: string, domain: string, kind: 
   return withVaultDatabase(vaultId, () => {
     const db = getDb();
     const person = ['prosop-person', 'testimony-participant'].includes(kind);
-    const title = person ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : 'title';
-    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : person ? 'birth_date' : 'status';
+    const title = person ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : kind === 'testimony-transcript' ? 'short_id' : 'title';
+    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : person ? 'birth_date' : kind === 'testimony-interview' ? 'workflow_status' : kind === 'testimony-contrast' ? 'short_id' : 'status';
     const state = options.state || 'active';
     if (!['active', 'archived', 'trash', 'all'].includes(state)) throw new PrivateSourceReadError(400, 'invalid_source_state');
     let where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)' : '';
     if (kind === 'testimony-participant') where = ' WHERE EXISTS (SELECT 1 FROM testimony_participant_profiles p WHERE p.person_id = r.person_id) OR EXISTS (SELECT 1 FROM testimony_interview_participants p WHERE p.person_id = r.person_id)';
     const extra: string[] = [], bindings: string[] = [];
-    if (kind === 'study-recording') {
+    if (kind === 'study-recording' || kind === 'testimony-interview') {
       if (state === 'active') where = ' WHERE r.archived_at IS NULL AND r.deleted_at IS NULL';
       if (state === 'archived') where = ' WHERE r.archived_at IS NOT NULL AND r.deleted_at IS NULL';
       if (state === 'trash') where = ' WHERE r.deleted_at IS NOT NULL';
       extra.push("CASE WHEN r.deleted_at IS NOT NULL THEN 'trash' WHEN r.archived_at IS NOT NULL THEN 'archived' ELSE 'active' END AS state");
-      if (options.query.trim()) {
+      if (options.query.trim() && kind === 'study-recording') {
         extra.push('CASE WHEN r.file_name LIKE ? OR r.session_label LIKE ? OR EXISTS (SELECT 1 FROM study_transcripts t WHERE t.recording_id = r.id AND t.content_markdown LIKE ?) THEN 1 ELSE 0 END AS _search_match');
         bindings.push(...Array(3).fill(`%${options.query.trim()}%`));
       }
+      if (options.query.trim() && kind === 'testimony-interview') {
+        extra.push(`CASE WHEN r.abstract LIKE ? OR r.context_markdown LIKE ? OR EXISTS (SELECT 1 FROM testimony_transcripts t JOIN testimony_media m ON m.id = t.media_id JOIN testimony_sessions s ON s.id = m.session_id WHERE s.interview_id = r.id AND t.content_markdown LIKE ?) THEN 1 ELSE 0 END AS _search_match`);
+        bindings.push(...Array(3).fill(`%${options.query.trim()}%`));
+      }
+    }
+    if (kind === 'testimony-transcript' && options.query.trim()) {
+      extra.push('CASE WHEN r.content_markdown LIKE ? THEN 1 ELSE 0 END AS _search_match');
+      bindings.push(`%${options.query.trim()}%`);
     }
     const extras = extra.length ? ', ' + extra.join(', ') : '';
     const all = db.prepare(`SELECT r."${plan.primaryKey}" AS id, r."${title}" AS title, r."${detail}" AS detail, r.updated_at AS updatedAt${extras} FROM "${plan.table}" r${where}`).all(...bindings) as RecordRow[];

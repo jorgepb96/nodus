@@ -370,6 +370,14 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
   // Evaluate over the table-wide set: statistics need every row, and one formula feeding
   // another needs its dependency filled in first. Normally this is the same array as `rows`.
   const evalRows = statRows;
+  const formulaIds = [...ordered.map((column) => column.id), ...circular]
+    .filter((id) => !options.columnIds || options.columnIds.has(id));
+  // A local recalculation starts from a captured materialized row. Its former
+  // error or colour must not survive a successful/differently coloured result.
+  for (const row of evalRows) for (const id of formulaIds) {
+    if (row.formulaErrors) delete row.formulaErrors[id];
+    if (row.formulaColors) delete row.formulaColors[id];
+  }
 
   for (const col of ordered) {
     if(options.columnIds&&!options.columnIds.has(col.id))continue;
@@ -397,6 +405,7 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
     for (const row of evalRows) {
       const res = evaluateFormula(spec, row, ctx);
       row.cells[col.id] = res.value;
+      if (res.error) setError(row, col.id, res.error);
       const color = res.color ?? applyColorRules(res.value, kind, colorRules);
       if (color) {
         row.formulaColors = row.formulaColors ?? {};
@@ -417,13 +426,16 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
   // re-read), the results live on those objects: copy them onto the rows actually returned.
   if (evalRows !== rows) {
     const source = new Map(evalRows.map((r) => [r.id, r]));
-    const formulaIds = [...ordered.map((c) => c.id), ...circular];
     for (const row of rows) {
       const src = source.get(row.id);
       if (!src) continue;
-      for (const id of formulaIds) row.cells[id] = src.cells[id] ?? null;
-      if (src.formulaColors) row.formulaColors = { ...row.formulaColors, ...src.formulaColors };
-      if (src.formulaErrors) row.formulaErrors = { ...row.formulaErrors, ...src.formulaErrors };
+      for (const id of formulaIds) {
+        row.cells[id] = src.cells[id] ?? null;
+        if (row.formulaColors) delete row.formulaColors[id];
+        if (row.formulaErrors) delete row.formulaErrors[id];
+        if (src.formulaColors?.[id]) (row.formulaColors ??= {})[id] = src.formulaColors[id];
+        if (src.formulaErrors?.[id]) (row.formulaErrors ??= {})[id] = src.formulaErrors[id];
+      }
     }
   }
 }

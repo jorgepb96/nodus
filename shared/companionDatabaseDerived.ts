@@ -1,7 +1,7 @@
 import {aggregateRollup,decodeMultiSelect,type DatabaseColumn,type RollupFunction} from './databases';
 import {formulaDependencies,type FormulaSpec} from './databaseFormula';
 import {formulaExpressionRelations,type FormulaRuntimeValue} from './databaseFormulaExpression';
-import {computeFormulas} from './databaseFormulaEval';
+import {computeFormulas,orderFormulaColumns} from './databaseFormulaEval';
 import type {CompanionDatabasePresentationSource} from './companionDatabasePresentation';
 
 /** Only databases actually needed by rollups or relation formula expressions. */
@@ -33,6 +33,7 @@ export function prepareCompanionDatabaseDerived(root:CompanionDatabasePresentati
     if(column.type==='unique_id')row.cells[column.id]=String(column.config.uniqueIdPrefix??'').slice(0,24)+String(row.uniqueSequence??0).padStart(Math.min(12,Math.max(1,Math.trunc(Number(column.config.uniqueIdPadding??4)))),'0');
   }
   const state=new Map<string,'visiting'|'done'>();
+  const circular=new Map([...sources].map(([id,current])=>[id,orderFormulaColumns(current.columns).circular]));
   const target=(current:CompanionDatabasePresentationSource,relationId:string|undefined,columnId:string|undefined)=>{
     const relation=current.columns.find(column=>column.id===relationId);
     if(relation?.type!=='relation'||relation.config.relationTargetKind!=='db_row'||!relation.config.relationTargetDatabaseId)return null;
@@ -58,6 +59,9 @@ export function prepareCompanionDatabaseDerived(root:CompanionDatabasePresentati
   const evaluate=(current:CompanionDatabasePresentationSource,column:DatabaseColumn):void=>{
     if(!['formula','rollup'].includes(column.type))return;
     const key=current.databaseId+':'+column.id;if(state.get(key)==='done')return;
+    if(column.type==='formula'&&circular.get(current.databaseId)?.has(column.id)){
+      computeFormulas(current.rows,current.columns,current.rows,{columnIds:new Set([column.id])});state.set(key,'done');return;
+    }
     if(state.get(key)==='visiting')throw new Error('Las propiedades calculadas contienen una referencia circular. Revisa su configuración en Nodus.');
     state.set(key,'visiting');
     if(column.type==='rollup'){

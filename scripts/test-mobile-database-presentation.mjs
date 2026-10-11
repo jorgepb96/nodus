@@ -145,6 +145,22 @@ try{
     repo.removeRelation(firstRelation.id);
     assert.deepEqual(await values(changed),actual(),'Deleting a local relation changes the computed aggregate');
     await assert.rejects(()=>values({...changed,relatedSources:{}}),/Falta una dependencia de cálculo/);
+    const {computeFormulas}=require('../shared/databaseFormulaEval.ts'),{prepareCompanionDatabaseDerived}=require('../shared/companionDatabaseDerived.ts');
+    const capturedError=structuredClone(changed),target=capturedError.relatedSources[linked.id];
+    for(const row of target.rows){row.formulaErrors={[total.id]:'Former configuration error'};row.formulaColors={[total.id]:'#ff0000'};}
+    const healthy=prepareCompanionDatabaseDerived(capturedError);
+    assert.ok(healthy.relatedSources[linked.id].rows.every(row=>!row.formulaErrors?.[total.id]&&!row.formulaColors?.[total.id]),'Successful local formula clears captured error and obsolete colour');
+    const pureColumns=repo.getColumns(linked.id),row=structuredClone(target.rows[0]),page=structuredClone(row);
+    page.formulaColors={unrelated:'#111111',[total.id]:'#ff0000'};page.formulaErrors={unrelated:'Keep',[total.id]:'Old'};
+    computeFormulas([page],pureColumns,target.rows,{columnIds:new Set([total.id])});
+    assert.equal(page.formulaColors.unrelated,'#111111');assert.equal(page.formulaErrors.unrelated,'Keep');
+    assert.equal(page.formulaColors[total.id],undefined);assert.equal(page.formulaErrors[total.id],undefined);
+    const circular=structuredClone(changed),formulaColumn=circular.columns.find(column=>column.id===formula.id);
+    const self=`property("${formula.id}")`;
+    formulaColumn.config.formula={kind:'expression',source:self,ast:parseFormulaExpression(self),resultKind:'number'};
+    const cyclic=prepareCompanionDatabaseDerived(circular).rows.find(row=>row.id===rows[0]);
+    assert.equal(cyclic.cells[formula.id],null);assert.match(cyclic.formulaErrors[formula.id],/Referencia circular/);
+    assert.notEqual(cyclic.cells[sum.id],null,'One invalid formula does not hide the other calculated or plain values');
   }));
   console.log('Prepared database presentation contract: real queries, complete selected data, portable projections, filters, cursors and typed boundary.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

@@ -8,7 +8,9 @@ import {prepareArgumentMapGeneration} from '../ai/argumentMap';
 import {finishArgumentGeneration,type ArgumentGenerationSource} from '../../shared/argumentGeneration';
 import {PROMPT_LANGUAGES,type PromptLanguage,type ModelRef} from '../../shared/types';
 import {mobileDomainAllowed} from './executionBoundary';
-import {applyProseDraft,validateProseDraft,proseDraftRevisionInput,type CompanionProseDraft} from '../../shared/companionProseDraft';
+import {applyProseDraft,validateProseDraft,proseDraftRevisionInput,portableProseReviewTemplate,localSceneBaselineRevisionInput,type CompanionProseDraft} from '../../shared/companionProseDraft';
+import {canonicalJson} from '../../shared/canonicalJson';
+import {stripWorldLinks} from '../../shared/worldManuscript';
 
 type Request={kind:'author'|'matrix'|'prose'|'argument';authorId?:string;themeId?:string;sceneId?:string;seedIdeaId?:string;language:PromptLanguage;draft?:CompanionProseDraft};
 function request(raw:unknown):Request{
@@ -36,11 +38,11 @@ export function mobileAcademicSource(raw:unknown){
 }
 /** Atomic publication receipt and canonical content, with no provider call. A
  * changed source is a visible conflict; it never overwrites an unrelated synthesis. */
-export function saveMobileAcademicResult(raw:unknown){
+export function saveMobileAcademicResult(raw:unknown,deviceGrant?:string){
   if(!mobileDomainAllowed('corpus')||!mobileDomainAllowed('writing'))throw new Error('permission_denied');
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||Buffer.byteLength(JSON.stringify(raw),'utf8')>2*1024*1024)throw new Error('invalid_academic_result');
-  const input=raw as {request:Request;revision:string;raw:string;model:ModelRef;requestId:string;generatedAt:string};
-  if(Object.keys(input).some(key=>!['request','revision','raw','model','requestId','generatedAt'].includes(key))||typeof input.raw!=='string'||!input.raw.trim()||typeof input.revision!=='string'||!/^[a-f0-9]{64}$/.test(input.revision)||typeof input.requestId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.requestId)||!Number.isFinite(Date.parse(input.generatedAt)))throw new Error('invalid_academic_result');
+  const input=raw as {request:Request;revision:string;raw:string;model:ModelRef;requestId:string;generatedAt:string;localScene?:unknown};
+  if(Object.keys(input).some(key=>!['request','revision','raw','model','requestId','generatedAt','localScene'].includes(key))||typeof input.raw!=='string'||!input.raw.trim()||typeof input.revision!=='string'||!/^[a-f0-9]{64}$/.test(input.revision)||typeof input.requestId!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.requestId)||!Number.isFinite(Date.parse(input.generatedAt)))throw new Error('invalid_academic_result');
   request(input.request);
   if(!input.model||typeof input.model.provider!=='string'||input.model.provider.length>64||typeof input.model.model!=='string'||!input.model.model||input.model.model.length>512||Object.keys(input.model).some(key=>!['provider','model','pending','reasoningEffort'].includes(key)))throw new Error('invalid_academic_model');
   const db=getDb(),payload=hash(input);
@@ -49,7 +51,7 @@ export function saveMobileAcademicResult(raw:unknown){
     const receipt=db.prepare('SELECT payload_hash,result_json FROM mobile_academic_publications WHERE request_id=?').get(input.requestId) as {payload_hash:string;result_json:string}|undefined;
     if(receipt){if(receipt.payload_hash!==payload)throw new Error('idempotency_conflict');return JSON.parse(receipt.result_json);}
     generationSignal()?.throwIfAborted();
-    const current=mobileAcademicSource(input.request);
+    const current=input.localScene===undefined?mobileAcademicSource(input.request):localSceneAcademicSource(input.request,input.localScene,deviceGrant);
     if(current.revision!==input.revision)throw new Error('academic_source_conflict');
     let result:unknown;
     if(input.request.kind==='prose')result=finishWorldProseReview(current.source as ReturnType<typeof prepareWorldProseReview>,input.raw);
@@ -64,6 +66,25 @@ export function saveMobileAcademicResult(raw:unknown){
     }
     db.prepare('INSERT INTO mobile_academic_publications VALUES(?,?,?)').run(input.requestId,payload,JSON.stringify(result));return result;
   })();
+}
+
+/** A provisional baseline cannot be used to rebase an existing Mac scene. */
+function localSceneAcademicSource(input:Request,raw:unknown,deviceGrant?:string) {
+  if(input.kind!=='prose'||!input.draft||!deviceGrant||!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('invalid_local_scene_source');
+  const proof=raw as {creationMutationId:string;baselineDraft:unknown};
+  if(Object.keys(proof).some(key=>!['creationMutationId','baselineDraft'].includes(key))||typeof proof.creationMutationId!=='string'||!/^[a-f0-9-]{36}$/i.test(proof.creationMutationId))throw new Error('invalid_local_scene_source');
+  const db=getDb();
+  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='desktop_bridge_creations'").get()
+    ||!db.prepare("SELECT 1 FROM desktop_bridge_creations WHERE grant_id=? AND mutation_id=? AND table_name='world_scenes' AND row_key=?").get(deviceGrant,proof.creationMutationId,JSON.stringify([input.sceneId])))throw new Error('local_scene_creation_unconfirmed');
+  const baseline=validateProseDraft(proof.baselineDraft),canonical=prepareWorldProseReview(input.sceneId!,input.language);
+  const sortBeats=(draft:CompanionProseDraft)=>draft.beats.map(beat=>({threadKind:beat.threadKind,threadId:beat.threadId,threadTitle:beat.threadTitle,mark:beat.mark,text:beat.text??null})).sort((a,b)=>`${a.threadKind}:${a.threadId}`<`${b.threadKind}:${b.threadId}`?-1:1);
+  if(canonical.sources.sceneTitle!==baseline.sceneTitle||canonical.sources.prose!==stripWorldLinks(baseline.text)
+    ||canonicalJson(sortBeats({sceneTitle:'',text:'',beats:canonical.beats}))!==canonicalJson(sortBeats(baseline)))throw new Error('academic_source_conflict');
+  const template=portableProseReviewTemplate(input.language),templateRevision=createHash('sha256').update(canonicalJson(template)).digest('hex');
+  const seed=createHash('sha256').update(localSceneBaselineRevisionInput(input.sceneId!,input.language,proof.creationMutationId,templateRevision)).digest('hex');
+  const baseRevision=createHash('sha256').update(proseDraftRevisionInput(seed,baseline)).digest('hex');
+  const source=applyProseDraft({...template,sceneId:input.sceneId!},input.draft);
+  return {source,revision:createHash('sha256').update(proseDraftRevisionInput(baseRevision,input.draft)).digest('hex')};
 }
 
 /** The Mac and companion can consult the same completed device maps. Reading

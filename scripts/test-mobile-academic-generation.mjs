@@ -88,5 +88,37 @@ try{
     assert.throws(()=>academic.saveMobileAcademicResult(pending),/academic_source_conflict/);
     assert.equal(providers,0);
   },['corpus','writing'])));
+  const offlineWorld=vaults.createVault('Escena autónoma antes de sincronizar','worldbuilding');
+  const sceneId=`scn_${randomUUID()}`,ruleId=`rul_${randomUUID()}`,creationMutationId=randomUUID(),grant='phone-creation';
+  const baselineDraft={sceneTitle:'Escena nueva del móvil',text:'',beats:[{threadKind:'rule',threadId:ruleId,threadTitle:'La puerta',mark:'breaks',text:'Se paga.'}]};
+  const currentDraft={...baselineDraft,text:'Ada cruza la puerta pagando el precio.'};
+  const request={kind:'prose',sceneId,language:'es',draft:currentDraft},template=prose.portableProseReviewTemplate('es');
+  const {canonicalJson}=require('../shared/canonicalJson.ts');
+  const sha=value=>createHash('sha256').update(value).digest('hex');
+  const packaged=JSON.parse(fs.readFileSync(new URL('../../nodus-mobile/ios/Packages/NodusKit/Sources/NodusKit/Resources/prose-draft-templates.json',import.meta.url),'utf8'));
+  assert.deepEqual(Object.keys(packaged.templates).sort(),[...PROMPT_LANGUAGES].sort());
+  for(const language of PROMPT_LANGUAGES){const source=prose.portableProseReviewTemplate(language);assert.deepEqual(packaged.templates[language].source,source);assert.equal(packaged.templates[language].templateRevision,sha(canonicalJson(source)));}
+  const seed=sha(prose.localSceneBaselineRevisionInput(sceneId,'es',creationMutationId,sha(canonicalJson(template))));
+  const input={request,revision:sha(prose.proseDraftRevisionInput(sha(prose.proseDraftRevisionInput(seed,baselineDraft)),currentDraft)),
+    localScene:{creationMutationId,baselineDraft},raw:'LATIDO: sí — Se paga.',model:{provider:'phone',model:'model'},requestId:randomUUID(),generatedAt:new Date().toISOString()};
+  const capture=()=>vaults.withOwningVault(offlineWorld.id,()=>database.withVaultDatabase(offlineWorld.id,()=>withMobileOperation(()=>academic.saveMobileAcademicResult(input,grant),['corpus','writing'])));
+  await assert.rejects(capture,/local_scene_creation_unconfirmed/,'A provider result cannot claim its Mac scene has already been created');
+  const {applyBridgeMutations}=require('../electron/desktopBridge/mutations.ts'),stamp=new Date().toISOString(),times={created_at:stamp,updated_at:stamp};
+  const mutation=(id,table,key,row)=>({id,kind:'upsert',clientId:grant,table,key,row,assets:[],schemaVersion:database.SCHEMA_VERSION,createdAt:stamp});
+  const edits=[mutation(creationMutationId,'world_scenes',[sceneId],{scene_id:sceneId,title:baselineDraft.sceneTitle,narrative_order:0,...times}),
+    mutation(randomUUID(),'world_rules',[ruleId],{rule_id:ruleId,title:'La puerta',title_key:'la puerta',...times}),
+    mutation(randomUUID(),'world_beats',['rule',ruleId,sceneId],{thread_kind:'rule',thread_id:ruleId,scene_id:sceneId,mark:'breaks',text:'Se paga.',...times})];
+  assert.equal((await applyBridgeMutations(offlineWorld.id,grant,edits,['corpus','writing'])).applied.length,3);
+  await vaults.withOwningVault(offlineWorld.id,()=>database.withVaultDatabase(offlineWorld.id,()=>withMobileOperation(()=>{
+    assert.throws(()=>academic.saveMobileAcademicResult(input,'different-phone'),/local_scene_creation_unconfirmed/);
+    const result=academic.saveMobileAcademicResult(input,grant);assert.equal(result.beats[0].present,true);
+    assert.deepEqual(academic.saveMobileAcademicResult(input,grant),result);
+    const db=database.getDb();
+    assert.equal(db.prepare('SELECT count(*) n FROM world_scene_text WHERE scene_id=?').get(sceneId).n,0,'Reviewing an unsaved draft cannot write its prose');
+    db.prepare('UPDATE world_scenes SET title=? WHERE scene_id=?').run('Cambio posterior del Mac',sceneId);
+    assert.throws(()=>academic.saveMobileAcademicResult({...input,requestId:randomUUID()},grant),/academic_source_conflict/);
+    assert.deepEqual(academic.saveMobileAcademicResult(input,grant),result,'A completed receipt survives later canonical changes');
+    assert.equal(providers,0);
+  },['corpus','writing'])));
   console.log('Canonical academic sources, current manuscript drafts, persisted argument catalogue, provider-free publication, duplicate receipt and source conflict passed.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

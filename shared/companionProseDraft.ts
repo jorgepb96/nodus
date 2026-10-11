@@ -3,6 +3,8 @@ import {BEAT_MARK_LABEL,marksFor} from './worldThreads';
 import {proseReviewContextCopy} from './worldContextPromptPacks';
 import {stripWorldLinks} from './worldManuscript';
 import {hasProseReviewMaterial,type ProseReviewSources} from './worldProseReview';
+import {worldOperationSystemPrompt} from './worldOperationPrompts';
+import {composeProseReviewContext} from './worldProseReview';
 
 export type ProseDraftBeat=Pick<WorldBeat,'threadKind'|'threadId'|'threadTitle'|'mark'|'text'>;
 export type CompanionProseDraft={sceneTitle:string;text:string;beats:ProseDraftBeat[]};
@@ -25,6 +27,16 @@ export function proseDraftTemplate(language:PromptLanguage){
 }
 export type PreparedProseReview={sceneId:string;beats:ProseDraftBeat[];sources:ProseReviewSources;noMaterial:boolean;
   prompt:{system:string;user:string;plainContext:boolean;temperature:number;maxTokens:number};draftTemplate:ReturnType<typeof proseDraftTemplate>};
+/** Provider-independent template for a scene authored on the companion. */
+export function portableProseReviewTemplate(language:PromptLanguage):PreparedProseReview {
+  const sources:ProseReviewSources={sceneTitle:'',prose:'',beats:[]};
+  return {sceneId:'',beats:[],sources,noMaterial:true,draftTemplate:proseDraftTemplate(language),
+    prompt:{system:worldOperationSystemPrompt('proseReview',language),user:composeProseReviewContext(sources,language),plainContext:true,temperature:0.2,maxTokens:600}};
+}
+export function localSceneBaselineRevisionInput(sceneId:string,language:PromptLanguage,creationMutationId:string,templateRevision:string):string {
+  return ['mobile-prose-local-scene-v1',sceneId,language,creationMutationId,templateRevision]
+    .map(field=>`${new TextEncoder().encode(field).length}:${field}`).join('');
+}
 export function applyProseDraft(source:PreparedProseReview,raw:unknown):PreparedProseReview {
   const draft=validateProseDraft(raw),template=source.draftTemplate;
   const sources={...source.sources,sceneTitle:draft.sceneTitle,prose:stripWorldLinks(draft.text),beats:draft.beats.map(beat=>({threadLabel:`${template.threadKinds[beat.threadKind]}: ${beat.threadTitle}`,mark:template.beatMarks[beat.mark as BeatMark]??beat.mark,text:beat.text}))};

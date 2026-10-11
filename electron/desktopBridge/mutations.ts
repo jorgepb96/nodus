@@ -26,6 +26,7 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
   await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => {
     const db = getDb();
     db.exec('CREATE TABLE IF NOT EXISTS desktop_bridge_receipts (grant_id TEXT NOT NULL, mutation_id TEXT NOT NULL, payload_hash TEXT NOT NULL, applied_at TEXT NOT NULL, PRIMARY KEY(grant_id,mutation_id))');
+    db.exec('CREATE TABLE IF NOT EXISTS desktop_bridge_creations(grant_id TEXT NOT NULL,mutation_id TEXT NOT NULL,table_name TEXT NOT NULL,row_key TEXT NOT NULL,PRIMARY KEY(grant_id,mutation_id))');
     for (const raw of input) {
       if (!raw || typeof raw !== 'object' || typeof raw.id !== 'string' || raw.id.length > 128) throw new Error('invalid_mutation');
       if (!permitted.has(raw.table) || !['upsert', 'delete'].includes(raw.kind) || !Array.isArray(raw.key)) { rejected.push({ id: raw.id, reason: 'table_not_writable' }); continue; }
@@ -34,6 +35,8 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
       const receipt = db.prepare('SELECT payload_hash FROM desktop_bridge_receipts WHERE grant_id=? AND mutation_id=?').get(grantId, raw.id) as { payload_hash: string } | undefined;
       if (receipt) { if (receipt.payload_hash === payload) duplicate.push(raw.id); else rejected.push({ id: raw.id, reason: 'idempotency_conflict' }); continue; }
       try {db.transaction(() => {
+        const creatingScene=worldTables.has(raw.table)&&raw.table==='world_scenes'&&raw.kind==='upsert'&&raw.key.length===1
+          &&!db.prepare('SELECT 1 FROM world_scenes WHERE scene_id=?').get(raw.key[0]);
         if(withMobileOperation(()=>applyMobileDatabaseMutation(raw))){
           db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId,raw.id,payload,new Date().toISOString());accepted.push(raw.id);return;
         }
@@ -45,6 +48,7 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
           rejected.push({ id: raw.id, reason: result.keptLocal ? 'conflict_local_revision' : result.refused[0]?.reason ?? result.retryable[0]?.reason ?? 'not_applied' }); return;
         }
         if(worldTables.has(raw.table))withMobileOperation(()=>finishMobileWorldMutation(raw,before));
+        if(creatingScene)db.prepare('INSERT INTO desktop_bridge_creations VALUES(?,?,?,?)').run(grantId,raw.id,raw.table,JSON.stringify(raw.key));
         db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId, raw.id, payload, new Date().toISOString());
         accepted.push(raw.id);
       })();}catch(error){if(error instanceof MobileDatabaseMutationError)rejected.push({id:raw.id,reason:error.message,error_description:error.description});else if(error instanceof MobileWorldMutationError)rejected.push({id:raw.id,reason:error.message});else throw error;}

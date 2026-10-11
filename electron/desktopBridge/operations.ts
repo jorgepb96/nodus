@@ -68,7 +68,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if(method==='getMobileAcademicSource'||method==='saveMobileAcademicResult'){
     if(args.length!==1)throw new Error('invalid_arguments');
     if(method==='saveMobileAcademicResult'&&(!bridgeJobId||!jobIdentity))throw new Error('job_required');
-    const invoke=()=>{signal?.throwIfAborted();return withMobileOperation(()=>method==='getMobileAcademicSource'?mobileAcademicSource(args[0]):saveMobileAcademicResult(args[0]),domains);};
+    const invoke=()=>{signal?.throwIfAborted();return withMobileOperation(()=>method==='getMobileAcademicSource'?mobileAcademicSource(args[0]):saveMobileAcademicResult(args[0],jobIdentity?.deviceGrant),domains);};
     const result=await withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>signal?withGenerationSignal(signal,invoke):invoke()));
     if(method==='saveMobileAcademicResult')invalidateLiveCorpus(vaultId);return result;
   }

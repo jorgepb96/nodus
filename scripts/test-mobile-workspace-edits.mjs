@@ -79,6 +79,23 @@ try {
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(rejected.noteId).n), 0, 'Invalid creations roll back the note and its complete structured editor');
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
   }
+  // A valid sub-2 MB attachment occurs in native JSON and Markdown. Its
+  // complete envelope exceeds the former 4 MiB transport limit.
+  const {MOBILE_WORKSPACE_EDIT_MAX_BYTES} = require('../shared/mobileWorkspace.ts');
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="#6158e8"/><!--' + 'x'.repeat(1989000) + '--></svg>';
+  const image = 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
+  const imageNote = await scoped(() => notes.createNote({title:'Imagen conservada',content:''}));
+  const imageOriginal = await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id));
+  const imageRequest = {id:randomUUID(),noteId:imageNote.id,input:{title:'Imagen conservada',contentMarkdown:`![Nodus](${image})`,
+    nativeDocument:[{id:'image-37',type:'image',props:{url:image,name:'Nodus.svg'}}],schemaVersion:2,expectedRevision:imageOriginal.revision}};
+  const wireBytes = Buffer.byteLength(JSON.stringify(imageRequest));
+  assert.ok(wireBytes > 4 * 1024 * 1024 && wireBytes < MOBILE_WORKSPACE_EDIT_MAX_BYTES);
+  const imageSaved = await applyWorkspaceEdit(first.id,'phone-grant',imageRequest);
+  assert.deepEqual(imageSaved.editorData.nativeDocument,imageRequest.input.nativeDocument);
+  assert.equal(imageSaved.editorData.contentMarkdown,imageRequest.input.contentMarkdown);
+  const imageHistory = imageSaved.editorData.versions.length;
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageRequest),imageSaved);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id))).versions.length,imageHistory);
   const nextDerivedId = await scoped(() => ideas.nextGlobalId());
   const ideaCreation = { id: randomUUID(), noteId: randomUUID(), creation: { kind: 'idea', folderId: folder.id, tags: [], globalId: `manual-${randomUUID()}` },
     input: { title: 'Idea escrita sin conexión', contentMarkdown: 'Desarrollo creado por el usuario.', nativeDocument: markdownToBlockNote('Desarrollo creado por el usuario.'), schemaVersion: 2, expectedRevision: 0 } };

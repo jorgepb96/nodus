@@ -6,6 +6,7 @@ import { createManualIdeaWithIdentity } from '../db/manualIdeasRepo';
 import { getIdea } from '../db/ideasRepo';
 import { getWorkspaceNoteEditorData, updateWorkspaceNote } from '../db/workspaceRepo';
 import { canonicalJson } from '../../shared/canonicalJson';
+import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
 import type { StudyDocUpdateInput } from '../../shared/studyEditor';
 import { withMobileOperation } from './executionBoundary';
 import { invalidateLiveCorpus } from './liveCorpus';
@@ -19,6 +20,7 @@ const fields = new Set(['academicMetadata', 'nativeDocument', 'schemaVersion', '
 /** A complete editor save and its acknowledgement commit together in the owning
  * vault. Replaying a lost acknowledgement must not create another Yjs revision. */
 export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: unknown): Promise<unknown> {
+  if (Buffer.byteLength(JSON.stringify(raw) ?? '', 'utf8') > MOBILE_WORKSPACE_EDIT_MAX_BYTES) throw new WorkspaceEditFailure('workspace_edit_too_large');
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new WorkspaceEditFailure('invalid_workspace_edit');
   const { id, noteId, input, creation } = raw as { id?: unknown; noteId?: unknown; input?: unknown; creation?: unknown };
   if (typeof id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id) ||

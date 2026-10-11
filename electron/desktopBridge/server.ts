@@ -14,6 +14,7 @@ import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOpe
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
+import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
 import { readPrivateSource, listPrivateSources, PrivateSourceReadError } from './privateSources';
@@ -393,7 +394,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       vaultIds: pairing.vaultIds, domains: pairing.domains,
       vaults: pairing.vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
-      workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, creation: ['markdown', 'idea'] } : undefined,
+      workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
@@ -436,10 +437,10 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   if (request.method === 'POST' && workspaceEdit) {
     const vaultId = decodeURIComponent(workspaceEdit[1]);
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
-    const input = await body(request, 4 * 1024 * 1024);
+    const input = await body(request, MOBILE_WORKSPACE_EDIT_MAX_BYTES);
     try { reply(response, 200, await applyWorkspaceEdit(vaultId, pairing.id, input)); }
     catch (error) {
-      if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
+      if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : error.code === 'workspace_edit_too_large' ? 413 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
       else reply(response, 400, { error: 'invalid_document', error_description: error instanceof Error ? error.message : 'The document could not be saved.' });
     }
     return;

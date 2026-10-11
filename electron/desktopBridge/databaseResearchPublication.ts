@@ -60,7 +60,7 @@ export async function saveMobileDatabaseResearchReport(raw:{request:DatabaseDeep
     if(identity.some(key=>authored[key]!==result[key])||artifacts.some(key=>!same(authored.structured[key],result.structured[key]))||quality.some(key=>!same(authored.quality[key],result.quality[key]))||provenance.some(key=>!same(authored.provenance[key],result.provenance[key])))throw new Error('database_publication_verification_failed');
     signal?.throwIfAborted();
     return db.transaction(()=>{
-      const duplicate=db.prepare('SELECT payload_hash,report_id FROM mobile_database_research_publications WHERE request_id=?').get(raw.requestId) as typeof receipt;
+      const duplicate=db.prepare('SELECT payload_hash,report_id FROM mobile_database_research_publications WHERE request_id=?').get(raw.requestId) as {payload_hash:string;report_id:string}|undefined;
       if(duplicate) {if(duplicate.payload_hash!==payload)throw new Error('idempotency_conflict');const report=repo.getDatabaseResearchReport(duplicate.report_id);if(!report)throw new Error('database_publication_result_unavailable');return report;}
       const run=repo.createDatabaseResearchRun({databaseId:request.databaseIds[0],objective:request.objective,title:verified.run.title,language:verified.run.language,model:verified.run.model,options:verified.run.options},{id:verified.run.id,createdAt:verified.run.createdAt});
       repo.startDatabaseResearchRun(run.id);

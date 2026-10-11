@@ -10,7 +10,7 @@ export class MobileWorldMutationError extends Error {
     ? 'El texto de esta escena cambió en Nodus. Tu borrador se conserva en el móvil. Compara ambas versiones antes de volver a guardarlo.'
     : 'Nodus no pudo aplicar este cambio del mundo. Se conserva en la cola de este dispositivo para su revisión.';}
 }
-const fail=(code:string):never=>{throw new MobileWorldMutationError(code);};
+function fail(code:string):never {throw new MobileWorldMutationError(code);}
 
 /** Only the closed, family-scoped content registry can reach this adapter. */
 export function prepareMobileWorldMutation(raw:{table:string;kind:string;key:string[];row?:Record<string,unknown>}) {

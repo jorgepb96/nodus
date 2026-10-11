@@ -116,6 +116,7 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   if(raw.expectedRevision===null&&!uuid(raw.conversationId)) throw new MobileChatFailure(400,'invalid_chat_creation');
   const draft = raw.draft;
   if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence','world','placement'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  const messages=draft.messages;
   if(draft.placement!==undefined)validatePlacement(draft.placement,kind);
   if(draft.databaseIds!==undefined && (kind!=='database'||!Array.isArray(draft.databaseIds)||draft.databaseIds.length>30||new Set(draft.databaseIds).size!==draft.databaseIds.length||draft.databaseIds.some(id=>typeof id!=='string'||!getDatabase(id))))throw new MobileChatFailure(400,'invalid_chat_database_selection');
   if(draft.study!==undefined){if(kind!=='study')throw new MobileChatFailure(400,'invalid_study_chat_options');try{normalizeMobileStudyChatOptions(draft.study as Parameters<typeof normalizeMobileStudyChatOptions>[0]);}catch{throw new MobileChatFailure(400,'invalid_study_chat_options');}}
@@ -143,7 +144,7 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
     const rich = (item:Record<string,unknown>)=>Object.fromEntries(Object.entries(item).filter(([key])=>!['id','role','content','createdAt','error','interrupted'].includes(key)));
     if(!original&&kind==='study'&&Array.isArray(message.citations)) {
       if(message.role!=='assistant'||!uuid(message.id)||Object.keys(rich(message)).some(key=>key!=='citations'))throw new MobileChatFailure(400,'chat_rich_turn_changed');
-      const question=[...draft.messages.slice(0,index)].reverse().find(item=>object(item)&&item.role==='user');
+      const question=[...messages.slice(0,index)].reverse().find(item=>object(item)&&item.role==='user');
       const proofs=object(draft.studyEvidence)?draft.studyEvidence[message.id]:undefined;
       const cited=new Set<string>();
       for(const citation of message.citations) {
@@ -192,13 +193,14 @@ export async function saveMacStoredQuestionAttachments(vaultId:string,grantId:st
     return saveMobileChatInternal(vaultId,grantId,kind,edit,domains,{id:questionId,role:'user'});
   }));
 }
-async function saveMobileChatInternal(vaultId: string,grantId: string,kind: string,raw: unknown,domains: readonly string[],trustedMessage?:{id:string;role:'user'|'assistant'},metadata?:GeneratedMetadata) {
+async function saveMobileChatInternal(vaultId: string,grantId: string,kind: string,raw: unknown,domains: readonly string[],trustedMessage?:{id:string;role:'user'|'assistant'},metadata?:GeneratedMetadata):Promise<{id:string;snapshot?:MobileChatDocument;deleted?:boolean}> {
   return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
     assertKind(kind);
     if(!domains.includes('corpus')||!domains.includes('writing')) throw new MobileChatFailure(403,'permission_denied');
     // Validate the outer identity before receipt lookup; large hostile inputs do
     // not evade limits through an already acknowledged request identity.
     if(!object(raw)||!uuid(raw.id)||!identity(raw.conversationId)||Buffer.byteLength(JSON.stringify(raw),'utf8')>MOBILE_CHAT_MAX_BYTES) throw new MobileChatFailure(400,'invalid_chat_edit');
+    const conversationId=raw.conversationId;
     const payload = digest({kind,raw}),receiptKey=`${grantId}:${raw.id}`;
     const apply=(store?:StudyAssistantStore)=>{
       const previous = kind==='study' ? store!.mobileCompanion?.receipts[receiptKey] : getDb().prepare('SELECT payload_hash AS hash,result_json AS json FROM mobile_chat_receipts WHERE grant_id=? AND request_id=?').get(grantId,raw.id) as {hash:string;json:string}|undefined;
@@ -206,7 +208,7 @@ async function saveMobileChatInternal(vaultId: string,grantId: string,kind: stri
         if(previous.hash!==payload) throw new MobileChatFailure(409,'idempotency_conflict');
         return JSON.parse(previous.json) as {id:string;snapshot?:MobileChatDocument;deleted?:boolean};
       }
-      const current = rawConversation(kind,raw.conversationId) ? snapshot(kind,raw.conversationId,store) : null;
+      const current = rawConversation(kind,conversationId) ? snapshot(kind,conversationId,store) : null;
       const request=validate(raw,current,kind,trustedMessage);
       if(request.expectedRevision===null ? current!==null : !current || current.revision!==request.expectedRevision) throw new MobileChatFailure(409,'chat_revision_conflict',current ?? undefined);
       if(kind==='study' && !domains.includes('study-recordings') && request.draft?.messages.some(message=>String(message.content).includes('nodus://study/recording/') || Array.isArray(message.citations) && message.citations.some(citation=>object(citation)&&citation.kind==='transcript'))) throw new MobileChatFailure(403,'permission_denied');

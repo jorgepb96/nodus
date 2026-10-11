@@ -34,6 +34,9 @@ import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabas
 import {databaseOfflineComposerMethods,databaseOfflineComposer} from './databaseResearchOffline';
 import {exportDeviceDatabaseResearch} from './databaseResearchExport';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
+import {PROVIDER_LABELS} from '@shared/providers';
+import {normalizePromptLanguage} from '@shared/promptLanguageOptions';
+import type {DatabaseDeepResearchSnapshot} from '../app/viewSnapshots';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
 import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
 import { dictionarySnapshot } from '@shared/dictionarySnapshot';
@@ -369,12 +372,15 @@ function SurfaceIssue({issue,title}: {issue: string; title?: string}) {
 
 function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [databaseSnapshot,setDatabaseSnapshot]=useState<React.ComponentProps<typeof DatabaseDeepResearchView>['snapshot']>({openReportId:config.initialDatabaseReportId||null});
+  const [offlineReadSettings]=useState<AppSettings>(()=>({...DEFAULT_APP_SETTINGS,
+    providerKeys:Object.fromEntries(Object.keys(PROVIDER_LABELS).map(provider=>[provider,false])) as AppSettings['providerKeys'],
+    lockedProviderKeys:[],uiLanguage:config.language,promptLanguage:normalizePromptLanguage(config.language)}));
+  const [databaseSnapshot,setDatabaseSnapshot]=useState<DatabaseDeepResearchSnapshot>({selectedDatabaseIds:[],selectedViewIds:[],openReportId:config.initialDatabaseReportId||null});
   const [error, setError] = useState('');
   const [jobError, setJobError] = useState('');
   useEffect(() => {
     if (config.surface !== 'databasePresentation' && (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType))) void call('getSettings').then(setSettings).catch(error => {
-      if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings({...DEFAULT_APP_SETTINGS,uiLanguage:config.language,promptLanguage:config.language});
+      if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings(offlineReadSettings);
       else setError(String(error));
     });
     const listener = (event: ErrorEvent) => setError(event.message);
@@ -419,7 +425,7 @@ function App() {
             onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
       : config.surface === 'graph' ? <StellarWorkspace source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
-      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??DEFAULT_APP_SETTINGS} mobile initialMap={config.initialArgumentMap}/>
+      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
       : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
@@ -436,7 +442,7 @@ function App() {
               onOpenMaterial={(id,location)=>navigate('citation',mobileStudyCitation('material',id,location??{}))}
               onOpenRecording={(id,timestamp,location)=>navigate('citation',mobileStudyCitation('recording',id,{...location,timestampSeconds:timestamp}))}
               onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
-          : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+          : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId={null} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
       : <ArgumentMapView settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
     <FeedbackHost/>

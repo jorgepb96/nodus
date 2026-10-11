@@ -90,7 +90,6 @@ export function prepareCompanionDatabaseDerived(root:CompanionDatabasePresentati
     state.set(key,'done');
   };
   for(const current of sources.values())for(const column of current.columns)evaluate(current,column);
-  source.relatedSources=Object.fromEntries([...sources].filter(([id])=>id!==root.databaseId));
-  return source;
+  return {...source,relatedSources:Object.fromEntries([...sources].filter(([id])=>id!==root.databaseId))};
 }
 function compare(left:string,right:string){return left<right?-1:left>right?1:0;}

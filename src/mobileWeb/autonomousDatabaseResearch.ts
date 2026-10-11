@@ -7,6 +7,8 @@ import {structuredPrompt} from './structuredPrompt';
 import type {DatabaseResearchReportSummary} from '../views/DatabaseDeepResearchView';
 import {normalizeDatabaseDeepResearchReportType} from '@shared/databaseDeepResearch';
 import DeviceDatabaseWorker from './databaseResearchWorker?worker&inline';
+import {AI_PROVIDERS} from '@shared/providers';
+import type {ModelRef} from '@shared/types';
 
 type Call=(method:string,...args:any[])=>Promise<any>;
 export interface DatabaseResearchCheckpoint {
@@ -15,6 +17,12 @@ export interface DatabaseResearchCheckpoint {
   reader?:{version:1;report:DatabaseResearchReport;sourceRevision:string;exportDetail:Omit<DatabaseResearchRunDetail,'report'>};reading?:unknown;
 }
 const active=new Map<string,{checkpoint:DatabaseResearchCheckpoint;controller:AbortController;task:Promise<void>}>();
+function databaseModel(value:DatabaseDeepResearchJobInput['model']):ModelRef {
+  if(!value?.model?.trim())throw new Error('Elige el modelo y configura su proveedor en los ajustes del móvil.');
+  const provider=AI_PROVIDERS.find(provider=>provider===value.provider)??(value.provider==='nodus'?'nodus':undefined);
+  if(!provider)throw new Error('El proveedor guardado para esta investigación no está reconocido. Revisa el modelo en los ajustes del móvil.');
+  return {provider,model:value.model};
+}
 export async function databaseResearchCheckpoints(call:Call):Promise<DatabaseResearchCheckpoint[]> {
   const values=await call('mobileDatabaseResearchCheckpoints');if(!Array.isArray(values))throw new Error('invalid_database_checkpoints');return values;
 }
@@ -39,7 +47,7 @@ export async function enqueueAutonomousDatabaseResearch(call:Call,raw:DatabaseDe
   const previous=await call('mobileGenerationCheckpoint','load','database',entityKey) as DatabaseResearchCheckpoint|null;
   const checkpoint:DatabaseResearchCheckpoint=previous&&!['available','cancelled'].includes(previous.state)?previous:{id:crypto.randomUUID(),entityKey,request,state:'accepted',createdAt:new Date().toISOString()};
   delete checkpoint.hiddenFromQueue;
-  if(!checkpoint.request.model)throw new Error('Elige el modelo y configura su proveedor en los ajustes del móvil.');
+  databaseModel(checkpoint.request.model);
   await call('mobileGenerationCheckpoint','save','database',entityKey,checkpoint);
   const controller=new AbortController();
   const task=execute(call,checkpoint,controller,notify).finally(()=>active.delete(entityKey));
@@ -67,7 +75,7 @@ async function execute(call:Call,checkpoint:DatabaseResearchCheckpoint,controlle
     await processDatabaseResearchRun(repository.detail.run.id,{onProgress:progress=>{controller.signal.throwIfAborted();notify(progress);void persist().catch(()=>controller.abort());},complete:async input=>{
       controller.signal.throwIfAborted();await writes;
       const prompt=databaseResearchCompletionInput(input);
-      const raw=await call('mobileStructuredCompletion',{...structuredPrompt(prompt,checkpoint.request.model!,checkpoint.request.thinkingEffort),generationId:checkpoint.id});
+      const raw=await call('mobileStructuredCompletion',{...structuredPrompt(prompt,databaseModel(checkpoint.request.model),checkpoint.request.thinkingEffort),generationId:checkpoint.id});
       const value=typeof raw==='string'?JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,'')):raw;
       const valid=input.role==='planner'?isDatabaseDeepResearchPlannerOutput:input.role==='critic'?isDatabaseDeepResearchCriticOutput:input.role==='verifier'?isDatabaseDeepResearchVerifierOutput:isDatabaseDeepResearchNarrativeOutput;
       if(!valid(value))throw new Error('El modelo no devolvió la estructura requerida para la investigación de datos.');return JSON.stringify(value);
@@ -96,7 +104,7 @@ async function execute(call:Call,checkpoint:DatabaseResearchCheckpoint,controlle
 export async function localDatabaseResearchJobs(call:Call) {
   return (await databaseResearchCheckpoints(call)).filter(item=>!item.hiddenFromQueue).map(item=>{
     const paused=['accepted','running'].includes(item.state)&&!active.has(item.entityKey),run=item.detail?.run;
-    const job:DatabaseDeepResearchJob & {retryable:boolean}={id:run?.id??`dbr_mobile_${item.id}`,title:run?.title??item.request.objective.slice(0,120),reportType:run?.reportType??item.request.reportType,
+    const job:DatabaseDeepResearchJob & {retryable:boolean}={id:run?.id??`dbr_mobile_${item.id}`,title:run?.title??item.request.objective.slice(0,120),reportType:run?.reportType??(item.request.reportType==='auto'?undefined:item.request.reportType),
       status:paused?'stale':run?.status??(item.state==='failed'?'failed':item.state==='cancelled'?'cancelled':'queued'),progress:run?.progress??0,phase:run?.phase??'snapshot',createdAt:run?.createdAt??item.createdAt??'1970-01-01T00:00:00Z',
       error:paused?'Investigación pausada en este dispositivo. Puedes continuar con la solicitud guardada.':item.error??run?.error??null,
       retryable:!item.detail?.report&&(paused||item.state==='failed'||item.state==='cancelled')};

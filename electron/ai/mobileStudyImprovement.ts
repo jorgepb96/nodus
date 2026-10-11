@@ -9,7 +9,7 @@ import {getSettings} from '../db/settingsRepo';
 import {getStudyStyle, listStudyStyles, listStudyImprovementLog, recordStudyImprovement} from '../db/studyStylesRepo';
 
 const hash = (text:string) => createHash('sha256').update(text).digest('hex');
-function studySource(target: {noteId?: string; documentId?: string}): MobileStudyImprovementOfflineSource['source'] {
+function studySource(target: {noteId?: string|null; documentId?: string|null}): MobileStudyImprovementOfflineSource['source'] {
   const id = target?.noteId || target?.documentId;
   if (Boolean(target?.noteId) === Boolean(target?.documentId) || typeof id !== 'string' || !id || id.length > 256) throw new Error('invalid_study_improvement_target');
   const source = target.noteId

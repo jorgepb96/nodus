@@ -98,7 +98,7 @@ export async function serveChatCapabilityFile(request:IncomingMessage,response:S
       let file:{blob:Buffer;mimeType:string;name:string}|null;
       if(attachment) {
         const attachmentId=asset.source.split('/').pop()!;
-        if(!Array.isArray(data.messages)||!data.messages.some(message=>message&&typeof message==='object'&&'attachments' in message&&Array.isArray(message.attachments)&&message.attachments.some(value=>value&&typeof value==='object'&&value.id===attachmentId)))throw new MobileChatFailure(403,'chat_attachment_not_referenced');
+        if(!Array.isArray(data.messages)||!data.messages.some(message=>message&&typeof message==='object'&&'attachments' in message&&Array.isArray(message.attachments)&&message.attachments.some((value:unknown)=>value&&typeof value==='object'&&'id' in value&&value.id===attachmentId)))throw new MobileChatFailure(403,'chat_attachment_not_referenced');
         try {
           const original=researchAttachmentOriginal({surface:asset.kind as 'research'|'world'|'database'|'study',conversationId:asset.conversationId},attachmentId),stat=fs.lstatSync(original.path);
           const vault=fs.realpathSync(activeVaultDir()),resolved=fs.realpathSync(original.path);

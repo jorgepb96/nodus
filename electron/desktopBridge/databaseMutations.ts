@@ -12,7 +12,7 @@ export class MobileDatabaseMutationError extends Error {
     : 'Nodus no pudo aplicar este cambio de base de datos. Se conserva en la cola del dispositivo para su revisión.';}
 }
 type Mutation={table:string;kind:string;key:unknown[];row?:Record<string,unknown>};
-const fail=(message:string):never=>{throw new MobileDatabaseMutationError(message);};
+function fail(message:string):never {throw new MobileDatabaseMutationError(message);}
 function identity(value:unknown){if(typeof value!=='string'||!value||value.length>1024)fail('invalid_database_identity');return value as string;}
 function title(value:unknown){if(typeof value!=='string'||value.length>4096||!value.trim())fail('invalid_database_title');return (value as string).trim();}
 function createdId(value:unknown,prefix:string){const id=identity(value);if(!new RegExp(`^${prefix}_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`,'i').test(id))fail('invalid_database_creation_identity');return id;}

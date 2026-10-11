@@ -113,7 +113,11 @@ export async function streamMobileCompanionChat(raw:unknown,identity:MobileChatJ
     if(kind==='reasoning'){emit('mobile:chat:reasoning',request.requestId,value);return;}
     text=kind==='replace'?value:text+value;emit(kind==='replace'?'mobile:chat:replace':'mobile:chat:delta',request.requestId,value);schedule();
   }
-  const generation=request.generation,messages=baseMessages as ResearchChatRequest['messages'];
+  const generation=request.generation;
+  const messages:ResearchChatRequest['messages']=baseMessages.map(message=>{
+    if((message.role!=='user'&&message.role!=='assistant')||typeof message.content!=='string')throw new MobileChatFailure(422,'invalid_live_chat_history');
+    return {...message,role:message.role,content:message.content};
+  });
   const promptKey=`${request.kind}:${latest.id}`;
   const common={model:generation.model,systemPromptId:generation.systemPromptId===undefined?getResearchSystemPrompts(promptKey).selectedId:generation.systemPromptId,thinkingEffort:generation.thinkingEffort,attachmentIds:generation.attachmentIds,conversationId:latest.id};
   const owner=chatAssetOwner({research:'assistant',world:'world-assistant',database:'database',study:'study'}[request.kind],latest.id,vaultId),releaseAssets=retainChatAssets(owner);
@@ -139,7 +143,7 @@ export async function streamMobileCompanionChat(raw:unknown,identity:MobileChatJ
     emit('mobile:chat:replace',request.requestId,text);
     const interrupted=executionSignal.aborted||result.aborted===true||result.interrupted===true;
     if(request.kind==='world'&&Array.isArray(result.focus))resolvedWorld={selection:resolvedWorld?.selection??latest.data.selection as WorldChatSelection,focus:result.focus as NonNullable<NonNullable<MobileChatEdit['draft']>['world']>['focus']};
-    const activeSkills=[...enabledChatSkills(request.kind),...(request.kind==='research'?invokedChatSkills(request.generation.skillIds??[]):[])];
+    const activeSkills=[...(request.kind==='research'&&getActiveVault().type==='academic'?[]:enabledChatSkills('assistant')),...(request.kind==='research'?invokedChatSkills(request.generation.skillIds??[]):[])];
     const skills=[...new Map(activeSkills.map(skill=>[skill.id,{id:skill.id,name:skill.name}])).values()];
     const extra={...(request.kind==='study'?{citations:result.citations,stats:result.stats,interrupted}:request.kind==='research'?{stats:result.stats,...(result.concilium?{concilium:result.concilium}:{}),...(interrupted?{error:true}:{})}:{}),...(skills.length?{skills}:{}),...(result.noMaterial===true?{noMaterial:true}:{})};
     await checkpoint(interrupted?'cancelled':'completed',extra);if(fatal)throw fatal;

@@ -16,6 +16,7 @@ import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
+import { readPrivateSource, PrivateSourceReadError } from './privateSources';
 import { DesktopRelayHost, type RelayConfiguration } from './relayHost';
 import { listVaultConfigs } from '../serverSync/serverSyncShared';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
@@ -481,6 +482,22 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     const vaultId = decodeURIComponent(file[1]);
     if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     await serveBridgeFile(request, response, url, vaultId, pairing.domains, decodeURIComponent(file[2]), decodeURIComponent(file[3]), file[4]);
+    return;
+  }
+  const source = /^\/bridge\/v2\/vaults\/([^/]+)\/([^/]+)\/sources\/([^/]+)\/([^/]+)$/.exec(url.pathname);
+  if (request.method === 'GET' && source) {
+    const vaultId = decodeURIComponent(source[1]);
+    const domain = decodeURIComponent(source[2]) as DesktopBridgeDomain;
+    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    const page = url.searchParams.has('group') ? {
+      group: url.searchParams.get('group') || '', cursor: Number(url.searchParams.get('cursor') || 0),
+      limit: Number(url.searchParams.get('limit') || 100), revision: url.searchParams.get('revision') || '',
+    } : undefined;
+    try { reply(response, 200, await readPrivateSource(vaultId, domain, decodeURIComponent(source[3]), decodeURIComponent(source[4]), page)); }
+    catch (error) {
+      if (error instanceof PrivateSourceReadError) reply(response, error.status, { error: error.code });
+      else throw error;
+    }
     return;
   }
   const match = /^\/bridge\/v1\/vaults\/([^/]+)\/([^/]+)\/records$/.exec(url.pathname);

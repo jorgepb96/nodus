@@ -2,6 +2,7 @@ import type {ArgumentMap,ArgumentMapRequest,ModelRef} from '@shared/types';
 import {finishArgumentGeneration,type ArgumentGenerationSource} from '@shared/argumentGeneration';
 import {structuredPrompt} from './structuredPrompt';
 import {preservePendingPublication} from './publicationRecovery';
+import {resumeAcademicGeneration} from './academicRecovery';
 
 type Call=(method:string,...args:unknown[])=>Promise<any>;
 type Request={kind:'argument';seedIdeaId:string;language:ArgumentMapRequest['language']};
@@ -15,7 +16,7 @@ export async function autonomousArgument(call:Call,input:ArgumentMapRequest):Pro
   if(running.has(entityKey))return running.get(entityKey)!;
   const execute=async()=>{
     const previous=await call('mobileGenerationCheckpoint','load','academic',entityKey) as Checkpoint|null;
-    const checkpoint:Checkpoint=previous&&!['available','cancelled'].includes(previous.state)?previous:{id:crypto.randomUUID(),entityKey,request,state:'accepted'};
+    const checkpoint:Checkpoint=resumeAcademicGeneration(previous,request)?previous!:{id:crypto.randomUUID(),entityKey,request,state:'accepted'};
     const save=()=>call('mobileGenerationCheckpoint','save','academic',entityKey,checkpoint);
     try{
       await save();

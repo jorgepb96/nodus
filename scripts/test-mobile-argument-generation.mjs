@@ -9,6 +9,12 @@ if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-arg
 const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-argument-'));installRuntimeHooks(directory);
 const require=createRequire(import.meta.url),{finishArgumentGeneration,isArgumentGenerationResponse}=require('../shared/argumentGeneration.ts');
 try{
+  const {resumeAcademicGeneration}=require('../src/mobileWeb/academicRecovery.ts');
+  const recoveryRequest={source:{kind:'argument',seedIdeaId:'real-0',language:'es'},model:{provider:'phone',model:'model'}};
+  const checkpoint={id:'c67e2634-31d1-4d7a-b2c9-5099d3cc9baf',request:recoveryRequest,state:'saved'};
+  assert.equal(resumeAcademicGeneration(checkpoint,{model:recoveryRequest.model,source:recoveryRequest.source}),true,'JSON key ordering cannot repeat a paid generation');
+  for(const state of ['available','failed','cancelled','interrupted'])assert.equal(resumeAcademicGeneration({...checkpoint,state},recoveryRequest),false,'a finished or rejected attempt needs fresh explicit inputs');
+  assert.equal(resumeAcademicGeneration(checkpoint,{...recoveryRequest,model:{provider:'other',model:'model'}}),false);
   const ideas=Array.from({length:120},(_,id)=>({global_id:`real-${id}`,type:'claim',label:`Idea ${id}`,statement:`Original ${id}`}));
   const source={seedIdeaId:'real-0',seed:ideas[0],ideas,truncated:true,noMaterial:false,noConnections:{summary:'Sin conexiones',overview:'Idea aislada'},prompt:{system:'Original Desktop prompt',user:'Original sources',temperature:0.2,maxTokens:8000}};
   const identity='bba4e150-7d22-4dba-a03f-c915b61078d3',date='2026-10-11T08:00:00Z';

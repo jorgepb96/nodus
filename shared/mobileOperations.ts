@@ -11,6 +11,7 @@ export const MOBILE_OPERATIONS = {
   getGlobalLibraryItem: ['library:item', 'corpus'],
   getLibraryReaderDocument: ['libraryReader:get', 'corpus'],
   getMobileDossierFiles: ['mobile:dossier:files', 'corpus'],
+  getMobileDatabaseRowLocation: ['mobile:database:rowLocation', 'corpus'],
   getMobileWorldMapReadSource: ['mobile:worldMap:read', 'corpus'],
   getResearchCorpusSources: ['research:corpus:sources', 'corpus'],
   getResearchPreparationInventory: ['research:preparation:inventory', 'corpus'],

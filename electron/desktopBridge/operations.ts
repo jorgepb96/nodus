@@ -12,6 +12,7 @@ import { BridgeJobCancelledError } from './jobs';
 import { emptyImmersionProgress } from '../db/immersionRepo';
 import {mobileDossierFiles} from './dossierFiles';
 import {mobileWorldMapReadSource} from './worldMapRead';
+import {mobileDatabaseRowLocation} from './databaseRowLocation';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -44,6 +45,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if (method === 'getMobileWorldMapReadSource') {
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileWorldMapReadSource(vaultId, args[0])));
+  }
+  if (method === 'getMobileDatabaseRowLocation') {
+    if (args.length !== 1) throw new Error('invalid_arguments');
+    return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileDatabaseRowLocation(vaultId, args[0])));
   }
   if (method === 'updateStudyEntity' && args[0] !== 'folder') throw new Error('operation_forbidden');
   if (['getContentTranslationOfflineSource', 'getContentTranslationGenerationContext', 'generateContentTranslation',

@@ -59,6 +59,25 @@ try {
   const boundary=require('../electron/desktopBridge/operations.ts');
   assert.throws(()=>boundary.authorizeMobileOperation(['corpus'],'saveWritingWorkshopFromMobile'),/permission_denied/);
   boundary.authorizeMobileOperation(['writing'],'saveWritingWorkshopFromMobile');
+  const seed=db.prepare('INSERT INTO writing_saved_drafts(id,title,brief_json,selection_json,model_json,draft_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)');
+  const fixtureDraft=structuredClone(saved.draft);delete fixtureDraft.mobileGenerationReceipt;
+  for(let index=0;index<120;index++)seed.run(`catalogue-${String(index).padStart(3,'0')}`,`Borrador ${index}`,JSON.stringify(request.brief),
+    JSON.stringify(selection),JSON.stringify(request.model),JSON.stringify(fixtureDraft),'2026-10-11T00:00:00Z','2026-10-11T00:00:00Z');
+  const deep=structuredClone(fixtureDraft);deep.brief.kind='deep_research';
+  seed.run('deep-only','Deep Research excluido',JSON.stringify(deep.brief),JSON.stringify(selection),null,JSON.stringify(deep),
+    '2026-10-11T00:00:00Z','2026-10-11T00:00:00Z');
+  const draftFirst=mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:0});
+  const draftLast=mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:100});
+  assert.equal(draftFirst.total,121);assert.equal(draftLast.items.length,21);assert.equal(draftLast.hasMore,false);
+  assert.equal(new Set([...draftFirst.items,...draftLast.items].map(row=>row.id)).size,121,'Timestamp ties must not duplicate or omit later pages');
+  assert.equal(draftFirst.revision,draftLast.revision);
+  assert(!JSON.stringify(draftFirst).includes('draftMarkdown'),'Catalogue does not download complete reports or a vault snapshot');
+  assert.equal(mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:0,query:'Borrador 119',sort:'title'}).total,1);
+  assert.equal(mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:0,kind:'debate'}).total,0);
+  assert.throws(()=>mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:0,kind:'deep_research'}),/invalid_workshop_draft_catalogue/);
+  db.prepare('UPDATE writing_saved_drafts SET draft_json=? WHERE id=?').run('{broken',saved.id);
+  assert.throws(()=>mobile.mobileWritingWorkshopDraftCatalogue({limit:100,offset:0}),'A damaged record must never appear as an empty gallery');
   console.log(JSON.stringify({suite:'mobile-writing-workshop',passed:true,readOnlyPreparation:true,completePagination:true,
-    selectedSourcesOnly:true,providerFreePublication:true,structuredDraft:true,staleSourceRejected:true,idempotentSave:true}));
+    selectedSourcesOnly:true,providerFreePublication:true,structuredDraft:true,staleSourceRejected:true,idempotentSave:true,
+    draftMetadataOnly:true,stableTimestampTies:true,damagedGalleryRejected:true}));
 } finally {globalThis.fetch=fetchBefore;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

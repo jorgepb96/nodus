@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import type {WritingWorkshopDraft, WritingWorkshopSavedDraft} from '@shared/types';
+import type {WritingWorkshopDraft, WritingWorkshopSavedDraft, WritingWorkshopKind} from '@shared/types';
 import {PROMPT_LANGUAGES} from '@shared/types';
 import {normalizePromptLanguage} from '@shared/promptLanguageOptions';
 import {mobileSourceRevisionInput} from '@shared/mobileOfflineSource';
@@ -11,11 +11,28 @@ import {getDb} from '../db/database';
 import {activeManualIdeaIds} from '../db/manualIdeaVisibility';
 import {getContradictions} from '../graph/graphService';
 import {listTutorRoutes} from '../db/tutorRepo';
-import {getWritingWorkshopDraft, saveWritingWorkshopDraft} from '../db/writingDraftsRepo';
+import {getWritingWorkshopDraft, saveWritingWorkshopDraft, listWritingWorkshopDraftSummaries} from '../db/writingDraftsRepo';
 import {selectedWritingWorkshopMaterial, finishMobileWritingWorkshop} from './writingWorkshop';
 
 const hash = (value: unknown) => createHash('sha256').update(mobileSourceRevisionInput(value)).digest('hex');
 const groups = Object.values(WORKSHOP_SOURCE_GROUPS);
+
+export function mobileWritingWorkshopDraftCatalogue(input: {limit: number; offset: number; query?: string; kind?: WritingWorkshopKind; sort?: 'newest' | 'oldest' | 'title'}) {
+  if (!input || !Number.isSafeInteger(input.limit) || input.limit < 1 || input.limit > 200
+    || !Number.isSafeInteger(input.offset) || input.offset < 0
+    || (input.query != null && (typeof input.query !== 'string' || input.query.length > 512))
+    || (input.kind != null && !['literature_review','theoretical_framework','debate','gap_justification','chapter_section','research_question'].includes(input.kind))
+    || (input.sort != null && !['newest','oldest','title'].includes(input.sort))
+    || Object.keys(input).some(key => !['limit','offset','query','kind','sort'].includes(key))) throw new Error('invalid_workshop_draft_catalogue');
+  const page = listWritingWorkshopDraftSummaries({...input, excludeKind: 'deep_research'});
+  const metadata = getDb().prepare(`SELECT id,title,updated_at,brief_json,
+    substr(COALESCE(json_extract(draft_json,'$.abstract'),''),1,500) AS abstract
+    FROM writing_saved_drafts WHERE json_extract(brief_json,'$.kind')!='deep_research' ORDER BY id`).all();
+  return {items: page.drafts.map(draft => ({id: draft.id, title: draft.title, kind: draft.kind,
+    objective: draft.objective, abstractSnippet: draft.abstractSnippet, createdAt: draft.createdAt, updatedAt: draft.updatedAt})),
+    total: page.total, offset: input.offset, limit: input.limit, hasMore: input.offset + page.drafts.length < page.total,
+    revision: hash(metadata)};
+}
 
 export function mobileWritingWorkshopCatalogue(input: {selectionKey: string; query?: string; limit: number; offset: number}) {
   if (!input || !Object.hasOwn(WORKSHOP_SOURCE_GROUPS, input.selectionKey) || !Number.isSafeInteger(input.limit)

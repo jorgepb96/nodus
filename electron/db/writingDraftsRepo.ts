@@ -68,6 +68,7 @@ export interface WritingWorkshopDraftSummary {
 export interface ListWritingWorkshopDraftSummariesOptions {
   query?: string;
   kind?: WritingWorkshopKind;
+  excludeKind?: WritingWorkshopKind;
   sort?: 'newest' | 'oldest' | 'title';
   limit: number;
   offset: number;
@@ -178,6 +179,10 @@ export function listWritingWorkshopDraftSummaries(
     where.push("json_extract(d.brief_json, '$.kind') = ?");
     values.push(options.kind);
   }
+  if (options.excludeKind) {
+    where.push("json_extract(d.brief_json, '$.kind') != ?");
+    values.push(options.excludeKind);
+  }
   const query = options.query?.trim().toLowerCase();
   if (query) {
     where.push(
@@ -191,10 +196,10 @@ export function listWritingWorkshopDraftSummaries(
     .get(...values) as { total: number };
   const orderBy =
     options.sort === 'oldest'
-      ? 'd.updated_at ASC, d.created_at ASC'
+      ? 'd.updated_at ASC, d.created_at ASC, d.id ASC'
       : options.sort === 'title'
-        ? 'd.title COLLATE NOCASE ASC, d.updated_at DESC'
-        : 'd.updated_at DESC, d.created_at DESC';
+        ? 'd.title COLLATE NOCASE ASC, d.updated_at DESC, d.id ASC'
+        : 'd.updated_at DESC, d.created_at DESC, d.id ASC';
   const rows = getDb()
     .prepare(
       `SELECT d.id, d.title, d.brief_json, d.model_json,

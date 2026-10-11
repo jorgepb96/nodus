@@ -60,6 +60,7 @@ export const MOBILE_OPERATIONS = {
   saveStudyImprovementFromMobile: ['study:improve:mobile:save', 'writing'],
   getWritingWorkshopMobileSource: ['writing:mobile:source', 'corpus'],
   getWritingWorkshopMobileCatalogue: ['writing:mobile:catalogue', 'corpus'],
+  getWritingWorkshopMobileDraftCatalogue: ['writing:mobile:drafts', 'corpus'],
   saveWritingWorkshopFromMobile: ['writing:mobile:save', 'writing'],
   createNote: ['notes:create', 'writing'], updateWorkspaceNote: ['workspace:editor:update', 'writing'],
   createManualIdea: ['manualIdeas:create', 'writing'], deleteNotesPermanently: ['notes:deletePermanently', 'writing'],

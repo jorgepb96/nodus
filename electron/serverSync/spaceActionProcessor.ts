@@ -9,7 +9,7 @@ import type {
   WritingWorkshopKind,
   WritingWorkshopSelection,
 } from '@shared/types';
-import {PROMPT_LANGUAGES} from '@shared/types';
+import {PROMPT_LANGUAGES,type PromptLanguage} from '@shared/types';
 import { buildArgumentMap } from '../ai/argumentMap';
 import { synthesizeAuthorDossier } from '../ai/authorDossier';
 import { enqueueDeepResearchJob } from '../ai/deepResearchQueue';
@@ -220,8 +220,10 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
     }
     case 'worldbuilding.continuity':
       return { result: { findings: runContinuity() }, changedVault: false };
-    case 'worldbuilding.proseReview':
-      return { result: await reviewWorldProse(text(payload, 'sceneId')), changedVault: false };
+    case 'worldbuilding.proseReview': {
+      if(payload.language!=null&&!(PROMPT_LANGUAGES as readonly unknown[]).includes(payload.language))throw new Error('invalid_prose_language');
+      return { result: await reviewWorldProse(text(payload, 'sceneId'),payload.language as PromptLanguage|undefined,payload.draft), changedVault: false };
+    }
     case 'worldbuilding.entityDelete': {
       const id = text(payload, 'id');
       const entity = text(payload, 'entity');

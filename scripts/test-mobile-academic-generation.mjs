@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createRequire} from 'node:module';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
 if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-academic'))process.exit(0);
@@ -12,6 +12,18 @@ const runtime=installRuntimeHooks(root);runtime.app.on=()=>{};runtime.app.once=(
 const require=createRequire(import.meta.url),fetch=globalThis.fetch;let database,providers=0;
 globalThis.fetch=async()=>{providers++;throw new Error('Source capture and publication must not use a provider');};
 try{
+  const prose=require('../shared/companionProseDraft.ts'),{composeProseReviewContext}=require('../shared/worldProseReview.ts'),{PROMPT_LANGUAGES}=require('../shared/types.ts');
+  const draft={sceneTitle:'Título local',text:'[Ada](nodus://world/character/ada) cruza [[Puerta]].',beats:[{threadKind:'rule',threadId:'real-rule',threadTitle:'La puerta',mark:'breaks',text:'Se paga.'}]};
+  for(const language of PROMPT_LANGUAGES){
+    const baseline={sceneId:'real-scene',beats:[],sources:{sceneTitle:'Título anterior',beats:[],prose:'Texto guardado'},noMaterial:true,prompt:{system:'original',user:'before',plainContext:true,temperature:.2,maxTokens:600},draftTemplate:prose.proseDraftTemplate(language)};
+    const current=prose.applyProseDraft(baseline,draft);
+    assert.equal(current.sources.prose,'Ada cruza Puerta.');assert.equal(current.sources.sceneTitle,'Título local');assert.equal(current.noMaterial,false);
+    assert.equal(current.prompt.user,composeProseReviewContext(current.sources,language),'the portable draft uses the exact original Desktop language prompt');
+    assert.equal(baseline.sources.prose,'Texto guardado','consulting the local draft cannot mutate the stored scene');
+  }
+  assert.throws(()=>prose.validateProseDraft({...draft,beats:[...draft.beats,...draft.beats]}),/duplicate_prose_draft_beat/);
+  assert.throws(()=>prose.validateProseDraft({...draft,beats:[{...draft.beats[0],mark:'step'}]}),/invalid_prose_draft_beat/);
+  assert.notEqual(prose.proseDraftRevisionInput('a'.repeat(64),draft),prose.proseDraftRevisionInput('a'.repeat(64),{...draft,text:'Actualización'}));
   database=require('../electron/db/database.ts');database.getDb();
   const vaults=require('../electron/vaults/vaultRegistry.ts'),vault=vaults.createVault('Síntesis companion aisladas','academic');
   const academic=require('../electron/desktopBridge/academicGeneration.ts'),authors=require('../electron/ai/authorDossier.ts'),{withMobileOperation}=require('../electron/desktopBridge/executionBoundary.ts');
@@ -49,5 +61,26 @@ try{
     assert.throws(()=>withMobileOperation(()=>academic.saveMobileAcademicResult(input),['corpus']),/permission_denied/);
     assert.equal(providers,0);
   },['corpus','writing'])));
-    console.log('Canonical academic sources, persisted argument catalogue, provider-free publication, duplicate receipt and source conflict passed.');
+  const world=vaults.createVault('Borrador de escena aislado','worldbuilding');
+  await vaults.withOwningVault(world.id,()=>database.withVaultDatabase(world.id,()=>withMobileOperation(()=>{
+    const {createScene}=require('../electron/db/worldStoryRepo.ts'),{prepareWorldProseReview}=require('../electron/ai/worldProseReview.ts');
+    const scene=createScene({title:'Escena guardada'}),baseRequest={kind:'prose',sceneId:scene.sceneId,language:'es'};
+    const db=database.getDb(),before=db.prepare('SELECT total_changes() AS n').get().n;
+    const baseline=academic.mobileAcademicSource(baseRequest),request={...baseRequest,draft};
+    const captured=academic.mobileAcademicSource(request);
+    assert.equal(db.prepare('SELECT total_changes() AS n').get().n,before,'capturing a draft cannot materialise text or beats');
+    assert.equal(captured.source.sources.prose,'Ada cruza Puerta.');assert.equal(captured.source.sources.sceneTitle,'Título local');
+    assert.equal(captured.revision,createHash('sha256').update(prose.proseDraftRevisionInput(baseline.revision,draft)).digest('hex'));
+    const input={request,revision:captured.revision,raw:'LATIDO: sí — Cruza la puerta.',model:{provider:'phone',model:'model'},requestId:randomUUID(),generatedAt:'2026-10-11T12:00:00.000Z'};
+    const result=academic.saveMobileAcademicResult(input);
+    assert.equal(result.beats[0].threadId,'real-rule');assert.equal(result.beats[0].present,true);
+    assert.deepEqual(academic.saveMobileAcademicResult(input),result);
+    assert.equal(prepareWorldProseReview(scene.sceneId,'es').sources.prose,'');
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM world_beats WHERE scene_id=?').get(scene.sceneId).n,0);
+    const pending={...input,requestId:randomUUID()};
+    db.prepare('UPDATE world_scenes SET title=? WHERE scene_id=?').run('Título cambiado en Mac',scene.sceneId);
+    assert.throws(()=>academic.saveMobileAcademicResult(pending),/academic_source_conflict/);
+    assert.equal(providers,0);
+  },['corpus','writing'])));
+  console.log('Canonical academic sources, current manuscript drafts, persisted argument catalogue, provider-free publication, duplicate receipt and source conflict passed.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

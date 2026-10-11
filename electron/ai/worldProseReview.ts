@@ -23,8 +23,9 @@ import { BEAT_MARK_LABEL } from '@shared/worldThreads';
 import { stripWorldLinks } from '@shared/worldManuscript';
 import type { ProseReviewResult,PromptLanguage } from '@shared/types';
 import { proseReviewContextCopy } from '@shared/worldContextPromptPacks';
+import {applyProseDraft,proseDraftTemplate,type PreparedProseReview} from '@shared/companionProseDraft';
 
-export function prepareWorldProseReview(sceneId:string,requestedLanguage?:PromptLanguage){
+export function prepareWorldProseReview(sceneId:string,requestedLanguage?:PromptLanguage):PreparedProseReview{
   const scene = getDb().prepare('SELECT title FROM world_scenes WHERE scene_id = ?').get(sceneId) as
     | { title: string }
     | undefined;
@@ -46,7 +47,7 @@ export function prepareWorldProseReview(sceneId:string,requestedLanguage?:Prompt
     prose: stripWorldLinks((getDb().prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get(sceneId) as {text:string}|undefined)?.text??''),
   };
 
-  return {sceneId,beats,sources,noMaterial:!hasProseReviewMaterial(sources),prompt:{
+  return {sceneId,beats,sources,draftTemplate:proseDraftTemplate(language),noMaterial:!hasProseReviewMaterial(sources),prompt:{
       system: worldOperationSystemPrompt('proseReview', language),
       user: composeProseReviewContext(sources, language),
       plainContext: true,
@@ -78,8 +79,8 @@ export function finishWorldProseReview(source:ReturnType<typeof prepareWorldPros
   };
 }
 
-export async function reviewWorldProse(sceneId:string):Promise<ProseReviewResult>{
-  const source=prepareWorldProseReview(sceneId);
+export async function reviewWorldProse(sceneId:string,language?:PromptLanguage,draft?:unknown):Promise<ProseReviewResult>{
+  const baseline=prepareWorldProseReview(sceneId,language),source=draft==null?baseline:applyProseDraft(baseline,draft);
   if(source.noMaterial)return {beats:[],noMaterial:true};
   const settings=getSettings(),model=settings.synthesisModel??settings.extractionModel??null;
   return finishWorldProseReview(source,await completeText(source.prompt,model));

@@ -8,14 +8,15 @@ import {prepareArgumentMapGeneration} from '../ai/argumentMap';
 import {finishArgumentGeneration,type ArgumentGenerationSource} from '../../shared/argumentGeneration';
 import {PROMPT_LANGUAGES,type PromptLanguage,type ModelRef} from '../../shared/types';
 import {mobileDomainAllowed} from './executionBoundary';
+import {applyProseDraft,validateProseDraft,proseDraftRevisionInput,type CompanionProseDraft} from '../../shared/companionProseDraft';
 
-type Request={kind:'author'|'matrix'|'prose'|'argument';authorId?:string;themeId?:string;sceneId?:string;seedIdeaId?:string;language:PromptLanguage};
+type Request={kind:'author'|'matrix'|'prose'|'argument';authorId?:string;themeId?:string;sceneId?:string;seedIdeaId?:string;language:PromptLanguage;draft?:CompanionProseDraft};
 function request(raw:unknown):Request{
   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('invalid_academic_source');
   const value=raw as Request,fields=value.kind==='author'?['kind','authorId','language']:value.kind==='matrix'?['kind','authorId','themeId','language']:value.kind==='prose'?['kind','sceneId','language']:value.kind==='argument'?['kind','seedIdeaId','language']:[];
-  if(!fields.length||Object.keys(value).some(key=>!fields.includes(key))||!(PROMPT_LANGUAGES as readonly unknown[]).includes(value.language))throw new Error('invalid_academic_source');
+  if(!fields.length||Object.keys(value).some(key=>!fields.includes(key)&&!(value.kind==='prose'&&key==='draft'))||!(PROMPT_LANGUAGES as readonly unknown[]).includes(value.language))throw new Error('invalid_academic_source');
   for(const field of fields.filter(field=>!['kind','language'].includes(field))){const id=(value as unknown as Record<string,unknown>)[field];if(typeof id!=='string'||!id||id.length>256)throw new Error('invalid_academic_source');}
-  return value;
+  return Object.hasOwn(value,'draft')?{...value,draft:validateProseDraft(value.draft)}:value;
 }
 function hash(value:unknown):string{
   const stable=(value:unknown):unknown=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>[key,stable(item)])):value;
@@ -26,9 +27,12 @@ export function mobileAcademicSource(raw:unknown){
   if(!mobileDomainAllowed('corpus'))throw new Error('permission_denied');
   const input=request(raw);
   const source=input.kind==='author'?prepareAuthorDossierSynthesis(input.authorId!,input.language):input.kind==='matrix'?prepareMatrixCellSynthesis(input.authorId!,input.themeId!,input.language):input.kind==='argument'?prepareArgumentMapGeneration({seedIdeaId:input.seedIdeaId!,language:input.language,mode:'ai'}):prepareWorldProseReview(input.sceneId!,input.language);
-  const value={version:1,request:input,source,...(input.kind==='prose'?{emptyPreview:finishWorldProseReview(source as ReturnType<typeof prepareWorldProseReview>,'')}: {})};
+  const {draft,...baseRequest}=input;
+  const baseline={version:1,request:baseRequest,source,...(input.kind==='prose'?{emptyPreview:finishWorldProseReview(source as ReturnType<typeof prepareWorldProseReview>,'')}: {})};
+  const adapted=draft?applyProseDraft(source as ReturnType<typeof prepareWorldProseReview>,draft):null;
+  const value=adapted?{...baseline,request:input,source:adapted,emptyPreview:finishWorldProseReview(adapted,'')}:baseline;
   if(Buffer.byteLength(JSON.stringify(value),'utf8')>2*1024*1024)throw new Error('academic_source_too_large');
-  return {...value,revision:hash(value)};
+  return {...value,revision:draft?createHash('sha256').update(proseDraftRevisionInput(hash(baseline),draft)).digest('hex'):hash(value)};
 }
 /** Atomic publication receipt and canonical content, with no provider call. A
  * changed source is a visible conflict; it never overwrites an unrelated synthesis. */

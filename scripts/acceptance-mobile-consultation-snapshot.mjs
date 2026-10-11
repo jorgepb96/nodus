@@ -34,7 +34,7 @@ try {
   }
   await client.request(`${root}?projection=everything-private`, 'GET', undefined, 400);
   const themes = await client.operation('stellarThemes');
-  const theme = themes.find(row => row.ideaCount >= 3 && row.ideaCount <= 30);
+  const theme = themes.filter(row => row.ideaCount >= 3).sort((a, b) => a.ideaCount - b.ideaCount)[0];
   assert(theme, 'A populated theme suitable for the phone canvas inspection is required');
   fs.writeFileSync(`${process.env.NODUS_MOBILE_ACCEPTANCE_LAB}/phone-graph-acceptance-input.json`,
     JSON.stringify({ vaultId: client.vault.id, themeLabel: theme.label, ideas: theme.ideaCount, capturedAt: new Date().toISOString() }), { mode: 0o600 });

@@ -22,6 +22,9 @@ import { activeVaultDir,getActiveVault } from '../vaults/vaultRegistry';
 import {MOBILE_STUDY_CHAT_MAX_BYTES,normalizeMobileStudyChatSelection,studyChatSelectionOptions,studyChatPackPayload,type MobileStudyChatSourcePack} from '@shared/mobileStudyChat';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {signStudyChatEntry} from '../desktopBridge/studyChatEvidence';
+import {getStudyQuestion} from '../db/studyQuestionsRepo';
+import {getStudyAssessment} from '../db/studyAssessmentsRepo';
+import {validateMobileStudyChatOriginal,type MobileStudyChatOriginal} from '@shared/mobileStudyChat';
 import { embed, embedMany } from './aiClient';
 
 type Row = Record<string, unknown>;
@@ -351,10 +354,35 @@ export function getMobileStudyChatSourcePack(raw:unknown):MobileStudyChatSourceP
     const selection=normalizeMobileStudyChatSelection(raw),store=ensureLexicalIndex();
     const entries=selection.scope==='manual'&&!selection.sourceKeys.length?[]:studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),studyChatSelectionOptions(selection),selection.scope==='manual'?selection.sourceKeys:[]).map(entry=>({...entry,embedding:null}));
     if(selection.scope==='manual'&&selection.sourceKeys.some(key=>!entries.some(entry=>studyAssistantSourceKey(entry.kind,entry.sourceId)===key)))throw new Error('study_chat_source_unavailable');
-    const pack:MobileStudyChatSourcePack={version:1,vaultId:vault.id,capturedAt:new Date().toISOString(),selection,entries,proofs:Object.fromEntries(entries.map(entry=>[entry.indexId,signStudyChatEntry(entry)])),id:''};
+    const originals=getDb().transaction(()=>{
+      const selected:Record<string,MobileStudyChatOriginal>={};
+      for(const entry of entries) {
+        const key=studyAssistantSourceKey(entry.kind,entry.sourceId);
+        if(selected[key]||!['question','exam'].includes(entry.kind))continue;
+        const source=readMobileStudyChatOriginal(entry.kind,entry.sourceId);if(source)selected[key]=source;
+      }
+      return selected;
+    })();
+    const pack:MobileStudyChatSourcePack={version:1,vaultId:vault.id,capturedAt:new Date().toISOString(),selection,entries,proofs:Object.fromEntries(entries.map(entry=>[entry.indexId,signStudyChatEntry(entry)])),originals,id:''};
     pack.id=sha256Snapshot(studyChatPackPayload(pack));
     if(Buffer.byteLength(JSON.stringify(pack),'utf8')>MOBILE_STUDY_CHAT_MAX_BYTES)throw new Error('El contexto de estudio supera 16 MB. Elige fuentes concretas para llevar.');
     return pack;
+  });
+}
+function readMobileStudyChatOriginal(kind:string,id:string):MobileStudyChatOriginal|null {
+  if(kind==='question') {const data=getStudyQuestion(id);if(!data||data.archivedAt)return null;const source:MobileStudyChatOriginal={kind,sourceId:id,data};validateMobileStudyChatOriginal(source);return source;}
+  if(kind==='exam') {const data=getStudyAssessment(id);if(!data||data.archivedAt||data.kind!=='exam')return null;const source:MobileStudyChatOriginal={kind,sourceId:id,data};validateMobileStudyChatOriginal(source);return source;}
+  return null;
+}
+export function getMobileStudyChatOriginal(raw:unknown) {
+  return withMobileOperation(()=>{
+    if(!['estudio','docencia'].includes(getActiveVault().type)||!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('invalid_study_chat_original_request');
+    const request=raw as Record<string,unknown>;
+    if(Object.keys(request).some(key=>!['kind','sourceId'].includes(key))||!['question','exam'].includes(String(request.kind))||typeof request.sourceId!=='string'||!request.sourceId||request.sourceId.length>256)throw new Error('invalid_study_chat_original_request');
+    const source=getDb().transaction(()=>readMobileStudyChatOriginal(String(request.kind),String(request.sourceId)))();
+    if(!source)throw new Error('study_chat_original_unavailable');
+    if(Buffer.byteLength(JSON.stringify(source),'utf8')>MOBILE_STUDY_CHAT_MAX_BYTES)throw new Error('study_chat_original_too_large');
+    return source;
   });
 }
 

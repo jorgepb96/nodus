@@ -6,6 +6,10 @@ import {buildStudyChatPrompt,studyChatCitation} from './studyChatPrompt';
 import {studyAssistantPromptPack} from './studyAssistantPromptPacks';
 import {sha256Snapshot} from './databaseResearchEngine';
 import type {PromptLanguage} from './types';
+import type {StudyQuestion} from './studyQuestions';
+import type {StudyAssessment} from './studyAssessments';
+
+export type MobileStudyChatOriginal = {kind:'question';sourceId:string;data:StudyQuestion}|{kind:'exam';sourceId:string;data:StudyAssessment};
 
 export const MOBILE_STUDY_CHAT_MAX_BYTES=16_000_000;
 export interface MobileStudyChatSourcePack {
@@ -16,6 +20,9 @@ export interface MobileStudyChatSourcePack {
   /** Opaque Mac signatures are retained with authored citations. The key never
    * leaves the owning vault; downloaded fragments remain valid after reindex. */
   proofs:Record<string,string>;
+  /** Complete selected question/exam records, kept with their chosen fragments.
+   * Older packs omit this and remain usable for retrieval and quoted evidence. */
+  originals?:Record<string,MobileStudyChatOriginal>;
 }
 export interface MobileStudyChatEvidence {entry:StudySearchIndexEntry;signature:string;maxChars:number}
 export type MobileStudyChatOptions=Pick<StudyAssistantRequest,'selection'|'task'|'level'|'tone'|'language'|'allowExternalKnowledge'>;
@@ -48,6 +55,18 @@ export function validateMobileStudyChatSourcePack(pack:MobileStudyChatSourcePack
     keys.add(entry.indexId);if(!/^[a-f\d]{64}$/.test(pack.proofs[entry.indexId]??''))throw new Error('study_chat_source_proof_missing');
     if(selection.scope==='manual'&&!selection.sourceKeys.includes(studyAssistantSourceKey(entry.kind,entry.sourceId)))throw new Error('study_chat_source_outside_selection');
   }
+  if(pack.originals!==undefined) {
+    if(!pack.originals||typeof pack.originals!=='object'||Array.isArray(pack.originals))throw new Error('invalid_study_chat_originals');
+    for(const [key,source] of Object.entries(pack.originals)) {
+      validateMobileStudyChatOriginal(source);
+      if(key!==studyAssistantSourceKey(source.kind,source.sourceId)||!pack.entries.some(entry=>entry.kind===source.kind&&entry.sourceId===source.sourceId))throw new Error('study_chat_original_outside_selection');
+    }
+  }
+}
+export function validateMobileStudyChatOriginal(source:MobileStudyChatOriginal) {
+  if(!source||!['question','exam'].includes(source.kind)||typeof source.sourceId!=='string'||!source.sourceId||!source.data||source.data.id!==source.sourceId)throw new Error('invalid_study_chat_original');
+  const question=(value:StudyQuestion)=>Boolean(value&&typeof value.id==='string'&&typeof value.prompt==='string'&&typeof value.explanation==='string'&&value.answer&&typeof value.answer==='object'&&!Array.isArray(value.answer)&&Array.isArray(value.options)&&value.options.every(option=>option&&typeof option.id==='string'&&typeof option.text==='string'&&typeof option.correct==='boolean'));
+  if(source.kind==='question'?!question(source.data):source.data.kind!=='exam'||typeof source.data.title!=='string'||typeof source.data.description!=='string'||!Array.isArray(source.data.items)||source.data.items.some(item=>!item||typeof item.points!=='number'||!Number.isFinite(item.points)||!question(item.question)||item.questionId!==item.question.id))throw new Error('invalid_study_chat_original');
 }
 export function makeStudyChatCitations(entries:StudySearchIndexEntry[],question:string):{citations:StudyAssistantCitation[];truncated:boolean} {
   const citations:StudyAssistantCitation[]=[];let chars=0,truncated=entries.length>=20;

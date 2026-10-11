@@ -5,6 +5,7 @@ import {chatProseForHistory} from './chatSkills';
 import type {PromptLanguage} from './types';
 export {prepareStudyChat} from './mobileStudyChat';
 export {validateMobileStudyChatSourcePack} from './mobileStudyChat';
+export {validateMobileStudyChatOriginal} from './mobileStudyChat';
 export {validateStudyAssistantAnswer} from './studyAssistant';
 export {prepareWorldChat,validateMobileWorldChatSourcePack,validateMobileWorldChatAnswer} from './mobileWorldChat';
 

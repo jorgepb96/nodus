@@ -1405,6 +1405,7 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('study:knowledge:reanalyze', async (_e, sourceKind: 'material' | 'document', sourceId: string) => reanalyzeStudyKnowledgeSource(sourceKind, sourceId));
   h('study:assistant:sources', async () => studyAssistant.getStudyAssistantSources());
   h('study:assistant:mobileSources',async (_e,selection:unknown)=>studySearch.getMobileStudyChatSourcePack(selection));
+  h('study:assistant:mobileOriginal',async (_e,request:unknown)=>studySearch.getMobileStudyChatOriginal(request));
   h('study:assistant:mobileCatalogue',async ()=>{
     const workspace=studyOrg.getStudyWorkspace();
     const named=(rows:Array<{id:string;name:string}>)=>rows.map(({id,name})=>({id,name}));

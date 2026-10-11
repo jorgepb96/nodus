@@ -15,6 +15,7 @@ try {
   db=require('../electron/db/database.ts');db.getDb();
   const vaults=require('../electron/vaults/vaultRegistry.ts'),search=require('../electron/ai/studySearch.ts'),native=require('../electron/ai/studyAssistant.ts');
   const boundary=require('../electron/desktopBridge/executionBoundary.ts'),shared=require('../shared/mobileStudyChat.ts'),prompt=require('../shared/studyChatPrompt.ts'),answer=require('../shared/studyAssistant.ts'),history=require('../electron/desktopBridge/chatHistory.ts');
+  const questions=require('../electron/db/studyQuestionsRepo.ts'),assessments=require('../electron/db/studyAssessmentsRepo.ts'),sha=require('../shared/databaseResearchEngine.ts').sha256Snapshot;
   for(const type of ['estudio','docencia']) {
     const vault=vaults.createVault(`Estudio aislado ${type}`,type);
     await vaults.withOwningVault(vault.id,()=>db.withVaultDatabase(vault.id,async()=>boundary.withMobileOperation(async()=>{
@@ -44,6 +45,24 @@ try {
       }
       const manual={scope:'manual',sourceKeys:[`document:${source}`]},manualPack=search.getMobileStudyChatSourcePack(manual);
       assert.equal(manualPack.entries.length,4);
+      const item=questions.createStudyQuestion({prompt:'¿Qué regula el intercambio de membrana?',type:'short',answer:{text:'El gradiente'},explanation:'El gradiente de concentración permite el intercambio.'});
+      const exam=assessments.createStudyAssessment({kind:'exam',title:'Examen de membrana',description:'Fuentes seleccionadas',questionIds:[item.id]});
+      const extra=[{...entries[0],indexId:`question:${item.id}`,kind:'question',sourceId:item.id,title:item.prompt,text:item.prompt},{...entries[0],indexId:`exam:${exam.id}`,kind:'exam',sourceId:exam.id,title:exam.title,text:exam.description}];
+      fs.writeFileSync(indexFile,JSON.stringify({...stored,entries:[...entries,...extra]}));
+      const originals=search.getMobileStudyChatSourcePack({scope:'manual',sourceKeys:[`question:${item.id}`,`exam:${exam.id}`]});
+      shared.validateMobileStudyChatSourcePack(originals,vault.id);
+      assert.deepEqual(originals.originals[`question:${item.id}`].data,questions.getStudyQuestion(item.id));
+      assert.deepEqual(originals.originals[`exam:${exam.id}`].data,assessments.getStudyAssessment(exam.id));
+      assert.equal(originals.originals[`exam:${exam.id}`].data.items[0].question.answer.text,'El gradiente');
+      assert.deepEqual(search.getMobileStudyChatOriginal({kind:'exam',sourceId:exam.id}),originals.originals[`exam:${exam.id}`]);
+      const misplaced=structuredClone(originals);misplaced.originals[`question:${item.id}`].sourceId=randomUUID();misplaced.id=sha(shared.studyChatPackPayload(misplaced));
+      assert.throws(()=>shared.validateMobileStudyChatSourcePack(misplaced,vault.id),/invalid_study_chat_original/);
+      const unrelated=structuredClone(manualPack);unrelated.originals=originals.originals;unrelated.id=sha(shared.studyChatPackPayload(unrelated));
+      assert.throws(()=>shared.validateMobileStudyChatSourcePack(unrelated,vault.id),/study_chat_original_outside_selection/);
+      const older=structuredClone(originals);delete older.originals;older.id=sha(shared.studyChatPackPayload(older));shared.validateMobileStudyChatSourcePack(older,vault.id);
+      questions.setStudyQuestionLifecycle(item.id,'delete');
+      assert.throws(()=>search.getMobileStudyChatOriginal({kind:'question',sourceId:item.id}),/study_chat_original_unavailable/);
+      fs.writeFileSync(indexFile,originalIndex);
       const input={packs:[manualPack],request:{...base,selection:manual},vaultId:vault.id,interfaceLanguage:'es'},prepared=shared.prepareStudyChat(input);
       assert.throws(()=>shared.prepareStudyChat({...input,vaultId:randomUUID()}),/source_pack/);
       assert.throws(()=>shared.prepareStudyChat({...input,request:{...input.request,selection:{scope:'course',sourceKeys:[]}}}),/scope_missing/);

@@ -5,7 +5,11 @@ import {normalizeTitle} from '../../shared/worldEncyclopedia';
 import type {WorldEntryRef} from '../../shared/types';
 import {RULE_MARKS,CONFLICT_MARKS,ARC_MARKS} from '../../shared/worldThreads';
 
-export class MobileWorldMutationError extends Error {}
+export class MobileWorldMutationError extends Error {
+  get description(){return this.message==='world_scene_text_conflict'
+    ? 'El texto de esta escena cambió en Nodus. Tu borrador se conserva en el móvil. Compara ambas versiones antes de volver a guardarlo.'
+    : 'Nodus no pudo aplicar este cambio del mundo. Se conserva en la cola de este dispositivo para su revisión.';}
+}
 const fail=(code:string):never=>{throw new MobileWorldMutationError(code);};
 
 /** Only the closed, family-scoped content registry can reach this adapter. */
@@ -24,7 +28,13 @@ export function prepareMobileWorldMutation(raw:{table:string;kind:string;key:str
   if(raw.table==='world_scene_text') {
     if(raw.key.length!==1||row.scene_id!==raw.key[0]||!db.prepare('SELECT 1 FROM world_scenes WHERE scene_id=?').get(raw.key[0]))fail('world_scene_unavailable');
     if(row.text!=null&&typeof row.text!=='string')fail('invalid_world_scene_text');
-    return getSceneText(raw.key[0]);
+    const before=getSceneText(raw.key[0]);
+    if(Object.prototype.hasOwnProperty.call(row,'_mobileExpectedText')){
+      if(typeof row._mobileExpectedText!=='string')fail('invalid_world_scene_baseline');
+      const ref={kind:'scene' as const,id:raw.key[0]},expected=promoteWorldLinks(row._mobileExpectedText,ref).text??'',next=promoteWorldLinks(typeof row.text==='string'?row.text:'',ref).text??'';
+      if((before.text??'')!==expected&&(before.text??'')!==next)fail('world_scene_text_conflict');
+    }
+    return before;
   }
   if(raw.table==='world_beats') {
     if(raw.key.length!==3||row.thread_kind!==raw.key[0]||row.thread_id!==raw.key[1]||row.scene_id!==raw.key[2])fail('invalid_world_beat_identity');

@@ -12,7 +12,7 @@ const runtime=installRuntimeHooks(root);runtime.app.on=()=>{};runtime.app.once=(
 const require=createRequire(import.meta.url);let database;
 try {
   database=require('../electron/db/database.ts');
-  const {getActiveVault,createVault,setActiveVault}=require('../electron/vaults/vaultRegistry.ts');
+  const {getActiveVault,createVault,setActiveVault,withOwningVault}=require('../electron/vaults/vaultRegistry.ts');
   const {applyBridgeMutations,mobileWorldContentMutationTables}=require('../electron/desktopBridge/mutations.ts');
   const academic=getActiveVault(),world=createVault('Mundo de aceptación aislado','worldbuilding'),other=createVault('Otro mundo','worldbuilding');
   const domains=['corpus','writing','files'];
@@ -41,6 +41,21 @@ try {
   const count=await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n);
   assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[shrink],domains)).duplicate,['shrink']);
   assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n),count,'A lost acknowledgement cannot create another snapshot');
+  const manuscript=require('../electron/db/worldManuscriptRepo.ts'),macText=Array(60).fill('Texto del Mac').join(' ');
+  await withOwningVault(world.id,()=>read(world,()=>manuscript.saveSceneText('scene',macText)));
+  const current=await read(world,db=>db.prepare('SELECT text,updated_at FROM world_scene_text WHERE scene_id=?').get('scene'));
+  const conflicted=change('conflicted-prose','world_scene_text',['scene'],{scene_id:'scene',text:'Borrador del teléfono',_mobileExpectedText:'Reescritura breve',word_count:3,created_at:stamp,updated_at:new Date(Date.parse(current.updated_at)+1000).toISOString()});
+  const conflict=await applyBridgeMutations(world.id,'paired-phone',[conflicted],domains);
+  assert.equal(conflict.rejected[0].reason,'world_scene_text_conflict');assert.match(conflict.rejected[0].error_description,/borrador se conserva/);
+  assert.equal(await read(world,db=>db.prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get('scene').text),current.text,'A stale device baseline never overwrites newer authored prose');
+  assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM desktop_bridge_receipts WHERE mutation_id=?').get(conflicted.id).n),0,'A conflict cannot receive a successful write receipt');
+  const localSnapshot=change('local-before-shrink','world_scene_snapshots',['before-shrink'],{snapshot_id:'before-shrink',scene_id:'scene',text:current.text,word_count:180,reason:'shrink',created_at:new Date(Date.parse(current.updated_at)+1000).toISOString()});
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[localSnapshot],domains)).applied,[localSnapshot.id]);
+  const snapshotsBefore=await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n);
+  const rebased={...conflicted,id:'rebased-prose',row:{...conflicted.row,_mobileExpectedText:current.text}};
+  assert.deepEqual((await applyBridgeMutations(world.id,'paired-phone',[rebased],domains)).applied,[rebased.id]);
+  assert.equal(await read(world,db=>db.prepare('SELECT text FROM world_scene_text WHERE scene_id=?').get('scene').text),rebased.row.text);
+  assert.equal(await read(world,db=>db.prepare('SELECT count(*) n FROM world_scene_snapshots').get().n),snapshotsBefore,'A confirmed phone preimage is not duplicated by the canonical shrink hook');
   const refusals=[{...beat,id:'missing-scene',key:['arc','thread','missing'],row:{...beat.row,scene_id:'missing'}},
     {...beat,id:'wrong-kind',key:['conflict','thread','scene'],row:{...beat.row,thread_kind:'conflict'}},
     {...beat,id:'wrong-mark',row:{...beat.row,mark:'breaks'}},

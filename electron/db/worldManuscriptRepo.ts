@@ -306,6 +306,8 @@ const SHRINK_FLOOR = 40;
 /** Also used when a device mutation has already passed canonical conflict checks. */
 export function preserveSceneTextBeforeOverwrite(sceneId:string, before:SceneText, text:string|null):void {
   if (before.wordCount >= SHRINK_FLOOR && countWords(text) < before.wordCount / 2) {
+    const latest=getDb().prepare('SELECT text,reason FROM world_scene_snapshots WHERE scene_id=? ORDER BY created_at DESC,rowid DESC LIMIT 1').get(sceneId) as {text:string|null;reason:string}|undefined;
+    if(latest?.reason==='shrink'&&(latest.text??'')===(before.text??''))return;
     writeSnapshot(sceneId, before.text, before.wordCount, 'shrink');
   }
 }

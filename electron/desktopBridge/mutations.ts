@@ -51,7 +51,7 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
         if(creatingScene)db.prepare('INSERT INTO desktop_bridge_creations VALUES(?,?,?,?)').run(grantId,raw.id,raw.table,JSON.stringify(raw.key));
         db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId, raw.id, payload, new Date().toISOString());
         accepted.push(raw.id);
-      })();}catch(error){if(error instanceof MobileDatabaseMutationError)rejected.push({id:raw.id,reason:error.message,error_description:error.description});else if(error instanceof MobileWorldMutationError)rejected.push({id:raw.id,reason:error.message});else throw error;}
+      })();}catch(error){if(error instanceof MobileDatabaseMutationError)rejected.push({id:raw.id,reason:error.message,error_description:error.description});else if(error instanceof MobileWorldMutationError)rejected.push({id:raw.id,reason:error.message,error_description:error.description});else throw error;}
     }
   }));
   invalidateLiveCorpus(vaultId);

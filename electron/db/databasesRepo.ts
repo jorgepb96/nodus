@@ -284,9 +284,9 @@ function uniqueShortId(): string {
   return `DB-${uuid().slice(0, 6).toUpperCase()}`;
 }
 
-export function createDatabase(name: string, icon: string | null = null): DatabaseSummary {
+export function createDatabase(name: string, icon: string | null = null, identity?:string): DatabaseSummary {
   const db = getDb();
-  const id = newId('db');
+  const id = identity ?? newId('db');
   const ts = now();
   const position = (db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_databases').get() as { n: number }).n;
   const normalizedName = name.trim() || 'Base de datos';
@@ -624,10 +624,11 @@ export function createColumn(
   databaseId: string,
   name: string,
   type: DatabaseColumnType,
-  config: DatabaseColumnConfig = {}
+  config: DatabaseColumnConfig = {},
+  identity?:string
 ): DatabaseColumn {
   const db = getDb();
-  const id = newId('dcol');
+  const id = identity ?? newId('dcol');
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_columns WHERE database_id = ?').get(databaseId) as {
       n: number;
@@ -883,10 +884,10 @@ function touchRow(rowId: string): void {
   getDb().prepare("UPDATE db_rows SET updated_at = ?, revision = revision + 1, updated_by = 'local' WHERE id = ?").run(now(), rowId);
 }
 
-export function createRow(databaseId: string): DatabaseRow {
+export function createRow(databaseId: string, identity?:string): DatabaseRow {
   const db = getDb();
   ensurePrimaryTitle(databaseId);
-  const id = newId('drow');
+  const id = identity ?? newId('drow');
   const ts = now();
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_rows WHERE database_id = ?').get(databaseId) as {

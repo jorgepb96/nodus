@@ -5,15 +5,16 @@ import { applyIncomingMutations, type IncomingMutation } from '../serverSync/mut
 import { invalidateLiveCorpus } from './liveCorpus';
 import { canonicalJson } from '../../shared/canonicalJson';
 import { withMobileOperation } from './executionBoundary';
+import {applyMobileDatabaseMutation,mobileDatabaseMutationTables,MobileDatabaseMutationError} from './databaseMutations';
 
 // Content edits do not grant ACL administration, tools, automation or pipeline operations.
-const writable = new Set(['notes', 'note_folders', 'note_links', 'pages', 'page_blocks', 'page_links', 'page_document_updates', 'page_revisions', 'page_comments',
+const writable = new Set([...mobileDatabaseMutationTables,'notes', 'note_folders', 'note_links', 'pages', 'page_favorites', 'page_blocks', 'page_links', 'page_document_updates', 'page_revisions', 'page_comments',
   'writing_saved_drafts', 'writing_draft_reads', 'writing_draft_annotations', 'content_translations', 'immersion_sessions',
   'dictionary_entries', 'dictionary_evidence', 'dictionary_versions', 'dictionary_relations', 'world_scene_text', 'world_scene_snapshots', 'world_chapter_breaks']);
 
 export async function applyBridgeMutations(vaultId: string, grantId: string, input: unknown): Promise<unknown> {
   if (!Array.isArray(input) || input.length > 100) throw new Error('invalid_mutations');
-  const accepted: string[] = [], duplicate: string[] = [], rejected: Array<{ id: string; reason: string }> = [];
+  const accepted: string[] = [], duplicate: string[] = [], rejected: Array<{ id: string; reason: string;error_description?:string }> = [];
   await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => {
     const db = getDb();
     db.exec('CREATE TABLE IF NOT EXISTS desktop_bridge_receipts (grant_id TEXT NOT NULL, mutation_id TEXT NOT NULL, payload_hash TEXT NOT NULL, applied_at TEXT NOT NULL, PRIMARY KEY(grant_id,mutation_id))');
@@ -24,7 +25,10 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
       const payload = createHash('sha256').update(canonicalJson(raw)).digest('hex');
       const receipt = db.prepare('SELECT payload_hash FROM desktop_bridge_receipts WHERE grant_id=? AND mutation_id=?').get(grantId, raw.id) as { payload_hash: string } | undefined;
       if (receipt) { if (receipt.payload_hash === payload) duplicate.push(raw.id); else rejected.push({ id: raw.id, reason: 'idempotency_conflict' }); continue; }
-      db.transaction(() => {
+      try {db.transaction(() => {
+        if(withMobileOperation(()=>applyMobileDatabaseMutation(raw))){
+          db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId,raw.id,payload,new Date().toISOString());accepted.push(raw.id);return;
+        }
         const mutation: IncomingMutation = { ...raw, id: `${grantId}:${raw.id}`, seq: Date.now(), clientId: grantId, actorId: grantId, deviceId: grantId };
         const result = withMobileOperation(() => applyIncomingMutations(db, [mutation]));
         if (result.refused.length || result.retryable.length || result.keptLocal) {
@@ -32,7 +36,7 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
         }
         db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId, raw.id, payload, new Date().toISOString());
         accepted.push(raw.id);
-      })();
+      })();}catch(error){if(error instanceof MobileDatabaseMutationError)rejected.push({id:raw.id,reason:error.message,error_description:error.description});else throw error;}
     }
   }));
   invalidateLiveCorpus(vaultId);

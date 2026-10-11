@@ -1226,12 +1226,16 @@ try {
   await page.getByTestId('toolkit-app-fullscreen').locator('[data-testid="toolkit-app-iframe"]').waitFor();
   await page.getByTestId('toolkit-app-fullscreen-close').click();
   assert.equal(await page.getByTestId('toolkit-app-fullscreen').count(), 0, 'bundled apps can enter and leave the full-screen view');
+  // Leaving fullscreen mounts a new iframe. Its heading renders before the
+  // asynchronous storage hydration; wait for the restored setup before editing.
+  await distributorFrame.getByText('Hay 0 temas activos para 4 grupos. Añade o activa 4 más.', { exact: true }).waitFor();
   assert.equal(await distributorFrame.getByRole('button', { name: 'Generar asignaciones' }).isDisabled(), true, 'assignments require enough active topics');
   await distributorFrame.locator('#group-count').fill('4');
   await distributorFrame.locator('#group-count').press('Tab');
   for (const topic of ['Tema uno', 'Tema dos', 'Tema tres']) {
     await distributorFrame.getByPlaceholder('Ej. Energías renovables').fill(topic);
     await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).click();
+    await distributorFrame.getByRole('button', { name: `Eliminar ${topic}`, exact: true }).waitFor();
   }
   await distributorFrame.getByPlaceholder('Ej. Tema de recuperación').fill('Tema excepcional');
   await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).click();

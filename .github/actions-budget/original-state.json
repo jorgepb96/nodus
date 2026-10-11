@@ -344,7 +344,7 @@
     "scripts/e2e-smoke.mjs": {
       "snapshot": "original-files/scripts/e2e-smoke.mjs",
       "originalSha256": "3b34a4a298f0490f33f9d749b356da39d86b69d2eff1a7548bfa9583a4fa08a7",
-      "restrictedSha256": "763c0522dab357d25a0bdb1899f6dcc84834032a07637cf71148f8a62cef6a4a"
+      "restrictedSha256": "da1ac5843cdc198dd860f79b23ddd15583505f2cfdb248637c7f58ee72286829"
     },
     "scripts/e2e-graph-progressive.mjs": {
       "snapshot": "original-files/scripts/e2e-graph-progressive.mjs",

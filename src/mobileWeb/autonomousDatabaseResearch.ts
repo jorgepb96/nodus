@@ -2,16 +2,17 @@ import {processDatabaseResearchRun,sha256Snapshot,type DatabaseResearchHost} fro
 import {mobileDatabaseSources,mobileDatabaseResearchHost,MobileDatabaseResearchRepository,createMobileDatabaseResearchDetail,validateMobileDatabaseSourcePack,type MobileDatabaseSourcePack} from '@shared/mobileDatabaseResearch';
 import {databaseResearchCompletionInput} from '@shared/databaseResearchCompletion';
 import {isDatabaseDeepResearchPlannerOutput,isDatabaseDeepResearchCriticOutput,isDatabaseDeepResearchVerifierOutput,isDatabaseDeepResearchNarrativeOutput} from '@shared/databaseDeepResearchPrompts';
-import {normalizeDatabaseDeepResearchJobInput,type DatabaseDeepResearchJobInput,type DatabaseResearchRunDetail,type DatabaseResearchReport,type DatabaseResearchProgress} from '@shared/databaseDeepResearch';
+import {normalizeDatabaseDeepResearchJobInput,type DatabaseDeepResearchJobInput,type DatabaseResearchRunDetail,type DatabaseResearchReport,type DatabaseResearchProgress,type DatabaseDeepResearchJob} from '@shared/databaseDeepResearch';
 import {structuredPrompt} from './structuredPrompt';
 import type {DatabaseResearchReportSummary} from '../views/DatabaseDeepResearchView';
 import {normalizeDatabaseDeepResearchReportType} from '@shared/databaseDeepResearch';
+import DeviceDatabaseWorker from './databaseResearchWorker?worker&inline';
 
 type Call=(method:string,...args:any[])=>Promise<any>;
 export interface DatabaseResearchCheckpoint {
-  id:string;entityKey:string;request:DatabaseDeepResearchJobInput;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';
+  id:string;entityKey:string;request:DatabaseDeepResearchJobInput;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';createdAt?:string;hiddenFromQueue?:boolean;
   context?:{revision:string;packs:MobileDatabaseSourcePack[]};detail?:DatabaseResearchRunDetail;result?:DatabaseResearchReport;error?:string;publicationPending?:boolean;
-  reader?:{version:1;report:DatabaseResearchReport;sourceRevision:string};reading?:unknown;
+  reader?:{version:1;report:DatabaseResearchReport;sourceRevision:string;exportDetail:Omit<DatabaseResearchRunDetail,'report'>};reading?:unknown;
 }
 const active=new Map<string,{checkpoint:DatabaseResearchCheckpoint;controller:AbortController;task:Promise<void>}>();
 export async function databaseResearchCheckpoints(call:Call):Promise<DatabaseResearchCheckpoint[]> {
@@ -21,7 +22,7 @@ function analysisWorker(controller:AbortController):DatabaseResearchHost['analyz
   return async(request,deps)=>{
     controller.signal.throwIfAborted();
     const snapshot=deps.readSnapshot!(request.databaseId,request.budget?.maxRows??500_000),columns=deps.readColumns!(request.databaseId);
-    const worker=new Worker(new URL('./databaseResearchWorker.ts',import.meta.url),{type:'module'});
+    const worker=new DeviceDatabaseWorker();
     return new Promise((resolve,reject)=>{
       const close=()=>{controller.signal.removeEventListener('abort',abort);worker.terminate();};
       const abort=()=>{close();reject(new DOMException('Investigación cancelada.','AbortError'));};
@@ -36,7 +37,8 @@ export async function enqueueAutonomousDatabaseResearch(call:Call,raw:DatabaseDe
   const request=normalizeDatabaseDeepResearchJobInput(raw),entityKey=sha256Snapshot(request);
   if(active.has(entityKey))return 'accepted';
   const previous=await call('mobileGenerationCheckpoint','load','database',entityKey) as DatabaseResearchCheckpoint|null;
-  const checkpoint:DatabaseResearchCheckpoint=previous&&!['available','cancelled'].includes(previous.state)?previous:{id:crypto.randomUUID(),entityKey,request,state:'accepted'};
+  const checkpoint:DatabaseResearchCheckpoint=previous&&!['available','cancelled'].includes(previous.state)?previous:{id:crypto.randomUUID(),entityKey,request,state:'accepted',createdAt:new Date().toISOString()};
+  delete checkpoint.hiddenFromQueue;
   if(!checkpoint.request.model)throw new Error('Elige el modelo y configura su proveedor en los ajustes del móvil.');
   await call('mobileGenerationCheckpoint','save','database',entityKey,checkpoint);
   const controller=new AbortController();
@@ -73,7 +75,8 @@ async function execute(call:Call,checkpoint:DatabaseResearchCheckpoint,controlle
     await writes;controller.signal.throwIfAborted();
     const report=checkpoint.detail.report!;
     const {updatedAt:_updated,readAt:_read,...source}=report;
-    checkpoint.reader={version:1,report,sourceRevision:sha256Snapshot(source)};
+    const {report:_report,...exportDetail}=checkpoint.detail;
+    checkpoint.reader={version:1,report,sourceRevision:sha256Snapshot(source),exportDetail};
     const reading={readAt:null,annotations:[]};
     checkpoint.reading={version:1,reportId:report.id,reportTitle:report.title,sourceRevision:checkpoint.reader.sourceRevision,readingRevision:sha256Snapshot(reading),reading};
     checkpoint.state='saved';await save();await publish();
@@ -91,14 +94,40 @@ async function execute(call:Call,checkpoint:DatabaseResearchCheckpoint,controlle
   }
 }
 export async function localDatabaseResearchJobs(call:Call) {
-  return (await databaseResearchCheckpoints(call)).filter(item=>item.detail).map(item=>({...item.detail!.run,
-    status:['accepted','running'].includes(item.state)&&!active.has(item.entityKey)?'stale':item.detail!.run.status,
-    error:['accepted','running'].includes(item.state)&&!active.has(item.entityKey)?'Investigación pausada en este dispositivo. Vuelve a iniciar la misma solicitud para continuar.':item.error??item.detail!.run.error,
-    reportId:item.result?.id??item.detail!.report?.id??null}));
+  return (await databaseResearchCheckpoints(call)).filter(item=>!item.hiddenFromQueue).map(item=>{
+    const paused=['accepted','running'].includes(item.state)&&!active.has(item.entityKey),run=item.detail?.run;
+    const job:DatabaseDeepResearchJob & {retryable:boolean}={id:run?.id??`dbr_mobile_${item.id}`,title:run?.title??item.request.objective.slice(0,120),reportType:run?.reportType??item.request.reportType,
+      status:paused?'stale':run?.status??(item.state==='failed'?'failed':item.state==='cancelled'?'cancelled':'queued'),progress:run?.progress??0,phase:run?.phase??'snapshot',createdAt:run?.createdAt??item.createdAt??'1970-01-01T00:00:00Z',
+      error:paused?'Investigación pausada en este dispositivo. Puedes continuar con la solicitud guardada.':item.error??run?.error??null,
+      retryable:!item.detail?.report&&(paused||item.state==='failed'||item.state==='cancelled')};
+    return job;
+  });
 }
 export async function cancelLocalDatabaseResearch(call:Call,runId:string):Promise<boolean> {
-  const run=[...active.values()].find(item=>item.checkpoint.detail?.run.id===runId);if(!run)return false;
-  run.controller.abort();await call('cancelAutonomousGeneration',run.checkpoint.id);await run.task.catch(()=>{});return true;
+  const run=[...active.values()].find(item=>`dbr_mobile_${item.checkpoint.id}`===runId);
+  if(run) {run.controller.abort();await call('cancelAutonomousGeneration',run.checkpoint.id);await run.task.catch(()=>{});return true;}
+  const metadata=(await databaseResearchCheckpoints(call)).find(item=>`dbr_mobile_${item.id}`===runId);
+  if(!metadata||metadata.detail?.report||!['accepted','running','failed'].includes(metadata.state))return false;
+  const checkpoint=await call('mobileGenerationCheckpoint','load','database',metadata.entityKey) as DatabaseResearchCheckpoint;
+  checkpoint.state='cancelled';delete checkpoint.error;
+  if(checkpoint.detail) {checkpoint.detail.run.status='cancelled';checkpoint.detail.run.error=null;}
+  await call('mobileGenerationCheckpoint','save','database',metadata.entityKey,checkpoint);return true;
+}
+export async function retryLocalDatabaseResearch(call:Call,runId:string,notify:(progress:DatabaseResearchProgress)=>void):Promise<void> {
+  const metadata=(await databaseResearchCheckpoints(call)).find(item=>`dbr_mobile_${item.id}`===runId);
+  if(!metadata||metadata.detail?.report||active.has(metadata.entityKey))throw new Error('Esta investigación no está disponible para reanudarla en el móvil.');
+  const checkpoint=await call('mobileGenerationCheckpoint','load','database',metadata.entityKey) as DatabaseResearchCheckpoint;
+  await enqueueAutonomousDatabaseResearch(call,checkpoint.request,notify);
+}
+export async function clearLocalDatabaseResearchJobs(call:Call):Promise<number> {
+  let count=0;
+  for(const metadata of await databaseResearchCheckpoints(call)) {
+    if(metadata.hiddenFromQueue||active.has(metadata.entityKey))continue;
+    const checkpoint=await call('mobileGenerationCheckpoint','load','database',metadata.entityKey) as DatabaseResearchCheckpoint;
+    checkpoint.hiddenFromQueue=true;
+    await call('mobileGenerationCheckpoint','save','database',metadata.entityKey,checkpoint);count++;
+  }
+  return count;
 }
 export async function localDatabaseResearchReports(call:Call):Promise<DatabaseResearchReportSummary[]> {
   return (await databaseResearchCheckpoints(call)).flatMap(item=>{

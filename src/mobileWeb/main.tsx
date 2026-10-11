@@ -26,8 +26,9 @@ import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_
 import { setActiveLang, t } from '../i18n';
 import type { AppSettings, GraphData } from '@shared/types';
 import type {DatabaseDeepResearchJobInput} from '@shared/databaseDeepResearch';
-import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabaseResearchReports,cancelLocalDatabaseResearch} from './autonomousDatabaseResearch';
+import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabaseResearchReports,cancelLocalDatabaseResearch,retryLocalDatabaseResearch,clearLocalDatabaseResearchJobs} from './autonomousDatabaseResearch';
 import {databaseOfflineComposerMethods,databaseOfflineComposer} from './databaseResearchOffline';
+import {exportDeviceDatabaseResearch} from './databaseResearchExport';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
 import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
@@ -74,12 +75,17 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  if(method==='exportDatabaseDeepResearchReport')return exportDeviceDatabaseResearch(call,String(args[0]),args[1] as Parameters<typeof exportDeviceDatabaseResearch>[2]);
   if(method==='listDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
     const local=await localDatabaseResearchJobs(call);let remote:any[]=[];
     try {remote=await native.nodusMobileCall(method,...args);}catch(error){if((error as {code?:string})?.code!=='offline'||!local.length)throw error;}
     return [...local,...remote.filter(job=>!local.some(own=>own.id===job.id))];
   }
   if(method==='cancelDatabaseDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous'&&await cancelLocalDatabaseResearch(call,String(args[0])))return true;
+  if(method==='clearFinishedDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
+    const local=await clearLocalDatabaseResearchJobs(call);
+    try{return local+await native.nodusMobileCall(method,...args);}catch(error){if((error as {code?:string})?.code==='offline'&&local>0)return local;throw error;}
+  }
   if (method === 'getActiveVault') return native.nodusMobileCall('surfaceVaultContext');
   if (method === 'listDictionaryGenerationJobs' && native.nodusMobileConfig.live && native.nodusMobileConfig.executionMode === 'autonomous') return native.nodusMobileCall('mobileDictionaryGenerationJobs');
   if (!native.nodusMobileConfig.live) {
@@ -365,7 +371,7 @@ function App() {
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
-      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
+      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'
         ? <WorldChatView settings={settings} onNavigate={view=>navigate('section',view)} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>

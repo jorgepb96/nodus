@@ -20,6 +20,7 @@ export interface QueueStripItem {
   /** Optional adapter fields for other durable research lanes. */
   percent?: number | null;
   detail?: string | null;
+  retryable?: boolean;
   error: string | null;
   origin: DeepResearchJobOrigin;
   enqueuedAt: string;
@@ -98,12 +99,14 @@ export function DeepResearchQueueStrip({
   running,
   onRemove,
   onClearFinished,
+  onRetry,
 }: {
   active: QueueStripItem[];
   failed: QueueStripItem[];
   running: boolean;
   onRemove: (item: QueueStripItem) => void;
   onClearFinished: () => void;
+  onRetry?: (item: QueueStripItem) => void;
 }) {
   const now = useElapsedClock(active.length > 0);
   const queueStartedAt = active.reduce<string | null>(
@@ -177,6 +180,7 @@ export function DeepResearchQueueStrip({
               {displayTitle(item)}
             </span>
             {item.origin !== 'app' && <OriginBadge origin={item.origin} />}
+            {onRetry && item.retryable && <button type="button" className="btn btn-ghost min-h-11 shrink-0" onClick={()=>onRetry(item)}>{t('Reintentar')}</button>}
             <span className="max-w-[45%] shrink-0 truncate text-[11px] text-red-700 dark:text-red-300 max-md:max-w-full max-md:basis-full max-md:whitespace-normal max-md:break-words" title={item.error ? errorText(item.error) : undefined}>
               {item.error ? `${t('Falló')}: ${errorText(item.error)}` : t('Falló')}
             </span>

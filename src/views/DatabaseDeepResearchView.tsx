@@ -621,6 +621,7 @@ export function DatabaseDeepResearchView({
   mobile = false,
   loadReportSummaries,
   enqueueMobileResearch,
+  retryMobileResearch,
 }: {
   settings: import("@shared/types").AppSettings;
   snapshot?: DatabaseDeepResearchSnapshot;
@@ -628,6 +629,7 @@ export function DatabaseDeepResearchView({
   mobile?: boolean;
   loadReportSummaries?: () => Promise<DatabaseResearchReportSummary[]>;
   enqueueMobileResearch?: (input:DatabaseDeepResearchJobInput) => Promise<'accepted'|'pending'>;
+  retryMobileResearch?: (id:string) => Promise<void>;
 }) {
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [details, setDetails] = useState<
@@ -1138,13 +1140,13 @@ export function DatabaseDeepResearchView({
   // They must not also appear as failed generation jobs.
   const queueFailed: QueueStripItem[] = jobs
     .filter((job) => ["failed", "cancelled", "stale"].includes(job.status))
-    .map((job) => ({ id: job.id, title: job.title, status: "failed", progress: null, error: job.error, origin: "app", enqueuedAt: job.createdAt }));
+    .map((job) => ({ id: job.id, title: job.title, status: "failed", progress: null, error: job.error, origin: "app", enqueuedAt: job.createdAt,retryable:(job as typeof job & {retryable?:boolean}).retryable }));
 
   const allSelected = visibleReports.length > 0 && visibleReports.every((report) => selectedReports.has(report.id));
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden" data-testid="database-deep-research">
       <SectionHeader icon="telescope" title={t("Deep Research")} subtitle={t("Investiga tus bases de datos con evidencia trazable y un lector completo.")} testId="database-deep-research-header" actions={<button className="btn btn-primary" data-testid="database-deep-research-new" onClick={() => setComposerOpen(true)}><Icon name="plus" size={14} />{t("Nuevo informe")}</button>} />
-      {queueActive.length > 0 || queueFailed.length > 0 ? <DeepResearchQueueStrip active={queueActive} failed={queueFailed} running={queueActive.some((item) => item.status === "running")} onRemove={(item) => void cancelJob(item.id)} onClearFinished={() => void clearFinishedJobs()} /> : null}
+      {queueActive.length > 0 || queueFailed.length > 0 ? <DeepResearchQueueStrip active={queueActive} failed={queueFailed} running={queueActive.some((item) => item.status === "running")} onRemove={(item) => void cancelJob(item.id)} onClearFinished={() => void clearFinishedJobs()} onRetry={retryMobileResearch ? item=>{void retryMobileResearch(item.id).then(loadJobsAndReports).catch(error=>setToast(t(String(error))));}:undefined} /> : null}
       <SectionToolbar testId="database-deep-research-toolbar">
         <div className="relative min-w-56 flex-1"><Icon name="search" size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" /><input className="input input-with-leading-icon h-9 w-full" value={reportSearch} onChange={(event) => { setReportSearch(event.target.value); onSnapshotChange?.({ search: event.target.value }); }} placeholder={t("Buscar entre tus informes…")} aria-label={t("Buscar entre tus informes")} /></div>
         <select className="input h-9 w-auto min-w-28" value={readFilter} onChange={(event) => { const value = event.target.value as "all" | "read" | "unread"; setReadFilter(value); onSnapshotChange?.({ readFilter: value }); }} aria-label={t("Filtrar por lectura")}><option value="all">{t("Todos")}</option><option value="unread">{t("No leídos")}</option><option value="read">{t("Leídos")}</option></select>

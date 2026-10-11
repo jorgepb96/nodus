@@ -40,6 +40,10 @@ try {
     const {updatedAt:_updated,readAt:_read,...deviceSource}=raw.detail.report;
     assert.equal(saved.id,raw.detail.report.id);assert.equal(saved.runId,raw.detail.run.id);
     assert.equal(reading.mobileDatabaseResearchReader(saved.id).sourceRevision,engine.sha256Snapshot(deviceSource),'Publication preserves local annotation anchors exactly');
+    const exportSource=reading.mobileDatabaseResearchReader(saved.id),portable=require('../shared/databaseResearchExport.ts'),exporter=require('../electron/export/databaseDeepResearchExport.ts');
+    const zipped=await exporter.buildDatabaseDeepResearchExport(saved.id,{format:'zip'}),archive=new (require('adm-zip'))(zipped.bytes);
+    const expected=portable.databaseResearchArchiveFiles(exportSource.report,{...exportSource.exportDetail,report:exportSource.report},{format:'zip'});
+    for(const [name,text] of Object.entries(expected))assert.equal(archive.getEntry(name).getData().toString('utf8'),text,'Device archive content is exactly the real Mac persisted export');
     database.getDb().prepare('UPDATE database_research_reports SET read_at=? WHERE id=?').run('2026-10-11T01:00:00Z',saved.id);
     const replay=await api.saveMobileDatabaseResearchReport(raw,()=>{throw new Error('Lost ACK cannot recompute an acknowledged report');});
     assert.equal(replay.readAt,'2026-10-11T01:00:00Z');

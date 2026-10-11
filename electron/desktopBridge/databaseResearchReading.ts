@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 import {BrowserWindow} from 'electron';
 import {getDb,withVaultDatabase} from '../db/database';
 import {getVault,withOwningVault} from '../vaults/vaultRegistry';
-import {getDatabaseResearchReport,listDatabaseDeepResearchReportAnnotations} from '../db/databaseDeepResearchRepo';
+import {getDatabaseResearchReport,getDatabaseResearchRunDetail,listDatabaseDeepResearchReportAnnotations} from '../db/databaseDeepResearchRepo';
 import {canonicalJson} from '../../shared/canonicalJson';
 import {invalidateLiveCorpus} from './liveCorpus';
 import type {DatabaseDeepResearchReportAnnotation} from '../../shared/databaseDeepResearch';
@@ -23,7 +23,10 @@ export function mobileDatabaseResearchReader(id:string) {
     try { JSON.parse(value); } catch { throw new DatabaseReadingFailure(400,'invalid_database_report'); }
   }
   const {updatedAt:_updated,readAt:_read,...source}=report;
-  return {version:1,report,sourceRevision:digest(source)};
+  const detail=getDatabaseResearchRunDetail(report.runId);
+  if(!detail)throw new DatabaseReadingFailure(400,'database_report_run_unavailable');
+  const {report:_report,...exportDetail}=detail;
+  return {version:1,report,sourceRevision:digest(source),exportDetail};
 }
 function snapshot(id:string) {
   const source=mobileDatabaseResearchReader(id);

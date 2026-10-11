@@ -1640,10 +1640,10 @@ function ensureDerivedMaterialized(databaseId: string, columns: DatabaseColumn[]
   derivedMaterializationCache.set(databaseId, expected);
 }
 
-function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColumns(databaseId)): DatabaseRow[] {
+function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColumns(databaseId), readOnly = false): DatabaseRow[] {
   const db = getDb();
   if (metaRows.length === 0) return [];
-  ensureDerivedMaterialized(databaseId, columns);
+  if(!readOnly)ensureDerivedMaterialized(databaseId, columns);
   const rowIndex = new Map<string, DatabaseRow>();
   const out: DatabaseRow[] = metaRows.map((m) => {
     const row: DatabaseRow = {
@@ -1713,7 +1713,7 @@ function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColum
 }
 
 /** Keyset-paginated row query. Interactive callers can never receive more than 500 rows. */
-export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
+export function queryDatabaseRows(input: DatabaseRowQuery, {readOnly = false}: {readOnly?:boolean} = {}): DatabaseRowPage {
   const db = getDb();
   const resolved = resolveRowQuery(input);
   const database = db.prepare('SELECT revision FROM db_databases WHERE id = ?').get(resolved.databaseId) as { revision: number } | undefined;
@@ -1723,7 +1723,7 @@ export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
   const limit = clampDatabaseRowPageLimit(input.limit);
   const direction = input.direction === 'backward' ? 'backward' : 'forward';
   const columns = getColumns(resolved.databaseId);
-  ensureDerivedMaterialized(resolved.databaseId, columns);
+  if(!readOnly)ensureDerivedMaterialized(resolved.databaseId, columns);
   const byId = new Map(columns.map((column) => [column.id, column]));
   const params: Record<string, string | number> = { databaseId: resolved.databaseId };
   const fastNumber = indexedNumberFilter(resolved.filter, byId);
@@ -1837,7 +1837,7 @@ export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
   const hasMore = fetched.length > limit;
   let selected = hasMore ? fetched.slice(0, limit) : fetched;
   if (direction === 'backward') selected = selected.reverse();
-  const rows = hydrateRows(selected, resolved.databaseId, columns);
+  const rows = hydrateRows(selected, resolved.databaseId, columns, readOnly);
   const cursorFor = (row: RowMeta & Record<string, string | number>) => encodeRowCursor({
     v: DATABASE_ROW_CURSOR_VERSION,
     queryHash: hash,
@@ -3271,13 +3271,14 @@ function dataSourceFromRow(row: DataSourceRow): DatabaseDataSource {
     createdBy: row.created_by, updatedBy: row.updated_by, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
-function ensureDatabaseDataSource(databaseId: string): DatabaseDataSource {
+function ensureDatabaseDataSource(databaseId: string, readOnly = false): DatabaseDataSource {
   const db = getDb();
   let row = db.prepare('SELECT * FROM db_data_sources WHERE database_id = ?').get(databaseId) as DataSourceRow | undefined;
   if (!row) {
     const database = db.prepare('SELECT name, revision, created_by, updated_by, created_at, updated_at FROM db_databases WHERE id = ?')
       .get(databaseId) as { name: string; revision: number; created_by: string; updated_by: string; created_at: string; updated_at: string } | undefined;
     if (!database) throw new Error('Base de datos no encontrada.');
+    if(readOnly)return dataSourceFromRow({id:`companion-read:${databaseId}`,database_id:databaseId,kind:'local_database',...database});
     const id = newId('dsrc');
     db.prepare(`INSERT INTO db_data_sources
       (id, database_id, name, kind, revision, created_by, updated_by, created_at, updated_at)
@@ -3326,11 +3327,12 @@ function viewSourceRows(viewId: string): ViewSourceRow[] {
   ).all(viewId) as ViewSourceRow[];
 }
 
-export function listDatabaseViewSources(viewId: string): DatabaseViewDataSource[] {
+export function listDatabaseViewSources(viewId: string, readOnly = false): DatabaseViewDataSource[] {
   const db = getDb(); const view = getView(viewId); if (!view) throw new Error('Vista no encontrada.');
   let rows = viewSourceRows(viewId);
   if (rows.length === 0) {
-    const source = ensureDatabaseDataSource(view.databaseId); const timestamp = now();
+    const source = ensureDatabaseDataSource(view.databaseId, readOnly); const timestamp = now();
+    if(readOnly)return [{viewId,sourceId:source.id,databaseId:source.databaseId,sourceName:source.name,alias:source.name,position:0,primary:true,propertyMap:automaticDatabaseSourcePropertyMap(getColumns(source.databaseId)),revision:1,createdAt:source.createdAt,updatedAt:source.updatedAt}];
     db.prepare(`INSERT INTO db_view_sources
       (view_id, source_id, alias, position, is_primary, property_map_json, revision, created_by, updated_by, created_at, updated_at)
       VALUES (?, ?, ?, 0, 1, '{}', 1, 'local', 'local', ?, ?)`).run(viewId, source.id, source.name, timestamp, timestamp);
@@ -3381,9 +3383,9 @@ export function detachDatabaseViewSource(viewId: string, sourceId: string): void
   const timestamp = now(); rows.forEach((entry, position) => update.run(position, timestamp, viewId, entry.source_id));
 }
 
-export function getDatabaseContainer(viewId: string): DatabaseContainerDefinition | null {
+export function getDatabaseContainer(viewId: string, readOnly = false): DatabaseContainerDefinition | null {
   const view = getView(viewId); if (!view) return null;
-  const sources = listDatabaseViewSources(viewId); const properties = new Map<string, DatabaseContainerProperty>();
+  const sources = listDatabaseViewSources(viewId, readOnly); const properties = new Map<string, DatabaseContainerProperty>();
   for (const source of sources) {
     const columns = new Map(getColumns(source.databaseId).map((column) => [column.id, column]));
     for (const [canonical, columnId] of Object.entries(source.propertyMap)) {
@@ -3447,10 +3449,10 @@ function mapContainerRow(source: DatabaseViewDataSource, row: DatabaseRow): Data
     sourceName: source.alias, cells, createdAt: row.createdAt, updatedAt: row.updatedAt, revision: row.revision ?? 1 };
 }
 
-export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): DatabaseContainerRowPage {
+export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery, {readOnly = false}: {readOnly?:boolean} = {}): DatabaseContainerRowPage {
   if (!input || typeof input.viewId !== 'string' || !input.viewId) throw new Error('Contenedor de base de datos no válido.');
   if (input.localFilter) assertFilterNode(input.localFilter);
-  const view = getView(input.viewId); const definition = getDatabaseContainer(input.viewId);
+  const view = getView(input.viewId); const definition = getDatabaseContainer(input.viewId, readOnly);
   if (!view || !definition) throw new Error('Vista no encontrada.');
   const sources = input.sourceId ? definition.sources.filter((source) => source.sourceId === input.sourceId) : definition.sources;
   if (input.sourceId && sources.length === 0) throw new Error('La fuente no pertenece a este contenedor.');
@@ -3470,7 +3472,7 @@ export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): Da
     filter: combinedSourceFilter(view.config.filter, input.localFilter, source, primaryInverse) }));
   let totalCount = 0;
   for (const entry of translations) if (entry.filter.kind !== 'false') totalCount += queryDatabaseRows({ databaseId: entry.source.databaseId,
-    filter: entry.filter.kind === 'node' ? entry.filter.node : null, limit: 1 }).totalCount;
+    filter: entry.filter.kind === 'node' ? entry.filter.node : null, limit: 1 },{readOnly}).totalCount;
   const rows: DatabaseContainerRow[] = []; let sourceIndex = cursor?.sourceIndex ?? 0; let innerCursor = cursor?.innerCursor ?? null;
   let nextCursor: string | null = null;
   while (sourceIndex < translations.length && rows.length < limit) {
@@ -3482,7 +3484,7 @@ export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): Da
     });
     const page = queryDatabaseRows({ databaseId: entry.source.databaseId,
       filter: entry.filter.kind === 'node' ? entry.filter.node : null, sorts: translatedSorts,
-      cursor: innerCursor, limit: limit - rows.length });
+      cursor: innerCursor, limit: limit - rows.length },{readOnly});
     rows.push(...page.rows.map((row) => mapContainerRow(entry.source, row)));
     if (page.nextCursor) { nextCursor = encodeContainerCursor({ v: DATABASE_CONTAINER_CURSOR_VERSION, queryHash: queryHashValue,
       revision, sourceIndex, innerCursor: page.nextCursor }); break; }

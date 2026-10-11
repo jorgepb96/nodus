@@ -7,6 +7,7 @@ import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
 import './mobile.css';
 import './phone.css';
+import './page.css';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { StellarWorkspace } from '../stellarGraph/StellarWorkspace';
@@ -42,8 +43,11 @@ import { parsePageNumber } from '@shared/pageLocation';
 import { installMobileKeyboard } from './mobileKeyboard';
 import { FeedbackHost } from '../components/feedback';
 import {COMPANION_CONTENT_CHANGED} from '../companionEvents';
+import {MobilePageDocument} from './MobilePageDocument';
+import {pageBlocksToMarkdown} from '@shared/pages';
+import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -75,6 +79,15 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  if(['getPageDocument','getSyncedBlockSource','getDatabaseContainer','queryDatabaseContainerRows'].includes(method))return native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
+  if(method==='getPageAsset'){
+    const result=await native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));return Uint8Array.from(atob(result.base64),(value:string)=>value.charCodeAt(0));
+  }
+  if(method==='savePageDocument'){
+    const input=args[0] as Parameters<Window['nodus']['savePageDocument']>[0];
+    const markdown=input.nativeDocument?blockNoteToMarkdown(input.nativeDocument):pageBlocksToMarkdown(input.blocks);
+    return native.nodusMobileCall(method,{...input,markdown});
+  }
   if(method==='exportDatabaseDeepResearchReport')return exportDeviceDatabaseResearch(call,String(args[0]),args[1] as Parameters<typeof exportDeviceDatabaseResearch>[2]);
   if(method==='listDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
     const local=await localDatabaseResearchJobs(call);let remote:any[]=[];
@@ -188,6 +201,7 @@ let activeChat: string | undefined, activeImprove: string | undefined;
     return;
   }
   if (event.channel === 'mobile:publication:changed') {
+    if(native.nodusMobileConfig.surface==='page')window.dispatchEvent(new Event('nodus:mobile-pages-changed'));
     for (const update of (Array.isArray(event.args[0]) ? event.args[0] : []) as Array<{method:string;state:string;entryId?:string;mode?:string;degraded?:boolean;entityKind?:string;entityId?:string;error?:string}>) {
       if (update.method === 'saveDictionaryGeneratedVersion' && update.entryId) {
         const phase = update.state === 'available' ? update.degraded ? 'degraded' : 'done'
@@ -370,6 +384,7 @@ function App() {
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
+      : config.surface === 'page' ? <MobilePageDocument id={config.initialPageId??''} onOpen={id=>navigate('page',id)}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>

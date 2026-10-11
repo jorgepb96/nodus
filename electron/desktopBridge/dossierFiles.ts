@@ -1,6 +1,8 @@
 import {getDb} from '../db/database';
 import {listGlobalLibraryVaultLinks} from '../library/libraryService';
 import {getLibraryReaderDocument} from '../libraryReader/libraryReaderStore';
+import {getPageDocumentReadOnly} from '../db/pagesRepo';
+import {pageDocumentAssets} from './pageDocuments';
 
 /** Private, provider-free catalogue. Only registered opaque file identities
  * leave the Mac; paths, blobs, credentials and extraction are never exposed. */
@@ -42,6 +44,9 @@ export function mobileDossierFiles(vaultId: string, domains: readonly string[], 
       JOIN db_rows AS row ON row.id=attachment.row_id LEFT JOIN db_blobs AS blob ON blob.hash=attachment.blob_hash
       WHERE row.database_id=? ORDER BY row.id, attachment.position, attachment.id`).all(id) as Array<{id:string;title:string;available:number}>)
       .map(row => ({kind:'databaseAttachment',id:row.id,title:row.title || 'Archivo',available:Boolean(row.available)}));
+  } else if(collection==='pages'){
+    const document=getPageDocumentReadOnly(id);if(!document)throw new Error('record_not_found');
+    files=pageDocumentAssets(document);
   } else throw new Error('invalid_arguments');
   if (files.length > 20_000) throw new Error('dossier_files_too_large');
   return {version:1,collection,id,files,...(reader !== undefined ? {reader} : {})};

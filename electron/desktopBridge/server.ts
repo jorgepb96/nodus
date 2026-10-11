@@ -14,6 +14,7 @@ import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOpe
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
+import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
 import {listMobileChats,readMobileChat,saveMobileChat,MobileChatFailure} from './chatHistory';
 import {MOBILE_CHAT_MAX_BYTES} from '../../shared/mobileChatHistory';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
@@ -468,6 +469,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     return;
   }
   const workspaceEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/workspace-edits$/.exec(url.pathname);
+  const pageEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/page-edits$/.exec(url.pathname);
+  if(request.method==='POST'&&pageEdit){
+    const vaultId=decodeURIComponent(pageEdit[1]);
+    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')||!pairing.domains.includes('writing')){reply(response,403,{error:'permission_denied'});return;}
+    try{reply(response,200,await saveMobilePageDocument(vaultId,pairing.id,await body(request,MOBILE_WORKSPACE_EDIT_MAX_BYTES)));}
+    catch(error){if(error instanceof PageDocumentFailure)reply(response,error.status,{error:error.code,...(error.remote?{remote:error.remote}:{})});else reply(response,400,{error:'invalid_page_document',error_description:error instanceof Error?error.message:'La página no pudo guardarse.'});}
+    return;
+  }
   if (request.method === 'POST' && workspaceEdit) {
     const vaultId = decodeURIComponent(workspaceEdit[1]);
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }

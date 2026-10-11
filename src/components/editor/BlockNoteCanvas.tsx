@@ -6,7 +6,7 @@ import { EditorFilePanel } from './EditorFilePanel';
 import { uploadEditorFile } from './editorAttachments';
 import { academicCitationSequence, academicInlines, academicTargets, type AcademicMetadata, type AcademicCitation } from '@shared/academicDocument';
 import { formatAcademicSnapshot, singleAcademicSnapshot } from '@shared/academicCsl';
-import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BlockNoteSchema, COLORS_DEFAULT, createHeadingBlockSpec, createStyleSpec, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSpecs, type PartialBlock } from '@blocknote/core';
 import { en, es } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/ariakit';
@@ -23,11 +23,12 @@ import type { StudyBlockAnchor } from '@shared/studyEditor';
 import { Markdown } from '../Markdown';
 import { getActiveLang, t } from '../../i18n';
 
+const CompatibilityRender=createContext<((markdown:string)=>ReactNode|null)|undefined>(undefined);
 const compatibility = createReactBlockSpec({ type: 'nodusMarkdown', propSchema: { markdown: { default: '' }, originalJson: { default: '' } }, content: 'none' }, {
-  render: ({ block, editor }) => <div className="nodus-compatibility-block">
-    <Markdown content={block.props.markdown} verify={false} />
+  render: function CompatibilityBlock({block,editor}) {const render=useContext(CompatibilityRender);return <div className="nodus-compatibility-block">
+    {render?.(block.props.markdown)??<Markdown content={block.props.markdown} verify={false} />}
     {editor.isEditable && <details><summary>{t('Editar bloque de compatibilidad')}</summary><textarea aria-label={t('Contenido original')} value={block.props.markdown} onChange={event => editor.updateBlock(block, { props: { markdown: event.target.value, originalJson: '' } })} /></details>}
-  </div>,
+  </div>;},
 })();
 const wiki = createReactInlineContentSpec({ type: 'nodusWiki', propSchema: { reference: { default: '' }, label: { default: '' } }, content: 'none' }, {
   render: ({ inlineContent }) => <span className="nodus-wiki-link" data-wiki-reference={inlineContent.props.reference}>{inlineContent.props.label || inlineContent.props.reference}</span>,
@@ -142,7 +143,10 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   onWikiLink?(reference: string): void;
   onToolbarElement?(element: HTMLElement | null): void;
   listReferences?(): Promise<EditorReference[]>;
-}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences }, ref) => {
+  resolveFileUrl?(url:string):Promise<string>;
+  onDownloadFile?(url:string,name:string):Promise<void>;
+  renderCompatibility?(markdown:string):ReactNode|null;
+}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences,resolveFileUrl,onDownloadFile,renderCompatibility }, ref) => {
   const initial = useMemo(() => nativeDocument ?? markdownToBlockNote(value), [documentId]);
   const originals = useMemo(() => {
     const result = new Map<string, NativeBlock>();
@@ -150,7 +154,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     visit(initial); return result;
   }, [initial]);
   const initialContent = useMemo(() => forEditor(initial), [initial]);
-  const editor = useCreateBlockNote({ schema, initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
+  const editor = useCreateBlockNote({ schema, initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, resolveFileUrl, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
   const root = useRef<HTMLDivElement>(null);
   const insertController = useRef<EditorInsertHandle>(null);
   const InsertSideMenu = useMemo(() => function NodusSideMenu(props: SideMenuProps) {
@@ -217,9 +221,9 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   const SelectionToolbar = useMemo(() => function NodusSelectionToolbar() {
     const [more, setMore] = useState(false);
     const advanced = new Set(['strikeStyleButton', 'textAlignLeftButton', 'textAlignCenterButton', 'textAlignRightButton', 'nestBlockButton', 'unnestBlockButton']);
-    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item);
+    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} onDownload={onDownloadFile} /> : item);
     return <FormattingToolbar>{items.filter(item => !advanced.has(String(item.key)))}{onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}>❞</button>}<span ref={mountToolbar} className="study-selection-tools-host" /><div className="editorial-selection-more"><button type="button" className="bn-button" aria-label={t('Más formato')} title={t('Más formato')} aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(!more)}>···</button>{more && <div className="editorial-selection-more-menu">{items.filter(item => advanced.has(String(item.key)))}<button type="button" className="bn-button" title={t('Fórmula en línea')} onClick={() => editor.insertInlineContent([{ type: 'nodusFormula', props: { formula: editor.getSelectedText() || 'x^2' } }])}>ƒx</button></div>}</div></FormattingToolbar>;
-  }, [editor,mountToolbar]);
+  }, [editor,mountToolbar,onDownloadFile]);
   useEffect(() => {
     const content = root.current?.querySelector<HTMLElement>('.bn-editor');
     content?.setAttribute('spellcheck', String(spellcheck));
@@ -347,7 +351,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     else if (onNavigateLink) onNavigateLink(href);
     else if (/^https?:\/\//i.test(href)) window.open(href,'_blank','noopener,noreferrer');
   }}>
-    <AcademicRender.Provider value={academicRender}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
+    <AcademicRender.Provider value={academicRender}><CompatibilityRender.Provider value={renderCompatibility}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
       const next = read(); onChange(blockNoteToMarkdown(next), next); notifyHistory();
     }}>
       <FormattingToolbarController formattingToolbar={SelectionToolbar} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } } }} />
@@ -360,7 +364,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
         editor.focus();
       }} />}
       {editable && <EditorInsertController ref={insertController} items={insertItems} />}
-    </BlockNoteView></AcademicRender.Provider>
+    </BlockNoteView></CompatibilityRender.Provider></AcademicRender.Provider>
   </div>;
 });
 BlockNoteCanvas.displayName = 'BlockNoteCanvas';

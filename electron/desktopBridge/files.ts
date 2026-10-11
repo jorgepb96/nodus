@@ -72,6 +72,7 @@ export const BRIDGE_FILE_KINDS = {
   archiveItem: { domain: 'primary-source-files', table: 'archive_items', id: 'item_id', blob: 'blob', name: 'file_name' },
   archiveFile: { domain: 'primary-source-files', table: 'archive_item_files', id: 'file_id', blob: 'content_blob', name: 'original_file_name', path: 'external_path' },
   databaseAttachment: { domain: 'corpus', table: 'db_attachments AS attachment JOIN db_rows AS row ON row.id=attachment.row_id JOIN db_databases AS database ON database.id=row.database_id LEFT JOIN db_blobs AS blob ON blob.hash=attachment.blob_hash', id: 'attachment.id', blob: 'COALESCE(attachment.blob, blob.data)', name: 'attachment.file_name', mime: 'attachment.mime_type' },
+  pageAsset: {domain:'corpus',table:'db_blobs',id:'hash',blob:'data',name:'hash',mime:'mime_type'},
 } as const;
 
 /** Reader files are resolved by Desktop from a granted document identity. An
@@ -155,12 +156,17 @@ export async function serveBridgeFile(request: IncomingMessage, response: Server
   if (chat) { await serveChatCapabilityFile(request,response,url,vaultId,domains,id,action); return; }
   await withVaultDatabase(vaultId, async () => {
     const db = getDb();
+    if(kind==='pageAsset'&&!/^[a-f0-9]{64}$/i.test(id)){json(400,{error:'invalid_page_asset'});return;}
     const deleted = 'deleted' in spec ? ` AND ${spec.deleted} IS NULL` : '';
     const predicate = `${spec.id} = ?${deleted}`;
     const fileColumn = 'path' in spec ? spec.path : 'NULL';
     const mimeColumn = 'mime' in spec ? spec.mime : 'mime_type';
     const row = db.prepare(`SELECT ${spec.name} AS filename, ${mimeColumn} AS mime, length(${spec.blob}) AS size, ${fileColumn} AS registeredPath FROM ${spec.table} WHERE ${predicate}`).get(id) as { filename: string | null; mime: string | null; size: number | null; registeredPath: string | null } | undefined;
     if (!row) { json(404, { error: 'file_not_found' }); return; }
+    if(kind==='pageAsset'){
+      const suffix:Record<string,string>={'application/pdf':'.pdf','image/png':'.png','image/jpeg':'.jpg','image/svg+xml':'.svg','image/webp':'.webp','image/gif':'.gif','audio/mpeg':'.mp3','audio/wav':'.wav','video/mp4':'.mp4','text/plain':'.txt'};
+      row.filename=id+(suffix[row.mime??'']??'');
+    }
     let handle: FileHandle | undefined;
     let fileStamp: string | undefined;
     let size = row.size;

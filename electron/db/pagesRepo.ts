@@ -527,6 +527,22 @@ export function getPageDocument(pageId: string): PageDocument | null {
   return buildDocument(page, ensureDocumentRow(page));
 }
 
+/** A companion consultation must not initialise document rows or history.
+ * Legacy blocks get the same deterministic in-memory CRDT bootstrap used by
+ * Desktop; a later, explicitly requested edit owns persistence. */
+export function getPageDocumentReadOnly(pageId: string): PageDocument | null {
+  const page = getPage(pageId);
+  if (!page) return null;
+  const row = getDb().prepare('SELECT * FROM page_documents WHERE page_id = ?').get(page.id) as Row | undefined;
+  if (row) return buildDocument(page, row);
+  const blocks = listPageBlocks(page.id).map(entry => ({id:entry.id,parentBlockId:entry.parentBlockId,order:entry.order,type:entry.type,content:entry.content}));
+  const initial = emptyYDoc(page, blocks), doc = new Y.Doc();
+  try {
+    Y.applyUpdate(doc, initial.state);
+    return buildDocument(page, {revision:1,next_update_sequence:1,snapshot_sequence:0}, doc);
+  } finally { doc.destroy(); }
+}
+
 export function getPageDocumentForRow(rowId: string): PageDocument | null {
   const page = getPageForRow(rowId);
   return page ? getPageDocument(page.id) : null;

@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { withVaultDatabase } from '../db/database';
 import { mobileDatabaseResearchCatalogue } from '../desktopBridge/databaseResearchCatalogue';
 import {mobileDatabaseResearchReader} from '../desktopBridge/databaseResearchReading';
+import {mobileDatabaseResearchSourcePack,saveMobileDatabaseResearchReport} from '../desktopBridge/databaseResearchPublication';
 import * as dbMode from '../db/databasesRepo';
 import * as taskMode from '../db/databaseTasksRepo';
 import * as automationMode from '../db/databaseAutomationsRepo';
@@ -647,6 +648,12 @@ export function registerDatabasesIpc({ h, getWindow, chatAborters }: IpcContext)
   });
   h('db:deepResearch:mobileReader',async(_e,id:string)=>{
     const vault=databaseResearchVault(); return withVaultDatabase(vault.id,()=>mobileDatabaseResearchReader(id));
+  });
+  h('db:deepResearch:mobileSourcePack',async(_e,input:{databaseIds:string[]})=>{
+    const vault=databaseResearchVault();return withVaultDatabase(vault.id,()=>mobileDatabaseResearchSourcePack(input));
+  });
+  h('db:deepResearch:mobilePublication',async(_e,input:Parameters<typeof saveMobileDatabaseResearchReport>[0])=>{
+    const vault=databaseResearchVault();return withVaultDatabase(vault.id,()=>saveMobileDatabaseResearchReport(input));
   });
   h('db:deepResearch:report:read', async (_e, id: string, read: boolean) => {
     const vault = databaseResearchVault();

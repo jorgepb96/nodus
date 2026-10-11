@@ -26,6 +26,8 @@ import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_
 import { setActiveLang, t } from '../i18n';
 import type { AppSettings, GraphData } from '@shared/types';
 import type {DatabaseDeepResearchJobInput} from '@shared/databaseDeepResearch';
+import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabaseResearchReports,cancelLocalDatabaseResearch} from './autonomousDatabaseResearch';
+import {databaseOfflineComposerMethods,databaseOfflineComposer} from './databaseResearchOffline';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
 import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
@@ -40,7 +42,7 @@ import { installMobileKeyboard } from './mobileKeyboard';
 import { FeedbackHost } from '../components/feedback';
 import {COMPANION_CONTENT_CHANGED} from '../companionEvents';
 
-type Configuration = { device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -72,7 +74,12 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
-  if (method === 'enqueueDatabaseDeepResearch' && native.nodusMobileConfig.executionMode === 'autonomous') throw new Error('La investigación de datos necesita su motor autónomo de consultas verificadas. El modelo del Mac solo se usa al elegir el modo live.');
+  if(method==='listDatabaseDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous') {
+    const local=await localDatabaseResearchJobs(call);let remote:any[]=[];
+    try {remote=await native.nodusMobileCall(method,...args);}catch(error){if((error as {code?:string})?.code!=='offline'||!local.length)throw error;}
+    return [...local,...remote.filter(job=>!local.some(own=>own.id===job.id))];
+  }
+  if(method==='cancelDatabaseDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous'&&await cancelLocalDatabaseResearch(call,String(args[0])))return true;
   if (method === 'getActiveVault') return native.nodusMobileCall('surfaceVaultContext');
   if (method === 'listDictionaryGenerationJobs' && native.nodusMobileConfig.live && native.nodusMobileConfig.executionMode === 'autonomous') return native.nodusMobileCall('mobileDictionaryGenerationJobs');
   if (!native.nodusMobileConfig.live) {
@@ -136,6 +143,10 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
   }
   try { return await native.nodusMobileCall(method, ...args); }
   catch (error) {
+    if((error as {code?:string})?.code==='offline'&&config.surface==='databaseResearch'&&databaseOfflineComposerMethods.has(method)) {
+      native.webkit.messageHandlers.nodus.postMessage({id:'downloaded-databases',method:'surfaceOfflineCopy',args:[]});
+      return databaseOfflineComposer(call,method,args);
+    }
     // Only the native transport can declare a disconnection. Permission,
     // certificate, format and server errors must never become a local catalogue.
     if ((error as {code?: string})?.code === 'offline' && companionDictionaryMethods.has(method)) {
@@ -249,8 +260,13 @@ window.addEventListener(OPEN_LIBRARY_DOCUMENT_EVENT, event => {
 });
 const openLibraryWork = (itemId: string, scope: 'global' | 'vault', page: number | null = null) => requestLibraryDocumentOpen({itemId,scope,page});
 const config = native.nodusMobileConfig;
-const databaseReportSummaries = () => loadMobileDatabaseResearchReports(call);
+const databaseReportSummaries = async() => {
+  const local=await localDatabaseResearchReports(call);let remote:Awaited<ReturnType<typeof loadMobileDatabaseResearchReports>>=[];
+  try {remote=await loadMobileDatabaseResearchReports(call);}catch(error){if((error as {code?:string})?.code!=='offline'||!local.length)throw error;}
+  return [...local.filter(report=>!remote.some(item=>item.id===report.id)),...remote];
+};
 const enqueueMobileDatabaseResearch = async(input:DatabaseDeepResearchJobInput):Promise<'accepted'|'pending'> => {
+  if(native.nodusMobileConfig.executionMode==='autonomous')return enqueueAutonomousDatabaseResearch(call,input,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);});
   const value=await call('enqueueDatabaseDeepResearch',input) as {version:number;requestId:string;bridgeJobId:string|null;state:string};
   if(!value||value.version!==1||typeof value.requestId!=='string'||!value.requestId||!['pending','accepted','running','saved','available'].includes(value.state)||value.state!=='pending'&&(!value.bridgeJobId||typeof value.bridgeJobId!=='string')) throw new Error('Nodus no pudo confirmar la solicitud de investigación.');
   return value.state==='pending'?'pending':'accepted';
@@ -298,6 +314,7 @@ function SurfaceIssue({issue,title}: {issue: string; title?: string}) {
 
 function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [databaseSnapshot,setDatabaseSnapshot]=useState<React.ComponentProps<typeof DatabaseDeepResearchView>['snapshot']>({openReportId:config.initialDatabaseReportId||null});
   const [error, setError] = useState('');
   const [jobError, setJobError] = useState('');
   useEffect(() => {
@@ -348,7 +365,7 @@ function App() {
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
-      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch}/>
+      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'
         ? <WorldChatView settings={settings} onNavigate={view=>navigate('section',view)} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>

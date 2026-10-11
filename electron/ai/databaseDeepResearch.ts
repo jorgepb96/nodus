@@ -14,7 +14,7 @@ import { getDb, withDatabaseContext } from "../db/database";
 import * as researchRepo from "../db/databaseDeepResearchRepo";
 import type {DatabaseColumn,DatabaseRow} from '@shared/databases';
 import {
-  sha256Snapshot, runDatabaseDeepResearch as runSharedResearch,
+  sha256Snapshot, rehashDatabaseResearchSnapshot, runDatabaseDeepResearch as runSharedResearch,
   processDatabaseResearchRun as processSharedRun, DatabaseDeepResearchQueue as SharedResearchQueue,
   type DatabaseResearchHost, type DatabaseResearchSnapshot, type DatabaseDeepResearchDeps,
   type DatabaseResearchBudget, type DatabaseResearchScope, type DatabaseDeepResearchRequest,
@@ -326,6 +326,28 @@ export function runDatabaseDeepResearch(request:DatabaseDeepResearchRequest,deps
 }
 export class DatabaseDeepResearchQueue extends SharedResearchQueue {
   constructor(deps:DatabaseDeepResearchDeps={}) { super(sourceDeps(deps)); }
+}
+/** One immutable, complete source pack. The transport bounds bytes before it
+ * signs or returns it; wide or truncated databases fail explicitly. */
+export function captureMobileDatabaseResearchSources(databaseIds:string[],readProfiles:(id:string)=>Record<string,{filled?:number;fillRate?:number;distinct?:number;valueType?:string}>=()=>({})) {
+  return withPrivateSqliteSnapshot(databaseIds,()=>{
+    const sources=databaseIds.map(id=>{
+      const views=listViews(id);
+      const viewRows=Object.fromEntries(views.map(view=>{
+        const selected=captureDatabaseResearchSnapshot(id,{},undefined,{viewId:view.id});
+        if(selected.truncated)throw new Error('database_source_view_incomplete');
+        return [view.id,selected.rows.map(row=>row.id)];
+      }));
+      return {database:getDatabase(id)!,snapshot:captureDatabaseResearchSnapshot(id),columns:getColumns(id),views,viewRows,profiles:readProfiles(id),viewId:null,viewRevision:null};
+    });
+    const targets=new Set(sources.flatMap(source=>source.snapshot.rows.map(row=>row.id)));
+    for(const source of sources) {
+      if(source.snapshot.truncated)throw new Error('database_source_pack_incomplete');
+      source.snapshot.relationEdges=relationEdgesForRows(source.snapshot.databaseId,source.snapshot.rows,undefined,targets);
+      source.snapshot.hash=rehashDatabaseResearchSnapshot(source.snapshot);
+    }
+    return sources;
+  }).value;
 }
 export async function processDatabaseResearchRun(runId:string,agents:DatabaseResearchAgentDeps={}) {
   const host:DatabaseResearchHost={repository:researchRepo,probeKind:'sqlite',readColumns:getColumns,listViews,

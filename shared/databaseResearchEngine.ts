@@ -2670,7 +2670,7 @@ export interface DatabaseResearchHost {
   repository: DatabaseResearchRepository;
   probeKind: 'sqlite' | 'device-downloads';
   readColumns: (databaseId:string)=>DatabaseColumn[];
-  listViews: (databaseId:string)=>import('./databases').DatabaseSavedView[];
+  listViews: (databaseId:string)=>import('./databaseFilters').DatabaseSavedView[];
   captureSnapshot: (databaseId:string,budget:DatabaseResearchBudget,deps:DatabaseDeepResearchDeps|undefined,scope:DatabaseResearchScope)=>DatabaseResearchSnapshot;
   relationEdges: (databaseId:string,rows:DatabaseRow[],columnId?:string,allowedTargets?:ReadonlySet<string>)=>DatabaseResearchSnapshot['relationEdges'];
   immutable: <T>(databaseIds:string[],capture:()=>T)=>{rowCounts:Record<string,number>;value:T};

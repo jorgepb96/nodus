@@ -129,6 +129,8 @@ export const MOBILE_OPERATIONS = {
   listDatabaseRows: ['db:listRows','corpus'], listDatabaseViews: ['db:listViews','corpus'],
   listMobileDatabaseDeepResearchReports: ['db:deepResearch:mobileCatalogue','corpus'],
   getMobileDatabaseResearchReader: ['db:deepResearch:mobileReader','corpus'],
+  getMobileDatabaseResearchSourcePack: ['db:deepResearch:mobileSourcePack','corpus'],
+  saveMobileDatabaseResearchReport: ['db:deepResearch:mobilePublication','writing'],
   listDatabaseDeepResearchReports: ['db:deepResearch:reports:list','corpus'], getDatabaseDeepResearchReport: ['db:deepResearch:report:get','corpus'],
   listDatabaseDeepResearchJobs: ['db:deepResearch:jobs:list','corpus'], previewDatabaseDeepResearch: ['db:deepResearch:preview','corpus'],
   getDatabaseDeepResearchJob: ['db:deepResearch:job:get','corpus'],
@@ -165,7 +167,7 @@ export const MOBILE_OPERATIONS = {
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
-  'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
+  'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
   'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',
   'researchChat', 'researchChatStream', 'worldChatStream', 'dbChatStream', 'streamStudyAssistant', 'enqueueDatabaseDeepResearch', 'improveStudyText', 'buildArgumentMap', 'scanDictionaryNewEvidence', 'generateConversationTitle',
 ]);

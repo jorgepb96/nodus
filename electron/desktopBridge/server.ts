@@ -408,21 +408,23 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
       chatHistory: {version:1,maxRequestBytes:MOBILE_CHAT_MAX_BYTES,conflicts:true,idempotent:true,pageSize:100,kinds:['research','world','database','study']},
       nativeLiveChat: {version:1,method:'streamMobileCompanionChat',partialPersistence:true,macProviders:true},
-      jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
+      jobs: { version: 1, durableCancellation: true, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
   if (jobRoute) {
     const vaultId = decodeURIComponent(jobRoute[1]);
     if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     try {
-      if (request.method === 'POST' && !jobRoute[2]) {
+      if (['POST', 'DELETE'].includes(request.method || '') && !jobRoute[2]) {
+        if (request.method === 'DELETE' && !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
         const input = await body(request, MOBILE_CHAT_MAX_BYTES+128*1024);
         const method = String(input.method || ''); authorizeMobileOperation(pairing.domains, method);
         if(method!=='streamMobileCompanionChat'&&Buffer.byteLength(JSON.stringify(input),'utf8')>4*1024*1024)throw new Error('request_too_large');
         if (!MOBILE_JOB_OPERATIONS.has(method) || !Array.isArray(input.args) || input.args.length > 12) throw new Error('invalid_job');
         if(method==='runMobileSpaceAction')validateCompanionActionJob(input.args,pairing.domains,input.idempotencyKey);
-        const job = jobStore().submit({ deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') });
-        reply(response, 202, { job: jobResponse(job) }); return;
+        const intent = { deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') };
+        const job = request.method === 'DELETE' ? jobStore().cancelRequest(intent) : jobStore().submit(intent);
+        reply(response, request.method === 'DELETE' ? 200 : 202, { job: jobResponse(job) }); return;
       }
       if (request.method === 'GET' && !jobRoute[2]) {
         const requestId=url.searchParams.get('requestId');

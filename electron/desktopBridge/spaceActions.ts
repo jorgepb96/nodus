@@ -6,6 +6,7 @@ import {withVaultDatabase} from '../db/database';
 import {withMobileOperation} from './executionBoundary';
 import {withGenerationSignal} from '../ai/generationSignal';
 import {invalidateLiveCorpus,liveCorpusRevision} from './liveCorpus';
+import {savedCompanionLiveArgumentMap,saveCompanionLiveArgumentMap} from './academicGeneration';
 
 export const COMPANION_CONTENT_ACTIONS=new Set(['idea.delete','idea.saveToNotes','deepResearch.saveToNotes','hypothesis.saveToNotes','projects.create','projects.update','projects.section.update','projects.chapter.import','worldbuilding.entityDelete','pages.restoreRevision','databases.importCSV','worldbuilding.continuity']);
 export const COMPANION_RESEARCH_ACTIONS=new Set(['author.synthesis.generate','authors.matrix.generate','argumentMap.generate','writing.generate','worldbuilding.proseReview']);
@@ -40,8 +41,16 @@ export async function runCompanionSpaceAction(vaultId:string,domains:readonly st
   signal?.throwIfAborted();
   const invoke=()=>{signal?.throwIfAborted();return withMobileOperation(()=>executeCompanionSpaceAction({...action,id,status:'running',inputRevision:action.inputRevision??null,inputFingerprint:action.inputFingerprint??null}),domains);};
   const result=await withOwningVault(vaultId,()=>withVaultDatabase(vaultId,async()=>{
+    if(action.kind==='argumentMap.generate'){
+      const stored=savedCompanionLiveArgumentMap(id);if(stored)return {changedVault:false,result:stored};
+    }
     if(action.inputRevision&&action.inputRevision!==await liveCorpusRevision(vaultId))throw new Error('stale_input_revision');
-    return signal?withGenerationSignal(signal,invoke):invoke();
+    const result=await (signal?withGenerationSignal(signal,invoke):invoke());
+    if(action.kind==='argumentMap.generate') {
+      signal?.throwIfAborted();
+      withMobileOperation(()=>saveCompanionLiveArgumentMap(id,[action],result.result),domains);
+    }
+    return result;
   }));
   if(result.changedVault)invalidateLiveCorpus(vaultId);return result.result;
 }

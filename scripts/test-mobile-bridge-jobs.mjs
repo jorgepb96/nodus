@@ -118,4 +118,44 @@ test('research recovery repairs a torn progress append before saving new events'
     assert.equal(restored.events.length, tail.endsWith('}') ? 3 : 2);
   }
 });
+test('cancellation before a delayed POST is durable and never starts the provider', async () => {
+  let starts = 0;
+  const folder = path.join(directory, 'cancel-before-submit');
+  const store = new BridgeJobStore(folder, async () => { starts++; return 'must-not-run'; });
+  const cancelled = store.cancelRequest(input);
+  assert.equal(cancelled.state, 'cancelled');
+  assert.equal(store.submit(input).id, cancelled.id);
+  await tick(); assert.equal(starts, 0);
+  const reopened = new BridgeJobStore(folder, async () => { starts++; });
+  assert.equal(reopened.submit(input).state, 'cancelled');
+  assert.equal(reopened.cancelRequest(input).id, cancelled.id);
+  assert.throws(() => reopened.submit({ ...input, args: ['changed'] }), /idempotency_conflict/);
+  assert.throws(() => reopened.cancelRequest({ ...input, args: ['changed'] }), /idempotency_conflict/);
+  assert.equal(reopened.get(cancelled.id, 'other-device', input.vaultId), undefined);
+  assert.equal(reopened.get(cancelled.id, input.deviceGrant, 'other-vault'), undefined);
+  await tick(); assert.equal(starts, 0);
+});
+test('keyed cancellation honours queued and completed receipts without restarting them', async () => {
+  let starts = 0;
+  const store = new BridgeJobStore(path.join(directory, 'cancel-by-key'), async () => { starts++; return { saved: true }; });
+  const queued = store.submit(input);
+  assert.equal(store.cancelRequest(input).id, queued.id);
+  await tick(); assert.equal(starts, 0); assert.equal(queued.state, 'cancelled');
+  const completedInput = { ...input, idempotencyKey: '01234567-89ab-cdef-0123-456789abcdee' };
+  const completed = store.submit(completedInput); await tick();
+  assert.equal(store.cancelRequest(completedInput).state, 'available');
+  assert.deepEqual(completed.result, { saved: true });
+  assert.equal(starts, 1);
+});
+test('cancelled content actions keep their sequence and idempotency across restart', async () => {
+  const folder = path.join(directory, 'cancelled-action-sequence');
+  const store = new BridgeJobStore(folder, async () => assert.fail('Cancelled actions must not run'));
+  const action = { ...input, method: 'runMobileSpaceAction', args: [{ kind: 'pages.restoreRevision' }] };
+  const first = store.cancelRequest(action);
+  assert.equal(first.actionSequence, 1);
+  const reopened = new BridgeJobStore(folder, async () => assert.fail('Cancelled actions must not run'));
+  assert.equal(reopened.submit(action).actionSequence, 1);
+  assert.equal(reopened.cancelRequest({ ...action, idempotencyKey: '01234567-89ab-cdef-0123-456789abcdee' }).actionSequence, 2);
+  await tick();
+});
 test.after(() => fs.rmSync(directory, { recursive: true, force: true }));

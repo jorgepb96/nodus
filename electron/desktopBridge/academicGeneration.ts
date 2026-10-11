@@ -76,3 +76,24 @@ export function listSavedCompanionArgumentMaps(cursor:string|null=null,limit=20)
   const rows=db.prepare("SELECT request_id,result_json FROM mobile_academic_publications WHERE request_id>? AND json_type(result_json,'$.root')='object' ORDER BY request_id LIMIT ?").all(cursor??'',limit+1) as Array<{request_id:string;result_json:string}>;
   return {items:rows.slice(0,limit).map(row=>({id:row.request_id,map:JSON.parse(row.result_json)})),cursor:rows.length>limit?rows[limit-1].request_id:null,hasMore:rows.length>limit,revision:hash(epoch)};
 }
+
+/** Only the Bridge's actual Mac generation lane calls this helper. Keeping its
+ * receipt before job availability also recovers a completed model response
+ * after the Mac exits between SQLite commit and job acknowledgement. */
+export function savedCompanionLiveArgumentMap(id:string){
+  const db=getDb();
+  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='mobile_academic_publications'").get())return null;
+  const row=db.prepare("SELECT result_json FROM mobile_academic_publications WHERE request_id=? AND json_type(result_json,'$.root')='object'").get(id) as {result_json:string}|undefined;
+  return row?JSON.parse(row.result_json):null;
+}
+export function saveCompanionLiveArgumentMap(id:string,args:unknown[],map:unknown){
+  if(!mobileDomainAllowed('writing'))throw new Error('permission_denied');
+  if(!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id))throw new Error('invalid_argument_receipt');
+  const db=getDb(),fingerprint=hash({lane:'mac-argument',args});
+  db.exec('CREATE TABLE IF NOT EXISTS mobile_academic_publications(request_id TEXT PRIMARY KEY,payload_hash TEXT NOT NULL,result_json TEXT NOT NULL)');
+  return db.transaction(()=>{
+    const existing=db.prepare('SELECT payload_hash,result_json FROM mobile_academic_publications WHERE request_id=?').get(id) as {payload_hash:string;result_json:string}|undefined;
+    if(existing){if(existing.payload_hash!==fingerprint)throw new Error('idempotency_conflict');return JSON.parse(existing.result_json);}
+    db.prepare('INSERT INTO mobile_academic_publications VALUES(?,?,?)').run(id,fingerprint,JSON.stringify(map));return map;
+  })();
+}

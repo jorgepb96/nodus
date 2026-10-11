@@ -7,9 +7,9 @@ import { invalidateLiveCorpus } from './liveCorpus';
 import { withGenerationSignal } from '../ai/generationSignal';
 import { withMobileOperation } from './executionBoundary';
 import {runCompanionSpaceAction} from './spaceActions';
-import {mobileAcademicSource,saveMobileAcademicResult,listSavedCompanionArgumentMaps} from './academicGeneration';
+import {mobileAcademicSource,saveMobileAcademicResult,listSavedCompanionArgumentMaps,savedCompanionLiveArgumentMap,saveCompanionLiveArgumentMap} from './academicGeneration';
 import {buildArgumentMap} from '../ai/argumentMap';
-import {PROMPT_LANGUAGES,type PromptLanguage} from '../../shared/types';
+import {PROMPT_LANGUAGES,type PromptLanguage,type ArgumentMapRequest} from '../../shared/types';
 import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
@@ -44,6 +44,17 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(method==='buildArgumentMap'&&bridgeJobId&&domains.includes('writing')){
+    if(args.length!==1||!args[0]||typeof args[0]!=='object')throw new Error('invalid_argument_source');
+    const request=args[0] as ArgumentMapRequest;
+    const invoke=async()=>withMobileOperation(async()=>{
+      signal?.throwIfAborted();
+      if(request.mode!=='auto'){const saved=savedCompanionLiveArgumentMap(bridgeJobId);if(saved)return saved;}
+      const map=await buildArgumentMap(request,request.model);signal?.throwIfAborted();
+      return request.mode==='auto'?map:saveCompanionLiveArgumentMap(bridgeJobId,args,map);
+    },domains);
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>signal?withGenerationSignal(signal,invoke):invoke()));
+  }
   if(method==='getMobileStructuralArgumentMap'){
     const value=args[0] as {seedIdeaId?:string;language?:PromptLanguage}|undefined;
     if(args.length!==1||!value||Object.keys(value).some(key=>!['seedIdeaId','language'].includes(key))||typeof value.seedIdeaId!=='string'||!value.seedIdeaId||value.seedIdeaId.length>256||value.language!=null&&!(PROMPT_LANGUAGES as readonly unknown[]).includes(value.language))throw new Error('invalid_argument_source');

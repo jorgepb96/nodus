@@ -58,6 +58,12 @@ try{
     const argumentInput={...input,request:argumentRequest,revision:argument.revision,raw:'{}',requestId:randomUUID()};
     const map=academic.saveMobileAcademicResult(argumentInput);assert.equal(map.root.ideaId,'real-idea-0');assert.deepEqual(academic.saveMobileAcademicResult(argumentInput),map);
     const catalogue=academic.listSavedCompanionArgumentMaps(null,1);assert.equal(catalogue.items.length,1);assert.equal(catalogue.items[0].id,argumentInput.requestId);assert.deepEqual(catalogue.items[0].map,map);
+    const liveId=randomUUID(),liveArgs=[{seedIdeaId:'real-idea-0',mode:'ai'}];
+    assert.deepEqual(academic.saveCompanionLiveArgumentMap(liveId,liveArgs,map),map);
+    assert.deepEqual(academic.savedCompanionLiveArgumentMap(liveId),map);
+    assert.deepEqual(academic.saveCompanionLiveArgumentMap(liveId,liveArgs,{...map,overview:'Must not replace a completed receipt'}),map);
+    assert.throws(()=>academic.saveCompanionLiveArgumentMap(liveId,[{seedIdeaId:'other',mode:'ai'}],map),/idempotency_conflict/);
+    assert(academic.listSavedCompanionArgumentMaps(null,100).items.some(item=>item.id===liveId));
     assert.throws(()=>withMobileOperation(()=>academic.saveMobileAcademicResult(input),['corpus']),/permission_denied/);
     assert.equal(providers,0);
   },['corpus','writing'])));

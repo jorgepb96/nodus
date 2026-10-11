@@ -2,7 +2,7 @@ import { autonomousDictionary } from './autonomousDictionary';
 import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
 import { autonomousTranslation } from './autonomousTranslation';
 import {autonomousWriting, cancelAutonomousWriting} from './autonomousWriting';
-import {autonomousArgument} from './autonomousArgument';
+import {autonomousArgument,cancelAutonomousArgument} from './autonomousArgument';
 import {StudyGraphView} from '../views/StudyGraphView';
 import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
@@ -26,7 +26,7 @@ import {StudyChatView} from '../views/StudyChatView';
 import {DatabasesChatView} from '../views/DatabasesChatView';
 import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_CHAT_CANCEL_METHODS,MOBILE_CHAT_STREAM_EVENTS} from './mobileChat';
 import { setActiveLang, t } from '../i18n';
-import type { AppSettings, GraphData } from '@shared/types';
+import type { AppSettings, GraphData, ArgumentMapRequest } from '@shared/types';
 import type {DatabaseDeepResearchJobInput} from '@shared/databaseDeepResearch';
 import {enqueueAutonomousDatabaseResearch,localDatabaseResearchJobs,localDatabaseResearchReports,cancelLocalDatabaseResearch,retryLocalDatabaseResearch,clearLocalDatabaseResearchJobs} from './autonomousDatabaseResearch';
 import {databaseOfflineComposerMethods,databaseOfflineComposer} from './databaseResearchOffline';
@@ -57,6 +57,7 @@ const native = window as unknown as {
   nodusMobileSubscriptions: Map<string, Set<(...args: unknown[]) => void>>;
 };
 let localStudySnapshot: Promise<Record<string, StudyProjectionRow[]>> | undefined;
+const activeArgumentJobs=new Map<string,{id:string;request:ArgumentMapRequest}>();
 let localDictionaryTables: Promise<Record<string, StudyProjectionRow[]>> | undefined;
 let localDictionary: ReturnType<typeof dictionarySnapshot> | undefined;
 let localSources: Promise<ReturnType<typeof snapshotSourceDetails>> | undefined;
@@ -98,6 +99,8 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
     const request=args[0] as Parameters<Window['nodus']['buildArgumentMap']>[0];
     if(request.mode==='auto')return native.nodusMobileCall('getMobileStructuralArgumentMap',{seedIdeaId:request.seedIdeaId,language:request.language??native.nodusMobileConfig.language});
     if(native.nodusMobileConfig.executionMode==='autonomous')return autonomousArgument(call,request);
+    const id=crypto.randomUUID();activeArgumentJobs.set(request.seedIdeaId,{id,request});
+    try{return await native.nodusMobileCall(method,id,request);}finally{if(activeArgumentJobs.get(request.seedIdeaId)?.id===id)activeArgumentJobs.delete(request.seedIdeaId);}
   }
   if(['getPageDocument','getSyncedBlockSource','getDatabaseContainer','queryDatabaseContainerRows'].includes(method))return native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
   if(method==='getPageAsset'){
@@ -251,6 +254,10 @@ let activeChat: string | undefined, activeImprove: string | undefined;
   if (name) streamHandlers.get(String(requestId))?.[name]?.(...payload);
 };
 window.nodus = new Proxy({}, { get: (_, method: string) => {
+  if(method==='cancelMobileArgumentMap')return async(seedIdeaId:string)=>{
+    if(await cancelAutonomousArgument(call,seedIdeaId))return;
+    const job=activeArgumentJobs.get(seedIdeaId);if(job)await native.nodusMobileCall('cancelLiveJob',job.id,'buildArgumentMap',[job.request]);
+  };
   // A source citation opens on this device. It must never launch Zotero on the
   // Mac or lose its page while substituting the work's metadata dossier.
   if (method === 'openEvidenceAtPage') return async (id: string, locator: string | {pageNumber?: number | null; location?: string | null; sourceRef?: string | null} | null) => {

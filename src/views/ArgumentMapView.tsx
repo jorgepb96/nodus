@@ -656,7 +656,7 @@ function ArgumentMapTab({ tab, active }: { tab: ArgumentMapTabState; active: boo
         <div className={presentation === 'map' ? 'min-h-0 flex-1' : 'min-h-0 flex-1 overflow-y-auto p-4'}>
           {tab.map && <div className={presentation === 'map' ? 'h-full' : 'hidden'}><ArgumentMapCanvas map={tab.map} onSelect={selectBlock} fullscreen={fullscreen} onToggleFullscreen={toggleFullscreen} fullscreenError={fullscreenError} /></div>}
           {tab.error && <div className="card flex items-start gap-2 p-4 text-sm text-red-400"><Icon name="alert" /> <span>{tab.error}</span></div>}
-          {tab.building && !tab.map && <div className="flex h-full flex-col items-center justify-center gap-3 text-neutral-500"><Spinner label={tab.mode === 'auto' ? t('Construyendo el esquema…') : t('El modelo está trazando el esquema de argumentos…')} /></div>}
+          {tab.building && !tab.map && <div className="flex h-full flex-col items-center justify-center gap-3 text-neutral-500"><Spinner label={tab.mode === 'auto' ? t('Construyendo el esquema…') : t('El modelo está trazando el esquema de argumentos…')} />{mobile && tab.mode !== 'auto' && <button className="btn-ghost min-h-11" onClick={() => { void (window.nodus as unknown as {cancelMobileArgumentMap(seedId:string):Promise<void>}).cancelMobileArgumentMap(tab.ideaId).catch(error=>setOpenArgumentMaps(current=>current.map(item=>item.key===tab.key?{...item,error:String(error)}:item))); }}>{t('Cancelar')}</button>}</div>}
           {tab.map && presentation === 'outline' && (
             <div className="mx-auto max-w-4xl">
               <div className="card mb-4 bg-neutral-900/60 p-4">

@@ -71,11 +71,20 @@ export class BridgeJobStore {
     writeFileSync(temporary, JSON.stringify({ ...job, events: [] }), { mode: 0o600 }); renameSync(temporary, file);
   }
   submit(input: Pick<BridgeJob, 'deviceGrant' | 'vaultId' | 'domains' | 'method' | 'args' | 'idempotencyKey'>): BridgeJob {
+    return this.accept(input, false);
+  }
+  /** A cancellation may beat an in-flight POST. Persist the same keyed receipt
+   * before acknowledging it, so that a late submission cannot start work. */
+  cancelRequest(input: Pick<BridgeJob, 'deviceGrant' | 'vaultId' | 'domains' | 'method' | 'args' | 'idempotencyKey'>): BridgeJob {
+    return this.accept(input, true);
+  }
+  private accept(input: Pick<BridgeJob, 'deviceGrant' | 'vaultId' | 'domains' | 'method' | 'args' | 'idempotencyKey'>, cancelled: boolean): BridgeJob {
     if (!/^[a-zA-Z0-9-]{16,128}$/.test(input.idempotencyKey)) throw new Error('invalid_idempotency_key');
     const payloadHash = createHash('sha256').update(canonicalJson({ method: input.method, args: input.args })).digest('hex');
     const existing = [...this.jobs.values()].find(job => job.deviceGrant === input.deviceGrant && job.vaultId === input.vaultId && job.idempotencyKey === input.idempotencyKey);
     if (existing) {
       if (existing.payloadHash !== payloadHash) throw new Error('idempotency_conflict');
+      if (cancelled) return this.cancel(existing.id, input.deviceGrant, input.vaultId)!;
       // This typed lane links the original durable Bridge id to its saved queue
       // record. Recovery observes/resumes that record and never enqueues a duplicate.
       if (existing.state === 'interrupted' && recoverableQueues.has(existing.method) && existing.recoveryProtocol === 1) {
@@ -84,12 +93,12 @@ export class BridgeJobStore {
       }
       return existing;
     }
-    const job: BridgeJob = { ...input, id: randomUUID(), payloadHash, state: 'accepted', createdAt: new Date().toISOString(), updatedAt: '', events: [], nextSequence: 1,
+    const job: BridgeJob = { ...input, id: randomUUID(), payloadHash, state: cancelled ? 'cancelled' : 'accepted', createdAt: new Date().toISOString(), updatedAt: '', events: [], nextSequence: 1,
       ...(input.method==='runMobileSpaceAction'?{actionSequence:[...this.jobs.values()].reduce((maximum,job)=>Math.max(maximum,job.actionSequence??0),0)+1}:{}),
       ...(recoverableQueues.has(input.method) ? { recoveryProtocol: 1 } : {}) };
     writeFileSync(this.eventFile(job.id), '', { mode: 0o600 });
     this.persist(job); this.jobs.set(job.id, job);
-    setImmediate(() => void this.execute(job));
+    if (!cancelled) setImmediate(() => void this.execute(job));
     return job;
   }
   private async execute(job: BridgeJob): Promise<void> {

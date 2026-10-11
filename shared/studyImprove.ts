@@ -284,6 +284,16 @@ export interface StudyImproveResult {
   estimatedOutputTokens: number;
 }
 
+/** A device result can be opened before publication, without inventing a Mac
+ * improvement-log identifier or applying an unacknowledged replacement. */
+export function pendingStudyImprovementRequestId(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const value = error as { code?: unknown; requestId?: unknown };
+  return value.code === 'mobile_publication_pending' && typeof value.requestId === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.requestId)
+    ? value.requestId : null;
+}
+
 export interface StudyImproveStreamHandlers {
   onDelta: (delta: string) => void;
 }

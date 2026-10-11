@@ -99,7 +99,19 @@ try {
     }
     throw new Error('Unexpected offline method: '+method);
   };
-  await assert.rejects(frontend.autonomousWriting(offlineCall,freshRequest,()=>{}),error=>error.code==='mobile_publication_pending');
+  const {pendingStudyImprovementRequestId}=require('../shared/studyImprove.ts');
+  let pendingId;
+  await assert.rejects(frontend.autonomousWriting(offlineCall,freshRequest,()=>{
+    assert.fail('An unacknowledged preview must not be emitted for automatic replacement');
+  }),error=>{
+    pendingId=pendingStudyImprovementRequestId(error);
+    return error.code==='mobile_publication_pending' && Boolean(pendingId);
+  });
+  assert.equal([...offlineCheckpoints.values()].find(value=>value.id===pendingId)?.state,'saved');
+  assert.equal(db.prepare('SELECT content_markdown FROM study_docs WHERE id=?').get(document.id).content_markdown,original);
+  assert.equal(pendingStudyImprovementRequestId({code:'offline',requestId:pendingId}),null);
+  assert.equal(pendingStudyImprovementRequestId({code:'mobile_publication_pending',requestId:'forged-log-id'}),null);
+  assert.equal(pendingStudyImprovementRequestId(null),null);
   assert([...offlineCheckpoints.values()].some(value=>value.context.offlineSourceVersion===1 && value.preview.text.includes('conserva 37 datos') && value.state==='saved'));
   macAvailable=true;
   const newlyPublished=await frontend.autonomousWriting(offlineCall,freshRequest,()=>{});

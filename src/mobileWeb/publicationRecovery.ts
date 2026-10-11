@@ -17,5 +17,5 @@ export function preservePendingPublication(checkpoint: PublicationCheckpoint, er
 
 export class PendingPublicationError extends Error {
   readonly code = 'mobile_publication_pending';
-  constructor() { super(pendingPublicationMessage); }
+  constructor(readonly requestId?: string) { super(pendingPublicationMessage); }
 }

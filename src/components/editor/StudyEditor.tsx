@@ -37,7 +37,7 @@ import type { EditorDocument, EditorDocumentPort } from './documentPort';
 import { studyDocumentPort } from './documentPort';
 import { refreshSavedEditor, type EditorRefreshSnapshot } from './remoteEditorRefresh';
 import type { StudyImproveScope, StudyStyle } from '@shared/studyImprove';
-import { studyStyleIcon } from '@shared/studyImprove';
+import { pendingStudyImprovementRequestId, studyStyleIcon } from '@shared/studyImprove';
 import type { StudySentenceContext, StudySynonymAlternative } from '@shared/studySynonyms';
 import { studySentenceContext } from '@shared/studySynonyms';
 import type { AppSettings } from '@shared/types';
@@ -280,6 +280,7 @@ export function StudyEditor({
   const [synonymPanel, setSynonymPanel] = useState<SynonymPanelState | null>(null);
   const [improveStreamingStyleId, setImproveStreamingStyleId] = useState<string | null>(null);
   const [improveStreamError, setImproveStreamError] = useState('');
+  const [pendingImprovement, setPendingImprovement] = useState<{ requestId: string; sourceId: string } | null>(null);
   const [improvePreview, setImprovePreview] = useState('');
   const [lastImprovement, setLastImprovement] = useState<string | null>(null);
   const improveCancelled = useRef(false);
@@ -437,12 +438,13 @@ export function StudyEditor({
   const runQuickImprovement = async (style: StudyStyle, target = selectionImprove?.target ?? resolveImproveSelection(false)) => {
     if (!target || improveStreamingStyleId || !active || !data) return;
     const base = draft;
+    const sourceId = active.id;
     let streamed = '';
     let frame = 0;
     const flush = () => { frame = 0; setImprovePreview(streamed); };
     improveCancelled.current = false;
     improvementRunning.current = true;
-    setImproveStreamingStyleId(style.id); setImprovePreview(''); setLastImprovement(null); setImproveStreamError(''); setSelectionImprove(null);
+    setImproveStreamingStyleId(style.id); setImprovePreview(''); setLastImprovement(null); setImproveStreamError(''); setPendingImprovement(null); setSelectionImprove(null);
     try {
       const result = await window.nodus.improveStudyText({
         ...port.improveTarget(active.id), subjectId, text: target.text, styleId: style.id, scope: target.scope,
@@ -463,7 +465,11 @@ export function StudyEditor({
       await window.nodus.updateStudyImprovementAction(result.logId, 'replace');
     } catch (cause) {
       if (frame) window.cancelAnimationFrame(frame);
-      if (!improveCancelled.current) setImproveStreamError(cause instanceof Error ? cause.message : String(cause));
+      if (!improveCancelled.current) {
+        const requestId = pendingStudyImprovementRequestId(cause);
+        if (requestId) setPendingImprovement({ requestId, sourceId });
+        else setImproveStreamError(cause instanceof Error ? cause.message : String(cause));
+      }
     } finally { improvementRunning.current = false; setImproveStreamingStyleId(null); setImprovePreview(''); }
   };
 
@@ -973,6 +979,14 @@ export function StudyEditor({
         clearEditorialDraft(draftScope,active.id); setRecoveredDraft(false); setSaveError(''); setSaveState('saved'); setEditorRevision(value => value+1);
       })()}>{t('Cargar versión actual')}</button></div>}
       {improveStreamError && <div data-testid="study-improve-stream-error" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"><Icon name="alert" size={13} /><span className="min-w-0 flex-1">{improveStreamError}</span><span>{t('El original permanece intacto.')}</span><button onClick={() => setImproveStreamError('')} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {pendingImprovement && pendingImprovement.sourceId === active?.id && <div data-testid="study-improvement-pending" className="flex flex-wrap items-center gap-2 border-b border-stone-200 bg-stone-50 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-900">
+        <span className="min-w-0 flex-1">{t('Mejora guardada en este dispositivo. Se sincronizará al volver a conectar. El original permanece intacto.')}</span>
+        <button type="button" className="btn min-h-[44px]" onClick={() => {
+          const bridge = window.nodus as unknown as { openMobileWritingResult(id: string): Promise<boolean> };
+          void bridge.openMobileWritingResult(pendingImprovement.requestId).catch(cause => setImproveStreamError(cause instanceof Error ? cause.message : String(cause)));
+        }}>{t('Abrir resultado guardado')}</button>
+        <button type="button" className="min-h-[44px] min-w-[44px]" onClick={() => setPendingImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={14} /></button>
+      </div>}
 
 
       {showSearch && (

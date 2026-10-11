@@ -61,7 +61,7 @@ export async function autonomousWriting(call:Call,request:StudyImproveRequest,on
       checkpoint.result=await call('saveStudyImprovementFromMobile',{request,revision:context.revision,offlineSourceVersion:context.offlineSourceVersion,raw:checkpoint.raw,requestId:checkpoint.id});
       check();checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await save();onDelta(preview.text);return checkpoint.result!;
     } catch(error) {
-      if(!running.cancelled && preservePendingPublication(checkpoint,error)){await save();throw new PendingPublicationError();}
+      if(!running.cancelled && preservePendingPublication(checkpoint,error)){await save();throw new PendingPublicationError(checkpoint.id);}
       checkpoint.state=running.cancelled?'cancelled':'failed';checkpoint.error=String(error);await save();throw error;
     }
   };

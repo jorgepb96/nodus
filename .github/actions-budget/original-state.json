@@ -268,12 +268,12 @@
       }
     ]
   },
-  "budgetCiSha256": "1d477fa001e21bf14d1000c5b960d70d4ab0df7c5087faaac8037068a99ffdd4",
+  "budgetCiSha256": "23b271e214c88c917b40f4daab81a83bc9fc7eec9488adef10983c32c090a38e",
   "changedFiles": {
     ".github/workflows/ci.yml": {
       "snapshot": "original-ci.yml",
       "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
-      "restrictedSha256": "1d477fa001e21bf14d1000c5b960d70d4ab0df7c5087faaac8037068a99ffdd4"
+      "restrictedSha256": "23b271e214c88c917b40f4daab81a83bc9fc7eec9488adef10983c32c090a38e"
     },
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
@@ -344,7 +344,7 @@
     "scripts/e2e-smoke.mjs": {
       "snapshot": "original-files/scripts/e2e-smoke.mjs",
       "originalSha256": "3b34a4a298f0490f33f9d749b356da39d86b69d2eff1a7548bfa9583a4fa08a7",
-      "restrictedSha256": "da1ac5843cdc198dd860f79b23ddd15583505f2cfdb248637c7f58ee72286829"
+      "restrictedSha256": "7774e4ac4462ea55d1f48915a98b37b92b74e82477a0b145569a88481bac3905"
     },
     "scripts/e2e-graph-progressive.mjs": {
       "snapshot": "original-files/scripts/e2e-graph-progressive.mjs",

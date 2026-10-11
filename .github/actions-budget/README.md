@@ -15,7 +15,7 @@ se ejecuta exactamente una vez. Se mantienen cachés, concurrencia limitada de
 los tests, fallo ante omisiones y cancelación de PR obsoletos. No se repite el CI
 al fusionar en `main` ni se transfieren builds entre varios runners.
 
-Los E2E de Linux usan Xvfb, Openbox y el driver OpenGL ES de SwiftShader de
+Los E2E de Linux usan Xvfb y el driver OpenGL ES de SwiftShader de
 Chromium para ejecutar WebGL real sin GPU. Los flags solo se aplican a Linux en
 CI y no desactivan el sandbox de Electron. El arranque, los cuatro E2E y las
 migraciones se comprueban antes de la suite larga para fallar pronto.

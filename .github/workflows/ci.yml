@@ -43,7 +43,7 @@ jobs:
       - name: Install Linux test tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y xvfb openbox ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
+          sudo apt-get install --no-install-recommends -y xvfb ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
           ffmpeg -version >/dev/null
           ffprobe -version >/dev/null
           test -x /usr/bin/google-chrome
@@ -105,16 +105,16 @@ jobs:
         run: node scripts/prepare-research-ocr-fixture.mjs
       - name: E2E smoke (real app boot)
         timeout-minutes: 10
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e'
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e'
       - name: Stellar canvas E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:stellar'
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:stellar'
       - name: Graph tabs E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:stellar-tabs'
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:stellar-tabs'
       - name: Argument map E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:argument-map'
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:argument-map'
       - name: Each package installs, migrates, registers and uninstalls
         run: xvfb-run --auto-servernum npm run verify:capability-packages
       - name: A 5.3.1 profile migrates, fails and retries

@@ -113,6 +113,9 @@ async function closeElectronApp(instance) {
 }
 
 let app = null;
+let page = null;
+const pageErrors = [];
+const consoleMessages = [];
 try {
   // The child must run as a real GUI app: strip the runner's as-Node flag.
   const childEnv = {
@@ -140,16 +143,14 @@ try {
   if (packagedExecutable) console.log(`[e2e] packaged executable: ${packagedExecutable}`);
 
   // ── Window + renderer mount ─────────────────────────────────────────────────
-  const page = await app.firstWindow();
+  page = await app.firstWindow();
   page.setDefaultTimeout(30_000);
-  const pageErrors = [];
   page.on('pageerror', (err) => {
     pageErrors.push(err);
     process.stderr.write(`[e2e][pageerror] ${err?.stack ?? err}\n`);
   });
   // Kept so the tutorial walk can prove the CSP actually admits the video embed: a
   // blocked frame never attaches, it only logs "Refused to frame …".
-  const consoleMessages = [];
   page.on('console', (message) => { consoleMessages.push(message.text()); });
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => {
@@ -4593,6 +4594,19 @@ try {
   console.log(`[e2e] database at schema v${version}`);
 
   console.log('e2e smoke test passed');
+} catch (error) {
+  if (page && !page.isClosed()) {
+    console.error('[e2e] recent renderer console:', consoleMessages.slice(-20));
+    for (const frame of page.frames()) {
+      console.error('[e2e] failure frame state:', await frame.evaluate(() => ({
+        text: document.body?.innerText.slice(-9000),
+        inputs: Array.from(document.querySelectorAll('input')).map(input => ({
+          id: input.id, value: input.value, valid: input.validity.valid,
+        })),
+      })).catch(() => 'frame detached'));
+    }
+  }
+  throw error;
 } finally {
   if (app) await closeElectronApp(app);
   await rm(userData, { recursive: true, force: true });

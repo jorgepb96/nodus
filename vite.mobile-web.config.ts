@@ -7,7 +7,8 @@ import { MOBILE_OPERATIONS } from './shared/mobileOperations';
 const output = path.resolve(process.env.NODUS_MOBILE_SURFACE_OUT || '../nodus-mobile/ios/Nodus/Resources/SharedDesktop');
 const chatRead=process.env.NODUS_MOBILE_CHAT_READ==='1';
 const proseRead=process.env.NODUS_MOBILE_PROSE_READ==='1';
-const readEntry=proseRead?'prose-read':chatRead?'chat-read':null;
+const mapRead=process.env.NODUS_MOBILE_MAP_READ==='1';
+const readEntry=mapRead?'map-read':proseRead?'prose-read':chatRead?'chat-read':null;
 
 export default defineConfig({
   root: path.resolve(__dirname, 'src/mobileWeb'), base: './',
@@ -33,7 +34,7 @@ export default defineConfig({
   } }],
   worker: { format: 'iife' },
   build: { outDir: output, emptyOutDir: !readEntry,
-    lib: { entry: path.resolve(__dirname, proseRead?'src/mobileWeb/proseRead.tsx':chatRead?'src/mobileWeb/chatRead.tsx':'src/mobileWeb/main.tsx'), formats: ['iife'], name: proseRead?'NodusProseRead':chatRead?'NodusChatRead':'NodusMobile', fileName: readEntry??'surface', cssFileName: readEntry??'surface' },
+    lib: { entry: path.resolve(__dirname, mapRead?'src/mobileWeb/mapRead.tsx':proseRead?'src/mobileWeb/proseRead.tsx':chatRead?'src/mobileWeb/chatRead.tsx':'src/mobileWeb/main.tsx'), formats: ['iife'], name: mapRead?'NodusMapRead':proseRead?'NodusProseRead':chatRead?'NodusChatRead':'NodusMobile', fileName: readEntry??'surface', cssFileName: readEntry??'surface' },
     rollupOptions: { output: { inlineDynamicImports: true } },
   },
 });

@@ -42,6 +42,29 @@ export function mobilePageDocument(vaultId:string,id:unknown){
   if(Buffer.byteLength(JSON.stringify(source),'utf8')>MOBILE_WORKSPACE_EDIT_MAX_BYTES-65536)throw new PageDocumentFailure(413,'page_document_too_large');
   return source;
 }
+/** Bounded, ordered read batches of explicit page identities. A batch observes
+ * one SQLite transaction; the enclosing download still checks the vault epoch. */
+export function mobilePageDocuments(vaultId:string,raw:unknown){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new PageDocumentFailure(400,'invalid_page_batch');
+  const input=raw as {pageIds?:unknown;cursor?:unknown;limit?:unknown};
+  if(Object.keys(input).some(key=>!['pageIds','cursor','limit'].includes(key))||!Array.isArray(input.pageIds)||!input.pageIds.length||input.pageIds.length>2000||
+    input.pageIds.some(id=>typeof id!=='string'||!id||id.length>1024)||new Set(input.pageIds).size!==input.pageIds.length||
+    !Number.isSafeInteger(input.cursor)||Number(input.cursor)<0||Number(input.cursor)>=input.pageIds.length||
+    !Number.isSafeInteger(input.limit)||Number(input.limit)<1||Number(input.limit)>20)throw new PageDocumentFailure(400,'invalid_page_batch');
+  const ids=input.pageIds as string[],offset=Number(input.cursor),limit=Number(input.limit);
+  return getDb().transaction(()=>{
+    const documents:ReturnType<typeof mobilePageDocument>[]=[],softMaximumBytes=4*1024*1024;
+    let bytes=0;
+    for(let index=offset;index<ids.length&&documents.length<limit;index++){
+      const source=mobilePageDocument(vaultId,ids[index]),count=Buffer.byteLength(JSON.stringify(source),'utf8');
+      if(documents.length&&bytes+count>softMaximumBytes)break;
+      documents.push(source);bytes+=count;
+    }
+    const next=offset+documents.length,result={version:1,vaultId,documents,nextCursor:next<ids.length?next:null,totalCount:ids.length};
+    if(Buffer.byteLength(JSON.stringify(result),'utf8')>MOBILE_WORKSPACE_EDIT_MAX_BYTES)throw new PageDocumentFailure(413,'page_batch_too_large');
+    return result;
+  })();
+}
 const fields=new Set(['pageId','expectedRevision','expectedPageRevision','title','blocks','nativeDocument','schemaVersion','academicMetadata','reason']);
 /** A whole page and the receipt are one canonical transaction. Never send
  * individual normalised blocks around the page's Yjs document. */

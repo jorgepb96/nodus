@@ -15,6 +15,7 @@ export const MOBILE_OPERATIONS = {
   getMobileDatabaseRowLocation: ['mobile:database:rowLocation', 'corpus'],
   getMobileDatabasePresentationRead: ['mobile:database:presentation', 'corpus'],
   getMobilePageDocument: ['mobile:page:document', 'corpus'],
+  getMobilePageDocuments: ['mobile:page:documents', 'corpus'],
   getMobileSyncedBlockSource: ['mobile:page:syncedSource', 'corpus'],
   getMobileLinkedDatabaseRead: ['mobile:page:linkedDatabase', 'corpus'],
   getMobileWorldMapReadSource: ['mobile:worldMap:read', 'corpus'],

@@ -18,7 +18,7 @@ import {mobileDossierFiles} from './dossierFiles';
 import {mobileWorldMapReadSource} from './worldMapRead';
 import {mobileDatabaseRowLocation} from './databaseRowLocation';
 import {mobileDatabasePresentationRead} from './databasePresentation';
-import {mobilePageDocument} from './pageDocuments';
+import {mobilePageDocument,mobilePageDocuments} from './pageDocuments';
 import {mobileSyncedBlockSource,mobileLinkedDatabaseRead} from './pageDependencies';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
@@ -95,6 +95,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if (method === 'getMobilePageDocument') {
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobilePageDocument(vaultId, args[0])));
+  }
+  if (method === 'getMobilePageDocuments') {
+    if(args.length!==1)throw new Error('invalid_arguments');
+    return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobilePageDocuments(vaultId, args[0])));
   }
   if (['getMobileSyncedBlockSource','getMobileLinkedDatabaseRead'].includes(method)) {
     if(args.length!==1)throw new Error('invalid_arguments');

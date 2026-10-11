@@ -35,6 +35,24 @@ try{
       revision??=result.revision;assert.equal(result.revision,revision);for(const row of result.rows){assert(!ids.has(row.id));ids.add(row.id);}cursor=result.nextCursor;
     }while(cursor);
     assert.equal(ids.size,67);assert.equal(db.prepare('SELECT total_changes() AS count').get().count,before,'Consultation must not initialise a source or materialise formulas/history');
+    const bulk=Array.from({length:41},(_,index)=>pages.createPage({title:`Documento por lotes ${index}`,blocks:[{id:`bulk-${index}`,type:'paragraph',content:{text:`Texto propio ${index}`}}]}).page.id);
+    const beforeBatch=db.prepare('SELECT total_changes() AS count').get().count;
+    let batchCursor=0,read=[];
+    do{
+      const batch=bridge.mobilePageDocuments(vault.id,{pageIds:bulk,cursor:batchCursor,limit:20});
+      assert.equal(batch.vaultId,vault.id);assert.equal(batch.totalCount,bulk.length);assert(batch.documents.length>0&&batch.documents.length<=20);
+      assert.deepEqual(batch.documents.map(source=>source.document.page.id),bulk.slice(batchCursor,batchCursor+batch.documents.length));
+      read.push(...batch.documents.map(source=>source.document.page.id));batchCursor=batch.nextCursor;
+    }while(batchCursor!==null);
+    assert.deepEqual(read,bulk);assert.equal(db.prepare('SELECT total_changes() AS count').get().count,beforeBatch,'Ordered batched consultation is read-only');
+    for(const invalid of [{pageIds:[bulk[0],bulk[0]],cursor:0,limit:20},{pageIds:bulk,cursor:0,limit:21},{pageIds:bulk,cursor:0.5,limit:20},{pageIds:bulk,cursor:bulk.length,limit:20},{pageIds:bulk,cursor:0,limit:20,extra:true}]){
+      assert.throws(()=>bridge.mobilePageDocuments(vault.id,invalid),error=>error.code==='invalid_page_batch');
+    }
+    assert.throws(()=>bridge.mobilePageDocuments(vault.id,{pageIds:[bulk[0],randomUUID()],cursor:0,limit:20}),error=>error.code==='page_unavailable');
+    const large=pages.createPage({title:'Documento extenso',blocks:Array.from({length:300},(_,index)=>({id:`large-mobile-page-${index}`,type:'paragraph',content:{text:'x'.repeat(8192)}}))}).page.id;
+    const bounded=bridge.mobilePageDocuments(vault.id,{pageIds:[large,bulk[0]],cursor:0,limit:20});
+    assert.equal(bounded.documents.length,1);assert.equal(bounded.nextCursor,1);assert.equal(bounded.documents[0].document.page.id,large);
+    assert(Buffer.byteLength(JSON.stringify(bounded))<=require('../shared/mobileWorkspace.ts').MOBILE_WORKSPACE_EDIT_MAX_BYTES);
     dbs.updateView(view.id,{filter:{conjunction:'and',conditions:[{id:'six',columnId:title.id,op:'contains',value:'6'}]},sorts:[{columnId:title.id,dir:'desc'}]});
     const filtered=dependencies.mobileLinkedDatabaseRead(vault.id,{action:'rows',input:{viewId:view.id,sourceId:null,localFilter:null,cursor:null,limit:30}}).data;
     assert.equal(filtered.totalCount,13);assert.equal(filtered.rows[0].cells.title,'Fila 66');assert.equal(filtered.rows.at(-1).cells.title,'Fila 16');
@@ -57,6 +75,9 @@ try{
     assert.equal(bridge.mobilePageDocument(vault.id,origin.page.id).document.blocks[0].content.text,'Texto compartido exacto');
     assert.equal(db.prepare('SELECT total_changes() AS count').get().count,writes);
   }));
-  await vaults.withOwningVault(other.id,()=>database.withVaultDatabase(other.id,async()=>assert.throws(()=>bridge.mobilePageDocument(other.id,pageId),error=>error.code==='page_unavailable')));
+  await vaults.withOwningVault(other.id,()=>database.withVaultDatabase(other.id,async()=>{
+    assert.throws(()=>bridge.mobilePageDocument(other.id,pageId),error=>error.code==='page_unavailable');
+    assert.throws(()=>bridge.mobilePageDocuments(other.id,{pageIds:[pageId],cursor:0,limit:20}),error=>error.code==='page_unavailable');
+  }));
   assert.equal(calls,0);console.log('Actual complete pages, native documents, idempotent edits, metadata conflicts, dependency pagination and read-only vault isolation: PASS');
 }finally{globalThis.fetch=fetch;database?.closeDb();runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

@@ -4,6 +4,7 @@ import { dialogTitle } from '../dialogTitles';
 import type { IpcContext } from './context';
 import crypto from 'node:crypto';
 import { withVaultDatabase } from '../db/database';
+import { mobileDatabaseResearchCatalogue } from '../desktopBridge/databaseResearchCatalogue';
 import * as dbMode from '../db/databasesRepo';
 import * as taskMode from '../db/databaseTasksRepo';
 import * as automationMode from '../db/databaseAutomationsRepo';
@@ -635,6 +636,9 @@ export function registerDatabasesIpc({ h, getWindow, chatAborters }: IpcContext)
   });
   h('db:deepResearch:reports:list', async (_e, query?: { limit?: number; offset?: number; query?: string; reportType?: DatabaseDeepResearchReportType }) => {
     const vault = databaseResearchVault(); return withVaultDatabase(vault.id, () => databaseResearch.listDatabaseResearchReports(query));
+  });
+  h('db:deepResearch:mobileCatalogue', async (_e,input?: {limit?:number;offset?:number}) => {
+    const vault = databaseResearchVault(); return withVaultDatabase(vault.id,()=>mobileDatabaseResearchCatalogue(input));
   });
   h('db:deepResearch:report:get', async (_e, id: string) => {
     const vault = databaseResearchVault(); return withVaultDatabase(vault.id, () => databaseResearch.getDatabaseResearchReport(id));

@@ -9,9 +9,12 @@ import { buildImmersionPdfInput } from '../export/immersionExport';
 import { professionalReportPdf } from '../export/professionalReportPdf';
 import { getWritingWorkshopDraft } from '../db/writingDraftsRepo';
 import { getImmersionSession } from '../db/immersionRepo';
+import { getDatabaseResearchReport } from '../db/databaseDeepResearchRepo';
+import { buildDatabaseDeepResearchExport } from '../export/databaseDeepResearchExport';
+import type { DatabaseDeepResearchExportOptions } from '../../shared/databaseDeepResearch';
 import type { WritingWorkshopExportRequest, DeepResearchArchiveRequest } from '../../shared/types';
 
-export const MOBILE_EXPORT_METHODS = new Set(['exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf']);
+export const MOBILE_EXPORT_METHODS = new Set(['exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport']);
 const lifetime = 24 * 60 * 60 * 1000;
 function directory(vaultId: string): string {
   return path.join(app.getPath('userData'), 'desktop-bridge', 'exports', createHash('sha256').update(vaultId).digest('hex'));
@@ -36,6 +39,14 @@ export function readMobileExport(vaultId: string, id: string): { bytes: Buffer; 
   } catch { return null; }
 }
 export async function renderMobileExport(vaultId: string, method: string, args: unknown[], emit?: (channel: string, ...args: unknown[]) => void) {
+  if (method === 'exportDatabaseDeepResearchReport') {
+    const [id,raw] = args;
+    const options = raw as DatabaseDeepResearchExportOptions;
+    if (typeof id !== 'string' || !options || typeof options !== 'object' || !['markdown','pdf','zip'].includes(options.format)) throw new Error('invalid_export');
+    const report = getDatabaseResearchReport(id); if (!report) throw new Error('database_report_not_found');
+    const exported = await buildDatabaseDeepResearchExport(id,options);
+    return store(vaultId,`${label(report.title)}.${exported.extension}`,exported.mime,exported.bytes,{canceled:false,path:null});
+  }
   const requestId = typeof args[0] === 'string' && args.length > 1 ? args[0] : undefined;
   const input = args[requestId ? 1 : 0];
   if (method === 'exportImmersionSessionPdf') {

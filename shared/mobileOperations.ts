@@ -125,6 +125,19 @@ export const MOBILE_OPERATIONS = {
   listResearchContextSources: ['research:contextSources', 'corpus'], listResearchAttachments: ['research:attachments:list', 'corpus'],
   listResearchNotebooks: ['research:notebooks:list', 'corpus'], resolveResearchNotebook: ['research:notebooks:resolve', 'corpus'],
   updateResearchNotebookAppearance: ['research:notebooks:appearance', 'writing'],
+  listDatabases: ['db:list','corpus'], getDatabaseDetail: ['db:detail','corpus'],
+  listDatabaseRows: ['db:listRows','corpus'], listDatabaseViews: ['db:listViews','corpus'],
+  listMobileDatabaseDeepResearchReports: ['db:deepResearch:mobileCatalogue','corpus'],
+  listDatabaseDeepResearchReports: ['db:deepResearch:reports:list','corpus'], getDatabaseDeepResearchReport: ['db:deepResearch:report:get','corpus'],
+  listDatabaseDeepResearchJobs: ['db:deepResearch:jobs:list','corpus'], previewDatabaseDeepResearch: ['db:deepResearch:preview','corpus'],
+  enqueueDatabaseDeepResearch: ['db:deepResearch:enqueue','research-generation'],
+  cancelDatabaseDeepResearchJob: ['db:deepResearch:job:cancel','research-generation'], clearFinishedDatabaseDeepResearchJobs: ['db:deepResearch:jobs:clear','research-generation'],
+  setDatabaseDeepResearchReportRead: ['db:deepResearch:report:read','writing'], deleteDatabaseDeepResearchReport: ['db:deepResearch:report:delete','writing'],
+  listDatabaseDeepResearchReportAnnotations: ['db:deepResearch:report:annotations:list','corpus'],
+  createDatabaseDeepResearchReportAnnotation: ['db:deepResearch:report:annotations:create','writing'],
+  updateDatabaseDeepResearchReportComment: ['db:deepResearch:report:annotations:updateComment','writing'],
+  deleteDatabaseDeepResearchReportAnnotation: ['db:deepResearch:report:annotations:delete','writing'],
+  exportDatabaseDeepResearchReport: ['db:deepResearch:report:export','corpus'],
 } as const;
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([

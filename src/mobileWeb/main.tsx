@@ -15,6 +15,8 @@ import { DictionaryView } from '../views/DictionaryView';
 import { WorkspaceView } from '../views/WorkspaceView';
 import { ArgumentMapView } from '../views/ArgumentMapView';
 import { DeepResearchView } from '../views/DeepResearchView';
+import { DatabaseDeepResearchView } from '../views/DatabaseDeepResearchView';
+import {loadMobileDatabaseResearchReports} from './databaseResearchCatalogue';
 import { ImmersionView } from '../views/ImmersionView';
 import { ResearchAssistantModal } from '../views/ResearchAssistantModal';
 import { setActiveLang, t } from '../i18n';
@@ -33,7 +35,7 @@ import { installMobileKeyboard } from './mobileKeyboard';
 import { FeedbackHost } from '../components/feedback';
 import {COMPANION_CONTENT_CHANGED} from '../companionEvents';
 
-type Configuration = { device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { device?: 'phone' | 'tablet'; surface: 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -65,6 +67,7 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  if (method === 'enqueueDatabaseDeepResearch' && native.nodusMobileConfig.executionMode === 'autonomous') throw new Error('La investigación de datos necesita su motor autónomo de consultas verificadas. El modelo del Mac solo se usa al elegir el modo live.');
   if (method === 'getActiveVault') return native.nodusMobileCall('surfaceVaultContext');
   if (method === 'listDictionaryGenerationJobs' && native.nodusMobileConfig.live && native.nodusMobileConfig.executionMode === 'autonomous') return native.nodusMobileCall('mobileDictionaryGenerationJobs');
   if (!native.nodusMobileConfig.live) {
@@ -239,6 +242,7 @@ window.addEventListener(OPEN_LIBRARY_DOCUMENT_EVENT, event => {
 });
 const openLibraryWork = (itemId: string, scope: 'global' | 'vault', page: number | null = null) => requestLibraryDocumentOpen({itemId,scope,page});
 const config = native.nodusMobileConfig;
+const databaseReportSummaries = () => loadMobileDatabaseResearchReports(call);
 setActiveLang(config.language);
 document.documentElement.classList.toggle('dark', config.theme === 'dark');
 document.documentElement.classList.toggle('light', config.theme !== 'dark');
@@ -290,11 +294,11 @@ function App() {
     window.addEventListener('error', listener); return () => window.removeEventListener('error', listener);
   }, []);
   useEffect(() => {
-    if (!config.live || !['dictionary', 'deepResearch'].includes(config.surface)) return;
+    if (!config.live || !['dictionary', 'deepResearch','databaseResearch'].includes(config.surface)) return;
     let active = true;
     let revision: string | undefined;
     let polling = false;
-    const method = config.surface === 'dictionary' ? 'listDictionaryGenerationJobs' : 'listDeepResearchJobs';
+    const method = config.surface === 'dictionary' ? 'listDictionaryGenerationJobs' : config.surface === 'databaseResearch' ? 'listDatabaseDeepResearchJobs' : 'listDeepResearchJobs';
     const timer = window.setInterval(() => {
       if (polling) return;
       polling = true;
@@ -307,6 +311,10 @@ function App() {
       if (config.surface === 'dictionary') {
         for (const job of jobs) for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(job);
         for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null);
+      } else if (config.surface === 'databaseResearch') {
+        for (const job of jobs) for (const listener of subscriptions.get('onDatabaseDeepResearchProgress') ?? []) {
+          listener({runId:job.id,status:job.status,progress:job.progress / 100,phase:job.phase,step:null,message:job.errorMessage ?? null});
+        }
       } else {
         for (const listener of subscriptions.get('onDeepResearchQueue') ?? []) listener(jobs);
         for (const listener of subscriptions.get('onWritingDraftsChanged') ?? []) listener(null);
@@ -328,6 +336,7 @@ function App() {
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
       : <ArgumentMapView settings={settings}/>}

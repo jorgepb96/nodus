@@ -1,6 +1,18 @@
 /* iPhone keeps touch controls in both orientations. iPad uses the shared
    Desktop layout, with its own available-width adaptations. */
 .nodus-phone .mobile-surface :is(button,input,select){min-height:44px}
+/* Data report evidence is a touch sheet; it never takes half a phone's
+   reading column. iPad keeps the original evidence inspector. */
+.nodus-phone [data-surface="databaseResearch"]{min-width:0;max-width:100%;overflow-x:hidden}
+.nodus-phone [data-testid="database-deep-research-reader-scroll"]{padding:12px;overflow-x:hidden;min-width:0;overflow-wrap:anywhere}
+.nodus-phone [data-testid="database-deep-research-reader-scroll"] :is(pre,svg,canvas){max-width:100%}
+.nodus-phone [data-testid="database-deep-research-reader-scroll"] pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.nodus-phone [data-testid="database-deep-research-reader-scroll"] table{width:100%;min-width:0;table-layout:fixed}
+.nodus-phone [data-testid="database-deep-research-reader-scroll"] :is(th,td){white-space:normal;overflow-wrap:anywhere}
+.nodus-phone [data-testid="database-deep-research-evidence-drawer"]{position:fixed;inset:auto 0 0;width:100%;max-height:82dvh;z-index:80;overflow-y:auto;overscroll-behavior:contain;border-radius:20px 20px 0 0;background:white;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px #0004}
+.dark.nodus-phone [data-testid="database-deep-research-evidence-drawer"]{background:#141414}
+.nodus-phone [data-surface="databaseResearch"] [role="dialog"]{align-content:start;overflow-y:auto;overscroll-behavior:contain}
+.nodus-phone [data-surface="databaseResearch"] [role="dialog"]>div{width:100%;max-width:100%;min-width:0;margin-block:auto}
 .nodus-phone .mobile-surface .section-header{padding:8px 12px;gap:8px}
 .nodus-phone .mobile-surface .section-header h1{font-size:1.125rem;line-height:1.35}
 .nodus-phone .mobile-surface .section-header>div:first-child{min-width:0;flex:1 1 100%}

@@ -118,6 +118,7 @@ interface ReaderReport {
   reportType: DatabaseDeepResearchReportType;
   readAt?: string | null;
 }
+export type DatabaseResearchReportSummary = Pick<ReaderReport,'id'|'runId'|'title'|'summary'|'createdAt'|'costUsd'|'qualityStatus'|'reportType'|'readAt'>;
 
 function toWritingAnnotation(annotation: DatabaseDeepResearchReportAnnotation): WritingDraftAnnotation {
   return { ...annotation, draftId: annotation.reportId };
@@ -617,10 +618,14 @@ export function DatabaseDeepResearchView({
   settings,
   snapshot,
   onSnapshotChange,
+  mobile = false,
+  loadReportSummaries,
 }: {
   settings: import("@shared/types").AppSettings;
   snapshot?: DatabaseDeepResearchSnapshot;
   onSnapshotChange?: (patch: Partial<DatabaseDeepResearchSnapshot>) => void;
+  mobile?: boolean;
+  loadReportSummaries?: () => Promise<DatabaseResearchReportSummary[]>;
 }) {
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [details, setDetails] = useState<
@@ -660,7 +665,7 @@ export function DatabaseDeepResearchView({
   const [previewBusy, setPreviewBusy] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<DatabaseDeepResearchJob[]>([]);
-  const [reports, setReports] = useState<ReaderReport[]>([]);
+  const [reports, setReports] = useState<DatabaseResearchReportSummary[]>([]);
   const [reportFilter, setReportFilter] = useState<DatabaseDeepResearchReportType | "all">(snapshot?.reportFilter ?? "all");
   const [reportSearch, setReportSearch] = useState(snapshot?.search ?? "");
   const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">(snapshot?.readFilter ?? "all");
@@ -772,15 +777,11 @@ export function DatabaseDeepResearchView({
   const loadJobsAndReports = useCallback(async () => {
     const [loadedJobs, loadedReports] = await Promise.all([
       window.nodus.listDatabaseDeepResearchJobs(),
-      window.nodus.listDatabaseDeepResearchReports(),
+      loadReportSummaries ? loadReportSummaries() : window.nodus.listDatabaseDeepResearchReports().then(reports=>reports.map(normalizeReport)),
     ]);
     setJobs(loadedJobs);
-    setReports(
-      loadedReports.map((report) =>
-        normalizeReport(report as DatabaseDeepResearchReport),
-      ),
-    );
-  }, []);
+    setReports(loadedReports);
+  }, [loadReportSummaries]);
   useEffect(() => {
     void load().catch((error) => setPreviewError(t((error as Error).message)));
     void loadJobsAndReports().catch((error) =>
@@ -967,18 +968,21 @@ export function DatabaseDeepResearchView({
     if (reader?.id === id) setReader(null);
   };
   const openReport = useCallback(
-    async (report: ReaderReport) => {
+    async (report: DatabaseResearchReportSummary) => {
+      try {
       const loaded = await window.nodus.getDatabaseDeepResearchReport(
         report.id,
       );
-      setReader(
-        loaded ? normalizeReport(loaded as DatabaseDeepResearchReport) : report,
-      );
+      if (!loaded) throw new Error(t("El informe ya no está disponible."));
+      setReader(normalizeReport(loaded as DatabaseDeepResearchReport));
       setEvidenceOpen(false);
       onSnapshotChange?.({
         openReportId: report.id,
         reading: snapshot?.openReportId === report.id ? snapshot.reading ?? null : null,
       });
+      } catch (error) {
+        setToast(t(error instanceof Error ? error.message : String(error)));
+      }
     },
     [onSnapshotChange, snapshot?.openReportId, snapshot?.reading],
   );
@@ -999,10 +1003,11 @@ export function DatabaseDeepResearchView({
     });
     return unsubscribe;
   }, [reader?.id, refreshAnnotations]);
-  const toggleReportRead = useCallback(async (report: ReaderReport) => {
+  const toggleReportRead = useCallback(async (report: DatabaseResearchReportSummary) => {
     try {
       const next = await window.nodus.setDatabaseDeepResearchReportRead(report.id, !report.readAt);
-      const updated = next && typeof next === "object" ? normalizeReport(next as DatabaseDeepResearchReport) : { ...report, readAt: report.readAt ? null : new Date().toISOString() };
+      if (!next || typeof next !== "object") throw new Error(t("No se pudo guardar el estado de lectura."));
+      const updated = normalizeReport(next as DatabaseDeepResearchReport);
       setReports((current) => current.map((item) => item.id === report.id ? updated : item));
       setReader((current) => current?.id === report.id ? updated : current);
     } catch (error) {
@@ -1054,7 +1059,7 @@ export function DatabaseDeepResearchView({
         { format, includeSnapshot: includeSnapshot && format === "zip" },
       );
       if (!result.canceled)
-        setToast(tx("Exportado: {path}", { path: result.path ?? "" }));
+        setToast(mobile ? t("Exportación preparada") : tx("Exportado: {path}", { path: result.path ?? "" }));
     } catch (error) {
       setToast(t((error as Error).message));
     }

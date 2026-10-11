@@ -103,6 +103,23 @@ jobs:
       # individual test fetch an unpinned language model.
       - name: Prepare hash-verified local OCR test resource
         run: node scripts/prepare-research-ocr-fixture.mjs
+      - name: E2E smoke (real app boot)
+        timeout-minutes: 10
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e'
+      - name: Stellar canvas E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:stellar'
+      - name: Graph tabs E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:stellar-tabs'
+      - name: Argument map E2E
+        timeout-minutes: 5
+        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:argument-map'
+      - name: Each package installs, migrates, registers and uninstalls
+        run: xvfb-run --auto-servernum npm run verify:capability-packages
+      - name: A 5.3.1 profile migrates, fails and retries
+        run: xvfb-run --auto-servernum npm run verify:capability-migration
+      # Catch display/runtime problems before spending time on the complete suite.
       - name: Every discovered unit and integration test passes exactly once
         run: |
           xvfb-run --auto-servernum bash -e -c '
@@ -112,22 +129,6 @@ jobs:
             node scripts/ci-test-shards.mjs verify || status=1
             exit "$status"
           '
-      - name: E2E smoke (real app boot)
-        timeout-minutes: 10
-        run: xvfb-run --auto-servernum npm run test:e2e
-      - name: Stellar canvas E2E
-        timeout-minutes: 5
-        run: xvfb-run --auto-servernum npm run test:e2e:stellar
-      - name: Graph tabs E2E
-        timeout-minutes: 5
-        run: xvfb-run --auto-servernum npm run test:e2e:stellar-tabs
-      - name: Argument map E2E
-        timeout-minutes: 5
-        run: xvfb-run --auto-servernum bash -e -c 'openbox >/dev/null 2>&1 & npm run test:e2e:argument-map'
-      - name: Each package installs, migrates, registers and uninstalls
-        run: xvfb-run --auto-servernum npm run verify:capability-packages
-      - name: A 5.3.1 profile migrates, fails and retries
-        run: xvfb-run --auto-servernum npm run verify:capability-migration
       - name: Preserve complete execution inventory, including failures
         if: always()
         uses: actions/upload-artifact@v7

@@ -268,12 +268,12 @@
       }
     ]
   },
-  "budgetCiSha256": "16ef34250e0475f2ec2aba68e6682d654dcf236c40da70a3adb5ba54d94e16aa",
+  "budgetCiSha256": "1d477fa001e21bf14d1000c5b960d70d4ab0df7c5087faaac8037068a99ffdd4",
   "changedFiles": {
     ".github/workflows/ci.yml": {
       "snapshot": "original-ci.yml",
       "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
-      "restrictedSha256": "16ef34250e0475f2ec2aba68e6682d654dcf236c40da70a3adb5ba54d94e16aa"
+      "restrictedSha256": "1d477fa001e21bf14d1000c5b960d70d4ab0df7c5087faaac8037068a99ffdd4"
     },
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
@@ -340,6 +340,26 @@
       "originalSha256": "b6fcb39034089acbad15d58132bd32334fbdafb45c1cfa4cf8633a9a34f43b93",
       "restrictedSha256": "97d7a1060bb35e23d5789bd47d85d3cf79a2e6de400b70b1f654b8fb512a93bf",
       "regenerateAfterRestore": true
+    },
+    "scripts/e2e-smoke.mjs": {
+      "snapshot": "original-files/scripts/e2e-smoke.mjs",
+      "originalSha256": "3b34a4a298f0490f33f9d749b356da39d86b69d2eff1a7548bfa9583a4fa08a7",
+      "restrictedSha256": "763c0522dab357d25a0bdb1899f6dcc84834032a07637cf71148f8a62cef6a4a"
+    },
+    "scripts/e2e-graph-progressive.mjs": {
+      "snapshot": "original-files/scripts/e2e-graph-progressive.mjs",
+      "originalSha256": "1bc71134677fb697262a7ef338e547be8639f235d890846702571c95d34662ef",
+      "restrictedSha256": "8194e406acc8bc9e0d6f98f466d394e6258f289d146995c4c2e4279870b801d0"
+    },
+    "scripts/e2e-stellar-tabs.mjs": {
+      "snapshot": "original-files/scripts/e2e-stellar-tabs.mjs",
+      "originalSha256": "38280a7431da4cef89d8d23a231296b3a4077b12c2b07613251917881e1f2404",
+      "restrictedSha256": "988e61d34e9d439483daaf437e2d6bea250f65bf8cf2e36aa562c04d26de172a"
+    },
+    "scripts/e2e-argument-map-canvas.mjs": {
+      "snapshot": "original-files/scripts/e2e-argument-map-canvas.mjs",
+      "originalSha256": "6ed75d17c107c838b8d7514d14cfcec5e5adb59b0ed8e703a54f8c5cbb4d9cd3",
+      "restrictedSha256": "e87a9c3941e553449c2e34e8575cc39df5b67add2d2d03b48ac1dfc1961dc52d"
     }
   }
 }

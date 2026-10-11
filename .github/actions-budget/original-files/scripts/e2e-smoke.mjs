@@ -23,10 +23,6 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
-// A hosted Linux display has no GPU. Exercise real WebGL through Chromium's
-// software OpenGL ES driver, keeping the normal Electron sandbox enabled.
-const ciGpuArgs = process.env.CI && process.platform === 'linux'
-  ? ['--use-gl=angle', '--use-angle=swiftshader'] : [];
 
 // Re-exec under Electron-as-Node so the final better-sqlite3 check matches the
 // app ABI (same pattern as every other script in this suite). Playwright then
@@ -130,7 +126,6 @@ try {
   app = await electron.launch({
     executablePath: packagedExecutable || require('electron'),
     args: [
-      ...ciGpuArgs,
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
       ...(packagedExecutable ? [] : [repoRoot]),
@@ -3051,13 +3046,7 @@ try {
   await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-map-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-relations').click();
-  const relationsView = page.getByTestId('primary-sources-relations-view');
-  await relationsView.waitFor({ timeout: 30_000 }).catch(async (error) => {
-    console.error('[e2e] relations render diagnostics', consoleMessages.slice(-12), pageErrors.map((entry) => entry.stack));
-    console.error(await page.evaluate(() => document.body.innerText.slice(-2000)).catch(() => 'No renderer DOM'));
-    throw error;
-  });
-  await relationsView.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
+  await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-relations-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-search').click();
   await page.getByTestId('primary-sources-search-input').fill('San Martín');

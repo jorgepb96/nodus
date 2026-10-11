@@ -8,8 +8,7 @@ const require=createRequire(import.meta.url),root=process.cwd(),appVersion=requi
 const env={...process.env,NODUS_USERDATA:profile,NODUS_STELLAR_PREVIEW:'1',NODUS_DISABLE_AUTO_UPDATE:'1',NODUS_DISABLE_ANNOUNCEMENTS:'1',NODUS_QA_ROOT:profile,NODUS_QA_DATABASE_AUDIT_LOG:profile+'/database-audit.jsonl'};
 delete env.ELECTRON_RUN_AS_NODE;
 fs.mkdirSync(root+'/output/stellar-tabs',{recursive:true});
-const ciGpuArgs=process.env.CI&&process.platform==='linux'?['--use-gl=angle','--use-angle=swiftshader']:[];
-const app=await electron.launch({executablePath:require('electron'),args:[...ciGpuArgs,root],env});
+const app=await electron.launch({executablePath:require('electron'),args:[root],env});
 try {
  const page=await app.firstWindow();page.setDefaultTimeout(30000);const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(1560,1000));

@@ -23,7 +23,7 @@ export default defineConfig({
     return `import MobileLayoutWorker from './layout.worker?worker&inline';\nfunction mobileLayoutWorker(){const w=new MobileLayoutWorker();w.addEventListener('error',e=>window.dispatchEvent(new ErrorEvent('error',{message:'Graph worker: '+e.message+' ('+e.filename+':'+e.lineno+')'})));return w;}\n${transformed}`;
   } }, react(), { name: 'mobile-local-document', writeBundle() {
     fs.writeFileSync(path.join(output, 'operations.json'), JSON.stringify({ version: 2, operations: MOBILE_OPERATIONS }));
-    fs.writeFileSync(path.join(output, 'index.html'), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' blob:; worker-src blob:; style-src 'self' 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'"><link rel="stylesheet" href="./surface.css"><title>Nodus</title></head><body><div id="root"></div></body></html>`);
+    fs.writeFileSync(path.join(output, 'index.html'), `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; script-src 'self' blob:; worker-src blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: nodus-image:; connect-src 'none'; object-src 'none'; base-uri 'none'"><link rel="stylesheet" href="./surface.css"><title>Nodus</title></head><body><div id="root"></div></body></html>`);
   } }],
   worker: { format: 'iife' },
   build: { outDir: output, emptyOutDir: true,

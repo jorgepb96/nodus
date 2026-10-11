@@ -285,6 +285,7 @@ export function DeepResearchView({
   onOpenStudyDocument,
   onOpenStudyMaterial,
   onOpenStudyRecording,
+  onNativeRead,
   completeGuideTarget,
   onCompleteGuideTargetConsumed,
 }: {
@@ -303,6 +304,8 @@ export function DeepResearchView({
   onOpenStudyDocument?: (id: string, location?: { from?: number | null }) => void;
   onOpenStudyMaterial?: (id: string, location?: { pageNumber?: number | null; slideNumber?: number | null }) => void;
   onOpenStudyRecording?: (id: string, timestamp?: number | null) => void;
+  /** Companion owns a native document reader; Desktop keeps its reader tabs. */
+  onNativeRead?: (id: string) => void;
   /** Study vaults: open the composer as a complete guide over these sources (from Materials). */
   completeGuideTarget?: { sourceKeys: string[]; nonce: number } | null;
   onCompleteGuideTargetConsumed?: () => void;
@@ -677,6 +680,7 @@ export function DeepResearchView({
   };
 
   const openReader = (saved: WritingWorkshopSavedDraft) => {
+    if (mobile && onNativeRead) { onNativeRead(saved.id); return; }
     if (mode === 'reader' && openDraft?.id === saved.id) return;
     setOpenIds((ids) => ids.includes(saved.id) ? ids : [...ids, saved.id]);
     restoredReading.current = readingById.current[saved.id] ?? null;

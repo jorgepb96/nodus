@@ -22,8 +22,9 @@ import { activeVaultDir,getActiveVault } from '../vaults/vaultRegistry';
 import {MOBILE_STUDY_CHAT_MAX_BYTES,normalizeMobileStudyChatSelection,studyChatSelectionOptions,studyChatPackPayload,type MobileStudyChatSourcePack} from '@shared/mobileStudyChat';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {signStudyChatEntry} from '../desktopBridge/studyChatEvidence';
-import {getStudyQuestion} from '../db/studyQuestionsRepo';
-import {getStudyAssessment} from '../db/studyAssessmentsRepo';
+import {getStudyQuestion,listStudyQuestionVersions} from '../db/studyQuestionsRepo';
+import {getStudyAssessment,getStudyAttempt,listStudyAttempts} from '../db/studyAssessmentsRepo';
+import {getStoredStudyRubric} from '../db/studyGradingRepo';
 import {validateMobileStudyChatOriginal,type MobileStudyChatOriginal} from '@shared/mobileStudyChat';
 import { embed, embedMany } from './aiClient';
 
@@ -370,8 +371,17 @@ export function getMobileStudyChatSourcePack(raw:unknown):MobileStudyChatSourceP
   });
 }
 function readMobileStudyChatOriginal(kind:string,id:string):MobileStudyChatOriginal|null {
-  if(kind==='question') {const data=getStudyQuestion(id);if(!data||data.archivedAt)return null;const source:MobileStudyChatOriginal={kind,sourceId:id,data};validateMobileStudyChatOriginal(source);return source;}
-  if(kind==='exam') {const data=getStudyAssessment(id);if(!data||data.archivedAt||data.kind!=='exam')return null;const source:MobileStudyChatOriginal={kind,sourceId:id,data};validateMobileStudyChatOriginal(source);return source;}
+  if(kind==='question') {
+    const data=getStudyQuestion(id);if(!data||data.archivedAt)return null;
+    const attemptIds=getDb().prepare('SELECT DISTINCT a.id FROM study_attempts a JOIN study_attempt_answers r ON r.attempt_id=a.id WHERE r.question_id=? ORDER BY a.started_at DESC').all(id) as Array<{id:string}>;
+    const attempts=attemptIds.flatMap(({id:attemptId})=>{const attempt=getStudyAttempt(attemptId);if(!attempt)return [];const {assessment:_assessment,...record}=attempt;return [{...record,answers:record.answers.filter(answer=>answer.questionId===id)}];});
+    const source:MobileStudyChatOriginal={kind,sourceId:id,data,related:{versions:listStudyQuestionVersions(id),attempts}};validateMobileStudyChatOriginal(source);return source;
+  }
+  if(kind==='exam') {
+    const data=getStudyAssessment(id);if(!data||data.archivedAt||data.kind!=='exam')return null;
+    const attempts=listStudyAttempts(id).map(({assessment:_assessment,...record})=>record);
+    const source:MobileStudyChatOriginal={kind,sourceId:id,data,related:{attempts,rubric:data.rubricId?getStoredStudyRubric(data.rubricId):null}};validateMobileStudyChatOriginal(source);return source;
+  }
   return null;
 }
 export function getMobileStudyChatOriginal(raw:unknown) {

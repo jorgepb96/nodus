@@ -6,10 +6,17 @@ import {buildStudyChatPrompt,studyChatCitation} from './studyChatPrompt';
 import {studyAssistantPromptPack} from './studyAssistantPromptPacks';
 import {sha256Snapshot} from './databaseResearchEngine';
 import type {PromptLanguage} from './types';
-import type {StudyQuestion} from './studyQuestions';
-import type {StudyAssessment} from './studyAssessments';
+import type {StudyQuestion,StudyQuestionVersion} from './studyQuestions';
+import type {StudyAssessment,StudyAttempt} from './studyAssessments';
+import type {StudyRubric} from './studyGrading';
 
-export type MobileStudyChatOriginal = {kind:'question';sourceId:string;data:StudyQuestion}|{kind:'exam';sourceId:string;data:StudyAssessment};
+export interface MobileStudyOriginalRelated {
+  versions?:StudyQuestionVersion[];
+  /** Existing answers only. No new attempt is created by the companion reader. */
+  attempts?:Array<Omit<StudyAttempt,'assessment'>>;
+  rubric?:StudyRubric|null;
+}
+export type MobileStudyChatOriginal = ({kind:'question';sourceId:string;data:StudyQuestion}|{kind:'exam';sourceId:string;data:StudyAssessment})&{related?:MobileStudyOriginalRelated};
 
 export const MOBILE_STUDY_CHAT_MAX_BYTES=16_000_000;
 export interface MobileStudyChatSourcePack {
@@ -67,6 +74,13 @@ export function validateMobileStudyChatOriginal(source:MobileStudyChatOriginal) 
   if(!source||!['question','exam'].includes(source.kind)||typeof source.sourceId!=='string'||!source.sourceId||!source.data||source.data.id!==source.sourceId)throw new Error('invalid_study_chat_original');
   const question=(value:StudyQuestion)=>Boolean(value&&typeof value.id==='string'&&typeof value.prompt==='string'&&typeof value.explanation==='string'&&value.answer&&typeof value.answer==='object'&&!Array.isArray(value.answer)&&Array.isArray(value.options)&&value.options.every(option=>option&&typeof option.id==='string'&&typeof option.text==='string'&&typeof option.correct==='boolean'));
   if(source.kind==='question'?!question(source.data):source.data.kind!=='exam'||typeof source.data.title!=='string'||typeof source.data.description!=='string'||!Array.isArray(source.data.items)||source.data.items.some(item=>!item||typeof item.points!=='number'||!Number.isFinite(item.points)||!question(item.question)||item.questionId!==item.question.id))throw new Error('invalid_study_chat_original');
+  if(source.related!==undefined) {
+    const related=source.related;
+    if(!related||typeof related!=='object'||Array.isArray(related)||Object.keys(related).some(key=>!['versions','attempts','rubric'].includes(key)))throw new Error('invalid_study_chat_original_related');
+    if(related.versions!==undefined&&(!Array.isArray(related.versions)||source.kind!=='question'||related.versions.some(version=>!version||typeof version.id!=='string'||version.questionId!==source.sourceId||!Number.isInteger(version.versionNo)||version.versionNo<1||!version.snapshot||typeof version.snapshot!=='object'||typeof version.createdAt!=='string')))throw new Error('invalid_study_chat_original_versions');
+    if(related.attempts!==undefined&&(!Array.isArray(related.attempts)||related.attempts.some(attempt=>!attempt||typeof attempt.id!=='string'||typeof attempt.assessmentId!=='string'||typeof attempt.status!=='string'||typeof attempt.startedAt!=='string'||!Array.isArray(attempt.answers)||attempt.answers.some(answer=>!answer||answer.attemptId!==attempt.id||typeof answer.questionId!=='string'||!answer.response||typeof answer.response!=='object'||Array.isArray(answer.response))||(source.kind==='exam'?attempt.assessmentId!==source.sourceId:!attempt.answers.length||attempt.answers.some(answer=>answer.questionId!==source.sourceId)))))throw new Error('invalid_study_chat_original_attempts');
+    if(related.rubric!=null&&(source.kind!=='exam'||related.rubric.id!==source.data.rubricId||typeof related.rubric.name!=='string'||!Array.isArray(related.rubric.criteria)||related.rubric.criteria.some(criterion=>!criterion||typeof criterion.label!=='string'||typeof criterion.description!=='string'||!Number.isFinite(criterion.weight))))throw new Error('invalid_study_chat_original_rubric');
+  }
 }
 export function makeStudyChatCitations(entries:StudySearchIndexEntry[],question:string):{citations:StudyAssistantCitation[];truncated:boolean} {
   const citations:StudyAssistantCitation[]=[];let chars=0,truncated=entries.length>=20;

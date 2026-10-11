@@ -47,6 +47,9 @@ try {
       assert.equal(manualPack.entries.length,4);
       const item=questions.createStudyQuestion({prompt:'¿Qué regula el intercambio de membrana?',type:'short',answer:{text:'El gradiente'},explanation:'El gradiente de concentración permite el intercambio.'});
       const exam=assessments.createStudyAssessment({kind:'exam',title:'Examen de membrana',description:'Fuentes seleccionadas',questionIds:[item.id]});
+      const attempt=assessments.startStudyAttempt({assessmentId:exam.id,mode:'practice'});
+      assessments.saveStudyAttemptAnswer(attempt.id,{assessmentItemId:exam.items[0].id,response:{text:'El gradiente'},responseMs:4200});
+      assessments.submitStudyAttempt(attempt.id);
       const extra=[{...entries[0],indexId:`question:${item.id}`,kind:'question',sourceId:item.id,title:item.prompt,text:item.prompt},{...entries[0],indexId:`exam:${exam.id}`,kind:'exam',sourceId:exam.id,title:exam.title,text:exam.description}];
       fs.writeFileSync(indexFile,JSON.stringify({...stored,entries:[...entries,...extra]}));
       const originals=search.getMobileStudyChatSourcePack({scope:'manual',sourceKeys:[`question:${item.id}`,`exam:${exam.id}`]});
@@ -54,6 +57,13 @@ try {
       assert.deepEqual(originals.originals[`question:${item.id}`].data,questions.getStudyQuestion(item.id));
       assert.deepEqual(originals.originals[`exam:${exam.id}`].data,assessments.getStudyAssessment(exam.id));
       assert.equal(originals.originals[`exam:${exam.id}`].data.items[0].question.answer.text,'El gradiente');
+      assert.deepEqual(originals.originals[`question:${item.id}`].related.versions,questions.listStudyQuestionVersions(item.id));
+      assert.equal(originals.originals[`question:${item.id}`].related.attempts.length,1);
+      assert.equal(originals.originals[`question:${item.id}`].related.attempts[0].answers[0].response.text,'El gradiente');
+      assert.equal(originals.originals[`exam:${exam.id}`].related.attempts[0].id,attempt.id);
+      assert.equal(originals.originals[`exam:${exam.id}`].related.attempts[0].assessment,undefined);
+      const foreignHistory=structuredClone(originals.originals[`question:${item.id}`]);foreignHistory.related.attempts[0].answers[0].questionId=randomUUID();
+      assert.throws(()=>shared.validateMobileStudyChatOriginal(foreignHistory),/invalid_study_chat_original_attempts/);
       assert.deepEqual(search.getMobileStudyChatOriginal({kind:'exam',sourceId:exam.id}),originals.originals[`exam:${exam.id}`]);
       const misplaced=structuredClone(originals);misplaced.originals[`question:${item.id}`].sourceId=randomUUID();misplaced.id=sha(shared.studyChatPackPayload(misplaced));
       assert.throws(()=>shared.validateMobileStudyChatSourcePack(misplaced,vault.id),/invalid_study_chat_original/);

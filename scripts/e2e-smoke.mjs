@@ -1235,11 +1235,13 @@ try {
   await distributorFrame.locator('#group-count').press('Tab');
   for (const topic of ['Tema uno', 'Tema dos', 'Tema tres']) {
     await distributorFrame.getByPlaceholder('Ej. Energías renovables').fill(topic);
-    await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).click();
+    // Exercise the native form with keyboard activation instead of relying on
+    // pointer coordinates in the hosted display's sandboxed iframe.
+    await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).press('Enter');
     await distributorFrame.getByRole('button', { name: `Eliminar ${topic}`, exact: true }).waitFor();
   }
   await distributorFrame.getByPlaceholder('Ej. Tema de recuperación').fill('Tema excepcional');
-  await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).click();
+  await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).press('Enter');
   await distributorFrame.getByText('Hay 3 temas activos para 4 grupos. Añade o activa 1 más.', { exact: true }).waitFor();
   await distributorFrame.getByRole('checkbox', { name: 'Activar Tema excepcional' }).check();
   await distributorFrame.getByText('Se repartirán 4 temas únicos entre 4 grupos.', { exact: true }).waitFor();

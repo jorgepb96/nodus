@@ -6,6 +6,7 @@ import { getActiveVault, withOwningVault } from '../vaults/vaultRegistry';
 import * as research from '../db/chatRepo';
 import * as world from '../db/worldChatRepo';
 import * as database from '../db/databaseChatRepo';
+import {getDatabase} from '../db/databasesRepo';
 import { getStudyAssistantConversation, listStudyAssistantConversations } from '../ai/studyAssistant';
 import { readStudyChatStore, writeStudyChatStore, type StudyAssistantStore } from '../ai/studyChatHistory';
 import type { StudyAssistantMessage } from '../../shared/studyAssistant';
@@ -65,7 +66,7 @@ export async function listMobileChats(vaultId: string,kind: string,cursor: numbe
     return {version:1,kind,revision,rows:rows.slice(cursor,cursor+100),cursor:cursor+Math.min(100,Math.max(0,rows.length-cursor)),hasMore:cursor+100<rows.length};
   },domains)));
 }
-function validate(raw: unknown,current: MobileChatDocument | null): MobileChatEdit {
+function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileChatKind): MobileChatEdit {
   if (Buffer.byteLength(JSON.stringify(raw) ?? '', 'utf8') > MOBILE_CHAT_MAX_BYTES) throw new MobileChatFailure(413,'chat_too_large');
   if (!object(raw) || raw.version !== 1 || !uuid(raw.id) || !identity(raw.conversationId) ||
       raw.expectedRevision !== null && !hash(raw.expectedRevision) || !['save','delete'].includes(String(raw.action)) ||
@@ -76,7 +77,8 @@ function validate(raw: unknown,current: MobileChatDocument | null): MobileChatEd
   }
   if(raw.expectedRevision===null&&!uuid(raw.conversationId)) throw new MobileChatFailure(400,'invalid_chat_creation');
   const draft = raw.draft;
-  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if(draft.databaseIds!==undefined && (kind!=='database'||!Array.isArray(draft.databaseIds)||draft.databaseIds.length>30||new Set(draft.databaseIds).size!==draft.databaseIds.length||draft.databaseIds.some(id=>typeof id!=='string'||!getDatabase(id))))throw new MobileChatFailure(400,'invalid_chat_database_selection');
   const old = Array.isArray(current?.data.messages) ? current!.data.messages as Array<Record<string,unknown>> : [];
   const ids = new Set<string>();
   draft.messages.forEach((message,index)=>{
@@ -105,7 +107,7 @@ function saveSQL(kind: Exclude<MobileChatKind,'study'>,request: MobileChatEdit) 
   const id=request.conversationId,draft=request.draft!,data=rawConversation(kind,id)!;
   if(kind==='research') { research.saveMessages(id,draft.messages as unknown as Parameters<typeof research.saveMessages>[1]);research.renameConversation(id,draft.title);research.setArchived(id,draft.archived); }
   else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],data.selection as Parameters<typeof world.saveWorldChatConversation>[2],data.focus as Parameters<typeof world.saveWorldChatConversation>[3],data.model as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
-  else { database.saveDatabaseChatConversation(id,draft.messages as unknown as Parameters<typeof database.saveDatabaseChatConversation>[1],data.databaseIds as string[]);database.renameDatabaseChatConversation(id,draft.title);database.setDatabaseChatConversationArchived(id,draft.archived); }
+  else { database.saveDatabaseChatConversation(id,draft.messages as unknown as Parameters<typeof database.saveDatabaseChatConversation>[1],draft.databaseIds ?? data.databaseIds as string[]);database.renameDatabaseChatConversation(id,draft.title);database.setDatabaseChatConversationArchived(id,draft.archived); }
 }
 /** Receipts and data commit in one SQLite transaction (or one study-history
  * atomic file replacement). A lost ACK never re-applies a later edited chat. */
@@ -124,7 +126,7 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
         return JSON.parse(previous.json) as {id:string;snapshot?:MobileChatDocument;deleted?:boolean};
       }
       const current = rawConversation(kind,raw.conversationId) ? snapshot(kind,raw.conversationId,store) : null;
-      const request=validate(raw,current);
+      const request=validate(raw,current,kind);
       if(request.expectedRevision===null ? current!==null : !current || current.revision!==request.expectedRevision) throw new MobileChatFailure(409,'chat_revision_conflict',current ?? undefined);
       if(kind==='study' && !domains.includes('study-recordings') && request.draft?.messages.some(message=>String(message.content).includes('nodus://study/recording/') || Array.isArray(message.citations) && message.citations.some(citation=>object(citation)&&citation.kind==='transcript'))) throw new MobileChatFailure(403,'permission_denied');
       if(request.action==='delete') {

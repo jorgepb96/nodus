@@ -11,6 +11,7 @@ import {
   queryDatabaseRows,
 } from "../db/databasesRepo";
 import { getDb, withDatabaseContext } from "../db/database";
+import {captureDatabaseChatContextSource} from '../db/databaseChatSource';
 import * as researchRepo from "../db/databaseDeepResearchRepo";
 import type {DatabaseColumn,DatabaseRow} from '@shared/databases';
 import {
@@ -338,7 +339,7 @@ export function captureMobileDatabaseResearchSources(databaseIds:string[],readPr
         if(selected.truncated)throw new Error('database_source_view_incomplete');
         return [view.id,selected.rows.map(row=>row.id)];
       }));
-      return {database:getDatabase(id)!,snapshot:captureDatabaseResearchSnapshot(id),columns:getColumns(id),views,viewRows,profiles:readProfiles(id),viewId:null,viewRevision:null};
+      return {database:getDatabase(id)!,snapshot:captureDatabaseResearchSnapshot(id),columns:getColumns(id),views,viewRows,profiles:readProfiles(id),chat:captureDatabaseChatContextSource(id),viewId:null,viewRevision:null};
     });
     const targets=new Set(sources.flatMap(source=>source.snapshot.rows.map(row=>row.id)));
     for(const source of sources) {

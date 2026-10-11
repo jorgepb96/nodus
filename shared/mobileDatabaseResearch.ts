@@ -1,4 +1,5 @@
 import type {DatabaseSummary} from './databases';
+import type {DatabaseChatSource} from './databaseChatSources';
 import {validateDatabaseResearchSources} from './databaseResearchSourceValidation';
 import type {DatabaseSavedView} from './databaseFilters';
 import {
@@ -9,7 +10,7 @@ import {rehashDatabaseResearchSnapshot,sha256Snapshot,type DatabaseResearchRepos
 
 export interface MobileDatabaseSourcePack {
   version:1; vaultId:string; capturedAt:string; id:string; signature:string;
-  databases:Array<DatabaseResearchSource & {database:DatabaseSummary;views:DatabaseSavedView[];viewRows:Record<string,string[]>;profiles?:Record<string,{filled?:number;fillRate?:number;distinct?:number;valueType?:string}>}>;
+  databases:Array<DatabaseResearchSource & {database:DatabaseSummary;views:DatabaseSavedView[];viewRows:Record<string,string[]>;chat?:DatabaseChatSource;profiles?:Record<string,{filled?:number;fillRate?:number;distinct?:number;valueType?:string}>}>;
 }
 export function databaseSourcePackPayload(pack:MobileDatabaseSourcePack) {
   return {version:pack.version,vaultId:pack.vaultId,capturedAt:pack.capturedAt,databases:pack.databases};
@@ -26,6 +27,7 @@ export function validateMobileDatabaseSourcePack(pack:MobileDatabaseSourcePack):
     const rows=new Set<string>(),columns=new Set<string>();
     for(const column of source.columns) {if(!column.id||column.databaseId!==snapshot.databaseId||columns.has(column.id))throw new Error('invalid_database_source_columns');columns.add(column.id);}
     for(const row of snapshot.rows) {if(!row.id||row.databaseId!==snapshot.databaseId||rows.has(row.id)||!row.cells||Object.keys(row.cells).some(id=>!columns.has(id)))throw new Error('invalid_database_source_rows');rows.add(row.id);}
+    if(source.chat && (source.chat.databaseId!==snapshot.databaseId || source.chat.name!==source.database.name || source.chat.profile?.rowCount!==snapshot.rowCount || !Array.isArray(source.chat.sample) || source.chat.sample.length!==Math.min(10,snapshot.rowCount) || source.chat.sample.some(row=>!rows.has(row.id))))throw new Error('invalid_database_chat_source');
     const views=new Set<string>();
     for(const view of source.views) {
       const selected=source.viewRows?.[view.id];

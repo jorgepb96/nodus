@@ -16,6 +16,6 @@ export interface MobileChatEdit {
   conversationId: string;
   expectedRevision: string | null;
   action: 'save' | 'delete';
-  draft?: { title: string; archived: boolean; messages: Array<Record<string, unknown>> };
+  draft?: { title: string; archived: boolean; messages: Array<Record<string, unknown>>; databaseIds?: string[] };
   companion?: Record<string, unknown> | null;
 }

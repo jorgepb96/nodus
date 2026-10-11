@@ -12,7 +12,7 @@ import { isReadOnlyCorpusQuery, serveLiveCorpus } from './liveCorpus';
 import { authorizeMobileOperation, executeMobileOperation } from './operations';
 import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOperations';
 import { BridgeJobStore, type BridgeJob } from './jobs';
-import { applyBridgeMutations } from './mutations';
+import { applyBridgeMutations, mobileWorldContentMutationTables } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
 import {validateCompanionSpaceAction,validateCompanionActionJob,companionActionKey,companionActionResponse} from './spaceActions';
@@ -406,6 +406,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
       workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
+      worldContentEdits: {version:1,vaults:pairing.vaultIds.map(id=>({vaultId:id,tables:mobileWorldContentMutationTables(id,pairing.domains)})).filter(item=>item.tables.length>0)},
       chatHistory: {version:1,maxRequestBytes:MOBILE_CHAT_MAX_BYTES,conflicts:true,idempotent:true,pageSize:100,kinds:['research','world','database','study']},
       nativeLiveChat: {version:1,method:'streamMobileCompanionChat',partialPersistence:true,macProviders:true},
       jobs: { version: 1, durableCancellation: true, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
@@ -454,7 +455,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     const vaultId = decodeURIComponent(corpus[1]);
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 16 * 1024 * 1024);
-    reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations)); return;
+    reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations, pairing.domains)); return;
   }
   const chatHistory = /^\/bridge\/v2\/vaults\/([^/]+)\/chat-history\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
   if(chatHistory && ['GET','POST'].includes(request.method??'')) {

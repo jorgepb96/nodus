@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "family": "worldbuilding",
+  "tables": [
+    "persons", "person_names", "person_places", "places", "events", "event_participants", "relationships",
+    "character_profiles", "event_world_dates", "character_abilities", "world_groups", "character_affiliations", "place_profiles",
+    "world_secrets", "secret_knowers", "world_scenes", "scene_characters", "world_scene_days",
+    "world_maps", "map_layers", "map_markers", "map_travel_modes", "world_calendar", "world_calendar_eras", "world_calendar_months",
+    "world_articles", "world_links", "world_threads", "thread_parties", "world_beats", "world_rules", "world_questions",
+    "world_question_options", "world_notice_mutes", "world_scene_text", "world_chapter_breaks", "world_word_days",
+    "world_manuscript_starts", "world_scene_snapshots"
+  ],
+  "fileTables": ["world_images", "map_images"]
+}

@@ -60,6 +60,15 @@ try {
   assert.equal((await listPrivateSources(vault,'study-recordings','study-recording',{offset:0,limit:100,query:'',state:'all'})).total,121);
 
   db.prepare('INSERT INTO persons(person_id,display_name,created_at,updated_at) VALUES(?,?,?,?)').run('private-person', 'Persona privada', stamp, stamp);
+  db.prepare('INSERT INTO testimony_participant_profiles(person_id,public_name,biographical_note,created_at,updated_at) VALUES(?,?,?,?,?)')
+    .run('private-person','Alias público','Biografía privada elegida',stamp,stamp);
+  const participant = await readPrivateSource(vault,'testimonies','testimony-participant','private-person');
+  const participantProfile = participant.groups.find(group=>group.key==='profile');
+  const participantRows = await readPrivateSource(vault,'testimonies','testimony-participant','private-person',
+    {group:'profile',cursor:0,limit:100,revision:participantProfile.revision});
+  assert.equal(participant.root.display_name,'Persona privada'); assert.equal(participantRows.rows[0].biographical_note,'Biografía privada elegida');
+  await assert.rejects(() => readPrivateSource(vault,'corpus','testimony-participant','private-person'),{status:403});
+  await assert.rejects(() => readPrivateSource(vault,'prosopography-private','testimony-participant','private-person'),{status:403});
   db.prepare('INSERT INTO prosop_person_profiles(person_id,created_at,updated_at) VALUES(?,?,?)').run('private-person',stamp,stamp);
   db.prepare('INSERT INTO prosop_sources(source_id,title,source_kind,created_at,updated_at) VALUES(?,?,?,?,?)').run('source','Fuente concreta','document',stamp,stamp);
   db.prepare('INSERT INTO prosop_source_segments(segment_id,source_id,locator_display,quoted_text,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('literal','source','p.37','Evidencia literal íntegra',stamp,stamp);

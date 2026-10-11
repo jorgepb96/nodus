@@ -10,6 +10,10 @@ const group = (key: string, title: string, table: string, where: string): Group 
 const sourceFactoids = 'r.source_id = ?';
 const personFactoids = "EXISTS (SELECT 1 FROM prosop_statements s JOIN prosop_statement_entities e ON e.statement_id = s.statement_id WHERE s.factoid_id = r.factoid_id AND e.entity_kind = 'person' AND e.entity_id = ?)";
 const plans: Record<string, Plan> = {
+  'testimony-participant': { domain: 'testimonies', table: 'persons', primaryKey: 'person_id', groups: [
+    group('profile', 'Perfil del participante', 'testimony_participant_profiles', 'r.person_id = ?'),
+    group('participation', 'Participación en entrevistas', 'testimony_interview_participants', 'r.person_id = ?'),
+  ] },
   'study-recording': { domain: 'study-recordings', table: 'study_recordings', primaryKey: 'id', groups: [
     group('transcripts', 'Transcripciones', 'study_transcripts', 'r.recording_id = ?'),
     group('segments', 'Segmentos', 'study_transcript_segments', 'EXISTS (SELECT 1 FROM study_transcripts t WHERE t.id = r.transcript_id AND t.recording_id = ?)'),
@@ -72,7 +76,9 @@ function root(db: Database, plan: Plan, id: string): RecordRow {
   return row;
 }
 function query(db: Database, item: Group): string {
-  return `SELECT r.rowid AS _bridge_cursor, ${projection(db, item.table)} FROM "${item.table}" r WHERE (${item.where})`;
+  const title = item.table === 'testimony_interview_participants'
+    ? ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title' : '';
+  return `SELECT r.rowid AS _bridge_cursor, ${projection(db, item.table)}${title} FROM "${item.table}" r WHERE (${item.where})`;
 }
 function metadata(db: Database, item: Group, id: string) {
   const hash = createHash('sha256'); let total = 0;
@@ -121,11 +127,13 @@ export async function listPrivateSources(vaultId: string, domain: string, kind: 
   if (!getVault(vaultId)) throw new PrivateSourceReadError(404, 'vault_not_found');
   return withVaultDatabase(vaultId, () => {
     const db = getDb();
-    const title = kind === 'prosop-person' ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : 'title';
-    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : kind === 'prosop-person' ? 'birth_date' : 'status';
+    const person = ['prosop-person', 'testimony-participant'].includes(kind);
+    const title = person ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : 'title';
+    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : person ? 'birth_date' : 'status';
     const state = options.state || 'active';
     if (!['active', 'archived', 'trash', 'all'].includes(state)) throw new PrivateSourceReadError(400, 'invalid_source_state');
     let where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)' : '';
+    if (kind === 'testimony-participant') where = ' WHERE EXISTS (SELECT 1 FROM testimony_participant_profiles p WHERE p.person_id = r.person_id) OR EXISTS (SELECT 1 FROM testimony_interview_participants p WHERE p.person_id = r.person_id)';
     const extra: string[] = [], bindings: string[] = [];
     if (kind === 'study-recording') {
       if (state === 'active') where = ' WHERE r.archived_at IS NULL AND r.deleted_at IS NULL';

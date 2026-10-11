@@ -13,6 +13,7 @@ export const MOBILE_OPERATIONS = {
   getLibraryReaderDocument: ['libraryReader:get', 'corpus'],
   getMobileDossierFiles: ['mobile:dossier:files', 'corpus'],
   getMobileDatabaseRowLocation: ['mobile:database:rowLocation', 'corpus'],
+  getMobileDatabasePresentationRead: ['mobile:database:presentation', 'corpus'],
   getMobilePageDocument: ['mobile:page:document', 'corpus'],
   getMobileSyncedBlockSource: ['mobile:page:syncedSource', 'corpus'],
   getMobileLinkedDatabaseRead: ['mobile:page:linkedDatabase', 'corpus'],

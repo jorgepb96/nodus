@@ -17,6 +17,7 @@ import { emptyImmersionProgress } from '../db/immersionRepo';
 import {mobileDossierFiles} from './dossierFiles';
 import {mobileWorldMapReadSource} from './worldMapRead';
 import {mobileDatabaseRowLocation} from './databaseRowLocation';
+import {mobileDatabasePresentationRead} from './databasePresentation';
 import {mobilePageDocument} from './pageDocuments';
 import {mobileSyncedBlockSource,mobileLinkedDatabaseRead} from './pageDependencies';
 
@@ -86,6 +87,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if (method === 'getMobileDatabaseRowLocation') {
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileDatabaseRowLocation(vaultId, args[0])));
+  }
+  if (method === 'getMobileDatabasePresentationRead') {
+    if(args.length!==1)throw new Error('invalid_arguments');
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>mobileDatabasePresentationRead(vaultId,args[0])));
   }
   if (method === 'getMobilePageDocument') {
     if (args.length !== 1) throw new Error('invalid_arguments');

@@ -4,11 +4,13 @@ import { autonomousTranslation } from './autonomousTranslation';
 import {autonomousWriting, cancelAutonomousWriting} from './autonomousWriting';
 import {autonomousArgument,cancelAutonomousArgument} from './autonomousArgument';
 import {StudyGraphView} from '../views/StudyGraphView';
+import {MobileDatabasePresentation,databasePresentationAction,readMobileDatabasePresentation,exportMobileDatabaseChart,type MobileDatabasePresentationTarget} from './databasePresentation';
 import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
 import './mobile.css';
 import './phone.css';
 import './page.css';
+import './database.css';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { StellarWorkspace } from '../stellarGraph/StellarWorkspace';
@@ -48,7 +50,7 @@ import {MobilePageDocument} from './MobilePageDocument';
 import {pageBlocksToMarkdown} from '@shared/pages';
 import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -81,6 +83,12 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  const databaseAction=databasePresentationAction(method);
+  if(databaseAction){
+    if(args.length!==1||!args[0]||typeof args[0]!=='object'||Array.isArray(args[0]))throw new Error('Consulta de base de datos no válida.');
+    return readMobileDatabasePresentation(native.nodusMobileCall,databaseAction,args[0] as Record<string,any>,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
+  }
+  if(method==='exportDatabaseChart')return exportMobileDatabaseChart(native.nodusMobileCall,args[0] as Parameters<typeof exportMobileDatabaseChart>[1]);
   if(method==='listSavedCompanionArgumentMaps'&&native.nodusMobileConfig.live){
     const cursor=typeof args[0]==='string'?args[0]:null,limit=typeof args[1]==='number'?args[1]:20;
     const local=await native.nodusMobileCall('mobileArgumentMaps') as Array<{id:string;map:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>}>;
@@ -365,7 +373,7 @@ function App() {
   const [error, setError] = useState('');
   const [jobError, setJobError] = useState('');
   useEffect(() => {
-    if (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType)) void call('getSettings').then(setSettings).catch(error => {
+    if (config.surface !== 'databasePresentation' && (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType))) void call('getSettings').then(setSettings).catch(error => {
       if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings({...DEFAULT_APP_SETTINGS,uiLanguage:config.language,promptLanguage:config.language});
       else setError(String(error));
     });
@@ -412,6 +420,7 @@ function App() {
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
       : config.surface === 'graph' ? <StellarWorkspace source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
       : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??DEFAULT_APP_SETTINGS} mobile initialMap={config.initialArgumentMap}/>
+      : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>

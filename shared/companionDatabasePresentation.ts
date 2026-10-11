@@ -6,7 +6,7 @@ import {decodeDatabaseDate} from './databaseProperties';
 import {expandDatabaseDateOccurrences,type DatabaseTemporalEvent,type DatabaseTemporalQuery} from './databaseTemporal';
 import type {DatabaseChartPoint,DatabaseChartQuery,DatabaseMapQuery,DatabaseMapMarker,DatabaseFeedItem,DatabaseFeedQuery} from './databaseVisualization';
 import {canonicalJson} from './canonicalJson';
-import {computeFormulas} from './databaseFormulaEval';
+import {prepareCompanionDatabaseDerived} from './companionDatabaseDerived';
 
 /** Complete selected data, never a first-page sample. Row values are the actual
  * Desktop query projection, including derived and metadata properties. */
@@ -18,6 +18,9 @@ export interface CompanionDatabasePresentationSource {
   localChanges?:boolean;
   localRevision?:string;
   columnRevisions?:Record<string,number>;
+  derivedDatabaseIds?:string[];
+  relatedSources?:Record<string,CompanionDatabasePresentationSource>;
+  relations?:Array<{id:string;row_id:string;column_id:string;target_kind:string;target_id:string;position:number;created_at:string}>;
 }
 function filtered(source:CompanionDatabasePresentationSource,filter?:FilterNode|null){
   if(filter)assertFilterNode(filter);
@@ -208,17 +211,7 @@ async function rows(source:CompanionDatabasePresentationSource,input:DatabaseRow
 }
 export async function queryCompanionDatabasePresentation(source:CompanionDatabasePresentationSource,action:string,input:Record<string,any>){
   if(source.version!==1||source.databaseId!==input.databaseId||source.database.id!==source.databaseId)throw new Error('La copia no pertenece a esta base de datos.');
-  if(source.localChanges){
-    source={...source,rows:source.rows.map(row=>({...row,cells:{...row.cells}}))};
-    for(const row of source.rows)for(const column of source.columns){
-      if(column.type==='created_time')row.cells[column.id]=row.createdAt;
-      if(column.type==='last_edited_time')row.cells[column.id]=row.updatedAt;
-      if(column.type==='created_by')row.cells[column.id]=row.createdBy??'';
-      if(column.type==='last_edited_by')row.cells[column.id]=row.updatedBy??'';
-      if(column.type==='unique_id')row.cells[column.id]=String(column.config.uniqueIdPrefix??'').slice(0,24)+String(row.uniqueSequence??0).padStart(Math.min(12,Math.max(1,Math.trunc(Number(column.config.uniqueIdPadding??4)))),'0');
-    }
-    computeFormulas(source.rows,source.columns);
-  }
+  source=prepareCompanionDatabaseDerived(source);
   switch(action){
     case 'metadata':return {database:source.database,columns:source.columns,views:source.views,revision:source.revision,columnRevisions:source.columnRevisions??{}};
     case 'rows':return rows(source,input as DatabaseRowQuery);

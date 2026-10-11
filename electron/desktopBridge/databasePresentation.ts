@@ -3,6 +3,7 @@ import {getDatabaseDetail,listViews,queryDatabaseRows,queryDatabaseChart,queryDa
 import {assertFilterNode,type DatabaseRowQuery} from '../../shared/databaseQuery';
 import type {DatabaseChartQuery,DatabaseMapQuery,DatabaseFeedQuery} from '../../shared/databaseVisualization';
 import type {DatabaseTemporalQuery} from '../../shared/databaseTemporal';
+import {companionDerivedDatabaseIds} from '../../shared/companionDatabaseDerived';
 
 const fields:Record<string,readonly string[]>={
   metadata:['databaseId'],
@@ -48,7 +49,7 @@ export function mobileDatabasePresentationRead(vaultId:string,raw:unknown){
     case 'metadata': {
       const {revision}=getDb().prepare('SELECT revision FROM db_databases WHERE id=?').get(databaseId) as {revision:number};
       const columnRevisions=Object.fromEntries((getDb().prepare('SELECT id,revision FROM db_columns WHERE database_id=?').all(databaseId) as Array<{id:string;revision:number}>).map(column=>[column.id,column.revision]));
-      data={...detail,views:listViews(databaseId),revision,columnRevisions};break;
+      data={...detail,views:listViews(databaseId),revision,columnRevisions,derivedDatabaseIds:companionDerivedDatabaseIds(detail.columns)};break;
     }
     case 'sourceRows': {
       const page=queryDatabaseRows({databaseId,cursor:input.cursor as string|null|undefined,limit:input.limit as number|undefined},{readOnly:true});
@@ -62,7 +63,8 @@ export function mobileDatabasePresentationRead(vaultId:string,raw:unknown){
           const columns=dependencies[row.row_id]??={};(columns[row.column_id]??=[]).push(row.target_id);
         }
       }
-      data={...page,pages,dependencies};break;
+      const relations=ids.length?getDb().prepare(`SELECT id,row_id,column_id,target_kind,target_id,position,created_at FROM db_relations WHERE row_id IN (${ids.map(()=>'?').join(',')}) ORDER BY row_id,position,id`).all(...ids):[];
+      data={...page,pages,dependencies,relations};break;
     }
     case 'rows':data=queryDatabaseRows(input as unknown as DatabaseRowQuery,{readOnly:true});break;
     case 'chart':data=queryDatabaseChart(input as unknown as DatabaseChartQuery);break;

@@ -362,7 +362,8 @@ export function orderFormulaColumns(columns: DatabaseColumn[]): { ordered: Datab
  * `statRows` is the whole table; it is the same array as `rows` unless the caller asked for a
  * page, in which case the statistics still have to see everything.
  */
-export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], statRows: DatabaseRow[] = rows): void {
+export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], statRows: DatabaseRow[] = rows,
+  options:{relatedValues?:EvalContext['relatedValues'];columnIds?:ReadonlySet<string>} = {}): void {
   const { ordered, circular } = orderFormulaColumns(columns);
   if (ordered.length === 0 && circular.size === 0) return;
   const byId = new Map(columns.map((c) => [c.id, c]));
@@ -371,6 +372,7 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
   const evalRows = statRows;
 
   for (const col of ordered) {
+    if(options.columnIds&&!options.columnIds.has(col.id))continue;
     const spec = col.config.formula as FormulaSpec | undefined;
     const problem = validateFormula(spec, columns);
     if (problem || !spec) {
@@ -390,7 +392,7 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
       const src = byId.get(statisticId);
       if (src) stats.set(statisticId, computeColumnStats(src, evalRows));
     }
-    const ctx: EvalContext = { columns: byId, stats };
+    const ctx: EvalContext = { columns: byId, stats, relatedValues: options.relatedValues };
 
     for (const row of evalRows) {
       const res = evaluateFormula(spec, row, ctx);
@@ -404,6 +406,7 @@ export function computeFormulas(rows: DatabaseRow[], columns: DatabaseColumn[], 
   }
 
   for (const colId of circular) {
+    if(options.columnIds&&!options.columnIds.has(colId))continue;
     for (const row of evalRows) {
       row.cells[colId] = null;
       setError(row, colId, 'Referencia circular: la fórmula se usa a sí misma.');

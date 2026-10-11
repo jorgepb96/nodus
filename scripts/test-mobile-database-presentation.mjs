@@ -78,8 +78,8 @@ try{
     repo.attachDatabaseViewSource(saved.id,partial.id,{alias:'Fuente sin categoría',propertyMap:{title:partialTitle.id}});
     const capture=id=>{
       const get=(action,input)=>mobileDatabasePresentationRead(vault.id,{action,input:{databaseId:id,...input}}).data;
-      const copy={version:1,vaultId:vault.id,databaseId:id,...get('metadata',{}),rows:[],pages:{},dependencies:{}};
-      let cursor=null;do{const page=get('sourceRows',{cursor,limit:200});copy.rows.push(...page.rows);Object.assign(copy.pages,page.pages);Object.assign(copy.dependencies,page.dependencies);cursor=page.nextCursor;}while(cursor);
+      const copy={version:1,vaultId:vault.id,databaseId:id,...get('metadata',{}),rows:[],pages:{},dependencies:{},relations:[]};
+      let cursor=null;do{const page=get('sourceRows',{cursor,limit:200});copy.rows.push(...page.rows);Object.assign(copy.pages,page.pages);Object.assign(copy.dependencies,page.dependencies);copy.relations.push(...page.relations);cursor=page.nextCursor;}while(cursor);
       return copy;
     };
     const canonical=(sourceId=null,localFilter=null)=>{
@@ -115,6 +115,31 @@ try{
     assert.deepEqual(content(offline.rows),content(canonical()),'Pending cells remove a filtered row; local creation is sorted into its actual group');
     assert.equal(offline.rows[0].rowId,created.id);assert.equal(JSON.stringify(copies[db.id]),originalCopy,'Queries do not mutate the retained copy');
     await assert.rejects(()=>queryCompanionDatabaseContainer({version:1,vaultId:vault.id,viewId:saved.id,definition:{...definition,revision:definition.revision+1},sources:copies}),/vista cambió/);
+    const relation=repo.createColumn(db.id,'Métricas relacionadas','relation',{relationTargetKind:'db_row',relationTargetDatabaseId:linked.id});
+    const total=repo.createColumn(linked.id,'Total de toda la fuente','formula',{formula:{kind:'columnStat',fn:'columnTotal',columnId:linkedAmount.id}});
+    const sum=repo.createColumn(db.id,'Suma enlazada','rollup',{rollupRelationColumnId:relation.id,rollupTargetColumnId:linkedAmount.id,rollupFunction:'sum'});
+    const globalSum=repo.createColumn(db.id,'Estadística enlazada','rollup',{rollupRelationColumnId:relation.id,rollupTargetColumnId:total.id,rollupFunction:'sum'});
+    const expression=`sum(relation("${relation.id}", "${linkedAmount.id}"))`;
+    const {parseFormulaExpression}=require('../shared/databaseFormulaExpression.ts');
+    const formula=repo.createColumn(db.id,'Expresión enlazada','formula',{formula:{kind:'expression',source:expression,ast:parseFormulaExpression(expression),resultKind:'number'}});
+    const firstRelation=repo.addRelation(rows[0],relation.id,'db_row','drow_linked_0');repo.addRelation(rows[0],relation.id,'db_row','drow_linked_1');
+    const dependent=capture(db.id);dependent.relatedSources={[linked.id]:capture(linked.id)};
+    assert.deepEqual(dependent.derivedDatabaseIds,[linked.id]);
+    dependent.relatedSources[linked.id].localChanges=true;dependent.relatedSources[linked.id].localRevision='pending-target-value';
+    dependent.relatedSources[linked.id].rows.find(row=>row.id==='drow_linked_0').cells[linkedAmount.id]='100';
+    const retained=JSON.stringify(dependent);
+    repo.setCell('drow_linked_0',linkedAmount.id,'100');
+    const values=async copy=>{
+      const computed=await queryCompanionDatabasePresentation(copy,'allRows',{databaseId:db.id});
+      const row=computed.rows.find(row=>row.id===rows[0]);return [sum.id,globalSum.id,formula.id].map(id=>row.cells[id]);
+    };
+    const actual=()=>{const row=read('rows',{limit:500}).rows.find(row=>row.id===rows[0]);return [sum.id,globalSum.id,formula.id].map(id=>row.cells[id]);};
+    assert.deepEqual(await values(dependent),actual(),'Rollups and relation expressions use edited targets and complete target-table statistics');
+    assert.equal(JSON.stringify(dependent),retained,'Derived graph consultation never mutates the protected capture');
+    const changed=structuredClone(dependent);changed.localChanges=true;changed.relations=changed.relations.filter(link=>link.id!==firstRelation.id);
+    repo.removeRelation(firstRelation.id);
+    assert.deepEqual(await values(changed),actual(),'Deleting a local relation changes the computed aggregate');
+    await assert.rejects(()=>values({...changed,relatedSources:{}}),/Falta una dependencia de cálculo/);
   }));
   console.log('Prepared database presentation contract: real queries, complete selected data, portable projections, filters, cursors and typed boundary.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

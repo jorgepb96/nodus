@@ -25,7 +25,9 @@ try {
       fs.mkdirSync(folder,{recursive:true});fs.writeFileSync(path.join(folder,'metadata.json'),JSON.stringify({id:attachmentId,name:'original.txt'}));fs.writeFileSync(path.join(folder,'original'),bytes);
       const image=assets.storeChatImage(owner,{bytes:Buffer.from([1,2,3]),mimeType:'image/png'},{title:'Original title',provider:'Original provider',prompt:'Original prompt'});
       const id=randomUUID(),request={version:1,id,conversationId,expectedRevision:null,action:'save',draft:{title:'Real saved result',archived:false,messages:[{id:randomUUID(),role:'user',content:'Read original',attachments:[{id:attachmentId,name:'original.txt',size:bytes.length,kind:'text',textChars:10,imageCount:0}]},{id:randomUUID(),role:'assistant',content:`Saved ${source}\n![Actual](${image})`}]},companion:null};
-      await history.saveMobileChat(vault.id,randomUUID(),kind,request,grant);
+      const plain={...request,draft:{...request.draft,messages:request.draft.messages.map(message=>{const {attachments,...text}=message;return text;})}};
+      const initial=await history.saveMobileChat(vault.id,randomUUID(),kind,plain,grant);
+      await history.saveMacStoredQuestionAttachments(vault.id,randomUUID(),kind,{...plain,id:randomUUID(),expectedRevision:initial.snapshot.revision},grant,plain.draft.messages[0].id,[attachmentId]);
       const metadata=await boundary.withMobileOperation(()=>api.getMobileChatReadResource({kind,conversationId,action:'metadata'}),grant);
       assert.equal(metadata.owner,owner);assert.deepEqual(metadata.requiredDomains,['corpus']);
       assert.equal((await boundary.withMobileOperation(()=>api.getMobileChatReadResource({kind,conversationId,action:'imageMetadata',source:image}),grant)).metadata.prompt,'Original prompt');

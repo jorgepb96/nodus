@@ -18,6 +18,7 @@ import {verifyStudyChatCitation} from './studyChatEvidence';
 import * as researchOrganisation from '../db/researchChatProjectsRepo';
 import {listResearchNotebooks,getResearchNotebook,associateNotebookConversation} from '../db/researchNotebooksRepo';
 import {RESEARCH_CHAT_PIN_LIMIT} from '../../shared/types';
+import {listResearchAttachments} from '../researchAttachments';
 
 export class MobileChatFailure extends Error {
   constructor(public readonly status: number, public readonly code: string, public readonly remote?: MobileChatDocument) { super(code); }
@@ -103,7 +104,7 @@ export async function listMobileChats(vaultId: string,kind: string,cursor: numbe
     return {version:1,kind,revision,...(cursor===0?{organisation:catalogue}:{}),rows:rows.slice(cursor,cursor+100),cursor:cursor+Math.min(100,Math.max(0,rows.length-cursor)),hasMore:cursor+100<rows.length};
   },domains)));
 }
-function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileChatKind): MobileChatEdit {
+function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileChatKind,trustedMessage?:{id:string;role:'user'|'assistant'}): MobileChatEdit {
   if (Buffer.byteLength(JSON.stringify(raw) ?? '', 'utf8') > MOBILE_CHAT_MAX_BYTES) throw new MobileChatFailure(413,'chat_too_large');
   if (!object(raw) || raw.version !== 1 || !uuid(raw.id) || !identity(raw.conversationId) ||
       raw.expectedRevision !== null && !hash(raw.expectedRevision) || !['save','delete'].includes(String(raw.action)) ||
@@ -136,6 +137,9 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
     // immutable on this portable lane. Native authored additions contain text;
     // unchanged rich turns retain their exact original record and assets.
     const original = message.id ? old.find(item=>item.id===message.id) : old[index];
+    // The closed Mac stream adapter supplies only its own generated reply ID.
+    // This permission is never a wire field or part of the public edit endpoint.
+    if(trustedMessage&&message.id===trustedMessage.id&&message.role===trustedMessage.role)return;
     const rich = (item:Record<string,unknown>)=>Object.fromEntries(Object.entries(item).filter(([key])=>!['id','role','content','createdAt','error','interrupted'].includes(key)));
     if(!original&&kind==='study'&&Array.isArray(message.citations)) {
       if(message.role!=='assistant'||!uuid(message.id)||Object.keys(rich(message)).some(key=>key!=='citations'))throw new MobileChatFailure(400,'chat_rich_turn_changed');
@@ -157,16 +161,38 @@ function createSQL(kind: Exclude<MobileChatKind,'study'>,id: string,title: strin
   else if(kind==='world') db.prepare('INSERT INTO world_chat_conversations (id,title,selection_json,focus_json,messages_json,model_json,created_at,updated_at) VALUES(?,?,?,?,?,NULL,?,?)').run(id,title,'{"scope":"auto","entryKeys":[],"keepFocus":false}','[]','[]',now,now);
   else db.prepare('INSERT INTO database_chat_conversations (id,title,database_ids_json,messages_json,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(id,title,'[]','[]',now,now);
 }
-function saveSQL(kind: Exclude<MobileChatKind,'study'>,request: MobileChatEdit) {
+type GeneratedMetadata={model?:import('../../shared/types').ModelRef|null;selection?:import('../../shared/types').ResearchContextSelection};
+function saveSQL(kind: Exclude<MobileChatKind,'study'>,request: MobileChatEdit,metadata?:GeneratedMetadata) {
   const id=request.conversationId,draft=request.draft!,data=rawConversation(kind,id)!;
-  if(kind==='research') { research.saveMessages(id,draft.messages as unknown as Parameters<typeof research.saveMessages>[1]);research.renameConversation(id,draft.title);research.setArchived(id,draft.archived); }
-  else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],draft.world?.selection??data.selection as Parameters<typeof world.saveWorldChatConversation>[2],draft.world?.focus??data.focus as Parameters<typeof world.saveWorldChatConversation>[3],data.model as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
+  if(kind==='research') { research.saveMessages(id,draft.messages as unknown as Parameters<typeof research.saveMessages>[1],metadata);research.renameConversation(id,draft.title);research.setArchived(id,draft.archived); }
+  else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],draft.world?.selection??data.selection as Parameters<typeof world.saveWorldChatConversation>[2],draft.world?.focus??data.focus as Parameters<typeof world.saveWorldChatConversation>[3],(metadata?.model??data.model) as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
   else { database.saveDatabaseChatConversation(id,draft.messages as unknown as Parameters<typeof database.saveDatabaseChatConversation>[1],draft.databaseIds ?? data.databaseIds as string[]);database.renameDatabaseChatConversation(id,draft.title);database.setDatabaseChatConversationArchived(id,draft.archived); }
   if(draft.placement)savePlacement(kind,id,draft.placement,draft.archived);
 }
 /** Receipts and data commit in one SQLite transaction (or one study-history
  * atomic file replacement). A lost ACK never re-applies a later edited chat. */
-export async function saveMobileChat(vaultId: string,grantId: string,kind: string,raw: unknown,domains: readonly string[]) {
+export function saveMobileChat(vaultId:string,grantId:string,kind:string,raw:unknown,domains:readonly string[]) {
+  return saveMobileChatInternal(vaultId,grantId,kind,raw,domains);
+}
+export function saveMacGeneratedChatReply(vaultId:string,grantId:string,kind:string,raw:MobileChatEdit,domains:readonly string[],replyId:string,metadata?:GeneratedMetadata) {
+  if(!uuid(replyId)||!raw.draft?.messages.some(message=>message.id===replyId&&message.role==='assistant'))throw new MobileChatFailure(400,'invalid_generated_reply');
+  return saveMobileChatInternal(vaultId,grantId,kind,raw,domains,{id:replyId,role:'assistant'},metadata);
+}
+/** Attach only actual stored records owned by this chat, after the ordinary
+ * question acknowledgement. A native request cannot forge their metadata. */
+export async function saveMacStoredQuestionAttachments(vaultId:string,grantId:string,kind:MobileChatKind,raw:MobileChatEdit,domains:readonly string[],questionId:string,ids:string[]) {
+  return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,async()=>{
+    assertKind(kind);
+    if(!domains.includes('corpus')||!domains.includes('writing')||!uuid(questionId)||new Set(ids).size!==ids.length)throw new MobileChatFailure(403,'permission_denied');
+    const stored=listResearchAttachments({surface:kind,conversationId:raw.conversationId});
+    const selected=ids.map(id=>{const attachment=stored.find(item=>item.id===id);if(!attachment)throw new MobileChatFailure(404,'chat_attachment_unavailable');return attachment;});
+    const draft=raw.draft;
+    if(!draft||!draft.messages.some(message=>message.id===questionId&&message.role==='user'))throw new MobileChatFailure(400,'invalid_live_chat_question');
+    const edit={...raw,draft:{...draft,messages:draft.messages.map(message=>message.id===questionId?{...message,attachments:selected}:message)}};
+    return saveMobileChatInternal(vaultId,grantId,kind,edit,domains,{id:questionId,role:'user'});
+  }));
+}
+async function saveMobileChatInternal(vaultId: string,grantId: string,kind: string,raw: unknown,domains: readonly string[],trustedMessage?:{id:string;role:'user'|'assistant'},metadata?:GeneratedMetadata) {
   return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
     assertKind(kind);
     if(!domains.includes('corpus')||!domains.includes('writing')) throw new MobileChatFailure(403,'permission_denied');
@@ -181,7 +207,7 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
         return JSON.parse(previous.json) as {id:string;snapshot?:MobileChatDocument;deleted?:boolean};
       }
       const current = rawConversation(kind,raw.conversationId) ? snapshot(kind,raw.conversationId,store) : null;
-      const request=validate(raw,current,kind);
+      const request=validate(raw,current,kind,trustedMessage);
       if(request.expectedRevision===null ? current!==null : !current || current.revision!==request.expectedRevision) throw new MobileChatFailure(409,'chat_revision_conflict',current ?? undefined);
       if(kind==='study' && !domains.includes('study-recordings') && request.draft?.messages.some(message=>String(message.content).includes('nodus://study/recording/') || Array.isArray(message.citations) && message.citations.some(citation=>object(citation)&&citation.kind==='transcript'))) throw new MobileChatFailure(403,'permission_denied');
       if(request.action==='delete') {
@@ -192,7 +218,7 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
       } else if(kind==='study') {
         const now=new Date().toISOString();
         const existing=store!.conversations.find(item=>item.id===request.conversationId);
-        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study??{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
+        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study??{}),...(metadata?.model?{model:metadata.model}:{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
         if(request.draft!.placement) {
           const placement=request.draft!.placement;
           if(placement.pinned&&!next.archived&&!existing?.pinnedAt&&store!.conversations.filter(item=>item.id!==next.id&&item.pinnedAt&&!item.archived).length>=RESEARCH_CHAT_PIN_LIMIT)throw new MobileChatFailure(409,'chat_pin_limit');
@@ -202,7 +228,7 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
         store!.conversations=store!.conversations.filter(item=>item.id!==next.id);store!.conversations.push(next as StudyAssistantStore['conversations'][number]);
       } else {
         if(!current) createSQL(kind,request.conversationId,request.draft!.title);
-        saveSQL(kind,request);
+        saveSQL(kind,request,metadata);
       }
       if(kind==='study') {
         store!.mobileCompanion ??= {documents:{},receipts:{}};

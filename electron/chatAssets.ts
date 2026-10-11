@@ -6,6 +6,14 @@ import { createHash, randomUUID } from 'node:crypto';
 import { LIMITS } from '../packages/capability-api/src/limits';
 
 const versions = new Map<string, number>();
+const retainedOwners=new Map<string,number>();
+/** While a live reply creates tools/results, checkpoints may not collect files
+ * that have been created but whose final reference has not streamed yet. */
+export function retainChatAssets(owner:string):()=>void {
+  directory(owner);retainedOwners.set(owner,(retainedOwners.get(owner)??0)+1);
+  let released=false;
+  return ()=>{if(released)return;released=true;const count=(retainedOwners.get(owner)??1)-1;if(count)retainedOwners.set(owner,count);else retainedOwners.delete(owner);};
+}
 const root = () => path.join(app.getPath('userData'), 'chat-assets');
 export const chatAssetOwner = (surface: string, conversationId: string, vaultId = '') =>
   createHash('sha256').update(JSON.stringify([surface, vaultId, conversationId])).digest('hex');
@@ -80,10 +88,14 @@ export function getCapabilityFile(source: string): { blob: Buffer; mimeType: str
  *  artifact, not in the conversation. Reading the message alone would collect exactly the
  *  attachments a saved result still needs, and the failure would only show up later, as a
  *  download or a model that had quietly stopped existing. */
-export function reconcileChatAssets(owner: string, messages: Array<{ content: string }>): void {
+export function reconcileChatAssets(owner: string, messages: Array<{ content: string;concilium?:unknown }>): void {
+  if(retainedOwners.has(owner))return;
   const dir = directory(owner);
   if (!fs.existsSync(dir)) return;
-  const text = messages.map(message => message.content).join('\n');
+  const text = messages.flatMap(message => {
+    const council=message.concilium as {members?:Array<{answer?:unknown}>}|undefined;
+    return [message.content,...(Array.isArray(council?.members)?council.members.flatMap(member=>typeof member.answer==='string'?[member.answer]:[]):[])];
+  }).join('\n');
   const files = fs.readdirSync(dir);
 
   // Only artifacts the conversation still refers to: one that was itself dropped must not

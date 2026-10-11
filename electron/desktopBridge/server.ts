@@ -194,7 +194,7 @@ async function startRelay(): Promise<void> {
 }
 function jobStore(): BridgeJobStore {
   return jobs ??= new BridgeJobStore(path.join(app.getPath('userData'), 'desktop-bridge', 'jobs'),
-    (job, emit, signal) => executeMobileOperation(job.vaultId, job.domains, job.method, job.args, emit, signal, job.id, job.mayHaveStarted),
+    (job, emit, signal) => executeMobileOperation(job.vaultId, job.domains, job.method, job.args, emit, signal, job.id, job.mayHaveStarted,{deviceGrant:job.deviceGrant,idempotencyKey:job.idempotencyKey}),
     async job => {
       if(job.method==='enqueueDatabaseDeepResearch') {
         const run=await withVaultDatabase(job.vaultId,()=>findMobileDatabaseResearchRun(job.id));
@@ -405,6 +405,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
       chatHistory: {version:1,maxRequestBytes:MOBILE_CHAT_MAX_BYTES,conflicts:true,idempotent:true,pageSize:100,kinds:['research','world','database','study']},
+      nativeLiveChat: {version:1,method:'streamMobileCompanionChat',partialPersistence:true,macProviders:true},
       jobs: { version: 1, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
   }
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
@@ -413,13 +414,20 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     try {
       if (request.method === 'POST' && !jobRoute[2]) {
-        const input = await body(request, 4 * 1024 * 1024);
+        const input = await body(request, MOBILE_CHAT_MAX_BYTES+128*1024);
         const method = String(input.method || ''); authorizeMobileOperation(pairing.domains, method);
+        if(method!=='streamMobileCompanionChat'&&Buffer.byteLength(JSON.stringify(input),'utf8')>4*1024*1024)throw new Error('request_too_large');
         if (!MOBILE_JOB_OPERATIONS.has(method) || !Array.isArray(input.args) || input.args.length > 12) throw new Error('invalid_job');
         const job = jobStore().submit({ deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') });
         reply(response, 202, { job: jobResponse(job) }); return;
       }
       if (request.method === 'GET' && !jobRoute[2]) {
+        const requestId=url.searchParams.get('requestId');
+        if(requestId) {
+          const found=jobStore().list(pairing.id,vaultId).find(job=>job.idempotencyKey===requestId);
+          if(!found){reply(response,404,{error:'job_not_found'});return;}
+          reply(response,200,{job:jobResponse(found)});return;
+        }
         reply(response, 200, { jobs: jobStore().list(pairing.id, vaultId).map(job => jobResponse(job, Number.MAX_SAFE_INTEGER)) }); return;
       }
       const job = jobRoute[2] && (request.method === 'DELETE' ? jobStore().cancel(jobRoute[2], pairing.id, vaultId) : jobStore().get(jobRoute[2], pairing.id, vaultId));

@@ -30,7 +30,7 @@ function portableSettings(value: unknown): unknown {
   return Object.fromEntries(Object.entries(value).filter(([key]) => !/(token|password|secret|api.?key|encryption|privatekey)/i.test(key)).map(([key, child]) => [key, portableSettings(child)]));
 }
 
-export async function executeMobileOperation(vaultId: string, domains: readonly string[], method: string, args: unknown[], events?: (channel: string, ...args: unknown[]) => void, signal?: AbortSignal, bridgeJobId?: string, mayHaveStarted?: boolean): Promise<unknown> {
+export async function executeMobileOperation(vaultId: string, domains: readonly string[], method: string, args: unknown[], events?: (channel: string, ...args: unknown[]) => void, signal?: AbortSignal, bridgeJobId?: string, mayHaveStarted?: boolean,jobIdentity?:{deviceGrant:string;idempotencyKey:string}): Promise<unknown> {
   authorizeMobileOperation(domains, method);
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
@@ -63,7 +63,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   }
   // The native renderer-specific helpers are deliberately unavailable here. Streaming
   // engines may emit progress, but never receive another renderer's identity or capabilities.
-  const event = { mobileBridgeJobId: bridgeJobId, mobileBridgeRecovery: mayHaveStarted, sender: { id: -1, isDestroyed: () => false, send: (channel: string, ...args: unknown[]) => events?.(channel, ...args) } } as unknown as IpcMainInvokeEvent;
+  const event = { mobileBridgeJobId: bridgeJobId, mobileBridgeRecovery: mayHaveStarted, mobileBridgeDeviceGrant:jobIdentity?.deviceGrant,mobileBridgeIdempotencyKey:jobIdentity?.idempotencyKey, sender: { id: -1, isDestroyed: () => false, send: (channel: string, ...args: unknown[]) => events?.(channel, ...args) } } as unknown as IpcMainInvokeEvent;
   const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, async () => {
     if (method === 'listGlobalLibraryItems') {
       const query = args[0] && typeof args[0] === 'object' && !Array.isArray(args[0]) ? args[0] as Record<string, unknown> : {};

@@ -155,6 +155,8 @@ export const MOBILE_OPERATIONS = {
   getMobileStudyChatOriginal: ['study:assistant:mobileOriginal','corpus'],
   getMobileChatResultArtifact: ['chatHistory:mobileResultArtifact','corpus'],
   getMobileChatReadResource: ['chatHistory:mobileReadResource','corpus'],
+  streamMobileCompanionChat: ['chatHistory:mobileLiveStream','research-generation'],
+  getMobileLiveChatConfiguration: ['chatHistory:mobileLiveConfiguration','corpus'],
   listStudyAssistantConversations: ['study:assistant:list','corpus'], getStudyAssistantConversation: ['study:assistant:get','corpus'],
   createStudyAssistantConversation: ['study:assistant:create','writing'], updateStudyAssistantConversation: ['study:assistant:update','writing'],
   deleteStudyAssistantConversation: ['study:assistant:delete','writing'], streamStudyAssistant: ['study:assistant:stream','research-generation'],
@@ -170,6 +172,7 @@ export const MOBILE_OPERATIONS = {
 } as const;
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
+  'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
   'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
   'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',

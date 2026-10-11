@@ -55,26 +55,7 @@ import './researchAssistant.css';
 import { isPhoneSurface } from '../mobileWeb/phoneLayout';
 import { MobileSheet } from '../components/MobileSheet';
 
-const DEFAULT_SELECTION: ResearchContextSelection = {
-  ideas: false,
-  themes: false,
-  contradictions: false,
-  gaps: false,
-  readingPath: false,
-  authors: false,
-  documents: false,
-  passages: false,
-  graph: false,
-  graphParts: {
-    ideaNodes: false,
-    themeNodes: false,
-    ideaEdges: false,
-    authorGraph: false,
-  },
-};
-
-/** A new chat reads both layers of the corpus, ideas and documents, and the web while it is on. */
-const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true });
+import {EMPTY_RESEARCH_CHAT_SELECTION as DEFAULT_SELECTION,DEFAULT_RESEARCH_CHAT_SELECTION as LAYERED_SELECTION} from '@shared/researchChatDefaults';
 
 /** The context balloon's layers, in the order the activity balloon lists what they read. */
 const CONTEXT_LAYERS = [

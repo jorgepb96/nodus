@@ -71,6 +71,7 @@ export const BRIDGE_FILE_KINDS = {
   testimonyMedia: { domain: 'testimonies', table: 'testimony_media', id: 'id', blob: 'content_blob', name: 'file_name', deleted: 'deleted_at' },
   archiveItem: { domain: 'primary-source-files', table: 'archive_items', id: 'item_id', blob: 'blob', name: 'file_name' },
   archiveFile: { domain: 'primary-source-files', table: 'archive_item_files', id: 'file_id', blob: 'content_blob', name: 'original_file_name', path: 'external_path' },
+  databaseAttachment: { domain: 'corpus', table: 'db_attachments AS attachment JOIN db_rows AS row ON row.id=attachment.row_id JOIN db_databases AS database ON database.id=row.database_id LEFT JOIN db_blobs AS blob ON blob.hash=attachment.blob_hash', id: 'attachment.id', blob: 'COALESCE(attachment.blob, blob.data)', name: 'attachment.file_name', mime: 'attachment.mime_type' },
 } as const;
 
 /** Reader files are resolved by Desktop from a granted document identity. An
@@ -157,7 +158,8 @@ export async function serveBridgeFile(request: IncomingMessage, response: Server
     const deleted = 'deleted' in spec ? ` AND ${spec.deleted} IS NULL` : '';
     const predicate = `${spec.id} = ?${deleted}`;
     const fileColumn = 'path' in spec ? spec.path : 'NULL';
-    const row = db.prepare(`SELECT ${spec.name} AS filename, mime_type AS mime, length(${spec.blob}) AS size, ${fileColumn} AS registeredPath FROM ${spec.table} WHERE ${predicate}`).get(id) as { filename: string | null; mime: string | null; size: number | null; registeredPath: string | null } | undefined;
+    const mimeColumn = 'mime' in spec ? spec.mime : 'mime_type';
+    const row = db.prepare(`SELECT ${spec.name} AS filename, ${mimeColumn} AS mime, length(${spec.blob}) AS size, ${fileColumn} AS registeredPath FROM ${spec.table} WHERE ${predicate}`).get(id) as { filename: string | null; mime: string | null; size: number | null; registeredPath: string | null } | undefined;
     if (!row) { json(404, { error: 'file_not_found' }); return; }
     let handle: FileHandle | undefined;
     let fileStamp: string | undefined;

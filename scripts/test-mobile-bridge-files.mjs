@@ -17,11 +17,24 @@ require.cache[databaseModule] = { id: databaseModule, filename: databaseModule, 
 } };
 const { BRIDGE_FILE_KINDS, serveBridgeFile } = require('../electron/desktopBridge/files.ts');
 const bytes = Buffer.alloc(4 * 1024 * 1024 + 721, 0xab), sha256 = createHash('sha256').update(bytes).digest('hex');
-for (const spec of Object.values(BRIDGE_FILE_KINDS)) {
+for (const spec of Object.values(BRIDGE_FILE_KINDS).filter(spec=>!spec.mime)) {
   db.exec(`CREATE TABLE ${spec.table} (${spec.id} TEXT PRIMARY KEY, ${spec.name} TEXT, mime_type TEXT, ${spec.blob} BLOB${spec.deleted ? ', deleted_at TEXT' : ''}${spec.path ? `, ${spec.path} TEXT` : ''})`);
   db.prepare(`INSERT INTO ${spec.table} (${spec.id},${spec.name},mime_type,${spec.blob}) VALUES (?,?,?,?)`).run('opaque-id','source.bin','application/octet-stream',bytes);
   db.prepare(`INSERT INTO ${spec.table} (${spec.id},${spec.name},mime_type) VALUES (?,?,?)`).run('removed','removed.bin','application/octet-stream');
 }
+// Database attachments use both real storage variants and require a live parent row.
+db.exec(`CREATE TABLE db_databases (id TEXT PRIMARY KEY);
+CREATE TABLE db_rows (id TEXT PRIMARY KEY, database_id TEXT);
+CREATE TABLE db_blobs (hash TEXT PRIMARY KEY, data BLOB);
+CREATE TABLE db_attachments (id TEXT PRIMARY KEY, row_id TEXT, file_name TEXT, mime_type TEXT, blob BLOB, blob_hash TEXT, position INTEGER DEFAULT 0)`);
+db.prepare('INSERT INTO db_databases VALUES (?)').run('database');
+db.prepare('INSERT INTO db_rows VALUES (?,?)').run('row','database');
+db.prepare('INSERT INTO db_blobs VALUES (?,?)').run(sha256,bytes);
+const attachmentInsert=db.prepare('INSERT INTO db_attachments (id,row_id,file_name,mime_type,blob,blob_hash) VALUES (?,?,?,?,?,?)');
+attachmentInsert.run('opaque-id','row','Original.bin','application/octet-stream',null,sha256);
+attachmentInsert.run('inline-id','row','Inline.bin','application/octet-stream',bytes,null);
+attachmentInsert.run('removed','row','Missing.bin','application/octet-stream',null,'missing-blob');
+attachmentInsert.run('orphan','missing-row','Orphan.bin','application/octet-stream',bytes,null);
 async function request(kind, domains, action, id='opaque-id', query='') {
   let status, payload, headers;
   await serveBridgeFile({method:'GET'}, {writeHead(code, fields){status=code;headers=fields;},end(body){payload=body;}},
@@ -40,6 +53,31 @@ try {
     assert.equal((await request(kind,[spec.domain],'content','missing')).status,404);
     for (const query of ['?offset=-1','?offset=1.5','?offset=99999999','?limit=99999999','?limit=0']) assert.equal((await request(kind,[spec.domain],'content','opaque-id',query)).status,416);
   }
+  assert.equal((await request('databaseAttachment',['corpus'],'descriptor','orphan')).status,404);
+  const inline=JSON.parse((await request('databaseAttachment',['corpus'],'descriptor','inline-id')).payload);
+  assert.equal(inline.sha256,sha256);assert.equal(inline.byteSize,bytes.length);
+  const {mobileDossierFiles}=require('../electron/desktopBridge/dossierFiles.ts');
+  const databaseCatalog=mobileDossierFiles('isolated-vault',['corpus'],{collection:'databases',id:'database'});
+  assert.equal(databaseCatalog.files.length,3);assert(!databaseCatalog.files.some(file=>file.id==='orphan'));
+  assert(databaseCatalog.files.find(file=>file.id==='opaque-id').available);
+  assert(!databaseCatalog.files.find(file=>file.id==='removed').available);
+  assert.throws(()=>mobileDossierFiles('isolated-vault',['corpus'],{collection:'databases',id:'foreign-database'}),/record_not_found/);
+  assert.throws(()=>mobileDossierFiles('isolated-vault',['corpus'],{collection:'archive-items',id:'opaque-id'}),/permission_denied/);
+  assert.throws(()=>mobileDossierFiles('isolated-vault',['corpus'],{collection:'db_attachments',id:'opaque-id'}),/invalid_arguments/);
+  assert.throws(()=>mobileDossierFiles('isolated-vault',['corpus'],{collection:'databases',id:'database',path:'/tmp/private'}),/invalid_arguments/);
+  db.exec(`ALTER TABLE study_material_versions ADD COLUMN material_id TEXT;
+    ALTER TABLE study_material_versions ADD COLUMN version_no INTEGER;
+    ALTER TABLE archive_item_files ADD COLUMN item_id TEXT;
+    ALTER TABLE archive_item_files ADD COLUMN sequence_no INTEGER;
+    ALTER TABLE archive_item_files ADD COLUMN version_no INTEGER`);
+  db.prepare('UPDATE study_material_versions SET material_id=?,version_no=1 WHERE id=?').run('opaque-id','opaque-id');
+  const studyCatalog=mobileDossierFiles('isolated-vault',['corpus'],{collection:'study-materials',id:'opaque-id'});
+  assert.deepEqual(studyCatalog.files.map(file=>file.kind),['studyMaterial','studyMaterialVersion']);
+  db.prepare('UPDATE archive_item_files SET item_id=?,sequence_no=1,version_no=1 WHERE file_id=?').run('opaque-id','opaque-id');
+  const archiveCatalog=mobileDossierFiles('isolated-vault',['corpus','primary-source-files'],{collection:'archive-items',id:'opaque-id'});
+  assert.deepEqual(archiveCatalog.files.map(file=>file.kind),['archiveItem','archiveFile']);
+  assert(!JSON.stringify([databaseCatalog,studyCatalog,archiveCatalog]).includes('content_blob'));
+  assert(!JSON.stringify(archiveCatalog).includes('external_path'));
   assert.equal((await request('studyRecording',['corpus'],'content')).status,403);
   assert.equal((await request('testimonyMedia',['study-recordings'],'content')).status,403);
   assert.equal((await request('archiveFile',['corpus'],'content')).status,403);

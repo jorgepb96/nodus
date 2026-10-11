@@ -10,6 +10,7 @@ import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
 import { emptyImmersionProgress } from '../db/immersionRepo';
+import {mobileDossierFiles} from './dossierFiles';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -35,6 +36,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if (method === 'getMobileDossierFiles') {
+    if (args.length !== 1) throw new Error('invalid_arguments');
+    return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileDossierFiles(vaultId, domains, args[0])));
+  }
   if (method === 'updateStudyEntity' && args[0] !== 'folder') throw new Error('operation_forbidden');
   if (['getContentTranslationOfflineSource', 'getContentTranslationGenerationContext', 'generateContentTranslation',
     'beginContentTranslationOnMobile', 'saveContentTranslationFromMobile', 'failContentTranslationOnMobile'].includes(method)) {

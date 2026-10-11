@@ -10,6 +10,7 @@ export const MOBILE_OPERATIONS = {
   getGapDetail: ['gaps:detail', 'corpus'],
   getGlobalLibraryItem: ['library:item', 'corpus'],
   getLibraryReaderDocument: ['libraryReader:get', 'corpus'],
+  getMobileDossierFiles: ['mobile:dossier:files', 'corpus'],
   getResearchCorpusSources: ['research:corpus:sources', 'corpus'],
   getResearchPreparationInventory: ['research:preparation:inventory', 'corpus'],
   getCompleteGuideEvidence: ['research:completeGuide:evidence', 'corpus'],

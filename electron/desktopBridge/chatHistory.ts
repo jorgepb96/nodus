@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { canonicalJson } from '../../shared/canonicalJson';
-import { MOBILE_CHAT_MAX_BYTES, type MobileChatDocument, type MobileChatEdit, type MobileChatKind } from '../../shared/mobileChatHistory';
+import { MOBILE_CHAT_MAX_BYTES, type MobileChatDocument, type MobileChatEdit, type MobileChatKind,type MobileChatOrganisation,type MobileChatPlacement } from '../../shared/mobileChatHistory';
 import { getDb, withVaultDatabase } from '../db/database';
 import { getActiveVault, withOwningVault } from '../vaults/vaultRegistry';
 import * as research from '../db/chatRepo';
@@ -15,6 +15,9 @@ import { chatAssetOwner,deleteChatAssets } from '../chatAssets';
 import { withMobileOperation } from './executionBoundary';
 import {normalizeMobileStudyChatOptions} from '../../shared/mobileStudyChat';
 import {verifyStudyChatCitation} from './studyChatEvidence';
+import * as researchOrganisation from '../db/researchChatProjectsRepo';
+import {listResearchNotebooks,getResearchNotebook,associateNotebookConversation} from '../db/researchNotebooksRepo';
+import {RESEARCH_CHAT_PIN_LIMIT} from '../../shared/types';
 
 export class MobileChatFailure extends Error {
   constructor(public readonly status: number, public readonly code: string, public readonly remote?: MobileChatDocument) { super(code); }
@@ -32,6 +35,27 @@ function assertKind(kind: string): asserts kind is MobileChatKind {
 function ensureTables() {
   getDb().exec(`CREATE TABLE IF NOT EXISTS mobile_chat_companions (kind TEXT NOT NULL, conversation_id TEXT NOT NULL, data_json TEXT NOT NULL, PRIMARY KEY(kind,conversation_id));
     CREATE TABLE IF NOT EXISTS mobile_chat_receipts (grant_id TEXT NOT NULL, request_id TEXT NOT NULL, payload_hash TEXT NOT NULL, result_json TEXT NOT NULL, PRIMARY KEY(grant_id,request_id));`);
+}
+function organisation(kind:MobileChatKind,store?:StudyAssistantStore):MobileChatOrganisation {
+  const study=kind==='study'?(store??readStudyChatStore()):null;
+  const organizer=kind==='world'?world.worldChatOrganizer:kind==='database'?database.databaseChatOrganizer:researchOrganisation;
+  const projects=study?study.projects:organizer.listChatProjects(),folders=study?study.folders:organizer.listChatProjectFolders();
+  const notebooks=kind==='study'?[]:kind==='research'?listResearchNotebooks():(kind==='world'?world.worldChatOrganizer:database.databaseChatOrganizer).listChatNotebooks();
+  return {version:1,kind,projects:projects.map(({id,name,instructions})=>({id,name,instructions:instructions??''})),folders:folders.map(({id,projectId,parentId,name,position})=>({id,projectId,parentId,name,position})),notebooks:notebooks.map(({id,name})=>({id,name}))};
+}
+function validatePlacement(raw:unknown,kind:MobileChatKind):asserts raw is MobileChatPlacement {
+  if(!object(raw)||Object.keys(raw).some(key=>!['projectId','folderId','notebookId','pinned'].includes(key))||typeof raw.pinned!=='boolean'||[raw.projectId,raw.folderId,raw.notebookId].some(id=>id!==null&&!identity(id)))throw new MobileChatFailure(400,'invalid_chat_placement');
+  // Surface-local identity; an ID that belongs to a different chat family is
+  // never accepted simply because it is a valid UUID in this vault.
+  const available=organisation(kind);
+  if(raw.projectId&&!available.projects.some(row=>row.id===raw.projectId)||raw.folderId&&!available.folders.some(row=>row.id===raw.folderId&&row.projectId===raw.projectId)||raw.notebookId&&!available.notebooks.some(row=>row.id===raw.notebookId)||raw.notebookId&&kind!=='research'&&(raw.projectId||raw.folderId))throw new MobileChatFailure(409,'chat_placement_unavailable');
+}
+function savePlacement(kind:Exclude<MobileChatKind,'study'>,id:string,value:MobileChatPlacement,archived:boolean) {
+  const organizer=kind==='world'?world.worldChatOrganizer:kind==='database'?database.databaseChatOrganizer:researchOrganisation;
+  organizer.setConversationProject(id,value.projectId);organizer.setConversationFolder(id,value.folderId);
+  if(kind==='research') {if(value.notebookId&&!getResearchNotebook(value.notebookId))throw new MobileChatFailure(409,'chat_placement_unavailable');associateNotebookConversation(value.notebookId,id);}
+  else (kind==='world'?world.worldChatOrganizer:database.databaseChatOrganizer).setConversationNotebook(id,value.notebookId);
+  try {organizer.setConversationPinned(id,archived?false:value.pinned);}catch(error){if(error instanceof Error&&error.message==='research_chat_pin_limit')throw new MobileChatFailure(409,'chat_pin_limit');throw error;}
 }
 function rawConversation(kind: MobileChatKind,id: string): Record<string,unknown> | null {
   const value = kind === 'research' ? research.getConversation(id) : kind === 'world' ? world.getWorldChatConversation(id) : kind === 'database' ? database.getDatabaseChatConversation(id) : getStudyAssistantConversation(id);
@@ -62,10 +86,11 @@ export async function listMobileChats(vaultId: string,kind: string,cursor: numbe
   return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
     assertKind(kind);
     const rows = kind === 'research' ? research.listConversations(true) : kind === 'world' ? world.listWorldChatConversations(true) : kind === 'database' ? database.listDatabaseChatConversations(true) : listStudyAssistantConversations(true);
-    const revision = digest(rows);
+    const catalogue=organisation(kind),revision = digest({rows,organisation:catalogue});
     if (!Number.isSafeInteger(cursor) || cursor < 0) throw new MobileChatFailure(400,'invalid_chat_cursor');
     if (expected && expected !== revision) throw new MobileChatFailure(409,'chat_catalogue_changed');
-    return {version:1,kind,revision,rows:rows.slice(cursor,cursor+100),cursor:cursor+Math.min(100,Math.max(0,rows.length-cursor)),hasMore:cursor+100<rows.length};
+    if(Buffer.byteLength(JSON.stringify(catalogue),'utf8')>8*1024*1024)throw new MobileChatFailure(413,'chat_organisation_too_large');
+    return {version:1,kind,revision,...(cursor===0?{organisation:catalogue}:{}),rows:rows.slice(cursor,cursor+100),cursor:cursor+Math.min(100,Math.max(0,rows.length-cursor)),hasMore:cursor+100<rows.length};
   },domains)));
 }
 function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileChatKind): MobileChatEdit {
@@ -79,7 +104,8 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   }
   if(raw.expectedRevision===null&&!uuid(raw.conversationId)) throw new MobileChatFailure(400,'invalid_chat_creation');
   const draft = raw.draft;
-  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence','world'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence','world','placement'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if(draft.placement!==undefined)validatePlacement(draft.placement,kind);
   if(draft.databaseIds!==undefined && (kind!=='database'||!Array.isArray(draft.databaseIds)||draft.databaseIds.length>30||new Set(draft.databaseIds).size!==draft.databaseIds.length||draft.databaseIds.some(id=>typeof id!=='string'||!getDatabase(id))))throw new MobileChatFailure(400,'invalid_chat_database_selection');
   if(draft.study!==undefined){if(kind!=='study')throw new MobileChatFailure(400,'invalid_study_chat_options');try{normalizeMobileStudyChatOptions(draft.study as Parameters<typeof normalizeMobileStudyChatOptions>[0]);}catch{throw new MobileChatFailure(400,'invalid_study_chat_options');}}
   if(draft.studyEvidence!==undefined&&(kind!=='study'||!object(draft.studyEvidence)))throw new MobileChatFailure(400,'invalid_study_chat_evidence');
@@ -126,6 +152,7 @@ function saveSQL(kind: Exclude<MobileChatKind,'study'>,request: MobileChatEdit) 
   if(kind==='research') { research.saveMessages(id,draft.messages as unknown as Parameters<typeof research.saveMessages>[1]);research.renameConversation(id,draft.title);research.setArchived(id,draft.archived); }
   else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],draft.world?.selection??data.selection as Parameters<typeof world.saveWorldChatConversation>[2],draft.world?.focus??data.focus as Parameters<typeof world.saveWorldChatConversation>[3],data.model as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
   else { database.saveDatabaseChatConversation(id,draft.messages as unknown as Parameters<typeof database.saveDatabaseChatConversation>[1],draft.databaseIds ?? data.databaseIds as string[]);database.renameDatabaseChatConversation(id,draft.title);database.setDatabaseChatConversationArchived(id,draft.archived); }
+  if(draft.placement)savePlacement(kind,id,draft.placement,draft.archived);
 }
 /** Receipts and data commit in one SQLite transaction (or one study-history
  * atomic file replacement). A lost ACK never re-applies a later edited chat. */
@@ -156,6 +183,11 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
         const now=new Date().toISOString();
         const existing=store!.conversations.find(item=>item.id===request.conversationId);
         const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study??{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
+        if(request.draft!.placement) {
+          const placement=request.draft!.placement;
+          if(placement.pinned&&!next.archived&&!existing?.pinnedAt&&store!.conversations.filter(item=>item.id!==next.id&&item.pinnedAt&&!item.archived).length>=RESEARCH_CHAT_PIN_LIMIT)throw new MobileChatFailure(409,'chat_pin_limit');
+          next.projectId=placement.projectId;next.folderId=placement.folderId;next.pinnedAt=placement.pinned&&!next.archived?existing?.pinnedAt??now:null;
+        }
         if(next.archived) next.pinnedAt=null;
         store!.conversations=store!.conversations.filter(item=>item.id!==next.id);store!.conversations.push(next as StudyAssistantStore['conversations'][number]);
       } else {

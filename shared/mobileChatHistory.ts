@@ -10,6 +10,13 @@ export interface MobileChatDocument {
   data: Record<string, unknown>;
   companion: Record<string, unknown> | null;
 }
+export interface MobileChatOrganisation {
+  version:1;kind:MobileChatKind;
+  projects:Array<{id:string;name:string;instructions:string}>;
+  folders:Array<{id:string;projectId:string;parentId:string|null;name:string;position:number}>;
+  notebooks:Array<{id:string;name:string}>;
+}
+export interface MobileChatPlacement {projectId:string|null;folderId:string|null;notebookId:string|null;pinned:boolean}
 export interface MobileChatEdit {
   version: 1;
   id: string;
@@ -19,6 +26,7 @@ export interface MobileChatEdit {
   draft?: { title: string; archived: boolean; messages: Array<Record<string, unknown>>; databaseIds?: string[];
     study?:import('./mobileStudyChat').MobileStudyChatOptions;
     world?:{selection:import('./types').WorldChatSelection;focus:import('./worldChatContext').WorldChatRef[]};
+    placement?:MobileChatPlacement;
     studyEvidence?:Record<string,Record<string,import('./mobileStudyChat').MobileStudyChatEvidence>> };
   companion?: Record<string, unknown> | null;
 }

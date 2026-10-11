@@ -6,6 +6,7 @@ import type {PromptLanguage} from './types';
 export {prepareStudyChat} from './mobileStudyChat';
 export {validateMobileStudyChatSourcePack} from './mobileStudyChat';
 export {validateMobileStudyChatOriginal} from './mobileStudyChat';
+export {composeProjectSystemPrompt} from './researchSystemPrompts';
 export {validateStudyAssistantAnswer} from './studyAssistant';
 export {prepareWorldChat,validateMobileWorldChatSourcePack,validateMobileWorldChatAnswer} from './mobileWorldChat';
 

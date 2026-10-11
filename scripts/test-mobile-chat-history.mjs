@@ -17,15 +17,28 @@ try {
   const vaults=require('../electron/vaults/vaultRegistry.ts'),api=require('../electron/desktopBridge/chatHistory.ts');
   const research=require('../electron/db/chatRepo.ts'),world=require('../electron/db/worldChatRepo.ts'),data=require('../electron/db/databaseChatRepo.ts'),study=require('../electron/ai/studyAssistant.ts');
   const studyStore=require('../electron/ai/studyChatHistory.ts');
+  const projects=require('../electron/db/researchChatProjectsRepo.ts'),notebooks=require('../electron/db/researchNotebooksRepo.ts');
   const domains=['corpus','writing','study-recordings'];
   const inVault=(id,work)=>vaults.withOwningVault(id,()=>db.withVaultDatabase(id,work));
   const cases=[['research','academic'],['world','worldbuilding'],['database','databases'],['study','estudio'],['study','docencia']];
   for(const [kind,type] of cases) {
     const vault=vaults.createVault(`Historial aislado ${type}`,type),grant=randomUUID();
     await inVault(vault.id,async()=>{
+      const organizer=kind==='world'?world.worldChatOrganizer:kind==='database'?data.databaseChatOrganizer:projects;
+      const createProject=input=>kind==='study'?studyStore.createStudyChatProject(input):organizer.createChatProject(input);
+      const createFolder=input=>kind==='study'?studyStore.createStudyChatFolder(input):organizer.createChatProjectFolder(input);
+      const project=createProject({name:'Proyecto 🌊',instructions:'Compara fuentes sin convertir preferencias en evidencia.'}),foreignProject=createProject({name:'Otro proyecto'});
+      const parent=createFolder({projectId:project.id,name:'Material'}),folder=createFolder({projectId:project.id,parentId:parent.id,name:'Lecturas'}),foreignFolder=createFolder({projectId:foreignProject.id,name:'Fuera'});
+      const notebook=kind==='study'?null:kind==='research'?notebooks.saveResearchNotebook({name:'Cuaderno',mode:'fixed',sources:[],exclusions:[]},[]):organizer.createChatNotebook({name:'Cuaderno',selection:{scope:'auto',entryKeys:[]}});
       const id=randomUUID(),messages=Array.from({length:151},(_,i)=>({id:randomUUID(),role:i%2?'assistant':'user',content:`Turno ${i} 🌊`,createdAt:new Date(Date.UTC(2026,0,2,10,0,i)).toISOString()}));
-      const request={version:1,id:randomUUID(),conversationId:id,expectedRevision:null,action:'save',draft:{title:'Conversación desde el móvil',archived:false,messages},companion:{messages:messages.map(message=>({id:message.id,text:message.content}))}};
+      const placement={projectId:project.id,folderId:folder.id,notebookId:null,pinned:true};
+      const request={version:1,id:randomUUID(),conversationId:id,expectedRevision:null,action:'save',draft:{title:'Conversación desde el móvil',archived:false,messages,placement},companion:{messages:messages.map(message=>({id:message.id,text:message.content}))}};
       const first=await api.saveMobileChat(vault.id,grant,kind,request,domains);
+      assert.equal(first.snapshot.data.projectId,project.id);assert.equal(first.snapshot.data.folderId,folder.id);assert(first.snapshot.data.pinnedAt);
+      const catalogue=await api.listMobileChats(vault.id,kind,0,domains);
+      assert.equal(catalogue.organisation.projects.find(row=>row.id===project.id).instructions,project.instructions);
+      assert.equal(catalogue.organisation.folders.find(row=>row.id===folder.id).parentId,parent.id);
+      if(notebook)assert(catalogue.organisation.notebooks.some(row=>row.id===notebook.id));
       assert.equal(first.snapshot.id,id);assert.equal(first.snapshot.data.messages.length,151);
       assert.deepEqual(first.snapshot.companion,request.companion);
       assert.deepEqual(await api.saveMobileChat(vault.id,grant,kind,request,domains),first,'Frozen receipt replay is exact');
@@ -34,6 +47,7 @@ try {
       const changed={...request,id:randomUUID(),expectedRevision:doc.revision,draft:{...request.draft,messages:doc.data.messages,title:'Nueva pregunta',archived:true}};
       const archived=await api.saveMobileChat(vault.id,grant,kind,changed,domains);
       assert.equal(archived.snapshot.data.archived,true);
+      assert.equal(archived.snapshot.data.pinnedAt,null,'Archiving always frees the pin');
       assert.equal(archived.snapshot.data.messages.length,151,'Readable history is never truncated to a model window');
       assert.deepEqual(archived.snapshot.data.messages.map(message=>message.createdAt),messages.map(message=>message.createdAt),'Archiving and subsequent saves retain actual per-turn time');
       assert.deepEqual(await api.saveMobileChat(vault.id,grant,kind,request,domains),first,'Lost ACK cannot overwrite later archiving');
@@ -45,6 +59,21 @@ try {
       await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...changed,id:randomUUID(),expectedRevision:archived.snapshot.revision,draft:{...changed.draft,messages:rich}},domains),error=>error.code==='chat_rich_turn_changed');
       const invalidDate=structuredClone(archived.snapshot.data.messages);invalidDate[0].createdAt='not a date';
       await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...changed,id:randomUUID(),expectedRevision:archived.snapshot.revision,draft:{...changed.draft,messages:invalidDate}},domains),error=>error.code==='invalid_chat_message_date');
+      await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...changed,id:randomUUID(),expectedRevision:archived.snapshot.revision,draft:{...changed.draft,placement:{...placement,folderId:foreignFolder.id}}},domains),error=>error.code==='chat_placement_unavailable');
+      const pinned=[];
+      for(let i=0;i<5;i++) {
+        const value=await api.saveMobileChat(vault.id,grant,kind,{version:1,id:randomUUID(),conversationId:randomUUID(),expectedRevision:null,action:'save',draft:{title:`Fijada ${i}`,archived:false,messages:[],placement:{projectId:null,folderId:null,notebookId:null,pinned:true}}},domains);pinned.push(value.snapshot);
+      }
+      const sixth=randomUUID();
+      await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{version:1,id:randomUUID(),conversationId:sixth,expectedRevision:null,action:'save',draft:{title:'Sexta',archived:false,messages:[],placement:{projectId:null,folderId:null,notebookId:null,pinned:true}}},domains),error=>error.code==='chat_pin_limit');
+      await assert.rejects(api.readMobileChat(vault.id,kind,sixth,domains),error=>error.code==='chat_unavailable');
+      for(const snapshot of pinned)await api.saveMobileChat(vault.id,grant,kind,{version:1,id:randomUUID(),conversationId:snapshot.id,expectedRevision:snapshot.revision,action:'delete'},domains);
+      if(notebook) {
+        const request={version:1,id:randomUUID(),conversationId:randomUUID(),expectedRevision:null,action:'save',draft:{title:'Dentro del cuaderno',archived:false,messages:[],placement:{projectId:null,folderId:null,notebookId:notebook.id,pinned:false}}};
+        const saved=await api.saveMobileChat(vault.id,grant,kind,request,domains);
+        assert.equal(saved.snapshot.data.notebookId,notebook.id);
+        await api.saveMobileChat(vault.id,grant,kind,{version:1,id:randomUUID(),conversationId:saved.snapshot.id,expectedRevision:saved.snapshot.revision,action:'delete'},domains);
+      }
       if(kind==='research') {
         const legacy=research.createConversation({title:'Original timestamps'}),turns=[{id:randomUUID(),role:'user',content:'Already on Mac'}];
         research.saveMessages(legacy.id,turns);

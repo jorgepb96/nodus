@@ -6,6 +6,7 @@ import type {PromptLanguage} from './types';
 export {prepareStudyChat} from './mobileStudyChat';
 export {validateMobileStudyChatSourcePack} from './mobileStudyChat';
 export {validateStudyAssistantAnswer} from './studyAssistant';
+export {prepareWorldChat,validateMobileWorldChatSourcePack,validateMobileWorldChatAnswer} from './mobileWorldChat';
 
 /** Runs only the existing deterministic, provider-free Desktop context writers.
  * Native SwiftUI owns navigation, source choice, streaming and durable history. */

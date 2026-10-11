@@ -79,10 +79,14 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   }
   if(raw.expectedRevision===null&&!uuid(raw.conversationId)) throw new MobileChatFailure(400,'invalid_chat_creation');
   const draft = raw.draft;
-  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence','world'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
   if(draft.databaseIds!==undefined && (kind!=='database'||!Array.isArray(draft.databaseIds)||draft.databaseIds.length>30||new Set(draft.databaseIds).size!==draft.databaseIds.length||draft.databaseIds.some(id=>typeof id!=='string'||!getDatabase(id))))throw new MobileChatFailure(400,'invalid_chat_database_selection');
   if(draft.study!==undefined){if(kind!=='study')throw new MobileChatFailure(400,'invalid_study_chat_options');try{normalizeMobileStudyChatOptions(draft.study as Parameters<typeof normalizeMobileStudyChatOptions>[0]);}catch{throw new MobileChatFailure(400,'invalid_study_chat_options');}}
   if(draft.studyEvidence!==undefined&&(kind!=='study'||!object(draft.studyEvidence)))throw new MobileChatFailure(400,'invalid_study_chat_evidence');
+  if(draft.world!==undefined){
+    const value=draft.world,selection=object(value)?value.selection:null;
+    if(kind!=='world'||!object(value)||Object.keys(value).some(key=>!['selection','focus'].includes(key))||!object(selection)||Object.keys(selection).some(key=>!['scope','entryKeys','keepFocus'].includes(key))||!['auto','manual'].includes(String(selection.scope))||typeof selection.keepFocus!=='boolean'||!Array.isArray(selection.entryKeys)||selection.entryKeys.length>100||new Set(selection.entryKeys).size!==selection.entryKeys.length||selection.entryKeys.some(key=>typeof key!=='string'||key.length>512)||!Array.isArray(value.focus)||value.focus.length>6||value.focus.some(ref=>!object(ref)||Object.keys(ref).some(key=>!['kind','id','title'].includes(key))||typeof ref.kind!=='string'||typeof ref.id!=='string'||typeof ref.title!=='string'||ref.id.length>256||ref.title.length>4096))throw new MobileChatFailure(400,'invalid_world_chat_selection');
+  }
   const old = Array.isArray(current?.data.messages) ? current!.data.messages as Array<Record<string,unknown>> : [];
   const ids = new Set<string>();
   draft.messages.forEach((message,index)=>{
@@ -119,7 +123,7 @@ function createSQL(kind: Exclude<MobileChatKind,'study'>,id: string,title: strin
 function saveSQL(kind: Exclude<MobileChatKind,'study'>,request: MobileChatEdit) {
   const id=request.conversationId,draft=request.draft!,data=rawConversation(kind,id)!;
   if(kind==='research') { research.saveMessages(id,draft.messages as unknown as Parameters<typeof research.saveMessages>[1]);research.renameConversation(id,draft.title);research.setArchived(id,draft.archived); }
-  else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],data.selection as Parameters<typeof world.saveWorldChatConversation>[2],data.focus as Parameters<typeof world.saveWorldChatConversation>[3],data.model as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
+  else if(kind==='world') { world.saveWorldChatConversation(id,draft.messages as unknown as Parameters<typeof world.saveWorldChatConversation>[1],draft.world?.selection??data.selection as Parameters<typeof world.saveWorldChatConversation>[2],draft.world?.focus??data.focus as Parameters<typeof world.saveWorldChatConversation>[3],data.model as Parameters<typeof world.saveWorldChatConversation>[4]);world.renameWorldChatConversation(id,draft.title);world.setWorldChatConversationArchived(id,draft.archived); }
   else { database.saveDatabaseChatConversation(id,draft.messages as unknown as Parameters<typeof database.saveDatabaseChatConversation>[1],draft.databaseIds ?? data.databaseIds as string[]);database.renameDatabaseChatConversation(id,draft.title);database.setDatabaseChatConversationArchived(id,draft.archived); }
 }
 /** Receipts and data commit in one SQLite transaction (or one study-history

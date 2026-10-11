@@ -1,6 +1,7 @@
 // worldbuilding channels, moved verbatim out of the monolithic registerIpc.
 // The channel names are unchanged; scripts/test-ipc-contract.mjs is what proves it.
 import { dialogTitle } from '../dialogTitles';
+import {getMobileWorldChatSourcePack} from '../db/mobileWorldChatSource';
 import type { IpcContext } from './context';
 import type { CharacterInput, CharacterFilter, CharacterImage, CharacterImageKind, CharacterAbilityInput, CharacterAffiliationInput } from '@shared/types';
 import { generateCharacterGalleryImage, generateCharacterPortrait, generateWorldEntityImage } from '../ai/decorativeImages';
@@ -257,6 +258,7 @@ export function registerWorldbuildingIpc({ h, getWindow, chatAborters }: IpcCont
 
   // ── The encyclopedia ───────────────────────────────────────────────────────
   h('encyclopedia:list', async () => listWorldEntries());
+  h('worldChat:mobileSourcePack',async (_e,request:unknown)=>getMobileWorldChatSourcePack(request));
   h('encyclopedia:get', async (_e, ref: WorldEntryRef) => getWorldEntry(ref));
   h('encyclopedia:searchBodies', async (_e, query: string) => searchWorldBodies(query));
   h('encyclopedia:createArticle', async (_e, input: WorldArticleInput) => createWorldArticle(input));

@@ -143,6 +143,7 @@ export const MOBILE_OPERATIONS = {
   deleteDatabaseDeepResearchReportAnnotation: ['db:deepResearch:report:annotations:delete','writing'],
   exportDatabaseDeepResearchReport: ['db:deepResearch:report:export','corpus'],
   listWorldEntries: ['encyclopedia:list','corpus'],
+  getMobileWorldChatSourcePack: ['worldChat:mobileSourcePack','corpus'],
   listWorldChatConversations: ['worldChat:history:list','corpus'], getWorldChatConversation: ['worldChat:history:get','corpus'],
   createWorldChatConversation: ['worldChat:history:create','writing'], saveWorldChatConversation: ['worldChat:history:save','writing'],
   deleteWorldChatConversation: ['worldChat:history:delete','writing'], worldChatStream: ['worldChat:stream','research-generation'],

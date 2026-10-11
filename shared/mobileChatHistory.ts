@@ -18,6 +18,7 @@ export interface MobileChatEdit {
   action: 'save' | 'delete';
   draft?: { title: string; archived: boolean; messages: Array<Record<string, unknown>>; databaseIds?: string[];
     study?:import('./mobileStudyChat').MobileStudyChatOptions;
+    world?:{selection:import('./types').WorldChatSelection;focus:import('./worldChatContext').WorldChatRef[]};
     studyEvidence?:Record<string,Record<string,import('./mobileStudyChat').MobileStudyChatEvidence>> };
   companion?: Record<string, unknown> | null;
 }

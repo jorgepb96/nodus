@@ -18,6 +18,7 @@ try{
   const repo=require('../electron/db/databasesRepo.ts'),{mobileDatabasePresentationRead}=require('../electron/desktopBridge/databasePresentation.ts');
   const {queryCompanionDatabasePresentation}=require('../shared/companionDatabasePresentation.ts'),{defaultDatabaseViewConfig}=require('../shared/databaseViewConfig.ts');
   const {queryCompanionDatabaseContainer}=require('../shared/companionDatabaseContainer.ts');
+  const {mobileDatabaseRowLocation}=require('../electron/desktopBridge/databaseRowLocation.ts');
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
     const db=repo.createDatabase('Consultas completas'),title=repo.createColumn(db.id,'Título','title'),group=repo.createColumn(db.id,'Grupo','text'),amount=repo.createColumn(db.id,'Cantidad','number');
     const place=repo.createColumn(db.id,'Ubicación','location'),date=repo.createColumn(db.id,'Fecha','date'),dependency=repo.createColumn(db.id,'Depende de','relation',{relationTargetKind:'db_row',relationTargetDatabaseId:db.id});
@@ -39,6 +40,10 @@ try{
     let cursor=null,visited=0;
     do{const page=read('sourceRows',{cursor,limit:200});source.rows.push(...page.rows);Object.assign(source.pages,page.pages);Object.assign(source.dependencies,page.dependencies);cursor=page.nextCursor;visited++;}while(cursor);
     assert.equal(visited,3);assert.equal(source.rows.length,523);assert.equal(source.views.length,10);
+    const associated=database.getDb().prepare("SELECT id FROM pages WHERE row_id=? AND state='active' ORDER BY id LIMIT 1").get(rows[522]);
+    assert.ok(associated?.id,'Canonical row creation must retain its actual associated page');
+    assert.deepEqual(mobileDatabaseRowLocation(vault.id,rows[522]),{version:1,vaultId:vault.id,rowId:rows[522],databaseId:db.id,pageId:associated.id});
+    assert.throws(()=>mobileDatabaseRowLocation(vault.id,'missing-row'),/record_not_found/);
     const queries=[
       ['chart',{xColumnId:group.id,yColumnId:amount.id,aggregation:'sum',type:'bar'}],
       ['chart',{xColumnId:group.id,yColumnId:amount.id,aggregation:'average',type:'line'}],

@@ -2,6 +2,7 @@ import {combinedDatabaseContainerFilter,type DatabaseContainerDefinition,type Da
 import {queryCompanionDatabasePresentation,type CompanionDatabasePresentationSource} from './companionDatabasePresentation';
 import {assertFilterNode,type FilterNode} from './databaseQuery';
 import {canonicalJson} from './canonicalJson';
+export {prepareCompanionDatabaseDerived} from './companionDatabaseDerived';
 
 export async function queryCompanionDatabaseContainer(input:{version:1;vaultId:string;viewId:string;definition:DatabaseContainerDefinition;
   sources:Record<string,CompanionDatabasePresentationSource>;sourceId?:string|null;localFilter?:FilterNode|null}) {

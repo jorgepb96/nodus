@@ -15,9 +15,11 @@ se ejecuta exactamente una vez. Se mantienen cachés, concurrencia limitada de
 los tests, fallo ante omisiones y cancelación de PR obsoletos. No se repite el CI
 al fusionar en `main` ni se transfieren builds entre varios runners.
 
-Los E2E de Linux usan Xvfb y el sandbox normal de Electron. El arranque, los
-cuatro E2E y las migraciones se comprueban antes de la suite larga para fallar
-pronto; un fallo conserva el estado de los frames en el log para diagnosticarlo.
+Los E2E de Linux usan Xvfb y OpenGL de Mesa por CPU, con ANGLE y el sandbox
+normal de Electron. El compositor de la interfaz permanece por software; los
+grafos conservan WebGL real. El arranque, los cuatro E2E y las migraciones se
+comprueban antes de la suite larga para fallar pronto; un fallo conserva el
+estado de los frames en el log para diagnosticarlo.
 
 Solo los nueve casos que dependen de APIs nativas de macOS se aplazan en Linux,
 con una lista explícita por archivo, nombre y razón; pasan a ser comprobaciones

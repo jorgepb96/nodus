@@ -23,6 +23,9 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
+// Mesa provides real WebGL on CPU; retain software UI compositing and sandboxing.
+const ciGpuArgs = process.env.CI && process.platform === 'linux'
+  ? ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing'] : [];
 
 // Re-exec under Electron-as-Node so the final better-sqlite3 check matches the
 // app ABI (same pattern as every other script in this suite). Playwright then
@@ -129,6 +132,7 @@ try {
   app = await electron.launch({
     executablePath: packagedExecutable || require('electron'),
     args: [
+      ...ciGpuArgs,
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
       ...(packagedExecutable ? [] : [repoRoot]),
@@ -153,6 +157,18 @@ try {
     return !!root && root.children.length > 0;
   }, { timeout: 30_000 });
   console.log('[e2e] renderer mounted');
+  if (process.env.CI && process.platform === 'linux') {
+    const graphics = await page.evaluate(() => {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      if (!gl) return null;
+      const debug = gl.getExtension('WEBGL_debug_renderer_info');
+      const renderer = gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return { renderer };
+    });
+    assert.ok(graphics, 'the Linux runner supplies a real WebGL2 context');
+    console.log('[e2e] Linux graphics:', graphics);
+  }
 
   // Suppress the "what's new" modal: a fresh profile has no last-seen version, so it
   // would otherwise overlay the app and intercept later clicks. localStorage persists

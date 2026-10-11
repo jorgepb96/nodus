@@ -25,6 +25,7 @@ jobs:
     timeout-minutes: 60
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+      LIBGL_ALWAYS_SOFTWARE: 'true'
       NODUS_CI_COMPONENT_STYLES: .ci/component-styles.css
       NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
     steps:
@@ -43,10 +44,11 @@ jobs:
       - name: Install Linux test tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y xvfb ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
+          sudo apt-get install --no-install-recommends -y xvfb libgl1-mesa-dri libegl-mesa0 mesa-utils ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
           ffmpeg -version >/dev/null
           ffprobe -version >/dev/null
           test -x /usr/bin/google-chrome
+          xvfb-run --auto-servernum glxinfo -B
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
       - name: Restore incremental checks and Electron download cache

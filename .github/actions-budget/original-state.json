@@ -268,12 +268,12 @@
       }
     ]
   },
-  "budgetCiSha256": "9780784cc917cdcbc971217f72391db2a1683491171a79c2dca663dcf3e1a283",
+  "budgetCiSha256": "32dc059797fe489ebcbf564e66f58850cf4bd9d55922802e17609477ab89c3f4",
   "changedFiles": {
     ".github/workflows/ci.yml": {
       "snapshot": "original-ci.yml",
       "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
-      "restrictedSha256": "9780784cc917cdcbc971217f72391db2a1683491171a79c2dca663dcf3e1a283"
+      "restrictedSha256": "32dc059797fe489ebcbf564e66f58850cf4bd9d55922802e17609477ab89c3f4"
     },
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
@@ -344,22 +344,22 @@
     "scripts/e2e-smoke.mjs": {
       "snapshot": "original-files/scripts/e2e-smoke.mjs",
       "originalSha256": "3b34a4a298f0490f33f9d749b356da39d86b69d2eff1a7548bfa9583a4fa08a7",
-      "restrictedSha256": "f88cec46c7b2d8ffe77295059be3bfb129e5ddf190da5e7b093f9458e921e1ce"
+      "restrictedSha256": "42185523182f3766a5d86de97f782251fa4a9921691f8f2f039c451eaec42f0c"
     },
     "scripts/e2e-graph-progressive.mjs": {
       "snapshot": "original-files/scripts/e2e-graph-progressive.mjs",
       "originalSha256": "1bc71134677fb697262a7ef338e547be8639f235d890846702571c95d34662ef",
-      "restrictedSha256": "1bc71134677fb697262a7ef338e547be8639f235d890846702571c95d34662ef"
+      "restrictedSha256": "600af560ca05fe0a8992b92d4e29fac16a77f2d819880f79aed26e0faf001e88"
     },
     "scripts/e2e-stellar-tabs.mjs": {
       "snapshot": "original-files/scripts/e2e-stellar-tabs.mjs",
       "originalSha256": "38280a7431da4cef89d8d23a231296b3a4077b12c2b07613251917881e1f2404",
-      "restrictedSha256": "38280a7431da4cef89d8d23a231296b3a4077b12c2b07613251917881e1f2404"
+      "restrictedSha256": "2cae083e0ee5507740a1c39087b00a9cab27f98da7e7bfd38e58afa1ef7b7b5c"
     },
     "scripts/e2e-argument-map-canvas.mjs": {
       "snapshot": "original-files/scripts/e2e-argument-map-canvas.mjs",
       "originalSha256": "6ed75d17c107c838b8d7514d14cfcec5e5adb59b0ed8e703a54f8c5cbb4d9cd3",
-      "restrictedSha256": "6ed75d17c107c838b8d7514d14cfcec5e5adb59b0ed8e703a54f8c5cbb4d9cd3"
+      "restrictedSha256": "95257f7578d19213e0b5739d54ea3749eef8972adb5d6f7c7459169b7f8920cd"
     }
   }
 }

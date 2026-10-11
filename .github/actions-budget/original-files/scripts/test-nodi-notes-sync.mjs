@@ -93,17 +93,10 @@ test('a deletion travels rather than being undone by the other device', async ()
     const target = { url: context.origin, token };
 
     const note = notesModule.saveNodiNote({ title: 'Para borrar', content: 'Cuerpo' });
-    const acknowledged = await syncModule.syncNodiNotes(target);
-    assert.equal(acknowledged.error, null, acknowledged.error ?? '');
-    assert.ok(Number.isFinite(acknowledged.serverTime));
+    await syncModule.syncNodiNotes(target);
 
     // Deleted on the desktop…
-    // Model a separate user action after the millisecond-based sync cursor,
-    // independently of how quickly this runner completes the HTTP exchange.
-    const realNow = Date.now;
-    Date.now = () => Math.max(realNow(), acknowledged.serverTime + 1);
-    try { notesModule.deleteNodiNote(note.id); }
-    finally { Date.now = realNow; }
+    notesModule.deleteNodiNote(note.id);
     assert.ok(!notesModule.listNodiNotes().some((entry) => entry.id === note.id));
     const pushed = await syncModule.syncNodiNotes(target);
     assert.equal(pushed.error, null, pushed.error ?? '');

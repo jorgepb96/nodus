@@ -1,0 +1,365 @@
+{
+  "repository": "jorgepb96/nodus",
+  "originalCommit": "0735f381485e5a0685e1f639e4e213ba1b014432",
+  "capturedAt": "2026-10-10T22:45:29.917588+00:00",
+  "workflows": [
+    {
+      "id": 372926202,
+      "name": "AppImage update compatibility",
+      "path": ".github/workflows/appimage-updates.yml",
+      "state": "active"
+    },
+    {
+      "id": 349659157,
+      "name": "Backfill macOS Intel build",
+      "path": ".github/workflows/backfill-macos-intel.yml",
+      "state": "active"
+    },
+    {
+      "id": 310506452,
+      "name": "CI",
+      "path": ".github/workflows/ci.yml",
+      "state": "active"
+    },
+    {
+      "id": 351015576,
+      "name": "Contributor License Agreement",
+      "path": ".github/workflows/cla.yml",
+      "state": "active"
+    },
+    {
+      "id": 359184203,
+      "name": "Local AI runtime",
+      "path": ".github/workflows/local-ai-runtime.yml",
+      "state": "active"
+    },
+    {
+      "id": 318355373,
+      "name": "Nodus Server image (experimental)",
+      "path": ".github/workflows/nodus-server-image.yml",
+      "state": "active"
+    },
+    {
+      "id": 323267176,
+      "name": "Website",
+      "path": ".github/workflows/pages.yml",
+      "state": "active"
+    },
+    {
+      "id": 372517243,
+      "name": "Presenter native controller \u2014 Windows and Linux",
+      "path": ".github/workflows/presenter-lan.yml",
+      "state": "active"
+    },
+    {
+      "id": 331837407,
+      "name": "Beta release",
+      "path": ".github/workflows/release-beta.yml",
+      "state": "active"
+    },
+    {
+      "id": 331837409,
+      "name": "Release build",
+      "path": ".github/workflows/release-build.yml",
+      "state": "active"
+    },
+    {
+      "id": 295767780,
+      "name": "Stable release",
+      "path": ".github/workflows/release.yml",
+      "state": "active"
+    },
+    {
+      "id": 364958556,
+      "name": "Research corpus native integration",
+      "path": ".github/workflows/research-corpus-native.yml",
+      "state": "active"
+    },
+    {
+      "id": 365089510,
+      "name": "Research corpus disposable installer validation",
+      "path": ".github/workflows/research-corpus-packaging.yml",
+      "state": "active"
+    },
+    {
+      "id": 374079436,
+      "name": "Scheme scan",
+      "path": ".github/workflows/scheme-scan.yml",
+      "state": "active"
+    },
+    {
+      "id": 368204681,
+      "name": "SearXNG engine health",
+      "path": ".github/workflows/searxng-health.yml",
+      "state": "active"
+    },
+    {
+      "id": 311294458,
+      "name": "pages-build-deployment",
+      "path": "dynamic/pages/pages-build-deployment",
+      "state": "active"
+    }
+  ],
+  "workflowSha256": {
+    ".github/workflows/appimage-updates.yml": "5d7769024916a640bddb372d476e3af52ac51ed3b4d321e6da2ebccbe408a67a",
+    ".github/workflows/backfill-macos-intel.yml": "2bc54e3d4fc7ce3aed986e45b8d5ae4ac8ce42b13b1c3e6d181e74a79319d725",
+    ".github/workflows/ci.yml": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
+    ".github/workflows/cla.yml": "2e7fdc08651f430914b0c867463102b1a56f9f5755fcfdc464e78752381880e6",
+    ".github/workflows/nodus-server-image.yml": "6f1dd8b1294dc413c062498d6738109c93370306fb65bbed4e182d7f532070c9",
+    ".github/workflows/pages.yml": "9b36b965f6e2850be4591d45a25c967ed39e23bd71aa3cf169250bf55886ba5b",
+    ".github/workflows/presenter-lan.yml": "c3602571798ea0bff7497206ac41ef7e2228316711dfe3380f6426bb59d798e2",
+    ".github/workflows/release-beta.yml": "8f38308844d6b2c9dce12be1be43103d8d53b2f0d064f5aca62ecc52abb6f20d",
+    ".github/workflows/release-build.yml": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
+    ".github/workflows/release.yml": "5d5f0b0733b8a97f5824b089d4996697095aa5c26e09e1adff6bd0092871aeb0",
+    ".github/workflows/research-corpus-native.yml": "a31713afd6d4da402daec761eee5ee0f86586748fc6d27f976e1159217f5314c",
+    ".github/workflows/research-corpus-packaging.yml": "fbb7702f0f582bf883bb2fc4edc709452d8b08c84e9cea0756190135ed1b09d6",
+    ".github/workflows/scheme-scan.yml": "2ee0a05d85dac0fae8c534b9550ccda07a8e9bb14b6ca9c36e2a20ca3390f4bc",
+    ".github/workflows/searxng-health.yml": "e76625bffd0872e502d804c96f865439df04720fca7c16d172fb03d655f91b24"
+  },
+  "rulesets": [
+    {
+      "id": 22341834,
+      "name": "Preserve CLA acceptance history",
+      "target": "branch",
+      "source_type": "Repository",
+      "source": "jorgepb96/nodus",
+      "enforcement": "active",
+      "conditions": {
+        "ref_name": {
+          "exclude": [],
+          "include": [
+            "refs/heads/cla-signatures"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "type": "deletion"
+        },
+        {
+          "type": "non_fast_forward"
+        }
+      ],
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5LpSCbzgFU6Mo",
+      "created_at": "2026-09-05T18:12:47.787+02:00",
+      "updated_at": "2026-09-05T18:12:47.806+02:00",
+      "bypass_actors": [],
+      "current_user_can_bypass": "never",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/jorgepb96/nodus/rulesets/22341834"
+        },
+        "html": {
+          "href": "https://github.com/jorgepb96/nodus/rules/22341834"
+        }
+      }
+    },
+    {
+      "id": 22341821,
+      "name": "Require CLA before merging into main",
+      "target": "branch",
+      "source_type": "Repository",
+      "source": "jorgepb96/nodus",
+      "enforcement": "active",
+      "conditions": {
+        "ref_name": {
+          "exclude": [],
+          "include": [
+            "~DEFAULT_BRANCH"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "type": "deletion"
+        },
+        {
+          "type": "non_fast_forward"
+        },
+        {
+          "type": "pull_request",
+          "parameters": {
+            "required_approving_review_count": 0,
+            "dismiss_stale_reviews_on_push": false,
+            "required_reviewers": [],
+            "require_code_owner_review": false,
+            "require_last_push_approval": false,
+            "required_review_thread_resolution": false,
+            "require_extra_approval_for_unattributed_changes": true,
+            "allowed_merge_methods": [
+              "merge",
+              "squash",
+              "rebase"
+            ]
+          }
+        },
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": false,
+            "do_not_enforce_on_create": false,
+            "required_status_checks": [
+              {
+                "context": "CLA / signature",
+                "integration_id": 15368
+              }
+            ]
+          }
+        }
+      ],
+      "node_id": "RRS_lACqUmVwb3NpdG9yec5LpSCbzgFU6L0",
+      "created_at": "2026-09-05T18:12:17.804+02:00",
+      "updated_at": "2026-09-05T18:12:17.885+02:00",
+      "bypass_actors": [],
+      "current_user_can_bypass": "never",
+      "_links": {
+        "self": {
+          "href": "https://api.github.com/repos/jorgepb96/nodus/rulesets/22341821"
+        },
+        "html": {
+          "href": "https://github.com/jorgepb96/nodus/rules/22341821"
+        }
+      }
+    }
+  ],
+  "branchProtection": null,
+  "managedWorkflowExceptions": [
+    {
+      "id": 311294458,
+      "reason": "GitHub-managed Pages workflow cannot be disabled (HTTP 422); Pages uses build_type=workflow and Website is disabled, so automatic publication has no producer."
+    }
+  ],
+  "pausedRulesetPayload": {
+    "name": "Require CLA before merging into main",
+    "target": "branch",
+    "enforcement": "active",
+    "bypass_actors": [],
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": [
+          "~DEFAULT_BRANCH"
+        ]
+      }
+    },
+    "rules": [
+      {
+        "type": "deletion"
+      },
+      {
+        "type": "non_fast_forward"
+      },
+      {
+        "type": "pull_request",
+        "parameters": {
+          "required_approving_review_count": 0,
+          "dismiss_stale_reviews_on_push": false,
+          "required_reviewers": [],
+          "require_code_owner_review": false,
+          "require_last_push_approval": false,
+          "required_review_thread_resolution": false,
+          "require_extra_approval_for_unattributed_changes": true,
+          "allowed_merge_methods": [
+            "merge",
+            "squash",
+            "rebase"
+          ]
+        }
+      }
+    ]
+  },
+  "budgetCiSha256": "32dc059797fe489ebcbf564e66f58850cf4bd9d55922802e17609477ab89c3f4",
+  "changedFiles": {
+    ".github/workflows/ci.yml": {
+      "snapshot": "original-ci.yml",
+      "originalSha256": "33555a41d46015c8ba92d7069740027c4ca00a98e71bf234829c4538ec206359",
+      "restrictedSha256": "32dc059797fe489ebcbf564e66f58850cf4bd9d55922802e17609477ab89c3f4"
+    },
+    ".github/workflows/release-build.yml": {
+      "snapshot": "original-files/.github/workflows/release-build.yml",
+      "originalSha256": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
+      "restrictedSha256": "5d391e7c7917acd76023a75166554c67a45b5b32baf2291ad4a786b365f2dc20"
+    },
+    "scripts/ci-test-shards.mjs": {
+      "snapshot": "original-files/scripts/ci-test-shards.mjs",
+      "originalSha256": "976e019622950aed82d7ab2d32f750215f3c289b280e02151b867d751e3e07fc",
+      "restrictedSha256": "a472575ec7350cc580140658a608e1885e7d10d3013c3a7e99f1ebf5b0e2e6d3"
+    },
+    "scripts/test-ci-quality-gate.mjs": {
+      "snapshot": "original-files/scripts/test-ci-quality-gate.mjs",
+      "originalSha256": "9a207bd8c9f5562db4092dcdc7de37678b2b9df8d53c619046015b7ab33cee94",
+      "restrictedSha256": "6dedc5e8c677923295b9f695fc240bd73bb861fbd09fb921ecb195754a00dc6b"
+    },
+    "scripts/test-update-channels.mjs": {
+      "snapshot": "original-files/scripts/test-update-channels.mjs",
+      "originalSha256": "102a9ba1e170d26ff17a1abb8e2b5418f21a9b089fdc5a12e1fb5f45e1052e67",
+      "restrictedSha256": "c28cd97dc8b600d677dd04b7260b32041264bae15b2603b824665e56b9f55348"
+    },
+    "scripts/test-release-artifact-names.mjs": {
+      "snapshot": "original-files/scripts/test-release-artifact-names.mjs",
+      "originalSha256": "5a6aebdd8dc16de90ad9c9b5cc2f4ae11ba955839cb8c916bcbb16518d9e1973",
+      "restrictedSha256": "97c926aba58b4d452c47efb0f9c6ee4e4107de3724a4512a06f00e0ae8607aa6"
+    },
+    "README.md": {
+      "snapshot": "original-files/README.md",
+      "originalSha256": "1309d01ef861d7b6bb68a04d9a21da4261c47e67f023334dc83a43e3c123ce36",
+      "restrictedSha256": "5eba3c84c44fcdc4895a1e68e9fd7f862795acb13bea0f501467d28b2f747cc9"
+    },
+    "site/app/index.html": {
+      "snapshot": "original-files/site/app/index.html",
+      "originalSha256": "e0781627da370fdfe1c9612ccf099b38f62ef6e351faa4623006f0f9e2dfa615",
+      "restrictedSha256": "2de6a5c1dfb744c613f848b9b96e63e28c3435acb3ad00723413a1af389531f0"
+    },
+    "scripts/test-e2e-stability.mjs": {
+      "snapshot": "original-files/scripts/test-e2e-stability.mjs",
+      "originalSha256": "69bd62985365e3016c4c9a4bd75a26bb700a6c5ea28c5924f26ead8592547c96",
+      "restrictedSha256": "aadb3fd1582400a4fe476cc5e04aa2323d83206d84a8f32b6f3921afe415b4dc"
+    },
+    "scripts/test-unsigned-mac-update.mjs": {
+      "snapshot": "original-files/scripts/test-unsigned-mac-update.mjs",
+      "originalSha256": "ff1b5d88d68fbf619eceaf6e631fe113329469566fdec2ce62f8ed983f2c4ade",
+      "restrictedSha256": "089d0023634a92870dfbc117756aa67d3b2b5397b6f6765fb290e033660751ee"
+    },
+    "scripts/test-presenter-multipeer.mjs": {
+      "snapshot": "original-files/scripts/test-presenter-multipeer.mjs",
+      "originalSha256": "4af1ef6e9506934b72d485833877090b947fcccaee5c97f8847deac448f0e15d",
+      "restrictedSha256": "57eea24cd1bb1a0312194c902aedb8228c9260b86e2a40ba0d8d19a8f98023af"
+    },
+    "scripts/test-site-pages.mjs": {
+      "snapshot": "original-files/scripts/test-site-pages.mjs",
+      "originalSha256": "69b8fccea8d47d4142e52c6e5298470b5202091e9b00ae0c49c0cae9060a8509",
+      "restrictedSha256": "0c8239896b115a2c1ffc66aeeabb608b93a9266b0ad64ee6033018aab011e715"
+    },
+    "scripts/test-nodi-notes-sync.mjs": {
+      "snapshot": "original-files/scripts/test-nodi-notes-sync.mjs",
+      "originalSha256": "d41b4e02ddf9dd10fd7544417f22809f63ad71e02c8d063456b5604e927160ca",
+      "restrictedSha256": "1f3a049d2a2294563bf1d05f4bfdbb691289408dbd5549e6738bc0bad1bf5f8e"
+    },
+    "site/sitemap.xml": {
+      "snapshot": "original-files/site/sitemap.xml",
+      "originalSha256": "b6fcb39034089acbad15d58132bd32334fbdafb45c1cfa4cf8633a9a34f43b93",
+      "restrictedSha256": "97d7a1060bb35e23d5789bd47d85d3cf79a2e6de400b70b1f654b8fb512a93bf",
+      "regenerateAfterRestore": true
+    },
+    "scripts/e2e-smoke.mjs": {
+      "snapshot": "original-files/scripts/e2e-smoke.mjs",
+      "originalSha256": "3b34a4a298f0490f33f9d749b356da39d86b69d2eff1a7548bfa9583a4fa08a7",
+      "restrictedSha256": "42185523182f3766a5d86de97f782251fa4a9921691f8f2f039c451eaec42f0c"
+    },
+    "scripts/e2e-graph-progressive.mjs": {
+      "snapshot": "original-files/scripts/e2e-graph-progressive.mjs",
+      "originalSha256": "1bc71134677fb697262a7ef338e547be8639f235d890846702571c95d34662ef",
+      "restrictedSha256": "600af560ca05fe0a8992b92d4e29fac16a77f2d819880f79aed26e0faf001e88"
+    },
+    "scripts/e2e-stellar-tabs.mjs": {
+      "snapshot": "original-files/scripts/e2e-stellar-tabs.mjs",
+      "originalSha256": "38280a7431da4cef89d8d23a231296b3a4077b12c2b07613251917881e1f2404",
+      "restrictedSha256": "2cae083e0ee5507740a1c39087b00a9cab27f98da7e7bfd38e58afa1ef7b7b5c"
+    },
+    "scripts/e2e-argument-map-canvas.mjs": {
+      "snapshot": "original-files/scripts/e2e-argument-map-canvas.mjs",
+      "originalSha256": "6ed75d17c107c838b8d7514d14cfcec5e5adb59b0ed8e703a54f8c5cbb4d9cd3",
+      "restrictedSha256": "95257f7578d19213e0b5739d54ea3749eef8972adb5d6f7c7459169b7f8920cd"
+    }
+  }
+}

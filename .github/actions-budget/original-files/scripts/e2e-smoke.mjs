@@ -23,9 +23,6 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
-// Mesa provides real WebGL on CPU; retain software UI compositing and sandboxing.
-const ciGpuArgs = process.env.CI && process.platform === 'linux'
-  ? ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing'] : [];
 
 // Re-exec under Electron-as-Node so the final better-sqlite3 check matches the
 // app ABI (same pattern as every other script in this suite). Playwright then
@@ -112,9 +109,6 @@ async function closeElectronApp(instance) {
 }
 
 let app = null;
-let page = null;
-const pageErrors = [];
-const consoleMessages = [];
 try {
   // The child must run as a real GUI app: strip the runner's as-Node flag.
   const childEnv = {
@@ -132,7 +126,6 @@ try {
   app = await electron.launch({
     executablePath: packagedExecutable || require('electron'),
     args: [
-      ...ciGpuArgs,
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
       ...(packagedExecutable ? [] : [repoRoot]),
@@ -142,14 +135,16 @@ try {
   if (packagedExecutable) console.log(`[e2e] packaged executable: ${packagedExecutable}`);
 
   // ── Window + renderer mount ─────────────────────────────────────────────────
-  page = await app.firstWindow();
+  const page = await app.firstWindow();
   page.setDefaultTimeout(30_000);
+  const pageErrors = [];
   page.on('pageerror', (err) => {
     pageErrors.push(err);
     process.stderr.write(`[e2e][pageerror] ${err?.stack ?? err}\n`);
   });
   // Kept so the tutorial walk can prove the CSP actually admits the video embed: a
   // blocked frame never attaches, it only logs "Refused to frame …".
+  const consoleMessages = [];
   page.on('console', (message) => { consoleMessages.push(message.text()); });
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => {
@@ -157,18 +152,6 @@ try {
     return !!root && root.children.length > 0;
   }, { timeout: 30_000 });
   console.log('[e2e] renderer mounted');
-  if (process.env.CI && process.platform === 'linux') {
-    const graphics = await page.evaluate(() => {
-      const gl = document.createElement('canvas').getContext('webgl2');
-      if (!gl) return null;
-      const debug = gl.getExtension('WEBGL_debug_renderer_info');
-      const renderer = gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
-      gl.getExtension('WEBGL_lose_context')?.loseContext();
-      return { renderer };
-    });
-    assert.ok(graphics, 'the Linux runner supplies a real WebGL2 context');
-    console.log('[e2e] Linux graphics:', graphics);
-  }
 
   // Suppress the "what's new" modal: a fresh profile has no last-seen version, so it
   // would otherwise overlay the app and intercept later clicks. localStorage persists
@@ -1238,16 +1221,12 @@ try {
   await page.getByTestId('toolkit-app-fullscreen').locator('[data-testid="toolkit-app-iframe"]').waitFor();
   await page.getByTestId('toolkit-app-fullscreen-close').click();
   assert.equal(await page.getByTestId('toolkit-app-fullscreen').count(), 0, 'bundled apps can enter and leave the full-screen view');
-  // Leaving fullscreen mounts a new iframe. Its heading renders before the
-  // asynchronous storage hydration; wait for the restored setup before editing.
-  await distributorFrame.getByText('Hay 0 temas activos para 4 grupos. Añade o activa 4 más.', { exact: true }).waitFor();
   assert.equal(await distributorFrame.getByRole('button', { name: 'Generar asignaciones' }).isDisabled(), true, 'assignments require enough active topics');
   await distributorFrame.locator('#group-count').fill('4');
   await distributorFrame.locator('#group-count').press('Tab');
   for (const topic of ['Tema uno', 'Tema dos', 'Tema tres']) {
     await distributorFrame.getByPlaceholder('Ej. Energías renovables').fill(topic);
     await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).click();
-    await distributorFrame.getByRole('button', { name: `Eliminar ${topic}`, exact: true }).waitFor();
   }
   await distributorFrame.getByPlaceholder('Ej. Tema de recuperación').fill('Tema excepcional');
   await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).click();
@@ -3067,13 +3046,7 @@ try {
   await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-map-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-relations').click();
-  const relationsView = page.getByTestId('primary-sources-relations-view');
-  await relationsView.waitFor({ timeout: 30_000 }).catch(async (error) => {
-    console.error('[e2e] relations render diagnostics', consoleMessages.slice(-12), pageErrors.map((entry) => entry.stack));
-    console.error(await page.evaluate(() => document.body.innerText.slice(-2000)).catch(() => 'No renderer DOM'));
-    throw error;
-  });
-  await relationsView.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
+  await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-relations-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-search').click();
   await page.getByTestId('primary-sources-search-input').fill('San Martín');
@@ -4605,19 +4578,6 @@ try {
   console.log(`[e2e] database at schema v${version}`);
 
   console.log('e2e smoke test passed');
-} catch (error) {
-  if (page && !page.isClosed()) {
-    console.error('[e2e] recent renderer console:', consoleMessages.slice(-20));
-    for (const frame of page.frames()) {
-      console.error('[e2e] failure frame state:', await frame.evaluate(() => ({
-        text: document.body?.innerText.slice(-9000),
-        inputs: Array.from(document.querySelectorAll('input')).map(input => ({
-          id: input.id, value: input.value, valid: input.validity.valid,
-        })),
-      })).catch(() => 'frame detached'));
-    }
-  }
-  throw error;
 } finally {
   if (app) await closeElectronApp(app);
   await rm(userData, { recursive: true, force: true });

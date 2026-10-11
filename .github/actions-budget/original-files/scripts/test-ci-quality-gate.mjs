@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { createPlan, discoverTests, validatePlan, validateReports, fileConcurrency, e2eReservationMs, e2eShard, browserFixtures, isAllowedSkip } from './ci-test-shards.mjs';
+import { createPlan, discoverTests, validatePlan, validateReports, fileConcurrency, e2eReservationMs, e2eShard, browserFixtures } from './ci-test-shards.mjs';
 import { createBuildManifest, verifyBuildManifest } from './ci-build-artifact.mjs';
 import { createNativeManifest, verifyNativeManifest } from './ci-native-artifact.mjs';
 import { preparedComponentStyles } from './lib/component-test-styles.mjs';
@@ -86,23 +86,13 @@ test('a new skip, unavailable browser, or unreported skipped check fails the gat
   assert.throws(() => validateReports(plan, reports), /New skipped check/);
 });
 
-test('the existing baseline skips retain their exact reasons', () => {
+test('only the two existing baseline skip reasons are accepted', () => {
   const reports = successfulReports();
   reports[0].summary.counts.skipped = 1;
   reports[0].skips = [{ file: 'scripts/test-skill-glyph.mjs', name: 'every published skill has an icon the application can draw', reason: 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR' }];
   validateReports(plan, reports);
   reports[0].skips[0].reason = 'another failure';
   assert.throws(() => validateReports(plan, reports), /New skipped check/);
-});
-
-test('only named native macOS cases can be deferred on Linux, never on a macOS release', () => {
-  const skip = { file: 'scripts/test-calendar-integrations.mjs', name: 'macOS service keeps vaults isolated, persists opt-in, preserves events on disable and retries on restart', reason: true };
-  assert.equal(isAllowedSkip(skip, 'linux'), true);
-  assert.equal(isAllowedSkip(skip, 'darwin'), false);
-  assert.equal(isAllowedSkip(skip, 'win32'), false);
-  assert.equal(isAllowedSkip({ ...skip, file: 'scripts/test-other.mjs' }, 'linux'), false);
-  assert.equal(isAllowedSkip({ ...skip, reason: 'missing dependency' }, 'linux'), false);
-  assert.equal(isAllowedSkip({ ...skip, name: 'new skipped test' }, 'linux'), false);
 });
 
 test('real child processes report every file, propagate assertion failures, and reject new skips', { timeout: 30_000 }, () => {

@@ -97,7 +97,7 @@ test('the uploader expects the names the builder produces', () => {
 
 test('the release workflow verifies the same names before publishing', () => {
   const workflow = read('.github/workflows/release-build.yml');
-  for (const name of PUBLISHED.filter((target) => target.ext !== 'zip' && !(target.os === 'mac' && target.arch === 'x64')).map((target) => target.name)) {
+  for (const name of PUBLISHED.filter((target) => target.ext !== 'zip').map((target) => target.name)) {
     assert.ok(workflow.includes(name), `the release workflow must verify ${name}`);
   }
 });
@@ -106,13 +106,11 @@ test('the download links the public actually clicks resolve to these names', () 
   const base = 'https://github.com/jorgepb96/nodus/releases/latest/download/';
   const page = read('site/app/index.html');
   for (const name of ['Nodus-mac-arm64.dmg', 'Nodus-mac-x64.dmg', 'Nodus-win-x64.exe', 'Nodus-linux-amd64.deb', 'Nodus-linux-x86_64.AppImage', 'Nodus-linux-x86_64.rpm']) {
-    const assetBase = name === 'Nodus-mac-x64.dmg' ? 'https://github.com/jorgepb96/nodus/releases/download/v5.8.1/' : base;
-    assert.ok(page.includes(`${assetBase}${name}`), `site/app/index.html links ${name}`);
+    assert.ok(page.includes(`${base}${name}`), `site/app/index.html links ${name}`);
   }
   const readme = read('README.md');
   for (const name of ['Nodus-mac-arm64.dmg', 'Nodus-mac-x64.dmg']) {
-    const assetBase = name === 'Nodus-mac-x64.dmg' ? 'https://github.com/jorgepb96/nodus/releases/download/v5.8.1/' : base;
-    assert.ok(readme.includes(`${assetBase}${name}`), `README.md links ${name}`);
+    assert.ok(readme.includes(`${base}${name}`), `README.md links ${name}`);
   }
 });
 
@@ -123,7 +121,7 @@ test('every README download counter reads a count the deploy publishes', () => {
   // "no result" instead of failing, so the two sides are checked against each other.
   const base = 'https://github.com/jorgepb96/nodus/releases/latest/download/';
   const readme = read('README.md');
-  const rows = readme.split('\n').filter((line) => line.includes('https://github.com/jorgepb96/nodus/releases/'));
+  const rows = readme.split('\n').filter((line) => line.includes(base));
 
   const ROW_KEYS = [
     { name: 'Nodus-mac-arm64.dmg', key: 'macosArm64' },
@@ -137,8 +135,7 @@ test('every README download counter reads a count the deploy publishes', () => {
     'every count the deploy publishes belongs to a row of the download table');
 
   for (const { name, key } of ROW_KEYS) {
-    const assetBase = name === 'Nodus-mac-x64.dmg' ? 'https://github.com/jorgepb96/nodus/releases/download/v5.8.1/' : base;
-    const row = rows.filter((line) => line.includes(`${assetBase}${name}`));
+    const row = rows.filter((line) => line.includes(`${base}${name}`));
     assert.equal(row.length, 1, `README.md offers ${name} in exactly one row`);
     assert.ok(row[0].includes(`query=%24.installers.${key}`),
       `the ${name} row counts $.installers.${key}`);

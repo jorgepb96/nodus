@@ -19,22 +19,6 @@ const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
 ]);
-// These nine native macOS cases run as mandatory release checks on Apple
-// silicon. Linux still runs their files and every platform-independent case.
-const macOnlySkips = new Map([
-  ['unsigned macOS updates survive force quit and report interrupted installation', 'scripts/test-unsigned-mac-update.mjs'],
-  ['macOS Multipeer transport completes the native peer protocol', 'scripts/test-presenter-multipeer.mjs'],
-  ['macOS service keeps vaults isolated, persists opt-in, preserves events on disable and retries on restart', 'scripts/test-calendar-integrations.mjs'],
-  ['THE USER-VISIBLE BUG: the released helper cannot install a renamed bundle', 'scripts/test-mac-bundle-name.mjs'],
-  ['the current helper installs a renamed bundle, so this cannot recur after 4.2.4', 'scripts/test-mac-bundle-name.mjs'],
-  ['a released helper installs the bundle name we are about to ship', 'scripts/test-mac-bundle-name.mjs'],
-  ['the update does not leave a second application behind', 'scripts/test-mac-bundle-name.mjs'],
-  ['macOS denies outside writes, descendant writes and forbidden network connections', 'scripts/test-research-isolation.mjs'],
-  ['explicit disposable endpoints are reachable while all other network destinations are denied', 'scripts/test-research-isolation.mjs'],
-]);
-export const isAllowedSkip = (skip, platform = process.platform) =>
-  (allowedSkips.has(skip.name) && allowedSkips.get(skip.name) === skip.reason) ||
-  (platform === 'linux' && skip.reason === true && macOnlySkips.get(skip.name) === skip.file);
 export const commitAt = (root) => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 export const discoverTests = (root) => fs.readdirSync(path.join(root, 'scripts'), { withFileTypes: true })
   .filter(entry => entry.isFile() && /^test-.*\.mjs$/.test(entry.name))
@@ -79,7 +63,7 @@ export function validatePlan(plan, files, commit) {
   assert.deepEqual(assigned.sort(), [...files].sort(), 'A test file was omitted');
 }
 
-export function validateReports(plan, reports, platform = process.platform) {
+export function validateReports(plan, reports) {
   assert.equal(reports.length, plan.shards.length, 'Missing shard report');
   assert.equal(new Set(reports.map(r => r.index)).size, reports.length, 'Duplicate shard report');
   for (const shard of plan.shards) {
@@ -97,7 +81,7 @@ export function validateReports(plan, reports, platform = process.platform) {
     assert.equal(report.summary.counts.todo, 0);
     assert.equal(report.summary.counts.skipped, report.skips.length, 'Unaccounted skipped tests');
     for (const skip of report.skips) {
-      assert.ok(isAllowedSkip(skip, platform), `New skipped check: ${skip.file}: ${skip.name}`);
+      assert.equal(allowedSkips.get(skip.name), skip.reason, `New skipped check: ${skip.file}: ${skip.name}`);
     }
   }
 }
@@ -140,7 +124,7 @@ export async function executeShard(plan, index, root, destination, output = proc
     report.success = Boolean(report.summary?.success) && report.completed.length === shard.files.length
       && report.completed.every(file => file.passed) && report.summary.counts.todo === 0
       && report.summary.counts.skipped === report.skips.length
-      && report.skips.every(skip => isAllowedSkip(skip));
+      && report.skips.every(skip => allowedSkips.get(skip.name) === skip.reason);
   } finally {
     writeJson(destination, report);
   }

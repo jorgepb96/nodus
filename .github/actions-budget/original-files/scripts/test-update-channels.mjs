@@ -120,17 +120,15 @@ test('stable and beta publication have isolated entry points and shared build lo
   assert.match(shared, /Beta release contains stable update manifest/);
   assert.match(shared, /--prerelease --latest=false/);
   assert.match(shared, /- os: macos-latest/, 'Apple silicon packaging runs on an ARM64 host for native optional dependencies');
-  assert.doesNotMatch(shared, /- os: macos-\d+-intel/, 'new releases do not consume an Intel runner');
+  assert.match(shared, /- os: macos-15-intel/, 'Intel packaging runs on an Intel host for native optional dependencies');
   assert.match(shared, /platform: '--mac --arm64'/, 'each macOS runner packs exactly one architecture');
-  assert.doesNotMatch(shared, /platform: '--mac --x64'/, 'new macOS releases are Apple silicon only');
-  // The audited manifest gate and all native builds must pass before publication.
-  assert.match(shared, /merge-mac-manifest:/, 'the supported macOS manifest is normalized before publication');
+  assert.match(shared, /platform: '--mac --x64'/, 'each macOS runner packs exactly one architecture');
+  // Neither macOS runner may publish <channel>-mac.yml: each one lists only its
+  // own files, so the second upload would decide which architecture can still
+  // update itself. One job merges them and publication waits for it.
+  assert.match(shared, /merge-mac-manifest:/, 'the two macOS manifests are merged into the published one');
   assert.match(shared, /needs\.merge-mac-manifest\.result == 'success'/, 'publication waits for the merged manifest');
   assert.match(shared, /merge-mac-update-manifest\.mjs/, 'the merge job runs the audited merger');
-  assert.match(shared, /uses: \.\/\.github\/workflows\/ci\.yml/, 'the release validates its exact tag with the complete Linux suite');
-  assert.match(shared, /needs: \[validate-release, quality-gate\]/, 'a failing quality gate prevents draft preparation');
-  assert.match(shared, /Verify platform-specific macOS contracts/);
-  assert.match(shared, /Verify Windows and macOS native migration and rollback/);
   assert.match(shared, /node node_modules\/electron\/install\.js/, 'release runners install Electron legal files before packaging');
   assert.match(shared, /gh release create[\s\S]*--draft/, 'the workflow creates one explicit draft before native builds');
   assert.match(shared, /upload-release-assets\.mjs/, 'all platforms upload to the explicit shared draft');

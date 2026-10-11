@@ -1,8 +1,7 @@
 import {_electron as electron} from 'playwright-core';
 import {createRequire} from 'node:module';import fs from 'node:fs';import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),root=process.cwd(),appVersion=require(root+'/package.json').version,profile=fs.mkdtempSync('/tmp/nodus-stellar-e2e-');fs.mkdirSync(root+'/work/stellar-preview',{recursive:true});
-const ciGpuArgs=process.env.CI&&process.platform==='linux'?['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing']:[];
-const app=await electron.launch({executablePath:require('electron'),args:[...ciGpuArgs,root],env:{...process.env,NODUS_USERDATA:profile,NODUS_STELLAR_PREVIEW:'1',NODUS_DISABLE_AUTO_UPDATE:'1',NODUS_DISABLE_ANNOUNCEMENTS:'1',NODUS_QA_ROOT:profile,NODUS_QA_DATABASE_AUDIT_LOG:profile+'/database-audit.jsonl'}});
+const app=await electron.launch({executablePath:require('electron'),args:[root],env:{...process.env,NODUS_USERDATA:profile,NODUS_STELLAR_PREVIEW:'1',NODUS_DISABLE_AUTO_UPDATE:'1',NODUS_DISABLE_ANNOUNCEMENTS:'1',NODUS_QA_ROOT:profile,NODUS_QA_DATABASE_AUDIT_LOG:profile+'/database-audit.jsonl'}});
 try{
 const page=await app.firstWindow();page.setDefaultTimeout(30000);const errors=[];page.on('pageerror',e=>errors.push(String(e)));
 await page.waitForFunction(()=>typeof window.nodus?.stellarPage==='function');

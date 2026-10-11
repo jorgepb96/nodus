@@ -207,7 +207,7 @@ export function NodeDetailPanel({
           <div>
             <Badge color="indigo">{t(NODE_LABELS[ideaDetail.idea.type as IdeaType]) ?? ideaDetail.idea.type}</Badge>
             <h3 className="font-semibold mt-2">{ideaDetail.idea.label}</h3>
-            <p className="text-neutral-400 mt-1">{ideaDetail.idea.statement}</p>
+            <p role="group" aria-label={t('Enunciado de la idea')} className="text-neutral-400 mt-1">{ideaDetail.idea.statement}</p>
           </div>
           {relations && relations.length > 0 && (
             <div>

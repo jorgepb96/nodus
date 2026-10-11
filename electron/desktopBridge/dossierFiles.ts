@@ -12,7 +12,7 @@ export function mobileDossierFiles(vaultId: string, domains: readonly string[], 
   if (Object.keys(input).some(key => !['collection','id'].includes(key)) || typeof id !== 'string' || !id || id.length > 1024) throw new Error('invalid_arguments');
   const db = getDb();
   const exists = (table: string, column: string) => Boolean(db.prepare(`SELECT 1 FROM ${table} WHERE ${column}=?`).get(id));
-  type File = {kind: string; id: string; title: string; available: boolean};
+  type File = {kind: string; id: string; title: string; available: boolean;mime?:string|null};
   let files: File[] = [], reader: ReturnType<typeof getLibraryReaderDocument> | undefined;
   if (collection === 'works') {
     if (!exists('works','nodus_id') && !listGlobalLibraryVaultLinks(id).some(link => link.vaultId === vaultId)) throw new Error('permission_denied');
@@ -39,11 +39,11 @@ export function mobileDossierFiles(vaultId: string, domains: readonly string[], 
       .map(row => ({kind:'studyMaterialVersion',id:row.id,title:row.title || 'Versión',available:Boolean(row.available)})));
   } else if (collection === 'databases') {
     if (!exists('db_databases','id')) throw new Error('record_not_found');
-    files = (db.prepare(`SELECT attachment.id, attachment.file_name AS title,
+    files = (db.prepare(`SELECT attachment.id, attachment.file_name AS title,attachment.mime_type AS mime,
       COALESCE(attachment.blob,blob.data) IS NOT NULL AS available FROM db_attachments AS attachment
       JOIN db_rows AS row ON row.id=attachment.row_id LEFT JOIN db_blobs AS blob ON blob.hash=attachment.blob_hash
-      WHERE row.database_id=? ORDER BY row.id, attachment.position, attachment.id`).all(id) as Array<{id:string;title:string;available:number}>)
-      .map(row => ({kind:'databaseAttachment',id:row.id,title:row.title || 'Archivo',available:Boolean(row.available)}));
+      WHERE row.database_id=? ORDER BY row.id, attachment.position, attachment.id`).all(id) as Array<{id:string;title:string;mime:string|null;available:number}>)
+      .map(row => ({kind:'databaseAttachment',id:row.id,title:row.title || 'Archivo',mime:row.mime,available:Boolean(row.available)}));
   } else if(collection==='pages'){
     const document=getPageDocumentReadOnly(id);if(!document)throw new Error('record_not_found');
     files=pageDocumentAssets(document);

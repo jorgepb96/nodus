@@ -27,6 +27,7 @@ void app.whenReady().then(async () => {
   const { createIpcContext } = await import('../electron/ipc/context');
   const context = createIpcContext(() => null);
   (await import('../electron/ipc/academic')).registerAcademicIpc(context);
+  (await import('../electron/ipc/chatHistory')).registerChatHistoryIpc(context);
   (await import('../electron/ipc/platform')).registerPlatformIpc(context);
   (await import('../electron/ipc/capabilities')).registerCapabilitiesIpc(context);
   (await import('../electron/ipc/library')).registerLibraryIpc(context);

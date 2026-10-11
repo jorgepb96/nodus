@@ -23,22 +23,19 @@ import type {
   StudyAssistantSourceOption,
 } from '@shared/studyAssistant';
 import {
-  compressStudyAssistantEvidence,
-  studyAssistantSourceKey,
   titleFromStudyQuestion,
   validateStudyAssistantAnswer,
 } from '@shared/studyAssistant';
-import type { StudySearchIndexEntry, StudySearchOptions } from '@shared/studySearch';
+import type { StudySearchOptions } from '@shared/studySearch';
 import type { PromptLanguage } from '@shared/types';
+import {buildStudyChatPrompt} from '@shared/studyChatPrompt';
+import {makeStudyChatCitations} from '@shared/mobileStudyChat';
 import { studyAssistantDemoSourceTitle, studyAssistantPromptPack } from '../../shared/studyAssistantPromptPacks';
 import { getSettings } from '../db/settingsRepo';
 import { normalizeStudySelection, readStudyChatStore, writeStudyChatStore } from './studyChatHistory';
 import { completeTextStream, resolveModelRef } from './aiClient';
 import { listStudyAssistantSourceOptions, retrieveStudyAssistantEntries } from './studySearch';
 
-const MAX_HISTORY_MESSAGES = 12;
-const MAX_CONTEXT_CHARS = 52_000;
-const MAX_SOURCE_CHARS = 3_600;
 /** One seeded conversation per demo vault; the id prefix is what `clear` matches on. */
 const DEMO_CONVERSATION_IDS = { study: 'demo-study-chat-membrane', teaching: 'demo-teaching-chat-commentary' } as const;
 type StudyChatDemoVariant = keyof typeof DEMO_CONVERSATION_IDS;
@@ -211,40 +208,11 @@ async function buildCitations(question: string, selection: StudyAssistantSelecti
   if (selection.scope === 'manual' && selection.sourceKeys.length === 0) return { citations: [], truncated: false };
   const manualKeys = selection.scope === 'manual' ? selection.sourceKeys : [];
   const entries = await retrieveStudyAssistantEntries(question, searchOptions(selection), manualKeys, 20);
-  const citations: StudyAssistantCitation[] = [];
-  let chars = 0; let truncated = entries.length >= 20;
-  for (const entry of entries) {
-    if (entry.kind === 'transcript' && !mobileDomainAllowed('study-recordings')) continue;
-    if (chars >= MAX_CONTEXT_CHARS) { truncated = true; break; }
-    const compressed = compressStudyAssistantEvidence(entry.text, question, Math.min(MAX_SOURCE_CHARS, MAX_CONTEXT_CHARS - chars));
-    if (!compressed.text) continue;
-    const id = `S${citations.length + 1}`;
-    citations.push(toCitation(id, entry, compressed.text));
-    chars += compressed.text.length;
-    truncated ||= compressed.truncated;
-  }
-  return { citations, truncated };
+  return makeStudyChatCitations(entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),question);
 }
 
-function toCitation(id: string, entry: StudySearchIndexEntry, quote: string): StudyAssistantCitation {
-  return {
-    id, sourceKey: studyAssistantSourceKey(entry.kind, entry.sourceId), indexId: entry.indexId, kind: entry.kind,
-    sourceId: entry.sourceId, title: entry.title, subtitle: entry.subtitle, quote, location: entry.location, scope: entry.scope,
-  };
-}
-
-export function buildStudyAssistantPrompt(request: StudyAssistantRequest, citations: StudyAssistantCitation[]): { system: string; user: string } {
-  const history = request.messages.filter((message) => message.content.trim()).slice(-MAX_HISTORY_MESSAGES);
-  const sources = citations.map((citation) => ({
-    id: citation.id, title: citation.title, type: citation.kind, location: citation.location, exact_fragment: citation.quote,
-  }));
-  const selectedLanguage = effectivePromptLanguage(request.language);
-  const pack = studyAssistantPromptPack(selectedLanguage);
-  const language = request.language === 'auto' ? pack.responseLanguage : selectedLanguage;
-  const external = request.allowExternalKnowledge ? pack.system.externalAllowed : pack.system.externalForbidden;
-  const system = [pack.system.intro, '', pack.system.rulesHeading, `- ${pack.system.corpus}`, `- ${pack.system.cite}`, `- ${pack.system.exact}`, `- ${external}`, `- ${pack.system.contradiction}`, `- ${pack.system.language(language, request.level, request.tone)}`, `- ${pack.system.markdown} ${pack.taskInstruction[request.task]}`].join('\n');
-  const user = JSON.stringify({ fuentes_seleccionadas: sources, conversacion: history.map(({ role, content }) => ({ role, content: role === 'assistant' ? chatProseForHistory(content) : content })) }, null, 2);
-  return { system, user };
+export function buildStudyAssistantPrompt(request:StudyAssistantRequest,citations:StudyAssistantCitation[]) {
+  return buildStudyChatPrompt(request,citations,promptLanguage(getSettings().promptLanguage));
 }
 
 export async function streamStudyAssistant(

@@ -1404,6 +1404,12 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('study:knowledge:progress', async () => getStudyKnowledgeProgress());
   h('study:knowledge:reanalyze', async (_e, sourceKind: 'material' | 'document', sourceId: string) => reanalyzeStudyKnowledgeSource(sourceKind, sourceId));
   h('study:assistant:sources', async () => studyAssistant.getStudyAssistantSources());
+  h('study:assistant:mobileSources',async (_e,selection:unknown)=>studySearch.getMobileStudyChatSourcePack(selection));
+  h('study:assistant:mobileCatalogue',async ()=>{
+    const workspace=studyOrg.getStudyWorkspace();
+    const named=(rows:Array<{id:string;name:string}>)=>rows.map(({id,name})=>({id,name}));
+    return {version:1,courses:named(workspace.courses),subjects:named(workspace.subjects),topics:named(workspace.topics),sources:studyAssistant.getStudyAssistantSources()};
+  });
   h('study:assistant:list', async (_e, includeArchived?: boolean) => studyAssistant.listStudyAssistantConversations(Boolean(includeArchived)));
   h('study:assistant:get', async (_e, id: string) => studyAssistant.getStudyAssistantConversation(id));
   h('study:assistant:create', async (_e, input?: StudyAssistantConversationInput) => studyAssistant.createStudyAssistantConversation(input));

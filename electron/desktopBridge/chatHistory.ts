@@ -13,6 +13,8 @@ import type { StudyAssistantMessage } from '../../shared/studyAssistant';
 import { deleteResearchAttachments } from '../researchAttachments';
 import { chatAssetOwner,deleteChatAssets } from '../chatAssets';
 import { withMobileOperation } from './executionBoundary';
+import {normalizeMobileStudyChatOptions} from '../../shared/mobileStudyChat';
+import {verifyStudyChatCitation} from './studyChatEvidence';
 
 export class MobileChatFailure extends Error {
   constructor(public readonly status: number, public readonly code: string, public readonly remote?: MobileChatDocument) { super(code); }
@@ -77,8 +79,10 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   }
   if(raw.expectedRevision===null&&!uuid(raw.conversationId)) throw new MobileChatFailure(400,'invalid_chat_creation');
   const draft = raw.draft;
-  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
+  if (!object(draft) || Object.keys(draft).some(key=>!['title','archived','messages','databaseIds','study','studyEvidence'].includes(key)) || typeof draft.title !== 'string' || draft.title.length > 4096 || typeof draft.archived !== 'boolean' || !Array.isArray(draft.messages) || draft.messages.length > 100_000 || raw.companion != null && !object(raw.companion)) throw new MobileChatFailure(400,'invalid_chat_edit');
   if(draft.databaseIds!==undefined && (kind!=='database'||!Array.isArray(draft.databaseIds)||draft.databaseIds.length>30||new Set(draft.databaseIds).size!==draft.databaseIds.length||draft.databaseIds.some(id=>typeof id!=='string'||!getDatabase(id))))throw new MobileChatFailure(400,'invalid_chat_database_selection');
+  if(draft.study!==undefined){if(kind!=='study')throw new MobileChatFailure(400,'invalid_study_chat_options');try{normalizeMobileStudyChatOptions(draft.study as Parameters<typeof normalizeMobileStudyChatOptions>[0]);}catch{throw new MobileChatFailure(400,'invalid_study_chat_options');}}
+  if(draft.studyEvidence!==undefined&&(kind!=='study'||!object(draft.studyEvidence)))throw new MobileChatFailure(400,'invalid_study_chat_evidence');
   const old = Array.isArray(current?.data.messages) ? current!.data.messages as Array<Record<string,unknown>> : [];
   const ids = new Set<string>();
   draft.messages.forEach((message,index)=>{
@@ -92,7 +96,16 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
     // unchanged rich turns retain their exact original record and assets.
     const original = message.id ? old.find(item=>item.id===message.id) : old[index];
     const rich = (item:Record<string,unknown>)=>Object.fromEntries(Object.entries(item).filter(([key])=>!['id','role','content','createdAt','error','interrupted'].includes(key)));
-    if (Object.keys(rich(message)).length && (!original || canonicalJson(rich(original)) !== canonicalJson(rich(message)))) throw new MobileChatFailure(400,'chat_rich_turn_changed');
+    if(!original&&kind==='study'&&Array.isArray(message.citations)) {
+      if(message.role!=='assistant'||!uuid(message.id)||Object.keys(rich(message)).some(key=>key!=='citations'))throw new MobileChatFailure(400,'chat_rich_turn_changed');
+      const question=[...draft.messages.slice(0,index)].reverse().find(item=>object(item)&&item.role==='user');
+      const proofs=object(draft.studyEvidence)?draft.studyEvidence[message.id]:undefined;
+      const cited=new Set<string>();
+      for(const citation of message.citations) {
+        if(!object(citation)||typeof citation.id!=='string'||cited.has(citation.id)||!object(proofs)||!object(proofs[citation.id])||!question||!verifyStudyChatCitation(citation as unknown as Parameters<typeof verifyStudyChatCitation>[0],proofs[citation.id] as unknown as Parameters<typeof verifyStudyChatCitation>[1],String(question.content)))throw new MobileChatFailure(400,'invalid_study_chat_evidence');
+        cited.add(citation.id);
+      }
+    } else if (Object.keys(rich(message)).length && (!original || canonicalJson(rich(original)) !== canonicalJson(rich(message)))) throw new MobileChatFailure(400,'chat_rich_turn_changed');
     if (original && canonicalJson(rich(original)) !== canonicalJson(rich(message))) throw new MobileChatFailure(400,'chat_rich_turn_changed');
   });
   return raw as unknown as MobileChatEdit;
@@ -137,7 +150,7 @@ export async function saveMobileChat(vaultId: string,grantId: string,kind: strin
       } else if(kind==='study') {
         const now=new Date().toISOString();
         const existing=store!.conversations.find(item=>item.id===request.conversationId);
-        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
+        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study??{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
         if(next.archived) next.pinnedAt=null;
         store!.conversations=store!.conversations.filter(item=>item.id!==next.id);store!.conversations.push(next as StudyAssistantStore['conversations'][number]);
       } else {

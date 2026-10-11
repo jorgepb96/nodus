@@ -149,7 +149,7 @@ export const MOBILE_OPERATIONS = {
   listDatabaseChatConversations: ['db:chatHistory:list','corpus'], getDatabaseChatConversation: ['db:chatHistory:get','corpus'],
   createDatabaseChatConversation: ['db:chatHistory:create','writing'], saveDatabaseChatConversation: ['db:chatHistory:save','writing'],
   deleteDatabaseChatConversation: ['db:chatHistory:delete','writing'], dbChatStream: ['db:chatStream','research-generation'],
-  listStudyAssistantSources: ['study:assistant:sources','corpus'], getStudyMaterial: ['study:materials:get','corpus'],
+  listStudyAssistantSources: ['study:assistant:sources','corpus'], getMobileStudyChatSourcePack: ['study:assistant:mobileSources','corpus'], getMobileStudyChatCatalogue: ['study:assistant:mobileCatalogue','corpus'], getStudyMaterial: ['study:materials:get','corpus'],
   createStudyFolder: ['study:folder:create','writing'], updateStudyEntity: ['study:entity:update','writing'],
   listStudyAssistantConversations: ['study:assistant:list','corpus'], getStudyAssistantConversation: ['study:assistant:get','corpus'],
   createStudyAssistantConversation: ['study:assistant:create','writing'], updateStudyAssistantConversation: ['study:assistant:update','writing'],

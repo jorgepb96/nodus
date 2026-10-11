@@ -3,6 +3,9 @@ import {composeDatabaseChatSources,type DatabaseChatSource} from './databaseChat
 import {databaseChatSystem,buildDbChatUser,type DbChatTurn} from './databaseChat';
 import {chatProseForHistory} from './chatSkills';
 import type {PromptLanguage} from './types';
+export {prepareStudyChat} from './mobileStudyChat';
+export {validateMobileStudyChatSourcePack} from './mobileStudyChat';
+export {validateStudyAssistantAnswer} from './studyAssistant';
 
 /** Runs only the existing deterministic, provider-free Desktop context writers.
  * Native SwiftUI owns navigation, source choice, streaming and durable history. */

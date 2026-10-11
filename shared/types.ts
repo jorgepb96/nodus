@@ -7353,6 +7353,8 @@ export interface SupportAuditEntry {
 }
 
 export interface WritingWorkshopDraft {
+  /** A device publication receipt is distinct from generated citations or quality checks. */
+  mobileGenerationReceipt?: {requestId: string; inputHash: string; sourceScope: 'linked_corpus' | 'device_downloads'};
   claimLedger?: import('./researchClaimAudit').ResearchClaimRecord[];
   researchTraversal?: import('./researchCorpus').ResearchTraversal;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;

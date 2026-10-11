@@ -58,6 +58,9 @@ export const MOBILE_OPERATIONS = {
   getStudyImprovementGenerationContext: ['study:improve:mobile:context', 'corpus'],
   getStudyImprovementOfflineSource: ['study:improve:mobile:offlineSource', 'corpus'],
   saveStudyImprovementFromMobile: ['study:improve:mobile:save', 'writing'],
+  getWritingWorkshopMobileSource: ['writing:mobile:source', 'corpus'],
+  getWritingWorkshopMobileCatalogue: ['writing:mobile:catalogue', 'corpus'],
+  saveWritingWorkshopFromMobile: ['writing:mobile:save', 'writing'],
   createNote: ['notes:create', 'writing'], updateWorkspaceNote: ['workspace:editor:update', 'writing'],
   createManualIdea: ['manualIdeas:create', 'writing'], deleteNotesPermanently: ['notes:deletePermanently', 'writing'],
   saveManualIdea: ['manualIdeas:save', 'writing'], getManualIndexStatus: ['manualIdeas:indexStatus', 'corpus'], searchIdeaCandidates: ['manualIdeas:searchCandidates', 'corpus'],
@@ -125,7 +128,7 @@ export const MOBILE_OPERATIONS = {
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf',
-  'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
+  'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
   'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',
   'researchChat', 'researchChatStream', 'improveStudyText', 'buildArgumentMap', 'scanDictionaryNewEvidence', 'generateConversationTitle',
 ]);

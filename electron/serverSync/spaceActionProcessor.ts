@@ -9,6 +9,7 @@ import type {
   WritingWorkshopKind,
   WritingWorkshopSelection,
 } from '@shared/types';
+import {PROMPT_LANGUAGES} from '@shared/types';
 import { buildArgumentMap } from '../ai/argumentMap';
 import { synthesizeAuthorDossier } from '../ai/authorDossier';
 import { enqueueDeepResearchJob } from '../ai/deepResearchQueue';
@@ -154,7 +155,7 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
       const toneValue = optionalText(payload, 'tone') ?? 'academic';
       if (!['academic', 'synthetic', 'critical', 'exploratory'].includes(toneValue)) throw new Error('bad_writing_tone');
       const language = optionalText(payload, 'language') ?? 'es';
-      if (!['es', 'en', 'fr', 'tr'].includes(language)) throw new Error('bad_writing_language');
+      if (!(PROMPT_LANGUAGES as readonly string[]).includes(language)) throw new Error('bad_writing_language');
       const brief: WritingWorkshopBrief = {
         kind,
         objective: text(payload, 'objective'),

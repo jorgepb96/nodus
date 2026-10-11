@@ -228,9 +228,9 @@ export function countWritingWorkshopDrafts(kind?: WritingWorkshopKind): number {
   return row.total;
 }
 
-export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest): WritingWorkshopSavedDraft {
+export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest, identity?: string): WritingWorkshopSavedDraft {
   const now = new Date().toISOString();
-  const id = uuid();
+  const id = identity ?? uuid();
   const title = request.title?.trim() || request.draft.title.trim() || 'Borrador sin título';
   getDb()
     .prepare(

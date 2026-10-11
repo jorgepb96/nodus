@@ -1,4 +1,5 @@
 import { exportAcademicDocument, inspectAcademicDocument } from '../export/academicExport';
+import {mobileWritingWorkshopSource, mobileWritingWorkshopCatalogue, saveMobileWritingWorkshop} from '../ai/mobileWritingWorkshop';
 import * as preparationExperience from '../ai/researchPreparationExperience';
 import { onDocumentaryPreparationChanged } from '../ai/documentaryPreparationEvents';
 import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
@@ -1805,6 +1806,13 @@ export function registerAcademicIpc(context: IpcContext): void {
 
   // writing workshop
   h('writing:snapshot', async (_e, brief: WritingWorkshopBrief) => buildWritingWorkshopSnapshot(brief));
+  h('writing:mobile:source', async (_e, selection) => mobileWritingWorkshopSource(selection));
+  h('writing:mobile:catalogue', async (_e, input) => mobileWritingWorkshopCatalogue(input));
+  h('writing:mobile:save', async (_e, input) => {
+    const saved = await saveMobileWritingWorkshop(input);
+    announceWritingDrafts();
+    return saved;
+  });
   h('writing:draft', async (_e, request: WritingWorkshopDraftRequest) => generateWritingWorkshopDraft(request));
   h('writing:export', async (_e, request: WritingWorkshopExportRequest) => exportWritingWorkshopDraft(request));
   h('writing:exportZip', async (e, requestId: string, request: DeepResearchArchiveRequest) =>

@@ -6,6 +6,7 @@ import {Markdown} from '../components/Markdown';
 import {anchorFromRange,findAnchoredText,invalidateReaderTextIndex,rangeFromOffsets,readerTextIndex,type ReaderAnchor} from '../components/ReaderSelectionActions';
 import {setActiveLang} from '../i18n';
 import type {AppSettings} from '@shared/types';
+import {ReaderResourceQueue} from './readerResourceQueue';
 
 interface Annotation extends ReaderAnchor {id:string;kind:'highlight'|'comment'|'bookmark';color:string|null}
 interface Input {source:string;language:AppSettings['uiLanguage'];dark:boolean;accent:string;fontSize:number;justify:boolean;annotations:Annotation[];highlighter:string|null;search:Array<{location:number;length:number}>;activeSearch:{location:number;length:number}|null;searchAim:number;bookmarkAim:number;legacyBookmark?:{selectedText:string;startOffset:number;endOffset:number;prefix:string;suffix:string}|null}
@@ -13,7 +14,15 @@ const native=window as unknown as {webkit:{messageHandlers:{proseRead:{postMessa
 let sequence=0,current:Input,root:HTMLElement|null=null,searchAim=0,bookmarkAim=0,legacyMigrated=false;
 const pending=new Map<string,{resolve:(value:any)=>void;reject:(error:Error)=>void}>();
 function send(method:string,value:unknown=null){native.webkit.messageHandlers.proseRead.postMessage({method,value});}
-function call(method:string,value:unknown){return new Promise<any>((resolve,reject)=>{if(pending.size>=256){reject(new Error('Hay demasiadas imágenes cargándose.'));return;}const id=String(++sequence),timer=setTimeout(()=>{pending.delete(id);reject(new Error('La imagen no ha respondido.'));},30000);pending.set(id,{resolve:value=>{clearTimeout(timer);resolve(value);},reject:error=>{clearTimeout(timer);reject(error);}});native.webkit.messageHandlers.proseRead.postMessage({id,method,value});});}
+function call(method:string,value:unknown,signal:AbortSignal){return new Promise<any>((resolve,reject)=>{
+  if(signal.aborted){reject(signal.reason??new DOMException('Lectura cancelada','AbortError'));return;}
+  const id=String(++sequence);
+  const cleanup=()=>{clearTimeout(timer);signal.removeEventListener('abort',abort);pending.delete(id);};
+  const abort=()=>{cleanup();send('cancelImage',id);reject(signal.reason??new DOMException('Lectura cancelada','AbortError'));};
+  const timer=setTimeout(()=>{cleanup();send('cancelImage',id);reject(new Error('La imagen no ha respondido.'));},30000);
+  pending.set(id,{resolve:value=>{cleanup();resolve(value);},reject:error=>{cleanup();reject(error);}});
+  signal.addEventListener('abort',abort,{once:true});native.webkit.messageHandlers.proseRead.postMessage({id,method,value});
+});}
 native.nodusProseReply=(id,result,error)=>{const item=pending.get(id);if(!item)return;pending.delete(id);if(error)item.reject(new Error(error));else item.resolve(result);};
 const colors:Record<string,string>={yellow:'#fde68a',rose:'#fecdd3',blue:'#bfdbfe',mint:'#bbf7d0',lavender:'#ddd6fe',peach:'#fed7aa'};
 function rect(range:Range){const value=range.getBoundingClientRect();return {x:value.x,y:value.y,width:value.width,height:value.height};}
@@ -67,13 +76,22 @@ function Document({input}:{input:Input}){
   const ref=useRef<HTMLDivElement>(null);
   useLayoutEffect(()=>{
     root=ref.current;if(!root)return;legacyMigrated=false;searchAim=0;bookmarkAim=0;
+    const host=root,controller=new AbortController(),resources=new ReaderResourceQueue(4);
     root.querySelectorAll('.katex-mathml').forEach(node=>node.setAttribute('data-reader-ignore','true'));
     root.querySelectorAll('table').forEach(table=>{const heads=Array.from(table.querySelectorAll('thead th'));if(heads.length>3)table.dataset.mobileColumns=String(heads.length);table.querySelectorAll('tbody tr').forEach(row=>row.querySelectorAll('td').forEach((cell,index)=>cell.setAttribute('data-column-label',heads[index]?.textContent??String(index+1))));});
     invalidateReaderTextIndex(root);send('text',readerTextIndex(root).content);paint();measure();
     const resize=new ResizeObserver(measure);resize.observe(root);
-    root.querySelectorAll('img').forEach(image=>{
+    host.querySelectorAll('img').forEach(image=>{
       const source=image.getAttribute('src');if(!source)return;image.removeAttribute('src');image.dataset.proseSource=source;
-      void call('image',source).then(value=>{if(!image.isConnected)return;image.src=`data:${value.mime};base64,${value.data}`;image.addEventListener('click',()=>send('openImage',{source,title:image.alt}));image.setAttribute('tabindex','0');image.setAttribute('role','button');image.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();send('openImage',{source,title:image.alt});}});}).catch(error=>{if(image.isConnected){const label=document.createElement('button');label.dataset.readerIgnore='true';label.className='prose-image-error';label.textContent=`${image.alt||'Imagen'}: ${error.message}. Reintentar`;label.onclick=()=>{label.remove();void call('image',source).then(value=>{image.src=`data:${value.mime};base64,${value.data}`;image.onclick=()=>send('openImage',{source,title:image.alt});}).catch(error=>send('issue',error.message));};image.after(label);}measure();});
+      const valid=()=>!controller.signal.aborted&&image.isConnected&&host.contains(image)&&image.dataset.proseSource===source;
+      const open=()=>{if(valid())send('openImage',{source,title:image.alt});};
+      image.onclick=open;image.setAttribute('tabindex','0');image.setAttribute('role','button');image.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}};
+      const load=()=>{void resources.run(()=>call('image',source,controller.signal),controller.signal).then(value=>{
+        if(!valid())return;image.src=`data:${value.mime};base64,${value.data}`;measure();
+      }).catch(error=>{
+        if(!valid())return;const label=document.createElement('button');label.dataset.readerIgnore='true';label.className='prose-image-error';
+        label.textContent=`${image.alt||'Imagen'}: ${error.message}. Reintentar`;label.onclick=()=>{label.remove();if(valid())load();};image.after(label);measure();
+      });};load();
     });
     const clicked=(event:MouseEvent)=>{
       if((event.target as HTMLElement).closest('button,img'))return;
@@ -82,8 +100,8 @@ function Document({input}:{input:Input}){
       if(!getSelection()?.isCollapsed)return;
       const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(!caret)return;
       for(const item of current.annotations.filter(item=>item.kind==='highlight')){const range=resolve(item);if(range?.isPointInRange(caret.startContainer,caret.startOffset)){send('highlight',{id:item.id,rect:rect(range)});return;}}
-    };root.addEventListener('click',clicked);
-    return()=>{resize.disconnect();root?.removeEventListener('click',clicked);root=null;};
+    };host.addEventListener('click',clicked);
+    return()=>{controller.abort();resize.disconnect();host.removeEventListener('click',clicked);if(root===host)root=null;};
   },[input.source]);
   return <div ref={ref} className="prose-document" style={{fontSize:input.fontSize+'px',textAlign:input.justify?'justify':'start'} as CSSProperties}><Markdown content={imageMarkdown(input.source)} verify={false} allowDataImages localReaderImages
     onCitation={ref=>link(ref.kind,ref.id)} onWorldEntry={(kind,id)=>link('world/'+kind,id)}

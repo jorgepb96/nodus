@@ -38,7 +38,8 @@ try {
   const paired = await request('/bridge/v1/pair', 'POST', { code: offer.code, deviceId: randomUUID(), deviceName: 'HTTPS acceptance laboratory' }, 201);
   token = paired.token;
   const capabilities = await request('/bridge/v2/capabilities');
-  assert.equal((await request('/bridge/v2/health')).version, '5.8.0');
+  const desktopVersion = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+  assert.equal((await request('/bridge/v2/health')).version, desktopVersion, 'The running Bridge must match this Desktop checkout.');
   assert.equal(capabilities.protocolVersion, 2); assert.notEqual(capabilities.deviceId, 'default');
   const vault = capabilities.vaults.find(item => item.name === 'Principal'); assert(vault);
   const root = `/bridge/v2/vaults/${encodeURIComponent(vault.id)}`;

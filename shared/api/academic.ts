@@ -818,6 +818,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   // argument map (AI-traced hierarchical outline around a seed idea)
   /** Trace a hierarchical block outline of the ideas connected to a seed idea. */
   buildArgumentMap(request: ArgumentMapRequest): Promise<ArgumentMap>;
+  listSavedCompanionArgumentMaps(cursor?:string|null,limit?:number):Promise<{items:Array<{id:string;map:ArgumentMap}>;cursor:string|null;hasMore:boolean;revision:string}>;
   /** Rank idea hubs by connectivity for the automatic mode (no AI, no model). */
   discoverArgumentRoutes(): Promise<ArgumentRouteSuggestion[]>;
 

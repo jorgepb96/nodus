@@ -67,6 +67,8 @@ export const MOBILE_OPERATIONS = {
   saveStudyImprovementFromMobile: ['study:improve:mobile:save', 'writing'],
   getWritingWorkshopMobileSource: ['writing:mobile:source', 'corpus'],
   getMobileAcademicSource: ['mobile:academic:source','corpus'],
+  getMobileStructuralArgumentMap: ['mobile:argument:structural','corpus'],
+  listSavedCompanionArgumentMaps: ['mobile:argument:list','corpus'],
   saveMobileAcademicResult: ['mobile:academic:save','writing'],
   getWritingWorkshopMobileCatalogue: ['writing:mobile:catalogue', 'corpus'],
   getWritingWorkshopMobileDraftCatalogue: ['writing:mobile:drafts', 'corpus'],

@@ -2,6 +2,7 @@ import { autonomousDictionary } from './autonomousDictionary';
 import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
 import { autonomousTranslation } from './autonomousTranslation';
 import {autonomousWriting, cancelAutonomousWriting} from './autonomousWriting';
+import {autonomousArgument} from './autonomousArgument';
 import {StudyGraphView} from '../views/StudyGraphView';
 import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
@@ -47,7 +48,7 @@ import {MobilePageDocument} from './MobilePageDocument';
 import {pageBlocksToMarkdown} from '@shared/pages';
 import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -79,6 +80,25 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  if(method==='listSavedCompanionArgumentMaps'&&native.nodusMobileConfig.live){
+    const cursor=typeof args[0]==='string'?args[0]:null,limit=typeof args[1]==='number'?args[1]:20;
+    const local=await native.nodusMobileCall('mobileArgumentMaps') as Array<{id:string;map:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>}>;
+    let remote:Awaited<ReturnType<Window['nodus']['listSavedCompanionArgumentMaps']>>;
+    try{remote=await native.nodusMobileCall(method,...args);}catch(error){
+      if((error as {code?:string})?.code!=='offline'||!local.length)throw error;
+      remote={items:[],cursor:null,hasMore:false,revision:'device-only'};
+      native.webkit.messageHandlers.nodus.postMessage({id:'device-arguments',method:'surfaceOfflineCopy',args:[]});
+    }
+    const merged=new Map(remote.items.map(item=>[item.id,item]));for(const item of local)if(!cursor||item.id>cursor)if(!merged.has(item.id))merged.set(item.id,item);
+    const ordered=[...merged.values()].sort((a,b)=>a.id.localeCompare(b.id)),items=ordered.slice(0,limit),hasMore=remote.hasMore||ordered.length>limit;
+    const revision=remote.revision+':'+local.map(item=>item.id).join(',');
+    return {items,hasMore,cursor:hasMore?items.at(-1)?.id??null:null,revision};
+  }
+  if(method==='buildArgumentMap'){
+    const request=args[0] as Parameters<Window['nodus']['buildArgumentMap']>[0];
+    if(request.mode==='auto')return native.nodusMobileCall('getMobileStructuralArgumentMap',{seedIdeaId:request.seedIdeaId,language:request.language??native.nodusMobileConfig.language});
+    if(native.nodusMobileConfig.executionMode==='autonomous')return autonomousArgument(call,request);
+  }
   if(['getPageDocument','getSyncedBlockSource','getDatabaseContainer','queryDatabaseContainerRows'].includes(method))return native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));
   if(method==='getPageAsset'){
     const result=await native.nodusMobileCall(method,...args,Boolean(native.nodusMobileConfig.pageDownloadedOnly));return Uint8Array.from(atob(result.base64),(value:string)=>value.charCodeAt(0));
@@ -338,7 +358,10 @@ function App() {
   const [error, setError] = useState('');
   const [jobError, setJobError] = useState('');
   useEffect(() => {
-    if (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType)) void call('getSettings').then(setSettings).catch(error => setError(String(error)));
+    if (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType)) void call('getSettings').then(setSettings).catch(error => {
+      if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings({...DEFAULT_APP_SETTINGS,uiLanguage:config.language,promptLanguage:config.language});
+      else setError(String(error));
+    });
     const listener = (event: ErrorEvent) => setError(event.message);
     window.addEventListener('error', listener); return () => window.removeEventListener('error', listener);
   }, []);
@@ -381,6 +404,7 @@ function App() {
             onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
       : config.surface === 'graph' ? <StellarWorkspace source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
+      : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??DEFAULT_APP_SETTINGS} mobile initialMap={config.initialArgumentMap}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
@@ -398,7 +422,7 @@ function App() {
               onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
-      : <ArgumentMapView settings={settings}/>}
+      : <ArgumentMapView settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
     <FeedbackHost/>
   </main>;
 }

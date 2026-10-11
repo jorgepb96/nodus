@@ -42,8 +42,12 @@ try{
     const cell=academic.saveMobileAcademicResult({...input,request:matrixRequest,revision:matrix.revision,raw:'{"stance":" Posición en el tema "}',requestId:randomUUID()});
     assert.equal(cell.ideaCount,3);assert.equal(cell.stance,'Posición en el tema');assert.equal(db.prepare('SELECT stance FROM synthesis_matrix_cell WHERE author_id=? AND theme_id=?').get('real-author','real-theme').stance,cell.stance);
     assert.throws(()=>academic.mobileAcademicSource({...request,method:'arbitrary'}),/invalid_academic_source/);
+    const argumentRequest={kind:'argument',seedIdeaId:'real-idea-0',language:'es'},argument=academic.mobileAcademicSource(argumentRequest);
+    const argumentInput={...input,request:argumentRequest,revision:argument.revision,raw:'{}',requestId:randomUUID()};
+    const map=academic.saveMobileAcademicResult(argumentInput);assert.equal(map.root.ideaId,'real-idea-0');assert.deepEqual(academic.saveMobileAcademicResult(argumentInput),map);
+    const catalogue=academic.listSavedCompanionArgumentMaps(null,1);assert.equal(catalogue.items.length,1);assert.equal(catalogue.items[0].id,argumentInput.requestId);assert.deepEqual(catalogue.items[0].map,map);
     assert.throws(()=>withMobileOperation(()=>academic.saveMobileAcademicResult(input),['corpus']),/permission_denied/);
     assert.equal(providers,0);
   },['corpus','writing'])));
-  console.log('Canonical academic source, provider-free publication, duplicate receipt and source conflict passed.');
+    console.log('Canonical academic sources, persisted argument catalogue, provider-free publication, duplicate receipt and source conflict passed.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

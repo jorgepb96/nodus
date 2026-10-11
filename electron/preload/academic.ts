@@ -739,6 +739,7 @@ export const academicApi: AcademicApi = {
   },
 
   buildArgumentMap: (request) => ipcRenderer.invoke('argumentMap:build', request),
+  listSavedCompanionArgumentMaps: (cursor,limit) => ipcRenderer.invoke('mobile:argument:list',cursor,limit),
   discoverArgumentRoutes: () => ipcRenderer.invoke('argumentMap:discover'),
 
   listConversations: (includeArchived) => ipcRenderer.invoke('chat:list', includeArchived),

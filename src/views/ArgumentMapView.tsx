@@ -74,23 +74,45 @@ export function ArgumentMapView({
   settings,
   snapshot,
   onSnapshotChange,
+  mobile=false,
+  initialMap,
+  initialSeed,
 }: {
   settings: AppSettings;
+  mobile?:boolean;
+  initialMap?:ArgumentMap;
+  initialSeed?:string;
   /** Where this section was last left. Read once, at mount, and never again. */
   snapshot?: ArgumentSnapshot;
   onSnapshotChange?: (patch: Partial<ArgumentSnapshot>) => void;
 }) {
-  // The catalogue is where a returning reader lands, always. The open map holds no
-  // data of its own — redrawing it means rebuilding it, and in AI mode that would
-  // spend a model call on the act of walking back into the section.
-  const [surface, setSurface] = useState<ArgumentMapSurface>('catalog');
-  const [openArgumentMaps, setOpenArgumentMaps] = useState<ArgumentMapTabState[]>([]);
-  const [activeMapKey, setActiveMapKey] = useState<string | null>(null);
+  // Opening a saved map reuses its content and never invokes a model.
+  const [surface, setSurface] = useState<ArgumentMapSurface>(initialMap?'map':'catalog');
+  const [openArgumentMaps, setOpenArgumentMaps] = useState<ArgumentMapTabState[]>(initialMap?[{key:`saved:${initialMap.root.id}`,ideaId:initialMap.seedIdeaId,label:initialMap.seedLabel,mode:'ai',map:initialMap,building:false,error:null}]:[]);
+  const [activeMapKey, setActiveMapKey] = useState<string | null>(initialMap?`saved:${initialMap.root.id}`:null);
+  const [downloadMessage,setDownloadMessage]=useState('');
+  const [downloading,setDownloading]=useState(false);
+  const [savedMaps,setSavedMaps]=useState<Array<{id:string;map:ArgumentMap}>>([]);
+  const [savedError,setSavedError]=useState('');
+  const [savedCursor,setSavedCursor]=useState<string|null>(null);
+  const [savedRevision,setSavedRevision]=useState<string|null>(null);
+  const [loadingSaved,setLoadingSaved]=useState(false);
+  const loadSaved=async(cursor:string|null=null)=>{
+    if(loadingSaved)return;setLoadingSaved(true);
+    try{
+      const page=await window.nodus.listSavedCompanionArgumentMaps(cursor,20);
+      if(cursor&&savedRevision&&savedRevision!==page.revision)throw new Error(t('Los mapas guardados han cambiado. Vuelve a abrir el catálogo.'));
+      setSavedMaps(current=>cursor?[...current,...page.items.filter(item=>!current.some(existing=>existing.id===item.id))]:page.items);
+      setSavedRevision(page.revision);setSavedCursor(page.hasMore?page.cursor:null);setSavedError('');
+    }catch(error){setSavedError(String(error));}finally{setLoadingSaved(false);}
+  };
+  useEffect(()=>{if(!initialMap)void loadSaved();},[]);
   const [ideaNodes, setIdeaNodes] = useState<IdeaPickerItem[]>([]);
   const [graphLoaded, setGraphLoaded] = useState(false);
   const [mode, setMode] = useState<'auto' | 'ai'>(() => snapshot?.mode ?? 'auto');
   const [suggestions, setSuggestions] = useState<ArgumentRouteSuggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [routesRequested,setRoutesRequested]=useState(false);
   // Only a click on «Actualizar» spins that button's icon. The automatic discovery
   // on entering the section has its own indicator, and spinning both at once read
   // as if the app were refreshing on its own.
@@ -138,6 +160,8 @@ export function ArgumentMapView({
   // Discover ranked idea hubs for the automatic mode. Cheap (local DB, no AI),
   // so we run it on mount and whenever the user (re)enters automatic mode.
   const discoverRoutes = useCallback(async (manual = false) => {
+    if(initialMap&&surface==='map')return;
+    setRoutesRequested(true);
     setSuggestionsLoading(true);
     if (manual) setRefreshing(true);
     setCatalogError(null);
@@ -150,17 +174,17 @@ export function ArgumentMapView({
       setSuggestionsLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [initialMap,surface]);
 
   useCompanionContentRefresh(async () => {
     if (mode === 'auto') await discoverRoutes();
     else {setIdeaNodes(await window.nodus.listPickerIdeas());setGraphLoaded(true);}
   });
   useEffect(() => {
-    if (mode === 'auto' && suggestions.length === 0 && !suggestionsLoading) {
+    if (mode === 'auto' && !routesRequested && !suggestionsLoading) {
       void discoverRoutes();
     }
-  }, [mode, suggestions.length, suggestionsLoading, discoverRoutes]);
+  }, [mode, routesRequested, suggestionsLoading, discoverRoutes]);
 
   // Switching the catalogue mode resets only its picker. An already-open map
   // remains mounted in its tab, just like an author dossier does.
@@ -248,6 +272,7 @@ export function ArgumentMapView({
       )));
     }
   }, [ideaNodes, mode, model, openArgumentMaps, search, seedId, settings.promptLanguage, suggestions]);
+  useEffect(()=>{if(initialSeed&&!initialMap)void build(initialSeed);},[]);
 
   const closeMapTab = useCallback((key: string) => {
     const closingIndex = openArgumentMaps.findIndex((tab) => tab.key === key);
@@ -403,10 +428,20 @@ export function ArgumentMapView({
                   <button className="btn btn-primary gap-1.5" onClick={() => build()} disabled={!seedId || selectedMapBuilding || !hasModel} title={!hasModel ? t('Configura un modelo de IA en Ajustes') : t('Trazar el mapa de argumentos')}>
                     <Icon name="map" /> {selectedMapBuilding ? t('Trazando…') : t('Trazar mapa')}
                   </button>
+                  {mobile&&seedId&&<select aria-label={t('Fuentes para llevar')} disabled={downloading} className="select" value="" onChange={event=>{
+                    const days=Number(event.target.value);if(![7,30].includes(days))return;setDownloading(true);
+                    void (window as any).nodusMobileCall('mobileAcademicDownload',{kind:'argument',seedIdeaId:seedId,language:settings.promptLanguage??'es'},days)
+                      .then(()=>setDownloadMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch((error:unknown)=>setDownloadMessage(String(error))).finally(()=>setDownloading(false));
+                  }}><option value="">{downloading?t('Guardando fuentes…'):t('Fuentes para llevar')}</option><option value="7">{t('Guardar 7 días')}</option><option value="30">{t('Guardar 30 días')}</option></select>}
                 </>
               )}
             </div>
             {!isAuto && seedId && <div className="mt-1 flex items-center gap-1 text-[11px] text-indigo-500 dark:text-indigo-400"><Icon name="check" size={12} /> {t('Idea seleccionada')}</div>}
+            {downloadMessage&&<p role="status" className="mt-2 text-sm text-neutral-500">{downloadMessage}</p>}
+            {!!savedMaps.length&&<details className="mt-3"><summary className="min-h-11 cursor-pointer py-2">{t('Mapas del móvil')} ({savedMaps.length})</summary><div className="flex flex-col gap-2 py-2">{savedMaps.map(item=><button key={item.id} className="btn justify-start text-left" onClick={()=>{
+              const key=`saved:${item.id}`;setOpenArgumentMaps(current=>current.some(tab=>tab.key===key)?current:[...current,{key,ideaId:item.map.seedIdeaId,label:item.map.seedLabel,mode:'ai',map:item.map,building:false,error:null}]);setActiveMapKey(key);setSurface('map');
+            }}>{item.map.seedLabel}</button>)}{savedCursor&&<button className="btn" disabled={loadingSaved} onClick={()=>loadSaved(savedCursor)}>{t('Cargar más')}</button>}</div></details>}
+            {savedError&&<div role="alert" className="mt-2 text-sm text-red-500">{savedError}<button className="btn ml-2" onClick={()=>loadSaved()}>{t('Reintentar')}</button></div>}
           </div>
 
           {!isAuto ? (

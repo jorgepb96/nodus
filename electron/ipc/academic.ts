@@ -1948,6 +1948,7 @@ export function registerAcademicIpc(context: IpcContext): void {
     buildArgumentMap(request, request.model)
   );
   h('argumentMap:discover', async () => discoverArgumentRoutes());
+  h('mobile:argument:list', async (_e,cursor?:string|null,limit?:number) => (await import('../desktopBridge/academicGeneration')).listSavedCompanionArgumentMaps(cursor,limit));
 
   // research chat history
   h('research:prompts:list', (_e, key?: string | null) => getResearchSystemPrompts(key));

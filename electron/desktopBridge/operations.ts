@@ -7,7 +7,9 @@ import { invalidateLiveCorpus } from './liveCorpus';
 import { withGenerationSignal } from '../ai/generationSignal';
 import { withMobileOperation } from './executionBoundary';
 import {runCompanionSpaceAction} from './spaceActions';
-import {mobileAcademicSource,saveMobileAcademicResult} from './academicGeneration';
+import {mobileAcademicSource,saveMobileAcademicResult,listSavedCompanionArgumentMaps} from './academicGeneration';
+import {buildArgumentMap} from '../ai/argumentMap';
+import {PROMPT_LANGUAGES,type PromptLanguage} from '../../shared/types';
 import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
@@ -42,6 +44,15 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(method==='getMobileStructuralArgumentMap'){
+    const value=args[0] as {seedIdeaId?:string;language?:PromptLanguage}|undefined;
+    if(args.length!==1||!value||Object.keys(value).some(key=>!['seedIdeaId','language'].includes(key))||typeof value.seedIdeaId!=='string'||!value.seedIdeaId||value.seedIdeaId.length>256||value.language!=null&&!(PROMPT_LANGUAGES as readonly unknown[]).includes(value.language))throw new Error('invalid_argument_source');
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>buildArgumentMap({seedIdeaId:value.seedIdeaId!,language:value.language,mode:'auto'}),domains)));
+  }
+  if(method==='listSavedCompanionArgumentMaps'){
+    if(args.length>2)throw new Error('invalid_arguments');
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>listSavedCompanionArgumentMaps(args[0] as string|null|undefined,args[1] as number|undefined),domains)));
+  }
   if(method==='getMobileAcademicSource'||method==='saveMobileAcademicResult'){
     if(args.length!==1)throw new Error('invalid_arguments');
     if(method==='saveMobileAcademicResult'&&(!bridgeJobId||!jobIdentity))throw new Error('job_required');

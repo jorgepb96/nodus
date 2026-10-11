@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-argument'))process.exit(0);
+const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-argument-'));installRuntimeHooks(directory);
+const require=createRequire(import.meta.url),{finishArgumentGeneration,isArgumentGenerationResponse}=require('../shared/argumentGeneration.ts');
+try{
+  const ideas=Array.from({length:120},(_,id)=>({global_id:`real-${id}`,type:'claim',label:`Idea ${id}`,statement:`Original ${id}`}));
+  const source={seedIdeaId:'real-0',seed:ideas[0],ideas,truncated:true,noMaterial:false,noConnections:{summary:'Sin conexiones',overview:'Idea aislada'},prompt:{system:'Original Desktop prompt',user:'Original sources',temperature:0.2,maxTokens:8000}};
+  const identity='bba4e150-7d22-4dba-a03f-c915b61078d3',date='2026-10-11T08:00:00Z';
+  const response={overview:'Overview',root:{ideaId:'real-0',statement:'Invented statement',children:[{ideaId:'real-1',relation:'supports',children:[{ideaId:'real-0'}]},{ideaId:'invented'},{ideaId:'real-1'},{ideaId:'real-2',relation:'arbitrary'}]}};
+  const map=finishArgumentGeneration(source,response,date,identity);
+  assert.equal(map.ideaCount,3);assert.equal(map.root.statement,'Original 0');assert.deepEqual(map.root.children.map(node=>node.ideaId),['real-1','real-2']);assert.equal(map.root.children[0].children.length,0);assert.equal(map.root.children[1].relation,'related');
+  assert.deepEqual(finishArgumentGeneration(source,response,date,identity),map);
+  const wide=finishArgumentGeneration(source,{root:{ideaId:'real-0',children:ideas.slice(1).map(idea=>({ideaId:idea.global_id}))}},date,identity);assert.equal(wide.ideaCount,90);
+  let root={ideaId:'real-8'};for(let id=7;id>=0;id--)root={ideaId:`real-${id}`,children:[root]};
+  assert.equal(finishArgumentGeneration(source,{root},date,identity).ideaCount,5);
+  const isolated=finishArgumentGeneration({...source,noMaterial:true},null,date,identity);assert.equal(isolated.ideaCount,1);assert.equal(isolated.overview,'Idea aislada');assert.equal(isolated.truncated,false);
+  assert.equal(isArgumentGenerationResponse({root:null}),false);assert.throws(()=>finishArgumentGeneration(source,{root:null},date,identity),/invalid_argument_response/);
+  assert.throws(()=>finishArgumentGeneration({...source,ideas:[ideas[0],ideas[0]]},response,date,identity),/invalid_argument_source/);
+  console.log('Shared argument grounding, stable publication, cycle, depth and block limits passed.');
+}finally{fs.rmSync(directory,{recursive:true,force:true});}

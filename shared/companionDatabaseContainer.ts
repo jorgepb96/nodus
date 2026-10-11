@@ -29,9 +29,14 @@ export async function queryCompanionDatabaseContainer(input:{version:1;vaultId:s
     const page=await queryCompanionDatabasePresentation(captured,'allRows',{databaseId:source.databaseId,filter:translated.kind==='node'?translated.node:null,sorts});
     if(!('rows' in page))throw new Error('Respuesta de filas no válida.');
     for(const row of page.rows) {
-      const cells:Record<string,string|null>={};
-      for(const [canonical,columnId] of Object.entries(source.propertyMap))cells[canonical]=row.cells[columnId]??row.rollups?.[columnId]??null;
+      const cells:Record<string,string|null>={},formulaErrors:Record<string,string>={},formulaColors:Record<string,string>={};
+      for(const [canonical,columnId] of Object.entries(source.propertyMap)){
+        cells[canonical]=row.cells[columnId]??row.rollups?.[columnId]??null;
+        if(row.formulaErrors?.[columnId])formulaErrors[canonical]=row.formulaErrors[columnId];
+        if(row.formulaColors?.[columnId])formulaColors[canonical]=row.formulaColors[columnId];
+      }
       rows.push({id:`${source.sourceId}:${row.id}`,sourceId:source.sourceId,databaseId:source.databaseId,rowId:row.id,sourceName:source.alias,cells,
+        formulaErrors,formulaColors,
         createdAt:row.createdAt,updatedAt:row.updatedAt,revision:row.revision??1});
     }
   }

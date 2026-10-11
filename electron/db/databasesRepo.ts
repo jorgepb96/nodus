@@ -3414,10 +3414,14 @@ function decodeContainerCursor(value: string): ContainerCursor {
 }
 
 function mapContainerRow(source: DatabaseViewDataSource, row: DatabaseRow): DatabaseContainerRow {
-  const cells: Record<string, string | null> = {};
-  for (const [canonical, columnId] of Object.entries(source.propertyMap)) cells[canonical] = row.cells[columnId] ?? row.rollups?.[columnId] ?? null;
+  const cells: Record<string, string | null> = {}, formulaErrors: Record<string,string> = {}, formulaColors: Record<string,string> = {};
+  for (const [canonical, columnId] of Object.entries(source.propertyMap)) {
+    cells[canonical] = row.cells[columnId] ?? row.rollups?.[columnId] ?? null;
+    if(row.formulaErrors?.[columnId])formulaErrors[canonical]=row.formulaErrors[columnId];
+    if(row.formulaColors?.[columnId])formulaColors[canonical]=row.formulaColors[columnId];
+  }
   return { id: `${source.sourceId}:${row.id}`, sourceId: source.sourceId, databaseId: source.databaseId, rowId: row.id,
-    sourceName: source.alias, cells, createdAt: row.createdAt, updatedAt: row.updatedAt, revision: row.revision ?? 1 };
+    sourceName: source.alias, cells, formulaErrors, formulaColors, createdAt: row.createdAt, updatedAt: row.updatedAt, revision: row.revision ?? 1 };
 }
 
 export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery, {readOnly = false}: {readOnly?:boolean} = {}): DatabaseContainerRowPage {

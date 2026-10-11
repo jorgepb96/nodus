@@ -80,6 +80,8 @@ export interface DatabaseContainerRow {
   rowId: string;
   sourceName: string;
   cells: Record<string, string | null>;
+  formulaErrors?: Record<string, string>;
+  formulaColors?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
   revision: number;

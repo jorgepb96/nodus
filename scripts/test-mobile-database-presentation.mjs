@@ -161,6 +161,14 @@ try{
     const cyclic=prepareCompanionDatabaseDerived(circular).rows.find(row=>row.id===rows[0]);
     assert.equal(cyclic.cells[formula.id],null);assert.match(cyclic.formulaErrors[formula.id],/Referencia circular/);
     assert.notEqual(cyclic.cells[sum.id],null,'One invalid formula does not hide the other calculated or plain values');
+    const diagnosticView=repo.createView(db.id,{name:'Diagnósticos móviles',layout:'table',filter:{conjunction:'and',conditions:[]},sorts:[]});
+    const diagnosticDefinition=repo.getDatabaseContainer(diagnosticView.id,true),diagnosticSource=capture(db.id);
+    diagnosticSource.columns=circular.columns;diagnosticSource.relatedSources=circular.relatedSources;diagnosticSource.localChanges=true;
+    const diagnostic=await queryCompanionDatabaseContainer({version:1,vaultId:vault.id,viewId:diagnosticView.id,definition:diagnosticDefinition,sources:{[db.id]:diagnosticSource}});
+    const mappedFormula=Object.entries(diagnosticDefinition.sources[0].propertyMap).find(([,column])=>column===formula.id)?.[0];
+    assert(mappedFormula,'The actual primary source maps its physical formula property');
+    const failed=diagnostic.rows.find(row=>row.rowId===rows[0]);
+    assert.equal(failed.cells[mappedFormula],null);assert.match(failed.formulaErrors[mappedFormula],/Referencia circular/);
   }));
   console.log('Prepared database presentation contract: real queries, complete selected data, portable projections, filters, cursors and typed boundary.');
 }finally{globalThis.fetch=fetch;database?.closeDb();fs.rmSync(root,{recursive:true,force:true});}

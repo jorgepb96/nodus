@@ -16,7 +16,7 @@ import { applyBridgeMutations } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
-import { readPrivateSource, PrivateSourceReadError } from './privateSources';
+import { readPrivateSource, listPrivateSources, PrivateSourceReadError } from './privateSources';
 import { DesktopRelayHost, type RelayConfiguration } from './relayHost';
 import { listVaultConfigs } from '../serverSync/serverSyncShared';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
@@ -482,6 +482,21 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     const vaultId = decodeURIComponent(file[1]);
     if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     await serveBridgeFile(request, response, url, vaultId, pairing.domains, decodeURIComponent(file[2]), decodeURIComponent(file[3]), file[4]);
+    return;
+  }
+  const sourceCatalogue = /^\/bridge\/v2\/vaults\/([^/]+)\/([^/]+)\/sources\/([^/]+)$/.exec(url.pathname);
+  if (request.method === 'GET' && sourceCatalogue) {
+    const vaultId = decodeURIComponent(sourceCatalogue[1]);
+    const domain = decodeURIComponent(sourceCatalogue[2]) as DesktopBridgeDomain;
+    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    try {
+      reply(response, 200, await listPrivateSources(vaultId, domain, decodeURIComponent(sourceCatalogue[3]), {
+        offset: Number(url.searchParams.get('offset') || 0), limit: Number(url.searchParams.get('limit') || 100), query: url.searchParams.get('q') || '', state: url.searchParams.get('state') || 'active',
+      }));
+    } catch (error) {
+      if (error instanceof PrivateSourceReadError) reply(response, error.status, { error: error.code });
+      else throw error;
+    }
     return;
   }
   const source = /^\/bridge\/v2\/vaults\/([^/]+)\/([^/]+)\/sources\/([^/]+)\/([^/]+)$/.exec(url.pathname);

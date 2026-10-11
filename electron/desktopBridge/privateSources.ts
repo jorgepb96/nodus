@@ -111,3 +111,41 @@ export async function readPrivateSource(vaultId: string, domain: string, kind: s
     })();
   });
 }
+
+/** Paged metadata only. Audio and transcript bodies are not catalogue columns. */
+export async function listPrivateSources(vaultId: string, domain: string, kind: string,
+  options: { offset: number; limit: number; query: string; state?: string }): Promise<unknown> {
+  const plan = planFor(domain, kind, 'catalogue');
+  if (!Number.isSafeInteger(options.offset) || options.offset < 0 || !Number.isSafeInteger(options.limit)
+      || options.limit < 1 || options.limit > 100 || options.query.length > 256) throw new PrivateSourceReadError(400, 'invalid_source_page');
+  if (!getVault(vaultId)) throw new PrivateSourceReadError(404, 'vault_not_found');
+  return withVaultDatabase(vaultId, () => {
+    const db = getDb();
+    const title = kind === 'prosop-person' ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : 'title';
+    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : kind === 'prosop-person' ? 'birth_date' : 'status';
+    const state = options.state || 'active';
+    if (!['active', 'archived', 'trash', 'all'].includes(state)) throw new PrivateSourceReadError(400, 'invalid_source_state');
+    let where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)' : '';
+    const extra: string[] = [], bindings: string[] = [];
+    if (kind === 'study-recording') {
+      if (state === 'active') where = ' WHERE r.archived_at IS NULL AND r.deleted_at IS NULL';
+      if (state === 'archived') where = ' WHERE r.archived_at IS NOT NULL AND r.deleted_at IS NULL';
+      if (state === 'trash') where = ' WHERE r.deleted_at IS NOT NULL';
+      extra.push("CASE WHEN r.deleted_at IS NOT NULL THEN 'trash' WHEN r.archived_at IS NOT NULL THEN 'archived' ELSE 'active' END AS state");
+      if (options.query.trim()) {
+        extra.push('CASE WHEN r.file_name LIKE ? OR r.session_label LIKE ? OR EXISTS (SELECT 1 FROM study_transcripts t WHERE t.recording_id = r.id AND t.content_markdown LIKE ?) THEN 1 ELSE 0 END AS _search_match');
+        bindings.push(...Array(3).fill(`%${options.query.trim()}%`));
+      }
+    }
+    const extras = extra.length ? ', ' + extra.join(', ') : '';
+    const all = db.prepare(`SELECT r."${plan.primaryKey}" AS id, r."${title}" AS title, r."${detail}" AS detail, r.updated_at AS updatedAt${extras} FROM "${plan.table}" r${where}`).all(...bindings) as RecordRow[];
+    const fold = (value: unknown) => String(value ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    const query = fold(options.query).trim();
+    const items = all.filter(row => !query || row._search_match === 1 || fold(`${row.title} ${row.detail ?? ''}`).includes(query)).sort((a, b) => {
+      const time = String(b.updatedAt).localeCompare(String(a.updatedAt));
+      return time || String(a.id).localeCompare(String(b.id));
+    }).map(({ _search_match, ...row }) => ({ ...row, detail: String(row.detail ?? '') }));
+    return { items: items.slice(options.offset, options.offset + options.limit), total: items.length,
+      offset: options.offset, limit: options.limit, hasMore: options.offset + options.limit < items.length, revision: digest(items) };
+  });
+}

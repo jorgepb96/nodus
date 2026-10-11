@@ -41,6 +41,11 @@ try {
   await assert.rejects(()=>saveImmersionMobileProgress(vault,'grant','session',stale),error=>error.code==='immersion_progress_conflict' && error.remote.progress.answers.length===2);
   await assert.rejects(()=>saveImmersionMobileProgress(vault,'grant','session',{...stale,expectedProgressRevision:null}),{code:'immersion_progress_conflict'});
   const latest=await readImmersionMobileProgress(vault,'session');
+  const {registerMobileOperation,executeMobileOperation}=require('../electron/desktopBridge/operations.ts');
+  const {getImmersionSession}=require('../electron/db/immersionRepo.ts');
+  registerMobileOperation('immersion:get',(_event,id)=>getImmersionSession(id));
+  assert.deepEqual((await executeMobileOperation(vault,['corpus'],'getImmersionSession',['session'])).progress,emptyImmersionProgress());
+  assert.deepEqual((await executeMobileOperation(vault,['corpus','writing'],'getImmersionSession',['session'])).progress,desktopProgress);
   const valid={...stale,expectedProgressRevision:latest.progressRevision};
   await assert.rejects(()=>saveImmersionMobileProgress(vault,'grant','session',{...valid,sourceRevision:'0'.repeat(64)}),{code:'immersion_plan_changed'});
   for (const bad of [

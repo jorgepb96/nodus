@@ -9,6 +9,7 @@ import { withMobileOperation } from './executionBoundary';
 import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
+import { emptyImmersionProgress } from '../db/immersionRepo';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -75,6 +76,9 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     }
     const invoke = () => withMobileOperation(() => handler(event, ...args));
     let value = await (signal ? withGenerationSignal(signal, invoke) : invoke());
+    if (method === 'getImmersionSession' && !domains.includes('writing') && value && typeof value === 'object') {
+      value = {...value, progress: emptyImmersionProgress()};
+    }
     if (method === 'listAudioClips' && Array.isArray(value)) {
       value = value.map(clip => ({...clip, fileName: path.basename(String(clip.fileName ?? ''))}));
     }

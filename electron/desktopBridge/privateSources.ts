@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { getVault } from '../vaults/vaultRegistry';
+import { privateSourceMaterials, matchPrivateSource } from './privateSourceContext';
 
 type Database = ReturnType<typeof getDb>;
 type RecordRow = Record<string, unknown>;
@@ -123,6 +124,44 @@ function metadata(db: Database, item: Group, id: string) {
     hash.update(JSON.stringify(row)).update('\n'); total++;
   }
   return { key: item.key, title: item.title, total, revision: hash.digest('hex') };
+}
+
+/** Domain-granted context is built transiently from private SQLite, never
+ * appended to the published snapshot or retained in the public snapshot cache. */
+export async function readPrivateSourceContext(vaultId: string, domains: readonly string[], queryText: string, budget: number): Promise<{items: RecordRow[]; used: number; matched: number; truncated: boolean}> {
+  return withVaultDatabase(vaultId, () => {
+    const db = getDb();
+    return db.transaction(() => {
+      const items: RecordRow[] = [], seen = new Set<string>();
+      let used = 0, matched = 0, truncated = false;
+      for (const [kind, plan] of Object.entries(plans)) {
+        if (!domains.includes(plan.domain)) continue;
+        const where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)'
+          : kind === 'testimony-participant' ? ' WHERE EXISTS (SELECT 1 FROM testimony_participant_profiles p WHERE p.person_id = r.person_id) OR EXISTS (SELECT 1 FROM testimony_interview_participants p WHERE p.person_id = r.person_id)'
+          : kind === 'testimony-transcript' ? ' WHERE EXISTS (SELECT 1 FROM testimony_media m JOIN testimony_sessions s ON s.id = m.session_id JOIN testimony_interviews i ON i.id = s.interview_id WHERE m.id = r.media_id AND i.deleted_at IS NULL AND i.archived_at IS NULL)' : '';
+        for (const candidate of db.prepare(`SELECT ${projection(db,plan.table)}${sourceLabels(plan.table)} FROM "${plan.table}" r${where} ORDER BY r.rowid`).iterate() as Iterable<RecordRow>) {
+          if (['study-recording','testimony-interview'].includes(kind) && (candidate.deleted_at || candidate.archived_at)) continue;
+          const id = String(candidate[plan.primaryKey]);
+          // Transcript queries join the actual owning recording/interview.
+          if (kind === 'testimony-transcript' && !candidate.interview_id) continue;
+          const groups: Record<string,RecordRow[]> = {};
+          for (const item of plan.groups) {
+            if (!['segments','transcripts','statements','items'].includes(item.key)) continue;
+            groups[item.key] = db.prepare(`${query(db,item)} ORDER BY r.rowid`).all(id) as RecordRow[];
+          }
+          for (const row of privateSourceMaterials(kind,id,candidate,groups)) {
+            const token = String(row.citation);
+            if (seen.has(token) || !matchPrivateSource(row,queryText)) continue;
+            seen.add(token); matched++;
+            const cost = JSON.stringify(row).length;
+            if (used + cost > budget) { truncated = true; continue; }
+            used += cost; items.push(row);
+          }
+        }
+      }
+      return {items,used,matched,truncated};
+    })();
+  });
 }
 
 /** Only an addressed source and its owned relations; no arbitrary SQL/table selection. */

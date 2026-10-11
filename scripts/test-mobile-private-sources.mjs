@@ -16,7 +16,7 @@ try {
   database = require('../electron/db/database.ts'); const db = database.getDb();
   const {getActiveVault, createVault} = require('../electron/vaults/vaultRegistry.ts');
   const vault = getActiveVault().id;
-  const {readPrivateSource, listPrivateSources} = require('../electron/desktopBridge/privateSources.ts');
+  const {readPrivateSource, listPrivateSources, readPrivateSourceContext} = require('../electron/desktopBridge/privateSources.ts');
   const stamp = '2026-10-11T00:00:00.000Z';
   const audio = Buffer.alloc(2 * 1024 * 1024, 37);
   db.prepare('INSERT INTO study_recordings(id,short_id,title,file_name,mime_type,content_hash,audio_blob,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)')
@@ -138,7 +138,25 @@ try {
     }
     await assert.rejects(() => readPrivateSource(vault,'corpus',kind,id), {status:403});
   }
-  console.log('Private source ownership, domain isolation, complete pagination and concurrent revision contracts passed.');
+  const deniedContext = await readPrivateSourceContext(vault,['corpus'],'37',120000);
+  assert.equal(deniedContext.items.length,0);
+  const recordingContext = await readPrivateSourceContext(vault,['study-recordings'],'37',120000);
+  const exactVersion = recordingContext.items.find(row=>row.contentScope==='record');
+  assert.equal(exactVersion.citation,'nodus://study/recording/recording%2Fencoded?transcript=transcript');
+  assert.equal(exactVersion.text,'Texto completo de la transcripción · 37 datos');
+  assert.equal(recordingContext.items.some(row=>row.domain!=='study-recordings'),false);
+  assert.equal(JSON.stringify(recordingContext).includes('audio_blob'),false);
+  const prosopContext = await readPrivateSourceContext(vault,['prosopography-private'],'íntegra',120000);
+  assert.equal(prosopContext.items.some(row=>row.citation==='nodus://prosop/factoid/factoid' && row.text.includes('Evidencia literal íntegra')),true);
+  assert.equal(prosopContext.items.some(row=>row.domain!=='prosopography-private'),false);
+  const testimonyContext = await readPrivateSourceContext(vault,['testimonies'],'literal',120000);
+  assert.equal(testimonyContext.items.some(row=>row.privateKind==='testimony-transcript'),true);
+  assert.equal(new Set(testimonyContext.items.map(row=>row.citation)).size,testimonyContext.items.length);
+  assert.equal(JSON.stringify(testimonyContext).includes('content_blob'),false);
+  db.prepare('UPDATE study_transcripts SET content_markdown=? WHERE id=?').run('37 datos '.repeat(20000),'transcript');
+  const budget = await readPrivateSourceContext(vault,['study-recordings'],'37',1000);
+  assert.equal(budget.truncated,true); assert.equal(budget.items.some(row=>row.contentScope==='record'),false);
+  console.log('Private source ownership, domain isolation, complete pagination, context and concurrent revision contracts passed.');
 } finally {
   globalThis.fetch = originalFetch; database?.closeDb(); runtime.restore();
   fs.rmSync(temporary, {recursive:true,force:true});

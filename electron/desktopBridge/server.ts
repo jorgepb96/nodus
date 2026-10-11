@@ -489,7 +489,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       reply(response, 403, { error: 'permission_denied' }); return;
     }
     const query = request.method === 'POST' ? await body(request, 256 * 1024) : undefined;
-    await serveLiveCorpus(request, response, url, vaultId, (corpus[2] || '').split('/').filter(Boolean).map(decodeURIComponent), query);
+    await serveLiveCorpus(request, response, url, vaultId, (corpus[2] || '').split('/').filter(Boolean).map(decodeURIComponent), query, pairing.domains);
     return;
   }
   const file = /^\/bridge\/v2\/vaults\/([^/]+)\/files\/([^/]+)\/([^/]+)\/(descriptor|content)$/.exec(url.pathname);

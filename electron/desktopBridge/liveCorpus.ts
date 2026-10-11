@@ -3,6 +3,8 @@ import { buildServerSnapshot, type BuiltSnapshot } from '../serverSync/serverSna
 import { getDb, withVaultDatabase } from '../db/database';
 import { getVault } from '../vaults/vaultRegistry';
 import { statSync } from 'node:fs';
+import { readPrivateSourceContext } from './privateSources';
+import { privateContextRevision } from './privateSourceContext';
 import { invalidateLiveLibrary, serveLiveLibrary } from './liveLibrary';
 import { buildVectorSet, describeVectorSet, type VectorKind } from '../serverSync/serverVectors';
 // @ts-expect-error The provider-free queries are JavaScript, bundled by Vite.
@@ -28,7 +30,7 @@ function databaseStamp(file: string): string {
 }
 export function invalidateLiveCorpus(vaultId: string): void { snapshots.delete(vaultId); invalidateLiveLibrary(vaultId); }
 
-export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[], input?: Record<string, unknown>): Promise<void> {
+export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse, url: URL, vaultId: string, segments: string[], input?: Record<string, unknown>, domains: readonly string[] = []): Promise<void> {
   const vault = getVault(vaultId);
   if (!vault) { res.writeHead(404); res.end(); return; }
   if (segments[0] === 'library') { await serveLiveLibrary(req, res, url, vaultId, segments.slice(1)); return; }
@@ -49,7 +51,28 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
   if (isReadOnlyCorpusQuery(req.method, segments.join('/'))) {
     if (!input) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'invalid_query' })); return; }
     let result;
-    if (segments[0] === 'context') result = contextReadQuery(cached.document, input, built.revision);
+    if (segments[0] === 'context') {
+      result = contextReadQuery(cached.document, input, built.revision);
+      if (Array.isArray(input.include) && input.include.includes('sources') && typeof input.query === 'string') {
+        const content = result.body;
+        const publicSources = content.sections.find((section: {kind:string}) => section.kind === 'sources');
+        const additional = await readPrivateSourceContext(vaultId,domains,input.query,Math.max(0,content.stats.budget-content.stats.chars));
+        if (additional.items.length) {
+          if (publicSources) {
+            const replaced = new Set(additional.items.map(row => String(row.citation)));
+            for (const row of publicSources.items) if (replaced.has(row.citation)) content.stats.chars -= JSON.stringify(row).length;
+            publicSources.items = publicSources.items.filter((row: {citation:string}) => !replaced.has(row.citation));
+            publicSources.items.push(...additional.items);
+          }
+          else content.sections.push({kind:'sources',items:additional.items});
+        }
+        content.stats.chars += additional.used; content.stats.matched += additional.matched;
+        content.stats.truncated ||= additional.truncated;
+        // Private revisions and content never modify the public cached snapshot.
+        content.revision = privateContextRevision(built.revision,additional.items);
+        res.setHeader('x-nodus-revision',content.revision);
+      }
+    }
     else {
       if (!validQueryKind(input)) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'invalid_vector_kind' })); return; }
       const kind = String(input.kind || 'ideas') as VectorKind;

@@ -162,7 +162,7 @@ export function IdeaDetailModal({
               <div>
                 <Badge color="indigo">{ideaTypeLabel(detail.idea.type as IdeaType)}</Badge>
                 <h3 className="mt-2 text-base font-semibold leading-snug">{detail.idea.label}</h3>
-                <p className="mt-1 text-sm text-neutral-400">{detail.idea.statement}</p>
+                <p role="group" aria-label={t('Enunciado de la idea')} className="mt-1 text-sm text-neutral-400">{detail.idea.statement}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">

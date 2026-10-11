@@ -691,6 +691,32 @@
   flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
   color: var(--stellar-text); font-size: 12px;
 }
+.stellar-theme-directory {
+  position: absolute;
+  inset: 80px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 12px 24px;
+}
+.stellar-theme-directory-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 14px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--stellar-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--stellar-text);
+  text-align: left;
+  cursor: pointer;
+}
+.stellar-theme-directory-row > span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; line-height: 1.4; }
+.stellar-theme-directory-row small { display: block; margin-top: 4px; color: var(--stellar-muted); font-size: 12px; }
+.stellar-theme-directory-row > svg { flex-shrink: 0; color: var(--stellar-accent-quiet); }
+.stellar-theme-directory-row:hover, .stellar-theme-directory-row:focus-visible { background: var(--stellar-accent-wash); }
 .stellar-breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--stellar-muted); font-size: 11px; }
 .stellar-breadcrumb button {
   display: inline-flex; align-items: center; gap: 6px;

@@ -44,6 +44,19 @@ export function ThemesOverview({
   const [query, setQuery] = useState("");
   const [positions, setPositions] = useState<Record<string, StellarPosition>>({});
   const [camera, setCamera] = useState({ x: 0, y: 0, zoom: 1 });
+  const container = useRef<HTMLDivElement | null>(null);
+  const [compact, setCompact] = useState(false);
+  const [phoneCanvas, setPhoneCanvas] = useState(false);
+  const directory = compact && !phoneCanvas;
+  useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const update = () => setCompact(element.clientWidth <= 600);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const api = useRef<StellarCanvasApi | null>(null);
   const framed = useRef("");
   const [pinned, setPinned] = useState<GraphNode[]>([]);
@@ -143,9 +156,11 @@ export function ThemesOverview({
     });
   }, [pinned]);
   useEffect(() => {
-    if (!data.nodes.length || framed.current === signature) return;
+    const framingKey = `${signature}:${compact}:${directory}`;
+    if (!data.nodes.length || framed.current === framingKey) return;
     if (!data.nodes.every((node) => positions[node.id])) return;
-    framed.current = signature;
+    framed.current = framingKey;
+    if (compact) { api.current?.fit(); return; }
     // Centre the themes at full size rather than fitting them: zoomed out, a node shrinks
     // to a speck and stops looking like the graph node it is. "Fit all" is one click away.
     const points = data.nodes.map((node) => positions[node.id]);
@@ -156,13 +171,14 @@ export function ThemesOverview({
       y: Math.round((Math.min(...points.map((p) => p.y)) + Math.max(...points.map((p) => p.y))) / 2) + 30,
       zoom: 1,
     });
-  }, [data, positions, signature]);
+  }, [data, positions, signature, compact, directory]);
   const bindApi = useCallback((value: StellarCanvasApi | null) => {
     api.current = value;
-  }, []);
+    if (value && compact && !directory) value.fit();
+  }, [compact, directory]);
 
   return (
-    <div className="stellar-workspace stellar-themes" data-testid="stellar-themes" data-theme-count={sorted.length}>
+    <div ref={container} className="stellar-workspace stellar-themes" data-testid="stellar-themes" data-theme-count={sorted.length} data-theme-presentation={directory ? "directory" : "canvas"}>
       <header className="stellar-header">
         <div className="stellar-heading">
           <span className="stellar-eyebrow">NODUS / {t("TEMAS")}</span>
@@ -193,7 +209,21 @@ export function ThemesOverview({
       </header>
       <div className="stellar-body">
         <div className="stellar-stage">
-          {active && <StellarCanvas
+          {directory && <div className="stellar-theme-directory" aria-label={t("Temas del corpus")}>
+            {pinned.map(node => <button key={node.id} className="stellar-theme-directory-row" onClick={() => onOpenIdea(node)}>
+              <Icon name="bulb" size={18} />
+              <span>{node.label}<small>{t("Idea seleccionada")}</small></span>
+              <Icon name="chevronRight" size={16} />
+            </button>)}
+            {shown.map(theme => <button key={theme.id} className="stellar-theme-directory-row" data-theme-id={theme.id}
+              aria-label={`${t("Tema")} · ${theme.ideaCount.toLocaleString()} ${t(theme.ideaCount === 1 ? "idea" : "ideas")} · ${themeName(theme)}`}
+              onClick={() => onOpen(theme)}>
+              <Icon name="layers" size={18} />
+              <span>{themeName(theme)}<small>{theme.ideaCount.toLocaleString()} {t(theme.ideaCount === 1 ? "idea" : "ideas")}</small></span>
+              <Icon name="chevronRight" size={16} />
+            </button>)}
+          </div>}
+          {active && !directory && <StellarCanvas
             data={data}
             context={corpusContext.layer}
             onContextNode={node => { if (!visibleIds.has(node.id)) updateIdeas([...pinned, node]); }}
@@ -227,6 +257,8 @@ export function ThemesOverview({
             {ideaCount !== null && ` · ${tx("{n} ideas únicas en el corpus", { n: ideaCount.toLocaleString() })}`}
           </div>
           <div className="stellar-navigation">
+            {compact && <button onClick={() => setPhoneCanvas(value => !value)}>{t(directory ? "Ver constelación" : "Ver temas")}</button>}
+            {!directory && <>
             <CorpusContextControls context={corpusContext} onFit={() => api.current?.fitContext()} />
             <button aria-label={t("Alejar")} title={t("Alejar")} onClick={() => api.current?.zoom(1 / 1.55)}>
               −
@@ -235,6 +267,7 @@ export function ThemesOverview({
               +
             </button>
             <button onClick={() => api.current?.fit()}>{t("Encuadrar")}</button>
+            </>}
           </div>
           {error && (
             <div className="stellar-error" role="alert">

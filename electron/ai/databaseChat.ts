@@ -1,4 +1,5 @@
 import { prepareResearchAttachments, withResearchAttachmentFallback } from './researchAttachments';
+import {generationSignal} from './generationSignal';
 import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { researchGenerationOptions } from './researchGenerationOptions';
 import { skillHasCapability } from '@shared/chatSkills';
@@ -124,6 +125,7 @@ export async function streamDatabaseChat(
   signal?: AbortSignal,
   deps: DatabaseChatDeps = {}
 ): Promise<{ text: string; aborted?: boolean }> {
+  signal = generationSignal(signal);
   if (!request.databaseIds.length && !request.attachmentIds?.length) throw new Error('Elige al menos una base de datos.');
   const settings = getSettings();
   const execution = vaultChatSkillSession('database', request.conversationId, request.question, request.model ?? settings.chatModel ?? settings.synthesisModel, getDatabaseChatConversation);

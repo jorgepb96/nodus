@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import {isMobileOperation,mobileDomainAllowed,assertDesktopPreparation} from '../desktopBridge/executionBoundary';
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
@@ -350,6 +351,7 @@ export async function retrieveStudyAssistantEntries(
   const selected = new Set(sourceKeys);
   const seenFragments = new Set<string>();
   const candidates = store.entries.filter((entry) => !entry.excluded
+    && (entry.kind !== 'transcript' || mobileDomainAllowed('study-recordings'))
     && (!selected.size || selected.has(studyAssistantSourceKey(entry.kind, entry.sourceId)))
     && matchesAssistantRetrievalOptions(entry, options)).filter((entry) => {
       const key = assistantFragmentKey(entry);
@@ -387,6 +389,7 @@ export async function retrieveStudyAssistantEntries(
 }
 
 export async function rebuildStudySearchIndex(): Promise<StudySearchProgress> {
+  assertDesktopPreparation();
   if (runtime.state === 'indexing' || runtime.state === 'paused') return progress();
   runtime.state = 'indexing'; runtime.error = null; runtime.paused = false; runtime.stopRequested = false; runtime.processedEntries = 0; runtime.currentTitle = null;
   const old = readStore(); const config = modelConfig();
@@ -422,6 +425,7 @@ let refreshTask: Promise<void> | null = null;
 /** Incremental, de-duplicated refresh used after source changes. Existing vectors
  * are retained by content hash and only new or changed fragments are embedded. */
 export function queueStudySearchIndexRefresh(): void {
+  if (isMobileOperation()) return;
   queuedRefresh = true;
   if (refreshTask) return;
   refreshTask = (async () => {
@@ -434,6 +438,10 @@ export function queueStudySearchIndexRefresh(): void {
 
 function ensureLexicalIndex(): StudySearchStore {
   const store = readStore();
+  if (isMobileOperation()) {
+    if (!store.entries.length) throw new Error('desktop_preparation_required');
+    return store;
+  }
   const config = modelConfig();
   const collected = collectStudySearchEntries();
   const oldByHash = new Map(store.entries.map((entry) => [entry.contentHash, entry]));

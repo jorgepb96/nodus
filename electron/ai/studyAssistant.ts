@@ -1,4 +1,6 @@
 import { prepareResearchAttachments, withResearchAttachmentFallback } from './researchAttachments';
+import {generationSignal} from './generationSignal';
+import {mobileDomainAllowed} from '../desktopBridge/executionBoundary';
 import { deleteResearchAttachments } from '../researchAttachments';
 import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { researchGenerationOptions } from './researchGenerationOptions';
@@ -66,7 +68,14 @@ export function listStudyAssistantConversations(includeArchived = false): StudyA
 }
 
 export function getStudyAssistantConversation(id: string): StudyAssistantConversation | null {
-  return readStore().conversations.find((conversation) => conversation.id === id) ?? null;
+  const conversation = readStore().conversations.find((conversation) => conversation.id === id) ?? null;
+  if (conversation) assertConversationGrant(conversation);
+  return conversation;
+}
+
+function assertConversationGrant(conversation: Pick<StudyAssistantConversation,'messages'>): void {
+  if (!mobileDomainAllowed('study-recordings') && conversation.messages.some(message =>
+    message.citations?.some(citation => citation.kind === 'transcript') || message.content.includes('nodus://study/recording/'))) throw new Error('permission_denied');
 }
 
 export function createStudyAssistantConversation(input: StudyAssistantConversationInput = {}): StudyAssistantConversation {
@@ -88,6 +97,8 @@ export function createStudyAssistantConversation(input: StudyAssistantConversati
 export function updateStudyAssistantConversation(id: string, patch: StudyAssistantConversationPatch): StudyAssistantConversation | null {
   const store = readStore(); const index = store.conversations.findIndex((conversation) => conversation.id === id); if (index < 0) return null;
   const current = store.conversations[index];
+  assertConversationGrant(current);
+  if (patch.messages) assertConversationGrant({messages:patch.messages});
   // Where a chat sits is only ever changed through the organizer, which validates it.
   const { projectId: _projectId, folderId: _folderId, pinnedAt: _pinnedAt, ...fields } = patch as StudyAssistantConversationPatch & { projectId?: unknown; folderId?: unknown; pinnedAt?: unknown };
   const next: StudyAssistantConversation = {
@@ -183,7 +194,9 @@ export function clearStudyAssistantDemoConversation(variant: StudyChatDemoVarian
   }
 }
 
-export function getStudyAssistantSources(): StudyAssistantSourceOption[] { return listStudyAssistantSourceOptions(); }
+export function getStudyAssistantSources(): StudyAssistantSourceOption[] {
+  return listStudyAssistantSourceOptions().filter(source => source.kind !== 'transcript' || mobileDomainAllowed('study-recordings'));
+}
 
 function searchOptions(selection: StudyAssistantSelection): StudySearchOptions {
   if (selection.scope === 'course') return { courseId: selection.courseId || undefined };
@@ -199,6 +212,7 @@ async function buildCitations(question: string, selection: StudyAssistantSelecti
   const citations: StudyAssistantCitation[] = [];
   let chars = 0; let truncated = entries.length >= 20;
   for (const entry of entries) {
+    if (entry.kind === 'transcript' && !mobileDomainAllowed('study-recordings')) continue;
     if (chars >= MAX_CONTEXT_CHARS) { truncated = true; break; }
     const compressed = compressStudyAssistantEvidence(entry.text, question, Math.min(MAX_SOURCE_CHARS, MAX_CONTEXT_CHARS - chars));
     if (!compressed.text) continue;
@@ -236,6 +250,7 @@ export async function streamStudyAssistant(
   onDelta: (delta: string, kind?: 'content' | 'reasoning') => void,
   signal?: AbortSignal,
 ): Promise<StudyAssistantResponse> {
+  signal = generationSignal(signal);
   const lastUser = [...request.messages].reverse().find((message) => message.role === 'user' && message.content.trim());
   if (!lastUser) throw new Error(studyAssistantPromptPack(effectivePromptLanguage(request.language)).noQuestion);
   const settings = getSettings();

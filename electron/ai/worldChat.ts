@@ -1,4 +1,5 @@
 import { prepareResearchAttachments, withResearchAttachmentFallback } from './researchAttachments';
+import {generationSignal} from './generationSignal';
 import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { researchGenerationOptions } from './researchGenerationOptions';
 import { skillHasCapability } from '@shared/chatSkills';
@@ -260,6 +261,7 @@ export async function streamWorldChat(
   onDelta: (delta: string) => void,
   signal?: AbortSignal
 ): Promise<WorldChatResult> {
+  signal = generationSignal(signal);
   const settings = getSettings();
   const skills = enabledChatSkills('assistant');
   const vaultId = getActiveVault().id;

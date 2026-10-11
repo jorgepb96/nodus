@@ -35,6 +35,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if (method === 'updateStudyEntity' && args[0] !== 'folder') throw new Error('operation_forbidden');
   if (['getContentTranslationOfflineSource', 'getContentTranslationGenerationContext', 'generateContentTranslation',
     'beginContentTranslationOnMobile', 'saveContentTranslationFromMobile', 'failContentTranslationOnMobile'].includes(method)) {
     const first = args[0] as {entityKind?: unknown; request?: {entityKind?: unknown}} | undefined;
@@ -74,7 +75,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
       const work = getDb().prepare('SELECT 1 FROM works WHERE nodus_id=?').get(id);
       if (!work && !listGlobalLibraryVaultLinks(id).some(link => link.vaultId === vaultId)) throw new Error('permission_denied');
     }
-    const invoke = () => withMobileOperation(() => handler(event, ...args));
+    const invoke = () => withMobileOperation(() => handler(event, ...args), domains);
     let value = await (signal ? withGenerationSignal(signal, invoke) : invoke());
     if (method === 'getImmersionSession' && !domains.includes('writing') && value && typeof value === 'object') {
       value = {...value, progress: emptyImmersionProgress()};

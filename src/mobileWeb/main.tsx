@@ -19,6 +19,10 @@ import { DatabaseDeepResearchView } from '../views/DatabaseDeepResearchView';
 import {loadMobileDatabaseResearchReports} from './databaseResearchCatalogue';
 import { ImmersionView } from '../views/ImmersionView';
 import { ResearchAssistantModal } from '../views/ResearchAssistantModal';
+import {WorldChatView} from '../views/WorldChatView';
+import {StudyChatView} from '../views/StudyChatView';
+import {DatabasesChatView} from '../views/DatabasesChatView';
+import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_CHAT_CANCEL_METHODS,MOBILE_CHAT_STREAM_EVENTS} from './mobileChat';
 import { setActiveLang, t } from '../i18n';
 import type { AppSettings, GraphData } from '@shared/types';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
@@ -149,12 +153,10 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
 };
 const subscriptions = native.nodusMobileSubscriptions;
 const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();
-const streamMethods = new Set(['generateImmersionSession', 'researchChatStream', 'improveStudyText']);
+const streamMethods = new Set(['generateImmersionSession', ...MOBILE_CHAT_STREAM_METHODS, 'improveStudyText']);
 const streamEvents: Record<string, string> = {
   'immersion:generate:progress': 'onProgress', 'study:improve:delta': 'onDelta',
-  'research:chatStream:delta': 'onDelta', 'research:chatStream:reasoning': 'onReasoning',
-  'research:chatStream:replace': 'onReplace', 'research:chatStream:concilium': 'onConcilium',
-  'research:chatStream:activity': 'onActivity', 'mobile:export:progress': 'onProgress',
+  ...MOBILE_CHAT_STREAM_EVENTS, 'mobile:export:progress': 'onProgress',
 };
 let activeChat: string | undefined, activeImprove: string | undefined;
 (window as any).nodusMobileEvent = (event: { channel: string; args: unknown[] }) => {
@@ -217,7 +219,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
     const result=await call(method,provider);
     return Array.isArray(result)?mobileModelInformation(provider,result):{...result,models:mobileModelInformation(provider,result.models??[]),selectableModels:mobileModelInformation(provider,result.selectableModels??[])};
   };
-  if (method === 'cancelResearchChat') return () => activeChat && call('cancelLiveJob', activeChat);
+  if ((MOBILE_CHAT_CANCEL_METHODS as readonly string[]).includes(method)) return async () => activeChat ? call('cancelLiveJob', activeChat) : undefined;
   if (method === 'improveStudyText' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousWriting>[1], handlers: {onDelta?:(text:string)=>void} = {}) => autonomousWriting(call,request,handlers.onDelta ?? (()=>{}));
   if (method === 'cancelStudyImprove') return () => native.nodusMobileConfig.executionMode === 'autonomous' ? cancelAutonomousWriting(call) : activeImprove && call('cancelLiveJob', activeImprove);
   if (method === 'exportDeepResearchArchive') return async (request: unknown, onProgress?: (done: number, total: number) => void) => {
@@ -226,7 +228,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
   };
   if (streamMethods.has(method)) return async (request: unknown, handlers: Record<string, (...args: any[]) => void> = {}) => {
     const id = crypto.randomUUID(); streamHandlers.set(id, handlers);
-    if (method === 'researchChatStream') activeChat = id;
+    if ((MOBILE_CHAT_STREAM_METHODS as readonly string[]).includes(method)) activeChat = id;
     if (method === 'improveStudyText') activeImprove = id;
     try { const result = await call(method, id, request); handlers.onStats?.(result?.stats); return result; }
     finally { streamHandlers.delete(id); if (activeChat === id) activeChat = undefined; if (activeImprove === id) activeImprove = undefined; }
@@ -338,7 +340,16 @@ function App() {
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
-      : config.surface === 'chat' ? <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
+      : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'
+        ? <WorldChatView settings={settings} onNavigate={view=>navigate('section',view)} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+        : ['study','teaching'].includes(mobileChatSurface(config.vaultType))
+          ? <StudyChatView settings={settings} variant={config.vaultType==='docencia'?'teaching':'study'}
+              onOpenDocument={(id,location)=>navigate('citation',mobileStudyCitation('doc',id,location))}
+              onOpenMaterial={(id,location)=>navigate('citation',mobileStudyCitation('material',id,location??{}))}
+              onOpenRecording={(id,timestamp,location)=>navigate('citation',mobileStudyCitation('recording',id,{...location,timestampSeconds:timestamp}))}
+              onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+          : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
+          : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
       : <ArgumentMapView settings={settings}/>}
     <FeedbackHost/>
   </main>;

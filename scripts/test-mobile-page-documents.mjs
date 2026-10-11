@@ -19,7 +19,7 @@ try{
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
     const db=database.getDb(),parent=dbs.createDatabase('Filas reales'),title=dbs.createColumn(parent.id,'Nombre','title');
     for(let n=0;n<67;n++){const row=dbs.createRow(parent.id);dbs.setCell(row.id,title.id,`Fila ${n}`);}
-    const view=dbs.listViews(parent.id)[0]??dbs.createView(parent.id,{name:'Todo',type:'table'});
+    const view=dbs.listViews(parent.id)[0]??dbs.createView(parent.id,{name:'Todo',layout:'table',filter:{conjunction:'and',conditions:[]},sorts:[]});
     const origin=pages.createPage({title:'Original',blocks:[{id:'source-block',type:'paragraph',content:{text:'Texto compartido exacto'}}]});
     const asset=pages.storePageAsset({name:'fuente.txt',mimeType:'text/plain',bytes:Buffer.from('Fuente literal')});
     const page=pages.createPage({title:'Documento',blocks:[{id:'synced',type:'synced_block',content:{sourceBlockId:'source-block'}},{id:'view',type:'database_view',content:{viewId:view.id}},{id:'file',type:'file',content:{blobHash:asset.blobHash,name:asset.name}}]});pageId=page.page.id;
@@ -35,6 +35,10 @@ try{
       revision??=result.revision;assert.equal(result.revision,revision);for(const row of result.rows){assert(!ids.has(row.id));ids.add(row.id);}cursor=result.nextCursor;
     }while(cursor);
     assert.equal(ids.size,67);assert.equal(db.prepare('SELECT total_changes() AS count').get().count,before,'Consultation must not initialise a source or materialise formulas/history');
+    dbs.updateView(view.id,{filter:{conjunction:'and',conditions:[{id:'six',columnId:title.id,op:'contains',value:'6'}]},sorts:[{columnId:title.id,dir:'desc'}]});
+    const filtered=dependencies.mobileLinkedDatabaseRead(vault.id,{action:'rows',input:{viewId:view.id,sourceId:null,localFilter:null,cursor:null,limit:30}}).data;
+    assert.equal(filtered.totalCount,13);assert.equal(filtered.rows[0].cells.title,'Fila 66');assert.equal(filtered.rows.at(-1).cells.title,'Fila 16');
+    dbs.updateView(view.id,{filter:{conjunction:'and',conditions:[]},sorts:[]});
     const document=native.markdownToBlockNote('# Texto móvil\n\n| A | B |\n| --- | --- |\n| 1 | 2 |');
     const input={pageId,expectedRevision:source.document.revision,expectedPageRevision:source.document.page.revision,title:'Título móvil',blocks:native.blockNoteToPageBlocks(document),nativeDocument:document,schemaVersion:2,reason:'contract-fixture'};
     const request={id:randomUUID(),input},saved=await bridge.saveMobilePageDocument(vault.id,'grant',request);

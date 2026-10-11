@@ -2423,8 +2423,8 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
       if (notModified(req, res, json, space, url, key)) return true;
       let plan = null;
       try { plan = JSON.parse(row.plan_json || 'null'); } catch { plan = null; }
-      // `progress_json` is the reader's own position in their own copy; it is never
-      // meaningful across devices, so the server does not pretend to serve it.
+      // Public plans exclude private answers. Paired devices synchronize their
+      // own progress separately through the scoped Desktop writing bridge.
       return send(res, json, { session: { id: row.id, topic: row.topic, title: row.title, language: row.language, minutes: row.minutes, plan }, revision: space.revision });
     }
 

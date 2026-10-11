@@ -17,6 +17,7 @@ import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
 import { readMobileExport } from './exports';
 import { serveBridgeFile } from './files';
 import { readPrivateSource, listPrivateSources, PrivateSourceReadError } from './privateSources';
+import { readImmersionMobileProgress, saveImmersionMobileProgress, ImmersionProgressFailure } from './immersionProgress';
 import { DesktopRelayHost, type RelayConfiguration } from './relayHost';
 import { listVaultConfigs } from '../serverSync/serverSyncShared';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
@@ -440,6 +441,20 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     catch (error) {
       if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
       else reply(response, 400, { error: 'invalid_document', error_description: error instanceof Error ? error.message : 'The document could not be saved.' });
+    }
+    return;
+  }
+  const immersionProgress = /^\/bridge\/v2\/vaults\/([^/]+)\/writing\/immersion\/([^/]+)\/progress$/.exec(url.pathname);
+  if (immersionProgress && ['GET','POST'].includes(request.method ?? '')) {
+    const vaultId = decodeURIComponent(immersionProgress[1]), sessionId = decodeURIComponent(immersionProgress[2]);
+    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response,403,{error:'permission_denied'}); return; }
+    try {
+      const result = request.method === 'GET' ? await readImmersionMobileProgress(vaultId,sessionId)
+        : await saveImmersionMobileProgress(vaultId,pairing.id,sessionId,await body(request,2 * 1024 * 1024));
+      reply(response,200,result);
+    } catch (error) {
+      if (error instanceof ImmersionProgressFailure) reply(response,error.status,{error:error.code,...(error.remote ? {remote:error.remote} : {})});
+      else throw error;
     }
     return;
   }

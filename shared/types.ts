@@ -6220,6 +6220,8 @@ export interface ArgumentRouteSuggestion {
 
 /** One persisted chat message. `stats`/`selectionKey`/`error` mirror the in-memory UI message. */
 export interface ChatMessageRecord {
+  /** Original authorship time, retained when the conversation is saved again. */
+  createdAt?: string;
   concilium?: import('./researchConcilium').ConciliumResult;
   attachments?: import('./researchAttachments').ResearchAttachment[];
   id: string;

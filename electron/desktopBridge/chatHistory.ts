@@ -91,6 +91,7 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   const ids = new Set<string>();
   draft.messages.forEach((message,index)=>{
     if (!object(message) || !['user','assistant'].includes(String(message.role)) || typeof message.content !== 'string') throw new MobileChatFailure(400,'invalid_chat_message');
+    if(message.createdAt!==undefined&&(typeof message.createdAt!=='string'||message.createdAt.length>64||!Number.isFinite(Date.parse(message.createdAt))))throw new MobileChatFailure(400,'invalid_chat_message_date');
     if (message.id !== undefined) {
       if (typeof message.id !== 'string' || !message.id || message.id.length > 256 || ids.has(message.id)) throw new MobileChatFailure(400,'invalid_chat_message');
       ids.add(message.id);

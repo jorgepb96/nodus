@@ -23,7 +23,7 @@ try {
   for(const [kind,type] of cases) {
     const vault=vaults.createVault(`Historial aislado ${type}`,type),grant=randomUUID();
     await inVault(vault.id,async()=>{
-      const id=randomUUID(),messages=Array.from({length:151},(_,i)=>({id:randomUUID(),role:i%2?'assistant':'user',content:`Turno ${i} 🌊`,...(kind==='study'?{createdAt:new Date().toISOString()}:{})}));
+      const id=randomUUID(),messages=Array.from({length:151},(_,i)=>({id:randomUUID(),role:i%2?'assistant':'user',content:`Turno ${i} 🌊`,createdAt:new Date(Date.UTC(2026,0,2,10,0,i)).toISOString()}));
       const request={version:1,id:randomUUID(),conversationId:id,expectedRevision:null,action:'save',draft:{title:'Conversación desde el móvil',archived:false,messages},companion:{messages:messages.map(message=>({id:message.id,text:message.content}))}};
       const first=await api.saveMobileChat(vault.id,grant,kind,request,domains);
       assert.equal(first.snapshot.id,id);assert.equal(first.snapshot.data.messages.length,151);
@@ -35,6 +35,7 @@ try {
       const archived=await api.saveMobileChat(vault.id,grant,kind,changed,domains);
       assert.equal(archived.snapshot.data.archived,true);
       assert.equal(archived.snapshot.data.messages.length,151,'Readable history is never truncated to a model window');
+      assert.deepEqual(archived.snapshot.data.messages.map(message=>message.createdAt),messages.map(message=>message.createdAt),'Archiving and subsequent saves retain actual per-turn time');
       assert.deepEqual(await api.saveMobileChat(vault.id,grant,kind,request,domains),first,'Lost ACK cannot overwrite later archiving');
       await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...request,id:randomUUID(),expectedRevision:doc.revision},domains),error=>error.code==='chat_revision_conflict'&&error.remote.revision===archived.snapshot.revision);
       await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...request,draft:{...request.draft,title:'Changed frozen payload'}},domains),error=>error.code==='idempotency_conflict');
@@ -42,6 +43,16 @@ try {
       await assert.rejects(api.listMobileChats(vault.id,kind==='research'?'database':'research',0,domains),error=>error.code==='chat_kind_forbidden');
       const rich=structuredClone(archived.snapshot.data.messages);rich[0].attachments=[{id:randomUUID(),path:'/a/foreign/private/file'}];
       await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...changed,id:randomUUID(),expectedRevision:archived.snapshot.revision,draft:{...changed.draft,messages:rich}},domains),error=>error.code==='chat_rich_turn_changed');
+      const invalidDate=structuredClone(archived.snapshot.data.messages);invalidDate[0].createdAt='not a date';
+      await assert.rejects(api.saveMobileChat(vault.id,grant,kind,{...changed,id:randomUUID(),expectedRevision:archived.snapshot.revision,draft:{...changed.draft,messages:invalidDate}},domains),error=>error.code==='invalid_chat_message_date');
+      if(kind==='research') {
+        const legacy=research.createConversation({title:'Original timestamps'}),turns=[{id:randomUUID(),role:'user',content:'Already on Mac'}];
+        research.saveMessages(legacy.id,turns);
+        const before=research.getConversation(legacy.id).messages[0].createdAt;
+        research.saveMessages(legacy.id,turns);
+        assert.equal(research.getConversation(legacy.id).messages[0].createdAt,before,'Legacy saves without timestamps do not retimestamp existing Mac turns');
+        research.deleteConversation(legacy.id);
+      }
       const remove={version:1,id:randomUUID(),conversationId:id,expectedRevision:archived.snapshot.revision,action:'delete'};
       const deleted=await api.saveMobileChat(vault.id,grant,kind,remove,domains);
       assert.equal(deleted.deleted,true);assert.deepEqual(await api.saveMobileChat(vault.id,grant,kind,remove,domains),deleted);

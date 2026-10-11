@@ -1311,6 +1311,8 @@ export interface Idea {
   statement: string;
   embedding?: number[] | null;
   created_at: string;
+  /** A mobile-authored text copy has no downloaded canonical neighbourhood. */
+  mobileSourceScope?: 'authoredText';
 }
 
 export interface IdeaOccurrence {

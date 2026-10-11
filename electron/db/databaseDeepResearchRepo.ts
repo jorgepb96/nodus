@@ -267,6 +267,19 @@ export function getDatabaseResearchJob(id: string): DatabaseDeepResearchJob | nu
   const run = getDatabaseResearchRun(id);
   return run ? databaseResearchJob(run) : null;
 }
+/** Retain the host's stable receipt even if a terminal run is later cleared. */
+export function findMobileDatabaseResearchRun(bridgeJobId:string): DatabaseResearchRun | null {
+  const db=getDb();
+  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='desktop_database_research_jobs'").get()) return null;
+  const row=db.prepare('SELECT run_id FROM desktop_database_research_jobs WHERE bridge_job_id=?').get(bridgeJobId) as {run_id:string}|undefined;
+  if(!row) return null;
+  const run=getDatabaseResearchRun(row.run_id);if(!run) throw new Error('mobile_database_research_run_unavailable');return run;
+}
+export function rememberMobileDatabaseResearchRun(bridgeJobId:string,runId:string): void {
+  const db=getDb();db.exec('CREATE TABLE IF NOT EXISTS desktop_database_research_jobs (bridge_job_id TEXT PRIMARY KEY,run_id TEXT NOT NULL,created_at TEXT NOT NULL)');
+  db.prepare('INSERT INTO desktop_database_research_jobs VALUES(?,?,?)').run(bridgeJobId,runId,now());
+}
+export function mobileDatabaseResearchTransaction<T>(run:()=>T): T { return getDb().transaction(run)(); }
 
 /** Clear terminal queue records that do not own a completed report. Reports are
  * deliberately retained in the gallery when a queue is cleared. */

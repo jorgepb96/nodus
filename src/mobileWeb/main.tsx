@@ -25,6 +25,7 @@ import {DatabasesChatView} from '../views/DatabasesChatView';
 import {mobileChatSurface,mobileStudyCitation,MOBILE_CHAT_STREAM_METHODS,MOBILE_CHAT_CANCEL_METHODS,MOBILE_CHAT_STREAM_EVENTS} from './mobileChat';
 import { setActiveLang, t } from '../i18n';
 import type { AppSettings, GraphData } from '@shared/types';
+import type {DatabaseDeepResearchJobInput} from '@shared/databaseDeepResearch';
 import { DEFAULT_APP_SETTINGS } from '@shared/defaultAppSettings';
 import { projectStudyWorkspace, type StudyProjectionRow } from '@shared/studyOrgProjection';
 import { studyKnowledgeProjection } from '@shared/studyKnowledgeProjection';
@@ -249,6 +250,11 @@ window.addEventListener(OPEN_LIBRARY_DOCUMENT_EVENT, event => {
 const openLibraryWork = (itemId: string, scope: 'global' | 'vault', page: number | null = null) => requestLibraryDocumentOpen({itemId,scope,page});
 const config = native.nodusMobileConfig;
 const databaseReportSummaries = () => loadMobileDatabaseResearchReports(call);
+const enqueueMobileDatabaseResearch = async(input:DatabaseDeepResearchJobInput):Promise<'accepted'|'pending'> => {
+  const value=await call('enqueueDatabaseDeepResearch',input) as {version:number;requestId:string;bridgeJobId:string|null;state:string};
+  if(!value||value.version!==1||typeof value.requestId!=='string'||!value.requestId||!['pending','accepted','running','saved','available'].includes(value.state)||value.state!=='pending'&&(!value.bridgeJobId||typeof value.bridgeJobId!=='string')) throw new Error('Nodus no pudo confirmar la solicitud de investigación.');
+  return value.state==='pending'?'pending':'accepted';
+};
 setActiveLang(config.language);
 document.documentElement.classList.toggle('dark', config.theme === 'dark');
 document.documentElement.classList.toggle('light', config.theme !== 'dark');
@@ -319,7 +325,7 @@ function App() {
         for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null);
       } else if (config.surface === 'databaseResearch') {
         for (const job of jobs) for (const listener of subscriptions.get('onDatabaseDeepResearchProgress') ?? []) {
-          listener({runId:job.id,status:job.status,progress:job.progress / 100,phase:job.phase,step:null,message:job.errorMessage ?? null});
+          listener({runId:job.id,status:job.status,progress:job.progress,phase:job.phase,step:null,message:job.error ?? null});
         }
       } else {
         for (const listener of subscriptions.get('onDeepResearchQueue') ?? []) listener(jobs);
@@ -342,7 +348,7 @@ function App() {
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
-      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries}/>
+      : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'
         ? <WorldChatView settings={settings} onNavigate={view=>navigate('section',view)} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>

@@ -13,6 +13,7 @@ export interface BridgeJob {
   recoveryProtocol?: number; mayHaveStarted?: boolean;
 }
 type Runner = (job: BridgeJob, emit: (channel: string, ...args: unknown[]) => void, signal: AbortSignal) => Promise<unknown>;
+const recoverableQueues=new Set(['enqueueDeepResearchJob','enqueueDatabaseDeepResearch']);
 
 /** Cancellation can also arrive through the shared Desktop research queue. */
 export class BridgeJobCancelledError extends Error {}
@@ -76,14 +77,14 @@ export class BridgeJobStore {
       if (existing.payloadHash !== payloadHash) throw new Error('idempotency_conflict');
       // This typed lane links the original durable Bridge id to its saved queue
       // record. Recovery observes/resumes that record and never enqueues a duplicate.
-      if (existing.state === 'interrupted' && existing.method === 'enqueueDeepResearchJob' && existing.recoveryProtocol === 1) {
+      if (existing.state === 'interrupted' && recoverableQueues.has(existing.method) && existing.recoveryProtocol === 1) {
         existing.error = undefined; existing.state = 'accepted'; this.persist(existing);
         setImmediate(() => void this.execute(existing));
       }
       return existing;
     }
     const job: BridgeJob = { ...input, id: randomUUID(), payloadHash, state: 'accepted', createdAt: new Date().toISOString(), updatedAt: '', events: [], nextSequence: 1,
-      ...(input.method === 'enqueueDeepResearchJob' ? { recoveryProtocol: 1 } : {}) };
+      ...(recoverableQueues.has(input.method) ? { recoveryProtocol: 1 } : {}) };
     writeFileSync(this.eventFile(job.id), '', { mode: 0o600 });
     this.persist(job); this.jobs.set(job.id, job);
     setImmediate(() => void this.execute(job));

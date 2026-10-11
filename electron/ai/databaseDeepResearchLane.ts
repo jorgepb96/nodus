@@ -320,10 +320,15 @@ async function drainVault(vaultId: string): Promise<void> {
 export async function enqueueDatabaseDeepResearch(
   vaultId: string,
   rawInput: DatabaseDeepResearchJobInput,
+  mobile: {bridgeJobId?:string;requireExisting?:boolean} = {},
 ): Promise<DatabaseDeepResearchJob> {
   const vault = getVault(vaultId);
   if (!vault || vault.type !== 'databases') throw new Error('Deep Research de datos sólo está disponible en un vault de bases de datos.');
   const run = await withVaultDatabase(vaultId, () => {
+    if(mobile.bridgeJobId) {
+      const existing=repo.findMobileDatabaseResearchRun(mobile.bridgeJobId);if(existing) return existing;
+      if(mobile.requireExisting) throw new Error('mobile_database_research_run_unavailable');
+    }
     const normalized = normalizeDatabaseDeepResearchJobInput(rawInput);
     const schemaColumns = normalized.databaseIds.flatMap((databaseId) => {
       const profile = getDatabaseProfile(databaseId)?.profile;
@@ -345,30 +350,35 @@ export async function enqueueDatabaseDeepResearch(
     if (maxCostUsd != null && estimate.estimatedCostUsd > maxCostUsd) {
       throw new Error(`El coste estimado ($${estimate.estimatedCostUsd.toFixed(2)}) supera el límite configurado ($${maxCostUsd.toFixed(2)}).`);
     }
-    return repo.createDatabaseResearchRun({
-      databaseId: input.databaseIds[0],
-      objective: input.objective,
-      title: input.objective.slice(0, 120),
-      language: input.language,
-      model: selectedModel,
-      options: {
-        ...input,
-        // Normalized at the durable boundary: whatever the renderer, MCP or the
-        // Server sent, the stored run carries a value the writer can trust.
-        sectionLength: normalizeDeepResearchSectionLength(input.sectionLength),
-        budget: {
-          maxRows: input.budget?.maxRows,
-          maxSteps: input.budget?.maxTasks,
-          maxBootstrapIterations: input.budget?.resamples,
-          maxPermutationIterations: input.budget?.resamples,
-          rounds: input.budget?.rounds,
-          depth: input.depth,
-          seed: input.budget?.seed,
-          maxCostUsd,
-          estimatedCostUsd: estimate.estimatedCostUsd,
+    const create = () => {
+      const run = repo.createDatabaseResearchRun({
+        databaseId: input.databaseIds[0],
+        objective: input.objective,
+        title: input.objective.slice(0, 120),
+        language: input.language,
+        model: selectedModel,
+        options: {
+          ...input,
+          // Normalized at the durable boundary: whatever the renderer, MCP or the
+          // Server sent, the stored run carries a value the writer can trust.
+          sectionLength: normalizeDeepResearchSectionLength(input.sectionLength),
+          budget: {
+            maxRows: input.budget?.maxRows,
+            maxSteps: input.budget?.maxTasks,
+            maxBootstrapIterations: input.budget?.resamples,
+            maxPermutationIterations: input.budget?.resamples,
+            rounds: input.budget?.rounds,
+            depth: input.depth,
+            seed: input.budget?.seed,
+            maxCostUsd,
+            estimatedCostUsd: estimate.estimatedCostUsd,
+          },
         },
-      },
-    });
+      });
+      if(mobile.bridgeJobId) repo.rememberMobileDatabaseResearchRun(mobile.bridgeJobId,run.id);
+      return run;
+    };
+    return mobile.bridgeJobId ? repo.mobileDatabaseResearchTransaction(create) : create();
   });
   void drainVault(vaultId);
   return repo.databaseResearchJob(run);

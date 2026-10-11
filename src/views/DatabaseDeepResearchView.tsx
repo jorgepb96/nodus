@@ -606,7 +606,7 @@ function DatabaseReaderSurface({
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-neutral-800 p-4 lg:block"><div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-500">{t("Contenido")}</div><div className="mb-4 h-1.5 overflow-hidden rounded bg-neutral-800"><div className="h-full bg-indigo-500" style={{ width: `${progress}%` }} /></div>{report.sections.map((section) => <a key={section.id} href={`#${section.id}`} className="mb-1 block rounded-lg px-2 py-1.5 text-xs hover:bg-neutral-900">{section.title}</a>)}</aside>
         <main ref={scrollRef} className="min-w-0 flex-1 overflow-y-auto px-5 py-6 md:px-10" data-testid="database-deep-research-reader-scroll"><div ref={documentRef} className="deep-research-reader-document mx-auto max-w-5xl space-y-7" style={{ "--deep-research-font-size": `${fontSize}px` } as CSSProperties}><ReportCharts charts={report.charts} />{report.sections.length ? report.sections.map((section) => <section key={section.id} id={section.id} className="scroll-mt-5"><h3 className="mb-3 text-xl font-semibold">{section.title}</h3><Markdown content={section.markdown} /></section>) : <Markdown content={report.markdown} />}</div></main>
-        {evidenceOpen && <aside data-testid="database-deep-research-evidence-drawer" className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950/30 p-4"><h3 className="mb-3 font-semibold">{t("Evidencia")}</h3>{report.evidence.length ? <div className="space-y-2">{report.evidence.map((item) => <article key={item.id} className="rounded-xl border border-neutral-800 p-3"><div className="text-xs font-medium">{item.label}</div><p className="mt-1 text-xs leading-5 text-neutral-500">{item.excerpt}</p><div className="mt-2 text-[10px] text-neutral-500">{item.method && `${t("Método")}: ${item.method} · `}{item.n != null && `n=${item.n} · `}{t("Filas")}: {item.rowIds.length || "—"}</div></article>)}</div> : <p className="text-xs text-neutral-500">{t("No hay evidencia registrada.")}</p>}</aside>}
+        {evidenceOpen && <aside data-testid="database-deep-research-evidence-drawer" aria-label={t("Evidencia")} className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 bg-neutral-950/30 p-4"><div className="mb-3 flex items-center justify-between gap-3"><h3 className="font-semibold">{t("Evidencia")}</h3><button className="btn btn-ghost min-h-11 min-w-11" onClick={onToggleEvidence} aria-label={t("Cerrar evidencia")}><Icon name="x" size={18}/></button></div>{report.evidence.length ? <div className="space-y-2">{report.evidence.map((item) => <article key={item.id} className="rounded-xl border border-neutral-800 p-3"><div className="text-xs font-medium">{item.label}</div><p className="mt-1 text-xs leading-5 text-neutral-500">{item.excerpt}</p><div className="mt-2 text-[10px] text-neutral-500">{item.method && `${t("Método")}: ${item.method} · `}{item.n != null && `n=${item.n} · `}{t("Filas")}: {item.rowIds.length || "—"}</div></article>)}</div> : <p className="text-xs text-neutral-500">{t("No hay evidencia registrada.")}</p>}</aside>}
       </div>
       <ReaderSelectionActions key={report.id} ref={markActionsRef} targetRef={documentRef} scrollRef={scrollRef} contextId={`database-deep-research:${report.id}`} annotations={annotations} highlighterColor={highlighterColor} onCreateAnnotation={onCreateAnnotation} onUpdateComment={onUpdateComment} onDeleteAnnotation={onDeleteAnnotation} onAnnotationError={onAnnotationError} onMarkChange={setHasMark} />
       <FindInPage targetRef={scrollRef} />
@@ -620,12 +620,14 @@ export function DatabaseDeepResearchView({
   onSnapshotChange,
   mobile = false,
   loadReportSummaries,
+  enqueueMobileResearch,
 }: {
   settings: import("@shared/types").AppSettings;
   snapshot?: DatabaseDeepResearchSnapshot;
   onSnapshotChange?: (patch: Partial<DatabaseDeepResearchSnapshot>) => void;
   mobile?: boolean;
   loadReportSummaries?: () => Promise<DatabaseResearchReportSummary[]>;
+  enqueueMobileResearch?: (input:DatabaseDeepResearchJobInput) => Promise<'accepted'|'pending'>;
 }) {
   const [databases, setDatabases] = useState<DatabaseSummary[]>([]);
   const [details, setDetails] = useState<
@@ -956,6 +958,12 @@ export function DatabaseDeepResearchView({
     }
     setBusy(true);
     try {
+      if(enqueueMobileResearch) {
+        const state=await enqueueMobileResearch({...input,model,thinkingEffort,planSections:previewSections});
+        setToast(t(state==='pending'?'Solicitud guardada en el móvil. Se enviará cuando Nodus vuelva a estar disponible.':'Solicitud aceptada por Nodus. Puedes seguir trabajando mientras se prepara el informe.'));
+        void loadJobsAndReports().catch(error=>setPreviewError(t(error instanceof Error?error.message:String(error))));
+        return true;
+      }
       const job = await window.nodus.enqueueDatabaseDeepResearch({
         ...input,
         model,

@@ -617,9 +617,10 @@ export function registerDatabasesIpc({ h, getWindow, chatAborters }: IpcContext)
   });
   h('db:deepResearch:enqueue', async (e, input: DatabaseDeepResearchJobInput) => {
     const vault = databaseResearchVault();
-    const job = await enqueueDatabaseDeepResearch(vault.id, input);
+    const host=e as typeof e & {mobileBridgeJobId?:string;mobileBridgeRecovery?:boolean};
+    const job = await enqueueDatabaseDeepResearch(vault.id, input,{bridgeJobId:host.mobileBridgeJobId,requireExisting:host.mobileBridgeRecovery});
     if (!e.sender.isDestroyed()) e.sender.send('db:deepResearch:progress', {
-      runId: job.id, status: job.status, progress: job.progress / 100, step: null, phase: job.phase, message: 'Añadida a la cola.',
+      runId: job.id, status: job.status, progress: job.progress, step: null, phase: job.phase, message: 'Añadida a la cola.',
     });
     return job;
   });

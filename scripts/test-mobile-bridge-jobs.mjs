@@ -84,8 +84,9 @@ test('legacy snapshots migrate progress before updating their state', () => {
   assert.equal(JSON.parse(fs.readFileSync(path.join(folder, `${legacy.id}.json`))).events.length, 0);
 });
 test('research recovery uses the original Bridge identity instead of creating another request', async () => {
-  const folder = path.join(directory, 'research-recovery');
-  const research = { ...input, method: 'enqueueDeepResearchJob' };
+  for (const method of ['enqueueDeepResearchJob', 'enqueueDatabaseDeepResearch']) {
+  const folder = path.join(directory, `research-recovery-${method}`);
+  const research = { ...input, method };
   const store = new BridgeJobStore(folder, (job, emit) => {
     emit('mobile:deepResearch:progress', { id: 'owned-lane', bridgeJobId: job.id, status: 'queued' });
     return new Promise(() => {});
@@ -96,6 +97,9 @@ test('research recovery uses the original Bridge identity instead of creating an
   const recovered = reopened.submit(research); assert.equal(recovered.id, original.id); await tick();
   assert.equal(observed.id, original.id); assert.equal(observed.mayHaveStarted, true);
   assert.equal(recovered.state, 'available'); assert.equal(recovered.result.savedDraftId, 'saved-once');
+  assert.throws(() => reopened.submit({...research,args:[{question:'different'}]}), /idempotency_conflict/);
+  assert.equal(reopened.get(original.id,'other-device',input.vaultId),undefined);
+  }
 });
 test('research recovery repairs a torn progress append before saving new events', async () => {
   for (const tail of ['{"sequence":2,"channel":', '{"sequence":2,"channel":"delta","args":["completo: ñ"]}']) {

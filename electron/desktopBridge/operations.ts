@@ -109,6 +109,32 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
       } finally { signal?.removeEventListener('abort', abort); }
     }
     if (method === 'listDeepResearchJobs' && Array.isArray(value)) return value.filter(job => job.vaultId === vaultId);
+    if(method==='enqueueDatabaseDeepResearch'&&value&&typeof value==='object') {
+      const id=(value as {id?:string}).id;if(!id) throw new Error('invalid_database_research_job');
+      const get=handlers.get('db:deepResearch:job:get')!,cancel=handlers.get('db:deepResearch:job:cancel')!,report=handlers.get('db:deepResearch:report:get')!;
+      let revision='',cancelling:Promise<unknown>|undefined;
+      const abort=()=>{
+        cancelling ??= Promise.resolve().then(()=>withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>cancel(event,id))));
+        void cancelling.catch(()=>{});
+      };
+      signal?.addEventListener('abort',abort,{once:true});
+      try {
+        for(;;) {
+          if(signal?.aborted) {abort();await cancelling;}
+          const job=await get(event,id) as {id:string;status:string;error?:string|null};
+          if(!job||job.id!==id) throw new Error('database_research_job_unavailable');
+          const next=JSON.stringify(job);if(next!==revision) {events?.('mobile:databaseResearch:progress',job);revision=next;}
+          if(job.status==='cancelled') throw new BridgeJobCancelledError(job.error??job.status);
+          if(['failed','stale'].includes(job.status)) throw new Error(job.error??job.status);
+          if(['completed','partial'].includes(job.status)) {
+            const saved=await report(event,id) as {id:string;runId:string}|null;
+            if(!saved||saved.runId!==id||!saved.id) throw new Error('database_research_result_not_saved');
+            value={...job,reportId:saved.id};break;
+          }
+          await new Promise(resolve=>setTimeout(resolve,500));
+        }
+      } finally {signal?.removeEventListener('abort',abort);}
+    }
     if (method === 'listDictionaryGenerationJobs' && Array.isArray(value)) return value.filter(job => getDb().prepare('SELECT 1 FROM dictionary_entries WHERE id=?').get(job.entryId));
     return value;
   }));

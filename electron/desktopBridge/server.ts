@@ -20,6 +20,7 @@ import { serveBridgeFile } from './files';
 import { readPrivateSource, listPrivateSources, PrivateSourceReadError } from './privateSources';
 import { readImmersionMobileProgress, saveImmersionMobileProgress, ImmersionProgressFailure } from './immersionProgress';
 import {readMobileDatabaseReading,saveMobileDatabaseReading,DatabaseReadingFailure} from './databaseResearchReading';
+import {findMobileDatabaseResearchRun} from '../db/databaseDeepResearchRepo';
 import { DesktopRelayHost, type RelayConfiguration } from './relayHost';
 import { listVaultConfigs } from '../serverSync/serverSyncShared';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
@@ -193,6 +194,10 @@ function jobStore(): BridgeJobStore {
   return jobs ??= new BridgeJobStore(path.join(app.getPath('userData'), 'desktop-bridge', 'jobs'),
     (job, emit, signal) => executeMobileOperation(job.vaultId, job.domains, job.method, job.args, emit, signal, job.id, job.mayHaveStarted),
     async job => {
+      if(job.method==='enqueueDatabaseDeepResearch') {
+        const run=await withVaultDatabase(job.vaultId,()=>findMobileDatabaseResearchRun(job.id));
+        if(run) await executeMobileOperation(job.vaultId,job.domains,'cancelDatabaseDeepResearchJob',[run.id]);return;
+      }
       if (job.method !== 'enqueueDeepResearchJob') return;
       const queue = await executeMobileOperation(job.vaultId, job.domains, 'listDeepResearchJobs', []) as Array<{ id: string; bridgeJobId?: string }>;
       const owned = queue.find(record => record.bridgeJobId === job.id);

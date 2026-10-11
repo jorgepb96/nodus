@@ -31,8 +31,9 @@ export function prepareWorldProseReview(sceneId:string,requestedLanguage?:Prompt
     | undefined;
   if (!scene) throw new Error('Escena no encontrada.');
 
-  const settings = getSettings();
-  const language = requestedLanguage??settings.promptLanguage ?? 'es';
+  // Portable source capture always supplies its language. Avoid reading and
+  // migrating model preferences while merely consulting that scene.
+  const language = requestedLanguage ?? getSettings().promptLanguage ?? 'es';
   const promptCopy = proseReviewContextCopy(language);
   const beats = beatsForScene(sceneId);
   const sources: ProseReviewSources = {

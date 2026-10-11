@@ -18,7 +18,8 @@ try {
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
     const parent=repo.createDatabase('Base vinculada'),row=repo.createRow(parent.id);rowId=row.id;
     const before=database.getDb().prepare('SELECT total_changes() AS count').get().count;
-    assert.deepEqual(read.mobileDatabaseRowLocation(vault.id,rowId),{version:1,vaultId:vault.id,rowId,databaseId:parent.id});
+    const pageId=database.getDb().prepare("SELECT id FROM pages WHERE row_id=? AND state='active'").get(rowId).id;
+    assert.deepEqual(read.mobileDatabaseRowLocation(vault.id,rowId),{version:1,vaultId:vault.id,rowId,databaseId:parent.id,pageId});
     assert.equal(database.getDb().prepare('SELECT total_changes() AS count').get().count,before,'The locator must not hydrate rows or materialise formulas');
     for(const value of ['',null,{},'x'.repeat(1025)])assert.throws(()=>read.mobileDatabaseRowLocation(vault.id,value),/invalid_arguments/);
     assert.throws(()=>read.mobileDatabaseRowLocation(vault.id,parent.id),/record_not_found/,'A database identity is not a row identity');

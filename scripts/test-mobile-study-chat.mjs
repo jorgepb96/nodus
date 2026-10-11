@@ -70,7 +70,7 @@ try {
       const unrelated=structuredClone(manualPack);unrelated.originals=originals.originals;unrelated.id=sha(shared.studyChatPackPayload(unrelated));
       assert.throws(()=>shared.validateMobileStudyChatSourcePack(unrelated,vault.id),/study_chat_original_outside_selection/);
       const older=structuredClone(originals);delete older.originals;older.id=sha(shared.studyChatPackPayload(older));shared.validateMobileStudyChatSourcePack(older,vault.id);
-      questions.setStudyQuestionLifecycle(item.id,'delete');
+      questions.setStudyQuestionLifecycle(item.id,'trash');
       assert.throws(()=>search.getMobileStudyChatOriginal({kind:'question',sourceId:item.id}),/study_chat_original_unavailable/);
       fs.writeFileSync(indexFile,originalIndex);
       const input={packs:[manualPack],request:{...base,selection:manual},vaultId:vault.id,interfaceLanguage:'es'},prepared=shared.prepareStudyChat(input);
@@ -87,7 +87,7 @@ try {
       // Once captured, real citations survive a later reindex of the Mac.
       fs.writeFileSync(indexFile,JSON.stringify({...stored,entries:[]}));
       const grant=randomUUID(),saved=await history.saveMobileChat(vault.id,grant,'study',edit,['corpus','writing','study-recordings']);
-      assert.deepEqual(saved.snapshot.data.selection,manual);assert.equal(saved.snapshot.data.task,'compare');assert.deepEqual(saved.snapshot.data.messages[1].citations,result.citations);
+      assert.deepEqual(saved.snapshot.data.selection,shared.normalizeMobileStudyChatOptions(study).selection);assert.equal(saved.snapshot.data.task,'compare');assert.deepEqual(saved.snapshot.data.messages[1].citations,result.citations);
       assert.deepEqual(await history.saveMobileChat(vault.id,grant,'study',edit,['corpus','writing','study-recordings']),saved);
       const forged=structuredClone(edit);forged.id=randomUUID();forged.conversationId=randomUUID();forged.draft.messages[1].citations[0].quote='Una afirmación inventada';
       await assert.rejects(history.saveMobileChat(vault.id,grant,'study',forged,['corpus','writing']),error=>error.code==='invalid_study_chat_evidence');

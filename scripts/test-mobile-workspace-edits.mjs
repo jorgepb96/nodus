@@ -87,7 +87,7 @@ try {
   const imageNote = await scoped(() => notes.createNote({title:'Imagen conservada',content:''}));
   const imageOriginal = await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id));
   const imageRequest = {id:randomUUID(),noteId:imageNote.id,input:{title:'Imagen conservada',contentMarkdown:`![Nodus](${image})`,
-    nativeDocument:[{id:'image-37',type:'image',props:{url:image,name:'Nodus.svg'}}],schemaVersion:2,expectedRevision:imageOriginal.revision}};
+    nativeDocument:[{id:'image-37',type:'image',props:{url:image,name:'Nodus.svg',caption:'Nodus'}}],schemaVersion:2,expectedRevision:imageOriginal.revision}};
   const wireBytes = Buffer.byteLength(JSON.stringify(imageRequest));
   assert.ok(wireBytes > 4 * 1024 * 1024 && wireBytes < MOBILE_WORKSPACE_EDIT_MAX_BYTES);
   const imageSaved = await applyWorkspaceEdit(first.id,'phone-grant',imageRequest);
@@ -96,6 +96,19 @@ try {
   const imageHistory = imageSaved.editorData.versions.length;
   assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageRequest),imageSaved);
   assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(imageNote.id))).versions.length,imageHistory);
+  // The larger native projection allowance cannot admit oversized arbitrary
+  // legacy content, or a forged synced projection beside unchanged native data.
+  await scoped(() => {
+    const pageRepo=require('../electron/db/pagesRepo.ts'),Y=require('yjs');
+    const document=pageRepo.getPageDocumentForNote(imageNote.id),revision=document.revision;
+    const forged={...document.blocks[0],content:{...document.blocks[0].content,unvalidated:'x'.repeat(1_000_001)}};
+    assert.throws(()=>pageRepo.savePageDocument({pageId:document.page.id,title:document.page.title,expectedRevision:revision,blocks:[forged],nativeDocument:null}),/límite de 1 MB/);
+    const ydoc=new Y.Doc();Y.applyUpdate(ydoc,document.yjsState);
+    ydoc.getMap('blockById').get(forged.id).set('contentJson',JSON.stringify(forged.content));
+    assert.throws(()=>pageRepo.applyPageDocumentUpdate(document.page.id,Y.encodeStateAsUpdate(ydoc,document.stateVector),revision),/límite de 1 MB/);
+    ydoc.destroy();
+    assert.equal(pageRepo.getPageDocumentForNote(imageNote.id).revision,revision,'Rejected projections cannot change the real document');
+  });
   const nextDerivedId = await scoped(() => ideas.nextGlobalId());
   const ideaCreation = { id: randomUUID(), noteId: randomUUID(), creation: { kind: 'idea', folderId: folder.id, tags: [], globalId: `manual-${randomUUID()}` },
     input: { title: 'Idea escrita sin conexión', contentMarkdown: 'Desarrollo creado por el usuario.', nativeDocument: markdownToBlockNote('Desarrollo creado por el usuario.'), schemaVersion: 2, expectedRevision: 0 } };

@@ -8,7 +8,7 @@ import * as world from '../db/worldChatRepo';
 import * as database from '../db/databaseChatRepo';
 import {getDatabase} from '../db/databasesRepo';
 import { getStudyAssistantConversation, listStudyAssistantConversations } from '../ai/studyAssistant';
-import { readStudyChatStore, writeStudyChatStore, type StudyAssistantStore } from '../ai/studyChatHistory';
+import { readStudyChatStore, writeStudyChatStore, normalizeStudySelection, type StudyAssistantStore } from '../ai/studyChatHistory';
 import type { StudyAssistantMessage } from '../../shared/studyAssistant';
 import { deleteResearchAttachments } from '../researchAttachments';
 import { chatAssetOwner,deleteChatAssets } from '../chatAssets';
@@ -59,8 +59,13 @@ function savePlacement(kind:Exclude<MobileChatKind,'study'>,id:string,value:Mobi
   try {organizer.setConversationPinned(id,archived?false:value.pinned);}catch(error){if(error instanceof Error&&error.message==='research_chat_pin_limit')throw new MobileChatFailure(409,'chat_pin_limit');throw error;}
 }
 function rawConversation(kind: MobileChatKind,id: string): Record<string,unknown> | null {
-  const value = kind === 'research' ? research.getConversation(id) : kind === 'world' ? world.getWorldChatConversation(id) : kind === 'database' ? database.getDatabaseChatConversation(id) : getStudyAssistantConversation(id);
-  return value ? value as unknown as Record<string,unknown> : null;
+  try {
+    const value = kind === 'research' ? research.getConversation(id) : kind === 'world' ? world.getWorldChatConversation(id) : kind === 'database' ? database.getDatabaseChatConversation(id) : getStudyAssistantConversation(id);
+    return value ? value as unknown as Record<string,unknown> : null;
+  } catch(error) {
+    if(error instanceof Error && error.message==='permission_denied')throw new MobileChatFailure(403,'permission_denied');
+    throw error;
+  }
 }
 export function mobileChatAssetOwner(kind:string,id:string,domains:readonly string[]) {
   assertKind(kind);
@@ -72,13 +77,17 @@ export function mobileChatAssetOwner(kind:string,id:string,domains:readonly stri
   return {owner:chatAssetOwner(surface,id,getActiveVault().id),data,requiredDomains:['corpus',...(protectedRecording?['study-recordings']:[])]};
 }
 function snapshot(kind: MobileChatKind,id: string,store?: StudyAssistantStore): MobileChatDocument {
-  const data = rawConversation(kind,id);
-  if (!data) throw new MobileChatFailure(404,'chat_unavailable');
-  const companion = kind === 'study' ? (store ?? readStudyChatStore()).mobileCompanion?.documents[id] ?? null : (() => {
+  const original = kind === 'study' && store ? store.conversations.find(item=>item.id===id) ?? null : rawConversation(kind,id);
+  if (!original) throw new MobileChatFailure(404,'chat_unavailable');
+  // In-memory repository objects may contain optional undefined properties.
+  // Hash and acknowledge the exact JSON that crosses the device boundary.
+  const data = JSON.parse(canonicalJson(original)) as Record<string,unknown>;
+  const originalCompanion = kind === 'study' ? (store ?? readStudyChatStore()).mobileCompanion?.documents[id] ?? null : (() => {
     ensureTables();
     const row = getDb().prepare('SELECT data_json FROM mobile_chat_companions WHERE kind=? AND conversation_id=?').get(kind,id) as {data_json:string}|undefined;
     return row ? JSON.parse(row.data_json) as Record<string,unknown> : null;
   })();
+  const companion = originalCompanion === null ? null : JSON.parse(canonicalJson(originalCompanion)) as Record<string,unknown>;
   const value = {kind,id,data,companion};
   return {version:1,...value,revision:digest(value)};
 }
@@ -109,6 +118,9 @@ function validate(raw: unknown,current: MobileChatDocument | null,kind: MobileCh
   if (!object(raw) || raw.version !== 1 || !uuid(raw.id) || !identity(raw.conversationId) ||
       raw.expectedRevision !== null && !hash(raw.expectedRevision) || !['save','delete'].includes(String(raw.action)) ||
       Object.keys(raw).some(key=>!['version','id','conversationId','expectedRevision','action','draft','companion'].includes(key))) throw new MobileChatFailure(400,'invalid_chat_edit');
+  // A stale draft must become an explicit conflict before rich-turn validation
+  // compares it against a newer Mac history. It remains available for recovery.
+  if(raw.expectedRevision===null ? current!==null : !current || current.revision!==raw.expectedRevision) throw new MobileChatFailure(409,'chat_revision_conflict',current ?? undefined);
   if (raw.action === 'delete') {
     if (raw.draft !== undefined || raw.companion !== undefined) throw new MobileChatFailure(400,'invalid_chat_edit');
     return raw as unknown as MobileChatEdit;
@@ -210,7 +222,6 @@ async function saveMobileChatInternal(vaultId: string,grantId: string,kind: stri
       }
       const current = rawConversation(kind,conversationId) ? snapshot(kind,conversationId,store) : null;
       const request=validate(raw,current,kind,trustedMessage);
-      if(request.expectedRevision===null ? current!==null : !current || current.revision!==request.expectedRevision) throw new MobileChatFailure(409,'chat_revision_conflict',current ?? undefined);
       if(kind==='study' && !domains.includes('study-recordings') && request.draft?.messages.some(message=>String(message.content).includes('nodus://study/recording/') || Array.isArray(message.citations) && message.citations.some(citation=>object(citation)&&citation.kind==='transcript'))) throw new MobileChatFailure(403,'permission_denied');
       if(request.action==='delete') {
         if(kind==='study') store!.conversations=store!.conversations.filter(item=>item.id!==request.conversationId);
@@ -220,7 +231,7 @@ async function saveMobileChatInternal(vaultId: string,grantId: string,kind: stri
       } else if(kind==='study') {
         const now=new Date().toISOString();
         const existing=store!.conversations.find(item=>item.id===request.conversationId);
-        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:{scope:'library' as const,sourceKeys:[]},model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study??{}),...(metadata?.model?{model:metadata.model}:{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
+        const next={...(existing ?? {id:request.conversationId,createdAt:now,selection:normalizeStudySelection(),model:null,task:'answer' as const,level:'standard' as const,tone:'clear' as const,language:'auto' as const,allowExternalKnowledge:false,projectId:null,folderId:null,pinnedAt:null}),...(request.draft!.study?normalizeMobileStudyChatOptions(request.draft!.study):{}),...(metadata?.model?{model:metadata.model}:{}),title:request.draft!.title.trim().slice(0,120)||'Conversación sin título',archived:request.draft!.archived,messages:request.draft!.messages as unknown as StudyAssistantMessage[],messageCount:request.draft!.messages.length,updatedAt:now};
         if(request.draft!.placement) {
           const placement=request.draft!.placement;
           if(placement.pinned&&!next.archived&&!existing?.pinnedAt&&store!.conversations.filter(item=>item.id!==next.id&&item.pinnedAt&&!item.archived).length>=RESEARCH_CHAT_PIN_LIMIT)throw new MobileChatFailure(409,'chat_pin_limit');
@@ -240,9 +251,7 @@ async function saveMobileChatInternal(vaultId: string,grantId: string,kind: stri
       else getDb().prepare('INSERT OR REPLACE INTO mobile_chat_companions VALUES(?,?,?)').run(kind,request.conversationId,JSON.stringify(request.companion??null));
       // Study's just-authored state has not reached disk yet. Snapshot that same
       // in-memory record, so the acknowledgement and replacement are identical.
-      const data = kind==='study' && request.action!=='delete' ? store!.conversations.find(item=>item.id===request.conversationId)! : undefined;
-      const value=data ? {kind,id:request.conversationId,data:data as unknown as Record<string,unknown>,companion:store!.mobileCompanion!.documents[request.conversationId]} : undefined;
-      const result={id:request.id,...(request.action==='delete'?{deleted:true}:{snapshot:value?{version:1 as const,...value,revision:digest(value)}:snapshot(kind,request.conversationId)})};
+      const result={id:request.id,...(request.action==='delete'?{deleted:true}:{snapshot:snapshot(kind,request.conversationId,store)})};
       if(kind==='study') store!.mobileCompanion!.receipts[receiptKey]={hash:payload,json:JSON.stringify(result)};
       else getDb().prepare('INSERT INTO mobile_chat_receipts VALUES(?,?,?,?)').run(grantId,request.id,payload,JSON.stringify(result));
       return result;

@@ -58,7 +58,7 @@ try {
       const input={deviceGrant:grant,vaultId:vault.id,domains,method:'streamMobileCompanionChat',args:[request],idempotencyKey:request.requestId};
       const job=store.submit(input);assert.equal(store.submit(input).id,job.id);
       for(let i=0;i<100&&!['available','failed','cancelled'].includes(job.state);i++)await delay(50);
-      assert.equal(job.state,'available',job.error);assert.equal(providerCalls,before+1);assert.equal(job.result.requestId,request.requestId);
+      assert.equal(job.state,'available',`${kind} (${type}): ${job.error}`);assert.equal(providerCalls,before+1);assert.equal(job.result.requestId,request.requestId);
       assert.equal(job.result.document.data.messages.length,2);assert.equal(job.result.document.data.messages.at(-1).id,request.answerId);
       assert(job.events.some(event=>event.channel==='mobile:chat:questionSaved'));assert(job.events.filter(event=>event.channel==='mobile:chat:checkpoint').length>=3);
       if(kind==='world')assert.equal(job.result.document.data.focus[0].title,'Personaje');

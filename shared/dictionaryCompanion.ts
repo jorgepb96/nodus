@@ -43,7 +43,7 @@ export function companionDictionary(copy: CompanionDictionaryCopy) {
   const included = (item: CompanionDictionaryEntry) => item.evidence.filter(row => row.decision === 'included');
   const summary = (item: CompanionDictionaryEntry): DictionaryEntrySummary => {
     const entry = item.detail.entry, rows = included(item);
-    return {id: entry.id, name: entry.name, aliases: entry.aliases, shortDescription: entry.shortDescription, tags: entry.tags,
+    return {...entry,
       authorCount: new Set(rows.flatMap(row => row.authors).map(author => author.id || normalizeDictionaryTerm(author.name))).size,
       workCount: new Set(rows.flatMap(row => row.works.length ? row.works.map(work => work.id) : [row.workId])).size,
       evidenceCount: rows.length, status: entry.status, insufficientEvidence: entry.insufficientEvidence,

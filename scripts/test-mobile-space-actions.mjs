@@ -33,7 +33,7 @@ try{
     assert.equal(restored.pageId,original.page.id);assert.equal(pages.getPageDocument(original.page.id).blocks[0].content.text,'Contenido original');
     const cancelled=new AbortController();cancelled.abort();
     await assert.rejects(()=>actions.runCompanionSpaceAction(vault.id,domains,action('hypothesis.saveToNotes',{title:'No guardar',markdown:'Cancelado'}),randomUUID(),cancelled.signal));
-    const request=action('hypothesis.saveToNotes',{title:'Desde el companion',markdown:'Nota literal'}),before=database.getDb().prepare('SELECT COUNT(*) AS n FROM notes').get().n;
+    const request=action('hypothesis.saveToNotes',{hypothesisId:'hypothesis-fixture',title:'Desde el companion',markdown:'Nota literal'}),before=database.getDb().prepare('SELECT COUNT(*) AS n FROM notes').get().n;
     const store=new BridgeJobStore(path.join(directory,'jobs'),job=>actions.runCompanionSpaceAction(job.vaultId,job.domains,job.args[0],job.id));
     const input={deviceGrant:'grant',vaultId:vault.id,domains,method:'runMobileSpaceAction',args:[request],idempotencyKey:actions.companionActionKey(request.idempotencyKey)};
     const job=store.submit(input),duplicate=store.submit(input);assert.equal(duplicate.id,job.id);assert.equal(job.actionSequence,1);

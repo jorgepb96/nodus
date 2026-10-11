@@ -21,7 +21,9 @@ try {
   const boundary=require('../electron/desktopBridge/executionBoundary.ts');
   const inVault=(id,work)=>vaults.withOwningVault(id,()=>database.withVaultDatabase(id,work));
   await inVault(vault.id,async()=>{
-    const source=repo.createDatabase('Datos de prueba'),column=repo.createColumn(source.id,'Métrica','number');
+    const source=repo.createDatabase('Datos de prueba');
+    repo.createColumn(source.id,'Nombre','title');
+    const column=repo.createColumn(source.id,'Métrica','number');
     for(let i=0;i<20;i++){const row=repo.createRow(source.id);repo.setCell(row.id,column.id,String(i+1));}
     const view=repo.createView(source.id,{name:'Mayores descendentes',layout:'table',config:{filter:{type:'condition',columnId:column.id,op:'gte',value:'10'},sorts:[{columnId:column.id,dir:'desc'}]}});
     const pack=api.mobileDatabaseResearchSourcePack({databaseIds:[source.id]});

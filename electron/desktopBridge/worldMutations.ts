@@ -1,6 +1,6 @@
 import {getDb} from '../db/database';
 import {indexEntryLinks,entryProse,promoteWorldLinks} from '../db/worldEncyclopediaRepo';
-import {getSceneText,saveSceneText,preserveSceneTextBeforeOverwrite} from '../db/worldManuscriptRepo';
+import {getSceneText,saveSceneText} from '../db/worldManuscriptRepo';
 import {normalizeTitle} from '../../shared/worldEncyclopedia';
 import type {WorldEntryRef} from '../../shared/types';
 import {RULE_MARKS,CONFLICT_MARKS,ARC_MARKS} from '../../shared/worldThreads';
@@ -58,15 +58,14 @@ export function finishMobileWorldMutation(raw:{table:string;kind:string;key:stri
     places:['place','place_id'],place_profiles:['place','place_id'],world_groups:['group','group_id'],world_scenes:['scene','scene_id'],world_maps:['map','map_id']};
   if(raw.table==='world_scene_text') {
     const current=getSceneText(raw.key[0]);
-    if(before)preserveSceneTextBeforeOverwrite(raw.key[0],before,current.text);
-    saveSceneText(raw.key[0],current.text);return;
+    saveSceneText(raw.key[0],current.text,before);return;
   }
   const entry=entries[raw.table];if(!entry)return;
-  if(raw.table==='world_threads'&&(db.prepare('SELECT kind FROM world_threads WHERE thread_id=?').get(raw.key[0]) as {kind:string})?.kind==='arc')return;
   if(['world_articles','world_rules','world_threads'].includes(raw.table)) {
     const current=db.prepare(`SELECT title FROM ${raw.table} WHERE ${entry[1]}=?`).get(raw.key[0]) as {title:string};
     db.prepare(`UPDATE ${raw.table} SET title=?,title_key=? WHERE ${entry[1]}=?`).run(current.title.trim(),normalizeTitle(current.title),raw.key[0]);
   }
+  if(raw.table==='world_threads'&&(db.prepare('SELECT kind FROM world_threads WHERE thread_id=?').get(raw.key[0]) as {kind:string})?.kind==='arc')return;
   const ref={kind:entry[0],id:raw.key[0]};
   const columns=new Set((db.prepare(`PRAGMA table_info(${raw.table})`).all() as {name:string}[]).map(column=>column.name));
   for(const block of entryProse(ref)) {

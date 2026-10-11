@@ -6,6 +6,7 @@ import * as Y from 'yjs';
 import { getDb } from './database';
 import { readPageYDocument, readPageNativeDocument, writePageYDocument } from '@shared/pageYjs';
 import { blockNoteToPageBlocks, markdownToBlockNote, validateBlockNoteDocument, type BlockNoteDocument } from '@shared/blockNoteDocument';
+import {canonicalJson} from '@shared/canonicalJson';
 import {
   PAGE_BLOCK_TYPES,
   markdownToPageBlocks,
@@ -553,16 +554,25 @@ export function getPageDocumentForNote(noteId: string): PageDocument | null {
   return page ? getPageDocument(page.id) : null;
 }
 
-function normalizeDrafts(pageId: string, drafts: PageBlockDraft[]): Required<PageBlockDraft>[] {
+function normalizeDrafts(pageId: string, drafts: PageBlockDraft[], native: BlockNoteDocument | null = null): Required<PageBlockDraft>[] {
   if (drafts.length > 10_000) throw new Error('Una página no puede guardar más de 10.000 bloques en una sola mutación.');
   const ids = new Set<string>();
+  let nativeProjections: Map<string, PageBlockDraft> | undefined;
   const normalized = drafts.map((draft, index): Required<PageBlockDraft> => {
     const id = draft.id?.trim() || `pblk_${randomUUID()}`;
     if (ids.has(id)) throw new Error('La página contiene bloques duplicados.');
     ids.add(id);
     if (!BLOCK_TYPES.has(draft.type)) throw new Error('Tipo de bloque no válido.');
     const content = jsonObject(draft.content);
-    if (JSON.stringify(content).length > 1_000_000) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+    // Validated native documents already have a 4 MB aggregate bound. Their
+    // legacy projections repeat the same content in native/Markdown/cache fields.
+    // Only internally generated projections may use that bounded overhead.
+    const size = JSON.stringify(content).length;
+    if (size > 1_000_000) {
+      if (!native || size > 16_000_000) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+      nativeProjections ??= new Map(blockNoteToPageBlocks(native).map(block=>[block.id!,block]));
+      if (canonicalJson(content) !== canonicalJson(nativeProjections.get(id)?.content)) throw new Error('El contenido de un bloque supera el límite de 1 MB.');
+    }
     return {
       id,
       parentBlockId: draft.parentBlockId ?? null,
@@ -772,7 +782,7 @@ export function savePageDocument(input: SavePageDocumentInput): PageMutationResu
     const before = capturePageHistorySnapshot(page.id, doc);
     ensurePageHistory(page.id, before);
     const native = input.nativeDocument == null ? input.nativeDocument : validateBlockNoteDocument(input.nativeDocument);
-    const drafts = normalizeDrafts(page.id, native ? blockNoteToPageBlocks(native) : input.blocks);
+    const drafts = normalizeDrafts(page.id, native ? blockNoteToPageBlocks(native) : input.blocks, native);
     const vector = Y.encodeStateVector(doc);
     writePageYDocument(doc, page.title, drafts, native, input.schemaVersion, input.academicMetadata);
     const update = Y.encodeStateAsUpdate(doc, vector);
@@ -806,7 +816,7 @@ export function applyPageDocumentUpdate(
     const projected = readPageYDocument(doc);
     const incomingNative = readPageNativeDocument(doc);
     const nativeChanged = JSON.stringify(incomingNative) !== JSON.stringify(before.nativeDocument ?? null);
-    const drafts = normalizeDrafts(pageId, nativeChanged && incomingNative ? blockNoteToPageBlocks(incomingNative) : projected.blocks);
+    const drafts = normalizeDrafts(pageId, nativeChanged && incomingNative ? blockNoteToPageBlocks(incomingNative) : projected.blocks, incomingNative);
     const vector = Y.encodeStateVector(doc);
     writePageYDocument(doc, projected.title, drafts, nativeChanged ? incomingNative : undefined, Number(doc.getMap('editor').get('schemaVersion')) || 1);
     const reconciliation = Y.encodeStateAsUpdate(doc, vector);
@@ -1006,10 +1016,11 @@ export function restorePageRevision(
     const before = capturePageHistorySnapshot(pageId);
     ensurePageHistory(pageId, before);
     const target = historical.snapshot;
-    const drafts = normalizeDrafts(pageId, target.blocks.filter((block) => block.trashedAt == null).map((block) => ({
+    const native = target.nativeDocument ? validateBlockNoteDocument(target.nativeDocument) : null;
+    const drafts = normalizeDrafts(pageId, native ? blockNoteToPageBlocks(native) : target.blocks.filter((block) => block.trashedAt == null).map((block) => ({
       id: block.id, parentBlockId: block.parentBlockId, order: block.order,
       type: block.type, content: block.content,
-    })));
+    })), native);
     const doc = loadYDoc(documentRow);
     const vector = Y.encodeStateVector(doc);
     writePageYDocument(doc, target.page.title, drafts, target.nativeDocument ?? null, target.schemaVersion, target.academicMetadata);

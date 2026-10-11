@@ -138,7 +138,7 @@ try{
       const computed=await queryCompanionDatabasePresentation(copy,'allRows',{databaseId:db.id});
       const row=computed.rows.find(row=>row.id===rows[0]);return [sum.id,globalSum.id,formula.id].map(id=>row.cells[id]);
     };
-    const actual=()=>{const row=read('rows',{limit:500}).rows.find(row=>row.id===rows[0]);return [sum.id,globalSum.id,formula.id].map(id=>row.cells[id]);};
+    const actual=()=>{const row=read('rows',{limit:500}).rows.find(row=>row.id===rows[0]);return [row.rollups?.[sum.id],row.rollups?.[globalSum.id],row.cells[formula.id]];};
     assert.deepEqual(await values(dependent),actual(),'Rollups and relation expressions use edited targets and complete target-table statistics');
     assert.equal(JSON.stringify(dependent),retained,'Derived graph consultation never mutates the protected capture');
     const changed=structuredClone(dependent);changed.localChanges=true;changed.relations=changed.relations.filter(link=>link.id!==firstRelation.id);

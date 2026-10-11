@@ -47,8 +47,8 @@ try {
   const figureImage = storeChatImage(figureOwner,{bytes:png,mimeType:'image/png'},{title:'Figura guardada'});
   await database.withVaultDatabase(first.id,()=>database.getDb().prepare('INSERT INTO immersion_sessions(id,topic,title,language,minutes,plan_json,progress_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').run('session','Tema','Recorrido','es',20,'{}','{}',stamp,stamp));
   const {writeDocumentVisuals} = require('../electron/capabilities/documentStore.ts');
-  writeDocumentVisuals({schemaVersion:1,vaultId:first.id,target:{kind:'immersion',id:'session'},contentHash:'source',revision:'revision',usage:{},
-    blocks:[{id:'block',markdown:'Texto'}],figures:[{id:'figure',caption:'Figura guardada',sources:[],blockId:'block',owner:figureOwner}]});
+  writeDocumentVisuals({schemaVersion:1,vaultId:first.id,target:{kind:'immersion',id:'session'},contentHash:'source',revision:'revision',createdAt:stamp,updatedAt:stamp,state:'ready',policy:{enabled:true,skills:[]},usage:{},
+    blocks:[{id:'block',field:'content',index:0,endLine:1,markdown:'Texto'}],figures:[{id:'figure',skillId:'fixture',brief:'Figura conservada',layout:'wide',state:'ready',caption:'Figura guardada',sources:[],blockId:'block',owner:figureOwner}]});
   assert.equal((await read(first,figureImage)).status,200); assert.equal((await read(other,figureImage)).status,403);
   console.log('Scoped image identity, original bytes, ranges, domain revocation and foreign vault rejection contracts passed.');
 } finally {

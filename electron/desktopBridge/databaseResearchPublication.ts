@@ -49,7 +49,12 @@ export async function saveMobileDatabaseResearchReport(raw:{request:DatabaseDeep
   const responses:{[role:string]:unknown}={planner:step('planning')?.plannerSelection,critic:(step('adversarial_review')?.criticOutput as {structured?:unknown}|undefined)?.structured,verifier:(step('verification')?.verifierOutput as {structured?:unknown}|undefined)?.structured,synthesizer:step('assembly')?.narrativeAst,writer:step('assembly')?.narrativeAst,editor:step('assembly')?.narrativeAst};
   try {
     signal?.throwIfAborted();
-    const verified=await processDatabaseResearchRun(memory.detail.run.id,{complete:async({role})=>{signal?.throwIfAborted();return JSON.stringify(responses[role]??null);}},mobileDatabaseResearchHost(memory,sources,analyze));
+    // A numerical-only run has no model review to replay. Introducing a
+    // completion adapter would turn absent reviews into failed verifier gates.
+    // Model-assisted runs still replay their structured output and all gates.
+    const modelDriven=step('adversarial_review')?.criticOutput!=null || step('verification')?.verifierOutput!=null || step('assembly')?.synthesizerOutput!=null || step('assembly')?.editorOutput!=null;
+    const agents=modelDriven?{complete:async({role}:Parameters<NonNullable<import('@shared/databaseResearchEngine').DatabaseResearchAgentDeps['complete']>>[0])=>{signal?.throwIfAborted();return JSON.stringify(responses[role]??null);}}:{};
+    const verified=await processDatabaseResearchRun(memory.detail.run.id,agents,mobileDatabaseResearchHost(memory,sources,analyze));
     const result=verified.report,authored=raw.detail.report;
     if(!result||!Number.isFinite(Date.parse(authored.createdAt))||authored.id!==result.id||authored.runId!==verified.run.id)throw new Error('database_publication_verification_failed');
     const same=(a:unknown,b:unknown)=>sha256Snapshot(a??null)===sha256Snapshot(b??null);
@@ -68,7 +73,9 @@ export async function saveMobileDatabaseResearchReport(raw:{request:DatabaseDeep
       for(const item of verified.steps)repo.upsertDatabaseResearchStep({...item,id:`${run.id}:${item.kind}:${item.ordinal}`,runId:run.id});
       for(const item of verified.claims)repo.saveDatabaseResearchClaim({...item,id:`${run.id}:${item.ordinal}`,runId:run.id});
       const report=repo.saveDatabaseResearchReport({...raw.detail.report!,finalStatus:verified.run.status==='partial'?'partial':'completed'});
-      db.prepare('UPDATE database_research_reports SET created_at=? WHERE id=?').run(raw.detail.report!.createdAt,report.id);
+      // Preserve the validated device document verbatim: its whitespace is
+      // part of the source revision used by already-authored annotations.
+      db.prepare('UPDATE database_research_reports SET created_at=?,markdown=? WHERE id=?').run(raw.detail.report!.createdAt,raw.detail.report!.markdown,report.id);
       const saved=repo.getDatabaseResearchReport(report.id)!;
       db.prepare('INSERT INTO mobile_database_research_publications VALUES(?,?,?)').run(raw.requestId,payload,report.id);return saved;
     })();

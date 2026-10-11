@@ -25,17 +25,18 @@ for (const spec of Object.values(BRIDGE_FILE_KINDS).filter(spec=>!spec.mime)) {
 // Database attachments use both real storage variants and require a live parent row.
 db.exec(`CREATE TABLE db_databases (id TEXT PRIMARY KEY);
 CREATE TABLE db_rows (id TEXT PRIMARY KEY, database_id TEXT);
-CREATE TABLE db_blobs (hash TEXT PRIMARY KEY, data BLOB);
+CREATE TABLE db_blobs (hash TEXT PRIMARY KEY, data BLOB, mime_type TEXT);
 CREATE TABLE db_attachments (id TEXT PRIMARY KEY, row_id TEXT, file_name TEXT, mime_type TEXT, blob BLOB, blob_hash TEXT, position INTEGER DEFAULT 0)`);
 db.prepare('INSERT INTO db_databases VALUES (?)').run('database');
 db.prepare('INSERT INTO db_rows VALUES (?,?)').run('row','database');
-db.prepare('INSERT INTO db_blobs VALUES (?,?)').run(sha256,bytes);
+db.prepare('INSERT INTO db_blobs VALUES (?,?,?)').run(sha256,bytes,'application/octet-stream');
 const attachmentInsert=db.prepare('INSERT INTO db_attachments (id,row_id,file_name,mime_type,blob,blob_hash) VALUES (?,?,?,?,?,?)');
 attachmentInsert.run('opaque-id','row','Original.bin','application/octet-stream',null,sha256);
 attachmentInsert.run('inline-id','row','Inline.bin','application/octet-stream',bytes,null);
 attachmentInsert.run('removed','row','Missing.bin','application/octet-stream',null,'missing-blob');
 attachmentInsert.run('orphan','missing-row','Orphan.bin','application/octet-stream',bytes,null);
 async function request(kind, domains, action, id='opaque-id', query='') {
+  if(kind==='pageAsset')id=id==='opaque-id'?sha256:id==='removed'?'b'.repeat(64):id==='missing'?'c'.repeat(64):id;
   let status, payload, headers;
   await serveBridgeFile({method:'GET'}, {writeHead(code, fields){status=code;headers=fields;},end(body){payload=body;}},
     new URL('https://localhost/file'+query), 'isolated-vault', domains, kind, id, action);
@@ -49,7 +50,7 @@ try {
     assert.deepEqual(Buffer.concat([first.payload,second.payload]),bytes);
     assert.equal(second.headers['x-nodus-file-offset'],'4194304');
     assert.equal((await request(kind,[],'content')).status,403);
-    assert.equal((await request(kind,[spec.domain],'descriptor','removed')).status,410);
+    assert.equal((await request(kind,[spec.domain],'descriptor','removed')).status,kind==='pageAsset'?404:410);
     assert.equal((await request(kind,[spec.domain],'content','missing')).status,404);
     for (const query of ['?offset=-1','?offset=1.5','?offset=99999999','?limit=99999999','?limit=0']) assert.equal((await request(kind,[spec.domain],'content','opaque-id',query)).status,416);
   }

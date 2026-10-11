@@ -38,7 +38,7 @@ try {
   await exportDeviceDatabaseResearch(call,report.id,{format:'docx'});
   const word=unzipSync(exported.at(-1).bytes);assert(strFromU8(word['word/document.xml']).includes('Memoria 🌊'));assert(strFromU8(word['word/document.xml']).includes('nodus://work/fixture'));assert(word['[Content_Types].xml']);
   await exportDeviceDatabaseResearch(call,report.id,{format:'pdf'});
-  assert(exported.at(-1).input.html.includes('class="cover"'));assert(exported.at(-1).input.html.includes('Comprobación Unicode'));assert(exported.at(-1).input.html.includes('@page'));
+  assert(/class="cover(?:\s|")/.test(exported.at(-1).input.html));assert(exported.at(-1).input.html.includes('Comprobación Unicode'));assert(exported.at(-1).input.html.includes('@page'));
   await exportDeviceDatabaseResearch(call,report.id,{format:'zip'});
   const archive=unzipSync(exported.at(-1).bytes),canonical=files.databaseResearchArchiveFiles(report,detail,{format:'zip'});
   assert.deepEqual(Object.keys(archive).sort(),Object.keys(canonical).sort());

@@ -67,7 +67,7 @@ export function getSceneText(sceneId: string): SceneText {
  *  3. The word count is recomputed here and stored, because every screen that shows it
  *     (the spine, the target, today's delta) would otherwise have to read the whole book.
  */
-export function saveSceneText(sceneId: string, text: string | null): SceneText {
+export function saveSceneText(sceneId: string, text: string | null, previous?: SceneText): SceneText {
   const db = getDb();
   const exists = db.prepare('SELECT 1 FROM world_scenes WHERE scene_id = ?').get(sceneId);
   if (!exists) throw new Error('Escena no encontrada.');
@@ -77,7 +77,7 @@ export function saveSceneText(sceneId: string, text: string | null): SceneText {
   // moment nobody remembers to press anything: a paste over a selected chapter, or an undo
   // stack lost to a reload. Half is the line because a real edit rarely halves a scene and
   // an accident almost always does.
-  const before = getSceneText(sceneId);
+  const before = previous ?? getSceneText(sceneId);
   const after = countWords(promoted);
   preserveSceneTextBeforeOverwrite(sceneId, before, promoted);
   const ts = now();

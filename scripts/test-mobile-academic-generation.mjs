@@ -36,7 +36,7 @@ try{
     for(let index=0;index<3;index++){
       db.prepare('INSERT INTO ideas(global_id,type,label,statement) VALUES(?,?,?,?)').run(`real-idea-${index}`,'claim',`Idea ${index}`,`Afirmación ${index}`);
       db.prepare('INSERT INTO idea_occurrences(global_id,nodus_id,role,confidence) VALUES(?,?,?,?)').run(`real-idea-${index}`,'real-work','central',0.9);
-      db.prepare('INSERT INTO idea_theme_links(global_id,nodus_id,theme_id) VALUES(?,?,?)').run(`real-idea-${index}`,'real-work','real-theme');
+      db.prepare('INSERT INTO idea_theme_links(global_id,nodus_id,theme_id,confidence,basis) VALUES(?,?,?,?,?)').run(`real-idea-${index}`,'real-work','real-theme',0.9,'explicit');
     }
     const request={kind:'author',authorId:'real-author',language:'es'},before=db.prepare('SELECT total_changes() AS n').get().n;
     const source=academic.mobileAcademicSource(request);assert.match(source.revision,/^[a-f0-9]{64}$/);assert.ok(source.source.prompt.user.includes('Autora real'));assert.equal(source.source.prompt.system,authors.prepareAuthorDossierSynthesis('real-author','es').prompt.system);

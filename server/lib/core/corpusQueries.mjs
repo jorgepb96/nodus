@@ -6,6 +6,7 @@ import { embeddingMatches } from './vectors.mjs';
 import { searchVectorsOffThread } from './vectorSearchPool.mjs';
 import { lexicalSearch } from './search.mjs';
 import { rows } from './snapshot.mjs';
+import { sourceMaterialRows } from './sourceMaterials.mjs';
 import { embeddingContractsCompatible, fingerprintEmbeddingContract } from './embeddingContract.mjs';
 const MAX_CONTEXT_CHARS = 600_000;
 const response = (status, body) => ({ status, body });
@@ -105,6 +106,7 @@ export function contextReadQuery(snapshot, input, revision) {
     if (wanted.has('document_profile_versions')) push('document_profile_versions', rows(snapshot, 'document_profile_versions').filter((row) => hitIds.has(String(row.version_id))));
     if (wanted.has('document_profile_fields')) push('document_profile_fields', rows(snapshot, 'document_profile_fields').filter((row) => hitIds.has(String(row.field_id))));
     if (wanted.has('document_sections')) push('document_sections', rows(snapshot, 'document_sections').filter((row) => hitIds.has(String(row.section_id))));
+    if (wanted.has('sources')) push('sources', sourceMaterialRows(snapshot, input.query));
 
     return response(200, {
       sections,

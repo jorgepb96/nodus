@@ -23,10 +23,6 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
-// A hosted Linux display has no GPU. Exercise real WebGL through Chromium's
-// software OpenGL ES driver, keeping the normal Electron sandbox enabled.
-const ciGpuArgs = process.env.CI && process.platform === 'linux'
-  ? ['--use-gl=angle', '--use-angle=swiftshader'] : [];
 
 // Re-exec under Electron-as-Node so the final better-sqlite3 check matches the
 // app ABI (same pattern as every other script in this suite). Playwright then
@@ -133,7 +129,6 @@ try {
   app = await electron.launch({
     executablePath: packagedExecutable || require('electron'),
     args: [
-      ...ciGpuArgs,
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
       ...(packagedExecutable ? [] : [repoRoot]),
@@ -1235,13 +1230,11 @@ try {
   await distributorFrame.locator('#group-count').press('Tab');
   for (const topic of ['Tema uno', 'Tema dos', 'Tema tres']) {
     await distributorFrame.getByPlaceholder('Ej. Energías renovables').fill(topic);
-    // Exercise the native form with keyboard activation instead of relying on
-    // pointer coordinates in the hosted display's sandboxed iframe.
-    await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).press('Enter');
+    await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).click();
     await distributorFrame.getByRole('button', { name: `Eliminar ${topic}`, exact: true }).waitFor();
   }
   await distributorFrame.getByPlaceholder('Ej. Tema de recuperación').fill('Tema excepcional');
-  await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).press('Enter');
+  await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).click();
   await distributorFrame.getByText('Hay 3 temas activos para 4 grupos. Añade o activa 1 más.', { exact: true }).waitFor();
   await distributorFrame.getByRole('checkbox', { name: 'Activar Tema excepcional' }).check();
   await distributorFrame.getByText('Se repartirán 4 temas únicos entre 4 grupos.', { exact: true }).waitFor();

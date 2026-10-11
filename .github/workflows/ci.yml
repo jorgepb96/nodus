@@ -105,16 +105,16 @@ jobs:
         run: node scripts/prepare-research-ocr-fixture.mjs
       - name: E2E smoke (real app boot)
         timeout-minutes: 10
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e'
+        run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e'
       - name: Stellar canvas E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:stellar'
+        run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar'
       - name: Graph tabs E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:stellar-tabs'
+        run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar-tabs'
       - name: Argument map E2E
         timeout-minutes: 5
-        run: xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' bash -e -c 'npm run test:e2e:argument-map'
+        run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:argument-map'
       - name: Each package installs, migrates, registers and uninstalls
         run: xvfb-run --auto-servernum npm run verify:capability-packages
       - name: A 5.3.1 profile migrates, fails and retries

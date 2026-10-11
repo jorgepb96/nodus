@@ -379,6 +379,7 @@ function App() {
   const [error, setError] = useState('');
   const [jobError, setJobError] = useState('');
   useEffect(() => {
+    void native.nodusMobileCall('surfaceMounted');
     if (config.surface !== 'databasePresentation' && (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType))) void call('getSettings').then(setSettings).catch(error => {
       if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings(offlineReadSettings);
       else setError(String(error));

@@ -781,30 +781,54 @@ export function applyStudyTemplate(id: string, name?: string): StudyCourse | Stu
 }
 
 function copyNativeStudyDocument(sourceId: string, targetId: string): void {
-  const row = getDb().prepare('SELECT native_document_json, native_schema_version, style_json, spellcheck_language, custom_dictionary_json FROM study_docs WHERE id = ?').get(sourceId) as Row;
+  const row = getDb().prepare('SELECT native_document_json, native_schema_version, style_json, spellcheck_language, custom_dictionary_json, academic_metadata_json FROM study_docs WHERE id = ?').get(sourceId) as Row;
   const native = parseNativeDocument(row.native_document_json);
-  getDb().prepare('UPDATE study_docs SET native_document_json = ?, native_schema_version = ?, style_json = ?, spellcheck_language = ?, custom_dictionary_json = ? WHERE id = ?').run(native ? JSON.stringify(cloneNativeDocument(native)) : null, row.native_schema_version, row.style_json, row.spellcheck_language, row.custom_dictionary_json, targetId);
+  const cloned = native ? cloneNativeDocument(native) : null;
+  const blockIds = new Map<string, string>();
+  const remember = (source: NonNullable<typeof native>, target: NonNullable<typeof native>) => source.forEach((block, index) => {
+    if (!target[index]) return;
+    blockIds.set(block.id, target[index].id);
+    remember(block.children ?? [], target[index].children ?? []);
+  });
+  if (native && cloned) remember(native, cloned);
+  let academicJson = row.academic_metadata_json ?? null;
+  if (typeof academicJson === 'string') {
+    const academic = JSON.parse(academicJson);
+    if (academic && typeof academic === 'object') {
+      for (const note of Object.values(academic.notes ?? {}) as Array<{document?: unknown}>) {
+        const document = parseNativeDocument(JSON.stringify(note.document));
+        if (document) { const copy = cloneNativeDocument(document); remember(document, copy); note.document = copy; }
+      }
+      for (const evidence of academic.evidence ?? []) evidence.blockId = blockIds.get(evidence.blockId) ?? evidence.blockId;
+      academicJson = JSON.stringify(academic);
+    }
+  }
+  getDb().prepare('UPDATE study_docs SET native_document_json = ?, native_schema_version = ?, style_json = ?, spellcheck_language = ?, custom_dictionary_json = ?, academic_metadata_json = ? WHERE id = ?').run(cloned ? JSON.stringify(cloned) : null, row.native_schema_version, row.style_json, row.spellcheck_language, row.custom_dictionary_json, academicJson, targetId);
+}
+
+/** Same document duplication as Desktop, with an identity allocated before a
+ * mobile request. The caller owns the surrounding receipt transaction. */
+export function duplicateStudyDocumentWithIdentity(id: string, identity: string): StudyDocument {
+  const db = getDb();
+  return db.transaction(() => {
+    const original = getStudyEntity('document', id) as StudyDocument | null;
+    if (!original) throw new Error('Documento no encontrado.');
+    const copy = createStudyDocumentWithIdentity({
+      title: `${original.title} (copia)`, kind: original.kind, contentMarkdown: original.contentMarkdown,
+      description: original.description, color: original.color, icon: original.icon, emoji: original.emoji,
+      imageData: original.imageData, year: original.year,
+    }, identity);
+    copyNativeStudyDocument(id, copy.id);
+    const placements = db.prepare('SELECT * FROM study_placements WHERE document_id = ? ORDER BY id').all(id) as Row[];
+    for (const row of placements) addStudyPlacement(copy.id, toPlacement(row));
+    return getStudyEntity('document', copy.id) as StudyDocument;
+  })();
 }
 
 export function duplicateStudyTree(kind: StudyEntityKind, id: string): StudyCourse | StudySubject | StudyTopic | StudyFolder | StudyDocument {
   const db = getDb();
   return db.transaction(() => {
-    if (kind === 'document') {
-      const original = getStudyEntity('document', id) as StudyDocument | null;
-      if (!original) throw new Error('Documento no encontrado.');
-      const copy = createStudyDocument({
-        title: `${original.title} (copia)`, kind: original.kind, contentMarkdown: original.contentMarkdown,
-        description: original.description, color: original.color, icon: original.icon, emoji: original.emoji,
-        imageData: original.imageData, year: original.year,
-      });
-      copyNativeStudyDocument(id, copy.id);
-      const placements = db.prepare('SELECT * FROM study_placements WHERE document_id = ?').all(id) as Row[];
-      for (const placementRow of placements) {
-        const placement = toPlacement(placementRow);
-        addStudyPlacement(copy.id, placement);
-      }
-      return copy;
-    }
+    if (kind === 'document') return duplicateStudyDocumentWithIdentity(id, crypto.randomUUID());
 
     const scope = descendantIds(kind, id);
     const courseMap = new Map<string, string>();

@@ -91,7 +91,7 @@ try {
       for (const [settings, expectedQueries] of [[RESEARCH_CHAT_LIGHT_AGENT_SETTINGS, 1], [RESEARCH_CHAT_AGENT_SETTINGS, 2],
         [{ ...RESEARCH_CHAT_AGENT_SETTINGS, evidenceTokens: 64000 }, 5]]) {
         const calls = [];
-        preparation.retrieveSharedDocumentaryEvidence = async (requested, query, limits, vector, signal, read, lexicalQueries) => {
+        preparation.retrieveSharedDocumentaryEvidence = async (requested, query, limits, vector, signal, read, currentDocuments, lexicalQueries) => {
           calls.push({ query, limits, lexicalQueries });
           assert.deepEqual(requested.documents.map(document => document.id), scope.documents.map(document => document.id));
           return { evidence: [], traversal: { rounds: 1, candidates: 0, partial: false } };

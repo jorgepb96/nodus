@@ -30,11 +30,11 @@ documentary path; it does not claim to verify those other paths.
 
 ## Local verification
 
-`grounding.log` records 20 passing test entries, including the existing 38-case
+`grounding.log` records 23 passing test entries, including the existing 38-case
 inner grounding suite. Additional regressions cover literal facet/evidence proof,
 an omitted planner facet, bounded repair, invented coverage spans, malformed table
 widths, default-off settings and real chat cancellation with a network-denying
-provider double. `retrieval.log` records three passing entries using the actual
+provider double. `retrieval.log` records 17 passing entries using the actual
 documentary retrieval worker and frozen deterministic fixtures.
 
 `lint.log`, `typecheck.log` and `build.log` record successful verification on this
@@ -72,3 +72,5 @@ It is a repeated directed regression, not an untouched holdout or population sco
 Independent source inspection is required; automatic auditor approval is not the
 quality score. Results and failures are retained in `../research-openrouter/`.
 No embedding profile is promoted by this report. Quality acceptance remains pending.
+
+After integrating `main` at merge commit `ca5caa4d`, the regenerated Electron 43.6.0 runtime passes the same isolated UI flow and the 23-entry grounding / 17-entry retrieval groups. Native strict schema requests for OpenAI/OpenRouter are verified by a loopback-only production-transport regression; a 400 cannot silently strip the schema. Upstream failures pause the QA proxy on the first response and retain all unresolved reservations.

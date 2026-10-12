@@ -22,7 +22,7 @@
       "scripts/research-openrouter-campaign.mjs": "fb2ee523babb2e9fab0ba190b4b4381e839ab5c6a3f4be39ffed194136ae0606"
     }
   },
-  "completed": true,
+  "completed": false,
   "arms": {
     "legacy": {
       "executed": 3,

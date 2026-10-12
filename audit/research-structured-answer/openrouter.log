@@ -1,0 +1,27 @@
+
+> nodus@5.8.1 test:research:openrouter
+> node --test scripts/test-research-openrouter-proxy.mjs scripts/test-research-openrouter-budget.mjs scripts/test-research-cost-ledger.mjs
+
+✔ campaign reservations survive restart and fail closed at the shared seven-dollar boundary (7.543083ms)
+✔ an explicit eight-dollar campaign preserves every reservation and cannot exceed its authorization (1.618959ms)
+✔ one authorization retains unknown costs across attempts and blocks crash resets (6.109125ms)
+✔ OpenRouter QA proxy pins the selected ZDR model/endpoint, price and remaining campaign allowance (73.599208ms)
+✔ upstream auth failures retain the reservation and pause later dispatches (10.969417ms)
+✔ successful bounded settlements continue until the durable budget blocks before dispatch (11.013625ms)
+✔ upstream rate limits save only sanitized error metadata and halt retries without additional reservations (5.073417ms)
+✔ an upstream 5xx response pauses all later provider dispatches (4.879208ms)
+✔ catalogue rate limits also record safe metadata and pause paid dispatch without a reservation (5.959542ms)
+✔ a central prior commitment reduces the proxy allowance without resetting campaign history (4.418209ms)
+✔ dispatch spacing is enforced and abort during the wait creates no reservation (9.527291ms)
+✔ model snapshot mismatch blocks paid dispatch and SSE accounting respects the billed-cost floor (8.033667ms)
+✔ OpenRouter billed cost raises settlement, while malformed and over-bound costs retain reservations (8.949666ms)
+✔ one paid request is dispatched at a time and caller cancellation keeps its reservation unknown (160.244458ms)
+✔ the optional ledger model whitelist preserves the legacy default and isolates the new model (2.964166ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 396.947834

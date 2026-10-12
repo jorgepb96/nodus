@@ -1,0 +1,108 @@
+
+> nodus@5.8.1 test:research:grounding
+> node --test scripts/test-research-chat-grounding.mjs scripts/test-research-coverage-quotes.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs scripts/test-research-answer-plan.mjs scripts/test-research-answer-schema.mjs scripts/test-research-answer-structure.mjs scripts/test-research-structured-answer.mjs
+
+✔ no Spanish error literal in the main process reaches a foreign-language reader untranslated (589.280709ms)
+✔ no Spanish error literal in the main process is erased into the generic message (301.567208ms)
+✔ every catalogue entry is translated in all seven languages and left alone in Spanish (18.475084ms)
+✔ every parameterized pattern keeps its runtime values and translates around them (22.312291ms)
+✔ Cloudflare safety errors preserve their cause and recovery instruction through IPC in every UI language (4.528708ms)
+✔ Scriptor errors preserve recovery codes and unsupported formula elements through IPC (2.057459ms)
+✔ live dictation errors preserve installation guidance and failure codes through IPC (5.746375ms)
+✔ catalogue and server-address errors keep their specific cause through IPC in every UI language (0.76025ms)
+✔ the local provider failure that opened this file names its cause in every language (1.499666ms)
+✔ a transport detail we did not author is passed through verbatim (0.500083ms)
+✔ the Settings connection test reports its HTTP status, not a generic failure (0.714958ms)
+✔ the Settings result travels as an IPC payload, which is the path the report used (0.307917ms)
+✔ the two literals the scanner cannot evaluate are translated in their real runtime form (0.667125ms)
+Research answer plan: literal question/source grounding, deterministic facet IDs, exact output coverage, structured table validation and citation-safe rendering passed.
+✔ scripts/test-research-answer-plan.mjs (141.19325ms)
+[perf][deep] AI concurrency change 0ms provider=openrouter model=offline-test-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
+[perf][deep] AI queue wait 6ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+(node:89365) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `Electron --trace-deprecation ...` to show where the warning was created)
+[perf][deep] AI inference 13ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI response metadata 0ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI concurrency change 0ms provider=openai model=offline-test-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
+[perf][deep] AI queue wait 5ms provider=openai model=offline-test-model class=interactive requestHash=74fc7e8e0a897a368674cf8b982b3396afc7af61a8dc8d82e1979f8549bae8fa
+[perf][deep] AI inference 2ms provider=openai model=offline-test-model class=interactive requestHash=74fc7e8e0a897a368674cf8b982b3396afc7af61a8dc8d82e1979f8549bae8fa
+[perf][deep] AI response metadata 0ms provider=openai model=offline-test-model class=interactive requestHash=74fc7e8e0a897a368674cf8b982b3396afc7af61a8dc8d82e1979f8549bae8fa
+[perf][deep] AI queue wait 5ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI inference 7ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] JSON retry 22ms attempt=1 jsonMode=true invariantRequest=true status=error error=El proveedor rechazó la solicitud (400). Detalle: Unknown field response_format retry=false
+[perf][deep] AI queue wait 3ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI inference 1ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI response metadata 0ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI queue wait 3ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI inference 2ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] AI response metadata 0ms provider=openrouter model=offline-test-model class=interactive requestHash=6be133729946a01265930e6f14a71a34312143b608b8d5ec862473512fdd67ec
+[perf][deep] JSON retry 8ms attempt=1 jsonMode=true invariantRequest=true status=error error=Native structured JSON schema is unavailable for this provider. retry=false
+Research answer schema transport: strict request, terminal 400, cached-refusal bypass, OpenRouter routing, legacy JSON mode, and shared bounds passed.
+✔ scripts/test-research-answer-schema.mjs (3459.070792ms)
+Research answer structure: structured table validation/rendering, citation-safe escaping, alignment checks, and archived malformed-table regression passed.
+✔ scripts/test-research-answer-structure.mjs (158.44775ms)
+✔ research assistant packs preserve complete rules, schemas, citations and limits (62.980959ms)
+✔ research assistant wires prompt language into all model-facing branches and genealogy labels (1.902916ms)
+Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+✔ scripts/test-research-chat-agent.mjs (4308.888959ms)
+✔ only authorized literal passages from the frozen turn enter verification (5.069916ms)
+✔ an explicit constructed exercise retains its writing mode; untrusted source text cannot disable verification (0.154583ms)
+✔ a supported answer retains the literal fact and a canonical source attribution (3.776166ms)
+✔ a fabricated quote cannot approve a claim even when the judge returns supported (1.242917ms)
+✔ an unavailable verifier is an availability failure, never a successful absence answer (0.8015ms)
+✔ a contradictory inference classification needs a fresh consistent verdict, not automatic approval (0.552833ms)
+✔ repeated contradictory inference classifications stay unavailable after one retry (0.570541ms)
+✔ cancellation during verification never returns the unchecked draft (0.433583ms)
+✔ general answers without documentary excerpts do not trigger paid audits (0.287291ms)
+✔ verified citations remain inside table cells and web evidence keeps its own target (0.33225ms)
+✔ a semantically correct paraphrase cannot masquerade as a direct quote (1.343083ms)
+✔ simple calculated equations and table values are checked despite an approving semantic judge (2.021167ms)
+✔ a malformed premise reference gets a bounded schema repair, not an unchecked answer (0.335625ms)
+✔ repair receives the deterministic cause even when the semantic reason approves the premises (0.333625ms)
+✔ a rejected translated direct quote is repaired without deleting its supported value (1.221208ms)
+✔ a supported premise survives a fresh review after an unsupported compound claim is repaired (0.489958ms)
+✔ verified but irrelevant background is repaired when the requested fact exists (7.40625ms)
+✔ coverage outages and persistently incomplete repairs cannot become successful refusals (0.908125ms)
+✔ a verified evidence gap retains the requested facet even without a factual claim (0.591584ms)
+✔ coverage cannot demand a corpus-absence assertion instead of an already verified price limitation (0.560792ms)
+✔ an interpretation complaint is checked against the precise verified distribution limit (0.312833ms)
+✔ coverage confirmation cannot invent answer spans or supporting source quotes (0.944834ms)
+✔ a malformed coverage proof gets one identical retry and completeness is derived from validated proof (0.879208ms)
+✔ coverage proof retries are bounded and transport failures are never replayed (0.298333ms)
+✔ a confirmed missing limit is compared with the exact already verified acknowledgement before another repair (0.347708ms)
+✔ limit comparison cannot invent quotes, indices or a verified statement (0.536125ms)
+✔ an unrelated verified limitation cannot satisfy the missing requested facet (0.614833ms)
+✔ broad drafts are redrafted from original excerpts without passing invented prose to the writer or judge (0.55375ms)
+✔ a source-only redraft table still needs separate quantity and negation evidence (0.307083ms)
+✔ a short draft citing generated orientation is redrafted and a fabricated replacement still cannot publish (0.206875ms)
+✔ empty, unavailable and cancelled source redrafts cannot publish unchecked prose (0.252292ms)
+✔ a positive coverage boolean cannot bypass independent proof or publish invented answer spans (0.601292ms)
+✔ independent positive proof repairs refused reasoning from literal premises and audits the comparison anew (0.371ms)
+✔ a long draft with few compound sentences still redrafts from original excerpts (0.163208ms)
+✔ full-question proof accepts separate literal request facets without inheriting a critic complaint (0.239666ms)
+✔ full-question proof rejects empty, invented and duplicate request-facet records (0.294167ms)
+✔ coverage accepts distributed literal spans without treating ellipsis-joined text as a quote (0.34ms)
+✔ the real chat stream holds draft content, cancels safely and rechecks scope after verification (4089.673334ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4139.045417
+✔ scripts/test-research-chat-grounding.mjs (6018.689875ms)
+Claim ledger: atomic premises, verdict agreement, silence, qualified inference, retired-claim carry-over, whole-report contradictions and orchestration passed.
+✔ scripts/test-research-claim-audit.mjs (1017.760583ms)
+Research answer quote guard: 16 checks passed across legacy, structured, synthetic safety, and 3 archived regressions.
+✔ scripts/test-research-coverage-quotes.mjs (225.950459ms)
+Structured answer: exact facet IDs, literal coverage, source audit, bounded repair, default-off rollout and real stream cancellation passed.
+✔ scripts/test-research-structured-answer.mjs (5121.976542ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6032.228458

@@ -133,10 +133,12 @@ try {
       if (stopping) break campaignLoop;
       const before = fs.existsSync(traceFile) ? fs.readFileSync(traceFile, 'utf8').length : 0;
       const started = Date.now();
+      const callsBefore = proxy.ledger.read().calls.length;
       const result = { caseId: input.id, arm, sourceHash: input.sourceHash };
       try { result.answer = await app.evaluate(async (_electron, { input, arm }) => global.__qaRun(input, arm), { input, arm }); }
       catch (error) { result.error = { message: String(error.message).slice(0, 500), classification: 'generation-or-verification-unavailable' }; }
       result.durationMs = Date.now() - started;
+      result.providerCalls = proxy.ledger.read().calls.length - callsBefore;
       result.traces = fs.existsSync(traceFile) ? fs.readFileSync(traceFile, 'utf8').slice(before).trim().split('\n').filter(Boolean).map(JSON.parse) : [];
       report.answers.push(result);
       save(path.join(output, 'campaign.json'), report);
@@ -144,7 +146,7 @@ try {
       console.log(JSON.stringify({ caseId: input.id, arm, answered: Boolean(result.answer), durationMs: result.durationMs,
         committedUsd: proxy.ledger.read().calls.reduce((sum, call) => sum + (call.actualUsd ?? call.maximumUsd), 0) }));
       if (stopping) break campaignLoop;
-      if (proxy.blocked.some(row => ['research_budget_exhausted', 'research_cost_bound_exceeded', 'research_model_snapshot_mismatch', 'research_zdr_snapshot_mismatch', 'research_provider_unavailable'].includes(row.message))) throw new Error('Campaign dispatch stopped; preserve pending cases');
+      if (proxy.blocked.length > 0) throw new Error('Campaign dispatch stopped; preserve pending cases');
     }
   }
   report.completed = !stopping;

@@ -21,6 +21,7 @@ import {mobileDatabasePresentationRead} from './databasePresentation';
 import {mobilePageDocument,mobilePageDocuments} from './pageDocuments';
 import {mobileSyncedBlockSource,mobileLinkedDatabaseRead} from './pageDependencies';
 import { generateMobileReportImage } from './reportImageGeneration';
+import { mobileStudyEditorData } from './studyEdits';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -154,6 +155,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     }
     const invoke = () => withMobileOperation(() => handler(event, ...args), domains);
     let value = await (signal ? withGenerationSignal(signal, invoke) : invoke());
+    if (method === 'getStudyDocEditorData') value = withMobileOperation(() => mobileStudyEditorData(String(args[0])), domains);
     if (method === 'getImmersionSession' && !domains.includes('writing') && value && typeof value === 'object') {
       value = {...value, progress: emptyImmersionProgress()};
     }

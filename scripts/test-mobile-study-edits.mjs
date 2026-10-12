@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-study-edits'))process.exit(0);
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-study-edits-'));
+const runtime=installRuntimeHooks(root);runtime.app.on=()=>{};runtime.app.once=()=>{};
+const require=createRequire(import.meta.url);let database;
+try {
+  database=require('../electron/db/database.ts');
+  const {getActiveVault,createVault,setActiveVault}=require('../electron/vaults/vaultRegistry.ts');
+  const org=require('../electron/db/studyOrgRepo.ts'),editor=require('../electron/db/studyEditorRepo.ts');
+  const {applyStudyEdit}=require('../electron/desktopBridge/studyEdits.ts');
+  const {markdownToBlockNote}=require('../shared/blockNoteDocument.ts');
+  const first=getActiveVault(),other=createVault('Otro vault aislado');
+  const scoped=work=>database.withVaultDatabase(first.id,()=>work(database.getDb()));
+  const document=await scoped(()=>org.createStudyDocument({title:'Documento de estudio',contentMarkdown:'Original'}));
+  const original=await scoped(()=>editor.getStudyDocEditorData(document.id));
+  const markdown='# Investigación\n\nConserva la cita [fuente](nodus://study/doc/document-37) y $x^2$.\n\n| Fuente | Dato |\n| --- | --- |\n| Libro | 37 |';
+  const nativeDocument=markdownToBlockNote(markdown);
+  const request={id:randomUUID(),documentId:document.id,input:{title:'Desde el móvil',contentMarkdown:markdown,nativeDocument,schemaVersion:2,expectedRevision:original.revision}};
+  const saved=await applyStudyEdit(first.id,'phone',request);
+  assert.equal(saved.document.id,document.id);assert.equal(saved.editorData.revision,original.revision+1);
+  assert.deepEqual(saved.editorData.nativeDocument,nativeDocument);
+  assert.deepEqual(await applyStudyEdit(first.id,'phone',{...request,input:Object.fromEntries(Object.entries(request.input).reverse())}),saved);
+  assert.equal((await scoped(()=>editor.getStudyDocEditorData(document.id))).versions.length,saved.editorData.versions.length);
+  await assert.rejects(applyStudyEdit(first.id,'phone',{...request,input:{...request.input,title:'Cambio de carga'}}),/idempotency_conflict/);
+  const mac=await scoped(()=>editor.updateStudyDoc(document.id,{...request.input,title:'Cambio del Mac',expectedRevision:saved.editorData.revision}));
+  const conflictId=randomUUID();
+  await assert.rejects(applyStudyEdit(first.id,'phone',{...request,id:conflictId}),error=>{
+    assert.equal(error.code,'revision_conflict');assert.equal(error.remote.revision,mac.editorRevision);assert.equal(error.remote.documentTitle,'Cambio del Mac');return true;
+  });
+  assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM desktop_study_edit_receipts WHERE request_id=?').get(conflictId).n),0);
+  const invalidId=randomUUID();
+  await assert.rejects(applyStudyEdit(first.id,'phone',{...request,id:invalidId,input:{...request.input,expectedRevision:mac.editorRevision,nativeDocument:[{id:'invalid',type:'unsupported-private-block'}]}}));
+  assert.equal((await scoped(()=>editor.getStudyDocEditorData(document.id))).revision,mac.editorRevision,'Rejected structured edits must roll back both revision and receipt');
+  assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM desktop_study_edit_receipts WHERE request_id=?').get(invalidId).n),0);
+  await scoped(()=>editor.createStudyAnnotation(document.id,{from:0,to:8,selectedText:'Conserva',comment:'Fragmento protegido',locked:true}));
+  const lockedId=randomUUID();
+  await assert.rejects(applyStudyEdit(first.id,'phone',{id:lockedId,documentId:document.id,input:{title:'No debe guardarse',contentMarkdown:'Eliminado',nativeDocument:markdownToBlockNote('Eliminado'),schemaVersion:2,expectedRevision:mac.editorRevision}}),/bloqueado/);
+  assert.equal((await scoped(()=>editor.getStudyDocEditorData(document.id))).revision,mac.editorRevision);
+  assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM desktop_study_edit_receipts WHERE request_id=?').get(lockedId).n),0,'A protected annotation and its version cannot be removed by a mobile save');
+  await assert.rejects(applyStudyEdit(other.id,'phone',request),/document_unavailable/);
+  await assert.rejects(applyStudyEdit(first.id,'phone',{...request,creation:{kind:'markdown'}}),/invalid_study_edit/);
+  database.closeDb();setActiveVault(other.id);
+  assert.deepEqual(await applyStudyEdit(first.id,'phone',request),saved,'Receipt must survive restart and active vault switch');
+  console.log(JSON.stringify({passed:true,structuredContent:true,lostAcknowledgementReplay:true,conflictPreservesRemote:true,atomicRollback:true,vaultIsolation:true,providerCalls:0,releaseApproved:false}));
+} finally {try{database?.closeDb();}catch{}fs.rmSync(root,{recursive:true,force:true});}

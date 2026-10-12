@@ -29,6 +29,8 @@ export const MOBILE_OPERATIONS = {
   getStudyIdeaDetail: ['study:knowledge:idea', 'corpus'],
   getStudyKnowledgeGraph: ['study:knowledge:graph', 'corpus'],
   getStudyDocEditorData: ['study:editor:data', 'corpus'],
+  createStudyAnnotation: ['study:annotation:create', 'writing'], updateStudyAnnotation: ['study:annotation:update', 'writing'],
+  duplicateMobileStudyDocument: ['study:mobile:duplicate', 'writing'], trashMobileStudyDocument: ['study:mobile:trash', 'writing'],
   listImageModels: ['ai:listImageModels', 'corpus'],
   getAppInfo: ['app:info', 'corpus'],
   getDocumentVisuals: ['documentVisuals:get', 'corpus'],

@@ -17,6 +17,7 @@ import { StellarWorkspace } from '../stellarGraph/StellarWorkspace';
 import { memorySource, type StellarGraphSource } from '../stellarGraph/source';
 import { DictionaryView } from '../views/DictionaryView';
 import { WorkspaceView } from '../views/WorkspaceView';
+import {MobileStudyDocument} from './MobileStudyDocument';
 import { ArgumentMapView } from '../views/ArgumentMapView';
 import { DeepResearchView } from '../views/DeepResearchView';
 import { DatabaseDeepResearchView } from '../views/DatabaseDeepResearchView';
@@ -53,7 +54,7 @@ import {MobilePageDocument} from './MobilePageDocument';
 import {pageBlocksToMarkdown} from '@shared/pages';
 import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -431,6 +432,7 @@ function App() {
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
       : config.surface === 'dictionary' ? <DictionaryView mobile settings={settings} onOpenIdea={id => navigate('idea', id)} onOpenAuthor={id => navigate('author', id)} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
+      : config.surface === 'studyDocument' ? <MobileStudyDocument id={config.initialStudyDocumentId??''} settings={settings} draftScope={config.documentDraftScope??''} call={call} onOpen={(kind,id)=>navigate(kind,id)}/>
       : config.surface === 'page' ? <MobilePageDocument id={config.initialPageId??''} onOpen={id=>navigate('page',id)}/>
       : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>

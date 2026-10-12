@@ -14,6 +14,7 @@ import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOpe
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations, mobileWorldContentMutationTables } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
+import { applyStudyEdit, StudyEditFailure } from './studyEdits';
 import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
 import {validateCompanionSpaceAction,validateCompanionActionJob,companionActionKey,companionActionResponse} from './spaceActions';
 import {listMobileChats,readMobileChat,saveMobileChat,MobileChatFailure} from './chatHistory';
@@ -474,6 +475,17 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     return;
   }
   const workspaceEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/workspace-edits$/.exec(url.pathname);
+  const studyEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/study-edits$/.exec(url.pathname);
+  if (request.method === 'POST' && studyEdit) {
+    const vaultId = decodeURIComponent(studyEdit[1]);
+    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('corpus') || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    try { reply(response, 200, await applyStudyEdit(vaultId, pairing.id, await body(request, MOBILE_WORKSPACE_EDIT_MAX_BYTES))); }
+    catch (error) {
+      if (error instanceof StudyEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : error.code === 'study_edit_too_large' ? 413 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
+      else reply(response, 400, { error: 'invalid_study_document', error_description: error instanceof Error ? error.message : 'The document could not be saved.' });
+    }
+    return;
+  }
   const pageEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/page-edits$/.exec(url.pathname);
   if(request.method==='POST'&&pageEdit){
     const vaultId=decodeURIComponent(pageEdit[1]);

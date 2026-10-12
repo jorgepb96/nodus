@@ -1083,6 +1083,15 @@ export function registerAcademicIpc(context: IpcContext): void {
     return result;
   });
   h('study:tree:duplicate', async (_e, kind: StudyEntityKind, id: string) => studyOrg.duplicateStudyTree(kind, id));
+  // Companion document commands do not enqueue extraction or indexing.
+  h('study:mobile:duplicate', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 128) throw new Error('invalid_study_document');
+    return studyOrg.duplicateStudyTree('document', id);
+  });
+  h('study:mobile:trash', async (_e, id: string) => {
+    if (typeof id !== 'string' || !id || id.length > 128) throw new Error('invalid_study_document');
+    return studyOrg.setStudyLifecycle('document', id, 'trash');
+  });
   h('study:tag:create', async (_e, input: CreateStudyTagInput) => studyOrg.createStudyTag(input));
   h('study:tag:update', async (_e, id: string, patch: Partial<CreateStudyTagInput> & { favorite?: boolean; position?: number }) =>
     studyOrg.updateStudyTag(id, patch));

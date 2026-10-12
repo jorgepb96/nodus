@@ -24,17 +24,17 @@
 
 /* The catalogue title and actions need explicit grid rows; flex-basis cannot
    adapt the Desktop grid and leaves its title squeezed between wide controls. */
-.nodus-phone .mobile-surface[data-surface="workspace"] [data-testid="workspace-header"]{grid-template-columns:minmax(0,1fr);gap:8px;padding:8px 12px}
-.nodus-phone .mobile-surface[data-surface="workspace"] [data-testid="workspace-header"] .library-header-title{grid-column:1;grid-row:1;width:100%;min-width:0}
-.nodus-phone .mobile-surface[data-surface="workspace"] [data-testid="workspace-header"] h1{font-size:1.125rem;line-height:1.35}
-.nodus-phone .mobile-surface[data-surface="workspace"] [data-testid="workspace-header"] p{font-size:.6875rem;line-height:1.4}
-.nodus-phone .mobile-surface[data-surface="workspace"] [data-testid="workspace-header"] .library-header-actions{grid-column:1;grid-row:2;justify-self:stretch;width:100%;justify-content:flex-start;gap:8px}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-options summary.editorial-create-trigger{width:44px;height:44px;min-width:44px;min-height:44px}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-create-menu{left:0;right:auto;max-width:calc(100vw - 24px)}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-create-menu button{min-height:44px;font-size:.875rem}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-error{flex-wrap:wrap;gap:8px;padding:12px;flex-shrink:0;max-height:42vh;overflow:auto;overscroll-behavior:contain}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-error>span{flex-basis:100%;line-height:1.5;overflow-wrap:anywhere}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-error>button{padding:8px 12px;border:1px solid currentColor;border-radius:10px;white-space:normal;max-width:100%;text-decoration:none}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) [data-testid="workspace-header"]{grid-template-columns:minmax(0,1fr);gap:8px;padding:8px 12px}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) [data-testid="workspace-header"] .library-header-title{grid-column:1;grid-row:1;width:100%;min-width:0}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) [data-testid="workspace-header"] h1{font-size:1.125rem;line-height:1.35}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) [data-testid="workspace-header"] p{font-size:.6875rem;line-height:1.4}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) [data-testid="workspace-header"] .library-header-actions{grid-column:1;grid-row:2;justify-self:stretch;width:100%;justify-content:flex-start;gap:8px}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-options summary.editorial-create-trigger{width:44px;height:44px;min-width:44px;min-height:44px}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-create-menu{left:0;right:auto;max-width:calc(100vw - 24px)}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-create-menu button{min-height:44px;font-size:.875rem}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-save-error{flex-wrap:wrap;gap:8px;padding:12px;flex-shrink:0;max-height:42vh;overflow:auto;overscroll-behavior:contain}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-save-error>span{flex-basis:100%;line-height:1.5;overflow-wrap:anywhere}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-save-error>button{padding:8px 12px;border:1px solid currentColor;border-radius:10px;white-space:normal;max-width:100%;text-decoration:none}
 
 /* Put optional tools beside Back, giving the actual document another row. */
 .nodus-phone .mobile-surface .deep-research-reader-header{
@@ -78,8 +78,8 @@
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-player select{width:100%;min-width:0;height:44px;flex-shrink:0}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-theme-view .stellar-legend{bottom:112px}
 .nodus-phone .mobile-surface[data-surface="graph"] .stellar-body{position:relative}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-editor-header{height:auto;flex-wrap:wrap}
-.nodus-phone .mobile-surface[data-surface="workspace"] .editorial-save-status{white-space:normal}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-editor-header{height:auto;flex-wrap:wrap}
+.nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-save-status{white-space:normal}
 .nodus-phone .editorial-editor-header{gap:4px;padding:4px 8px;flex-basis:auto}
 .nodus-phone .editorial-header-leading .library-workspace-tab.is-library{flex:0 0 44px;min-width:44px}
 .nodus-phone .editorial-header-leading .library-workspace-tab.is-library .library-workspace-tab-main{justify-content:center;padding:0;min-width:44px}

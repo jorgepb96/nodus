@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { withOwningVault } from '../vaults/vaultRegistry';
-import { getStudyDocEditorData, updateStudyDoc } from '../db/studyEditorRepo';
+import { getStudyDocEditorData, updateStudyDoc, createStudyAnnotationWithIdentity, updateStudyAnnotation, deleteStudyAnnotation } from '../db/studyEditorRepo';
 import { createStudyDocumentWithIdentity, resolveStudyMoveDestination, duplicateStudyDocumentWithIdentity, getStudyEntity, setStudyLifecycle } from '../db/studyOrgRepo';
 import { STUDY_DOCUMENT_KINDS, type CreateStudyDocumentInput } from '../../shared/studyOrg';
 import { canonicalJson } from '../../shared/canonicalJson';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
-import type { StudyDocUpdateInput } from '../../shared/studyEditor';
+import type { StudyDocUpdateInput, StudyAnnotationInput } from '../../shared/studyEditor';
 import { withMobileOperation } from './executionBoundary';
 import { invalidateLiveCorpus } from './liveCorpus';
 
@@ -68,8 +68,30 @@ export async function applyStudyEdit(vaultId: string, grantId: string, raw: unkn
           return parent != null && (typeof parent !== 'string' || !parent || parent.length > 128);
         }) || (create.placement.position !== undefined && !Number.isSafeInteger(create.placement.position)))) throw new StudyEditFailure('invalid_study_creation');
   }
-  const action = command as {action?: unknown; targetId?: unknown; sourceFingerprint?: unknown} | undefined;
-  if (command !== undefined && (!action || typeof action !== 'object' || Array.isArray(action) || create ||
+  const action = command as {action?: unknown; targetId?: unknown; sourceFingerprint?: unknown; annotationId?: unknown; expectedAnnotation?: unknown; patch?: unknown} | undefined;
+  const annotationAction = action && ['annotationCreate','annotationUpdate','annotationDelete'].includes(String(action.action));
+  if (annotationAction) {
+    if (create || !action || Object.keys(action).some(key => !['action','annotationId','expectedAnnotation','patch'].includes(key)) ||
+        typeof action.annotationId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(action.annotationId) ||
+        (action.action === 'annotationCreate' ? action.expectedAnnotation !== null : !action.expectedAnnotation || typeof action.expectedAnnotation !== 'object' || Array.isArray(action.expectedAnnotation))) throw new StudyEditFailure('invalid_study_annotation');
+    const patch = action.patch as Record<string, unknown> | undefined;
+    if (action.action === 'annotationDelete' ? patch !== undefined : !patch || typeof patch !== 'object' || Array.isArray(patch) ||
+        Object.keys(patch).some(key => !['anchor','from','to','selectedText','comment','color','locked','pinned','resolved'].includes(key))) throw new StudyEditFailure('invalid_study_annotation');
+    if (patch) {
+      for (const key of ['from','to']) if (patch[key] !== undefined && (!Number.isSafeInteger(patch[key]) || Number(patch[key]) < 0)) throw new StudyEditFailure('invalid_study_annotation');
+      for (const key of ['selectedText','comment']) if (patch[key] !== undefined && (typeof patch[key] !== 'string' || String(patch[key]).length > 1024 * 1024)) throw new StudyEditFailure('invalid_study_annotation');
+      for (const key of ['locked','pinned','resolved']) if (patch[key] !== undefined && typeof patch[key] !== 'boolean') throw new StudyEditFailure('invalid_study_annotation');
+      if (patch.color !== undefined && patch.color !== null && (typeof patch.color !== 'string' || patch.color.length > 128)) throw new StudyEditFailure('invalid_study_annotation');
+      if (patch.anchor !== undefined && patch.anchor !== null) {
+        const anchor = patch.anchor as Record<string, unknown>;
+        if (typeof anchor !== 'object' || Array.isArray(anchor) || Object.keys(anchor).some(key => !['blockId','endBlockId','from','to'].includes(key)) ||
+            typeof anchor.blockId !== 'string' || !anchor.blockId || anchor.blockId.length > 128 ||
+            (anchor.endBlockId !== undefined && (typeof anchor.endBlockId !== 'string' || !anchor.endBlockId || anchor.endBlockId.length > 128)) ||
+            !Number.isSafeInteger(anchor.from) || !Number.isSafeInteger(anchor.to) || Number(anchor.from) < 0 || Number(anchor.to) < Number(anchor.from)) throw new StudyEditFailure('invalid_study_annotation');
+      }
+      if (action.action === 'annotationCreate' && (typeof patch.comment !== 'string' || typeof patch.selectedText !== 'string' || !Number.isSafeInteger(patch.from) || !Number.isSafeInteger(patch.to) || Number(patch.to) < Number(patch.from))) throw new StudyEditFailure('invalid_study_annotation');
+    }
+  } else if (command !== undefined && (!action || typeof action !== 'object' || Array.isArray(action) || create ||
       Object.keys(action).some(key => !['action','targetId','sourceFingerprint'].includes(key)) ||
       !['duplicate','trash'].includes(String(action.action)) || typeof action.sourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(action.sourceFingerprint) ||
       (action.action === 'duplicate' ? typeof action.targetId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(action.targetId) || action.targetId === documentId : action.targetId !== undefined))) throw new StudyEditFailure('invalid_study_command');
@@ -97,9 +119,18 @@ export async function applyStudyEdit(vaultId: string, grantId: string, raw: unkn
       if (!db.prepare('SELECT id FROM study_docs WHERE id=? AND deleted_at IS NULL').get(documentId)) throw new StudyEditFailure('document_unavailable');
       const current = withMobileOperation(() => mobileStudyEditorData(documentId));
       if (current.revision !== value.expectedRevision) throw new StudyEditFailure('revision_conflict', current);
-      if (action && current.mobileCommandSource.fingerprint !== action.sourceFingerprint) throw new StudyEditFailure('source_conflict', current);
-      withMobileOperation(() => updateStudyDoc(documentId, value));
+      if (action && !annotationAction && current.mobileCommandSource.fingerprint !== action.sourceFingerprint) throw new StudyEditFailure('source_conflict', current);
       let commandResult: unknown;
+      if (annotationAction) {
+        const annotationId = action!.annotationId as string;
+        const existing = current.annotations.find(item => item.id === annotationId) ?? null;
+        if (canonicalJson(existing) !== canonicalJson(action!.expectedAnnotation)) throw new StudyEditFailure('annotation_conflict', current);
+        const owner = db.prepare('SELECT document_id FROM study_annotations WHERE id=?').get(annotationId) as {document_id:string} | undefined;
+        if (owner && owner.document_id !== documentId) throw new StudyEditFailure('annotation_unavailable');
+        if (action!.action === 'annotationCreate') commandResult = withMobileOperation(() => createStudyAnnotationWithIdentity(documentId, action!.patch as StudyAnnotationInput, annotationId));
+        else if (action!.action === 'annotationUpdate') commandResult = withMobileOperation(() => updateStudyAnnotation(annotationId, action!.patch as Partial<StudyAnnotationInput> & {resolved?: boolean}));
+        else { withMobileOperation(() => deleteStudyAnnotation(annotationId)); commandResult = null; }
+      } else withMobileOperation(() => updateStudyDoc(documentId, value));
       if (action?.action === 'duplicate') {
         if (db.prepare('SELECT id FROM study_docs WHERE id=?').get(action.targetId)) throw new StudyEditFailure('identity_conflict');
         const duplicate = withMobileOperation(() => duplicateStudyDocumentWithIdentity(documentId, action.targetId as string));
@@ -107,7 +138,7 @@ export async function applyStudyEdit(vaultId: string, grantId: string, raw: unkn
       } else if (action?.action === 'trash') withMobileOperation(() => setStudyLifecycle('document', documentId, 'trash'));
       const document = withMobileOperation(() => getStudyEntity('document', documentId));
       const editorData = withMobileOperation(() => mobileStudyEditorData(documentId));
-      const committed = { id, document, editorData, ...(action ? {commandResult: commandResult ?? {document}} : {}) };
+      const committed = { id, document, editorData, ...(action ? {commandResult: annotationAction ? commandResult : commandResult ?? {document}} : {}) };
       db.prepare('INSERT INTO desktop_study_edit_receipts VALUES(?,?,?,?,?)').run(grantId, id, payload, JSON.stringify(committed), new Date().toISOString());
       return committed;
     })();

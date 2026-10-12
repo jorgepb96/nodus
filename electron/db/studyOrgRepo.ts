@@ -298,9 +298,15 @@ export function createStudyFolder(input: CreateStudyFolderInput): StudyFolder {
 }
 
 export function createStudyDocument(input: CreateStudyDocumentInput): StudyDocument {
+  return createStudyDocumentWithIdentity(input, crypto.randomUUID());
+}
+
+/** Stable companion identities are allocated before the device reconnects. */
+export function createStudyDocumentWithIdentity(input: CreateStudyDocumentInput, identity: string): StudyDocument {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(identity)) throw new Error('Identidad de documento no válida.');
   const db = getDb();
   const create = db.transaction(() => {
-    const key = ids('document');
+    const key = { id: identity, shortId: createStudyShortId(PREFIX.document, identity) };
     const timestamp = now();
     db.prepare(`INSERT INTO study_docs
       (id, short_id, title, kind, content_markdown, description, color, icon, emoji, image_data, year, position, created_at, updated_at)

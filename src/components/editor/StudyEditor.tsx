@@ -275,6 +275,7 @@ export function StudyEditor({
   const [showImprovePrompts, setShowImprovePrompts] = useState(false);
   const [documentImprovement, setDocumentImprovement] = useState<{ style: StudyStyle; target: ImproveTarget } | null>(null);
   const [quickImproveStyles, setQuickImproveStyles] = useState<StudyStyle[]>([]);
+  const [quickImproveIssue, setQuickImproveIssue] = useState('');
   const [selectionImprove, setSelectionImprove] = useState<{ x: number; y: number; target: ImproveTarget } | null>(null);
   const [selectionToolbar, setSelectionToolbar] = useState<HTMLElement | null>(null);
   const [synonymPanel, setSynonymPanel] = useState<SynonymPanelState | null>(null);
@@ -340,9 +341,15 @@ export function StudyEditor({
   }, [port]);
 
   const loadQuickImproveStyles = useCallback(async () => {
-    const [settings, styles] = await Promise.all([window.nodus.getSettings(), window.nodus.listStudyStyles()]);
-    const byId = new Map(styles.filter((item) => item.active && !item.archivedAt).map((item) => [item.id, item]));
-    setQuickImproveStyles(settings.studyImproveToolbarStyleIds.slice(0, 4).map((id) => byId.get(id)).filter((item): item is StudyStyle => Boolean(item)));
+    try {
+      const [settings, styles] = await Promise.all([window.nodus.getSettings(), window.nodus.listStudyStyles()]);
+      const byId = new Map(styles.filter((item) => item.active && !item.archivedAt).map((item) => [item.id, item]));
+      setQuickImproveStyles(settings.studyImproveToolbarStyleIds.slice(0, 4).map((id) => byId.get(id)).filter((item): item is StudyStyle => Boolean(item)));
+      setQuickImproveIssue('');
+    } catch (error) {
+      setQuickImproveStyles([]);
+      setQuickImproveIssue(error instanceof Error ? error.message : String(error));
+    }
   }, []);
 
   useEffect(() => { void loadQuickImproveStyles(); }, [active?.id, loadQuickImproveStyles]);
@@ -1086,7 +1093,7 @@ export function StudyEditor({
             {(contextTab==='checks'||contextTab==='structure')&&<AcademicPanel document={nativeDocument??[]} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef.current} view={contextTab} unresolvedComments={data.annotations.filter(a=>!a.resolvedAt).length} onOpenSource={(href,evidence)=>void navigateReference(href,evidence)} onSettings={()=>academicTools.current?.open('settings')} />}
             {contextTab === 'details' && contextDetails}
             {contextTab === 'outline' && <DocOutline markdown={draft} onJump={jumpToHeading} />}
-            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{prompt.name}</button>)}</div>}
+            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveIssue && <p role="status" className="text-sm mt-3">{t('No se han podido cargar los prompts de mejora.')} {quickImproveIssue}</p>}{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{prompt.name}</button>)}</div>}
       {contextTab === 'details' && (
         <div className="grid grid-cols-2 gap-3 p-4">
           {onUpdateMetadata && <label className="text-[10px] text-neutral-500">{t('Tipo de material')}<select data-testid="study-doc-kind" className="input mt-1 w-full" value={active.kind} onChange={(event) => void onUpdateMetadata({ kind: event.target.value as StudyDocumentKind })}>{STUDY_DOCUMENT_KINDS.map((kind) => <option key={kind} value={kind}>{t(STUDY_KIND_LABEL[kind])}</option>)}</select></label>}

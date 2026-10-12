@@ -382,7 +382,7 @@ function App() {
   useEffect(() => {
     void native.nodusMobileCall('surfaceMounted');
     if (config.surface !== 'databasePresentation' && (config.surface !== 'graph' || ['estudio','docencia'].includes(config.vaultType))) void call('getSettings').then(setSettings).catch(error => {
-      if(config.initialArgumentMap&&(error as {code?:string})?.code==='offline')setSettings(offlineReadSettings);
+      if((config.initialArgumentMap||config.surface==='studyDocument')&&(error as {code?:string})?.code==='offline')setSettings(offlineReadSettings);
       else setError(String(error));
     });
     const listener = (event: ErrorEvent) => setError(event.message);

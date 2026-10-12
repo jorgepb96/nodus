@@ -1,0 +1,544 @@
+{
+  "format": "research-openrouter-paired/1",
+  "startedAt": "2026-10-12T14:06:04.973Z",
+  "completed": false,
+  "model": "mistralai/mistral-small-3.2-24b-instruct",
+  "sourceVersion": {
+    "workingTreeDirty": true,
+    "commit": "1c40b7fbcfe6dc27ad81bfa6de7f2d8d2a780d9b",
+    "files": {
+      "electron/ai/researchChatGrounding.ts": "e308b14e106b3314d9b537b28216f66ab9ad77817f8c8541ac3918a6a8dded6f",
+      "electron/ai/researchStructuredAnswer.ts": "39d8dd09e51b0a4bbcf3b16b6fadf89292e218b22a442d450782d4ce619099df",
+      "electron/ai/researchClaimAudit.ts": "644f3ea8c12262aa64d646c39d965b6557473a9386ca4e13fa97d6ad980010ee",
+      "shared/researchChatGrounding.ts": "19c49739b940f52549db4b039e6377c6a8938adf3245b1a7343ca4f38ea2ce3d",
+      "shared/researchClaimAudit.ts": "31332562d228a2f57a27d72e49a902f5cec35b19c3694360aa00edbb2b7fe2c3",
+      "shared/researchAnswerPlan.ts": "1e4355d1b2ab094cbc95b27dfcc02be294317f01cbe74125f8557d19a2b49190",
+      "shared/researchAnswerStructure.ts": "3a147ed9377878727cc44cfb542f31e038d3c76d559d220cfb85d5de825257f5",
+      "electron/ai/aiClient.ts": "9e3ae02f869507c10a589959232d00be5dc5bb8f446411d1e5766e82b0df3445",
+      "electron/ai/providers.ts": "a6be3d1560f11aec49ff2a55f3c1e9c93c66c6a6379d24f87abf52f4b76a5d64",
+      "shared/researchAnswerSchema.ts": "757017fb4b5c7ba519ded00b8056f061df1dd305f313063247981fb6a33ce35c",
+      "electron/db/settingsRepo.ts": "cab636da3701ea62d689dd0ded7c38a22750af0546b084bd08b81b863efc28b6",
+      "electron/qa/researchProviderProxy.ts": "44d70fbefd94428771f4db283b2619bb7e3f376b9adfc806963d39cdf589e41a",
+      "electron/bootstrap.ts": "181763d7a4d276926627aad4435cb305f56dfa9ba5e2a61442e1c5f8a44636b6",
+      "scripts/lib/tsRuntimeHooks.mjs": "9d198653650e913a83477088959e103708f93511be793b0ae16745ca64343908",
+      "scripts/research-openrouter-proxy.mjs": "cd1acb2a96692c7d6cc01768cc4daab7ba9b2298e8c1bffdec787c1570028e81",
+      "scripts/research-openrouter-budget.mjs": "2d373a0daa605c87850e7a631f26b6e902442772f8a3f3fa72a1160194a19b3b",
+      "scripts/research-openrouter-campaign.mjs": "6e2a1c45fbceac3aeb7091ee1f98e45e3b8048abe1f015a4eeb86e8c7c49ddc4"
+    }
+  },
+  "answers": [],
+  "pending": [
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-calculation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-calculation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-correction",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-correction",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-statistics",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-statistics",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-negation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-negation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-policy",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-policy",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-paper",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-paper",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-dates",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-dates",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-sensor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-sensor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-calculation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-calculation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-correction",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-correction",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-statistics",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-statistics",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-negation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-negation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-policy",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-policy",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-paper",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-paper",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-price",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-price",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-donor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-donor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-funding",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-funding",
+      "arm": "structured"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-data",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-data",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-dates",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-dates",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-sensor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-sensor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-calculation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-calculation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-correction",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-correction",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-statistics",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-statistics",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-negation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-negation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-policy",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-policy",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-paper",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-paper",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-price",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-price",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-donor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-donor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-funding",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-funding",
+      "arm": "structured"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-data",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-data",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-dates",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-dates",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-sensor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-sensor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-calculation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-calculation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-correction",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-correction",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-statistics",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-statistics",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-negation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-negation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-policy",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-policy",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-paper",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-paper",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-price",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-price",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-donor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-donor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-funding",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-funding",
+      "arm": "structured"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-data",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-data",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-dates",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-dates",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-sensor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-sensor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-calculation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-calculation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-correction",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-correction",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-statistics",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-statistics",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-negation",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-negation",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-policy",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-policy",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-paper",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-paper",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-donor",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-donor",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-funding",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-funding",
+      "arm": "structured"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data",
+      "arm": "legacy"
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data",
+      "arm": "structured"
+    }
+  ],
+  "acceptance": null,
+  "root": "/private/tmp/nodus-research-JozUHh",
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true
+  },
+  "error": {
+    "message": "electron.launch: Timeout 60000ms exceeded.\nCall log:\n\u001b[2m  - <launching> /private/tmp/nodus-research-JozUHh/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\u001b[22m\n\u001b[2m  - <launched> pid=89828\u001b[22m\n\u001b[2m  - [pid=89828][err] Debugger listening on ws://127.0.0.1:54974/3a6056c0-2c2f-406f-a283-fcb15251290f\u001b[22m\n\u001b[2m  - [pid=89828][err] For help, see: https://nodejs.org/learn/getting-started/debugging\u001b[22m\n\u001b[2m  - <ws connect"
+  },
+  "cost": {
+    "closedAt": "2026-10-12T14:07:05.149Z",
+    "limitUsd": 0.40712363,
+    "campaignCeilingUsd": 0.5,
+    "priorUnknownUsd": 0.00211523,
+    "priorCommittedUsd": 0.09287637,
+    "calls": 0,
+    "accountedUpperBoundUsd": 0,
+    "knownCostOverruns": [],
+    "stopReason": null,
+    "cumulativeCampaignUpperBoundUsd": 0.09287637
+  },
+  "dispatchBlocks": [],
+  "finishedAt": "2026-10-12T14:07:05.152Z",
+  "diagnosis": {
+    "classification": "macos-keychain-startup-wait",
+    "generationCalls": 0,
+    "evidence": "startup-keychain-diagnosis.json",
+    "credentialFaultEstablished": false
+  }
+}

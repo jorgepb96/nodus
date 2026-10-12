@@ -1,0 +1,12 @@
+{
+  "closedAt": "2026-10-12T14:07:05.149Z",
+  "limitUsd": 0.40712363,
+  "campaignCeilingUsd": 0.5,
+  "priorUnknownUsd": 0.00211523,
+  "priorCommittedUsd": 0.09287637,
+  "calls": 0,
+  "accountedUpperBoundUsd": 0,
+  "knownCostOverruns": [],
+  "stopReason": null,
+  "cumulativeCampaignUpperBoundUsd": 0.09287637
+}

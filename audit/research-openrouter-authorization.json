@@ -27,6 +27,10 @@
     {
       "report": "audit/research-openrouter-availability-attempt/campaign.json",
       "committedUsd": 0.09076114
+    },
+    {
+      "report": "audit/research-openrouter-keychain-startup/campaign.json",
+      "committedUsd": 0
     }
   ],
   "remainingUsd": 0.40712363,

@@ -1,0 +1,17 @@
+{
+  "format": "nodus.qa-startup-keychain/1",
+  "isolatedRoot": "/private/tmp/nodus-research-EgLEBj",
+  "electron": "43.6.0",
+  "waitSamples": 1450,
+  "mainThreadNativeFrames": [
+    "+                                                                                                                       1450 SecItemCopyMatching",
+    "+                                                                                                                         1450 SecItemCopyMatching_osx(__CFDictionary const*, void const**)",
+    "+                                                                                                                             1450 SecKeychainItemCopyContent",
+    "+                                                                                                                               1450 Security::KeychainCore::ItemImpl::getContent(SecItemClass*, SecKeychainAttributeList*, unsigned int*, void**)",
+    "+                                                                                                                                               1450 Security::SecurityServer::ClientSession::decrypt(Security::Context const&, unsigned int, Security::CssmData const&, Security::CssmData&, Security::Allocator&)"
+  ],
+  "encryptedCredentialOnly": true,
+  "modelCalls": 0,
+  "qaSecretCopyRemoved": true,
+  "limits": "Native wait establishes a Keychain call is blocking, not whether a visible authorization dialog was shown or whether the credential is invalid."
+}

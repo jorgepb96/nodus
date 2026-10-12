@@ -58,7 +58,7 @@ export interface GeneratedImageBytes {
 }
 
 function taskKey(kind: DecorativeImageEntityKind, id: string): string {
-  return `${kind}:${id}`;
+  return `${getActiveVault().id}:${kind}:${id}`;
 }
 
 function parseModel(value: string | null): ModelRef | null {

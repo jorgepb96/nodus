@@ -335,6 +335,46 @@ async function runGeneration(
   }
 }
 
+/** Awaited mobile report lane: keeps the canonical models, prompt and image storage,
+ * but ties progress and cancellation to a durable Bridge job instead of a detached task. */
+export async function generateReportImageAndWait(
+  entityId: string, style: DecorativeImageStyle, visualContext: string | undefined,
+  onProgress: (phase: string) => void, signal?: AbortSignal
+): Promise<DecorativeImage> {
+  const entityKind = 'deep_research', key = taskKey(entityKind, entityId);
+  if (active.has(key)) throw new Error('report_image_generation_busy');
+  const source = imageSource(entityKind, entityId); // Require the real saved report before any mutation.
+  const settings = getSettings();
+  if (!settings.imageProvider || !settings.imageModel) throw new Error('mac_image_model_missing');
+  signal?.throwIfAborted();
+  const token = Symbol(key), previous = getDecorativeImage(entityKind, entityId);
+  active.set(key, token);
+  try {
+    markDecorativeImagePending({ entityKind, entityId, provider: settings.imageProvider,
+      model: settings.imageModel, style, preserveContext: false, preservePrompt: false });
+    onProgress('context');
+    const context = visualContext?.replace(/\s+/g, ' ').trim().slice(0, 260) || await visualContextFor(source);
+    signal?.throwIfAborted();
+    if (active.get(key) !== token) throw new Error('report_image_generation_superseded');
+    const prompt = buildDecorativeImagePrompt(style, context, vaultTypeImagePrompt(getActiveVault().type));
+    saveDecorativeImagePrompt(entityKind, entityId, context, prompt);
+    onProgress('generating');
+    const generated = await callImageProvider(settings.imageProvider, settings.imageModel, prompt, signal);
+    signal?.throwIfAborted();
+    if (active.get(key) !== token) throw new Error('report_image_generation_superseded');
+    const stored = prepareGeneratedImage(generated);
+    onProgress('saving');
+    return saveDecorativeImageReady(entityKind, entityId, stored.image, stored.mimeType, stored.thumbnail, stored.thumbnailMimeType);
+  } catch (error) {
+    if (active.get(key) === token) {
+      saveDecorativeImageFailure(entityKind, entityId, error instanceof Error ? error.message : String(error));
+      // The durable job retains the failure; the existing report illustration survives.
+      if (previous?.status === 'ready') restorePreviousDecorativeImage(entityKind, entityId);
+    }
+    throw error;
+  } finally { if (active.get(key) === token) active.delete(key); }
+}
+
 /** Persist pending immediately, then run entirely outside the owner workflow. */
 export function queueDecorativeImageGeneration(
   request: DecorativeImageActionRequest,

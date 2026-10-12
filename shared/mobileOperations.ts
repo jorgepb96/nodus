@@ -123,6 +123,7 @@ export const MOBILE_OPERATIONS = {
   getWritingWorkshopSnapshot: ['writing:snapshot', 'corpus'], generateWritingWorkshopDraft: ['writing:draft', 'research-generation'],
   researchChat: ['research:chat', 'research-generation'], researchChatStream: ['research:chatStream', 'research-generation'],
   improveStudyText: ['study:improve', 'research-generation'], suggestStudySynonyms: ['study:synonyms', 'research-generation'],
+  generateReportImage: ['images:mobile:generateReport', 'research-generation'],
   getDecorativeImage: ['images:get', 'corpus'], getDecorativeImageDataUrl: ['images:data', 'corpus'],
   listDocumentSkills: ['documentSkills:list', 'corpus'],
   listConversations: ['chat:list', 'corpus'], getConversation: ['chat:get', 'corpus'],
@@ -192,6 +193,6 @@ export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
   'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
-  'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',
+  'generateReportImage', 'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',
   'researchChat', 'researchChatStream', 'worldChatStream', 'dbChatStream', 'streamStudyAssistant', 'enqueueDatabaseDeepResearch', 'improveStudyText', 'buildArgumentMap', 'scanDictionaryNewEvidence', 'generateConversationTitle',
 ]);

@@ -20,6 +20,7 @@ import {mobileDatabaseRowLocation} from './databaseRowLocation';
 import {mobileDatabasePresentationRead} from './databasePresentation';
 import {mobilePageDocument,mobilePageDocuments} from './pageDocuments';
 import {mobileSyncedBlockSource,mobileLinkedDatabaseRead} from './pageDependencies';
+import { generateMobileReportImage } from './reportImageGeneration';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -45,6 +46,13 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if (method === 'generateReportImage') {
+    if (args.length !== 1 || !bridgeJobId || !domains.includes('writing') || !domains.includes('corpus')) throw new Error('permission_denied');
+    const invoke = () => withMobileOperation(() => generateMobileReportImage(args[0], phase => events?.('mobile:reportImage:progress', {phase}), signal), domains);
+    const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => signal ? withGenerationSignal(signal, invoke) : invoke()));
+    invalidateLiveCorpus(vaultId);
+    return result;
+  }
   if(method==='buildArgumentMap'&&bridgeJobId&&domains.includes('writing')){
     if(args.length!==1||!args[0]||typeof args[0]!=='object')throw new Error('invalid_argument_source');
     const request=args[0] as ArgumentMapRequest;

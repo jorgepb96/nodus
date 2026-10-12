@@ -523,6 +523,7 @@ export function WorkspaceView({
   /** Study and teaching vaults: notes can be linked to courses, subjects, topics and materials. */
   studyLinks?: { onOpenLocation: (target: StudyNavigationTarget) => void; onOpenMaterial: (id: string) => void };
 }) {
+  const [mobileCommandIssue, setMobileCommandIssue] = useState<string | null>(null);
   const [pinnedActionIds, setPinnedActionIds] = useState<string[]>(snapshot?.pinnedActionIds ?? []);
   const [layout, setLayout] = useState<'editorial' | 'navigator'>(() => snapshot?.layout ?? 'editorial');
   const [catalogView, setCatalogView] = useState<'list' | 'cards'>(() => snapshot?.catalogView ?? 'list');
@@ -738,8 +739,21 @@ export function WorkspaceView({
     });
   };
 
+  const mobileWorkspaceCommands = (window as unknown as {nodusMobileConfig?: {live?: boolean}}).nodusMobileConfig?.live
+    ? window.nodus as unknown as {duplicateMobileWorkspaceNote(id: string): Promise<Note>; trashMobileWorkspaceNote(id: string): Promise<void>}
+    : null;
+
   const duplicateNote = async (note: Note) => {
     if (activeId === note.id && !await flushRef.current()) return;
+    if (mobileWorkspaceCommands) {
+      setMobileCommandIssue(null);
+      try {
+        const copy = await mobileWorkspaceCommands.duplicateMobileWorkspaceNote(note.id);
+        openNote(copy.id);
+        await refresh();
+      } catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      return;
+    }
     const data = await window.nodus.getWorkspaceNoteEditorData(note.id);
     const copy = await window.nodus.createNote({
       title: `${note.title} (${t('copia')})`, content: note.content,
@@ -753,7 +767,15 @@ export function WorkspaceView({
   const moveToTrash = async (ids: string[]) => {
     const unique = [...new Set(ids)];
     if (activeId && unique.includes(activeId) && !await flushRef.current()) return;
-    await window.nodus.trashNotes(unique);
+    if (mobileWorkspaceCommands) {
+      setMobileCommandIssue(null);
+      const queued: string[] = [];
+      try { for (const id of unique) { await mobileWorkspaceCommands.trashMobileWorkspaceNote(id); queued.push(id); } }
+      catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      closeNotes(queued);
+      try { await refresh(); } catch (error) { setMobileCommandIssue(error instanceof Error ? error.message : String(error)); }
+      if (queued.length !== unique.length) return;
+    } else await window.nodus.trashNotes(unique);
     closeNotes(unique);
     setSelected(new Set());
     setPendingNoteDelete(null);
@@ -1198,6 +1220,7 @@ export function WorkspaceView({
 
   return (
     <div className="library-theme editorial-workspace relative flex h-full min-h-0 flex-col">
+      {mobileCommandIssue && <div role="alert" className="flex items-start gap-3 border-b border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"><span className="flex-1">{mobileCommandIssue}</span><button aria-label={t('Cerrar')} className="grid min-h-11 min-w-11 shrink-0 place-items-center" onClick={() => setMobileCommandIssue(null)}><Icon name="x" size={16} /></button></div>}
       {!active && <div className="editorial-editor-header"><button className="editorial-header-action" disabled aria-label={t('Navegador de documentos')}><Icon name="list" size={14} /></button><div className="editorial-header-leading">{workspaceTabs}</div></div>}
 
       <div className={`min-h-0 flex-1 overflow-hidden ${active ? 'hidden' : ''}`} aria-hidden={active ? true : undefined}>

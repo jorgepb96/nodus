@@ -9162,4 +9162,5 @@ export const EN: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Keep Nodus open and both devices on the same network or VPN, such as Tailscale. Live uses the models on this Mac.",
   "Todo tu workspace": "Your entire workspace",
   "Generar código y QR": "Generate code and QR",
+  "El código ha caducado. Genera otro código y QR para vincular el móvil.": "The code has expired. Generate another code and QR to link your mobile device.",
 };

@@ -30,7 +30,7 @@ export function MobilePairingSettings() {
       refreshing = true;
       try {
         const [list, next] = await Promise.all([window.nodus.listVaults(), window.nodus.getDesktopBridgeStatus()]);
-        if (!disposed) { setVaults(list); setStatus(next); setRefreshIssue(''); }
+        if (!disposed) { setVaults(list); setStatus(next); setNow(Date.now()); setRefreshIssue(''); }
       } catch (error) {
         if (!disposed) setRefreshIssue(String(error));
       } finally { refreshing = false; }
@@ -47,7 +47,7 @@ export function MobilePairingSettings() {
     };
   }, []);
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
   }, []);
   useEffect(() => {
@@ -60,6 +60,7 @@ export function MobilePairingSettings() {
       : p.id === offer.id));
     if (linked) { setLinkedDevice(linked); setOffer(null); setQr(''); }
   }, [offer, status]);
+  const offerExpired = !!offer && Date.parse(offer.expiresAt) <= now;
   const expired = (p: DesktopBridgePairingSummary) => !!p.expiresAt && Date.parse(p.expiresAt) <= now;
   const activity = (p: DesktopBridgePairingSummary) => Date.parse(p.lastSeenAt ?? p.renewedAt ?? p.createdAt) || 0;
   const pairings = (status?.pairings ?? []).filter(p => !p.revokedAt).sort((a, b) => activity(b) - activity(a));
@@ -69,10 +70,11 @@ export function MobilePairingSettings() {
   const renewalDevice = pairings.find(p => p.id === offer?.renewalPairingId);
   const dateLabel = (value: string) => Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(getActiveLang()) : '—';
   async function create(renewalPairingId?: string) {
-    setBusy(true); setIssue(''); setLinkedDevice(null); offerIssuedAt.current = Date.now();
+    setBusy(true); setIssue(''); setLinkedDevice(null); setOffer(null); setQr(''); offerIssuedAt.current = Date.now();
     try {
       const next = await window.nodus.createDesktopBridgeOffer(vaults.map(v => v.id), WORKSPACE_DOMAINS, renewalPairingId, 'direct');
-      setOffer(next); setQr(await QRCode.toDataURL(next.qrURL ?? next.pairingURL, { margin: 4, width: 720, errorCorrectionLevel: 'M' }));
+      const image = await QRCode.toDataURL(next.qrURL ?? next.pairingURL, { margin: 4, width: 720, errorCorrectionLevel: 'M' });
+      setQr(image); setNow(Date.now()); setOffer(next);
       await refresh();
     } catch (error) { setIssue(String(error)); } finally { setBusy(false); }
   }
@@ -97,7 +99,8 @@ export function MobilePairingSettings() {
     <details className="text-sm"><summary className="cursor-pointer">{t(offer?.renewalPairingId ? 'Bóvedas' : 'Todo tu workspace')} · {(offer?.vaultIds ?? vaults).length}</summary><p className="mt-2">{(offer?.vaultIds ?? vaults.map(v => v.id)).map(id => vaults.find(v => v.id === id)?.name ?? id).join(', ')}</p></details>
     <button className="btn btn-primary" disabled={busy || !vaults.length} onClick={() => void create(offer?.renewalPairingId)}>{t(offer ? 'Renovar código' : 'Generar código y QR')}</button>
     {offer?.renewalPairingId && <button className="btn btn-ghost" disabled={busy} onClick={() => { setOffer(null); setQr(''); }}>{t('Nueva vinculación')}</button>}
-    {offer && <div className="flex flex-wrap items-start gap-4"><img src={qr} width={320} height={320} style={{imageRendering:'pixelated'}} alt={t('Código QR para vincular Nodus')}/><div className="space-y-2"><p className="text-xl font-mono tracking-widest">{offer.code}</p><p className="text-xs text-neutral-500">{t('Caduca')}: {new Date(offer.expiresAt).toLocaleTimeString()}</p><a className="btn btn-ghost" href={offer.pairingURL}>{t('Abrir enlace de vinculación')}</a><button className="btn btn-ghost" onClick={() => void navigator.clipboard.writeText(offer.pairingURL)}>{t('Copiar enlace')}</button></div></div>}
+    {offerExpired && <p role="status" className="text-sm text-neutral-500">{t('El código ha caducado. Genera otro código y QR para vincular el móvil.')}</p>}
+    {offer && !offerExpired && <div className="flex flex-wrap items-start gap-4"><img src={qr} width={320} height={320} style={{imageRendering:'pixelated'}} alt={t('Código QR para vincular Nodus')}/><div className="space-y-2"><p className="text-xl font-mono tracking-widest">{offer.code}</p><p className="text-xs text-neutral-500">{t('Caduca')}: {new Date(offer.expiresAt).toLocaleTimeString()}</p><a className="btn btn-ghost" href={offer.pairingURL}>{t('Abrir enlace de vinculación')}</a><button className="btn btn-ghost" onClick={() => void navigator.clipboard.writeText(offer.pairingURL)}>{t('Copiar enlace')}</button></div></div>}
     {(issue || refreshIssue || status?.error) && <p role="alert" className="text-sm text-red-600">{issue || refreshIssue || status?.error}</p>}
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-sm font-medium">{t('Dispositivos vinculados')} · {pairings.filter(p => !expired(p)).length}</h4><button className="btn btn-ghost" disabled={busy} onClick={() => void refresh().catch(error => setIssue(String(error)))}>{t('Actualizar')}</button></div>

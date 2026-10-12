@@ -32,6 +32,7 @@ const recent = { ...older, id: 'recent-id', deviceId: 'new', vaultIds: ['vault-a
 const expired = { ...older, id: 'expired-id', deviceName: 'Expired phone', expiresAt: '2000-01-01T00:00:00Z' };
 let pairings = [older, expired, { ...older, id: 'revoked-id', revokedAt: '2026-10-09T19:00:00Z' }, recent];
 const creates = [], revocations = [];
+let offerExpiry = '2030-01-01T00:00:00Z';
 window.nodus = {
   listVaults: async () => [{ id: 'vault-a', name: 'Principal', active: true }, { id: 'vault-b', name: 'Other', active: false }],
   getDesktopBridgeStatus: async () => ({ running: true, pairings, error: null }),
@@ -39,7 +40,7 @@ window.nodus = {
     creates.push({ vaults, domains, id, transport });
     const p = id ? pairings.find(p => p.id === id) : { vaultIds: vaults, domains };
     return { id: 'offer-id', renewalPairingId: id, vaultIds: p.vaultIds, domains: p.domains, code: 'TEST-CODE',
-      expiresAt: '2030-01-01T00:00:00Z', pairingURL: 'nodus://pair?fixture=nonsecret' };
+      expiresAt: offerExpiry, pairingURL: 'nodus://pair?fixture=nonsecret' };
   },
   revokeDesktopBridgePairing: async id => { revocations.push(id); pairings = pairings.map(p => p.id === id ? { ...p, revokedAt: '2026-10-09T20:10:00Z' } : p); },
 };
@@ -64,10 +65,21 @@ try {
   assert.match(document.querySelector('li details').textContent, /Consulta del corpus.*Escritura e ideas/);
   assert.equal(document.querySelectorAll('input[type=checkbox]').length, 0, 'The primary flow must not ask users to select vaults or permissions.');
   await click(byText('Generar código y QR'));
-  await settled(() => !byText('Renovar código')?.disabled);
+  await settled(() => !!byText('Renovar código') && !byText('Renovar código').disabled);
   assert.deepEqual(creates[0].vaults, ['vault-a', 'vault-b'], 'Pair the complete workspace, including inactive vaults.');
   assert.equal(creates[0].transport, 'direct', 'The primary flow connects over LAN/VPN without waiting for Server/Cloud.');
   assert.deepEqual(creates[0].domains, ['corpus', 'writing', 'research-generation', 'testimonies', 'teaching-roster', 'teaching-grades', 'study-recordings', 'primary-source-files', 'prosopography-private']);
+  offerExpiry = '2000-01-01T00:00:00Z';
+  await click(byText('Renovar código'));
+  await settled(() => !!byText('Renovar código') && !byText('Renovar código').disabled);
+  assert.equal(document.querySelector('img'), null, 'An expired QR must not remain scannable.');
+  assert.equal(document.querySelector('a[href^="nodus://"]'), null, 'Expired pairing links must not remain actionable.');
+  assert.equal(byText('Copiar enlace'), undefined);
+  assert.match(document.querySelector('[role=status]').textContent, /El código ha caducado/);
+  offerExpiry = '2030-01-01T00:00:00Z';
+  await click(byText('Renovar código'));
+  await settled(() => !!byText('Renovar código') && !byText('Renovar código').disabled);
+  assert.ok(document.querySelector('img'), 'Regenerating an expired offer restores its QR.');
   pairings = [...pairings, { ...older, id: 'offer-id', deviceName: 'Just paired phone', createdAt: '2026-10-09T20:01:00Z' }];
   assert.equal(document.querySelectorAll('li').length, 3);
   assert.equal(statusPolls.length, 1);
@@ -84,9 +96,10 @@ try {
   });
   assert.equal(document.querySelectorAll('li').length, 1, 'The connection ID distinguishes duplicate device names.');
   await click(byText('Renovar conexión'));
-  assert.equal(creates[1].id, recent.id);
-  assert.equal(creates[1].transport, 'direct');
-  assert.deepEqual(creates[1].vaults, ['vault-a', 'vault-b']);
+  await settled(() => !!byText('Nueva vinculación') && !byText('Nueva vinculación').disabled);
+  assert.equal(creates[3].id, recent.id);
+  assert.equal(creates[3].transport, 'direct');
+  assert.deepEqual(creates[3].vaults, ['vault-a', 'vault-b']);
   assert.match(document.querySelector('[role=status]').textContent, /Same phone/);
   assert.equal(document.querySelectorAll('input[type=checkbox]').length, 0, 'A renewal cannot edit vaults or permissions.');
   await settled(() => !byText('Nueva vinculación')?.disabled);

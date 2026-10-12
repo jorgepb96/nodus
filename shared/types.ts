@@ -4762,6 +4762,7 @@ export interface DesktopBridgePairingSummary {
   deviceId: string;
   deviceName: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   createdAt: string;
   expiresAt: string | null;
@@ -4787,6 +4788,7 @@ export interface DesktopBridgeOffer {
   origins: string[];
   certificateFingerprint: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   expiresAt: string;
   pairingURL: string;

@@ -59,7 +59,7 @@ void app.whenReady().then(async () => {
   }
   const bridge = await import('../electron/desktopBridge/server');
   const renew = async () => {
-    const offer = await bridge.createDesktopBridgeOffer(listVaults().map(vault => vault.id), ['corpus', 'writing', 'research-generation', 'testimonies', 'primary-source-files', 'prosopography-private', 'teaching-roster', 'teaching-grades', 'study-recordings']);
+    const offer = await bridge.createDesktopBridgeOffer(listVaults().map(vault => vault.id), ['corpus', 'writing', 'research-generation', 'testimonies', 'primary-source-files', 'prosopography-private', 'teaching-roster', 'teaching-grades', 'study-recordings'], undefined, 'automatic', {wholeWorkspace:true});
     fs.writeFileSync(path.join(lab, 'mobile-pairing-offer.json'), JSON.stringify(offer), { mode: 0o600 });
   };
   await renew();

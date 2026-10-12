@@ -14,6 +14,13 @@ const fixture={id:'0824d8e8-44ed-498a-86a8-bb3e847b42fa',code:'ABCDE-23456',orig
 const link=desktopPairingQR(fixture);
 const encoded=JSON.parse(Buffer.from(new URL(link).searchParams.get('q'),'base64url'));
 assert.deepEqual(encoded[8],fixture.vaults.map(vault=>[vault.id,vault.name,vault.type]));assert.deepEqual(encoded[9],fixture.relay);assert.equal(encoded[10],fixture.macDeviceId);
+for(const flag of [true,false]){
+ const compact=JSON.parse(Buffer.from(new URL(desktopPairingQR({...fixture,wholeWorkspace:flag})).searchParams.get('q'),'base64url'));
+ assert.equal(compact.length,13);assert.equal(compact[11],null);assert.equal(compact[12],flag);
+ const renewal=JSON.parse(Buffer.from(new URL(desktopPairingQR({...fixture,renewalPairingId:'stable-grant',wholeWorkspace:flag})).searchParams.get('q'),'base64url'));
+ assert.equal(renewal[11],'stable-grant');assert.equal(renewal[12],flag);
+}
+assert.equal(encoded.length,11,'Legacy QR stays byte-compatible and never implies whole Workspace');
 const png=await QRCode.toBuffer(link,{width:720,margin:4,errorCorrectionLevel:'M'});
 const destination=path.resolve('scripts/fixtures/mobile-pairing');
 const mobileDestination=path.resolve('../nodus-mobile/ios/Packages/NodusKit/Tests/NodusKitTests/Fixtures');

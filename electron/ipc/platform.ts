@@ -165,8 +165,8 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     return powerStatus();
   });
   h('desktopBridge:status', async () => desktopBridgeStatus());
-  h('desktopBridge:offer', async (_e, vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport?: 'direct' | 'automatic') =>
-    createDesktopBridgeOffer(vaultIds, domains, renewalPairingId, transport));
+  h('desktopBridge:offer', async (_e, vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport?: 'direct' | 'automatic', options?: {wholeWorkspace?:boolean}) =>
+    createDesktopBridgeOffer(vaultIds, domains, renewalPairingId, transport, options));
   h('desktopBridge:revoke', async (_e, id: string) => {
     revokeDesktopBridgePairing(id);
     return desktopBridgeStatus();

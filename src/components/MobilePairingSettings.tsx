@@ -72,7 +72,7 @@ export function MobilePairingSettings() {
   async function create(renewalPairingId?: string) {
     setBusy(true); setIssue(''); setLinkedDevice(null); setOffer(null); setQr(''); offerIssuedAt.current = Date.now();
     try {
-      const next = await window.nodus.createDesktopBridgeOffer(vaults.map(v => v.id), WORKSPACE_DOMAINS, renewalPairingId, 'direct');
+      const next = await window.nodus.createDesktopBridgeOffer(vaults.map(v => v.id), WORKSPACE_DOMAINS, renewalPairingId, 'direct', {wholeWorkspace:true});
       const image = await QRCode.toDataURL(next.qrURL ?? next.pairingURL, { margin: 4, width: 720, errorCorrectionLevel: 'M' });
       setQr(image); setNow(Date.now()); setOffer(next);
       await refresh();
@@ -93,6 +93,7 @@ export function MobilePairingSettings() {
   return <section ref={pairingPanel} aria-label={t('Vincular móvil')} className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800 scroll-mt-4">
     <h3 className="font-semibold">{t('Vincular con mi Nodus')}</h3>
     <p className="text-sm text-neutral-500">{t('Escanea el QR o introduce el código en Nodus móvil para conectar todo tu workspace.')}</p>
+    {!offer?.renewalPairingId && <p className="text-sm text-neutral-500">{t('Esta vinculación también incluye las bóvedas que añadas después a tu Workspace.')}</p>}
     <p className="text-sm text-neutral-500">{t('Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.')}</p>
     {linkedDevice && <p role="status" className="rounded-lg border border-green-600/30 bg-green-600/10 p-3 text-sm text-green-700 dark:text-green-300">{tx('{device} se ha vinculado. Ya puedes usar tu workspace desde el móvil.', { device: linkedDevice.deviceName })}</p>}
     {offer?.renewalPairingId && <div role="status" className="space-y-1 text-sm"><p className="font-medium">{tx('Renovar conexión de {device}', { device: renewalDevice?.deviceName ?? offer.renewalPairingId })}</p><p>{t('Renovación de la conexión existente. Se conservan sus bóvedas, permisos y datos locales.')}</p></div>}

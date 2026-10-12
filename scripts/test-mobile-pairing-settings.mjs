@@ -36,8 +36,8 @@ let offerExpiry = '2030-01-01T00:00:00Z';
 window.nodus = {
   listVaults: async () => [{ id: 'vault-a', name: 'Principal', active: true }, { id: 'vault-b', name: 'Other', active: false }],
   getDesktopBridgeStatus: async () => ({ running: true, pairings, error: null }),
-  createDesktopBridgeOffer: async (vaults, domains, id, transport) => {
-    creates.push({ vaults, domains, id, transport });
+  createDesktopBridgeOffer: async (vaults, domains, id, transport, options) => {
+    creates.push({ vaults, domains, id, transport, options });
     const p = id ? pairings.find(p => p.id === id) : { vaultIds: vaults, domains };
     return { id: 'offer-id', renewalPairingId: id, vaultIds: p.vaultIds, domains: p.domains, code: 'TEST-CODE',
       expiresAt: offerExpiry, pairingURL: 'nodus://pair?fixture=nonsecret' };
@@ -67,6 +67,7 @@ try {
   await click(byText('Generar código y QR'));
   await settled(() => !!byText('Renovar código') && !byText('Renovar código').disabled);
   assert.deepEqual(creates[0].vaults, ['vault-a', 'vault-b'], 'Pair the complete workspace, including inactive vaults.');
+  assert.deepEqual(creates[0].options,{wholeWorkspace:true},'The primary code explicitly includes future Workspace vaults.');
   assert.equal(creates[0].transport, 'direct', 'The primary flow connects over LAN/VPN without waiting for Server/Cloud.');
   assert.deepEqual(creates[0].domains, ['corpus', 'writing', 'research-generation', 'testimonies', 'teaching-roster', 'teaching-grades', 'study-recordings', 'primary-source-files', 'prosopography-private']);
   offerExpiry = '2000-01-01T00:00:00Z';

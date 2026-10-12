@@ -7,7 +7,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { app, safeStorage } from 'electron';
 import { getDb, withVaultDatabase } from '../db/database';
 import { ensureLanCert, lanAddresses } from '../localServer/lanCert';
-import { getVault } from '../vaults/vaultRegistry';
+import { getVault, listVaults } from '../vaults/vaultRegistry';
 import { isReadOnlyCorpusQuery, serveLiveCorpus } from './liveCorpus';
 import { authorizeMobileOperation, executeMobileOperation } from './operations';
 import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOperations';
@@ -94,6 +94,7 @@ interface BridgePairing {
   deviceId: string;
   deviceName: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   createdAt: string;
   expiresAt: string | null;
@@ -108,6 +109,7 @@ interface PairingOffer {
   id: string;
   codeHash: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   expiresAt: number;
 }
@@ -119,6 +121,7 @@ export interface DesktopBridgeOffer {
   origins: string[];
   certificateFingerprint: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   expiresAt: string;
   pairingURL: string;
@@ -241,7 +244,7 @@ function readPairings(): BridgePairing[] {
     if (!Array.isArray(value) || value.some(item => !item || typeof item !== 'object'
       || typeof item.id !== 'string' || typeof item.tokenHash !== 'string'
       || !Array.isArray(item.vaultIds) || !item.vaultIds.every((id: unknown) => typeof id === 'string')
-      || !Array.isArray(item.domains))) throw new Error('Invalid pairing store');
+      || !Array.isArray(item.domains) || (item.wholeWorkspace !== undefined && typeof item.wholeWorkspace !== 'boolean'))) throw new Error('Invalid pairing store');
     return value as BridgePairing[];
   } catch {
     throw new Error('No se pueden descifrar los dispositivos vinculados. Sus credenciales se conservan; desbloquea el llavero o restaura su copia de seguridad.');
@@ -287,6 +290,12 @@ async function body(request: import('node:http').IncomingMessage, max = 512 * 10
   const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as unknown;
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('invalid_json');
   return parsed as Record<string, unknown>;
+}
+
+/** Enumerated grants remain static. Explicit whole-workspace grants resolve
+ * the current registry every request; removed vaults immediately cease access. */
+function effectiveVaultIds(pairing: Pick<BridgePairing,'vaultIds'|'wholeWorkspace'>): string[] {
+  return pairing.wholeWorkspace === true ? listVaults().map(vault=>vault.id) : pairing.vaultIds.filter(id=>Boolean(getVault(id)));
 }
 
 function bearer(request: import('node:http').IncomingMessage): string | null {
@@ -363,6 +372,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     } : {
       id: offer.id, tokenHash: hash(token), deviceId: String(input.deviceId || randomUUID()).slice(0, 128),
       deviceName: String(input.deviceName || 'Nodus Mobile').slice(0, 200), vaultIds: offer.vaultIds,
+      ...(offer.wholeWorkspace !== undefined ? {wholeWorkspace:offer.wholeWorkspace} : {}),
       domains: offer.domains, createdAt: new Date().toISOString(), expiresAt: null, revokedAt: null, lastSeenAt: null,
       ...(offer.relaySecret && relayConfiguration ? { relayKeyId: randomUUID(), relaySecret: randomBytes(32).toString('base64'), relayChannelId: relayConfiguration.id } : {}),
     };
@@ -370,14 +380,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     // A failed encrypted write leaves the single-use offer available for retry.
     offers.delete(offer.id);
     advertisements.get(offer.id)?.kill(); advertisements.delete(offer.id);
-    reply(response, 201, { token, pairing: { ...pairing, tokenHash: undefined, relaySecret: undefined },
+    reply(response, 201, { token, pairing: { ...pairing, vaultIds: effectiveVaultIds(pairing), tokenHash: undefined, relaySecret: undefined },
       relay: pairing.relayKeyId && pairing.relaySecret ? relayFor(pairing.relayKeyId, pairing.relaySecret) : undefined });
     return;
   }
   const pairing = authorize(request);
   if (!pairing) { reply(response, 401, { error: 'invalid_token' }); return; }
   if (request.method === 'GET' && url.pathname === '/bridge/v2/pairing') {
-    reply(response, 200, { pairing: { ...pairing, tokenHash: undefined, relaySecret: undefined },
+    reply(response, 200, { pairing: { ...pairing, vaultIds: effectiveVaultIds(pairing), tokenHash: undefined, relaySecret: undefined },
       relay: pairing.relayKeyId && pairing.relaySecret ? relayFor(pairing.relayKeyId, pairing.relaySecret) : undefined });
     return;
   }
@@ -402,16 +412,17 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       snapshotVersions: [1, 2], assets: true, libraryDocuments: true, mutations: pairing.domains.includes('writing'), vectors: false, resources: {},
       maxAssetBytes: 8 * 1024 * 1024, maxSpaceAssetBytes: 1024 * 1024 * 1024, maxSnapshotBytes: 512 * 1024 * 1024, maxSnapshotJsonBytes: 512 * 1024 * 1024,
       maxMutationBatch: 100, maxMutationBytes: 8 * 1024 * 1024, maxMutationBatchBytes: 16 * 1024 * 1024,
-      desktopBridge: { protocol: '/bridge/v2', relay: Boolean(pairing.relaySecret && relayConfiguration), relayState, relayProtocolVersion: 1, transport: 'private-tls-or-encrypted-websocket' } }); return;
+      desktopBridge: { protocol: '/bridge/v2', ...(pairing.wholeWorkspace !== undefined ? {wholeWorkspace:pairing.wholeWorkspace} : {}), relay: Boolean(pairing.relaySecret && relayConfiguration), relayState, relayProtocolVersion: 1, transport: 'private-tls-or-encrypted-websocket' } }); return;
   }
   if (request.method === 'GET' && url.pathname === '/bridge/v2/capabilities') {
+    const vaultIds = effectiveVaultIds(pairing);
     reply(response, 200, { protocolVersion: 2, deviceId: macIdentity(), deviceName: hostname(),
-      vaultIds: pairing.vaultIds, domains: pairing.domains,
-      vaults: pairing.vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
+      vaultIds, domains: pairing.domains, ...(pairing.wholeWorkspace !== undefined ? {wholeWorkspace:pairing.wholeWorkspace} : {}),
+      vaults: vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
       workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
-      worldContentEdits: {version:1,vaults:pairing.vaultIds.map(id=>({vaultId:id,tables:mobileWorldContentMutationTables(id,pairing.domains)})).filter(item=>item.tables.length>0)},
+      worldContentEdits: {version:1,vaults:vaultIds.map(id=>({vaultId:id,tables:mobileWorldContentMutationTables(id,pairing.domains)})).filter(item=>item.tables.length>0)},
       chatHistory: {version:1,maxRequestBytes:MOBILE_CHAT_MAX_BYTES,conflicts:true,idempotent:true,pageSize:100,kinds:['research','world','database','study']},
       nativeLiveChat: {version:1,method:'streamMobileCompanionChat',partialPersistence:true,macProviders:true},
       jobs: { version: 1, durableCancellation: true, states: ['accepted', 'running', 'saved', 'available', 'failed', 'interrupted', 'cancelled'], methods: [...MOBILE_JOB_OPERATIONS] } }); return;
@@ -419,7 +430,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const jobRoute = /^\/bridge\/v2\/vaults\/([^/]+)\/jobs(?:\/([a-f0-9-]+))?$/.exec(url.pathname);
   if (jobRoute) {
     const vaultId = decodeURIComponent(jobRoute[1]);
-    if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     try {
       if (['POST', 'DELETE'].includes(request.method || '') && !jobRoute[2]) {
         if (request.method === 'DELETE' && !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
@@ -451,7 +462,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const exported = /^\/bridge\/v2\/vaults\/([^/]+)\/exports\/([a-f0-9-]+)$/.exec(url.pathname);
   if (exported && ['GET', 'HEAD'].includes(request.method || '')) {
     const vaultId = decodeURIComponent(exported[1]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('corpus')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('corpus')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const file = readMobileExport(vaultId, exported[2]);
     if (!file) { reply(response, 404, { error: 'export_expired' }); return; }
     response.writeHead(200, { 'content-type': file.mime, 'content-length': file.bytes.length, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(file.filename)}` });
@@ -460,14 +471,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const corpus = /^\/bridge\/v2\/vaults\/([^/]+)\/corpus(?:\/(.*))?$/.exec(url.pathname);
   if (request.method === 'POST' && corpus && corpus[2] === 'mutations') {
     const vaultId = decodeURIComponent(corpus[1]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 16 * 1024 * 1024);
     reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations, pairing.domains)); return;
   }
   const chatHistory = /^\/bridge\/v2\/vaults\/([^/]+)\/chat-history\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
   if(chatHistory && ['GET','POST'].includes(request.method??'')) {
     const vaultId=decodeURIComponent(chatHistory[1]),kind=decodeURIComponent(chatHistory[2]),id=chatHistory[3]&&decodeURIComponent(chatHistory[3]);
-    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')||(request.method==='POST'&&!pairing.domains.includes('writing'))) {reply(response,403,{error:'permission_denied'});return;}
+    if(!effectiveVaultIds(pairing).includes(vaultId)||!pairing.domains.includes('corpus')||(request.method==='POST'&&!pairing.domains.includes('writing'))) {reply(response,403,{error:'permission_denied'});return;}
     try {
       if(request.method==='GET') reply(response,200,id ? await readMobileChat(vaultId,kind,id,pairing.domains) : await listMobileChats(vaultId,kind,Number(url.searchParams.get('cursor')??'0'),pairing.domains,url.searchParams.get('revision')??undefined));
       else {
@@ -484,7 +495,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const studyEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/study-edits$/.exec(url.pathname);
   if (request.method === 'POST' && studyEdit) {
     const vaultId = decodeURIComponent(studyEdit[1]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('corpus') || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('corpus') || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     try { reply(response, 200, await applyStudyEdit(vaultId, pairing.id, await body(request, MOBILE_WORKSPACE_EDIT_MAX_BYTES))); }
     catch (error) {
       if (error instanceof StudyEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : error.code === 'study_edit_too_large' ? 413 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
@@ -495,14 +506,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const pageEdit = /^\/bridge\/v2\/vaults\/([^/]+)\/page-edits$/.exec(url.pathname);
   if(request.method==='POST'&&pageEdit){
     const vaultId=decodeURIComponent(pageEdit[1]);
-    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')||!pairing.domains.includes('writing')){reply(response,403,{error:'permission_denied'});return;}
+    if(!effectiveVaultIds(pairing).includes(vaultId)||!pairing.domains.includes('corpus')||!pairing.domains.includes('writing')){reply(response,403,{error:'permission_denied'});return;}
     try{reply(response,200,await saveMobilePageDocument(vaultId,pairing.id,await body(request,MOBILE_WORKSPACE_EDIT_MAX_BYTES)));}
     catch(error){if(error instanceof PageDocumentFailure)reply(response,error.status,{error:error.code,...(error.remote?{remote:error.remote}:{})});else reply(response,400,{error:'invalid_page_document',error_description:error instanceof Error?error.message:'La página no pudo guardarse.'});}
     return;
   }
   if (request.method === 'POST' && workspaceEdit) {
     const vaultId = decodeURIComponent(workspaceEdit[1]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, MOBILE_WORKSPACE_EDIT_MAX_BYTES);
     if ((input as {command?:unknown})?.command && !pairing.domains.includes('corpus')) { reply(response,403,{error:'permission_denied'});return; }
     try { reply(response, 200, await applyWorkspaceEdit(vaultId, pairing.id, input)); }
@@ -517,7 +528,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const databaseReading = /^\/bridge\/v2\/vaults\/([^/]+)\/writing\/database-research\/([^/]+)\/reading$/.exec(url.pathname);
   if(databaseReading&&['GET','POST'].includes(request.method??'')) {
     const vaultId=decodeURIComponent(databaseReading[1]),id=decodeURIComponent(databaseReading[2]);
-    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('writing')) {reply(response,403,{error:'permission_denied'});return;}
+    if(!effectiveVaultIds(pairing).includes(vaultId)||!pairing.domains.includes('writing')) {reply(response,403,{error:'permission_denied'});return;}
     try {
       const value=request.method==='GET'?await readMobileDatabaseReading(vaultId,id):await saveMobileDatabaseReading(vaultId,pairing.id,id,await body(request,2*1024*1024));
       reply(response,200,value);
@@ -530,7 +541,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const immersionProgress = /^\/bridge\/v2\/vaults\/([^/]+)\/writing\/immersion\/([^/]+)\/progress$/.exec(url.pathname);
   if (immersionProgress && ['GET','POST'].includes(request.method ?? '')) {
     const vaultId = decodeURIComponent(immersionProgress[1]), sessionId = decodeURIComponent(immersionProgress[2]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response,403,{error:'permission_denied'}); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('writing')) { reply(response,403,{error:'permission_denied'}); return; }
     try {
       const result = request.method === 'GET' ? await readImmersionMobileProgress(vaultId,sessionId)
         : await saveImmersionMobileProgress(vaultId,pairing.id,sessionId,await body(request,2 * 1024 * 1024));
@@ -544,7 +555,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const operation = /^\/bridge\/v2\/vaults\/([^/]+)\/operations$/.exec(url.pathname);
   if (request.method === 'POST' && operation) {
     const vaultId = decodeURIComponent(operation[1]);
-    if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 4 * 1024 * 1024);
     try {
       const method = String(input.method || '');
@@ -569,7 +580,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const actionPath=corpus&&/^actions(?:\/([a-f0-9-]+)(\/cancel)?)?$/i.exec(corpus[2]||'');
   if(corpus&&actionPath){
     const vaultId=decodeURIComponent(corpus[1]);
-    if(!pairing.vaultIds.includes(vaultId)||!pairing.domains.includes('corpus')){reply(response,403,{error:'permission_denied'});return;}
+    if(!effectiveVaultIds(pairing).includes(vaultId)||!pairing.domains.includes('corpus')){reply(response,403,{error:'permission_denied'});return;}
     try{
       const store=jobStore();
       if(request.method==='POST'&&!actionPath[1]){
@@ -602,7 +613,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   }
   if (corpus && (request.method === 'GET' || request.method === 'HEAD' || isReadOnlyCorpusQuery(request.method, corpus[2]))) {
     const vaultId = decodeURIComponent(corpus[1]);
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('corpus')) {
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('corpus')) {
       reply(response, 403, { error: 'permission_denied' }); return;
     }
     const query = request.method === 'POST' ? await body(request, 256 * 1024) : undefined;
@@ -612,7 +623,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   const file = /^\/bridge\/v2\/vaults\/([^/]+)\/files\/([^/]+)\/([^/]+)\/(descriptor|content)$/.exec(url.pathname);
   if (['GET', 'HEAD'].includes(request.method || '') && file) {
     const vaultId = decodeURIComponent(file[1]);
-    if (!pairing.vaultIds.includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId)) { reply(response, 403, { error: 'permission_denied' }); return; }
     await serveBridgeFile(request, response, url, vaultId, pairing.domains, decodeURIComponent(file[2]), decodeURIComponent(file[3]), file[4]);
     return;
   }
@@ -620,7 +631,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   if (request.method === 'GET' && sourceCatalogue) {
     const vaultId = decodeURIComponent(sourceCatalogue[1]);
     const domain = decodeURIComponent(sourceCatalogue[2]) as DesktopBridgeDomain;
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
     try {
       reply(response, 200, await listPrivateSources(vaultId, domain, decodeURIComponent(sourceCatalogue[3]), {
         offset: Number(url.searchParams.get('offset') || 0), limit: Number(url.searchParams.get('limit') || 100), query: url.searchParams.get('q') || '', state: url.searchParams.get('state') || 'active',
@@ -635,7 +646,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   if (request.method === 'GET' && source) {
     const vaultId = decodeURIComponent(source[1]);
     const domain = decodeURIComponent(source[2]) as DesktopBridgeDomain;
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
     const page = url.searchParams.has('group') ? {
       group: url.searchParams.get('group') || '', cursor: Number(url.searchParams.get('cursor') || 0),
       limit: Number(url.searchParams.get('limit') || 100), revision: url.searchParams.get('revision') || '',
@@ -651,7 +662,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   if (request.method === 'GET' && match) {
     const vaultId = decodeURIComponent(match[1]);
     const domain = decodeURIComponent(match[2]) as DesktopBridgeDomain;
-    if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
+    if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes(domain)) { reply(response, 403, { error: 'permission_denied' }); return; }
     const table = String(url.searchParams.get('table') || '');
     const cursor = Math.max(0, Number(url.searchParams.get('cursor') || 0) || 0);
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') || 50) || 50));
@@ -697,7 +708,8 @@ async function startServer(): Promise<void> {
   lastError = null;
 }
 
-export async function createDesktopBridgeOffer(vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport: 'direct' | 'automatic' = 'automatic'): Promise<DesktopBridgeOffer> {
+export async function createDesktopBridgeOffer(vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport: 'direct' | 'automatic' = 'automatic', options?: {wholeWorkspace?:boolean}): Promise<DesktopBridgeOffer> {
+  if (options !== undefined && (!options || typeof options !== 'object' || Array.isArray(options) || Object.keys(options).some(key=>key!=='wholeWorkspace') || (options.wholeWorkspace !== undefined && typeof options.wholeWorkspace !== 'boolean'))) throw new Error('invalid_pairing_scope');
   if (transport !== 'direct' && transport !== 'automatic') throw new Error('invalid_pairing_transport');
   // Refuse a new offer before opening any endpoint when existing credentials
   // cannot be read. Pairing must never overwrite an inaccessible encrypted store.
@@ -706,7 +718,9 @@ export async function createDesktopBridgeOffer(vaultIds: string[], domains: Desk
     && (!pairing.expiresAt || Date.parse(pairing.expiresAt) > Date.now())) : undefined;
   if (renewalPairingId && !renewal) throw new Error('La conexión ya no está activa. Crea una nueva vinculación.');
   for (const [id, offer] of offers) if (offer.expiresAt <= Date.now()) offers.delete(id);
-  const allowedVaults = renewal ? renewal.vaultIds : [...new Set(vaultIds)].filter((id) => Boolean(getVault(id)));
+  const wholeWorkspace = renewal ? renewal.wholeWorkspace : options?.wholeWorkspace;
+  const scope = wholeWorkspace !== undefined ? {wholeWorkspace} : {};
+  const allowedVaults = renewal ? effectiveVaultIds(renewal) : wholeWorkspace === true ? listVaults().map(vault=>vault.id) : [...new Set(vaultIds)].filter((id) => Boolean(getVault(id)));
   const allowedDomains = renewal ? renewal.domains : [...new Set(domains)].filter((value): value is DesktopBridgeDomain => DESKTOP_BRIDGE_DOMAINS.includes(value));
   if (!allowedVaults.length || !allowedDomains.length) throw new Error('Selecciona al menos una bóveda y un dominio privado.');
   await ensureServer();
@@ -719,9 +733,9 @@ export async function createDesktopBridgeOffer(vaultIds: string[], domains: Desk
   const code = [...randomBytes(10)].map((byte) => alphabet[byte % alphabet.length]).join('');
   const id = randomUUID(); const expiresAt = Date.now() + 10 * 60_000;
   const relaySecret = transport === 'automatic' && relayConfiguration ? randomBytes(32).toString('base64') : undefined;
-  offers.set(id, { id, codeHash: hash(code), vaultIds: allowedVaults, domains: allowedDomains, expiresAt, relaySecret,
+  offers.set(id, { id, ...scope, codeHash: hash(code), vaultIds: allowedVaults, domains: allowedDomains, expiresAt, relaySecret,
     ...(renewal ? { renewalPairingId: renewal.id } : {}) });
-  const offer = { id, code: `${code.slice(0, 5)}-${code.slice(5)}`, origins, certificateFingerprint: fingerprint!, vaultIds: allowedVaults, domains: allowedDomains, expiresAt: new Date(expiresAt).toISOString(),
+  const offer = { id, ...scope, code: `${code.slice(0, 5)}-${code.slice(5)}`, origins, certificateFingerprint: fingerprint!, vaultIds: allowedVaults, domains: allowedDomains, expiresAt: new Date(expiresAt).toISOString(),
     deviceName: hostname(), macDeviceId: macIdentity(), ...(renewal ? { renewalPairingId: renewal.id } : {}), relay: relaySecret ? relayFor(id, relaySecret) : undefined, vaults: allowedVaults.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })) };
   if (process.platform === 'darwin') {
     // The code is never advertised. Its HMAC authenticates the whole offer,
@@ -764,7 +778,7 @@ export function desktopBridgeStatus(): DesktopBridgeStatus {
   let issue = lastError;
   try { pairings = readPairings(); } catch (error) { issue = error instanceof Error ? error.message : String(error); }
   return { running: Boolean(server), port, origins, certificateFingerprint: fingerprint,
-    pairings: pairings.map(({ tokenHash: _tokenHash, relaySecret: _secret, ...pairing }) => pairing), relay: { state: relayState, origin: relayConfiguration?.url }, error: issue };
+    pairings: pairings.map(({ tokenHash: _tokenHash, relaySecret: _secret, ...pairing }) => ({...pairing,vaultIds:effectiveVaultIds(pairing)})), relay: { state: relayState, origin: relayConfiguration?.url }, error: issue };
 }
 
 function refreshOrigins(): void {

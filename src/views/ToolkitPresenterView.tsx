@@ -1,4 +1,4 @@
-// PDF Presenter — the library workspace (F0). Imports PDFs and converts externally
+// Nodus Presenter — the library workspace (F0). Imports PDFs and converts externally
 // authored presentations to the same internal PDF representation in a global Toolkit
 // shelf and lets you organise them with folders, search, sort, rename, download
 // and delete, with a lazy thumbnail grid for the selected deck. Presenting, notes and
@@ -435,7 +435,7 @@ export function ToolkitPresenterView({ onBack }: { onBack: () => void }) {
       <ToolkitAppHero
         compact
         badge="Nodus Toolkit"
-        title="PDF Presenter"
+        title="Nodus Presenter"
         description={t('Organiza tus diapositivas. Comparte tus ideas.')}
         icon="presentation"
         actionLabel={importing ? t('Importando…') : t('Importar PDF o presentación')}

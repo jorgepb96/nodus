@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.9.1 — 2026-10-13
+
+### Fixes
+
+- Nodus Scriptor now uses the latest text selected while the Polish panel is open. Changing the selection clears the previous proposal and cancels any pending request, preserving the correct replacement range, formatting and undo.
+
+### Enhancements
+
+- PDF Presenter is now named Nodus Presenter throughout the current interface, web remote and documentation. The in-app What’s New modal reuses the 5.9.0 highlights in all twelve languages.
+
 ## 5.9.0 — 2026-10-12
 
 ### New features

@@ -1276,7 +1276,7 @@ export const JA: Record<string, string> = {
   "Nodus Compass": "Nodusコンパス",
   "Nodus Tools": "ノダスツール",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Nodus に組み込まれた、ファイル変換とドキュメント処理のための便利なローカルファーストツール。",
-  "Nodus PDF Presenter": "Nodus PDF プレゼンター",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "プレゼンタービュー、モバイルリモートコントロール、スピーカーノート、ライブ注釈ツールを使用して、PDF および外部で作成されたプレゼンテーションを表示します。",
   "Nodus OCR Workspace": "Nodus OCR ワークスペース",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "ページごとのレビュー、テキストのクリーンアップ、再処理、Nodus Vaultとの直接統合を備えた、スキャンされた PDF および画像用の AI 搭載 OCR。",

@@ -1218,7 +1218,7 @@ export const ZH_TW: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "實用的本地優先工具，用於轉換檔案和處理文件，內置於Nodus。",
-  "Nodus PDF Presenter": "Nodus PDF Presenter",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "演示PDF檔案和外部製作的簡報，支援演講者檢視、手機遙控、演講者備註和即時註釋工具。",
   "Nodus OCR Workspace": "Nodus OCR Workspace",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "面向掃描版PDF和影像的AI輔助OCR，支援逐頁審閱、文本清理、重新處理，並與Nodus知識庫直接整合。",

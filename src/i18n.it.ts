@@ -1259,7 +1259,7 @@ export const IT: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Pratici strumenti locali per la conversione di file e l'elaborazione di documenti, integrati in Nodus.",
-  "Nodus PDF Presenter": "Presentatore PDF Nodus",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "Presenta PDF e presentazioni esterne con la visualizzazione presentatore, il telecomando mobile, le note del relatore e gli strumenti di annotazione in tempo reale.",
   "Nodus OCR Workspace": "Area di lavoro Nodus OCR",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "OCR basato sull'intelligenza artificiale per PDF e immagini scansionati, con revisione pagina per pagina, pulizia del testo, rielaborazione e integrazione diretta con i tuoi archivi Nodus.",

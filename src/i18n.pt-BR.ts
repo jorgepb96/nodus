@@ -1329,7 +1329,7 @@ export const PT_BR: Record<string, string> = {
   'Nodus Tools': 'Nodus Tools',
   'Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.':
     'Ferramentas práticas e local-first para converter arquivos e processar documentos, integradas ao Nodus.',
-  'Nodus PDF Presenter': 'Nodus PDF Presenter',
+  'Nodus Presenter': 'Nodus Presenter',
   'Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.':
     'Apresentar arquivos PDF e apresentações externas com visualização do apresentador, controle remoto pelo celular, notas do orador e ferramentas de anotação ao vivo.',
   'Nodus OCR Workspace': 'Nodus OCR Workspace',

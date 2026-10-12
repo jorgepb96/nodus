@@ -219,7 +219,7 @@ export function App() {
   // The 2.4.0 toolkit/model guide queues directly behind release notes. Its own
   // versioned guard settles immediately for new installs and for users who saw it.
   const [toolkitBetaTourSettled, setToolkitBetaTourSettled] = useState(false);
-  // The PDF Presenter video announcement queues immediately after release notes.
+  // The Nodus Presenter video announcement queues immediately after release notes.
   const [pdfPresenterTutorialSettled, setPdfPresenterTutorialSettled] = useState(false);
   // Users who completed the essential guide before the video tutorials existed were
   // never asked "video or text", so the catalogue is announced to them once, here.
@@ -1383,7 +1383,7 @@ export function App() {
       { id: 'act:assistant', label: 'Research chat', section: t('Acciones'), icon: 'chat', keywords: 'assistant chat', run: () => openAssistant() },
       { id: 'act:skills', label: t('Mis skills'), section: t('Acciones'), icon: 'sparkles', keywords: 'skills habilidades biblioteca instalar activar', run: () => setSkillsTab('library') },
       { id: 'act:marketplace', label: 'Marketplace', section: t('Acciones'), icon: 'basket', keywords: 'marketplace tienda skills plugins instalar descargar catalogo catálogo', run: () => setSkillsTab('marketplace') },
-      { id: 'act:presenter', label: 'PDF Presenter', section: t('Acciones'), icon: 'presentation', keywords: 'presentar diapositivas slides pdf presenter proyector herramientas toolkit', run: () => { setToolkitPage('presenter'); setView('toolkit'); } },
+      { id: 'act:presenter', label: 'Nodus Presenter', section: t('Acciones'), icon: 'presentation', keywords: 'presentar diapositivas slides pdf presenter proyector herramientas toolkit', run: () => { setToolkitPage('presenter'); setView('toolkit'); } },
       { id: 'act:feedback', label: t('Sugerir función o reportar error'), section: t('Acciones'), icon: 'gitPr', keywords: 'feedback github pr bug feature sugerencia error', run: () => setFeedbackOpen(true) },
       { id: 'act:roadmap', label: t('Roadmap'), section: t('Acciones'), icon: 'route', keywords: 'roadmap hoja ruta futuro próximos pasos', run: () => setRoadmapOpen(true) },
       { id: 'act:theme', label: isDark ? t('Usar tema claro') : t('Usar tema oscuro'), section: t('Acciones'), icon: 'palette', keywords: 'tema theme claro oscuro', run: () => void toggleTheme() },

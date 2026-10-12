@@ -25,7 +25,7 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.9.0');
+  assert.equal(current.version, '5.9.1');
   assert.equal(current.highlights.length, 14);
   assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','new','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix','fix']);
   assert.deepEqual(current.highlights.map(h => h.scope), ['toolkit','toolkit','toolkit','toolkit','academic','academic','toolkit','general','general','general','general','ai','plugin','library']);
@@ -34,6 +34,11 @@ test('the current release covers the final changes in twelve languages and three
     if (lang !== 'en') assert.notEqual(highlight[lang], highlight.en, `${lang}: native translation`);
     assert.doesNotMatch(highlight[lang], /[;—]/, `${lang}: simple sentences`);
   }
+});
+
+test('5.9.1 reuses every 5.9.0 modal highlight and translation exactly', () => {
+  const previous = RELEASE_NOTES.find(note => note.version === '5.9.0');
+  assert.deepEqual(current.highlights, previous.highlights);
 });
 
 test('only v5 and future releases use the three translated sections, including empty sections', () => {

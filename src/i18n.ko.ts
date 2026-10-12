@@ -1276,7 +1276,7 @@ export const KO: Record<string, string> = {
   "Nodus Compass": "Nodus 나침반",
   "Nodus Tools": "Nodus 도구",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Nodus에 내장된 파일 변환 및 문서 처리를 위한 편리한 로컬 우선 도구입니다.",
-  "Nodus PDF Presenter": "Nodus PDF 발표자",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "발표자 보기, 모바일 원격 제어, 발표자 노트, 실시간 주석 도구를 사용하여 PDF와 외부에서 제작한 프레젠테이션을 발표하세요.",
   "Nodus OCR Workspace": "Nodus OCR 작업 공간",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "페이지별 검토, 텍스트 정리, 재처리 및 Nodus 저장소와의 직접 통합을 통해 스캔한 PDF 및 이미지에 대한 AI 기반 OCR입니다.",

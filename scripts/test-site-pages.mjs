@@ -36,7 +36,7 @@ test('the home page presents the four main vaults, the rest, and the toolkit', (
     assert.ok(home.includes(`<h3>${name}</h3>`), `the remaining vaults include ${name}`);
   }
   // the six tools the desktop app actually ships (src/navigation.ts TOOLKIT_TOOLS)
-  for (const tool of ['PDF Presenter', 'Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'OCR Workspace']) {
+  for (const tool of ['Nodus Presenter', 'Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'OCR Workspace']) {
     assert.ok(home.includes(`<h3>${tool}</h3>`), `the toolkit section includes ${tool}`);
   }
   // every vault mode ships today, so no page may still call one of them unreleased

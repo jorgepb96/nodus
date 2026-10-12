@@ -588,12 +588,12 @@ test('a packaged renderer still gets the real player, not YouTube error 153', as
   assert.deepEqual(original, { 'User-Agent': 'Clean Chromium', Accept: '*/*' }, 'incoming headers are not mutated');
 });
 
-test('PDF Presenter queues after release notes and before every other startup announcement', async () => {
+test('Nodus Presenter queues after release notes and before every other startup announcement', async () => {
   const app = await read('src/App.tsx');
   assert.match(app, /whatsNewSettled && !pdfPresenterTutorialSettled && !manualWhatsNewOpen && \(\s*<PdfPresenterTutorialAnnouncement/);
   for (const component of ['MobileTeaserGuide', 'PlatformHighlightsUpdateTour', 'ToolkitBetaUpdateTour', 'TutorialVideosUpdateTour']) {
     assert.match(app, new RegExp(`whatsNewSettled && pdfPresenterTutorialSettled &&[^\\n]+\\(\\s*<${component}`));
   }
   const wiki = await read('site/wiki/wiki.js');
-  assert.match(wiki, /'pdf-presenter': \['Features', 'PDF Presenter'\]/);
+  assert.match(wiki, /'pdf-presenter': \['Features', 'Nodus Presenter'\]/);
 });

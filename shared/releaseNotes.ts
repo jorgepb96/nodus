@@ -3114,6 +3114,12 @@ const RELEASE_5_2_2_HIGHLIGHTS: RawReleaseHighlight[] = [
 
 const RAW_RELEASE_NOTES: RawReleaseNote[] = [
   {
+    // 5.9.1 intentionally reuses the exact 5.9.0 modal highlights.
+    version: '5.9.1',
+    date: '2026-10-13',
+    highlights: RELEASE_5_9_0_HIGHLIGHTS,
+  },
+  {
     version: '5.9.0',
     date: '2026-10-12',
     highlights: RELEASE_5_9_0_HIGHLIGHTS,

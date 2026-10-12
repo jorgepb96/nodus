@@ -432,10 +432,23 @@ export function StudyEditor({
     return null;
   };
 
-  const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number }) => {
+  const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number; target?: EventTarget | null }) => {
+    const editorSelection = event?.target instanceof Element && Boolean(event.target.closest('.bn-editor, [data-testid="study-markdown-editor"]'));
     window.setTimeout(() => {
-      if (improveStreamingStyleId || aiResult) return;
       const target = resolveImproveSelection(false);
+      const source = aiSource.current;
+      if (editorSelection && aiPanel === 'polish' && source?.id === activeIdRef.current && target) {
+        const previous = source.target;
+        // Compare positions as well as text: the same phrase can appear twice.
+        const changed = source.base !== draft || source.native !== JSON.stringify(nativeRef.current)
+          || previous.text !== target.text || previous.visual !== target.visual
+          || previous.from !== target.from || previous.to !== target.to
+          || previous.range?.from !== target.range?.from || previous.range?.to !== target.range?.to;
+        if (changed) {
+          cancelAi(); discardProposal(); capturePolishSource(target);
+        }
+      }
+      if (improvementRunning.current || resultRef.current) return;
       if (!target) { setSelectionImprove(null); return; }
       const selection = window.getSelection();
       const rect = selection?.rangeCount ? selection.getRangeAt(0).getBoundingClientRect() : null;
@@ -475,6 +488,10 @@ export function StudyEditor({
     improvementRunning.current = false; imageRequest.current = null;
     setImproveStreamingStyleId(null); setImageBusy(false); setImprovePreview('');
   };
+  const capturePolishSource = (target: ImproveTarget) => {
+    aiSource.current = { id: active.id, base: draft, native: JSON.stringify(nativeRef.current), target };
+    preserveSelection(); setLastImprovement(null); setImproveStreamError('');
+  };
   const closeAiPanel = () => { cancelAi(); discardProposal(); setAiPanel(null); setSelectionImprove(null); setImproveStreamError(''); aiSource.current = null; imageSource.current = null; requestAnimationFrame(restoreSelection); };
   closeAiRef.current = closeAiPanel;
   useEffect(() => { closeAiPanel(); return () => { aiGeneration.current++; if (imageRequest.current) void window.nodus.cancelEditorImage(imageRequest.current); if (improvementRunning.current) { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); } if (resultRef.current) void window.nodus.updateStudyImprovementAction(resultRef.current.logId, 'rejected').catch(() => undefined); }; }, [active?.id]);
@@ -486,8 +503,7 @@ export function StudyEditor({
     if (active.id !== activeIdRef.current || originalNative !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
     setShowSearch(false); closeSynonymPanel();
     cancelAi(); setImageResult(null);
-    aiSource.current = { id: active.id, base: draft, native: JSON.stringify(nativeRef.current), target };
-    preserveSelection(); setLastImprovement(null); setSelectionImprove(null); setImproveStreamError(''); setAiPanel('polish');
+    capturePolishSource(target); setSelectionImprove(null); setAiPanel('polish');
     const generation = aiGeneration.current;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (generation === aiGeneration.current && target.range && originalNative === JSON.stringify(nativeRef.current)) canvasRef.current?.revealAiSelection(target.range);
@@ -1125,7 +1141,7 @@ export function StudyEditor({
         compact
       /></div>}
 
-      <div className="editorial-editor-body flex min-h-0 flex-1" onKeyDownCapture={event => { if (locked && (event.target as Element).closest('.nodus-blocknote') && (event.metaKey || event.ctrlKey) && !['a', 'c'].includes(event.key.toLowerCase())) { event.preventDefault(); event.stopPropagation(); } }} onInputCapture={() => setLastImprovement(null)} onMouseUp={(event) => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(event); } }} onKeyUp={event => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(); } }} onDragOver={(event) => {
+      <div className="editorial-editor-body flex min-h-0 flex-1" onKeyDownCapture={event => { if (locked && (event.target as Element).closest('.nodus-blocknote') && (event.metaKey || event.ctrlKey) && !['a', 'c'].includes(event.key.toLowerCase())) { event.preventDefault(); event.stopPropagation(); } }} onInputCapture={() => setLastImprovement(null)} onMouseUp={(event) => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(event); } }} onKeyUp={event => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(event); } }} onDragOver={(event) => {
         if (event.dataTransfer.types.includes(port.dragType) || event.dataTransfer.types.includes('text/uri-list')) event.preventDefault();
       }} onDrop={(event) => void handleEditorDrop(event)}>
 

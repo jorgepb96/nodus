@@ -10,8 +10,8 @@ const { RELEASE_NOTES } = await import('data:text/javascript;base64,' + Buffer.f
 const current = RELEASE_NOTES[0];
 const pkg = JSON.parse(await fs.readFile('package.json', 'utf8'));
 assert.equal(current.version, pkg.version);
-// Independently authored order for v5.9.0: four new features, four enhancements and six fixes.
-assert.equal(current.version, '5.9.0');
+// Independently authored order for v5.9.1: four new features, four enhancements and six fixes.
+assert.equal(current.version, '5.9.1');
 const expected = current.highlights;
 assert.deepEqual(expected.map(h => h.category), ['new','new','new','new','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix','fix']);
 const output = `artifacts/release-${current.version}`;
@@ -83,5 +83,5 @@ try {
   }
   assert.deepEqual(errors, []);
   await fs.writeFile(`${output}/modal-order-es.md`, `# Novedades de Nodus ${current.version}\n\n${releaseNoteSections(current).map(section => `## ${RELEASE_SECTION_LABELS.es[section.category]}\n\n` + section.highlights.map(highlight => `- [${highlight.scope}] ${highlight.es}`).join('\n\n')).join('\n\n')}\n`);
-  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.9.0 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
+  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.9.1 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
 } finally { await browser.close(); }

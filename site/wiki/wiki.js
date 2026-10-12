@@ -55,7 +55,7 @@ const VIDEO_TITLES = {
   teaching: ['Vault manuals', 'Teaching vault'],
   nodi: ['Features', 'Meet Nodi, the companion'],
   toolkit: ['Features', 'Nodus Toolkit'],
-  'pdf-presenter': ['Features', 'PDF Presenter'],
+  'pdf-presenter': ['Features', 'Nodus Presenter'],
   word: ['Integrations', 'Word and LibreOffice copilot'],
   zotero: ['Integrations', 'Zotero integration'],
   mcp: ['Integrations', 'MCP and Nodus Server'],

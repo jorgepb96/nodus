@@ -1,4 +1,4 @@
-// PDF Presenter — the MOBILE remote page, served by the presenter's LAN server and
+// Nodus Presenter — the MOBILE remote page, served by the presenter's LAN server and
 // opened by scanning the QR. It is a plain browser app (no nodus IPC): it speaks to
 // the app over a WebSocket carrying the same PresenterActions the windows use, and
 // streams the PDF + notes over HTTP. It mirrors the live tool overlays, shows the
@@ -373,7 +373,7 @@ function RemoteApp({ pin, onInvalidPin }: { pin: string; onInvalidPin: () => voi
       {screen !== 'remote' ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
           <Icon name="presentation" size={40} className="text-amber-400" />
-          <h1 className="text-lg font-semibold">PDF Presenter</h1>
+          <h1 className="text-lg font-semibold">Nodus Presenter</h1>
           <p className="text-sm text-neutral-400">
             {screen === 'connecting'
               ? t('Conectando al servidor…')
@@ -594,7 +594,7 @@ function PresenterRemoteRoot() {
         <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-amber-400 text-neutral-950 shadow-lg shadow-amber-400/20">
           <Icon name="presentation" size={25} />
         </span>
-        <h1 className="mt-5 text-center text-xl font-semibold">PDF Presenter</h1>
+        <h1 className="mt-5 text-center text-xl font-semibold">Nodus Presenter</h1>
         <p className="mt-2 text-center text-sm leading-relaxed text-neutral-400">{t('Introduce el PIN que aparece en Nodus.')}</p>
         <label htmlFor="presenter-pin" className="mt-6 block text-xs font-medium text-neutral-300">{t('PIN')}</label>
         <input

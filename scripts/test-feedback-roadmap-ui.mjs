@@ -73,7 +73,7 @@ test('roadmap follows the requested sequence and is opened from Settings › Abo
     'Vault de worldbuilding',
     'Nodus Toolkit',
     'Nodus Translate',
-    'Nodus PDF Presenter',
+    'Nodus Presenter',
     'Nodus OCR Workspace',
   ];
   let previous = -1;
@@ -95,7 +95,7 @@ test('roadmap follows the requested sequence and is opened from Settings › Abo
     'Vault de worldbuilding',
     'Nodus Toolkit',
     'Nodus Translate',
-    'Nodus PDF Presenter',
+    'Nodus Presenter',
     'Nodus OCR Workspace',
   ]) {
     const itemStart = roadmapSource.indexOf(`title: '${implemented}'`);

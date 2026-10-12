@@ -1,3 +1,5 @@
+import { cloneAcademicDocument } from '@shared/academicDocument';
+import { createNoteWithIdentity } from './notesRepo';
 import {academicMarkdownProjection,assertAcademicSupplement} from '@shared/academicProjection';
 import { normalizeAcademicMetadata } from '@shared/academicDocument';
 import { scheduleManualIndex } from '../ai/manualIdeaIndex';
@@ -268,6 +270,19 @@ export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput):
     } else savedDocument = synchronizeNotePage(noteId, title, content);
     return { ...getNote(noteId)!, editorRevision: savedDocument.revision };
   })();
+}
+
+/** The source draft and this copy are committed by the owning mobile receipt. */
+export function duplicateWorkspaceNoteWithIdentity(noteId: string, targetId: string): Note {
+  const row = noteRow(noteId), editor = getWorkspaceNoteEditorData(noteId);
+  const source = getNote(noteId)!;
+  const title = `${editor.documentTitle ?? String(row.title)} (copia)`;
+  createNoteWithIdentity({title, content: '', kind: source.kind === 'idea' ? 'markdown' : source.kind, folderId: source.folderId, tags: source.tags}, targetId);
+  const cloned = editor.nativeDocument ? cloneAcademicDocument(editor.nativeDocument, editor.academicMetadata) : null;
+  return updateWorkspaceNote(targetId, {title, contentMarkdown: editor.contentMarkdown ?? text(row.content),
+    ...(cloned ? {nativeDocument: cloned.document, academicMetadata: cloned.metadata} : {academicMetadata: editor.academicMetadata}),
+    schemaVersion: editor.schemaVersion, style: editor.style, spellcheckLanguage: String(row.spellcheck_language ?? 'es-ES'),
+    customDictionary: editor.customDictionary, expectedRevision: getWorkspaceNoteEditorData(targetId).revision});
 }
 
 export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): Note {

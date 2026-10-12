@@ -2,10 +2,10 @@ import { parseMobileAnnotationCommand, type MobileAnnotationCommand } from './mo
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { withOwningVault } from '../vaults/vaultRegistry';
-import { createNoteWithIdentity, getNote } from '../db/notesRepo';
+import { createNoteWithIdentity, getNote, trashNotes } from '../db/notesRepo';
 import { createManualIdeaWithIdentity } from '../db/manualIdeasRepo';
 import { getIdea } from '../db/ideasRepo';
-import { getWorkspaceNoteEditorData, updateWorkspaceNote, createWorkspaceAnnotationWithIdentity, updateWorkspaceAnnotation, deleteWorkspaceAnnotation } from '../db/workspaceRepo';
+import { getWorkspaceNoteEditorData, updateWorkspaceNote, createWorkspaceAnnotationWithIdentity, updateWorkspaceAnnotation, deleteWorkspaceAnnotation, duplicateWorkspaceNoteWithIdentity } from '../db/workspaceRepo';
 import { canonicalJson } from '../../shared/canonicalJson';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
 import type { StudyDocUpdateInput, StudyAnnotationInput } from '../../shared/studyEditor';
@@ -17,6 +17,34 @@ export class WorkspaceEditFailure extends Error {
 }
 
 const fields = new Set(['academicMetadata', 'nativeDocument', 'schemaVersion', 'expectedRevision', 'title', 'contentMarkdown', 'style', 'spellcheckLanguage', 'customDictionary', 'reason']);
+
+/** Content is covered by the editor revision; placements, tags and provenance
+ * have their own strict fingerprint, including the actual folder ancestry. */
+export function mobileWorkspaceCommandSource(noteId: string) {
+  const document = getNote(noteId);
+  if (!document) throw new WorkspaceEditFailure('document_unavailable');
+  const folders: unknown[] = [], visited = new Set<string>();
+  let id = document.folderId;
+  while (id) {
+    if (visited.has(id) || visited.size >= 1000) throw new WorkspaceEditFailure('placement_unavailable');
+    visited.add(id);
+    const row = getDb().prepare('SELECT id,parent_id,name,order_idx,summary FROM note_folders WHERE id=?').get(id) as {parent_id:string|null}|undefined;
+    if (!row) throw new WorkspaceEditFailure('placement_unavailable');
+    folders.push(row); id = row.parent_id;
+  }
+  const metadata = {kind:document.kind,folderId:document.folderId,tags:document.tags,source:document.source,orderIdx:document.orderIdx,trashedAt:document.trashedAt};
+  return {version:1,document,placements:[],fingerprint:createHash('sha256').update(canonicalJson({metadata,folders})).digest('hex')};
+}
+export function mobileWorkspaceEditorData(noteId: string) {
+  const editor = getWorkspaceNoteEditorData(noteId);
+  try { return {...editor, mobileCommandSource: mobileWorkspaceCommandSource(noteId)}; }
+  catch (error) {
+    // A broken organization path disables metadata-sensitive commands, not the
+    // existing editor read/save contract or consultation of its complete body.
+    if (error instanceof WorkspaceEditFailure && error.code === 'placement_unavailable') return {...editor, mobileCommandSource:null, mobileCommandSourceIssue:error.code};
+    throw error;
+  }
+}
 
 /** A complete editor save and its acknowledgement commit together in the owning
  * vault. Replaying a lost acknowledgement must not create another Yjs revision. */
@@ -42,11 +70,20 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
       value.expectedRevision !== 0 || !Array.isArray(value.nativeDocument) || value.schemaVersion !== 2))
     throw new WorkspaceEditFailure('invalid_workspace_creation');
   let annotation: MobileAnnotationCommand | undefined;
+  let action: {action:'duplicate'|'trash';targetId?:string;sourceFingerprint:string}|undefined;
   if (command !== undefined) {
-    if (create) throw new WorkspaceEditFailure('invalid_workspace_annotation');
-    try { annotation = parseMobileAnnotationCommand(command); } catch { throw new WorkspaceEditFailure('invalid_workspace_annotation'); }
+    const rawAction = command as Record<string,unknown>|undefined;
+    if (rawAction && ['duplicate','trash'].includes(String(rawAction.action))) {
+      if (create || typeof rawAction !== 'object' || Array.isArray(rawAction) || Object.keys(rawAction).some(key => !['action','targetId','sourceFingerprint'].includes(key)) ||
+          typeof rawAction.sourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(rawAction.sourceFingerprint) ||
+          (rawAction.action === 'duplicate' ? typeof rawAction.targetId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(rawAction.targetId) || rawAction.targetId === noteId : rawAction.targetId !== undefined)) throw new WorkspaceEditFailure('invalid_workspace_command');
+      action = rawAction as typeof action;
+    } else {
+      if (create) throw new WorkspaceEditFailure('invalid_workspace_annotation');
+      try { annotation = parseMobileAnnotationCommand(command); } catch { throw new WorkspaceEditFailure('invalid_workspace_annotation'); }
+    }
   }
-  const payload = createHash('sha256').update(canonicalJson({ noteId, input: value, ...(create ? { creation: create } : {}), ...(annotation ? {command: annotation} : {}) })).digest('hex');
+  const payload = createHash('sha256').update(canonicalJson({ noteId, input: value, ...(create ? { creation: create } : {}), ...(annotation ? {command: annotation} : action ? {command:action} : {}) })).digest('hex');
   const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => {
     const db = getDb();
     db.exec('CREATE TABLE IF NOT EXISTS desktop_workspace_edit_receipts (grant_id TEXT NOT NULL, request_id TEXT NOT NULL, payload_hash TEXT NOT NULL, result_json TEXT NOT NULL, applied_at TEXT NOT NULL, PRIMARY KEY(grant_id,request_id))');
@@ -64,8 +101,9 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
           : createNoteWithIdentity({ title: value.title, content: '', kind: 'markdown', folderId: create.folderId, tags: create.tags }, noteId));
       }
       if (!note || note.trashedAt) throw new WorkspaceEditFailure('document_unavailable');
-      const current = withMobileOperation(() => getWorkspaceNoteEditorData(noteId));
+      const current = withMobileOperation(() => mobileWorkspaceEditorData(noteId));
       if (!create && current.revision !== value.expectedRevision) throw new WorkspaceEditFailure('revision_conflict', current);
+      if (action && current.mobileCommandSource?.fingerprint !== action.sourceFingerprint) throw new WorkspaceEditFailure(current.mobileCommandSource ? 'source_conflict' : 'placement_unavailable', current);
       let annotationResult: unknown;
       if (annotation) {
         const existing = current.annotations.find(item => item.id === annotation.annotationId) ?? null;
@@ -77,8 +115,14 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
         else { withMobileOperation(() => deleteWorkspaceAnnotation(annotation.annotationId)); annotationResult = null; }
       }
       const saved = annotation ? {...getNote(noteId)!, editorRevision: current.revision} : withMobileOperation(() => updateWorkspaceNote(noteId, { ...value, expectedRevision: current.revision }));
-      const editorData = withMobileOperation(() => getWorkspaceNoteEditorData(noteId));
-      const committed = { id, note: saved, editorData, ...(annotation ? {commandResult: annotationResult} : {}) };
+      let commandResult: unknown;
+      if (action?.action === 'duplicate') {
+        if (getNote(action.targetId!)) throw new WorkspaceEditFailure('identity_conflict');
+        const copy = withMobileOperation(() => duplicateWorkspaceNoteWithIdentity(noteId, action.targetId!));
+        commandResult = {document:copy,editorData:withMobileOperation(() => mobileWorkspaceEditorData(copy.id))};
+      } else if (action?.action === 'trash') withMobileOperation(() => trashNotes([noteId]));
+      const editorData = withMobileOperation(() => mobileWorkspaceEditorData(noteId));
+      const committed = { id, note: action?.action === 'trash' ? getNote(noteId)! : saved, editorData, ...(annotation ? {commandResult: annotationResult} : action ? {commandResult:commandResult ?? {document:getNote(noteId)!}} : {}) };
       db.prepare('INSERT INTO desktop_workspace_edit_receipts VALUES(?,?,?,?,?)').run(grantId, id, payload, JSON.stringify(committed), new Date().toISOString());
       return committed;
     })();

@@ -12,7 +12,7 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 
 if (!process.argv.includes('--electron-research-answer-schema-test')) {
-  execFileSync(path.join(repo, 'node_modules/.bin/electron'),
+  execFileSync(require('electron'),
     [path.join(repo, 'scripts/test-research-answer-schema.mjs'), '--electron-research-answer-schema-test'],
     { cwd: repo, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'inherit' });
   process.exit(0);
@@ -103,6 +103,28 @@ try {
   assert.equal(schemas.RESEARCH_ANSWER_WRITER_SCHEMA.properties.tables.anyOf[0].items.properties.headers.maxItems, 12,
     'native bounds match shared table limits rather than imposing a smaller contract');
   assert.equal(schemas.RESEARCH_ANSWER_WRITER_SCHEMA.properties.tables.anyOf[0].items.properties.rows.items.items.maxLength, 1600);
+
+  // The byte bound includes the exact native response_format body. A prompt that fits
+  // alone must be refused before transport when its opted-in schema pushes it over.
+  const smallRequest = { system: 's', user: 'u', maxTokens: 128, corpusContext: true };
+  const oversizedSchemaRequest = { ...smallRequest, responseSchema: {
+    name: 'large_schema', schema: { type: 'object', properties: { padding: { type: 'string', description: 'x'.repeat(40_000) } } },
+  } };
+  const promptBound = aiClient.researchRequestUpperBound(smallRequest);
+  const schemaBound = aiClient.researchRequestUpperBound(oversizedSchemaRequest);
+  assert.ok(promptBound < 32_768, `base request fits the conservative window (${promptBound})`);
+  assert.ok(schemaBound > 32_768, `schema-inclusive bound exceeds the conservative window (${schemaBound})`);
+  let overflowLog = '';
+  const originalWarn = console.warn;
+  console.warn = (...parts) => { overflowLog += parts.join(' '); };
+  try {
+    run([{ content: '{"ok":true}' }]);
+    await assert.rejects(() => aiClient.completeJson(oversizedSchemaRequest, guard, openrouter), error => error.code === 'context_overflow');
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.equal(requests.length, 0, 'context overflow is rejected before provider dispatch');
+  assert.match(overflowLog, /schemaBytes [1-9]\d*/u, 'overflow breakdown reports the schema byte count');
 
   // Real completeJson transport: schema body is sent, and configured OpenRouter routing
   // is preserved while ambiguous reasoning extras stay absent.

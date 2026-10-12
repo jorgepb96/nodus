@@ -23,7 +23,8 @@ export interface ResearchAnswerPlanInput {
 
 export interface ValidatedResearchAnswerPlanFacet extends ResearchAnswerPlanFacetInput {
   id: string;
-  evidenceStatus: 'established' | 'unestablished';
+  /** Whether excerpt premises were selected; this is not an availability or support verdict. */
+  excerptPremises: 'selected' | 'none';
 }
 
 export interface ValidatedResearchAnswerPlan {
@@ -184,7 +185,7 @@ export function validateResearchAnswerPlan(input: unknown, question: string, sou
       if (typeof facet.questionQuote === 'string' && facet.questionQuote.trim().length >= 2 && facet.questionQuote.length <= MAX_QUESTION_QUOTE
         && normalized(question).includes(normalized(facet.questionQuote)) && Array.isArray(facet.evidence)) {
         validatedFacets.push({ id: `f${index + 1}`, questionQuote: facet.questionQuote, evidence,
-          evidenceStatus: evidence.length ? 'established' : 'unestablished' });
+          excerptPremises: evidence.length ? 'selected' : 'none' });
       }
     }
   }

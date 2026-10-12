@@ -19,7 +19,7 @@ try {
   const { validateConcilium } = load('shared/researchConcilium.ts');
   for (const config of [{ models: models.slice(0, 1), chairman: 0 }, { models: [...models, ...models], chairman: 0 }, { models, chairman: 3 }, { models: [models[0], models[0]], chairman: 0 }, { models: [null, models[1]], chairman: 0 }]) assert.throws(() => validateConcilium(config));
   assert.equal(validateConcilium({ models: [...models, { provider: 'deepseek', model: 'mock-four' }, { provider: 'gemini', model: 'mock-five' }], chairman: 4 }).models.length, 5);
-  load('electron/db/settingsRepo.ts').updateSettings({ synthesisModel: models[0], chatModel: models[0], promptLanguage: 'en', researchWebSearch: 'off' });
+  load('electron/db/settingsRepo.ts').updateSettings({ synthesisModel: models[0], chatModel: models[0], promptLanguage: 'en', researchWebSearch: 'off', researchAnswerVerification: 'legacy' });
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: skill.builtin === 'svg', nodi: false } });
   const ai = load('electron/ai/aiClient.ts');
@@ -96,7 +96,8 @@ try {
   // draft as factual evidence when the frozen corpus contains no passages.
   answerMode = 'documentary';
   const documentaryChat = [];
-  const gap = await research.streamResearchChat({ ...request, messages: [{ role: 'user', content: 'Compare the evidence.' }] }, delta => documentaryChat.push(delta));
+  const gap = await research.streamResearchChat({ ...request, messages: [{ role: 'user', content: 'Compare the evidence.' }],
+    selection: { ...selection, sourceFilter: { enabled: true, authorIds: [], workIds: [] } } }, delta => documentaryChat.push(delta));
   assert.match(gap.answer, /cannot support an answer with the available excerpts/);
   assert.doesNotMatch(gap.answer, /Verified consensus|Assessment from/);
   assert(documentaryChat.every(delta => !delta.includes('Verified consensus')));

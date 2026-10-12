@@ -27,8 +27,12 @@ try {
     'Explica NF4 en una tabla.', sources);
   assert.equal(shortNamedFacet.issues.length, 0, 'literal named scientific concepts and format words need not be eight characters long');
   assert.equal(shortNamedFacet.plan.facets[0].questionQuote, 'NF4');
-  assert.equal(planned.plan.facets[0].evidenceStatus, 'established');
-  assert.equal(planned.plan.facets[1].evidenceStatus, 'unestablished', 'empty evidence is scoped as unestablished, not corpus absence');
+  assert.equal(planned.plan.facets[0].excerptPremises, 'selected');
+  assert.equal(planned.plan.facets[1].excerptPremises, 'none', 'empty evidence means no excerpt premises were selected, not that the requested fact is unavailable');
+  const attributionPlan = validateResearchAnswerPlan({ format: 'prose', facets: [{ questionQuote: 'Who authored the Vega archive?', evidence: [] }] },
+    'Who authored the Vega archive?', [{ id: 'vega-authors', text: 'Source title: Vega archive\nSource authors: Dr. Ada Lovelace\nVerbatim excerpt:\nThe spaced-retrieval group recalled 72%.\n' }]);
+  assert.equal(attributionPlan.issues.length, 0);
+  assert.equal(attributionPlan.plan.facets[0].excerptPremises, 'none', 'metadata attribution stays outside excerpt evidence selection');
 
   const checks = [
     ['invented-question-span', { ...planInput, facets: [{ ...planInput.facets[0], questionQuote: 'Compare all countries worldwide' }] }, question, sources, 'question_quote'],

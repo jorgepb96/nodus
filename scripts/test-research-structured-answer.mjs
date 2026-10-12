@@ -68,6 +68,137 @@ const install = (mode = 'ok', controller = null) => {
   };
 };
 
+async function runMetadataRegression({ worldFact = false } = {}) {
+  const metadataValue = worldFact ? 'Ada Lovelace; Nobel Prize winner' : 'Ada Lovelace';
+  const source = { id: worldFact ? 'documentary:metadata-world#0' : 'documentary:metadata-author#0', label: 'River survey', pageLabel: '2',
+    authors: [metadataValue], summary: 'The river level is 18 metres.', citation: `nodus://passage/${encodeURIComponent(worldFact ? 'documentary:metadata-world#0' : 'documentary:metadata-author#0')}` };
+  const sourceContext = JSON.stringify({ contexto_modular_seleccionado: { pasajes_relevantes: [source] } });
+  const asked = worldFact ? 'Did Ada Lovelace win the Nobel Prize?' : 'Who authored the River survey?';
+  const answerText = worldFact ? 'I cannot establish whether Ada Lovelace won the Nobel Prize from the supplied excerpts.'
+    : 'The source record lists Ada Lovelace as the author.';
+  const unsupportedWorldAnswer = `Ada Lovelace won the Nobel Prize. [River survey](${source.citation})`;
+  const counts = {};
+  install();
+  const auditSources = load('shared/researchChatGrounding.ts').researchChatAuditSources(sourceContext);
+  assert.match(auditSources[0].text, /Source authors: /);
+  assert.ok(auditSources[0].text.endsWith('Verbatim excerpt:\nThe river level is 18 metres.'), 'author metadata remains outside the verbatim excerpt');
+  ai.completeJson = async (options, validate, selected) => {
+    assert.deepEqual(selected, model);
+    const input = JSON.parse(options.user);
+    let value;
+    if (options.system.startsWith('Plan a documentary answer')) {
+      counts.plan = (counts.plan ?? 0) + 1;
+      value = { facets: [{ questionQuote: asked, evidence: [] }], format: 'prose' };
+    } else if (input.plan) {
+      counts.writer = (counts.writer ?? 0) + 1;
+      assert.equal(input.plan.facets[0].excerptPremises, 'none', 'no selected excerpt quote is not an availability verdict');
+      assert.match(options.system, /metadata cannot establish world facts/i);
+      value = { answers: [{ facetId: 'f1', text: worldFact && !input.repair ? unsupportedWorldAnswer
+        : worldFact ? answerText : `${answerText} [River survey](${source.citation})` }] };
+    } else if (input.sentences) {
+      counts.audit = (counts.audit ?? 0) + 1;
+      assert.match(options.system, /Application source metadata can support attribution and provenance, never independent corroboration/u,
+        'the full prose auditor preserves its metadata boundary');
+      assert.match(input.sources[0].text, /Source authors: /);
+      const sentence = input.sentences[0].text;
+      if (!worldFact) {
+        value = { claims: [{ index: 0, kind: 'attributed', supported: true, explicitInference: false, reason: 'Fixture source-record attribution.', unsupportedParts: [],
+          premises: [{ text: sentence, type: 'attribution', entailed: true, evidence: [{ id: source.id, quote: `Source authors: ${metadataValue}` }], from: [] }] }] };
+      } else if (counts.audit === 1) {
+        value = { claims: [{ index: 0, kind: 'fact', supported: false, explicitInference: false, reason: 'Metadata cannot establish a world fact.', unsupportedParts: ['won the Nobel Prize'],
+          premises: [{ text: 'Ada Lovelace won the Nobel Prize.', type: 'fact', entailed: false,
+            evidence: [{ id: source.id, quote: `Source authors: ${metadataValue}` }], from: [] }] }] };
+      } else {
+        value = { claims: [{ index: 0, kind: 'nonfactual', supported: true, explicitInference: false, reason: 'A bounded evidence limit.', unsupportedParts: [], premises: [] }] };
+      }
+    } else if (input.fullQuestionProof) {
+      counts.proof = (counts.proof ?? 0) + 1;
+      assert.deepEqual(input.plannedFacets.map(facet => facet.id), ['f1']);
+      value = { addressed: [{ facetId: 'f1', complaint: asked, answerQuotes: [worldFact ? answerText : answerText] }], omissions: [] };
+    } else if (input.sources) value = { complete: true, missing: [] };
+    else throw new Error('Unexpected metadata regression request');
+    if (!validate(value)) throw new ai.AiError('Metadata fixture schema mismatch', false, false, 'schema_mismatch');
+    return value;
+  };
+
+  const answer = await groundResearchChatAnswer('', sourceContext, asked, model, 'en', undefined, { structured: true });
+  if (worldFact) assert.match(answer, /cannot establish whether Ada Lovelace won the Nobel Prize/i);
+  else { assert.match(answer, /Ada/); assert.match(answer, /author/); }
+  assert.deepEqual([counts.plan, counts.writer, counts.audit, counts.proof], worldFact ? [1, 2, 2, 1] : [1, 1, 1, 1],
+    worldFact ? 'a metadata-only world fact is rejected, repaired, fully audited and coverage-proved' : 'metadata attribution still receives a full audit and coverage proof');
+}
+
+async function runUnplannedMetadataAttribution() {
+  const source = { id: 'documentary:river-author-omitted#0', label: 'River survey', pageLabel: '2', authors: ['Ada Lovelace'],
+    summary: 'The river level is 18 metres.', citation: 'nodus://passage/documentary%3Ariver-author-omitted%230' };
+  const sourceContext = JSON.stringify({ contexto_modular_seleccionado: { pasajes_relevantes: [source] } });
+  const asked = 'What is the river level, and who authored the River survey?';
+  const levelFacet = 'What is the river level';
+  const authorFacet = 'who authored the River survey';
+  const levelAnswer = 'The river level is 18 metres.';
+  const authorAnswer = 'The source record lists Ada Lovelace as the author.';
+  const counts = {};
+  install();
+  ai.completeJson = async (options, validate, selected) => {
+    assert.deepEqual(selected, model);
+    const input = JSON.parse(options.user);
+    let value;
+    if (options.system.startsWith('Plan a documentary answer')) {
+      counts.plan = (counts.plan ?? 0) + 1;
+      value = { facets: [{ questionQuote: levelFacet, evidence: [{ sourceId: source.id, quote: source.summary }] }], format: 'prose' };
+    } else if (input.plan) {
+      counts.writer = (counts.writer ?? 0) + 1;
+      if (counts.writer === 1) {
+        assert.deepEqual(input.plan.facets.map(facet => facet.id), ['f1']);
+        value = { answers: [{ facetId: 'f1', text: `${levelAnswer} [River survey](${source.citation})` }] };
+      } else {
+        assert.ok(input.repair);
+        assert.deepEqual(input.plan.facets.map(facet => facet.id), ['f1', 'f2']);
+        assert.equal(input.plan.facets[1].questionQuote, authorFacet);
+        assert.equal(input.plan.facets[1].excerptPremises, 'none');
+        assert.deepEqual(input.plan.facets[1].evidence, [], 'metadata proof must not be promoted into excerpt premises');
+        value = { answers: [
+          { facetId: 'f1', text: `${levelAnswer} [River survey](${source.citation})` },
+          { facetId: 'f2', text: `${authorAnswer} [River survey](${source.citation})` },
+        ] };
+      }
+    } else if (input.sentences) {
+      counts.audit = (counts.audit ?? 0) + 1;
+      assert.match(options.system, /Application source metadata can support attribution and provenance, never independent corroboration/u);
+      value = { claims: input.sentences.map((row, index) => {
+        const author = row.text.includes('Ada Lovelace');
+        return { index, kind: author ? 'attributed' : 'fact', supported: true, explicitInference: false, reason: 'Literal fixture evidence.', unsupportedParts: [],
+          premises: [{ text: row.text, type: author ? 'attribution' : 'fact', entailed: true,
+            evidence: [{ id: source.id, quote: author ? 'Source authors: Ada Lovelace' : source.summary }], from: [] }] };
+      }) };
+    } else if (input.fullQuestionProof) {
+      counts.proof = (counts.proof ?? 0) + 1;
+      if (counts.proof === 1) {
+        assert.deepEqual(input.plannedFacets.map(facet => facet.id), ['f1']);
+        value = { addressed: [{ facetId: 'f1', complaint: levelFacet, answerQuotes: [levelAnswer] }], omissions: [
+          { facetId: 'unplanned', complaint: authorFacet, kind: 'available-fact', requiredFact: 'Report the source record author.',
+            sourceId: source.id, quote: 'Source authors: Ada Lovelace' },
+        ] };
+      } else {
+        assert.deepEqual(input.plannedFacets.map(facet => facet.id), ['f1', 'f2']);
+        value = { addressed: [
+          { facetId: 'f1', complaint: levelFacet, answerQuotes: [levelAnswer] },
+          { facetId: 'f2', complaint: authorFacet, answerQuotes: [authorAnswer] },
+        ], omissions: [] };
+      }
+    } else if (input.sources) value = { complete: true, missing: [] };
+    else throw new Error('Unexpected unplanned metadata attribution request');
+    if (!validate(value)) throw new ai.AiError('Unplanned metadata fixture schema mismatch', false, false, 'schema_mismatch');
+    return value;
+  };
+
+  const answer = await groundResearchChatAnswer('', sourceContext, asked, model, 'en', undefined, { structured: true });
+  assert.match(answer, /18 metres/);
+  assert.match(answer, /Ada Lovelace/);
+  assert.deepEqual([counts.plan, counts.writer, counts.audit, counts.proof], [1, 2, 2, 2],
+    'an unplanned metadata attribution is added without promoting metadata to excerpt evidence, then rewritten, audited and reproved');
+}
+
 try {
   install();
   const answer = await groundResearchChatAnswer('', context, question, model, 'en', undefined, { structured: true });
@@ -91,6 +222,9 @@ try {
   install('unplanned-invented');
   await assert.rejects(groundResearchChatAnswer('', context, question, model, 'en', undefined, { structured: true }), /No se pudo verificar/);
   assert.equal(counts.proof, 2, 'an invented unplanned-facet source quote is rejected on both bounded proof attempts');
+  await runMetadataRegression();
+  await runMetadataRegression({ worldFact: true });
+  await runUnplannedMetadataAttribution();
   const controller = new AbortController(); install('ok', controller);
   await assert.rejects(groundResearchChatAnswer('', context, question, model, 'en', controller.signal, { structured: true }), { name: 'AbortError' });
 

@@ -241,6 +241,7 @@ function providerRequestHash(model: ModelRef, opts: CallOpts): string {
     maxTokens: opts.maxTokens ?? null,
     reasoning: opts.reasoning ?? null,
     ...(opts.researchEffort !== undefined ? { researchEffort: opts.researchEffort } : {}),
+    ...(opts.responseSchema !== undefined ? { responseSchema: opts.responseSchema } : {}),
     deterministic: opts.deterministic ?? false,
     images: opts.images?.map((part) => ({
       mediaType: part.mediaType,
@@ -807,7 +808,8 @@ function withPromptContext<T extends { system: string; plainContext?: boolean }>
  * Prompt builders call this before dispatch, while they can still select less evidence. */
 export function researchRequestUpperBound(opts: CallOpts): number {
   const contextual = withPromptContext(opts);
-  return researchPromptUpperBound(contextual.system, contextual.user, contextual.maxTokens ?? 8000);
+  return researchPromptUpperBound(contextual.system, contextual.user, contextual.maxTokens ?? 8000)
+    + responseSchemaRequestBytes(contextual);
 }
 
 /** Resolve which model to use: explicit override, else the synthesis workload. */
@@ -862,9 +864,15 @@ export async function researchModelContextWindow(model: ModelRef): Promise<{ tok
   return { tokens: 32768, known: false };
 }
 /** Byte sizes of a request's parts, largest payload fields first, for the overflow log. */
+function responseSchemaRequestBytes(opts: CallOpts): number {
+  if (!opts.responseSchema) return 0;
+  const responseFormat = structuredResponseFormat('openai', opts.responseSchema);
+  return responseFormat ? new TextEncoder().encode(JSON.stringify(responseFormat)).length : 0;
+}
+
 function requestSizeBreakdown(opts: CallOpts): string {
   const bytes = (text: string) => new TextEncoder().encode(text).length;
-  const parts = [`system ${bytes(opts.system)}`, `user ${bytes(opts.user)}`, `output ${opts.maxTokens ?? 8000}`];
+  const parts = [`system ${bytes(opts.system)}`, `user ${bytes(opts.user)}`, `schemaBytes ${responseSchemaRequestBytes(opts)}`, `output ${opts.maxTokens ?? 8000}`];
   try {
     const payload = JSON.parse(opts.user) as Record<string, unknown>;
     const fields = Object.entries(payload).map(([key, value]) => [key, bytes(JSON.stringify(value) ?? '')] as const).sort((a, b) => b[1] - a[1]).slice(0, 8);
@@ -880,7 +888,8 @@ async function assertCorpusRequestFits(model: ModelRef, opts: CallOpts): Promise
   if (!active && !opts.corpusContext) return;
   const effective = await researchModelContextWindow(model);
   const window = Math.min(effective.tokens, active?.window ?? Infinity);
-  const needed = researchPromptUpperBound(opts.system, opts.user, opts.maxTokens ?? 8000);
+  const needed = researchPromptUpperBound(opts.system, opts.user, opts.maxTokens ?? 8000)
+    + responseSchemaRequestBytes(opts);
   if (needed > window) {
     // Say what is large: the generic message a cloud model gets carries no numbers.
     console.warn(`[research] request refused before sending: needs ~${needed} (bytes as tokens) > window ${window} for ${model.provider}/${model.model}; ${requestSizeBreakdown(opts)}`);

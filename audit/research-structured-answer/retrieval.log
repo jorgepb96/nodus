@@ -1,241 +1,67 @@
-[perf][deep] AI concurrency change 0ms provider=lmstudio model=fake-json-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
-[perf][deep] AI queue wait 6ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 11ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-(node:88473) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
-(Use `Electron --trace-deprecation ...` to show where the warning was created)
-[perf][deep] AI inference 12ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 10ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[ai] structured reply rejected by its guard: {"wrong":true}
-[perf][deep] JSON retry 182ms attempt=1 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=true
-[perf][deep] AI queue wait 7ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 7ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 57ms attempt=2 jsonMode=true invariantRequest=true status=ok
-[perf][deep] AI queue wait 13ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 13ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 77ms attempt=1 jsonMode=true invariantRequest=true status=error error=JSON inválido: Unexpected character "d" at position 16 retry=true
-[ai] structured reply is not JSON (Unexpected character "d" at position 16): uno {"ideas":["a"]} dos {"ideas":["b"]}
-[perf][deep] AI queue wait 10ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 7ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 133ms attempt=2 jsonMode=true invariantRequest=true status=ok
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 11ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 55ms attempt=1 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=true
-[ai] structured reply rejected by its guard: {"wrong":1}
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 58ms attempt=2 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=true
-[ai] structured reply rejected by its guard: {"wrong":2}
-[perf][deep] AI queue wait 8ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 94ms attempt=3 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=false
-[ai] structured reply rejected by its guard: {"wrong":3}
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 69ms attempt=1 jsonMode=true invariantRequest=true status=error error=La respuesta de «fake-json-model» (LM Studio) se cortó al alcanzar el límite de 256 tokens de salida y el JSON quedó incompleto. El límite de salida y la ventana de contexto son ajustes distintos. Nodus intentará dividir las tareas estructuradas compatibles; ampliar LM Studio (Context Length) solo ayuda cuando el prompt no deja espacio suficiente. Si el error persiste, usa un modelo que siga mejor JSON o un proveedor en la nube para esta tarea. retry=false
-[perf][deep] AI queue wait 20ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 57ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 180ms attempt=1 jsonMode=true invariantRequest=true status=error error=La respuesta de «fake-json-model» (LM Studio) se cortó al alcanzar el límite de 256 tokens de salida y el JSON quedó incompleto. El límite de salida y la ventana de contexto son ajustes distintos. Nodus intentará dividir las tareas estructuradas compatibles; ampliar LM Studio (Context Length) solo ayuda cuando el prompt no deja espacio suficiente. Si el error persiste, usa un modelo que siga mejor JSON o un proveedor en la nube para esta tarea. retry=false
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 14ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 88ms attempt=1 jsonMode=true invariantRequest=true status=error error=El backend de IA terminó la solicitud sin producir respuesta. retry=true
-[perf][deep] AI queue wait 13ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 36ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 117ms attempt=2 jsonMode=true invariantRequest=true status=ok
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 15ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI concurrency change 0ms provider=custom model=deepseek-v4.1-flash:thinking active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
-[perf][deep] AI queue wait 2ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI inference 5ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI response metadata 0ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI queue wait 5ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=6c8ef5c55f359266488f470798e12701a96a4a1c56b0d204086a6fbcf875367e
-[perf][deep] AI inference 7ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=6c8ef5c55f359266488f470798e12701a96a4a1c56b0d204086a6fbcf875367e
-[perf][deep] AI response metadata 0ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=6c8ef5c55f359266488f470798e12701a96a4a1c56b0d204086a6fbcf875367e
-[perf][deep] AI queue wait 5ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI inference 10ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI response metadata 0ms provider=custom model=deepseek-v4.1-flash:thinking class=interactive requestHash=1052f5090c86ec165da8e63054aff448fd80fdcaf4e36e5a6445baf3f459c56d
-[perf][deep] AI queue wait 6ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 11ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 57ms attempt=1 jsonMode=true invariantRequest=true status=error error=La respuesta de «fake-json-model» (LM Studio) se cortó al alcanzar el límite de 256 tokens de salida y el JSON quedó incompleto. El límite de salida y la ventana de contexto son ajustes distintos. Nodus intentará dividir las tareas estructuradas compatibles; ampliar LM Studio (Context Length) solo ayuda cuando el prompt no deja espacio suficiente. Si el error persiste, usa un modelo que siga mejor JSON o un proveedor en la nube para esta tarea. retry=false
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 15ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 61ms attempt=1 jsonMode=true invariantRequest=true status=error error=La respuesta de «fake-json-model» (LM Studio) se cortó al alcanzar el límite de 256 tokens de salida y el JSON quedó incompleto. El límite de salida y la ventana de contexto son ajustes distintos. Nodus intentará dividir las tareas estructuradas compatibles; ampliar LM Studio (Context Length) solo ayuda cuando el prompt no deja espacio suficiente. Si el error persiste, usa un modelo que siga mejor JSON o un proveedor en la nube para esta tarea. retry=false
-[perf][deep] AI queue wait 7ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 12ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] JSON retry 82ms attempt=1 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=false
-[ai] structured reply rejected by its guard: {"wrong":1}
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] JSON retry 40ms attempt=1 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=false
-[ai] structured reply rejected by its guard: {"wrong":2}
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 6ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[ai] structured reply rejected by its guard: {"wrong":3}
-[perf][deep] JSON retry 43ms attempt=1 jsonMode=true invariantRequest=true status=error error=El JSON no cumple el esquema esperado retry=false
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 8ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 3ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 7ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-json-model class=interactive requestHash=ce363bea2cf68a940dced5809fb37a76054b9e88ea1dd51afde4d9cd86a14b22
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 9ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] AI inference 41ms provider=lmstudio model=fake-json-model class=interactive requestHash=b65cf77be9a85835a750180d3646fc788e50f872fc809179bdab8c3f73241b63
-[perf][deep] JSON retry 86ms attempt=1 jsonMode=true invariantRequest=true status=error error=Tiempo agotado esperando al proveedor de IA. Prueba con un modelo más rápido o un fragmento menor. retry=false
-[perf][deep] AI concurrency change 0ms provider=lmstudio model=fake-deprecating-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
-[perf][deep] AI queue wait 6ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI inference 6ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI inference 2ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI inference 7ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI queue wait 5ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI response metadata 0ms provider=lmstudio model=fake-deprecating-model class=interactive requestHash=08a93ebeefd9f37d1ff3141aacb09b011a33b8da01a848361267e75ceffd4287
-[perf][deep] AI concurrency change 0ms provider=lmstudio model=fake-other-refusal-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
-[perf][deep] AI queue wait 4ms provider=lmstudio model=fake-other-refusal-model class=interactive requestHash=c5b0b76d761a9c4c5571430f37709bbb2329ad120c62083cbe9db6186b09fed5
-[perf][deep] AI inference 7ms provider=lmstudio model=fake-other-refusal-model class=interactive requestHash=c5b0b76d761a9c4c5571430f37709bbb2329ad120c62083cbe9db6186b09fed5
-[perf][deep] AI queue wait 2ms provider=lmstudio model=fake-other-refusal-model class=interactive requestHash=c5b0b76d761a9c4c5571430f37709bbb2329ad120c62083cbe9db6186b09fed5
-[perf][deep] AI inference 1ms provider=lmstudio model=fake-other-refusal-model class=interactive requestHash=c5b0b76d761a9c4c5571430f37709bbb2329ad120c62083cbe9db6186b09fed5
-AI JSON retry budget verified.
-✔ scripts/test-ai-json-retry.mjs (12881.39525ms)
 
-  ...3bskmvjldm0000gn/T/nodus-optional-fields-evBoNt/providerErrors.cjs  8.3kb
+> nodus@5.8.1 test:research:retrieval
+> node --test scripts/test-documentary-retrieval.mjs scripts/test-research-chat-agent.mjs scripts/test-research-corpus-run.mjs scripts/test-research-synthesis-context.mjs scripts/test-synthesis-evidence-passages.mjs
 
-⚡ Done in 5ms
-✔ a rejection that names an optional field is always replayable (0.835667ms)
-✔ a named rejection is only a 400; other statuses keep their meaning (0.139458ms)
-✔ an unnamed custom rejection is replayable, whatever Nodus had added (0.128458ms)
-✔ the unnamed fallback stays narrow: custom only, 400/422 only (0.108792ms)
-✔ a 400 that names `temperature` as deprecated is recoverable, and nothing else is (0.395959ms)
-✔ both transports drop the knob on that signal and keep the rest of the request (2.58175ms)
-✔ native and compatible transports share thinking recovery (0.388416ms)
-✔ a streamed answer cut at the output ceiling is reported, not stored (0.789916ms)
-✔ the transport recovers by dropping only the reasoning field, keeping JSON mode (1.07325ms)
-Source jobs: exclusivity, restart fencing, idempotency, pause, changed revisions, vault boundaries, retry bound, cancellation and Unicode chunk bounds passed.
-✔ scripts/test-documentary-requests.mjs (959.651292ms)
-Documentary retrieval worker: one process answers every request; cached ranking identical to the statement, after in-place writes too.
-✔ scripts/test-documentary-retrieval-worker.mjs (1319.574416ms)
 Documentary retrieval worker: baseline regressions plus four lexical facets, local cosine and key scope, byte limits, direct reads, alias deduplication and fair expansion passed.
-✔ scripts/test-documentary-retrieval.mjs (2110.841708ms)
-2026-10-12T14:01:23.872Z [documentary] retrieval search 0.1s · 2 lexical / 0 vector keys · 2 passages
-2026-10-12T14:01:23.894Z [documentary] retrieval search 0.0s · 2 lexical / 0 vector keys · 2 passages
-2026-10-12T14:01:24.159Z [documentary] retrieval pages 0.0s · 2 lexical / 0 vector keys · 1 passages
-2026-10-12T14:01:24.167Z [documentary] retrieval context 0.0s · 2 lexical / 0 vector keys · 1 passages
-2026-10-12T14:01:24.186Z [documentary] retrieval search 0.0s · 2 lexical / 0 vector keys · 2 passages
-2026-10-12T14:01:24.235Z [documentary] retrieval search 0.0s · 2 lexical / 0 vector keys · 2 passages
-Legacy fencing, lexical-first preparation, frozen model dispatch, durable batches and compatible vector reuse passed.
-✔ scripts/test-documentary-writers.mjs (7496.660084ms)
+✔ scripts/test-documentary-retrieval.mjs (3383.729292ms)
+Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+✔ scripts/test-research-chat-agent.mjs (13959.690875ms)
 Corpus run: pre-ranking scope, mixed Ideas, lexical-only retrieval, shared section budget, no profile barrier and selection revocation passed.
-✔ scripts/test-research-corpus-run.mjs (5270.743583ms)
-opening searches: 1 batched request(s), 0 single embedding request(s)
-✔ the opening queries are embedded in one request (36.674625ms)
-ℹ tests 1
+✔ scripts/test-research-corpus-run.mjs (15385.453167ms)
+2026-10-12T15:12:24.533Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.644Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 0 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.680Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 0 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.760Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.817Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[perf][deep] JSON retry 15ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+[perf][deep] JSON retry 1ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.307Z [synthesisEvidence] 0.3s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:25.384Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:25.401Z [research] dropped 1 drawing request(s) from a route answer; the final report draws the route once it passes
+[perf][deep] JSON retry 59ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.570Z [synthesisEvidence] 0.1s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.1s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 2 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[perf][deep] JSON retry 0ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.867Z [synthesisEvidence] 0.1s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 2 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:26.010Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[routeReview] no review parsed: 13 chars from the configured model after 0.0s, budget 2000 tokens, 1 steps; reply began "{\"issues\":[]}"
+2026-10-12T15:12:26.176Z [routeReport] 0.0s · ORD precedent 0.0s · stock 0.0s · textbook precedent 0.0s · compatibility 0.0s · audit 0.0s · review 0.0s · step support 0.0s
+[routeReview] no review parsed: 13 chars from the configured model after 0.0s, budget 2000 tokens, 1 steps; reply began "{\"issues\":[]}"
+2026-10-12T15:12:26.180Z [routeReport] 0.0s · textbook precedent 0.0s · ORD precedent 0.0s · compatibility 0.0s · stock 0.0s · audit 0.0s · review 0.0s · step support 0.0s
+[route-evidence] 1 steps: ord 0, textbook 0, web 0 (0 ms)
+✔ selected works constrain pre-answer chemistry evidence and post-answer options (126.195541ms)
+✔ documents switched off contribute no chemistry passages, even with selected books (54.788334ms)
+✔ an empty source selection remains empty instead of searching the full library (32.747083ms)
+✔ an authorized notebook limits chemistry to its own works (35.662667ms)
+✔ automatic academic authorization preserves external chemistry evidence; explicit restrictions do not (16.646625ms)
+✔ repeated correction retains the original target beyond the 4096 history window (28.838834ms)
+✔ repeated correction retains the original target beyond the cloud history window (53.829167ms)
+✔ retrieval starts once ORD has answered, beside the rest of the gather (516.731292ms)
+✔ a run of corrections keeps the route request in the replayed conversation (47.878542ms)
+✔ a stop during the route check keeps the answer the reader was shown (10.603792ms)
+✔ a route request that asks for the web is an explicit web request (307.517875ms)
+✔ a route correction searches its request again without planning or supervising the chip (246.85475ms)
+✔ a correction round inspects no molecules (143.824708ms)
+✔ cancelling a prompt interrupts the evidence embedding instead of finishing retrieval (30.420917ms)
+✔ cancellation reaches concurrent route tools, and one gather opens one runner (17.124667ms)
+✔ post-answer checks preserve structural verification while respecting the source grant (21.880792ms)
+✔ the opt-in revision pass honours web-off and propagates web cancellation (1.2115ms)
+✔ scheme indexes are searched only when every record and template is in scope (18.609625ms)
+ℹ tests 18
 ℹ suites 0
-ℹ pass 1
+ℹ pass 18
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 51.715334
-✔ scripts/test-research-opening-searches.mjs (4253.410083ms)
-6 searches; the vault changed before 0 of the 5 later ones; evidence 44
-✔ the turn writes its citation receipts once, after its searches, not between them (40.2635ms)
-ℹ tests 1
+ℹ duration_ms 1767.224
+✔ scripts/test-research-synthesis-context.mjs (18422.505958ms)
+Synthesis textbook passages: dense lane off the main process, embeddings requested together, same passages.
+✔ scripts/test-synthesis-evidence-passages.mjs (11485.757292ms)
+ℹ tests 5
 ℹ suites 0
-ℹ pass 1
+ℹ pass 5
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 45.828625
-✔ scripts/test-research-receipts-between-searches.mjs (2912.455042ms)
-ℹ tests 17
-ℹ suites 0
-ℹ pass 17
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 20055.522958
+ℹ duration_ms 18435.955875

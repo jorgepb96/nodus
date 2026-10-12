@@ -9,7 +9,11 @@ option; additional provider calls and latency are disclosed in its tooltip.
 
 The application first selects one to six literal question facets and original
 source excerpts. Stable facet IDs become a minimum checklist for drafting and
-repair. Planning is not evidence approval: the existing atomic prose auditor checks
+repair. The plan's `excerptPremises: none` means that it selected no excerpt premise,
+not that the requested fact is unavailable. Supplied metadata can establish attribution
+to the document record, including a facet found only by independent coverage review;
+it cannot establish world facts or corroboration. Planning is not evidence approval:
+the existing atomic prose auditor checks
 the rendered answer against the same frozen sources. Independent full-question
 coverage proof must account for each planned facet. It can also identify a facet
 that the planner omitted; a bounded repair receives the expanded checklist and
@@ -30,19 +34,24 @@ documentary path; it does not claim to verify those other paths.
 
 ## Local verification
 
-`grounding.log` records 23 passing test entries, including the existing 38-case
+`grounding.log` records 25 passing test entries, including the existing 38-case
 inner grounding suite. Additional regressions cover literal facet/evidence proof,
 an omitted planner facet, bounded repair, invented coverage spans, malformed table
 widths, default-off settings and real chat cancellation with a network-denying
-provider double. `retrieval.log` records 17 passing entries using the actual
+provider double. Metadata-only attribution is accepted only after audit; a world
+fact based on metadata is rejected and repaired. `retrieval.log` records five
+passing test files, including 18 synthesis-context cases, using the actual
 documentary retrieval worker and frozen deterministic fixtures.
 
 `lint.log`, `typecheck.log` and `build.log` record successful verification on this
 macOS ARM64 checkout. `ui-smoke.json` records a real Electron run under the isolated
-OS policy: all nine initial database opens are in the QA profile, outside writes
-and network are denied, three synthetic sources are prepared, excluded citations
+OS policy: every recorded database open is in the QA profile, outside writes
+and network are denied, three synthetic library sources are created and a scoped
+text passage is prepared, excluded citations
 are revoked, original PDF pages open, and the verification toggle persists its
-off/structured/off changes through the production settings API. Zero model calls
+off/structured/off changes through the production settings API. No embedding runtime
+is loaded in this smoke, so preparation can remain lexical/incomplete. Compiled Electron
+bundle hashes and runtime versions are recorded, with an unchanged-build check at exit. Zero model calls
 were made in that UI run. It is not a generated-answer quality measurement.
 
 ```sh
@@ -70,9 +79,20 @@ never enter provider context. This controlled generation comparison does not rer
 retrieval, extraction, multilingual embeddings or the application citation dialogs.
 It is a repeated directed regression, not an untouched holdout or population score.
 Independent source inspection is required; automatic auditor approval is not the
-quality score. Results and failures are retained in `../research-openrouter/`.
+quality score. Interrupted attempts and failures are retained in the sibling
+`research-openrouter-*-attempt` and `research-openrouter-*-preflight` directories,
+and in `../research-openrouter-keychain-startup/`; the authorization record references
+every cost-bearing attempt. A completed new `../research-openrouter/` campaign does not yet exist.
 No embedding profile is promoted by this report. Quality acceptance remains pending.
 
-After integrating `main` at merge commit `ca5caa4d`, the regenerated Electron 43.6.0 runtime passes the same isolated UI flow and the 23-entry grounding / 17-entry retrieval groups. Native strict schema requests for OpenAI/OpenRouter are verified by a loopback-only production-transport regression; a 400 cannot silently strip the schema. Upstream failures pause the QA proxy on the first response and retain all unresolved reservations.
+After integrating `main` at merge commit `ca5caa4d`, the regenerated Electron 43.6.0 runtime passes the isolated UI flow. Native strict schema requests for OpenAI/OpenRouter are verified by a loopback-only production-transport regression; a 400 cannot silently strip the schema. Schema identity enters request hashing only when opted in, and schema bytes enter context admission before any HTTP request. Upstream failures pause the QA proxy on the first response and retain all unresolved reservations. Sanitized upstream errors are also used for caller responses so persisted campaign errors cannot retain raw credential or prompt echoes.
 
-The OpenRouter comparison is not complete. The first availability attempt retained 33 reservations (USD 0.09076114), with repeated upstream 429 responses; a prior Qwen ZDR refusal retained USD 0.00211523. The integrated Electron 43.6.0 launch then blocked inside the macOS Keychain before any model request. A native process sample establishes that wait; it does not establish a bad credential. The authorized encrypted QA copy was removed after shutdown. The cumulative additional committed upper bound is USD 0.09287637 of USD 0.50; USD 0.40712363 remains. The two production corrections are verified offline, but no new factual-answer accuracy rate or 95% acceptance is claimed.
+The Linux CI run for `91945f4c` failed four tests whose fixtures retained earlier
+publication/API assumptions. The fixes explicitly exercise legacy verified
+cancellation and consensus, intercept `embedQuery`, and check early retrieval
+on the authorized corpus path; an unscoped local-model request deliberately waits
+for the full gather to size its exact context. Their expectations were preserved
+and all four pass locally. They now belong to the focused commands above. The
+full CI result for the new commit must be assessed independently.
+
+The OpenRouter comparison is not complete. The first availability attempt retained 33 reservations (USD 0.09076114), with repeated upstream 429 responses; a prior Qwen ZDR refusal retained USD 0.00211523. The integrated Electron 43.6.0 launch then blocked inside the macOS Keychain before any model request. A native process sample establishes that wait; it does not establish a bad credential. Isolated startup already skips legacy-key recovery; neither a recovery scan nor a plaintext credential workaround was used. The authorized encrypted QA copy was removed after shutdown. The cumulative additional committed upper bound is USD 0.09287637 of USD 0.50; USD 0.40712363 remains. The production corrections are verified offline, but no new factual-answer accuracy rate or 95% acceptance is claimed.

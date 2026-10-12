@@ -1,9 +1,27 @@
 # Documentary Research Chat verification
 
-Research Chat checks documentary prose against the literal passages authorized
-for that turn before publishing it. This happens after retrieval and applies to
-any embedding provider. Embedding defaults, vector preparation, contracts and
-existing indexes remain unchanged; no index rebuild is needed for this change.
+Native Research Chat offers **Verify sources** as an experimental option, off by
+default. When enabled, it checks documentary prose against the literal passages
+authorized for that turn before publishing it. This happens after retrieval and
+applies to any embedding provider. Embedding defaults, vector preparation,
+contracts and existing indexes remain unchanged; no index rebuild is needed.
+
+The UI enables `researchAnswerVerification: structured`. The application first
+plans literal requested facets, then writes a structured answer with each facet
+ID accounted for exactly once. Tables use bounded, equal-width cells rather than
+model-authored Markdown separators. Selected excerpt premises are a checklist,
+not an availability or support verdict: document metadata may support attribution
+to the source record, but cannot establish world facts. The full prose audit and
+independent full-question coverage proof remain required. If the latter finds an
+omitted planner facet, a bounded repair receives an expanded checklist and must
+pass fresh audit and proof. A requested table must survive factual filtering.
+Native OpenAI/OpenRouter schema bytes count toward the conservative context
+budget, and a provider error cannot silently remove the schema.
+
+The `legacy` setting remains available to the controlled comparison. Its drafting
+and source-only redrafting behavior is described below. `off` uses the ordinary
+chat path without the additional verification calls. Neither verifier establishes
+a quality score by approving its own answer; independent source review is needed.
 
 The writer first answers the actual question at an appropriate length, preserves
 attributions, quantities, negations and corrections, and distinguishes source
@@ -98,14 +116,26 @@ auditor's original Deep Research policy and retired-claim behaviour are unchange
 ```sh
 npm run test:research:grounding
 npm run test:research:retrieval
+npm run test:research:openrouter
 npm run build
-npm run audit:research:grounding -- --stage=development
-npm run audit:research:grounding -- --stage=repair --profiles=embeddinggemma-2-text-q8-512-v1
-npm run audit:research:grounding -- --stage=coverage
-npm run audit:research:grounding -- --stage=evaluation --budget-usd=8
+npm run audit:research:openrouter               # dry run, no provider calls
+npm run audit:research:openrouter -- --run-paid # requires remaining authorization
+node scripts/collect-research-openrouter.mjs
+node scripts/e2e-research-isolated.mjs --notebooks --verification --pdf --activity
 ```
 
-The paid UI campaign requires the completed disposable product roots recorded in
+The additional OpenRouter comparison has a separate USD 0.50 cumulative ceiling.
+It pins Mistral Small 3.2 through DeepInfra FP8 with ZDR, no fallbacks, and maximum
+input/output tariffs of USD 0.075/0.20 per million tokens. Both verifier paths
+receive identical frozen original sources; reviewer annotations and expected
+answers never enter provider context. This is a controlled generation regression,
+not a fresh retrieval run or an untouched holdout. First upstream availability
+or accounting failure stops further dispatch, retaining unknown reservations.
+See the [implementation checks and current campaign limits](../audit/research-structured-answer/README.md).
+
+The original DeepSeek campaign is closed at USD 7.9559 committed of USD 8 and
+must not be reopened. The following describes that retained historical campaign.
+Its paid UI runner required the completed disposable product roots recorded in
 `audit/embeddinggemma-2/campaign.json`. It never opens or imports a real profile or
 vault. Each model reuses only its own isolated corpus/index/profile. All paid
 calls go through the original shared DeepSeek Flash proxy, with two concurrent

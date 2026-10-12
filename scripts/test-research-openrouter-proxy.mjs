@@ -192,11 +192,16 @@ test('upstream rate limits save only sanitized error metadata and halt retries w
   const proxy = await startProxy(root, { catalogDispatch: fixtureCatalog, dispatch: async () => {
     dispatches++;
     return Response.json({ error: { code: 'rate_limit_exceeded', provider_name: 'DeepInfra',
-      message: `Rate limit. Bearer ${secret}; echoed request: ${prompt}` } }, { status: 429 });
+      message: `Rate limit. Bearer ${secret}; echoed request: ${prompt}`, metadata: { raw: `key=${secret}; ${prompt}` } } }, { status: 429 });
   } });
   try {
     const limited = await post(proxy, { ...input(OPENROUTER_QA_MODEL), messages: [{ role: 'user', content: prompt }] });
     assert.equal(limited.status, 429);
+    const safeResponse = await limited.text();
+    assert.doesNotMatch(safeResponse, new RegExp(secret), 'persistable caller errors never contain a credential');
+    assert.doesNotMatch(safeResponse, new RegExp(prompt), 'the upstream raw error is never forwarded');
+    assert.deepEqual(JSON.parse(safeResponse).error, { code: 'rate_limit_exceeded', provider_name: 'DeepInfra',
+      message: '[redacted message overlapping request content]' });
     assert.equal(proxy.ledger.read().calls.length, 1);
     assert.equal(proxy.ledger.read().calls[0].actualUsd, null, 'the rate-limited request retains unknown usage');
     assert.equal(proxy.halted.reason, 'upstream_rate_limited');

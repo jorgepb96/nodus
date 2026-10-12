@@ -30,12 +30,20 @@ try {
     synthesisModel: { provider: 'google', model: 'test-text-model' },
     nodiModel: { provider: 'google', model: 'test-text-model' },
     promptLanguage: 'en',
+    // This regression exercises the legacy verified documentary publication gate;
+    // verification is experimental and disabled by default in ordinary chats.
+    researchAnswerVerification: 'legacy',
     // This suite isolates cancellation of the answer transport. A staged SearXNG
     // runtime must not turn its empty synthetic corpus into a live web search.
     researchWebSearch: 'off',
   });
 
   const ai = load('electron/ai/aiClient.ts');
+  ai.completeJson = async (_options, validate) => {
+    const plan = { goal: 'Summarise the observatory.', queries: ['observatory design'], authors: [], titles: [], explicitLibrary: false, kind: 'fact', answerMode: 'documentary' };
+    assert.ok(validate(plan));
+    return plan;
+  };
   const PARTIAL = 'Partial answer kept after the user pressed stop.';
   // The real transport streams deltas and, on abort, resolves with the accumulated
   // text instead of throwing. A per-run controller lets the stub fire the stop at the
@@ -85,10 +93,11 @@ try {
   const owner = (surface, id) => assets.chatAssetOwner(surface, id, vaults.getActiveVault().id);
 
   const researchSelection = { ideas: false, themes: false, contradictions: false, gaps: false, readingPath: false, authors: false, documents: false, passages: false, graph: false, graphParts: {} };
+  const verifiedResearchSelection = { ...researchSelection, sourceFilter: { enabled: true, authorIds: [], workIds: [] } };
   const surfaces = [
     {
       name: 'research assistant',
-      run: (signal) => research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn], selection: researchSelection }, () => {}, signal).then((result) => ({ text: result.answer, aborted: result.aborted })),
+      run: (signal) => research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn], selection: verifiedResearchSelection }, () => {}, signal).then((result) => ({ text: result.answer, aborted: result.aborted })),
     },
     {
       name: 'nodi',

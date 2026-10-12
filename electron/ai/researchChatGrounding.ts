@@ -1,5 +1,5 @@
 import type { ModelRef, PromptLanguage } from '@shared/types';
-import type { ResearchProseAudit } from '@shared/researchClaimAudit';
+import type { ResearchAuditSource, ResearchProseAudit } from '@shared/researchClaimAudit';
 import { researchPlainSentence, researchProseSpans } from '@shared/researchClaimAudit';
 import { researchChatAuditSources, researchChatAuditedMarkdown, researchChatCalculations, researchChatLiteralQuotes, researchChatNeedsGrounding, validResearchAnswerQuotes, type ResearchAnswerQuoteProof, RESEARCH_CHAT_PRECISION_RULES } from '@shared/researchChatGrounding';
 import { createResearchProseAuditor } from './researchClaimAudit';
@@ -23,6 +23,16 @@ interface LimitComparison {
   distinct: Array<{ omissionIndex: number }>;
 }
 const comparable = (text: string) => researchPlainSentence(text).replace(/\*\*|__/gu, '').normalize('NFC').replace(/\s+/gu, ' ').trim();
+const normalizedEvidence = (text: string) => text.normalize('NFC').replace(/\s+/gu, ' ').trim();
+function excerptPremiseForCoverageOmission(row: CoverageProof['omissions'][number], sources: ResearchAuditSource[]) {
+  if (row.kind !== 'available-fact' || typeof row.sourceId !== 'string' || typeof row.quote !== 'string') return [];
+  const source = sources.find(candidate => candidate.id === row.sourceId);
+  const marker = 'Verbatim excerpt:\n';
+  const markerIndex = source?.text.lastIndexOf(marker) ?? -1;
+  if (!source || markerIndex < 0) return [];
+  const excerpt = source.text.slice(markerIndex + marker.length);
+  return normalizedEvidence(excerpt).includes(normalizedEvidence(row.quote)) ? [{ sourceId: source.id, quote: row.quote }] : [];
+}
 const validCoverage = (input: unknown): input is AnswerCoverage => {
   if (!input || typeof input !== 'object') return false;
   const value = input as AnswerCoverage;
@@ -240,7 +250,7 @@ export async function groundResearchChatAnswer(answer: string, sourceContext: st
       const augmented = validateResearchAnswerPlan({ format: answerPlan.format, ...(answerPlan.formatQuestionQuote ? { formatQuestionQuote: answerPlan.formatQuestionQuote } : {}),
         facets: [...answerPlan.facets.map(({ questionQuote, evidence }) => ({ questionQuote, evidence })),
           ...proof.omissions.filter(row => row.facetId === 'unplanned').map(row => ({ questionQuote: row.complaint,
-            evidence: row.kind === 'available-fact' ? [{ sourceId: row.sourceId, quote: row.quote }] : [] }))] }, question, sources);
+            evidence: excerptPremiseForCoverageOmission(row, sources) }))] }, question, sources);
       if (!augmented.plan) throw new Error(unavailable);
       answerPlan = augmented.plan;
     }

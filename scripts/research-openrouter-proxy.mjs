@@ -78,7 +78,11 @@ function parseServedMetadata(text, contentType = '') {
 function sanitizeMetadataText(value, authorization, promptContents, maxLength) {
   if (typeof value !== 'string') return undefined;
   let safe = value;
-  if (authorization) safe = safe.replaceAll(authorization, '[redacted credential]');
+  if (authorization) {
+    safe = safe.replaceAll(authorization, '[redacted credential]');
+    const token = /^Bearer\s+(\S+)$/u.exec(authorization)?.[1];
+    if (token) safe = safe.replaceAll(token, '[redacted credential]');
+  }
   safe = safe.replace(/bearer\s+[^\s,;"']+/giu, 'Bearer [redacted]')
     .replace(/(?:sk-or-v1-|sk-)[A-Za-z0-9_-]{8,}/gu, '[redacted token]')
     .replace(/(?:api[_ -]?key|token)\s*[:=]\s*[^\s,;"']+/giu, '[redacted token]')
@@ -384,8 +388,17 @@ export async function startResearchOpenRouterProxy(root, { dispatch = fetch, cat
         reportedCost: hasReportedCost && !malformedReportedCost ? reportedCost : undefined, upstreamError,
         tariffCostBound, actualUsd, maximumUsd, accounting: actualUsd !== null ? 'max_reported_cost_or_pinned_tariff' : malformedReportedCost
           ? 'malformed_reported_cost_reservation_retained' : 'reservation_retained' });
-      response.writeHead(upstream.status, { 'Content-Type': contentType });
-      response.end(text);
+      if (!upstream.ok) {
+        // The caller may persist its AiError in a campaign report. Never pass
+        // through an upstream error body that can echo credentials or prompts.
+        response.writeHead(upstream.status, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ error: { message: upstreamError?.message ?? 'research_upstream_unavailable',
+          ...(upstreamError?.code ? { code: upstreamError.code } : {}),
+          ...(upstreamError?.providerName ? { provider_name: upstreamError.providerName } : {}) } }));
+      } else {
+        response.writeHead(upstream.status, { 'Content-Type': contentType });
+        response.end(text);
+      }
     } catch (error) {
       if (reservation) appendMetric({ reservation, provider: 'openrouter', status: providerStatus,
         failed: true, reservationRetained: true, ...(overrun ? { overrun: true,

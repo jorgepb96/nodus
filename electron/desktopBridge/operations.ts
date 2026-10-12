@@ -20,9 +20,10 @@ import {mobileDatabaseRowLocation} from './databaseRowLocation';
 import {mobileDatabasePresentationRead} from './databasePresentation';
 import {mobilePageDocument,mobilePageDocuments} from './pageDocuments';
 import {mobileSyncedBlockSource,mobileLinkedDatabaseRead} from './pageDependencies';
-import { generateMobileWorldMap } from './worldMapGeneration';
+import { generateMobileWorldMap, mobileWorldMapGenerationSource, saveMobileWorldMapImage } from './worldMapGeneration';
 import { generateMobileReportImage } from './reportImageGeneration';
 import { mobileStudyEditorData } from './studyEdits';
+import { mobileWorkspaceEditorData } from './workspaceEdits';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -48,6 +49,13 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if (method === 'getMobileWorldMapGenerationSource' || method === 'saveMobileWorldMapImage') {
+    if (args.length !== 1 || !domains.includes('corpus')) throw new Error('permission_denied');
+    if (method === 'saveMobileWorldMapImage' && (!bridgeJobId || !jobIdentity)) throw new Error('job_required');
+    const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => withMobileOperation(() => method === 'getMobileWorldMapGenerationSource' ? mobileWorldMapGenerationSource(args[0]) : saveMobileWorldMapImage(args[0], jobIdentity!.deviceGrant, signal), domains)));
+    if (method === 'saveMobileWorldMapImage') invalidateLiveCorpus(vaultId);
+    return result;
+  }
   if (method === 'generateMobileWorldMap') {
     if (args.length !== 1 || !bridgeJobId || !domains.includes('writing') || !domains.includes('corpus')) throw new Error('permission_denied');
     const invoke = () => withMobileOperation(() => generateMobileWorldMap(args[0], phase => events?.('mobile:worldMap:progress', {phase}), signal), domains);
@@ -164,6 +172,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     const invoke = () => withMobileOperation(() => handler(event, ...args), domains);
     let value = await (signal ? withGenerationSignal(signal, invoke) : invoke());
     if (method === 'getStudyDocEditorData') value = withMobileOperation(() => mobileStudyEditorData(String(args[0])), domains);
+    if (method === 'getWorkspaceNoteEditorData') value = withMobileOperation(() => mobileWorkspaceEditorData(String(args[0])), domains);
     if (method === 'getImmersionSession' && !domains.includes('writing') && value && typeof value === 'object') {
       value = {...value, progress: emptyImmersionProgress()};
     }

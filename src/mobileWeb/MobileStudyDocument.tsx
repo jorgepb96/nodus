@@ -30,10 +30,10 @@ export function MobileStudyDocument({id,settings,draftScope,call,onOpen}: {
   if(!document)return <div role="status" className="p-4">{t('Cargando editor…')}</div>;
   return <StudyEditor settings={settings} documents={[document]} activeId={document.id} port={port}
     showTabs={false} documentIcon="doc.text" onRegisterFlush={value=>{flush.current=value;}}
-    onActivate={setActiveId} onClose={()=>onOpen('studyDocument',document.id)}
+    onActivate={setActiveId} onClose={async()=>{if(await flush.current())onOpen('closeStudyDocument',document.id);}}
     onSaved={saved=>setDocument(current=>current?{...current,title:saved.title,contentMarkdown:saved.contentMarkdown,editorRevision:saved.editorRevision}:current)}
     onDuplicate={async()=>{if(!await flush.current())return;const copy=await call('duplicateMobileStudyDocument',document.id) as EditorDocument;setActiveId(copy.id);}}
-    onTrash={async()=>{if(!await flush.current())return;await call('trashMobileStudyDocument',document.id);setIssue(t('El documento se ha movido a la papelera.'));}}
+    onTrash={async()=>{if(!await flush.current())return;await call('trashMobileStudyDocument',document.id);onOpen('trashedStudyDocument',document.id);}}
     onOpenLinkedDocument={setActiveId} onOpenRecording={(recording,timestamp)=>onOpen('citation',`nodus://study/recording/${encodeURIComponent(recording)}${timestamp==null?'':`?t=${timestamp}`}`)}
     onNavigateLink={href=>{if(!href.startsWith('nodus://'))return false;onOpen('citation',href);return true;}}
   />;

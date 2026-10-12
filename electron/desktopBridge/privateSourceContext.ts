@@ -28,7 +28,7 @@ export function privateSourceMaterials(kind: string, id: string, root: Row, grou
     result.push({version:1,privateKind:targetKind, domain, recordId:targetId, kind:path.split('/')[0], citation,
       label:label || targetId, text:body, contentScope:record ? 'record' : 'metadata', ...(locator ? {locator} : {})});
   };
-  const label = String(root.title || root.display_name || root.literal_name || root.short_id || id);
+  const label = String((kind === 'testimony-participant' ? root.public_name : null) || root.title || root.display_name || root.literal_name || root.short_id || id);
   if (kind === 'prosop-source' && (groups.segments || []).some(row => row.source_id !== id)) throw new Error('private_source_ownership');
   if (['prosop-factoid','prosop-mention'].includes(kind) && (groups.segments || []).some(row => row.segment_id !== root.source_segment_id || row.source_id !== root.source_id)) throw new Error('private_source_ownership');
   if (kind === 'testimony-contrast' && (groups.items || []).some(row => row.contrast_id !== id)) throw new Error('private_source_ownership');

@@ -101,6 +101,11 @@ function projection(db: Database, table: string): string {
   return columns.map(field => `r."${field.name.replaceAll('"', '""')}"`).join(', ');
 }
 function digest(value: unknown): string { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
+function participantIdentity(db: Database, kind: string, row: RecordRow): RecordRow {
+  if (kind !== 'testimony-participant') return row;
+  const profile = db.prepare('SELECT public_name,identity_mode FROM testimony_participant_profiles WHERE person_id=?').get(row.person_id) as RecordRow | undefined;
+  return profile ? { ...row, public_name: profile.public_name, identity_mode: profile.identity_mode } : row;
+}
 function root(db: Database, plan: Plan, id: string): RecordRow {
   const row = db.prepare(`SELECT ${projection(db, plan.table)}${sourceLabels(plan.table)} FROM "${plan.table}" r WHERE r."${plan.primaryKey}" = ?`).get(id) as RecordRow | undefined;
   if (!row) throw new PrivateSourceReadError(404, 'source_not_found');
@@ -149,7 +154,7 @@ export async function readPrivateSourceContext(vaultId: string, domains: readonl
             if (!['segments','transcripts','statements','items'].includes(item.key)) continue;
             groups[item.key] = db.prepare(`${query(db,item)} ORDER BY r.rowid`).all(id) as RecordRow[];
           }
-          for (const row of privateSourceMaterials(kind,id,candidate,groups)) {
+          for (const row of privateSourceMaterials(kind,id,participantIdentity(db,kind,candidate),groups)) {
             const token = String(row.citation);
             if (seen.has(token) || !matchPrivateSource(row,queryText)) continue;
             seen.add(token); matched++;
@@ -172,7 +177,7 @@ export async function readPrivateSource(vaultId: string, domain: string, kind: s
   return withVaultDatabase(vaultId, () => {
     const db = getDb();
     return db.transaction(() => {
-      const source = root(db, plan, id);
+      const source = participantIdentity(db, kind, root(db, plan, id));
       if (!page) {
         const groups = plan.groups.map(item => metadata(db, item, id));
         return { version: 1, kind, id, root: source, groups, revision: digest({ source, groups }) };
@@ -227,14 +232,18 @@ export async function listPrivateSources(vaultId: string, domain: string, kind: 
       extra.push('CASE WHEN r.content_markdown LIKE ? THEN 1 ELSE 0 END AS _search_match');
       bindings.push(`%${options.query.trim()}%`);
     }
+    if (kind === 'testimony-participant') extra.push('r.display_name AS _working_name');
     const extras = extra.length ? ', ' + extra.join(', ') : '';
-    const all = db.prepare(`SELECT r."${plan.primaryKey}" AS id, r."${title}" AS title, r."${detail}" AS detail, r.updated_at AS updatedAt${extras} FROM "${plan.table}" r${where}`).all(...bindings) as RecordRow[];
+    const displayTitle = kind === 'testimony-participant'
+      ? `COALESCE(NULLIF((SELECT p.public_name FROM testimony_participant_profiles p WHERE p.person_id=r.person_id), ''), r.display_name)`
+      : `r."${title}"`;
+    const all = db.prepare(`SELECT r."${plan.primaryKey}" AS id, ${displayTitle} AS title, r."${detail}" AS detail, r.updated_at AS updatedAt${extras} FROM "${plan.table}" r${where}`).all(...bindings) as RecordRow[];
     const fold = (value: unknown) => String(value ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
     const query = fold(options.query).trim();
-    const items = all.filter(row => !query || row._search_match === 1 || fold(`${row.title} ${row.detail ?? ''}`).includes(query)).sort((a, b) => {
+    const items = all.filter(row => !query || row._search_match === 1 || fold(`${row.title} ${row.detail ?? ''} ${row._working_name ?? ''}`).includes(query)).sort((a, b) => {
       const time = String(b.updatedAt).localeCompare(String(a.updatedAt));
       return time || String(a.id).localeCompare(String(b.id));
-    }).map(({ _search_match, ...row }) => ({ ...row, detail: String(row.detail ?? '') }));
+    }).map(({ _search_match, _working_name, ...row }) => ({ ...row, detail: String(row.detail ?? '') }));
     return { items: items.slice(options.offset, options.offset + options.limit), total: items.length,
       offset: options.offset, limit: options.limit, hasMore: options.offset + options.limit < items.length, revision: digest(items) };
   });

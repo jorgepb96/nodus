@@ -153,6 +153,18 @@ try {
   assert.equal(testimonyContext.items.some(row=>row.privateKind==='testimony-transcript'),true);
   assert.equal(new Set(testimonyContext.items.map(row=>row.citation)).size,testimonyContext.items.length);
   assert.equal(JSON.stringify(testimonyContext).includes('content_blob'),false);
+  db.prepare('INSERT INTO persons(person_id,display_name,created_at,updated_at) VALUES(?,?,?,?)')
+    .run('participant-alias', 'Identidad privada de trabajo', stamp, stamp);
+  db.prepare('INSERT INTO testimony_participant_profiles(person_id,public_name,identity_mode,biographical_note,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+    .run('participant-alias', 'Seudónimo elegido', 'pseudonymous', 'Perfil ficticio para verificar la atribución del participante.', stamp, stamp);
+  const aliasPage = await listPrivateSources(vault, 'testimonies', 'testimony-participant', {query:'Seudónimo elegido',offset:0,limit:100,state:'active'});
+  assert.equal(aliasPage.items.length, 1); assert.equal(aliasPage.items[0].title, 'Seudónimo elegido');
+  assert.equal(aliasPage.items[0]._working_name, undefined);
+  const workingPage = await listPrivateSources(vault, 'testimonies', 'testimony-participant', {query:'Identidad privada de trabajo',offset:0,limit:100,state:'active'});
+  assert.equal(workingPage.items[0].title, 'Seudónimo elegido');
+  const aliasDossier = await readPrivateSource(vault, 'testimonies', 'testimony-participant', 'participant-alias');
+  assert.equal(aliasDossier.root.public_name, 'Seudónimo elegido');
+  assert.equal(aliasDossier.root.display_name, 'Identidad privada de trabajo');
   db.prepare('UPDATE study_transcripts SET content_markdown=? WHERE id=?').run('37 datos '.repeat(20000),'transcript');
   const budget = await readPrivateSourceContext(vault,['study-recordings'],'37',1000);
   assert.equal(budget.truncated,true); assert.equal(budget.items.some(row=>row.contentScope==='record'),false);

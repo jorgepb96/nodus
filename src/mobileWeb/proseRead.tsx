@@ -7,10 +7,12 @@ import {anchorFromRange,findAnchoredText,invalidateReaderTextIndex,rangeFromOffs
 import {setActiveLang} from '../i18n';
 import type {AppSettings} from '@shared/types';
 import {ReaderResourceQueue} from './readerResourceQueue';
+import {proseSelectionPayload} from './proseSelectionBridge';
+import {formulaExpansionControls} from './proseFormulaExpansion';
 
 interface Annotation extends ReaderAnchor {id:string;kind:'highlight'|'comment'|'bookmark';color:string|null}
 interface Input {source:string;language:AppSettings['uiLanguage'];dark:boolean;accent:string;fontSize:number;justify:boolean;annotations:Annotation[];highlighter:string|null;search:Array<{location:number;length:number}>;activeSearch:{location:number;length:number}|null;searchAim:number;bookmarkAim:number;legacyBookmark?:{selectedText:string;startOffset:number;endOffset:number;prefix:string;suffix:string}|null}
-const native=window as unknown as {webkit:{messageHandlers:{proseRead:{postMessage(value:unknown):void}}};nodusProseRender(input:Input):void;nodusProseUpdate(input:Input):void;nodusProseReply(id:string,result:unknown,error:string|null):void;nodusProseClear():void};
+const native=window as unknown as {webkit:{messageHandlers:{proseRead:{postMessage(value:unknown):void}}};nodusProseRender(input:Input):void;nodusProseUpdate(input:Input):void;nodusProseReply(id:string,result:unknown,error:string|null):void;nodusProseClear():void;nodusProseRefreshSelection():boolean};
 let sequence=0,current:Input,root:HTMLElement|null=null,searchAim=0,bookmarkAim=0,legacyMigrated=false;
 const pending=new Map<string,{resolve:(value:any)=>void;reject:(error:Error)=>void}>();
 function send(method:string,value:unknown=null){native.webkit.messageHandlers.proseRead.postMessage({method,value});}
@@ -52,13 +54,19 @@ function paint(){
 let heightFrame=0;
 function measure(){cancelAnimationFrame(heightFrame);heightFrame=requestAnimationFrame(()=>{if(root)send('height',Math.ceil(root.getBoundingClientRect().height));});}
 let selectionTimer:ReturnType<typeof setTimeout>|undefined;
-document.addEventListener('selectionchange',()=>{clearTimeout(selectionTimer);selectionTimer=setTimeout(()=>{
-  if(!root)return;const selection=getSelection();if(!selection||selection.rangeCount===0||selection.isCollapsed){send('selection',null);return;}
-  const range=selection.getRangeAt(0);if(!root.contains(range.startContainer)||!root.contains(range.endContainer))return;
-  const fragment=range.cloneContents();fragment.querySelectorAll('[data-reader-ignore]').forEach(node=>node.remove());const text=fragment.textContent??'';if(!text.trim())return;
-  const anchor=anchorFromRange(root,range,text);if(anchor.endOffset-anchor.startOffset!==text.length)return;
-  send('selection',{anchor,rect:rect(range)});
-},220);});
+function publishSelection(){
+  const payload=proseSelectionPayload(root,getSelection(),anchorFromRange);
+  send('selection',payload);return payload!==null;
+}
+// WebKit's edit-menu delegate can arrive after the selection debounce. Recheck
+// immediately rather than let a second native Copy/Translate menu coexist.
+native.nodusProseRefreshSelection=()=>{
+  clearTimeout(selectionTimer);
+  const payload=proseSelectionPayload(root,getSelection(),anchorFromRange);
+  if(!payload)return false;
+  send('selection',payload);return true;
+};
+document.addEventListener('selectionchange',()=>{clearTimeout(selectionTimer);selectionTimer=setTimeout(publishSelection,220);});
 native.nodusProseClear=()=>getSelection()?.removeAllRanges();
 const link=(host:string,id:string,query?:Record<string,number|null|undefined>)=>{const url=new URL(`nodus://${host}/${encodeURIComponent(id)}`);for(const [key,value] of Object.entries(query??{}))if(value!=null)url.searchParams.set(key,String(value));send('open',url.href);};
 
@@ -79,8 +87,9 @@ function Document({input}:{input:Input}){
     const host=root,controller=new AbortController(),resources=new ReaderResourceQueue(4);
     root.querySelectorAll('.katex-mathml').forEach(node=>node.setAttribute('data-reader-ignore','true'));
     root.querySelectorAll('table').forEach(table=>{const heads=Array.from(table.querySelectorAll('thead th'));if(heads.length>3)table.dataset.mobileColumns=String(heads.length);table.querySelectorAll('tbody tr').forEach(row=>row.querySelectorAll('td').forEach((cell,index)=>cell.setAttribute('data-column-label',heads[index]?.textContent??String(index+1))));});
+    const adaptFormulae=formulaExpansionControls(root,value=>send('formula',value));adaptFormulae();
     invalidateReaderTextIndex(root);send('text',readerTextIndex(root).content);paint();measure();
-    const resize=new ResizeObserver(measure);resize.observe(root);
+    const resize=new ResizeObserver(()=>{adaptFormulae();measure();});resize.observe(root);
     host.querySelectorAll('img').forEach(image=>{
       const source=image.getAttribute('src');if(!source)return;image.removeAttribute('src');image.dataset.proseSource=source;
       const valid=()=>!controller.signal.aborted&&image.isConnected&&host.contains(image)&&image.dataset.proseSource===source;

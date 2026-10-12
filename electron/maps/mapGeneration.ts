@@ -286,8 +286,8 @@ export async function generateMapImage(request: MapGenerationRequest, lifecycle:
   const { generated, degraded, prompt, provider, model } = await runGeneration(promptInputFor(map, request), reference);
   const prepared = await prepareMapImage(generated.bytes);
   checkpoint(lifecycle, 'saving');
-  unchangedMap(map, snapshot);
   getDb().transaction(() => {
+  unchangedMap(map, snapshot);
   saveMapImage({
     mapId: map.mapId,
     role: 'base' as MapImageRole,
@@ -437,8 +437,8 @@ export async function expandMapCanvas(request: MapGenerationRequest, lifecycle: 
   // Coordinates first: if this throws, the map keeps its old image AND its old
   // coordinates, which is a consistent state. The reverse order would not be.
   checkpoint(lifecycle, 'saving');
-  unchangedMap(map, snapshot);
   getDb().transaction(() => {
+  unchangedMap(map, snapshot);
   growMapCanvas(map.mapId, growth);
   saveMapImage({
     mapId: map.mapId,

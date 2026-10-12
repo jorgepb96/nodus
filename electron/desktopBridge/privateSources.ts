@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { statSync } from 'node:fs';
 import { getDb, withVaultDatabase } from '../db/database';
 import { getVault } from '../vaults/vaultRegistry';
 import { privateSourceMaterials, matchPrivateSource } from './privateSourceContext';
@@ -15,6 +16,17 @@ const interviewTranscripts = 'EXISTS (SELECT 1 FROM testimony_media m JOIN testi
 const interviewSegments = 'EXISTS (SELECT 1 FROM testimony_transcripts t JOIN testimony_media m ON m.id = t.media_id JOIN testimony_sessions s ON s.id = m.session_id WHERE t.id = r.transcript_id AND s.interview_id = ?)';
 const contrastAnnotations = 'EXISTS (SELECT 1 FROM testimony_contrast_items c WHERE c.annotation_id = r.id AND c.contrast_id = ?)';
 const plans: Record<string, Plan> = {
+  'archive-source': { domain: 'primary-source-files', table: 'archive_items', primaryKey: 'item_id', groups: [
+    group('profile', 'Descripción de la fuente', 'archive_item_profiles', 'r.item_id = ?'),
+    group('excerpts', 'Extractos citables', 'archive_excerpts', 'r.item_id = ?'),
+    group('textVersions', 'Versiones del texto', 'archive_text_versions', 'r.item_id = ?'),
+    group('segments', 'Fragmentos y ubicaciones', 'archive_text_segments', 'EXISTS (SELECT 1 FROM archive_text_versions v WHERE v.text_version_id = r.text_version_id AND v.item_id = ?)'),
+    group('analysis', 'Análisis de la fuente', 'archive_source_analyses', 'r.item_id = ?'),
+    group('evidence', 'Evidencias vinculadas', 'record_evidence', "r.source_kind = 'archive' AND r.nodus_id = ?"),
+    group('units', 'Unidades descriptivas', 'archive_description_units', 'EXISTS (SELECT 1 FROM archive_item_units u WHERE u.unit_id = r.unit_id AND u.item_id = ?)'),
+    group('repository', 'Repositorio', 'archive_repositories', 'EXISTS (SELECT 1 FROM archive_description_units d JOIN archive_item_units u ON u.unit_id = d.unit_id WHERE d.repository_id = r.repository_id AND u.item_id = ?)'),
+    group('files', 'Archivos originales', 'archive_item_files', 'r.item_id = ?'),
+  ] },
   'testimony-interview': { domain: 'testimonies', table: 'testimony_interviews', primaryKey: 'id', groups: [
     group('participants', 'Participantes', 'testimony_interview_participants', 'r.interview_id = ?'),
     group('sessions', 'Sesiones', 'testimony_sessions', 'r.interview_id = ?'),
@@ -97,7 +109,8 @@ function planFor(domain: string, kind: string, id: string): Plan {
 function projection(db: Database, table: string): string {
   const fields = db.prepare(`PRAGMA table_info("${table}")`).all() as { name: string; type: string }[];
   if (!fields.length) throw new PrivateSourceReadError(409, 'source_schema_unavailable');
-  const columns = fields.filter(field => !/BLOB/i.test(field.type) && !/_blob$/.test(field.name));
+  const columns = fields.filter(field => !/BLOB/i.test(field.type) && !/_blob$/.test(field.name) &&
+    (!table.startsWith('archive_') || !/(?:^|_)(?:path|api_key|private_key|password|credential|credentials|secret|token)(?:_|$)/i.test(field.name)));
   return columns.map(field => `r."${field.name.replaceAll('"', '""')}"`).join(', ');
 }
 function digest(value: unknown): string { return createHash('sha256').update(JSON.stringify(value)).digest('hex'); }
@@ -109,24 +122,46 @@ function participantIdentity(db: Database, kind: string, row: RecordRow): Record
 function root(db: Database, plan: Plan, id: string): RecordRow {
   const row = db.prepare(`SELECT ${projection(db, plan.table)}${sourceLabels(plan.table)} FROM "${plan.table}" r WHERE r."${plan.primaryKey}" = ?`).get(id) as RecordRow | undefined;
   if (!row) throw new PrivateSourceReadError(404, 'source_not_found');
-  return row;
+  return materializeArchiveRow(db, plan.table, row);
 }
 function query(db: Database, item: Group): string {
   return `SELECT r.rowid AS _bridge_cursor, ${projection(db, item.table)}${sourceLabels(item.table)} FROM "${item.table}" r WHERE (${item.where})`;
 }
 function sourceLabels(table: string): string {
+  if (table === 'archive_items') return ', (r.blob IS NOT NULL AND length(r.blob) > 0) AS original_available';
+  if (table === 'archive_item_files') return ', (r.content_blob IS NOT NULL AND length(r.content_blob) > 0) AS original_available';
   if (table === 'testimony_interview_participants') return ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title, (SELECT p.display_name FROM persons p WHERE p.person_id = r.person_id) AS display_name';
   if (table === 'testimony_transcripts') return ', (SELECT s.interview_id FROM testimony_media m JOIN testimony_sessions s ON s.id = m.session_id WHERE m.id = r.media_id) AS interview_id, (SELECT m.file_name FROM testimony_media m WHERE m.id = r.media_id) AS file_name, (SELECT m.session_id FROM testimony_media m WHERE m.id = r.media_id) AS session_id';
   if (table === 'testimony_annotations') return ', (SELECT i.title FROM testimony_interviews i WHERE i.id = r.interview_id) AS interview_title';
   if (table === 'testimony_contrast_items') return ', (SELECT a.quote_snapshot FROM testimony_annotations a WHERE a.id = r.annotation_id) AS quote_snapshot, (SELECT a.interview_id FROM testimony_annotations a WHERE a.id = r.annotation_id) AS interview_id, (SELECT a.transcript_id FROM testimony_annotations a WHERE a.id = r.annotation_id) AS transcript_id, (SELECT a.t_start FROM testimony_annotations a WHERE a.id = r.annotation_id) AS t_start';
   return '';
 }
+function materializeArchiveRow(db: Database, table: string, row: RecordRow): RecordRow {
+  if (!table.startsWith('archive_')) return row;
+  const safe: RecordRow = { ...row };
+  for (const [key, value] of Object.entries(safe)) {
+    if (!key.endsWith('_json') || typeof value !== 'string') continue;
+    try {
+      const scrub = (input: unknown): unknown => Array.isArray(input) ? input.map(scrub)
+        : input && typeof input === 'object' ? Object.fromEntries(Object.entries(input)
+          .filter(([name]) => !/(?:path|api.?key|private.?key|password|credential|secret|token|blob)/i.test(name)).map(([name, child]) => [name, scrub(child)])) : input;
+      safe[key] = JSON.stringify(scrub(JSON.parse(value)));
+    } catch { delete safe[key]; }
+  }
+  if (table === 'archive_item_files' && !safe.original_available) {
+    const file = db.prepare('SELECT external_path FROM archive_item_files WHERE file_id=?').get(row.file_id) as {external_path?: string} | undefined;
+    try { const stat = file?.external_path ? statSync(file.external_path) : null; safe.original_available = stat?.isFile() && stat.size > 0 ? 1 : 0; }
+    catch { safe.original_available = 0; }
+  }
+  return safe;
+}
+
 function metadata(db: Database, item: Group, id: string) {
   const hash = createHash('sha256'); let total = 0;
   // Hash the complete source group without accumulating large transcripts or
   // unrelated tables. Every page carries this revision and can detect an edit.
   for (const row of db.prepare(`${query(db, item)} ORDER BY r.rowid`).iterate(id)) {
-    hash.update(JSON.stringify(row)).update('\n'); total++;
+    hash.update(JSON.stringify(materializeArchiveRow(db, item.table, row as RecordRow))).update('\n'); total++;
   }
   return { key: item.key, title: item.title, total, revision: hash.digest('hex') };
 }
@@ -140,6 +175,7 @@ export async function readPrivateSourceContext(vaultId: string, domains: readonl
       const items: RecordRow[] = [], seen = new Set<string>();
       let used = 0, matched = 0, truncated = false;
       for (const [kind, plan] of Object.entries(plans)) {
+        if (kind === 'archive-source') continue; // Addressed reader only; never scan every private archive for context.
         if (!domains.includes(plan.domain)) continue;
         const where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)'
           : kind === 'testimony-participant' ? ' WHERE EXISTS (SELECT 1 FROM testimony_participant_profiles p WHERE p.person_id = r.person_id) OR EXISTS (SELECT 1 FROM testimony_interview_participants p WHERE p.person_id = r.person_id)'
@@ -190,7 +226,7 @@ export async function readPrivateSource(vaultId: string, domain: string, kind: s
       const info = metadata(db, item, id);
       if (page.revision !== info.revision) throw new PrivateSourceReadError(409, 'source_changed');
       const rows = db.prepare(`${query(db, item)} AND r.rowid > ? ORDER BY r.rowid LIMIT ?`).all(id, page.cursor, page.limit + 1) as RecordRow[];
-      const result = rows.slice(0, page.limit);
+      const result = rows.slice(0, page.limit).map(row => materializeArchiveRow(db, item.table, row));
       return { rows: result, cursor: Number(result.at(-1)?._bridge_cursor ?? page.cursor), hasMore: rows.length > page.limit,
         total: info.total, revision: info.revision };
     })();
@@ -208,7 +244,7 @@ export async function listPrivateSources(vaultId: string, domain: string, kind: 
     const db = getDb();
     const person = ['prosop-person', 'testimony-participant'].includes(kind);
     const title = person ? 'display_name' : kind === 'prosop-mention' ? 'literal_name' : kind === 'prosop-factoid' ? 'summary' : kind === 'testimony-transcript' ? 'short_id' : 'title';
-    const detail = kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : person ? 'birth_date' : kind === 'testimony-interview' ? 'workflow_status' : kind === 'testimony-contrast' ? 'short_id' : 'status';
+    const detail = kind === 'archive-source' ? 'kind' : kind === 'study-recording' ? 'duration_seconds' : kind === 'prosop-source' ? 'date_display' : kind === 'prosop-mention' ? 'context' : person ? 'birth_date' : kind === 'testimony-interview' ? 'workflow_status' : kind === 'testimony-contrast' ? 'short_id' : 'status';
     const state = options.state || 'active';
     if (!['active', 'archived', 'trash', 'all'].includes(state)) throw new PrivateSourceReadError(400, 'invalid_source_state');
     let where = kind === 'prosop-person' ? ' WHERE EXISTS (SELECT 1 FROM prosop_person_profiles p WHERE p.person_id = r.person_id)' : '';

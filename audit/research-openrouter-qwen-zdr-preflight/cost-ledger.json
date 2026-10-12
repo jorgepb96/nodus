@@ -1,0 +1,13 @@
+{
+  "limitUsd": 0.5,
+  "calls": [
+    {
+      "id": "721606d4-b6c5-475b-bfdb-7549960d3484",
+      "provider": "openrouter",
+      "model": "qwen/qwen3.7-flash-20260727",
+      "maximumUsd": 0.00211523,
+      "reservedAt": "2026-10-12T13:10:48.710Z",
+      "actualUsd": null
+    }
+  ]
+}

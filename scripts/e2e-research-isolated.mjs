@@ -131,6 +131,19 @@ try {
       await page.keyboard.press('Escape');
     }
     report.notebooks.layouts = layouts;
+    if (process.argv.includes('--verification')) {
+      const toggle = page.getByTestId('research-verification-toggle');
+      await toggle.waitFor();
+      assert.equal(await toggle.getAttribute('aria-pressed'), 'false');
+      assert.equal(await page.evaluate(async () => (await window.nodus.getSettings()).researchAnswerVerification), 'off');
+      await toggle.click();
+      await page.waitForFunction(async () => (await window.nodus.getSettings()).researchAnswerVerification === 'structured');
+      assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+      await page.screenshot({ path: path.join(root, 'artifacts/verification-enabled.png') });
+      await toggle.click();
+      await page.waitForFunction(async () => (await window.nodus.getSettings()).researchAnswerVerification === 'off');
+      report.verification = { passed: true, default: 'off', enabled: 'structured', disabled: 'off', modelCalls: 0 };
+    }
     // Back to a general chat, which reads the whole vault, for the checks that follow.
     await page.getByTestId('research-new-conversation').click();
   }

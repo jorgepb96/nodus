@@ -36,6 +36,7 @@ import { codexReasoningFor } from '@shared/codexReasoning';
 import { anthropicVisionContent, openAiVisionContent, type VisionImagePart } from '@shared/imageAnalysis';
 import { getActiveVault, activeVaultRevision } from '../vaults/vaultRegistry';
 import { jsonrepair } from 'jsonrepair';
+import { mayRetryWithoutStructuredSchema, structuredResponseFormat, type ResearchNativeResponseSchema } from '@shared/researchAnswerSchema';
 import { perfLogNs, startPerf, type PerfContext } from '../perf';
 import {
   embedWithNodusLocal,
@@ -469,6 +470,8 @@ function nodusLocalMaxTokens(model: ModelRef, opts: CallOpts, requestedMax: numb
 }
 
 export interface CallOpts {
+  /** Strict native JSON Schema, explicitly opted into by structured Research Chat only. */
+  responseSchema?: ResearchNativeResponseSchema;
   /** Backend academic corpus requests only; include all final prompt/output bytes. */
   corpusContext?: boolean;
   /** Set exclusively by Research Assistant; absent preserves every other surface. */
@@ -883,6 +886,21 @@ async function assertCorpusRequestFits(model: ModelRef, opts: CallOpts): Promise
  * be rejected by some models, so callers retry once without them on a 400.
  */
 function optionalBody(model: ModelRef, jsonMode: boolean, reasoning: ReasoningEffort, opts: CallOpts): Record<string, unknown> {
+  if (opts.responseSchema) {
+    const responseFormat = structuredResponseFormat(model.provider, opts.responseSchema);
+    // If a caller supplies a schema for a provider without this contract, do not pretend
+    // that JSON mode enforces it. Structured Research Chat only opts in for OpenAI/router.
+    if (!responseFormat) throw new AiError('Native structured JSON schema is unavailable for this provider.', false, true, 'bad_request');
+    const auditedOpenRouterProvider = process.env.NODUS_AUDIT_OPENROUTER_PROVIDER?.trim();
+    return {
+      response_format: responseFormat,
+      ...(model.provider === 'openrouter'
+        ? auditedOpenRouterProvider
+          ? { provider: { only: [auditedOpenRouterProvider], allow_fallbacks: false } }
+          : openRouterRoutingBody(getSettings().openRouterThroughput)
+        : {}),
+    };
+  }
   // A gateway that already refused this body once keeps the plain one for the rest of the
   // session: rediscovering the refusal per chunk would triple the requests a long scan
   // costs. See optionalFieldsSupport.ts.
@@ -1481,7 +1499,7 @@ async function rawCompleteTransport(
       // `optionalFieldReplays` for the order and `replayRefusedOptionalFields` for how far a
       // custom gateway is allowed to push the request back to the plain OpenAI body.
       const sentReasoning = (extras as any).reasoning_effort !== undefined;
-      if (!opts.noRetry && Object.keys(extras).length > 0 && shouldRetryWithoutOptionalFields(e, { provider: model.provider })) {
+      if (mayRetryWithoutStructuredSchema(opts.responseSchema) && !opts.noRetry && Object.keys(extras).length > 0 && shouldRetryWithoutOptionalFields(e, { provider: model.provider })) {
         res = await replayRefusedOptionalFields(model, extras, e, sentReasoning, replayBody);
       } else {
         throw e;

@@ -11,6 +11,7 @@ import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -101,6 +102,7 @@ export const ZH_TW: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS["zh-TW"],
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS["zh-TW"],
   ...RESEARCH_ATTACHMENT_TRANSLATIONS['zh-TW'],
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['zh-TW'],
   ...VAULT_FILE_DROP_TRANSLATIONS['zh-TW'],
   ...RESEARCH_PROMPT_TRANSLATIONS['zh-TW'],
   ...RESEARCH_SOURCE_TRANSLATIONS["zh-TW"],

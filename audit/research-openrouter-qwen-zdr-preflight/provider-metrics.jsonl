@@ -1,0 +1,1 @@
+{"reservation":"721606d4-b6c5-475b-bfdb-7549960d3484","provider":"openrouter","model":"qwen/qwen3.7-flash-20260727","requestHash":"d944d9707c57104f7ed5bfe2665016f11f578f80f4ce9d5378ebb6e583869897","status":404,"latencyMs":56.975625000000036,"tariffCostBound":null,"actualUsd":null,"maximumUsd":0.00211523,"accounting":"reservation_retained"}

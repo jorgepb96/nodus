@@ -11,6 +11,7 @@ import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -99,6 +100,7 @@ export const JA: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS.ja,
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS.ja,
   ...RESEARCH_ATTACHMENT_TRANSLATIONS.ja,
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['ja'],
   ...VAULT_FILE_DROP_TRANSLATIONS['ja'],
   ...DOCUMENT_SKILLS_TRANSLATIONS.ja,
   ...RESEARCH_PROMPT_TRANSLATIONS.ja,

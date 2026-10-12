@@ -1,0 +1,460 @@
+[
+  {
+    "reviewId": "b0ed49e48e39a190",
+    "question": "Identifica por separado los años de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+    "answer": null,
+    "unavailable": true,
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+    "sources": [
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:0",
+        "label": "fixture 01",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 1 La escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:1",
+        "label": "fixture 13",
+        "pageLabel": "p. 1",
+        "summary": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A1"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:2",
+        "label": "fixture 11",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laboratório abriu em 1913, não a biblioteca.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:3",
+        "label": "fixture 06",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro: archive 6 La scuola di Puerto Claro apr] la biblioteca nel 1912. || laboratorio apr] nel 1913, non la biblioteca. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:4",
+        "label": "fixture 21",
+        "pageLabel": "p. 1",
+        "summary": "# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:5",
+        "label": "fixture 26",
+        "pageLabel": "p. 1",
+        "summary": "# Puerto Claro · archive 26 The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:6",
+        "label": "fixture 16",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 16 # Puerto Claro · archive 16 Die Schule in Puerto Claro eröffnete ihre Bibliothek 1912. Das Labor eröffnete 1913, nicht die Bibliothek.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:7",
+        "label": "public QLORA001",
+        "pageLabel": "pp. 19–20",
+        "summary": "[p. 19] 2022. [48] G. Qin and J. Eisner. Learning how to ask: Querying lms with mixtures of soft prompts. arXiv preprint arXiv:2104.06599, 2021. [49] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena, Y. Zhou, W. Li, and P. J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. J. Mach. Learn. Res., 21(1), jan 2020. ISSN 1532-4435. [50] V. Sanh, A. Webson, C. Raffel, S. H. Bach, L. Sutawika, Z. Alyafeai, A. Chaffin, A. Stiegler, T. L. Scao, A. Raja, et al. Multitask prompted training enables zero-shot task generalization. arXiv preprint arXiv:2110.08207, 2021. [51] M. Sap, R. LeBras, D. Fried, and Y. Choi. Neural theory-of-mind? on the limits of social intelligence in large lms. arXiv preprint arXiv:2210.13312, 2022. [52] T. L. Scao, A. Fan, C. Akiki, E. Pavlick, S. Ili´c, D. Hesslow, R. Castagné, A. S. Luccioni, F. Yvon, M. Gallé, et al. Bloom: A 176b-parameter open-access multilingual language model. arXiv preprint arXiv:2211.05100, 2022. [53] S. Shaphiro and M. Wilk. An analysis of variance test for normality. Biometrika, 52(3):591–611, 1965. [54] Y.-L. Sung, V. Nair, and C. A. Raffel. Training neural networks with fixed sparse masks. Advances in Neural Information Processing Systems, 34:24193–24205, 2021. [p. 20] R. Taori, I. Gulrajani, T. Zhang, Y. Dubois, X. Li, C. Guestrin, P. Liang, and T. B. Hashimoto. Stanford alpaca: An instruction-following llama model. https://github.com/tatsu-lab/ stanford_alpaca, 2023. [56] R. Thoppilan, D. De Freitas, J. Hall, N. Shazeer, A. Kulshreshtha, H.-T. Cheng, A. Jin, T. Bos, L. Baker, Y. Du, et al. Lamda: Language models for dialog applications. arXiv preprint arXiv:2201.08239, 2022. [57] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Rozière, N. Goyal, E. Hambro,",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A7"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:8",
+        "label": "fixture 25",
+        "pageLabel": "p. 1",
+        "summary": "# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A8"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:9",
+        "label": "fixture 07",
+        "pageLabel": "p. 1",
+        "summary": "Vega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A9"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:10",
+        "label": "public ARENA001",
+        "pageLabel": "p. 12",
+        "summary": "2506 | | 1719 1513 1573 | 1767 1631 2058 1656 1554 1573 1620 1556 1571 1529 1920 1729 1653 1974 1770 1585 1644 1491 1612 1892 1681 1758 1578 1855 1783 1846 1632 1657 1832 1919 1587 | | | 1000 1107 1144 1256 1128 1212 1121 | 1177 1035 1393 1092 1233 1325 1252 1143 1242 1204 1108 1056 1265 1200 1284 1081 1322 1435 1433 1435 1268 | 1316 1163 1176 | | 966 1014 743 441 472 408 667 970 848 786 651 813 825 729 768 525 779 786 627 548 627 476 650 549 442 439 396 428 425 382 323 418 337 326 368 380 357 393 412 489 372 482 535 384 327 326 324 359 405 340 406 932 421 343 366 | 338 480 613 404 409 431 377 439 472 444 341 325 354 539 580 529 481 352 326 657 684 657 626 628 340 504 501 514 566 506 362 537 625 509 465 531 537 364 708 536 563 598 515 394 321 328 483 688 535 439 432 469 662 548 530 516 722 518 640 961 805 724 705 951 874 782 | | | 0 223 228 194 293 285 309 246 186 184 290 301 222 199 293 266 296 278 216 205 245 312 216 134 131 206 191 172 256 288 225 96 149 222 220 184 200 144 111 125 65 248 233 138 103 92 101 89 139 134 120 98 60 97 125 106 123 112 124 56 239 310 | 310 299 301 | | | May 2023 Jun 2023 Jul 2023 Aug 2023 Figure 9.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A10"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:11",
+        "label": "public QLORA001",
+        "pageLabel": "p. 10",
+        "summary": "70.7% | 4.3% | | FLAN v2 | 65B | 4-bit | 41 GB | 37.0% | 59.6% | 48.4% | 4.6% | | Guanaco | 33B | 4-bit | 21 GB | 96.5% | 99.2% | 97.8% 4.4% | | | Open Assistant | 33B | 16-bit | 66 GB | 91.2% | 98.7% | 94.9% | 4.5% | | Alpaca | 33B | 4-bit | 21 GB | 67.2% | 79.7% | 73.6% | 4.2% | | FLAN v2 | 33B | 4-bit | 21 GB | 26.3% | 49.7% | 38.0% | 3.9% | | Vicuna | 13B | 16-bit | 26 GB | 91.2% | 98.7% | 94.9% 4.5% | | | Guanaco | 13B | 4-bit | 10 GB | 87.3% | 93.4% | 90.4% | 5.2% | | Alpaca | 13B | 4-bit | 10 GB | 63.8% | 76.7% | 69.4% | 4.2% | | HH-RLHF | 13B | 4-bit | 10 GB | 55.5% | 69.1% | 62.5% | 4.7% | | Unnatural Instr. | 13B | 4-bit | 10 GB | 50.6% | 69.8% | 60.5% | 4.2% | | Chip2 | 13B | 4-bit | 10 GB | 49.2% | 69.3% | 59.5% | 4.7% | | Longform | 13B | 4-bit | 10 GB | 44.9% | 62.0% | 53.6% | 5.2% | | Self-Instruct | 13B | 4-bit | 10 GB | 38.0% | 60.5% | 49.1% | 4.6% | | FLAN v2 | 13B | 4-bit | 10 GB | 32.4% | 61.2% | 47.0% | 3.6% | | Guanaco | 7B | 4-bit | 5 GB | 84.1% | 89.8% | 87.0% 5.4% | | |",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A11"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:12",
+        "label": "fixture 22",
+        "pageLabel": "p. 1",
+        "summary": "# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A12"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:13",
+        "label": "fixture 23",
+        "pageLabel": "p. 1",
+        "summary": "# Alba · archive 23 O sensor Alba mede turbidez com luz verde de 530 nm. Não mede oxigénio. Deve ser calibrado a cada 30 dias. Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A13"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:14",
+        "label": "fixture 28",
+        "pageLabel": "p. 1",
+        "summary": "Campos: Document · Evidence 1. Document: Alba · archive 28 · Evidence: Der Alba-Sensor misst Trübung mit grünem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage. 2. Document: Source type · Evidence: synthetic archive",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A14"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:15",
+        "label": "fixture 08",
+        "pageLabel": "p. 1",
+        "summary": "Alba: archive 8 The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A15"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:16",
+        "label": "public QLORA001",
+        "pageLabel": "p. 17",
+        "summary": "Jones, N. Joseph, B. Mann, N. DasSarma, et al. A general language assistant as a laboratory for alignment. arXiv preprint arXiv:2112.00861, 2021. [3] S. H. Bach, V. Sanh, Z.-X. Yong, A. Webson, C. Raffel, N. V. Nayak, A. Sharma, T. Kim, M. S. Bari, T. Fevry, et al. Promptsource: An integrated development environment and repository for natural language prompts. arXiv preprint arXiv:2202.01279, 2022. [4] Y. Bai, A. Jones, K. Ndousse, A. Askell, A. Chen, N. DasSarma, D. Drain, S. Fort, D. Ganguli, T. Henighan, et al. Training a helpful and harmless assistant with reinforcement learning from human feedback. arXiv preprint arXiv:2204.05862, 2022. [5] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon, et al. Constitutional ai: Harmlessness from ai feedback. arXiv preprint arXiv:2212.08073, 2022. [6] E. M. Bender, T. Gebru, A. McMillan-Major, and S. Shmitchell. On the dangers of stochastic parrots: Can language models be too big? In Proceedings of the 2021 ACM conference on fairness, accountability, and transparency, pages 610–623, 2021. [7] S. Biderman, H. Schoelkopf, Q. Anthony, H. Bradley, K. O’Brien, E. Hallahan, M. A. Khan, S. Purohit, U. S. Prashanth, E. Raff, et al. Pythia: A suite for analyzing large language models across training and scaling. arXiv preprint arXiv:2304.01373, 2023. [8] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill, et al. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258, 2021. [9] T. Chen, B. Xu, C. Zhang, and C. Guestrin. Training deep nets with sublinear memory cost. arXiv preprint arXiv:1604.06174, 2016. [10] W.-L. Chiang, Z. Li, Z. Lin,",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A16"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:17",
+        "label": "public ARENA001",
+        "pageLabel": "pp. 10–11",
+        "summary": "[p. 10] URL https://aclanthology.org/2023. A diafindings-emnlp.311. | | Karpinska, M., Akoury, N., and Iyyer, M. The perils of | Liu, T.-Y. et al. Learning to rank for information retrieval. | | using Mechanical Turk to evaluate open-ended text gen- | Foundations and Trends® in Information Retrieval, 3(3): | | eration. In Moens, M.-F., Huang, X., Specia, L., and Yih, S. W.-t. (eds.), Proceedings of the 2021 Confer- | 225–331, 2009. | | ence on Empirical Methods in Natural Language Pro- | McInnes, L., Healy, J., and Melville, J. Umap: Uniform | | cessing, pp. 1265–1285, Online and Punta Cana, Domini- | manifold approximation and projection for dimension | | can Republic, November 2021. Association for Computa- | reduction, 2020. | | 97. URL https://aclanthology.org/2021. OpenAI. | Gpt-4 technical report. arXiv preprint | | emnlp-main.97. | arXiv:2303.08774, 2023. | [p. 11] | Oren, Y., Meister, N., Chatterji, N., Ladhak, F., and | 2023.acl-long.754. URL https://aclanthology. | | - | - | | Hashimoto, T. B. Proving test set contamination in black box language models. arXiv preprint arXiv:2310.17623, | org/2023.acl-long.754. bounded random variables by betting. arXiv preprint | | Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, J., and Lowe, R. Training language models to follow theoretic statistics and safe anytime-valid inference. Statistical Science, 38(4):576–601, 2023. Rao, P. V. and Kupper, L. L. Ties in paired-comparison Journal of the American Statistical Association, 62(317): models. Transactions on Machine Learning Research, Szörényi, B., Busa-Fekete, R., Paul, A., and Hüllermeier, E. Online rank elicitation for plackettluce: A dueling bandits approach. In Cortes, C., R. (eds.), Advances in Neural Information Processing Systems, volume 28. Curran Associates, Inc., 2015. URL https://proceedings.neurips. pdf. tuned chat models. arXiv preprint arXiv:2307.09288, and applications.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A17"
+      }
+    ]
+  },
+  {
+    "reviewId": "9e8ede895e7259a4",
+    "question": "Identifica por separado los años de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+    "answer": null,
+    "unavailable": true,
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+    "sources": [
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:0",
+        "label": "fixture 01",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 1 La escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:1",
+        "label": "fixture 13",
+        "pageLabel": "p. 1",
+        "summary": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A1"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:2",
+        "label": "fixture 11",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laboratório abriu em 1913, não a biblioteca.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:3",
+        "label": "fixture 06",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro: archive 6 La scuola di Puerto Claro apr] la biblioteca nel 1912. || laboratorio apr] nel 1913, non la biblioteca. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:4",
+        "label": "fixture 21",
+        "pageLabel": "p. 1",
+        "summary": "# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:5",
+        "label": "fixture 26",
+        "pageLabel": "p. 1",
+        "summary": "# Puerto Claro · archive 26 The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:6",
+        "label": "fixture 16",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 16 # Puerto Claro · archive 16 Die Schule in Puerto Claro eröffnete ihre Bibliothek 1912. Das Labor eröffnete 1913, nicht die Bibliothek.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:7",
+        "label": "public QLORA001",
+        "pageLabel": "pp. 19–20",
+        "summary": "[p. 19] 2022. [48] G. Qin and J. Eisner. Learning how to ask: Querying lms with mixtures of soft prompts. arXiv preprint arXiv:2104.06599, 2021. [49] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena, Y. Zhou, W. Li, and P. J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. J. Mach. Learn. Res., 21(1), jan 2020. ISSN 1532-4435. [50] V. Sanh, A. Webson, C. Raffel, S. H. Bach, L. Sutawika, Z. Alyafeai, A. Chaffin, A. Stiegler, T. L. Scao, A. Raja, et al. Multitask prompted training enables zero-shot task generalization. arXiv preprint arXiv:2110.08207, 2021. [51] M. Sap, R. LeBras, D. Fried, and Y. Choi. Neural theory-of-mind? on the limits of social intelligence in large lms. arXiv preprint arXiv:2210.13312, 2022. [52] T. L. Scao, A. Fan, C. Akiki, E. Pavlick, S. Ili´c, D. Hesslow, R. Castagné, A. S. Luccioni, F. Yvon, M. Gallé, et al. Bloom: A 176b-parameter open-access multilingual language model. arXiv preprint arXiv:2211.05100, 2022. [53] S. Shaphiro and M. Wilk. An analysis of variance test for normality. Biometrika, 52(3):591–611, 1965. [54] Y.-L. Sung, V. Nair, and C. A. Raffel. Training neural networks with fixed sparse masks. Advances in Neural Information Processing Systems, 34:24193–24205, 2021. [p. 20] R. Taori, I. Gulrajani, T. Zhang, Y. Dubois, X. Li, C. Guestrin, P. Liang, and T. B. Hashimoto. Stanford alpaca: An instruction-following llama model. https://github.com/tatsu-lab/ stanford_alpaca, 2023. [56] R. Thoppilan, D. De Freitas, J. Hall, N. Shazeer, A. Kulshreshtha, H.-T. Cheng, A. Jin, T. Bos, L. Baker, Y. Du, et al. Lamda: Language models for dialog applications. arXiv preprint arXiv:2201.08239, 2022. [57] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Rozière, N. Goyal, E. Hambro,",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A7"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:8",
+        "label": "fixture 25",
+        "pageLabel": "p. 1",
+        "summary": "# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A8"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:9",
+        "label": "fixture 07",
+        "pageLabel": "p. 1",
+        "summary": "Vega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A9"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:10",
+        "label": "public ARENA001",
+        "pageLabel": "p. 12",
+        "summary": "2506 | | 1719 1513 1573 | 1767 1631 2058 1656 1554 1573 1620 1556 1571 1529 1920 1729 1653 1974 1770 1585 1644 1491 1612 1892 1681 1758 1578 1855 1783 1846 1632 1657 1832 1919 1587 | | | 1000 1107 1144 1256 1128 1212 1121 | 1177 1035 1393 1092 1233 1325 1252 1143 1242 1204 1108 1056 1265 1200 1284 1081 1322 1435 1433 1435 1268 | 1316 1163 1176 | | 966 1014 743 441 472 408 667 970 848 786 651 813 825 729 768 525 779 786 627 548 627 476 650 549 442 439 396 428 425 382 323 418 337 326 368 380 357 393 412 489 372 482 535 384 327 326 324 359 405 340 406 932 421 343 366 | 338 480 613 404 409 431 377 439 472 444 341 325 354 539 580 529 481 352 326 657 684 657 626 628 340 504 501 514 566 506 362 537 625 509 465 531 537 364 708 536 563 598 515 394 321 328 483 688 535 439 432 469 662 548 530 516 722 518 640 961 805 724 705 951 874 782 | | | 0 223 228 194 293 285 309 246 186 184 290 301 222 199 293 266 296 278 216 205 245 312 216 134 131 206 191 172 256 288 225 96 149 222 220 184 200 144 111 125 65 248 233 138 103 92 101 89 139 134 120 98 60 97 125 106 123 112 124 56 239 310 | 310 299 301 | | | May 2023 Jun 2023 Jul 2023 Aug 2023 Figure 9.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A10"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:11",
+        "label": "public QLORA001",
+        "pageLabel": "p. 10",
+        "summary": "70.7% | 4.3% | | FLAN v2 | 65B | 4-bit | 41 GB | 37.0% | 59.6% | 48.4% | 4.6% | | Guanaco | 33B | 4-bit | 21 GB | 96.5% | 99.2% | 97.8% 4.4% | | | Open Assistant | 33B | 16-bit | 66 GB | 91.2% | 98.7% | 94.9% | 4.5% | | Alpaca | 33B | 4-bit | 21 GB | 67.2% | 79.7% | 73.6% | 4.2% | | FLAN v2 | 33B | 4-bit | 21 GB | 26.3% | 49.7% | 38.0% | 3.9% | | Vicuna | 13B | 16-bit | 26 GB | 91.2% | 98.7% | 94.9% 4.5% | | | Guanaco | 13B | 4-bit | 10 GB | 87.3% | 93.4% | 90.4% | 5.2% | | Alpaca | 13B | 4-bit | 10 GB | 63.8% | 76.7% | 69.4% | 4.2% | | HH-RLHF | 13B | 4-bit | 10 GB | 55.5% | 69.1% | 62.5% | 4.7% | | Unnatural Instr. | 13B | 4-bit | 10 GB | 50.6% | 69.8% | 60.5% | 4.2% | | Chip2 | 13B | 4-bit | 10 GB | 49.2% | 69.3% | 59.5% | 4.7% | | Longform | 13B | 4-bit | 10 GB | 44.9% | 62.0% | 53.6% | 5.2% | | Self-Instruct | 13B | 4-bit | 10 GB | 38.0% | 60.5% | 49.1% | 4.6% | | FLAN v2 | 13B | 4-bit | 10 GB | 32.4% | 61.2% | 47.0% | 3.6% | | Guanaco | 7B | 4-bit | 5 GB | 84.1% | 89.8% | 87.0% 5.4% | | |",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A11"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:12",
+        "label": "fixture 22",
+        "pageLabel": "p. 1",
+        "summary": "# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A12"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:13",
+        "label": "fixture 23",
+        "pageLabel": "p. 1",
+        "summary": "# Alba · archive 23 O sensor Alba mede turbidez com luz verde de 530 nm. Não mede oxigénio. Deve ser calibrado a cada 30 dias. Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A13"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:14",
+        "label": "fixture 28",
+        "pageLabel": "p. 1",
+        "summary": "Campos: Document · Evidence 1. Document: Alba · archive 28 · Evidence: Der Alba-Sensor misst Trübung mit grünem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage. 2. Document: Source type · Evidence: synthetic archive",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A14"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:15",
+        "label": "fixture 08",
+        "pageLabel": "p. 1",
+        "summary": "Alba: archive 8 The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A15"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:16",
+        "label": "public QLORA001",
+        "pageLabel": "p. 17",
+        "summary": "Jones, N. Joseph, B. Mann, N. DasSarma, et al. A general language assistant as a laboratory for alignment. arXiv preprint arXiv:2112.00861, 2021. [3] S. H. Bach, V. Sanh, Z.-X. Yong, A. Webson, C. Raffel, N. V. Nayak, A. Sharma, T. Kim, M. S. Bari, T. Fevry, et al. Promptsource: An integrated development environment and repository for natural language prompts. arXiv preprint arXiv:2202.01279, 2022. [4] Y. Bai, A. Jones, K. Ndousse, A. Askell, A. Chen, N. DasSarma, D. Drain, S. Fort, D. Ganguli, T. Henighan, et al. Training a helpful and harmless assistant with reinforcement learning from human feedback. arXiv preprint arXiv:2204.05862, 2022. [5] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon, et al. Constitutional ai: Harmlessness from ai feedback. arXiv preprint arXiv:2212.08073, 2022. [6] E. M. Bender, T. Gebru, A. McMillan-Major, and S. Shmitchell. On the dangers of stochastic parrots: Can language models be too big? In Proceedings of the 2021 ACM conference on fairness, accountability, and transparency, pages 610–623, 2021. [7] S. Biderman, H. Schoelkopf, Q. Anthony, H. Bradley, K. O’Brien, E. Hallahan, M. A. Khan, S. Purohit, U. S. Prashanth, E. Raff, et al. Pythia: A suite for analyzing large language models across training and scaling. arXiv preprint arXiv:2304.01373, 2023. [8] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill, et al. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258, 2021. [9] T. Chen, B. Xu, C. Zhang, and C. Guestrin. Training deep nets with sublinear memory cost. arXiv preprint arXiv:1604.06174, 2016. [10] W.-L. Chiang, Z. Li, Z. Lin,",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A16"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:17",
+        "label": "public ARENA001",
+        "pageLabel": "pp. 10–11",
+        "summary": "[p. 10] URL https://aclanthology.org/2023. A diafindings-emnlp.311. | | Karpinska, M., Akoury, N., and Iyyer, M. The perils of | Liu, T.-Y. et al. Learning to rank for information retrieval. | | using Mechanical Turk to evaluate open-ended text gen- | Foundations and Trends® in Information Retrieval, 3(3): | | eration. In Moens, M.-F., Huang, X., Specia, L., and Yih, S. W.-t. (eds.), Proceedings of the 2021 Confer- | 225–331, 2009. | | ence on Empirical Methods in Natural Language Pro- | McInnes, L., Healy, J., and Melville, J. Umap: Uniform | | cessing, pp. 1265–1285, Online and Punta Cana, Domini- | manifold approximation and projection for dimension | | can Republic, November 2021. Association for Computa- | reduction, 2020. | | 97. URL https://aclanthology.org/2021. OpenAI. | Gpt-4 technical report. arXiv preprint | | emnlp-main.97. | arXiv:2303.08774, 2023. | [p. 11] | Oren, Y., Meister, N., Chatterji, N., Ladhak, F., and | 2023.acl-long.754. URL https://aclanthology. | | - | - | | Hashimoto, T. B. Proving test set contamination in black box language models. arXiv preprint arXiv:2310.17623, | org/2023.acl-long.754. bounded random variables by betting. arXiv preprint | | Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, J., and Lowe, R. Training language models to follow theoretic statistics and safe anytime-valid inference. Statistical Science, 38(4):576–601, 2023. Rao, P. V. and Kupper, L. L. Ties in paired-comparison Journal of the American Statistical Association, 62(317): models. Transactions on Machine Learning Research, Szörényi, B., Busa-Fekete, R., Paul, A., and Hüllermeier, E. Online rank elicitation for plackettluce: A dueling bandits approach. In Cortes, C., R. (eds.), Advances in Neural Information Processing Systems, volume 28. Curran Associates, Inc., 2015. URL https://proceedings.neurips. pdf. tuned chat models. arXiv preprint arXiv:2307.09288, and applications.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A17"
+      }
+    ]
+  },
+  {
+    "reviewId": "c4f92290f2c998e5",
+    "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+    "answer": null,
+    "unavailable": true,
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+    "sources": [
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+        "label": "fixture 13",
+        "pageLabel": "p. 1",
+        "summary": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0"
+      }
+    ]
+  },
+  {
+    "reviewId": "7c43a333fb097a5b",
+    "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+    "answer": null,
+    "unavailable": true,
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+    "sources": [
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+        "label": "fixture 13",
+        "pageLabel": "p. 1",
+        "summary": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0"
+      }
+    ]
+  },
+  {
+    "reviewId": "f485d62b997b203c",
+    "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+    "answer": null,
+    "unavailable": true,
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceHash": "92015a84f8c61948e2c2ca8b474a8424663e9eac48fb878a05ee3fb8e249041f",
+    "sources": [
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:0",
+        "label": "fixture 07",
+        "pageLabel": "p. 1",
+        "summary": "Vega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A0"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:1",
+        "label": "fixture 13",
+        "pageLabel": "p. 1",
+        "summary": "Alba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A1"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:2",
+        "label": "fixture 12",
+        "pageLabel": "p. 1",
+        "summary": "Vega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A2"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:3",
+        "label": "fixture 27",
+        "pageLabel": "p. 1",
+        "summary": "Campos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A3"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:4",
+        "label": "fixture 17",
+        "pageLabel": "p. 1",
+        "summary": "Vega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A4"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:5",
+        "label": "fixture 02",
+        "pageLabel": "p. 1",
+        "summary": "Vega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A5"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:6",
+        "label": "fixture 22",
+        "pageLabel": "p. 1",
+        "summary": "# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A6"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:7",
+        "label": "fixture 19",
+        "pageLabel": "p. 1",
+        "summary": "# Bruma · archive 19 La encuesta Bruma incluyó 240 personas de seis pueblos. El intervalo de confianza fue del 95%. La mediana fue 18 y la media 24; no son equivalentes. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. ## Archive section 2 Bruma field log 1: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 1 contains no additional outcome claim. ## Archive section 3 Bruma field log 2: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 2 contains no additional outcome claim. ## Archive section 4 Bruma field log 3: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 3 contains no additional outcome claim. ## Archive section 5 Bruma field log 4: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 4 contains no additional outcome claim. ## Archive section 6 Bruma field log 5: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 5 contains no additional outcome claim. ## Archive section 7 Bruma field log 6: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 6 contains no additional outcome claim. ## Archive section 8 Bruma field log 7: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 7 contains no additional outcome",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A7"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:8",
+        "label": "fixture 21",
+        "pageLabel": "p. 1",
+        "summary": "# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A8"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:9",
+        "label": "fixture 11",
+        "pageLabel": "p. 1",
+        "summary": "Puerto Claro · archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laboratório abriu em 1913, não a biblioteca.",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A9"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:10",
+        "label": "public LORA0001",
+        "pageLabel": "p. 12",
+        "summary": "v | Random Gaussian | | 16 | | 0.4 | | 40 | | 0.2 | | 1 5 | 1 5 | 1 5 | | 10 15 20 25 30 34 39 44 49 54 59 | 10 15 20 25 30 34 39 44 49 54 59 | 10 15 20 25 30 34 39 44 49 54 59 | | j Figure 4: Left and Middle: Normalized subspace similarity between the column vectors of A r =64 from two random seeds, for both ∆ W q and ∆ W v in the 48-th layer. Right: the same heat-map how “large” is ∆ W comparing to its corresponding directions in W? This can shed light on the To answer these questions, we project W onto the r -dimensional subspace of ∆ W by computing U > W V >, with U / V being the left/right singular-vector matrix of ∆ W. Then, we compare the Frobenius norm between ‖ U > W V > ‖ F and ‖ W ‖ F. As a comparison, we also compute ‖ U > W V > ‖ F by replacing U, V with the top r singular vectors of W or a random matrix. | j | j | | | ∆ W q W q Random ∆ W q | W q Random | | \\|\\| U > W q V > \\|\\| F = 0.32 21.67 | 0.02 | 1.90 37.71 0.33 | | \\|\\| W q \\|\\| F = 61. 95 Table 7: The Frobenius norm of U > W q V > where U and V are the left/right top r singular vector directions of",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A10"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:11",
+        "label": "public RWKV0001",
+        "pageLabel": "p. 22",
+        "summary": "10 3 10 2 | 10 3 10 2 10 3 | | Compute (exaFLOP) | Compute (exaFLOP) | Compute (exaFLOP) | | (a) ARC (Challenge) | (b) ARC (Easy) | (c) BoolQ | | 100 | 100 | 100 | | 80 | 80 | 80 | | 60 | 60 | 60 | | Accuracy | Accuracy | Accuracy | | 40 | 40 | 40 | | 20 | BLOOM 20 | 20 | | 0 | 0 | 0 | | 10 2 | 10 3 10 2 | 10 3 10 2 10 3 | | Compute (exaFLOP) | Compute (exaFLOP) | Compute (exaFLOP) | | (d) COPA | (e) HeadQA | (f) HellaSwag | | 100 | 100 | 100 | | 80 | 80 | 80 | | 60 | 60 | 60 | | Accuracy | Accuracy | Accuracy | | 40 | 40 | 40 | | 20 | BLOOM 20 | 20 | | 0 | 0 | 0 | | 10 2 | 10 3 10 2 | 10 3 10 2 10 3 | | Compute (exaFLOP) | Compute (exaFLOP) | Compute (exaFLOP) | | (g) LAMBADA (OpenAI) | (h) OpenBookQA | (i) PiQA | | 100 | 100 | 100 | | 80 | 80 | 80 | | 60 | 60 | 60 | | Accuracy | Accuracy | Accuracy | | 40 | 40 | 40 | | 20 | BLOOM 20 | 20 | | 0 | 0 | 0 | | 10 2 | 10 3 10 2 | 10 3 10 2 10 3 | | Compute (exaFLOP) | Compute (exaFLOP) |",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A11"
+      },
+      {
+        "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-calculation:12",
+        "label": "public SAM00001",
+        "pageLabel": "pp. 7–8",
+        "summary": "[p. 7] ±0.9 Fig. 8) that, to our knowledge, do not appear in SA-1B. masculine 55.7 ±1.7 90.1 ±0.6 2 51.5 ±1.4 91.1 ±0.5 Our experiments begin by testing the core goal of perceived age group 3 52.2 ±1.9 91.4 ±0.7 promptable segmentation: producing a valid mask from any older 62.9 ±6.7 92.6 ±1.3 4 51.5 ±2.7 91.7 ±1.0 prompt. We emphasize the challenging scenario of a single middle 54.5 ±1.3 90.2 ±0.5 5 52.4 ±4.2 92.5 ±1.4 foreground point prompt, since it is more likely to be amyoung 54.2 ±2.2 91.2 ±0.7 6 56.7 ±6.3 91.2 ±2.4 biguous than other more specific prompts. Next, we present ceived gender presentation, age group, and skin tone. 95% confidence intervals are shown. Within each grouping, all confidence intervals overlap except older vs. middle. [p. 8] Fairness in segmenting people. We investigate potential fairness concerns across perceived gender presentation, perceived age group, and perceived skin tone by measuring the performance discrepancy of SAM between groups. We use the More Inclusive Annotations for People (MIAP) [87] dataset for gender presentation and age and a proprietary dataset for skin tone (see §C). Our evaluation uses simulated interactive segmentation with random sampling of 1 and 3 points (see §D). Table 2 (top left) shows results for perceived gender presentation. We note that females have been shown to be underrepresented in detection and segmentation datasets [115], but observe that SAM performs similarly across groups. We repeat the analysis for perceived age in Table 2 (bottom left), noting that those who are perceived to be younger and older have been shown to be underrepresented in large-scale datasets [110]. SAM performs best on those who are perceived older (although the confidence interval is",
+        "reason": "source",
+        "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-calculation%3A12"
+      }
+    ]
+  }
+]

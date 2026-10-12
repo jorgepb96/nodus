@@ -1,0 +1,451 @@
+{
+  "root": "/private/tmp/nodus-research-vBBRQu",
+  "proof": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true
+  },
+  "completed": true,
+  "modelCalls": 0,
+  "productionFixtures": false,
+  "notebooks": {
+    "passed": true,
+    "collections": 3,
+    "sources": 3,
+    "preparedPassages": 1,
+    "layouts": [
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      }
+    ]
+  },
+  "verification": {
+    "passed": true,
+    "default": "off",
+    "enabled": "structured",
+    "disabled": "off",
+    "modelCalls": 0
+  },
+  "activity": {
+    "passed": true,
+    "mode": "deterministic IPC/UI fixture, no live model or Zotero calls",
+    "turns": 4,
+    "layouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 224.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 293.5
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 224.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 293.5
+        }
+      }
+    ],
+    "webLayouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": 45.9453125,
+            "bottom": 84.7890625
+          },
+          {
+            "layer": "profiles",
+            "top": 85.7890625,
+            "bottom": 124.6328125
+          },
+          {
+            "layer": "ideas",
+            "top": 125.6328125,
+            "bottom": 164.4765625
+          },
+          {
+            "layer": "nodus",
+            "top": 165.4765625,
+            "bottom": 204.3203125
+          },
+          {
+            "layer": "context",
+            "top": 205.3203125,
+            "bottom": 235.3203125
+          },
+          {
+            "layer": "graph",
+            "top": 236.3203125,
+            "bottom": 266.3203125
+          },
+          {
+            "layer": "zotero",
+            "top": 267.3203125,
+            "bottom": 306.1640625
+          },
+          {
+            "layer": "attachments",
+            "top": 307.1640625,
+            "bottom": 337.1640625
+          },
+          {
+            "layer": "tools",
+            "top": 338.1640625,
+            "bottom": 368.1640625
+          },
+          {
+            "layer": "web",
+            "top": 369.1640625,
+            "bottom": 1183.0390625
+          },
+          {
+            "layer": "response",
+            "top": 1184.0390625,
+            "bottom": 1214.0390625
+          }
+        ],
+        "webBottom": 1183.0390625,
+        "detailBottom": 1177.0390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 454,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -451.5546875,
+            "bottom": -412.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -411.7109375,
+            "bottom": -372.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -371.8671875,
+            "bottom": -333.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -332.0234375,
+            "bottom": -293.1796875
+          },
+          {
+            "layer": "context",
+            "top": -292.1796875,
+            "bottom": -262.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -261.1796875,
+            "bottom": -231.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -230.1796875,
+            "bottom": -191.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -190.3359375,
+            "bottom": -160.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -159.3359375,
+            "bottom": -129.3359375
+          },
+          {
+            "layer": "web",
+            "top": -128.3359375,
+            "bottom": 685.5390625
+          },
+          {
+            "layer": "response",
+            "top": 686.5390625,
+            "bottom": 716.5390625
+          }
+        ],
+        "webBottom": 685.5390625,
+        "detailBottom": 679.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 242,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -503.5546875,
+            "bottom": -464.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -463.7109375,
+            "bottom": -424.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -423.8671875,
+            "bottom": -385.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -384.0234375,
+            "bottom": -345.1796875
+          },
+          {
+            "layer": "context",
+            "top": -344.1796875,
+            "bottom": -314.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -313.1796875,
+            "bottom": -283.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -282.1796875,
+            "bottom": -243.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -242.3359375,
+            "bottom": -212.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -211.3359375,
+            "bottom": -181.3359375
+          },
+          {
+            "layer": "web",
+            "top": -180.3359375,
+            "bottom": 633.5390625
+          },
+          {
+            "layer": "response",
+            "top": 634.5390625,
+            "bottom": 664.5390625
+          }
+        ],
+        "webBottom": 633.5390625,
+        "detailBottom": 627.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 454,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -663.5546875,
+            "bottom": -624.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -623.7109375,
+            "bottom": -584.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -583.8671875,
+            "bottom": -545.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -544.0234375,
+            "bottom": -505.1796875
+          },
+          {
+            "layer": "context",
+            "top": -504.1796875,
+            "bottom": -474.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -473.1796875,
+            "bottom": -443.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -442.1796875,
+            "bottom": -403.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -402.3359375,
+            "bottom": -372.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -371.3359375,
+            "bottom": -341.3359375
+          },
+          {
+            "layer": "web",
+            "top": -340.3359375,
+            "bottom": 473.5390625
+          },
+          {
+            "layer": "response",
+            "top": 474.5390625,
+            "bottom": 504.5390625
+          }
+        ],
+        "webBottom": 473.5390625,
+        "detailBottom": 467.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 242,
+        "scrollHeight": 1179
+      }
+    ],
+    "requestFiltering": true,
+    "simultaneousOperations": true,
+    "keyboard": true,
+    "minimizeExpand": true,
+    "neverClosed": true,
+    "failure": true,
+    "cancellation": true
+  },
+  "pdf": {
+    "passed": true,
+    "notebookId": "810ec5dd-ee52-4cc3-9c86-436a3c207ef6",
+    "physicalPage": 1,
+    "originalRead": {
+      "passed": true,
+      "noCampaignCreated": true,
+      "physicalPage": 1
+    },
+    "marker": "PACKAGED73"
+  },
+  "paths": {
+    "userData": "/private/tmp/nodus-research-vBBRQu/profile",
+    "sessionData": "/private/tmp/nodus-research-vBBRQu/sessions",
+    "temp": "/private/tmp/nodus-research-vBBRQu/tmp",
+    "appData": "/private/tmp/nodus-research-vBBRQu/app-data",
+    "downloads": "/private/tmp/nodus-research-vBBRQu/downloads"
+  },
+  "databaseOpens": 9
+}

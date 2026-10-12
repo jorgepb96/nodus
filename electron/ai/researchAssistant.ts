@@ -319,9 +319,17 @@ async function answerResearchChatTurn(request: ResearchChatRequest, signal: Abor
   // A route-fix correction answers the checker, not the literature: it makes no new claims and
   // must not be held to the citation contract, or a valid correction is thrown away for citing
   // nothing. The original request still supplied the target and context.
-  const citationRequired = needsCitation && !isRouteFixPrompt(execution.question ?? '');
-  const grounded = !execution.skills.length && !attachments.text && !attachments.images?.length && researchChatNeedsGrounding(user);
+  const verification = getSettings().researchAnswerVerification ?? 'off';
+  const grounded = verification !== 'off' && !execution.skills.length && !attachments.text && !attachments.images?.length && researchChatNeedsGrounding(user);
+  const citationRequired = needsCitation && !isRouteFixPrompt(execution.question ?? '') && !(grounded && verification === 'structured');
   const opts = { corpusContext: !!requestNotebookScope(request) && !attachments.images?.length, system: system + attachments.system, user: user + attachments.text, images: attachments.images, englishImagePrompts: execution.skills.some(skill => skillHasCapability(skill, 'image')), temperature: 0.2, ...generationOptions, signal };
+  if (grounded && verification === 'structured') {
+    const answer = finalizeAnswer(await groundResearchChatAnswer('', user, execution.question ?? '', request.model,
+      getSettings().promptLanguage ?? 'es', signal, { structured: true }), local, user);
+    signal.throwIfAborted();
+    validateNotebookRequest(request);
+    return { answer: rememberNotebookTurn(request, answer), stats };
+  }
   let answer = '';
   for (let attempt = 0; attempt < CHAT_CITATION_ATTEMPTS; attempt += 1) {
     signal.throwIfAborted();
@@ -387,19 +395,25 @@ async function streamResearchChatTurn(
   validateNotebookRequest(request);
   // A route-fix correction answers the checker, not the literature; do not hold it to the
   // citation contract (see answerResearchChat).
-  const citationRequired = needsCitation && !isRouteFixPrompt(execution.question ?? '');
   // Peer opinions cannot enlarge the set of citable source ids.
   const evidence = JSON.parse(user);
   delete evidence.council_assessments;
   const sourceContext = council?.assessments ? JSON.stringify(evidence) : user;
-  const grounded = !council?.member && !execution.skills.length && !attachments.text && !attachments.images?.length && researchChatNeedsGrounding(sourceContext);
+  const verification = getSettings().researchAnswerVerification ?? 'off';
+  const grounded = verification !== 'off' && !council?.member && !execution.skills.length && !attachments.text && !attachments.images?.length && researchChatNeedsGrounding(sourceContext);
+  const structured = grounded && verification === 'structured';
+  const citationRequired = needsCitation && !isRouteFixPrompt(execution.question ?? '') && !structured;
   const opts = { corpusContext: !!requestNotebookScope(request) && !attachments.images?.length, system: system + attachments.system, user: user + attachments.text, images: attachments.images, englishImagePrompts: execution.skills.some(skill => skillHasCapability(skill, 'image')), temperature: 0.2, ...generationOptions, signal };
   // Documentary prose is held until its claims have been checked. Thinking can
   // still stream; cancellation must never publish the unchecked partial draft.
   const deltas: typeof onDelta = (text, kind) => { if (!grounded || kind === 'reasoning') onDelta(text, kind); };
-  const write = () => researchActivityStep('response', 'write', () => withResearchAttachmentFallback(attachments, opts, options => completeTextStream(options, deltas, request.model, signal)), request.model?.model);
+  const write = () => researchActivityStep('response', 'write', () => structured
+    ? groundResearchChatAnswer('', sourceContext, execution.question ?? '', request.model, getSettings().promptLanguage ?? 'es', signal, { structured: true })
+    : withResearchAttachmentFallback(attachments, opts, options => completeTextStream(options, deltas, request.model, signal)), request.model?.model);
   // Streamed thinking is provisional; the retry repaints from nothing.
-  let answer = await retryOnceWhenCutOff(write, { isCutOff: error => error instanceof AiError && error.code === 'output_truncated', beforeRetry: () => onDelta('', 'replace'), signal });
+  let answer: string;
+  try { answer = await retryOnceWhenCutOff(write, { isCutOff: error => error instanceof AiError && error.code === 'output_truncated', beforeRetry: () => onDelta('', 'replace'), signal }); }
+  catch (error) { if (grounded && signal?.aborted) return { answer: '', stats, aborted: true }; throw error; }
   answer = await researchActivityStep('response', 'citations', () => finalizeAnswer(answer, local, sourceContext));
   // A user-triggered stop ends the turn with the text that already streamed. Running
   // the citation-recovery resample or the skill tools now would either throw an
@@ -421,7 +435,7 @@ async function streamResearchChatTurn(
   if (citationRequired && !attachments.text && extractCitationRefs(answer).length === 0 && !splitChatVisuals(answer).some(part => part.kind !== 'markdown')) {
     throw new Error('El modelo no devolvió ninguna cita verificable del contexto tras tres intentos idénticos.');
   }
-  if (grounded) {
+  if (grounded && !structured) {
     try {
       answer = finalizeAnswer(await researchActivityStep('response', 'citations', () => groundResearchChatAnswer(answer, sourceContext,
         execution.question ?? '', request.model, getSettings().promptLanguage ?? 'es', signal)), local, sourceContext);
@@ -867,7 +881,7 @@ function buildChatSystemPrompt(compact: boolean, language: PromptLanguage = getS
     'For a request specifically about the corpus, explain a real evidence gap briefly. For a general exercise or creative request, apply your knowledge and construct the answer; the sources do not need to contain the worked solution or output format.',
     'Chat skills are output utilities (drawings, figures, code), never the way the library is searched: Nodus researches the library before you write, and the context says what it consulted.',
     'Write a synthesis: group what the sources share and contrast where they differ instead of giving each source its own section.',
-    RESEARCH_CHAT_PRECISION_RULES,
+    ...(getSettings().researchAnswerVerification && getSettings().researchAnswerVerification !== 'off' ? [RESEARCH_CHAT_PRECISION_RULES] : []),
     ...(compact ? prompt.citationRulesCompact : prompt.citationRules),
   ].join('\n');
 }

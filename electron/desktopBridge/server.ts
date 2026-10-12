@@ -33,6 +33,9 @@ import {desktopPairingQR} from '../../shared/desktopPairingQR';
 import {desktopBridgeOrigins} from '../../shared/desktopBridgeOrigins';
 
 export const DESKTOP_BRIDGE_PROTOCOL = '/bridge/v1' as const;
+// A bounded 20 MB image becomes up to 28 MB of base64 plus its publication
+// metadata. Only the provider-free map image publication receives this limit.
+const MOBILE_MAP_IMAGE_JOB_MAX_BYTES = 28_128_000;
 export const DESKTOP_BRIDGE_DOMAINS = [
   'corpus',
   'writing', 'research-generation',
@@ -419,9 +422,11 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     try {
       if (['POST', 'DELETE'].includes(request.method || '') && !jobRoute[2]) {
         if (request.method === 'DELETE' && !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
-        const input = await body(request, MOBILE_CHAT_MAX_BYTES+128*1024);
+        const input = await body(request, Math.max(MOBILE_CHAT_MAX_BYTES+128*1024, MOBILE_MAP_IMAGE_JOB_MAX_BYTES));
         const method = String(input.method || ''); authorizeMobileOperation(pairing.domains, method);
-        if(method!=='streamMobileCompanionChat'&&Buffer.byteLength(JSON.stringify(input),'utf8')>4*1024*1024)throw new Error('request_too_large');
+        const requestLimit = method === 'saveMobileWorldMapImage' ? MOBILE_MAP_IMAGE_JOB_MAX_BYTES
+          : method === 'streamMobileCompanionChat' ? MOBILE_CHAT_MAX_BYTES+128*1024 : 4*1024*1024;
+        if(Buffer.byteLength(JSON.stringify(input),'utf8')>requestLimit)throw new Error('request_too_large');
         if (!MOBILE_JOB_OPERATIONS.has(method) || !Array.isArray(input.args) || input.args.length > 12) throw new Error('invalid_job');
         if(method==='runMobileSpaceAction')validateCompanionActionJob(input.args,pairing.domains,input.idempotencyKey);
         const intent = { deviceGrant: pairing.id, vaultId, domains: pairing.domains, method, args: input.args, idempotencyKey: String(input.idempotencyKey || '') };

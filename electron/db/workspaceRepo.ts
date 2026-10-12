@@ -290,9 +290,13 @@ export function restoreWorkspaceNoteVersion(noteId: string, versionId: string): 
 // ── Comentarios anclados ─────────────────────────────────────────────────────────
 
 export function createWorkspaceAnnotation(noteId: string, input: StudyAnnotationInput): StudyAnnotation {
+  return createWorkspaceAnnotationWithIdentity(noteId, input, crypto.randomUUID());
+}
+
+/** Owning mobile receipt transaction supplies a stable annotation identity. */
+export function createWorkspaceAnnotationWithIdentity(noteId: string, input: StudyAnnotationInput, id: string): StudyAnnotation {
   const db = getDb();
   noteRow(noteId);
-  const id = crypto.randomUUID();
   const timestamp = now();
   const position = Number((db
     .prepare('SELECT COALESCE(MAX(position), -1) + 1 AS value FROM note_annotations WHERE note_id = ?')

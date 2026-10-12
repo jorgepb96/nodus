@@ -152,7 +152,62 @@ try {
     assert.equal(await scoped(() => ideas.getIdea(rejected.creation.globalId)), null, 'The owning note and authored idea roll back together');
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
   }
-  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,companionIdeaVisibleInAutoCataloguesAndBothGraphs:true,trashAndRestorePreserveAuthoredIdentity:true,derivedCounterUnaffected:true,providerCalls: 0, releaseApproved: false }));
+  for (const ownerId of [note.id, ideaCreation.noteId]) {
+    const base = await scoped(() => workspace.getWorkspaceNoteEditorData(ownerId));
+    const annotationId = randomUUID();
+    const packet = (action, expectedAnnotation, patch, revision = base.revision) => ({id: randomUUID(), noteId: ownerId, input: {title: 'Must never replace owner title', contentMarkdown: '', expectedRevision: revision}, command: {action, annotationId, expectedAnnotation, ...(patch ? {patch} : {})}});
+    const create = packet('annotationCreate', null, {from: 0, to: 5, selectedText: 'Exact', comment: 'Offline Scriptor comment', locked: true});
+    const created = await applyWorkspaceEdit(first.id, 'phone-grant', create);
+    assert.equal(created.commandResult.id, annotationId);
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', create), created);
+    assert.equal(created.editorData.revision, base.revision);
+    assert.deepEqual(created.editorData.nativeDocument, base.nativeDocument);
+    assert.deepEqual(created.editorData.academicMetadata, base.academicMetadata);
+    assert.deepEqual(created.editorData.versions, base.versions);
+    assert.equal(created.editorData.documentTitle, base.documentTitle);
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM note_annotations WHERE id=?').get(annotationId).n), 1);
+    const neighbor = await scoped(() => workspace.createWorkspaceAnnotation(ownerId, {from: 0, to: 1, selectedText: 'E', comment: 'Unrelated note annotation'}));
+    const update = packet('annotationUpdate', created.editorData.annotations.find(a => a.id === annotationId), {comment: 'Edited locked Scriptor comment', pinned: true, resolved: true});
+    const updated = await applyWorkspaceEdit(first.id, 'phone-grant', update);
+    assert.equal(updated.commandResult.locked, true); assert.equal(updated.commandResult.pinned, true); assert.ok(updated.commandResult.resolvedAt);
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', update), updated);
+    assert.equal(updated.editorData.annotations.find(a => a.id === neighbor.id).comment, 'Unrelated note annotation');
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', packet('annotationUpdate', created.commandResult, {comment: 'Stale overwrite'})), error => error.code === 'annotation_conflict' && error.remote.annotations.some(a => a.comment === 'Edited locked Scriptor comment'));
+    const removal = packet('annotationDelete', updated.editorData.annotations.find(a => a.id === annotationId));
+    const removed = await applyWorkspaceEdit(first.id, 'phone-grant', removal);
+    assert.equal(removed.commandResult, null); assert.ok(removed.editorData.annotations.some(a => a.id === neighbor.id));
+    assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', removal), removed);
+    const canonical = await scoped(() => workspace.getWorkspaceNoteEditorData(ownerId));
+    await scoped(() => workspace.updateWorkspaceNote(ownerId, {title: canonical.documentTitle + ' Mac', contentMarkdown: canonical.contentMarkdown, nativeDocument: canonical.nativeDocument, schemaVersion: canonical.schemaVersion, academicMetadata: canonical.academicMetadata, style: canonical.style, expectedRevision: canonical.revision}));
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', {...create, id: randomUUID(), command: {...create.command, annotationId: randomUUID()}}), error => error.code === 'revision_conflict');
+    await assert.rejects(applyWorkspaceEdit(other.id, 'phone-grant', {...create, id: randomUUID()}), /document_unavailable/);
+    const malformed = packet('annotationCreate', null, {from: 1.5, to: 8, selectedText: 'Exact', comment: 'Invalid'}, canonical.revision + 1);
+    await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', malformed), /invalid_workspace_annotation/);
+    assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(malformed.id).n), 0);
+    if (ownerId === ideaCreation.noteId) {
+      const actualIdea = await scoped(() => ideas.getIdea(ideaCreation.creation.globalId));
+      assert.equal(actualIdea.label, base.documentTitle + ' Mac');
+      assert.equal(actualIdea.statement, base.contentMarkdown);
+    }
+  }
+  const versionOwner = await scoped(() => notes.createNote({title: 'Version owner', content: 'Initial body'}));
+  const versionInitial = await scoped(() => workspace.getWorkspaceNoteEditorData(versionOwner.id));
+  const versionNative = markdownToBlockNote(markdown);
+  const academicMetadata = {formatVersion: 1, style: 'chicago-author-date', locale: 'en-US', placement: 'endnote', notes: {}, evidence: [{id: 'stable-evidence', blockId: versionNative[0].id, text: 'Original evidence', status: 'checked'}]};
+  const originalVersionPacket = {id: randomUUID(), noteId: versionOwner.id, input: {title: 'Structured original version', contentMarkdown: markdown, nativeDocument: versionNative, schemaVersion: 2, academicMetadata, style: {fontFamily: 'serif'}, expectedRevision: versionInitial.revision}};
+  const originalVersion = await applyWorkspaceEdit(first.id, 'phone-grant', originalVersionPacket);
+  const laterVersion = await applyWorkspaceEdit(first.id, 'phone-grant', {...originalVersionPacket, id: randomUUID(), input: {...originalVersionPacket.input, title: 'Later version', contentMarkdown: 'Changed body', nativeDocument: markdownToBlockNote('Changed body'), academicMetadata: {...academicMetadata, evidence: []}, expectedRevision: originalVersion.editorData.revision}});
+  const actualVersion = laterVersion.editorData.versions.find(item => item.title === 'Structured original version');
+  assert.ok(actualVersion, 'Restoration uses an actual downloaded canonical version');
+  const restorePacket = {id: randomUUID(), noteId: versionOwner.id, input: {title: actualVersion.title, contentMarkdown: actualVersion.contentMarkdown, nativeDocument: actualVersion.nativeDocument, schemaVersion: actualVersion.schemaVersion, academicMetadata: actualVersion.academicMetadata, style: actualVersion.style, reason: 'restore', expectedRevision: laterVersion.editorData.revision}};
+  const restoredVersion = await applyWorkspaceEdit(first.id, 'phone-grant', restorePacket);
+  assert.equal(restoredVersion.editorData.documentTitle, 'Structured original version');
+  assert.deepEqual(restoredVersion.editorData.nativeDocument, actualVersion.nativeDocument);
+  assert.deepEqual(restoredVersion.editorData.academicMetadata, actualVersion.academicMetadata);
+  assert.deepEqual(restoredVersion.editorData.style, actualVersion.style);
+  assert.deepEqual(await applyWorkspaceEdit(first.id, 'phone-grant', restorePacket), restoredVersion);
+  assert.equal((await scoped(() => workspace.getWorkspaceNoteEditorData(versionOwner.id))).versions.length, restoredVersion.editorData.versions.length);
+  console.log(JSON.stringify({ passed: true, structuredContentPreserved: true, atomicCanonicalReceipt: true, retryWithoutRevisionOrHistoryDuplicate: true, changedPayloadRefused: true, conflictPreservesBothDocuments: true, lockedFragmentRollback: true, isolatedVaults: 2, reopenedReceipt: true, stableCreationIdentity: true,creationRollbackForInvalidStructureAndCollection: true,authoredIdeaOwnershipAndIdentity:true,authoredIdeaRollbackAndReplay:true,companionIdeaVisibleInAutoCataloguesAndBothGraphs:true,trashAndRestorePreserveAuthoredIdentity:true,derivedCounterUnaffected:true,durableWorkspaceAnnotations:true,manualIdeaComments:true,downloadedVersionNativeRestore:true,restoreReceiptReplay:true,annotationSourceAndTargetConflicts:true,lockedCommentDesktopSemantics:true,unrelatedCommentsPreserved:true,providerCalls: 0, releaseApproved: false }));
 } finally {
   try { database?.closeDb(); } catch {}
   fs.rmSync(root, { recursive: true, force: true });

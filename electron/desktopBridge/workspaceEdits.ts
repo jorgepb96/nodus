@@ -1,13 +1,14 @@
+import { parseMobileAnnotationCommand, type MobileAnnotationCommand } from './mobileAnnotationEdits';
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { withOwningVault } from '../vaults/vaultRegistry';
 import { createNoteWithIdentity, getNote } from '../db/notesRepo';
 import { createManualIdeaWithIdentity } from '../db/manualIdeasRepo';
 import { getIdea } from '../db/ideasRepo';
-import { getWorkspaceNoteEditorData, updateWorkspaceNote } from '../db/workspaceRepo';
+import { getWorkspaceNoteEditorData, updateWorkspaceNote, createWorkspaceAnnotationWithIdentity, updateWorkspaceAnnotation, deleteWorkspaceAnnotation } from '../db/workspaceRepo';
 import { canonicalJson } from '../../shared/canonicalJson';
 import { MOBILE_WORKSPACE_EDIT_MAX_BYTES } from '../../shared/mobileWorkspace';
-import type { StudyDocUpdateInput } from '../../shared/studyEditor';
+import type { StudyDocUpdateInput, StudyAnnotationInput } from '../../shared/studyEditor';
 import { withMobileOperation } from './executionBoundary';
 import { invalidateLiveCorpus } from './liveCorpus';
 
@@ -22,7 +23,7 @@ const fields = new Set(['academicMetadata', 'nativeDocument', 'schemaVersion', '
 export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: unknown): Promise<unknown> {
   if (Buffer.byteLength(JSON.stringify(raw) ?? '', 'utf8') > MOBILE_WORKSPACE_EDIT_MAX_BYTES) throw new WorkspaceEditFailure('workspace_edit_too_large');
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new WorkspaceEditFailure('invalid_workspace_edit');
-  const { id, noteId, input, creation } = raw as { id?: unknown; noteId?: unknown; input?: unknown; creation?: unknown };
+  const { id, noteId, input, creation, command } = raw as { id?: unknown; noteId?: unknown; input?: unknown; creation?: unknown; command?: unknown };
   if (typeof id !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id) ||
       typeof noteId !== 'string' || !noteId || noteId.length > 128 ||
       !input || typeof input !== 'object' || Array.isArray(input)) throw new WorkspaceEditFailure('invalid_workspace_edit');
@@ -40,7 +41,12 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
       !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(noteId) ||
       value.expectedRevision !== 0 || !Array.isArray(value.nativeDocument) || value.schemaVersion !== 2))
     throw new WorkspaceEditFailure('invalid_workspace_creation');
-  const payload = createHash('sha256').update(canonicalJson({ noteId, input: value, ...(create ? { creation: create } : {}) })).digest('hex');
+  let annotation: MobileAnnotationCommand | undefined;
+  if (command !== undefined) {
+    if (create) throw new WorkspaceEditFailure('invalid_workspace_annotation');
+    try { annotation = parseMobileAnnotationCommand(command); } catch { throw new WorkspaceEditFailure('invalid_workspace_annotation'); }
+  }
+  const payload = createHash('sha256').update(canonicalJson({ noteId, input: value, ...(create ? { creation: create } : {}), ...(annotation ? {command: annotation} : {}) })).digest('hex');
   const result = await withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => {
     const db = getDb();
     db.exec('CREATE TABLE IF NOT EXISTS desktop_workspace_edit_receipts (grant_id TEXT NOT NULL, request_id TEXT NOT NULL, payload_hash TEXT NOT NULL, result_json TEXT NOT NULL, applied_at TEXT NOT NULL, PRIMARY KEY(grant_id,request_id))');
@@ -60,9 +66,19 @@ export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: 
       if (!note || note.trashedAt) throw new WorkspaceEditFailure('document_unavailable');
       const current = withMobileOperation(() => getWorkspaceNoteEditorData(noteId));
       if (!create && current.revision !== value.expectedRevision) throw new WorkspaceEditFailure('revision_conflict', current);
-      const saved = withMobileOperation(() => updateWorkspaceNote(noteId, { ...value, expectedRevision: current.revision }));
+      let annotationResult: unknown;
+      if (annotation) {
+        const existing = current.annotations.find(item => item.id === annotation.annotationId) ?? null;
+        if (canonicalJson(existing) !== canonicalJson(annotation.expectedAnnotation)) throw new WorkspaceEditFailure('annotation_conflict', current);
+        const owner = db.prepare('SELECT note_id FROM note_annotations WHERE id=?').get(annotation.annotationId) as {note_id:string}|undefined;
+        if (owner && owner.note_id !== noteId) throw new WorkspaceEditFailure('annotation_unavailable');
+        if (annotation.action === 'annotationCreate') annotationResult = withMobileOperation(() => createWorkspaceAnnotationWithIdentity(noteId, annotation.patch as StudyAnnotationInput, annotation.annotationId));
+        else if (annotation.action === 'annotationUpdate') annotationResult = withMobileOperation(() => updateWorkspaceAnnotation(annotation.annotationId, annotation.patch!));
+        else { withMobileOperation(() => deleteWorkspaceAnnotation(annotation.annotationId)); annotationResult = null; }
+      }
+      const saved = annotation ? {...getNote(noteId)!, editorRevision: current.revision} : withMobileOperation(() => updateWorkspaceNote(noteId, { ...value, expectedRevision: current.revision }));
       const editorData = withMobileOperation(() => getWorkspaceNoteEditorData(noteId));
-      const committed = { id, note: saved, editorData };
+      const committed = { id, note: saved, editorData, ...(annotation ? {commandResult: annotationResult} : {}) };
       db.prepare('INSERT INTO desktop_workspace_edit_receipts VALUES(?,?,?,?,?)').run(grantId, id, payload, JSON.stringify(committed), new Date().toISOString());
       return committed;
     })();

@@ -11,6 +11,7 @@ import type {
 import { SCHEMA_VERSION } from '../db/migrations';
 import { getSettings, updateSettings } from '../db/settingsRepo';
 import { getBackupPassword, getBackupRecoveryKey, lockedApiKeyProviders, setBackupRecoveryKey } from '../secrets/secretStore';
+import { harnessKeysMode } from '../secrets/safeStorageGate';
 import { generateBackupPassword } from './backupCrypto';
 import { createBackupArchiveFile } from './exportImport';
 import { verifyBackupFileInUtility } from './backupUtilityHost';
@@ -798,6 +799,9 @@ export async function runPreUpdateBackupNow(currentVersion: string, targetVersio
  * never blocks the UI.
  */
 export async function maybeRunAutoBackup(appVersion: string): Promise<AutoBackupResult | null> {
+  // A test-harness launch (see safeStorageGate) reads no stored secrets, so the backup password
+  // looks missing; it must neither back up nor record a failure in the user's settings.
+  if (harnessKeysMode()) return null;
   const settings = getSettings();
   if (!settings.autoBackupEnabled) return null;
   // A configured-but-broken setup must never fail silently. Returning early without
@@ -836,6 +840,7 @@ export async function runBackupCleanupNow(now = new Date(), expectedScopeToken?:
 
 /** Uses the backup weekday/time policy, including startup catch-up after a missed slot. */
 export async function maybeRunBackupCleanup(now = new Date()): Promise<BackupCleanupResult | null> {
+  if (harnessKeysMode()) return null;
   const settings = getSettings();
   if (!settings.backupCleanupEnabled) return null;
   const days = Array.isArray(settings.autoBackupDays) ? settings.autoBackupDays : [];

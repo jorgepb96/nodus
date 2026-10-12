@@ -3,7 +3,7 @@
  *  the route, the roles and the systematic IUPAC names, and the application derives every
  *  structure and every balanced equation from the names. */
 
-import { ROUTE_SPECIES_RULES } from './routeRules';
+import { routeSpeciesRules } from './routeRules';
 
 /** How to plan, ahead of the output format. Weaker thinking models spent most of their reasoning
  *  hand-balancing hydrogens and re-deriving mechanisms (deepseek-flash on the Robinson tropinone
@@ -51,15 +51,15 @@ const HEAD = [
   '   Rules for every step:',
 ];
 
+// Every turn that receives this contract is a route turn, and a route turn strips every
+// chemistry-plan fence from the answer (`stripDrawingRequests`): the route is drawn once, by the
+// final report, after every step passes. So the contract asks for no drawing block at all; asking
+// for a target drawing made the model announce one ("the target is drawn below") that the reader
+// then saw replaced by the "Not drawn here" placeholder on every route answer.
 const TAIL = [
-  '2. Draw ONLY the final target: emit exactly one fenced code block tagged chemistry-plan, kind',
-  '   "structure", using the exact target identity quoted from my request. If my request gives the',
-  '   target\'s SMILES, use it (kind "smiles"): it is the structure itself and needs no lookup. Only',
-  '   when no SMILES is given, use the exact name (kind "name"). Exact shape:',
-  '   {"version":2,"kind":"structure","depiction":"skeletal","species":[{"id":"target","input":{"kind":"smiles","value":"EXACT TARGET SMILES FROM MY REQUEST"}}]}',
-  '   Emit no other chemistry-plan, chemfig, smiles, json or SVG block, and never emit a',
-  '   nodus-view, nodus-artifact or nodus-capability-result block: those are application results,',
-  '   the application draws and verifies every step itself.',
+  '2. Draw nothing: emit no chemistry-plan, chemfig, smiles, json or SVG block, and never a',
+  '   nodus-view, nodus-artifact or nodus-capability-result block. Those are application results:',
+  '   the application draws the route itself once every step passes.',
 ];
 
 const placeholders = (lines: string[]) => lines.join('\n').split('«').join('`').split('»').join('`').split('¤').join('\\');
@@ -70,7 +70,7 @@ export const SYNTHESIS_TEMPLATE_ADDENDUM = [
   METHOD.join('\n'),
   '',
   placeholders(HEAD),
-  ...ROUTE_SPECIES_RULES.map((rule) => `   - ${rule}`),
+  ...routeSpeciesRules().map((rule) => `   - ${rule}`),
   placeholders(TAIL),
 ].join('\n');
 

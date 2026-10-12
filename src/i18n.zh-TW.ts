@@ -1,4 +1,5 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -87,6 +88,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 
 /** Traditional Chinese UI table. Keys are the Spanish source strings (see i18n.ts). */
 export const ZH_TW: Record<string, string> = {
+  ...BACKUPS_TRANSLATIONS['zh-TW'],
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-TW'],
   ...CALENDAR_SYNC_TRANSLATIONS["zh-TW"],
@@ -7913,4 +7915,17 @@ export const ZH_TW: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "原生連線無法使用。需要 macOS 和區域網路權限。",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "使用 Nodus Presenter 掃描。請將電腦和手機連線至同一個區域網路。",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "App 連線無法使用。請檢查網路連線並重新開始簡報。",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "無法啟動麥克風。",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "聽寫已暫停，以完成待處理的音訊。處理完成後可繼續。",
+  "Preparando dictado…": "正在準備聽寫…",
+  "Cancelar dictado": "取消聽寫",
+  "Dictado en directo · Local": "即時聽寫 · 本機",
+  "Escuchando…": "正在聆聽…",
+  "El texto se inserta automáticamente en el cursor.": "文字將自動插入游標位置。",
+  "Opciones de dictado": "聽寫選項",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "請在設定 → AI 模型中下載本機轉錄模型以使用聽寫。",
+  "Audio pendiente": "待處理音訊",
+  "Modelo local": "本機模型",
+  "Detener dictado": "停止聽寫",
 };

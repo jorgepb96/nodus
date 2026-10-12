@@ -564,6 +564,12 @@ function mainProcessRuntimeError(message: string, language: unknown): string | n
  * "this message could not be translated": the answer existed, in the wrong process.
  */
 export function knownRuntimeErrorText(message: string, language: unknown): string | null {
+  const pausedSync = /^(.+) (La sincronización automática se ha detenido para evitar llamadas repetidas\.(?: Vuelve a conectar o sincroniza manualmente tras resolver el error\.)?)$/.exec(message);
+  if (pausedSync && !pausedSync[1].includes('La sincronización automática se ha detenido para evitar llamadas repetidas.')) {
+    const reason = localizeRuntimeError(pausedSync[1], language);
+    const recovery = mainProcessRuntimeError(pausedSync[2], language);
+    if (recovery) return `${reason} ${recovery}`;
+  }
   const skillError = localizeChatSkillError(message, normalizeUiLanguage(language));
   if (skillError) return skillError;
   if (message === 'Fallo al sintetizar el audio.') {

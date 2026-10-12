@@ -1,4 +1,5 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -86,6 +87,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * translator's review debt and should be treated as a first pass.
  */
 export const JA: Record<string, string> = {
+  ...BACKUPS_TRANSLATIONS.ja,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ja,
   ...CALENDAR_SYNC_TRANSLATIONS["ja"],
@@ -8268,4 +8270,17 @@ export const JA: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "ネイティブ接続は利用できません。macOSとローカルネットワークの許可が必要です。",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter で読み取ってください。コンピューターとスマートフォンを同じローカルネットワークに接続してください。",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "アプリへの接続を利用できません。ネットワーク接続を確認し、プレゼンテーションを再開してください。",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "マイクを起動できませんでした。",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "処理待ちの音声を完了するため、音声入力を一時停止しました。完了後に再開してください。",
+  "Preparando dictado…": "音声入力を準備中…",
+  "Cancelar dictado": "音声入力をキャンセル",
+  "Dictado en directo · Local": "リアルタイム音声入力 · ローカル",
+  "Escuchando…": "聞き取り中…",
+  "El texto se inserta automáticamente en el cursor.": "テキストはカーソル位置に自動的に挿入されます。",
+  "Opciones de dictado": "音声入力の設定",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "音声入力を使うには、設定 → AIモデルからローカル文字起こしモデルをダウンロードしてください。",
+  "Audio pendiente": "処理待ちの音声",
+  "Modelo local": "ローカルモデル",
+  "Detener dictado": "音声入力を停止",
 };

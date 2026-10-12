@@ -5,6 +5,7 @@
  *  `CapabilityWorkerV2` and nothing else. Everything crossing the port is validated on
  *  both ends: a malformed frame must fail one call, never take the process down. */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { createRequire } from 'node:module';
 import { validateHostToWorker, type HostChannel, type WorkerToHostMessage } from '../../packages/capability-api/src/protocol';
 import { TRUSTED_PROTOCOL } from '../../packages/capability-api/src/limits';
@@ -18,16 +19,22 @@ if (!port) throw new Error('The capability bootstrap must run as a utility proce
 const post = (message: WorkerToHostMessage) => port.postMessage(message);
 
 let nextCallId = 0;
-const pendingHostCalls = new Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
-/** One controller for the whole process: cancelling a capability cancels its work,
- *  and the host kills the process if this is not enough within the grace period. */
+const pendingHostCalls = new Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void; parent?: string }>();
+/** The controller for work that belongs to no call (loading the module). A cancel without a call
+ *  id cancels it and every call; the host kills the process if that is not enough within the
+ *  grace period. */
 let controller = new AbortController();
+/** The host call each piece of work belongs to, followed through every await of the module's
+ *  code, so `host.signal` is that call's and a cancel reaches that call alone. */
+const currentCall = new AsyncLocalStorage<{ callId: string; controller: AbortController }>();
+const callControllers = new Map<string, AbortController>();
 
 function hostCall(channel: HostChannel, method: string, payload: unknown): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const callId = `h${nextCallId++}`;
-    pendingHostCalls.set(callId, { resolve, reject });
-    post({ type: 'host-call', callId, channel, method, payload });
+    const parent = currentCall.getStore()?.callId;
+    pendingHostCalls.set(callId, { resolve, reject, ...(parent ? { parent } : {}) });
+    post({ type: 'host-call', callId, channel, method, payload, ...(parent ? { parentCallId: parent } : {}) });
   });
 }
 
@@ -84,7 +91,7 @@ const host: CapabilityHostV2 = {
   },
   attachments: { store: request => hostCall('attachments', 'store', request) as ReturnType<CapabilityHostV2['attachments']['store']> },
   log: (level, message, detail) => post({ type: 'log', level, message, ...(detail ? { detail } : {}) }),
-  get signal() { return controller.signal; },
+  get signal() { return currentCall.getStore()?.controller.signal ?? controller.signal; },
 };
 
 let worker: CapabilityWorkerV2 | null = null;
@@ -126,9 +133,22 @@ port.on('message', event => {
   }
 
   if (message.type === 'cancel') {
-    controller.abort(new DOMException('The capability call was cancelled.', 'AbortError'));
+    const cancelled = () => new DOMException('The capability call was cancelled.', 'AbortError');
+    const only = message.invocationId;
+    if (only) {
+      // One call: its own work and its own host calls, and nothing that runs beside it.
+      callControllers.get(only)?.abort(cancelled());
+      for (const [id, pending] of pendingHostCalls) {
+        if (pending.parent !== only) continue;
+        pendingHostCalls.delete(id);
+        pending.reject(cancelled());
+      }
+      return;
+    }
+    controller.abort(cancelled());
+    for (const [, call] of callControllers) call.abort(cancelled());
     // Every host call in flight is dead too: its answer can no longer be used.
-    for (const [, pending] of pendingHostCalls) pending.reject(new DOMException('The capability call was cancelled.', 'AbortError'));
+    for (const [, pending] of pendingHostCalls) pending.reject(cancelled());
     pendingHostCalls.clear();
     controller = new AbortController();
     return;
@@ -140,7 +160,9 @@ port.on('message', event => {
   }
 
   const { callId, method, payload } = message;
-  void (async () => {
+  const call = { callId, controller: new AbortController() };
+  callControllers.set(callId, call.controller);
+  void currentCall.run(call, async () => {
     if (!worker) throw new Error('The capability worker is not loaded.');
     // Migrations are the package's, not the module's: they are the numbered scripts the
     // manifest declared, and they run here, one rung at a time, with the same host the
@@ -153,8 +175,14 @@ port.on('message', event => {
     // caller can act on, not a silent undefined that looks like an empty result.
     if (typeof implementation !== 'function') throw new Error(`This capability does not implement ${method}.`);
     return implementation.call(worker, payload);
-  })().then(
-    value => post({ type: 'result', callId, ok: true, value }),
+  }).finally(() => callControllers.delete(callId)).then(
+    // A value the port cannot clone (a function, a class with private state) throws here, and
+    // unhandled that rejection ended the process — and every other call it was carrying. It is
+    // this call's failure, and it is reported as one.
+    value => {
+      try { post({ type: 'result', callId, ok: true, value }); }
+      catch (error) { post({ type: 'result', callId, ok: false, error: `The capability's result could not be sent to the application: ${error instanceof Error ? error.message : String(error)}` }); }
+    },
     error => post({
       type: 'result', callId, ok: false,
       error: error instanceof Error ? error.message : String(error),

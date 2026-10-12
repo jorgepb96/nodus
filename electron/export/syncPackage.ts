@@ -2,6 +2,7 @@ import AdmZip from 'adm-zip';
 import { createHash, randomUUID } from 'node:crypto';
 import type { SyncConflict, SyncGroupKey, SyncMergeSummary, SyncTableCounts } from '@shared/types';
 import { getDb, SCHEMA_VERSION } from '../db/database';
+import { SYNC_SCHEMA_VERSION } from '../db/syncSchemaVersion';
 import { decryptWithKey, deriveKeyFromDescriptor, encryptWithKey, newKdfDescriptor, type KdfDescriptor } from './backupCrypto';
 import { identityColumns, identityWhere, quoteIdentifier, tableColumns, type TableColumn } from '../db/rowIdentity';
 import { measureClockSkewAhead, packageIsOlderThanHorizon, type TombstoneRow } from '../db/tombstones';
@@ -491,7 +492,9 @@ export function buildSyncPackage(appVersion: string, passphrase: string): { buff
   const manifest: SyncManifest = {
     format: SYNC_FORMAT,
     formatVersion: SYNC_FORMAT_VERSION,
-    schemaVersion: SCHEMA_VERSION,
+    // The wire version (see SYNC_SCHEMA_VERSION): what a receiver needs to know is whether
+    // a table changed shape, not whether an index was added.
+    schemaVersion: SYNC_SCHEMA_VERSION,
     appVersion,
     // Kept in the clear so an incompatible package can be refused, and its age reported,
     // without asking for a passphrase first.

@@ -212,6 +212,11 @@ export function buildStudySttPrompt(vocabulary: string[], limit = 80): string {
 }
 
 export interface StudySttRequest {
+  /** Keep a local model resident for rolling dictation windows. An empty WAV
+   * payload prepares this session; cancel its requestId to release the model. */
+  realtime?: boolean;
+  /** Live dictation can skip a short phrase that contains no recognized speech. */
+  allowEmpty?: boolean;
   audioBytes: Uint8Array;
   mimeType: string;
   provider?: StudySttProvider | null;

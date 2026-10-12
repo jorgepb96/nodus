@@ -61,6 +61,9 @@ import {
   tokenEndpoint,
 } from './oauth.mjs';
 import { adminAction, dashboard, login, loginPage, recoveryKeyIndex, recoveryKeyManifest, recoveryKeyObject, recoveryKeyRows, recoveryKeySnapshot, recoveryManifest, recoveryObject, recoveryRows } from './admin.mjs';
+import { blobStatus, completeBlob, getBinary, putBlobChunk, putDocumentUpdate, cleanupBlobUploads, MAX_SHARED_BLOB_BYTES, MAX_DOCUMENT_UPDATE_BYTES } from './binaries.mjs';
+import { admitRequest, reserveBudget, DEFAULT_SYNC_BUDGET } from './budget.mjs';
+import { drainObjectQueue } from './objectLifecycle.mjs';
 import { handleMcp } from './mcp.mjs';
 
 function method(request, allowed) {
@@ -89,7 +92,9 @@ async function capabilityDocument(env, request) {
     resources: { api: `${new URL(request.url).origin}/api/v1`, mcp: `${new URL(request.url).origin}/mcp` },
     publication: { generations: true, resumable: true, tableChunkRows: TABLE_CHUNK_ROWS, tableChunkBytes: TABLE_CHUNK_BYTES, objectPartBytes: OBJECT_PART_BYTES, maxMutationBytes: MAX_MUTATION_BYTES, maxMutationBatch: MAX_MUTATION_BATCH },
     storage: { structured: 'd1', objects: 'r2', vectorSearch: vectorizeDimensions.length ? ['vectorize', 'r2-exact', 'lexical'] : ['r2-exact', 'lexical'], vectorizeDimensions },
-    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, mutations: true, spaceActions: true, desktopBridgeRelay: false, nodiNotes: true, oauth: true, mcp: true, recovery: true },
+    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, mutations: true, spaceActions: true, desktopBridgeRelay: false, binarySync: true, mutationRelay: true, syncBudget: true, durableObjectCleanup: true, nodiNotes: true, oauth: true, mcp: true, recovery: true },
+    syncBudget: { scope: 'installation', windows: 'UTC-day-and-month', defaults: DEFAULT_SYNC_BUDGET },
+    maxSharedBlobBytes: MAX_SHARED_BLOB_BYTES, maxDocumentUpdateBytes: MAX_DOCUMENT_UPDATE_BYTES,
     maxAssetBytes: 8 * 1024 * 1024, maxSpaceAssetBytes: 1024 * 1024 * 1024,
     maxLibraryPackageBytes: 128 * 1024 * 1024, maxSpaceLibraryBytes: 4 * 1024 * 1024 * 1024,
     maxSnapshotBytes: 512 * 1024 * 1024, maxSnapshotJsonBytes: 512 * 1024 * 1024,
@@ -212,9 +217,23 @@ async function api(env, request, segments) {
     const auth = await apiAuthorize({ via: ['device', 'oauth'], spaceId, need: 'writer', scope: 'materials.write' });
     method(request, ['PUT', 'POST']); return json(await putSmallObject(env, auth, 'asset', hash, request));
   }
+  if (resource === 'document-updates' || resource === 'blobs') {
+    const reading = request.method==='GET' || request.method==='HEAD';
+    const auth = await apiAuthorize({via:['device'],spaceId,need:reading?'reader':'writer'});
+    const hash = decodeURIComponent(tail[1] || '');
+    if (resource==='document-updates') {
+      method(request,['GET','HEAD','PUT']);
+      return reading ? getBinary(env,auth,'document-update',hash,request) : json(await putDocumentUpdate(env,auth,hash,request));
+    }
+    if (tail[2]==='status') { method(request,['GET']); return json(await blobStatus(env,auth,hash)); }
+    if (tail[2]==='chunks') { method(request,['PUT']); return json(await putBlobChunk(env,auth,hash,tail[3],request)); }
+    if (tail[2]==='complete') { method(request,['POST']); return json(await completeBlob(env,auth,hash)); }
+    method(request,['GET','HEAD']); return getBinary(env,auth,'blob',hash,request);
+  }
   if (resource === 'mutations') {
-    const ownerOperation = request.method === 'GET' || tail[1] === 'ack';
-    const auth = await apiAuthorize({ via: ['device', 'oauth'], spaceId, need: ownerOperation ? 'owner' : 'writer', scope: ownerOperation ? 'materials.read' : 'materials.write' });
+    const relay = new URL(request.url).searchParams.get('relay') === '1';
+    const ownerOperation = !relay && (request.method === 'GET' || tail[1] === 'ack');
+    const auth = await apiAuthorize({ via: ['device', 'oauth'], spaceId, need: ownerOperation ? 'owner' : relay ? 'reader' : 'writer', scope: ownerOperation ? 'materials.read' : 'materials.write' });
     if (tail[1] === 'ack') { method(request, ['POST']); return json(await ackMutations(env, auth, request)); }
     if (request.method === 'GET') return json(await getMutations(env, auth, request));
     if (request.method === 'POST') return json(await postMutations(env, auth, request));
@@ -313,9 +332,20 @@ async function route(env, request) {
 
 export default {
   async fetch(request, env) {
-    try { return await route(env, request); } catch (error) { console.error(error); return errorResponse(error); }
+    try { return await route(env, await admitRequest(env, request)); } catch (error) {
+      if (!(error instanceof HttpError)) console.error(error);
+      return errorResponse(error);
+    }
   },
   async scheduled(_event, env, ctx) {
-    ctx.waitUntil(Promise.all([cleanupPublications(env), cleanupSync(env), oauthCleanup(env)]));
+    ctx.waitUntil((async () => {
+      await reserveBudget(env, { requests: 1, work: 10000 }, 'maintenance');
+      // Sequential and bounded: maintenance also obeys the Free D1 query ceiling.
+      const failures=[];
+      for (const cleanup of [cleanupPublications,cleanupSync,cleanupBlobUploads,drainObjectQueue,oauthCleanup]) {
+        try {await cleanup(env);} catch (error) {failures.push(error);}
+      }
+      if (failures.length) throw new AggregateError(failures,'Cloud maintenance could not finish every cleanup task.');
+    })());
   },
 };

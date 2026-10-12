@@ -185,7 +185,10 @@ export function parseAnkiApkg(bytes: Buffer): { cards: StudyFlashcardInput[]; wa
         const frontIndex = ordered.findIndex((field) => /front|anverso|pregunta|question/i.test(field.name));
         const backIndex = ordered.findIndex((field) => /back|reverso|respuesta|answer|definici/i.test(field.name));
         if (frontIndex >= 0 && backIndex >= 0 && frontIndex !== backIndex) {
-          return { front: fields[frontIndex] ?? '', back: fields[backIndex] ?? '', hint: '', type: 'front_back' };
+          // Nodus's own export writes Anverso/Reverso/Pista; dropping the third field lost
+          // every hint on a round trip.
+          const hintIndex = ordered.findIndex((field, index) => index !== frontIndex && index !== backIndex && /pista|hint|extra/i.test(field.name));
+          return { front: fields[frontIndex] ?? '', back: fields[backIndex] ?? '', hint: hintIndex >= 0 ? fields[hintIndex] ?? '' : '', type: 'front_back' };
         }
       }
       return { front: fields[0] ?? '', back: fields.slice(1).filter(Boolean).join('\n'), hint: fields[2] ?? '', type: 'front_back' };

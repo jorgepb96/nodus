@@ -30,7 +30,6 @@ import type {
   StudyOutlineItem,
 } from '@shared/studyEditor';
 import { DEFAULT_STUDY_DOC_STYLE, studyCommandMarkdown, studyDocumentStats } from '@shared/studyEditor';
-import { deleteLastStudySentence } from '@shared/sttModels';
 import type { StudyDocumentKind, StudyTag } from '@shared/studyOrg';
 import { STUDY_DOCUMENT_KINDS } from '@shared/studyOrg';
 import type { EditorDocument, EditorDocumentPort } from './documentPort';
@@ -47,7 +46,7 @@ import { Icon, ICON_NAMES, Spinner } from '../ui';
 import { TextInputModal } from '../TextInputModal';
 import { t } from '../../i18n';
 import { DocOutline } from './DocOutline';
-import { StudyDictation } from './StudyDictation';
+import { StudyDictation, type StudyDictationHandle } from './StudyDictation';
 import { StudyImproveDialog } from './StudyImproveDialog';
 import { AudioPanel } from '../AudioPanel';
 import { ConfirmModal } from '../ConfirmModal';
@@ -145,10 +144,10 @@ function SynonymAlternativeList({
         type="button"
         key={`${alternative.from}:${alternative.to}:${alternative.replacement}:${index}`}
         data-testid={historical ? 'study-synonyms-history-option' : 'study-synonyms-option'}
-        className={`group w-full rounded-lg border px-2.5 py-2 text-left transition ${historical ? 'border-transparent bg-stone-50 hover:border-teal-200 hover:bg-teal-50 dark:bg-neutral-900/60 dark:hover:border-teal-900 dark:hover:bg-teal-950/30' : 'border-stone-200 bg-white hover:border-teal-300 hover:bg-teal-50 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-teal-800 dark:hover:bg-teal-950/30'}`}
+        className={`study-synonym-alternative w-full rounded-lg border px-2.5 py-2 text-left transition ${historical ? 'is-historical' : ''}`}
         onClick={() => onSelect(alternative)}
       >
-        <span className="block text-sm text-stone-800 group-hover:text-teal-900 dark:text-neutral-100 dark:group-hover:text-teal-100">{alternative.replacement}</span>
+        <span className="block text-sm">{alternative.replacement}</span>
         {alternative.target !== selectedText && <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{t('Sustituye')} «{alternative.target}»</span>}
       </button>
     ))}
@@ -238,11 +237,23 @@ export function StudyEditor({
   const [recoveredDraft, setRecoveredDraft] = useState(false);
   const hydratedIdRef = useRef('');
   const draftScope = port.dragType;
-  const setDraft: typeof setDraftState = (value) => setDraftState(current => {
+  const rawHistory = useRef<{ undo: Array<{ before: string; after: string; group?: string; time: number }>; redo: Array<{ before: string; after: string; group?: string; time: number }> }>({ undo: [], redo: [] });
+  const setDraft = (value: Parameters<typeof setDraftState>[0], group?: string) => {
+    let recorded = false;
+    setDraftState(current => {
     const next = typeof value === 'function' ? value(current) : value;
     let native:BlockNoteDocument;try{assertAcademicSupplement(current,next);native=markdownToBlockNote(next,nativeRef.current);}catch(error){setSaveError(error instanceof Error?error.message:String(error));return current;}
+    if (!recorded && rawRef.current && current !== next && group !== 'history') {
+      recorded = true;
+      const history = rawHistory.current, previous = history.undo.at(-1), time = Date.now();
+      if (group && previous?.group === group && previous.after === current && (group.startsWith('dictation:') || time - previous.time < 600)) { previous.after = next; previous.time = time; }
+      else history.undo.push({ before: current, after: next, group, time });
+      if (history.undo.length > 200) history.undo.shift();
+      history.redo = [];
+    }
     nativeRef.current = native; setNativeDocument(native); return next;
-  });
+    });
+  };
   const [style, setStyle] = useState<StudyDocStyle>(DEFAULT_STUDY_DOC_STYLE);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [raw, setRaw] = useState(false);
@@ -259,6 +270,9 @@ export function StudyEditor({
   const [showSearch, setShowSearch] = useState(false);
   const [showStyle, setShowStyle] = useState(false);
   const [showDictation, setShowDictation] = useState(false);
+  const [dictationActive, setDictationActive] = useState(false);
+  const dictationRef = useRef<StudyDictationHandle>(null);
+  useEffect(() => { setShowDictation(false); setDictationActive(false); }, [active?.id]);
   const [showAudio, setShowAudio] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
@@ -297,9 +311,11 @@ export function StudyEditor({
   const savedSignaturesRef = useRef(new Map<string,string>());
   const saveLatestRef = useRef<(reason: 'autosave' | 'manual' | 'command') => Promise<boolean>>(async () => true);
   const rawRef = useRef(raw);
+  useEffect(() => { rawHistory.current = { undo: [], redo: [] }; }, [raw, active?.id]);
   const canvasRef = useRef<BlockNoteCanvasHandle>(null);
   const rawTextareaRef = useRef<HTMLTextAreaElement>(null);
   const rawSelection = useRef<{ id: string; content: string; from: number; to: number } | null>(null);
+  const rawDictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; document: string } | null>(null);
   const [localPins, setLocalPins] = useState<string[]>([]);
   const preferenceVault = useRef<string | null>(null);
   useEffect(() => {
@@ -643,7 +659,10 @@ export function StudyEditor({
     return await operation;
   };
   saveLatestRef.current = save;
-  const flushLatest = useCallback(() => flushEditorialDraft(() => saveLatestRef.current('autosave'), () => !hydratedIdRef.current || latestSignatureRef.current === baselineRef.current), []);
+  const flushLatest = useCallback(async () => {
+    await dictationRef.current?.stop();
+    return flushEditorialDraft(() => saveLatestRef.current('autosave'), () => !hydratedIdRef.current || latestSignatureRef.current === baselineRef.current);
+  }, []);
   useEffect(() => { onRegisterFlush?.(flushLatest); }, [onRegisterFlush,flushLatest]);
   useEffect(() => window.nodus.onBeforeEditorLeave(flushLatest), [flushLatest]);
 
@@ -704,8 +723,12 @@ export function StudyEditor({
     const textarea = rawTextareaRef.current;
     if (!textarea) return;
     textarea.focus();
-    document.execCommand(direction);
-    setDraft(textarea.value);
+    const history = rawHistory.current;
+    const entry = (direction === 'undo' ? history.undo : history.redo).pop();
+    if (!entry) return;
+    (direction === 'undo' ? history.redo : history.undo).push(entry);
+    const value = direction === 'undo' ? entry.before : entry.after;
+    textarea.value = value; setDraft(value, 'history');
   };
   const insertCommand = (command: StudyEditorCommand) => insertMarkdown(studyCommandMarkdown(command));
   const insertHeading = (level: number) => insertMarkdown(`${'#'.repeat(level)} ${t('Título')}`);
@@ -833,9 +856,9 @@ export function StudyEditor({
     { id: 'evidence', label: t('Vincular evidencia'), icon: 'link', group: t('Escritura académica'), disabled: raw || locked, onSelect: () => academicTools.current?.open('evidence') },
     { id: 'manuscript', label: t('Manuscrito y citas'), icon: 'settings', group: t('Escritura académica'), onSelect: () => academicTools.current?.open('settings') },
     { id: 'delivery', label: t('Preparar entrega'), icon: 'external', group: t('Escritura académica'), testId: 'academic-delivery', onSelect: () => academicTools.current?.open('delivery') },
-    { id: 'dictation', label: t('Dictado por voz'), icon: 'microphone', group: t('Voz'), testId: 'study-dictation-toggle', pressed: showDictation, onSelect: () => setShowDictation(!showDictation) },
+    { id: 'dictation', label: t(dictationActive ? 'Detener dictado' : 'Dictado por voz'), icon: 'microphone', group: t('Voz'), essential: true, testId: 'study-dictation-toggle', disabled: locked && !dictationActive, pressed: dictationActive, onSelect: () => { if (dictationActive) void dictationRef.current?.stop(); else if (showDictation) void dictationRef.current?.start(); else setShowDictation(true); } },
     { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: showAudio, onSelect: () => { const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value); } },
-    { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => { if (raw) setEditorRevision(value => value + 1); setRaw(!raw); } },
+    { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => void (async () => { await dictationRef.current?.stop(); if (raw) setEditorRevision(value => value + 1); setRaw(!raw); })() },
     { id: 'split', label: t('Dividir vista'), icon: 'columns', group: t('Vistas'), pressed: split, onSelect: () => setSplit(!split) },
     { id: 'style', label: t('Apariencia y metadatos'), icon: 'palette', group: t('Vistas'), testId: 'study-doc-style', pressed: showStyle, onSelect: () => { setShowStyle(!showStyle); setContextOpen(true); setContextTab('details'); } },
     { id: 'history', label: t('Historial de versiones'), icon: 'clock', group: t('Vistas'), onSelect: () => { setContextOpen(true); setContextTab('history'); } },
@@ -911,42 +934,67 @@ export function StudyEditor({
         </div>
       )}
       {showDictation && <StudyDictation
+        key={active.id}
+        ref={dictationRef}
         documentId={active.id}
+        settings={settings}
         language={data.spellcheckLanguage}
         vocabulary={[active.title, ...documents.map((document) => document.title), ...draft.match(/\b[A-ZÁÉÍÓÚÑ][\p{L}-]{3,}\b/gu) ?? []]}
         customDictionary={data.customDictionary}
-        onInsert={(text, scope) => {
+        onStateChange={setDictationActive}
+        onClose={() => void (async () => { await dictationRef.current?.stop(); setShowDictation(false); })()}
+        onEnd={() => { canvasRef.current?.endDictation(); rawDictation.current = null; }}
+        onUpdate={(text, id, final, scope) => {
           if (!raw) {
-            canvasRef.current?.insertText(text, scope === 'selection');
+            canvasRef.current?.updateDictation(text, id, final, scope === 'selection');
             return;
           }
           const textarea = rawTextareaRef.current;
-          const cursor = textarea?.selectionStart ?? draft.length;
-          let from = cursor;
-          let to = cursor;
-          if (scope === 'selection') {
+          const current = textarea?.value ?? draft;
+          let range = rawDictation.current;
+          if (range?.id === id && range.document !== current) {
+            // Follow edits outside the dictated range, but never overwrite a
+            // writer's correction inside it.
+            let start = 0, end = 0;
+            while (start < current.length && start < range.document.length && current[start] === range.document[start]) start++;
+            while (end < current.length - start && end < range.document.length - start && current[current.length - end - 1] === range.document[range.document.length - end - 1]) end++;
+            const oldEnd = range.document.length - end;
+            if (oldEnd <= range.from) { const delta = current.length - range.document.length; range.from += delta; range.to += delta; }
+            else if (start < range.to) { if (final) rawDictation.current = null; return; }
+          }
+          if (!text && range?.id !== id) return;
+          const cursor = textarea?.selectionStart ?? current.length;
+          let from = range?.id === id ? range.from : cursor;
+          let to = range?.id === id ? range.to : cursor;
+          if (range?.id !== id && scope === 'selection') {
             from = textarea?.selectionStart ?? cursor;
             to = textarea?.selectionEnd ?? cursor;
             if (from === to) {
-              from = draft.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
-              const nextLine = draft.indexOf('\n', cursor);
-              to = nextLine === -1 ? draft.length : nextLine;
+              from = current.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
+              const nextLine = current.indexOf('\n', cursor);
+              to = nextLine === -1 ? current.length : nextLine;
             }
           }
-          const prefix = from > 0 && !/\s/.test(draft[from - 1]) && !/^[,.;:!?]/.test(text) ? ' ' : '';
-          const suffix = to < draft.length && !/\s/.test(draft[to]) && !/[\s\n]$/.test(text) ? ' ' : '';
-          setDraft(`${draft.slice(0, from)}${prefix}${text}${suffix}${draft.slice(to)}`);
-          window.setTimeout(() => {
-            const nextCursor = from + prefix.length + text.length + suffix.length;
-            rawTextareaRef.current?.setSelectionRange(nextCursor, nextCursor);
-            rawTextareaRef.current?.focus();
-          });
-          return { from: from + prefix.length, to: from + prefix.length + text.length };
-        }}
-        onAction={(action) => {
-          if (action === 'undo') document.execCommand('undo');
-          if (action === 'delete_last_sentence') { setDraft(deleteLastStudySentence(draft)); setRaw(true); }
-          if (action === 'finish') setShowDictation(false);
+          if (!range || range.id !== id) {
+            range = { id, from, to, text: '', document: current, prefix: from > 0 && !/\s/.test(current[from - 1]) && !/^[,.;:!?\s]/.test(text) ? ' ' : '', suffix: to < current.length && !/[\s,.;:!?]/.test(current[to]) ? ' ' : '' };
+            rawDictation.current = range;
+          }
+          const next = text ? `${range.prefix}${text}${range.suffix}` : '';
+          let common = 0;
+          while (common < range.text.length && common < next.length && range.text[common] === next[common]) common++;
+          from += common;
+          // Explicit history is needed for unfocused textarea updates:
+          // setRangeText does not enter the browser's native undo stack.
+          if (textarea) {
+            const focused = document.activeElement === textarea;
+            const selection = [textarea.selectionStart, textarea.selectionEnd];
+            if (focused) textarea.setSelectionRange(from, to);
+            textarea.setRangeText(next.slice(common), from, to, focused ? 'end' : 'preserve');
+            if (focused && selection[0] < range.from) textarea.setSelectionRange(selection[0], selection[1]);
+            setDraft(textarea.value, `dictation:${id}`);
+          } else setDraft(`${current.slice(0, from)}${next.slice(common)}${current.slice(to)}`, `dictation:${id}`);
+          range.to = range.from + next.length; range.text = next; range.document = textarea?.value ?? `${current.slice(0, from)}${next.slice(common)}${current.slice(to)}`;
+          if (final) rawDictation.current = null;
         }}
       />}
       {showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
@@ -975,7 +1023,12 @@ export function StudyEditor({
             <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={Boolean(improveStreamingStyleId)} />
             {raw ? (
               <textarea ref={rawTextareaRef} data-testid="study-markdown-editor" aria-label={t('Editor Markdown')} disabled={Boolean(improveStreamingStyleId)} className="h-full min-h-[560px] w-full resize-none bg-white p-6 font-mono text-sm leading-6 text-stone-800 outline-none dark:bg-neutral-950 dark:text-neutral-300"
-                spellCheck lang={data.spellcheckLanguage} value={draft} onChange={(event) => setDraft(event.target.value)}
+                spellCheck lang={data.spellcheckLanguage} value={draft} onChange={(event) => setDraft(event.target.value, 'typing')}
+                onKeyDown={event => {
+                  if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+                  const key = event.key.toLowerCase();
+                  if (key === 'z' || key === 'y') { event.preventDefault(); runEditorHistory(key === 'y' || event.shiftKey ? 'redo' : 'undo'); }
+                }}
                 onPaste={(event) => {
                   const html = event.clipboardData.getData('text/html');
                   if (!html) return;
@@ -1085,7 +1138,7 @@ export function StudyEditor({
       {synonymPanel && createPortal(
         <div ref={synonymPanelRef} data-testid="study-synonyms-panel" role="dialog" aria-label={t('Alternativas de sinónimos')} className="study-synonyms-panel" style={{ left: synonymPanel.x, top: synonymPanel.y }}>
           <div className="study-synonyms-header">
-            <span className="flex min-w-0 items-center gap-2"><Icon name="aiSynonyms" size={16} className="text-teal-600 dark:text-teal-300" /><span className="truncate font-semibold">{t('Sinónimos y reformulaciones')}</span></span>
+            <span className="flex min-w-0 items-center gap-2"><Icon name="aiSynonyms" size={16} className="scriptor-accent-text" /><span className="truncate font-semibold">{t('Sinónimos y reformulaciones')}</span></span>
             <button type="button" className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-100" onClick={closeSynonymPanel} aria-label={t('Cerrar')}><Icon name="x" size={13} /></button>
           </div>
           <p className="px-3 pb-2 text-[11px] leading-4 text-neutral-500">{t('Cinco alternativas en el idioma original, elegidas con el contexto de la frase.')}</p>
@@ -1101,7 +1154,7 @@ export function StudyEditor({
           {synonymPanel.error && <div data-testid="study-synonyms-error" className="mx-3 mb-2 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{synonymPanel.error}</div>}
           <div className="flex items-center justify-between border-t border-stone-200 px-3 py-2 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500">{synonymPanel.rounds.length > 1 ? `${synonymPanel.rounds.length * 5} ${t('alternativas en memoria')}` : ''}</span>
-            <button type="button" data-testid="study-synonyms-regenerate" className="btn btn-ghost h-8 gap-1.5 px-2 text-xs text-teal-700 dark:text-teal-300" disabled={synonymPanel.loading} onClick={regenerateSynonyms}><Icon name="refresh" size={13} className={synonymPanel.loading ? 'animate-spin' : ''} />{t('Regenerar alternativas')}</button>
+            <button type="button" data-testid="study-synonyms-regenerate" className="btn btn-ghost scriptor-accent-text h-8 gap-1.5 px-2 text-xs" disabled={synonymPanel.loading} onClick={regenerateSynonyms}><Icon name="refresh" size={13} className={synonymPanel.loading ? 'animate-spin' : ''} />{t('Regenerar alternativas')}</button>
           </div>
         </div>,
         document.body,

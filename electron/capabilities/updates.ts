@@ -5,7 +5,7 @@ import { fetchCapabilityCatalog, installCatalogEntry, readCachedCatalog, type Ca
 import { listInstalledPluginsV2, readPluginStateV2, writePluginAutoUpdate, type InstalledPluginStateV2 } from './pluginStoreV2';
 import { rebuildCapabilityRegistry } from './registry';
 import { runPluginDataMigrations } from './migrationRunner';
-import { stopCapabilityWorkers } from './workerHost';
+import { stopPluginWorkers } from './workerHost';
 
 /** Keeping installed packages current, without ever deciding on the user's behalf.
  *
@@ -87,7 +87,7 @@ export async function checkForCapabilityUpdates(options: CapabilityUpdateOptions
         continue;
       }
       // The old process is running the old bytes; it goes before the new version is used.
-      await stopCapabilityWorkers(key => key.includes(state.id));
+      await stopPluginWorkers(state.id);
       await runPluginDataMigrations(state.id);
       materializeTrustedPluginSkills(state.id);
       results.push({ pluginId: state.id, state: 'updated', from, to: entry.version });

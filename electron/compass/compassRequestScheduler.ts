@@ -112,7 +112,10 @@ export class CompassRequestScheduler {
       )
       .digest("hex");
     const existing = this.inflight.get(key);
-    if (existing) return this.subscribe(existing, input.signal);
+    // An entry whose last consumer left has already been aborted but stays in the map until
+    // its promise settles. Joining it would hand a fresh search an AbortError it never asked for.
+    if (existing && !existing.controller.signal.aborted)
+      return this.subscribe(existing, input.signal);
     const controller = new AbortController();
     const priority =
       input.priority === "visible" ? 0 : input.priority === "load-more" ? 1 : 2;
@@ -330,6 +333,12 @@ export class CompassRequestScheduler {
           task.resolve(value);
         },
         (error) => {
+          // A cancelled request says nothing about the provider. Counting it would let three
+          // cancels (or lane switches) open the circuit and refuse the next real search.
+          if (task.signal.aborted || (error as { name?: unknown })?.name === "AbortError") {
+            task.reject(error);
+            return;
+          }
           const current = this.usage(task.provider, Date.now()).usage;
           current.consecutiveFailures += 1;
           const retryAt = Number((error as { retryAt?: number })?.retryAt);

@@ -75,6 +75,11 @@ export function useLocalAudioRecorder({
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  // Starting awaits the privacy notice and the microphone permission; a recorder whose view
+  // closed meanwhile must not open the microphone afterwards with nothing left to stop it.
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
   useEffect(() => () => {
     if (timerRef.current) window.clearInterval(timerRef.current);
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
@@ -136,11 +141,12 @@ export function useLocalAudioRecorder({
   const start = async (): Promise<void> => {
     onError('');
     setSeconds(0);
-    if (!(await confirmMicrophonePrivacy())) return;
+    if (!(await confirmMicrophonePrivacy()) || !mountedRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true },
       });
+      if (!mountedRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
       streamRef.current = stream;
       const mime = bestRecorderMime();
       const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);

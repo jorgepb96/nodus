@@ -7,6 +7,11 @@ import { createInflateRaw, inflateRawSync } from 'node:zlib';
 const EOCD_SIGNATURE = 0x06054b50;
 const CENTRAL_SIGNATURE = 0x02014b50;
 const LOCAL_SIGNATURE = 0x04034b50;
+const ZIP64_EOCD_SIGNATURE = 0x06064b50;
+const ZIP64_LOCATOR_SIGNATURE = 0x07064b50;
+const ZIP64_EXTRA_ID = 0x0001;
+const ZIP64_LOCATOR_BYTES = 20;
+const ZIP64_EOCD_BYTES = 56;
 const MAX_COMMENT_BYTES = 0xffff;
 const MAX_CENTRAL_DIRECTORY_BYTES = 64 * 1024 * 1024;
 
@@ -41,6 +46,135 @@ function readExactlySync(fd: number, length: number, position: number): Buffer {
   return buffer;
 }
 
+interface CentralDirectoryLocation {
+  entryCount: number;
+  centralSize: number;
+  centralOffset: number;
+  /** Where the ZIP64 end record is, when the classic record says its values did not fit. */
+  zip64RecordOffset: number | null;
+}
+
+/** The archive's last bytes: room for the end record, its longest comment and a ZIP64 locator. */
+function tailLengthFor(size: number): number {
+  return Math.min(size, MAX_COMMENT_BYTES + 22 + ZIP64_LOCATOR_BYTES);
+}
+
+function readUInt64(buffer: Buffer, offset: number): number {
+  const value = buffer.readBigUInt64LE(offset);
+  if (value > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('Directorio ZIP inválido.');
+  return Number(value);
+}
+
+/**
+ * The end-of-central-directory record. A field too small for its value holds 0xffff/0xffffffff
+ * and the real value is in the ZIP64 end record, found through the locator just before it. A
+ * vault database past 4 GiB needs that, so it is read rather than refused.
+ */
+function locateCentralDirectory(tail: Buffer, tailStart: number): CentralDirectoryLocation {
+  let eocd = -1;
+  for (let offset = tail.length - 22; offset >= 0; offset -= 1) {
+    if (tail.readUInt32LE(offset) !== EOCD_SIGNATURE) continue;
+    const commentLength = tail.readUInt16LE(offset + 20);
+    if (offset + 22 + commentLength === tail.length) { eocd = offset; break; }
+  }
+  if (eocd < 0) throw new Error('No se encontró el directorio ZIP.');
+  const disk = tail.readUInt16LE(eocd + 4);
+  const centralDisk = tail.readUInt16LE(eocd + 6);
+  const entriesOnDisk = tail.readUInt16LE(eocd + 8);
+  const entryCount = tail.readUInt16LE(eocd + 10);
+  const centralSize = tail.readUInt32LE(eocd + 12);
+  const centralOffset = tail.readUInt32LE(eocd + 16);
+  const zip64 = entriesOnDisk === 0xffff || entryCount === 0xffff || centralSize === 0xffffffff || centralOffset === 0xffffffff;
+  if (!zip64) {
+    if (disk !== 0 || centralDisk !== 0 || entriesOnDisk !== entryCount) throw new Error('Los ZIP multidisco no están soportados.');
+    return { entryCount, centralSize, centralOffset, zip64RecordOffset: null };
+  }
+  const locator = eocd - ZIP64_LOCATOR_BYTES;
+  if (locator < 0 || tail.readUInt32LE(locator) !== ZIP64_LOCATOR_SIGNATURE) throw new Error('Directorio ZIP64 no encontrado.');
+  if (tail.readUInt32LE(locator + 4) !== 0 || tail.readUInt32LE(locator + 16) !== 1) throw new Error('Los ZIP multidisco no están soportados.');
+  const zip64RecordOffset = readUInt64(tail, locator + 8);
+  if (zip64RecordOffset + ZIP64_EOCD_BYTES > tailStart + locator) throw new Error('Directorio ZIP64 inválido.');
+  return { entryCount, centralSize, centralOffset, zip64RecordOffset };
+}
+
+function readZip64Record(record: Buffer): Omit<CentralDirectoryLocation, 'zip64RecordOffset'> {
+  if (record.readUInt32LE(0) !== ZIP64_EOCD_SIGNATURE) throw new Error('Directorio ZIP64 dañado.');
+  const disk = record.readUInt32LE(16);
+  const centralDisk = record.readUInt32LE(20);
+  const entriesOnDisk = readUInt64(record, 24);
+  const entryCount = readUInt64(record, 32);
+  if (disk !== 0 || centralDisk !== 0 || entriesOnDisk !== entryCount) throw new Error('Los ZIP multidisco no están soportados.');
+  return { entryCount, centralSize: readUInt64(record, 40), centralOffset: readUInt64(record, 48) };
+}
+
+function checkCentralDirectory(location: Omit<CentralDirectoryLocation, 'zip64RecordOffset'>, fileSize: number): void {
+  if (location.centralSize > MAX_CENTRAL_DIRECTORY_BYTES || location.centralOffset + location.centralSize > fileSize) {
+    throw new Error('Directorio ZIP inválido.');
+  }
+}
+
+/** Every entry of a central directory, ZIP64 extra fields resolved. */
+function parseCentralDirectory(central: Buffer, entryCount: number): ZipFileEntry[] {
+  const entries: ZipFileEntry[] = [];
+  const names = new Set<string>();
+  let cursor = 0;
+  for (let index = 0; index < entryCount; index += 1) {
+    if (cursor + 46 > central.length || central.readUInt32LE(cursor) !== CENTRAL_SIGNATURE) {
+      throw new Error('Directorio ZIP dañado.');
+    }
+    const flags = central.readUInt16LE(cursor + 8);
+    const method = central.readUInt16LE(cursor + 10);
+    let compressedSize = central.readUInt32LE(cursor + 20);
+    let uncompressedSize = central.readUInt32LE(cursor + 24);
+    const nameLength = central.readUInt16LE(cursor + 28);
+    const extraLength = central.readUInt16LE(cursor + 30);
+    const commentLength = central.readUInt16LE(cursor + 32);
+    const diskStart = central.readUInt16LE(cursor + 34);
+    let localHeaderOffset = central.readUInt32LE(cursor + 42);
+    const next = cursor + 46 + nameLength + extraLength + commentLength;
+    if (next > central.length) throw new Error('Directorio ZIP truncado.');
+    if ((flags & 0x1) !== 0) throw new Error('Las entradas ZIP cifradas externamente no están soportadas.');
+    if (method !== 0 && method !== 8) throw new Error(`Método ZIP no soportado: ${method}.`);
+    if (uncompressedSize === 0xffffffff || compressedSize === 0xffffffff || localHeaderOffset === 0xffffffff || diskStart === 0xffff) {
+      // ZIP64: the overflowing values, in this fixed order, in the 0x0001 extra field.
+      const extra = central.subarray(cursor + 46 + nameLength, cursor + 46 + nameLength + extraLength);
+      let field = -1;
+      for (let at = 0; at + 4 <= extra.length;) {
+        const size = extra.readUInt16LE(at + 2);
+        if (extra.readUInt16LE(at) === ZIP64_EXTRA_ID) { field = at; break; }
+        at += 4 + size;
+      }
+      if (field < 0) throw new Error('Entrada ZIP64 sin datos de tamaño.');
+      const end = field + 4 + extra.readUInt16LE(field + 2);
+      if (end > extra.length) throw new Error('Entrada ZIP64 truncada.');
+      let at = field + 4;
+      const take = (): number => {
+        if (at + 8 > end) throw new Error('Entrada ZIP64 truncada.');
+        const value = readUInt64(extra, at);
+        at += 8;
+        return value;
+      };
+      if (uncompressedSize === 0xffffffff) uncompressedSize = take();
+      if (compressedSize === 0xffffffff) compressedSize = take();
+      if (localHeaderOffset === 0xffffffff) localHeaderOffset = take();
+    }
+    const name = central.subarray(cursor + 46, cursor + 46 + nameLength).toString((flags & 0x800) !== 0 ? 'utf8' : 'latin1');
+    if (!name || names.has(name)) throw new Error('El ZIP contiene nombres vacíos o duplicados.');
+    names.add(name);
+    entries.push({
+      name,
+      method: method as 0 | 8,
+      compressedSize,
+      uncompressedSize,
+      localHeaderOffset,
+      isDirectory: name.endsWith('/'),
+    });
+    cursor = next;
+  }
+  if (cursor !== central.length) throw new Error('El directorio ZIP contiene datos inesperados.');
+  return entries;
+}
+
 /**
  * Read one deliberately small entry without loading the archive around it. Recovery
  * folder inspection is synchronous, and used to instantiate AdmZip for every
@@ -55,75 +189,19 @@ export function readZipEntrySync(
   const fd = fs.openSync(filePath, 'r');
   try {
     const stat = fs.fstatSync(fd);
-    const tailLength = Math.min(stat.size, MAX_COMMENT_BYTES + 22);
+    const tailLength = tailLengthFor(stat.size);
     if (tailLength < 22) throw new Error('ZIP truncado.');
-    const tail = readExactlySync(fd, tailLength, stat.size - tailLength);
-    let eocd = -1;
-    for (let offset = tail.length - 22; offset >= 0; offset -= 1) {
-      if (tail.readUInt32LE(offset) !== EOCD_SIGNATURE) continue;
-      const commentLength = tail.readUInt16LE(offset + 20);
-      if (offset + 22 + commentLength === tail.length) { eocd = offset; break; }
+    const tailStart = stat.size - tailLength;
+    const location = locateCentralDirectory(readExactlySync(fd, tailLength, tailStart), tailStart);
+    const directory = location.zip64RecordOffset === null
+      ? location
+      : readZip64Record(readExactlySync(fd, ZIP64_EOCD_BYTES, location.zip64RecordOffset));
+    checkCentralDirectory(directory, stat.size);
+    const entries = parseCentralDirectory(readExactlySync(fd, directory.centralSize, directory.centralOffset), directory.entryCount);
+    const selected = entries.find((entry) => entry.name === entryName) ?? null;
+    if (selected && (selected.compressedSize > maxBytes || selected.uncompressedSize > maxBytes)) {
+      throw new Error(`La entrada ${selected.name} supera el límite seguro de lectura.`);
     }
-    if (eocd < 0) throw new Error('No se encontró el directorio ZIP.');
-    const disk = tail.readUInt16LE(eocd + 4);
-    const centralDisk = tail.readUInt16LE(eocd + 6);
-    const entriesOnDisk = tail.readUInt16LE(eocd + 8);
-    const entryCount = tail.readUInt16LE(eocd + 10);
-    const centralSize = tail.readUInt32LE(eocd + 12);
-    const centralOffset = tail.readUInt32LE(eocd + 16);
-    if (disk !== 0 || centralDisk !== 0 || entriesOnDisk !== entryCount) {
-      throw new Error('Los ZIP multidisco no están soportados.');
-    }
-    if (entryCount === 0xffff || centralSize === 0xffffffff || centralOffset === 0xffffffff) {
-      throw new Error('El formato ZIP64 no está soportado por esta versión de Nodus.');
-    }
-    if (centralSize > MAX_CENTRAL_DIRECTORY_BYTES || centralOffset + centralSize > stat.size) {
-      throw new Error('Directorio ZIP inválido.');
-    }
-
-    const central = readExactlySync(fd, centralSize, centralOffset);
-    let cursor = 0;
-    let selected: ZipFileEntry | null = null;
-    const names = new Set<string>();
-    for (let index = 0; index < entryCount; index += 1) {
-      if (cursor + 46 > central.length || central.readUInt32LE(cursor) !== CENTRAL_SIGNATURE) {
-        throw new Error('Directorio ZIP dañado.');
-      }
-      const flags = central.readUInt16LE(cursor + 8);
-      const method = central.readUInt16LE(cursor + 10);
-      const compressedSize = central.readUInt32LE(cursor + 20);
-      const uncompressedSize = central.readUInt32LE(cursor + 24);
-      const nameLength = central.readUInt16LE(cursor + 28);
-      const extraLength = central.readUInt16LE(cursor + 30);
-      const commentLength = central.readUInt16LE(cursor + 32);
-      const localHeaderOffset = central.readUInt32LE(cursor + 42);
-      const next = cursor + 46 + nameLength + extraLength + commentLength;
-      if (next > central.length) throw new Error('Directorio ZIP truncado.');
-      if ((flags & 0x1) !== 0) throw new Error('Las entradas ZIP cifradas externamente no están soportadas.');
-      if (method !== 0 && method !== 8) throw new Error(`Método ZIP no soportado: ${method}.`);
-      if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localHeaderOffset === 0xffffffff) {
-        throw new Error('El formato ZIP64 no está soportado por esta versión de Nodus.');
-      }
-      const name = central.subarray(cursor + 46, cursor + 46 + nameLength)
-        .toString((flags & 0x800) !== 0 ? 'utf8' : 'latin1');
-      if (!name || names.has(name)) throw new Error('El ZIP contiene nombres vacíos o duplicados.');
-      names.add(name);
-      if (name === entryName) {
-        if (compressedSize > maxBytes || uncompressedSize > maxBytes) {
-          throw new Error(`La entrada ${name} supera el límite seguro de lectura.`);
-        }
-        selected = {
-          name,
-          method: method as 0 | 8,
-          compressedSize,
-          uncompressedSize,
-          localHeaderOffset,
-          isDirectory: name.endsWith('/'),
-        };
-      }
-      cursor = next;
-    }
-    if (cursor !== central.length) throw new Error('El directorio ZIP contiene datos inesperados.');
     if (!selected) return null;
     if (selected.isDirectory) return Buffer.alloc(0);
 
@@ -154,7 +232,7 @@ export function readZipEntrySync(
 }
 
 /**
- * A deliberately small ZIP32 reader for Nodus backups. Unlike AdmZip it never
+ * A deliberately small ZIP reader (ZIP32, and ZIP64 past 4 GiB) for Nodus backups. Unlike AdmZip it never
  * materialises an entry in memory unless the caller explicitly asks for a
  * bounded small entry (the two JSON manifests and the wrapped recovery key).
  */
@@ -169,67 +247,16 @@ export class ZipFileReader {
     const handle = await fs.promises.open(filePath, 'r');
     try {
       const stat = await handle.stat();
-      const tailLength = Math.min(stat.size, MAX_COMMENT_BYTES + 22);
+      const tailLength = tailLengthFor(stat.size);
       if (tailLength < 22) throw new Error('ZIP truncado.');
-      const tail = await readExactly(handle, tailLength, stat.size - tailLength);
-      let eocd = -1;
-      for (let offset = tail.length - 22; offset >= 0; offset -= 1) {
-        if (tail.readUInt32LE(offset) !== EOCD_SIGNATURE) continue;
-        const commentLength = tail.readUInt16LE(offset + 20);
-        if (offset + 22 + commentLength === tail.length) { eocd = offset; break; }
-      }
-      if (eocd < 0) throw new Error('No se encontró el directorio ZIP.');
-      const disk = tail.readUInt16LE(eocd + 4);
-      const centralDisk = tail.readUInt16LE(eocd + 6);
-      const entriesOnDisk = tail.readUInt16LE(eocd + 8);
-      const entryCount = tail.readUInt16LE(eocd + 10);
-      const centralSize = tail.readUInt32LE(eocd + 12);
-      const centralOffset = tail.readUInt32LE(eocd + 16);
-      if (disk !== 0 || centralDisk !== 0 || entriesOnDisk !== entryCount) throw new Error('Los ZIP multidisco no están soportados.');
-      if (entryCount === 0xffff || centralSize === 0xffffffff || centralOffset === 0xffffffff) {
-        throw new Error('El formato ZIP64 no está soportado por esta versión de Nodus.');
-      }
-      if (centralSize > MAX_CENTRAL_DIRECTORY_BYTES || centralOffset + centralSize > stat.size) {
-        throw new Error('Directorio ZIP inválido.');
-      }
-      const central = await readExactly(handle, centralSize, centralOffset);
-      const entries: ZipFileEntry[] = [];
-      const byName = new Map<string, ZipFileEntry>();
-      let cursor = 0;
-      for (let index = 0; index < entryCount; index += 1) {
-        if (cursor + 46 > central.length || central.readUInt32LE(cursor) !== CENTRAL_SIGNATURE) {
-          throw new Error('Directorio ZIP dañado.');
-        }
-        const flags = central.readUInt16LE(cursor + 8);
-        const method = central.readUInt16LE(cursor + 10);
-        const compressedSize = central.readUInt32LE(cursor + 20);
-        const uncompressedSize = central.readUInt32LE(cursor + 24);
-        const nameLength = central.readUInt16LE(cursor + 28);
-        const extraLength = central.readUInt16LE(cursor + 30);
-        const commentLength = central.readUInt16LE(cursor + 32);
-        const localHeaderOffset = central.readUInt32LE(cursor + 42);
-        const next = cursor + 46 + nameLength + extraLength + commentLength;
-        if (next > central.length) throw new Error('Directorio ZIP truncado.');
-        if ((flags & 0x1) !== 0) throw new Error('Las entradas ZIP cifradas externamente no están soportadas.');
-        if (method !== 0 && method !== 8) throw new Error(`Método ZIP no soportado: ${method}.`);
-        if (compressedSize === 0xffffffff || uncompressedSize === 0xffffffff || localHeaderOffset === 0xffffffff) {
-          throw new Error('El formato ZIP64 no está soportado por esta versión de Nodus.');
-        }
-        const name = central.subarray(cursor + 46, cursor + 46 + nameLength).toString((flags & 0x800) !== 0 ? 'utf8' : 'latin1');
-        if (!name || byName.has(name)) throw new Error('El ZIP contiene nombres vacíos o duplicados.');
-        const entry: ZipFileEntry = {
-          name,
-          method: method as 0 | 8,
-          compressedSize,
-          uncompressedSize,
-          localHeaderOffset,
-          isDirectory: name.endsWith('/'),
-        };
-        entries.push(entry);
-        byName.set(name, entry);
-        cursor = next;
-      }
-      if (cursor !== central.length) throw new Error('El directorio ZIP contiene datos inesperados.');
+      const tailStart = stat.size - tailLength;
+      const location = locateCentralDirectory(await readExactly(handle, tailLength, tailStart), tailStart);
+      const directory = location.zip64RecordOffset === null
+        ? location
+        : readZip64Record(await readExactly(handle, ZIP64_EOCD_BYTES, location.zip64RecordOffset));
+      checkCentralDirectory(directory, stat.size);
+      const entries = parseCentralDirectory(await readExactly(handle, directory.centralSize, directory.centralOffset), directory.entryCount);
+      const byName = new Map(entries.map((entry) => [entry.name, entry]));
       return new ZipFileReader(filePath, entries, byName);
     } finally {
       await handle.close();

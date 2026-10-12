@@ -378,7 +378,16 @@ export function migrateDatabaseSafely(
   let snapshot: MigrationRecoverySnapshot | null = null;
 
   if (fromVersion > 0) {
-    database.pragma('wal_checkpoint(TRUNCATE)');
+    // The copy below is of the main file alone, so every commit must be in it first. A reader
+    // holding a snapshot stops a TRUNCATE checkpoint short and leaves the newest commits in the
+    // -wal; the copy would then lack them, and a failed migration restores the copy and deletes
+    // the -wal. Wait for readers like any other statement would, and refuse rather than copy short.
+    database.pragma('busy_timeout = 5000');
+    const [checkpoint] = database.pragma('wal_checkpoint(TRUNCATE)') as Array<{ busy: number; log: number; checkpointed: number }>;
+    if (checkpoint && (checkpoint.busy !== 0 || checkpoint.log !== checkpoint.checkpointed)) {
+      database.close();
+      throw new Error('El vault está en uso por otra conexión y no se puede copiar antes de migrar. No se ha modificado nada; vuelve a abrirlo en unos segundos.');
+    }
     database.close();
     snapshot = createVerifiedSnapshot(databasePath, fromVersion, targetVersion, major);
     database = new Database(databasePath);

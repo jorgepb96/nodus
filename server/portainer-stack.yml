@@ -16,7 +16,7 @@ services:
       NODUS_ADMIN_EMAIL: ${NODUS_ADMIN_EMAIL:-}
       NODUS_ADMIN_PASSWORD: ${NODUS_ADMIN_PASSWORD:-}
       NODUS_SETUP_TOKEN: ${NODUS_SETUP_TOKEN:-}
-      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.0}
+      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.1}
     volumes:
       - nodus_data:/data
     expose:

@@ -163,6 +163,18 @@ const DOCUMENTED_MAX_OUTPUT: Readonly<Record<string, Readonly<Record<string, num
     'claude-sonnet-5': 128_000,
     'claude-sonnet-4-6': 128_000,
   },
+  // https://api-docs.deepseek.com/quick_start/pricing/ — 1M context with a 384K output ceiling.
+  // Recorded because an ABSENT ceiling is not neutral: researchAnswerTokens falls back to the flat
+  // figure, which pinned every non-Claude provider at 10,000 output tokens however large its
+  // window. deepseek-flash was then cut off mid-answer at 18,192 (10,000 + a low reasoning
+  // reserve) while holding a million-token context, and the scaling added for Claude never
+  // applied to it at all.
+  deepseek: {
+    'deepseek-flash': 384_000,
+    'deepseek-v4-flash': 384_000,
+    'deepseek-v4-pro': 384_000,
+    'deepseek-pro': 384_000,
+  },
 };
 
 /** The documented output ceiling for one provider/model, or null when it is not recorded. */

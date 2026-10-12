@@ -466,7 +466,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   updateStudyAnnotation(id: string, patch: Partial<StudyAnnotationInput> & { resolved?: boolean }): Promise<StudyAnnotation | null>;
   deleteStudyAnnotation(id: string): Promise<void>;
   transcribeStudyAudio(request: StudySttRequest, handlers?: StudySttStreamHandlers): Promise<StudySttResult>;
-  cancelStudyTranscription(): Promise<void>;
+  cancelStudyTranscription(requestId?: string): Promise<void>;
   getWhisperCppStatus(): Promise<WhisperCppStatus>;
   installWhisperCpp(): Promise<WhisperCppStatus>;
   uninstallWhisperCpp(): Promise<WhisperCppStatus>;

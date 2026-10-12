@@ -290,6 +290,8 @@ import { exportImmersionSessionPdf } from '../export/immersionExport';
 import { generateProjectSuggestions } from '../ai/projectInsertion';
 import { exportProject, exportProjectChapter } from '../export/projectExport';
 import path from 'node:path';
+import { tempFileFor } from '../util/tempFileName';
+import { openDocumentPath } from '../util/openDocument';
 import fs from 'node:fs';
 import os from 'node:os';
 import AdmZip from 'adm-zip';
@@ -827,7 +829,7 @@ export function registerAcademicIpc(context: IpcContext): void {
   h('libraryReader:openOriginal', async (_e, nodusId: string) => {
     const originalPath = libraryReader.libraryReaderOriginalPath(nodusId);
     if (!originalPath) return false;
-    return (await shell.openPath(originalPath)) === '';
+    return (await openDocumentPath(originalPath)) === '';
   });
   h('libraryReader:annotations:list', async (_e, nodusId: string) =>
     libraryReader.listLibraryReaderAnnotations(nodusId)
@@ -1531,7 +1533,7 @@ export function registerAcademicIpc(context: IpcContext): void {
       fs.writeFileSync(picked.filePath, ics, 'utf8');
       return { path: picked.filePath };
     }
-    const filePath = path.join(os.tmpdir(), `nodus-${event.id}.ics`);
+    const filePath = tempFileFor(os.tmpdir(), 'nodus-', event.id, '.ics');
     fs.writeFileSync(filePath, ics, 'utf8');
     const error = await shell.openPath(filePath);
     if (error) throw new Error(error);
@@ -1747,10 +1749,15 @@ export function registerAcademicIpc(context: IpcContext): void {
     const controller = new AbortController();
     chatAborters.set(requestId, controller);
     const unregisterNotebook = request.selection.notebookId ? researchNotebooks.registerNotebookRun(request.selection.notebookId, controller) : () => {};
+    // Timeline of one answer (request, first and last streamed text, done), for perf diagnosis.
+    const t0 = Date.now();
+    let firstDelta = 0, lastDelta = 0, chars = 0;
     try {
       return await streamResearchChat(
         request,
         (delta, kind) => {
+          const now = Date.now();
+          if (kind !== 'replace') { if (!firstDelta) firstDelta = now; lastDelta = now; chars += delta.length; }
           const channel = kind === 'reasoning' ? 'research:chatStream:reasoning' : kind === 'replace' ? 'research:chatStream:replace' : 'research:chatStream:delta';
           e.sender.send(channel, requestId, delta);
         },
@@ -1759,6 +1766,8 @@ export function registerAcademicIpc(context: IpcContext): void {
         activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); }
       );
     } finally {
+      const s = (t: number) => (t ? ((t - t0) / 1000).toFixed(1) : '-');
+      console.info(`${new Date().toISOString()} [chatTimeline] first text ${s(firstDelta)}s · last text ${s(lastDelta)}s · done ${s(Date.now())}s · streamed ${chars} chars`);
       chatAborters.delete(requestId);
       unregisterNotebook();
     }

@@ -7,6 +7,7 @@ import { normalizeToolkitToolPages } from '@shared/toolkitNavigation';
 import { Icon } from '../components/ui';
 import { t } from '../i18n';
 import { TOOLKIT_TOOLS, isToolkitStandalonePage, scriptorViewForVault, toolkitSidebarId, type ToolkitCatalogPage, type ToolkitStandalonePage, type ToolkitPage } from '../navigation';
+import { ToolkitBackupsView } from './ToolkitBackupsView';
 import { ToolkitConvertView } from './ToolkitConvertView';
 import { ToolkitProtectView } from './ToolkitProtectView';
 import { ToolkitPresenterView } from './ToolkitPresenterView';
@@ -153,7 +154,9 @@ export function ToolkitView({
     <div className="theme-workspace-surface toolkit-workspace h-full overflow-y-auto px-6 py-6 max-md:px-4">
       {/* Las herramientas tienen página propia; cualquier otra página
           cae en el catálogo en lugar de dejar el panel en blanco. */}
-      {page === 'convert' ? (
+      {page === 'backups' ? (
+        <ToolkitBackupsView onBack={() => onNavigate('home')} />
+      ) : page === 'convert' ? (
         <ToolkitConvertView onBack={() => onNavigate('home')} />
       ) : page === 'apps' ? (
         <ToolkitAppsView onBack={() => onNavigate('home')} settings={settings} />

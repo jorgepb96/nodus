@@ -1,27 +1,44 @@
 import type { VisionSession } from './vision/service';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
-import { utilityProcess } from 'electron';
 import type { ModelRef } from '@shared/types';
 import { serializeChatVisualPart } from '@shared/chatSkills';
+import { documentedContextWindow } from '@shared/providerContextWindows';
 import { completeText } from '../ai/aiClient';
 import { storeCapabilityFile } from '../chatAssets';
 import { validateViewDocument, type ViewDocumentV1 } from '../../packages/capability-api/src/views';
 import type { WorkerArtifactV1 } from '../../packages/capability-api/src/artifacts';
 import type { ChatAstNode } from '../../packages/capability-api/src/chat';
-import { acquireCapabilityWorker, stopCapabilityWorkers, type TrustedWorkerRuntime } from './workerHost';
+import type { ChatModelBudgetV1 } from '../../packages/capability-api/src/worker';
+import { acquireCapabilityWorker, leaseCapabilityScope, type TrustedWorkerRuntime } from './workerHost';
 import { createCapabilityHostServices, type CapabilityServiceAdapters } from './hostServices';
 import { resolveTrustedCapability } from './pluginStoreV2';
 import { serializeArtifactReference, storeCapabilityArtifact } from './artifactStore';
 import { inspectCapabilitySvg, refineCapabilitySvg, validateCapabilitySvg } from './svgServices';
 import { ensurePythonRuntime, runInPythonRuntime, validateRuntimeLock } from './pythonRuntime';
+import { runCapabilitySubworker } from './subworkerPool';
 import type { CapabilityProvider } from './registry';
 import type { TurnPins } from './registry';
 import type { TrustedCapabilityRunner } from './chatPipeline';
 
 /** Assembles the pieces for one turn: the pinned package, its worker, the host services
  *  it is allowed to reach, and where its results are stored. */
+
+/** The host's estimate of characters per token, passed to capabilities so that every consumer
+ *  sizes its limits with ONE ratio instead of inventing its own. Same figure the research lane
+ *  uses. An estimate, and documented as one. */
+const CAPABILITY_CHARS_PER_TOKEN = 3.2;
+
+/** What this turn's model can hold, for a capability to size its own limits against.
+ *
+ *  A model with no documented window yields an absent window rather than a guessed one, because
+ *  a capability's own floor is a better answer than a number nobody verified — and `null` here
+ *  must never be read as "unlimited". */
+function chatModelBudget(model: ModelRef | null | undefined): ChatModelBudgetV1 | undefined {
+  if (!model?.provider || !model.model) return undefined;
+  const window = documentedContextWindow(model.provider, model.model);
+  return window == null ? undefined : { contextWindowTokens: window, charsPerToken: CAPABILITY_CHARS_PER_TOKEN };
+}
 
 export interface TrustedTurnContext {
   vision?: VisionSession;
@@ -31,6 +48,11 @@ export interface TrustedTurnContext {
   locale: string;
   model?: ModelRef | null;
   pins: TurnPins;
+  /** Runners naming the same scope share their capability workers (see `leaseCapabilityScope`):
+   *  one answer's phases, and the correction rounds after it, then reuse one process with its
+   *  module caches instead of starting a cold one per phase. Absent, the runner's workers are
+   *  its own and stop when it is disposed. */
+  scope?: string;
   signal?: AbortSignal;
   beforeInvoke?: () => void;
   beforePaidCall?: () => void;
@@ -111,46 +133,7 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
     },
     // An auxiliary process from the package's own bundle, with its own deadline and a kill
     // the host controls. It talks to nothing: one input in, one value out.
-    async subworker(runtime, request, signal) {
-      const entry = path.resolve(path.dirname(runtime.entryPath), request.entry);
-      const base = path.resolve(path.dirname(runtime.entryPath));
-      if (entry !== base && !entry.startsWith(base + path.sep)) throw new Error('A subworker entry must live inside its own package.');
-      const max = runtime.permissions.subworkers?.max ?? 0;
-      if (max < 1) throw new Error('Capability subworkers are not permitted.');
-      const child = utilityProcess.fork(entry, [], { serviceName: `Nodus capability subworker ${runtime.capabilityId}`, stdio: 'ignore' });
-      // Same reason as the tool budget above: "the capability subworker exceeded its time limit"
-      // named no number and no cause. The work it bounds was measured at a third of a second
-      // against a budget of fifteen, so an overrun is a starved or unstarted process rather than a
-      // hard molecule — and that is only visible with the spawn-to-result time written down.
-      const spawned = Date.now();
-      const budget = Math.min(Math.max(request.timeoutMs, 1_000), 300_000);
-      return new Promise((resolve, reject) => {
-        let settled = false;
-        const finish = (error?: Error, value?: unknown) => {
-          if (settled) return;
-          settled = true;
-          clearTimeout(timer);
-          signal.removeEventListener('abort', abort);
-          try { child.kill(); } catch { /* already gone */ }
-          const spent = Date.now() - spawned;
-          if (error || spent * 2 >= budget) {
-            console.info(`${new Date().toISOString()} [capability] ${runtime.capabilityId} subworker ${request.entry} ${error ? 'failed' : 'ok'} in ${(spent / 1000).toFixed(1)}s of a ${(budget / 1000).toFixed(0)}s budget`);
-          }
-          if (error) reject(error); else resolve(value);
-        };
-        const abort = () => finish(new DOMException('The capability subworker was cancelled.', 'AbortError'));
-        const timer = setTimeout(() => finish(new Error(`The capability subworker exceeded its time limit of ${(budget / 1000).toFixed(0)} seconds.`)), budget);
-        signal.addEventListener('abort', abort, { once: true });
-        child.on('message', (message: { error?: string; result?: unknown }) => {
-          if (message?.error) finish(new Error(String(message.error).slice(0, 2_000)));
-          else finish(undefined, message?.result);
-        });
-        child.once('error', error => finish(new Error(String(error))));
-        child.once('exit', () => finish(new Error('The capability subworker exited without a result.')));
-        try { child.postMessage(request.input); }
-        catch (error) { finish(error instanceof Error ? error : new Error(String(error))); }
-      });
-    },
+    subworker: (runtime, request, signal) => runCapabilitySubworker(runtime, request, signal),
     async attachments(runtime, request) {
       if (!context.owner) throw new Error('Start a saved chat before creating capability attachments.');
       const source = storeCapabilityFile(context.owner, { bytes: request.bytes, mimeType: request.mimeType, name: request.name });
@@ -162,7 +145,9 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
 }
 
 export function createTrustedCapabilityRunner(context: TrustedTurnContext): TrustedCapabilityRunner {
-  const scopeKey = randomUUID();
+  // Computed once per turn, not per call: the model does not change inside a turn.
+  const budget = chatModelBudget(context.model);
+  const { scopeKey, release } = leaseCapabilityScope(context.scope);
   const services = createCapabilityHostServices(createCapabilityAdapters(context));
   const workerFor = (provider: CapabilityProvider) => {
     const runtime = runtimeFor(provider, context.pins);
@@ -178,7 +163,7 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
     });
 
   return {
-    dispose: () => stopCapabilityWorkers(key => key.endsWith(`#${scopeKey}`)),
+    dispose: release,
     async invoke({ provider, toolId, input, nodeId }) {
       const tool = provider.tools.find(candidate => candidate.id === toolId);
       if (!tool) throw new Error(`${provider.id} has no tool ${toolId}.`);
@@ -191,22 +176,38 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
       // unverified fallback — so the budget is almost never spent on chemistry, and a timeout
       // without a timing line is undiagnosable. Logged on failure always, and on success only when
       // the call used more than half its budget, so an ordinary route stays quiet.
-      const started = Date.now();
-      const report = (outcome: string) => {
-        const spent = Date.now() - started;
-        if (outcome === 'ok' && spent * 2 < tool.timeoutMs) return;
-        console.info(`${new Date().toISOString()} [capability] ${provider.id} ${toolId} ${outcome} in ${(spent / 1000).toFixed(1)}s of a ${(tool.timeoutMs / 1000).toFixed(0)}s budget`);
+      // Restarted when the call is admitted: time queued behind the same tool is reported beside
+      // the budget, not as part of it.
+      let started = performance.now();
+      let startedWall = Date.now();
+      let queued = '';
+      // Always, so a run's log carries the per-tool cost a later analysis can total. Suppressing
+      // the quick successes left the dominant cost of a turn unmeasurable from its own log.
+      const report = (outcome: string, detail = '') => {
+        const spent = performance.now() - started;
+        const wallSpent = Date.now() - startedWall;
+        const drift = Math.abs(wallSpent - spent) > Math.max(250, spent * 0.1) ? ` · CLOCK STEPPED: wall says ${(wallSpent / 1000).toFixed(1)}s` : '';
+        console.info(`${new Date().toISOString()} [capability] ${provider.id} ${toolId} ${outcome} in ${(spent / 1000).toFixed(1)}s of a ${(tool.timeoutMs / 1000).toFixed(0)}s budget${queued}${detail}${drift}`);
       };
       try {
         const result = await handle.call<Awaited<ReturnType<TrustedCapabilityRunner['invoke']>>>('invoke', {
           invocationId: `i${Math.random().toString(36).slice(2, 10)}`,
           toolId, input, locale: context.locale,
-          chat: { question: context.question, nodeId },
-        }, { timeoutMs: tool.timeoutMs, signal: context.signal });
+          chat: { question: context.question, nodeId, ...(budget ? { budget } : {}) },
+        }, {
+          timeoutMs: tool.timeoutMs, signal: context.signal, services,
+          queue: { key: `invoke:${toolId}`, limit: tool.concurrency },
+          onAdmitted: waited => {
+            started = performance.now();
+            startedWall = Date.now();
+            if (waited >= 50) queued = ` · queued ${(waited / 1000).toFixed(1)}s`;
+          },
+        });
         report('ok');
         return result;
       } catch (error) {
-        report(error instanceof Error && error.name === 'AbortError' ? 'cancelled' : 'failed');
+        report(error instanceof Error && error.name === 'AbortError' ? 'cancelled' : 'failed',
+          error instanceof Error ? ` — ${error.message.replace(/\s+/g, ' ').slice(0, 200)}` : '');
         throw error;
       }
     },
@@ -214,8 +215,8 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
     async hook({ provider, hook, nodes }: { provider: CapabilityProvider; hook: 'prepare' | 'finalize'; nodes: ChatAstNode[] }) {
       const { handle } = workerFor(provider);
       return handle.call(hook === 'prepare' ? 'prepareChat' : 'finalizeChat',
-        { nodes, ...(hook === 'prepare' ? { question: context.question } : {}), locale: context.locale },
-        { timeoutMs: 60_000, signal: context.signal });
+        { nodes, ...(hook === 'prepare' ? { question: context.question, ...(budget ? { budget } : {}) } : {}), locale: context.locale },
+        { timeoutMs: 60_000, signal: context.signal, services });
     },
 
     async persistArtifact({ provider, artifact }: { provider: CapabilityProvider; artifact: WorkerArtifactV1 }) {
@@ -247,7 +248,7 @@ export function createTrustedCapabilityRunner(context: TrustedTurnContext): Trus
         const view = await handle.call('renderArtifact', {
           artifactType: artifact.artifactType, artifactVersion: artifact.artifactVersion,
           data: artifact.data, locale: context.locale,
-        }, { timeoutMs: 60_000, signal: context.signal });
+        }, { timeoutMs: 60_000, signal: context.signal, services });
         pieces.push(renderView({ provider, view: validateViewDocument(view) }));
       }
       return pieces.join('');

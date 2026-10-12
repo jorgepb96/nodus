@@ -1010,15 +1010,15 @@ function readPathRows(db: ReturnType<typeof getDb>): ReadingWorkRow[] {
     .prepare(
       `
       WITH theme_stats AS (
-        SELECT wt.nodus_id, COUNT(DISTINCT wt.theme_id) AS theme_count, GROUP_CONCAT(DISTINCT t.label) AS theme_labels
+        SELECT wt.nodus_id, COUNT(DISTINCT wt.theme_id) AS theme_count, json_group_array(DISTINCT t.label) AS theme_labels
         FROM work_themes wt
         JOIN themes t ON t.theme_id = wt.theme_id
         GROUP BY wt.nodus_id
       ),
       idea_stats AS (
         SELECT io.nodus_id, COUNT(DISTINCT io.global_id) AS idea_count,
-               GROUP_CONCAT(DISTINCT io.global_id) AS idea_ids,
-               GROUP_CONCAT(DISTINCT i.label) AS idea_labels
+               json_group_array(DISTINCT io.global_id) AS idea_ids,
+               json_group_array(DISTINCT i.label) AS idea_labels
         FROM idea_occurrences io
         JOIN ideas i ON i.global_id = io.global_id
         GROUP BY io.nodus_id
@@ -1537,12 +1537,21 @@ function parseAuthors(authorsJson: string): string[] {
   }
 }
 
+/**
+ * Read one of readPathRows' aggregated lists. They are JSON arrays (json_group_array), not
+ * GROUP_CONCAT's comma-joined text: thousands of idea labels contain commas, and splitting
+ * on them turned one label into fragments ("V" / "D" / "and J segments") that were then
+ * shown as related ideas.
+ */
 function splitConcat(value: string | null): string[] {
   if (!value) return [];
-  return value
-    .split(',')
-    .map((x) => x.trim())
-    .filter(Boolean);
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function splitGapStatements(value: string | null): string[] {

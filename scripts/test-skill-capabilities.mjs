@@ -152,6 +152,10 @@ test('the auto-update cycle installs a compatible release, gates a wider one and
 
   const originalFetch = globalThis.fetch;
   globalThis.fetch = mock;
+  // This test is about the update cycle itself, so it runs with the auto-update lock off
+  // even on a machine whose environment sets it.
+  const lock = process.env.NODUS_DISABLE_AUTO_UPDATE;
+  delete process.env.NODUS_DISABLE_AUTO_UPDATE;
   try {
     const marketplace = lib.addSkillSource(origin);
     const sourceId = marketplace.sources.at(-1).id;
@@ -194,7 +198,10 @@ test('the auto-update cycle installs a compatible release, gates a wider one and
     lib.setPluginAutoUpdate('updater-kit', true);
     await lib.checkPluginUpdates(true);
     assert.equal(installed().activeVersion, '2.4.0', 'and the same release installs once auto-update is on');
-  } finally { globalThis.fetch = originalFetch; }
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (lock === undefined) delete process.env.NODUS_DISABLE_AUTO_UPDATE; else process.env.NODUS_DISABLE_AUTO_UPDATE = lock;
+  }
 });
 
 test('inbox packages are reviewable, path-bounded and never active before approval', () => {

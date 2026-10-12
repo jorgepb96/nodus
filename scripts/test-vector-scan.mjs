@@ -18,6 +18,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -25,14 +26,7 @@ const require = createRequire(import.meta.url);
 // better-sqlite3's binary is built for Electron's ABI, so this re-runs itself under
 // Electron rather than skipping: a test that quietly passes by not running is worse
 // than no test. Same trick as scripts/test-idea-identity.mjs.
-if (!process.argv.includes('--electron-vector-scan-test')) {
-  execFileSync(
-    path.join(repoRoot, 'node_modules/.bin/electron'),
-    [path.join(repoRoot, 'scripts/test-vector-scan.mjs'), '--electron-vector-scan-test'],
-    { cwd: repoRoot, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'inherit' }
-  );
-  process.exit(0);
-}
+if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--electron-vector-scan-test')) process.exit(0);
 
 const Database = require('better-sqlite3');
 

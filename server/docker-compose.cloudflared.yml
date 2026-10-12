@@ -36,7 +36,7 @@ services:
       # With the pair, the account is created on first boot and its password is rotated
       # whenever you change the value here.
       NODUS_SETUP_TOKEN: ${NODUS_SETUP_TOKEN:-}
-      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.0}
+      NODUS_SOURCE_URL: ${NODUS_SOURCE_URL:-https://github.com/jorgepb96/nodus/tree/v5.8.1}
       NODUS_ADMIN_EMAIL: ${NODUS_ADMIN_EMAIL:-}
       NODUS_ADMIN_PASSWORD: ${NODUS_ADMIN_PASSWORD:-}
       # Optional ceilings. Unset they default to 8 MiB per image, 2 GiB of images per

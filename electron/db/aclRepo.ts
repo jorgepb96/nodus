@@ -1,3 +1,4 @@
+import { createAclReadPolicy } from './aclReadPolicy';
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto';
 import { getDb } from './database';
 import type {
@@ -6,7 +7,6 @@ import type {
 
 type Row = Record<string, unknown>;
 const now = () => new Date().toISOString();
-const roleRank: Record<AclRole, number> = { view: 0, comment: 1, edit_content: 2, edit: 3, full_access: 4, owner: 5 };
 
 function resourceExists(type: AclResourceType, id: string): boolean {
   const db = getDb();
@@ -76,45 +76,9 @@ export function listAclEntries(resourceType: AclResourceType, resourceId: string
     principal_name COLLATE NOCASE, entry.id`).all(resourceType, resourceId) as Row[]).map(toEntry);
 }
 
-function resourceChain(resourceType: AclResourceType, resourceId: string): Array<[AclResourceType, string]> {
-  const db = getDb(); const chain: Array<[AclResourceType, string]> = []; const seen = new Set<string>();
-  let type = resourceType; let id = resourceId;
-  for (;;) {
-    const key = `${type}:${id}`; if (seen.has(key)) break; seen.add(key); chain.push([type, id]);
-    if (type === 'vault') break;
-    if (type === 'page') {
-      const parent = db.prepare('SELECT parent_page_id FROM pages WHERE id = ?').get(id) as { parent_page_id: string | null } | undefined;
-      if (parent?.parent_page_id) { id = parent.parent_page_id; continue; }
-    } else if (type === 'view') {
-      const parent = db.prepare('SELECT database_id FROM db_views WHERE id = ?').get(id) as { database_id: string } | undefined;
-      if (parent) { type = 'database'; id = parent.database_id; continue; }
-    } else if (type === 'row') {
-      const parent = db.prepare('SELECT database_id FROM db_rows WHERE id = ?').get(id) as { database_id: string } | undefined;
-      if (parent) { type = 'database'; id = parent.database_id; continue; }
-    }
-    type = 'vault'; id = 'vault';
-  }
-  return chain;
-}
-
 export function getEffectiveAcl(resourceType: AclResourceType, resourceId: string, actorId = 'local'): EffectiveAcl {
-  requireResource(resourceType, resourceId); const db = getDb();
-  const groups = db.prepare('SELECT group_id FROM workspace_group_members WHERE actor_id = ?').all(actorId) as Array<{ group_id: string }>;
-  const principals = [{ type: 'actor', id: actorId }, ...groups.map((group) => ({ type: 'group', id: group.group_id }))];
-  let role: AclRole | null = null; let source: [AclResourceType, string] | null = null;
-  const lookup = db.prepare('SELECT role FROM acl_entries WHERE resource_type = ? AND resource_id = ? AND principal_type = ? AND principal_id = ?');
-  for (const resource of resourceChain(resourceType, resourceId)) {
-    const roles = principals.flatMap((principal) => {
-      const row = lookup.get(resource[0], resource[1], principal.type, principal.id) as { role: AclRole } | undefined;
-      return row ? [row.role] : [];
-    });
-    if (roles.length) { role = roles.sort((left, right) => roleRank[right] - roleRank[left])[0]; source = resource; break; }
-  }
-  const rank = role == null ? -1 : roleRank[role];
-  return { role, sourceResourceType: source?.[0] ?? null, sourceResourceId: source?.[1] ?? null,
-    inherited: Boolean(source && (source[0] !== resourceType || source[1] !== resourceId)), canView: rank >= 0,
-    canComment: rank >= roleRank.comment, canEditContent: rank >= roleRank.edit_content,
-    canEditStructure: rank >= roleRank.edit, canManageAccess: rank >= roleRank.full_access };
+  requireResource(resourceType, resourceId);
+  return createAclReadPolicy(getDb(),actorId)(resourceType,resourceId);
 }
 
 export type AclCapability = 'view' | 'comment' | 'edit_content' | 'edit' | 'manage_access';

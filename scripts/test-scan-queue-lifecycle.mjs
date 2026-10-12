@@ -16,6 +16,9 @@ globalThis.__scanQueueLife = {
   releaseReprocess: null,
   releaseBridge: null,
   deepFailures: 0,
+  deepRuns: 0,
+  autoSummary: false,
+  summaryFailures: 0,
 };
 
 await build({
@@ -39,17 +42,17 @@ await build({
           all(){return []},run(){return {changes:1}}
         }}}}
       `);
-      stub(/\.\.\/db\/settingsRepo$/, 'settings', `export function getSettings(){return {aiConcurrencyMode:'manual',concurrency:1,autoBridgeAfterQueue:false,autoSummaryAfterDeep:false,embeddingProvider:'openai',providerKeys:{openai:false},zoteroUserId:'',zoteroStoragePath:'',unpaywallEmail:'',preferZoteroFulltext:false,ocrEnabled:false,ocrLanguages:[],ocrMaxPages:0,themesLocked:false,synthesisModel:null}}`);
+      stub(/\.\.\/db\/settingsRepo$/, 'settings', `export function getSettings(){return {aiConcurrencyMode:'manual',concurrency:1,autoBridgeAfterQueue:false,autoSummaryAfterDeep:globalThis.__scanQueueLife.autoSummary,embeddingProvider:'openai',providerKeys:{openai:false},zoteroUserId:'',zoteroStoragePath:'',unpaywallEmail:'',preferZoteroFulltext:false,ocrEnabled:false,ocrLanguages:[],ocrMaxPages:0,themesLocked:false,synthesisModel:null}}`);
       stub(/\.\.\/ai\/lightScan$/, 'light', `export async function runLightScan(){}`);
-      stub(/\.\.\/ai\/deepScan$/, 'deep', `export function issueDeepScanPublicationOrdinal(){return 1}export function finishDeepScanPublicationOrdinal(){}export async function runDeepScan(){if(globalThis.__scanQueueLife.deepFailures>0){globalThis.__scanQueueLife.deepFailures-=1;throw new Error('temporary fusion failure')}}`);
-      stub(/\.\.\/ai\/summaryScan$/, 'summary', `export async function runSummaryScan(){}`);
+      stub(/\.\.\/ai\/deepScan$/, 'deep', `export function issueDeepScanPublicationOrdinal(){return 1}export function finishDeepScanPublicationOrdinal(){}export async function runDeepScan(){globalThis.__scanQueueLife.deepRuns+=1;if(globalThis.__scanQueueLife.deepFailures>0){globalThis.__scanQueueLife.deepFailures-=1;throw new Error('temporary fusion failure')}}`);
+      stub(/\.\.\/ai\/summaryScan$/, 'summary', `export async function runSummaryScan(){if(globalThis.__scanQueueLife.summaryFailures>0){globalThis.__scanQueueLife.summaryFailures-=1;throw new globalThis.__scanQueueLife.AiError('summary provider timed out',true)}}`);
       stub(/\.\.\/ai\/reprocessConnections$/, 'reprocess', `export async function reprocessConnections(_options,_model,onProgress){globalThis.__scanQueueLife.reprocessStarted=true;onProgress?.({phase:'themes',label:'Agrupando ideas en temas',current:1,total:1});await new Promise(resolve=>{globalThis.__scanQueueLife.releaseReprocess=resolve});return {relationsAdded:0,newThemes:0}}`);
       stub(/\.\.\/db\/themesRepo$/, 'themes', `export function listThemeLabels(){return []}`);
       stub(/\.\.\/extraction\/textExtractor$/, 'text', `export async function resolveWorkText(){return {text:'paper text',segments:[]}}export function resolvedTextStateFromDoc(){return {}}`);
       stub(/\.\.\/zotero\/zoteroClient$/, 'zotero', `export async function getItem(){return {abstract:'abstract'}}`);
       stub(/\.\.\/db\/worksRepo$/, 'works', `export function clearDeepQueued(){}export function setDeepPending(){}export function setDeepResult(){}export function setResolvedTextState(){}export function setSummaryPending(){}`);
       stub(/\.\.\/db\/workSummariesRepo$/, 'summaries', `export function failedSummaryWorks(){return []}export function pendingSummaryWorks(){return []}`);
-      stub(/\.\.\/ai\/aiClient$/, 'ai', `export class AiError extends Error{constructor(message,retriable=false,config=false){super(message);this.retriable=retriable;this.config=config}}`);
+      stub(/\.\.\/ai\/aiClient$/, 'ai', `export class AiError extends Error{constructor(message,retriable=false,config=false){super(message);this.retriable=retriable;this.config=config}}globalThis.__scanQueueLife.AiError=AiError`);
       stub(/\.\.\/ai\/semanticBridges$/, 'bridges', `export async function discoverSemanticBridges(){await new Promise(resolve=>{globalThis.__scanQueueLife.releaseBridge=resolve});return {added:0,validated:0,candidatesScanned:0}}`);
       stub(/\.\.\/ai\/embeddingPipeline$/, 'embeddings', `export async function startEmbedding(){}`);
       stub(/\.\.\/ai\/passageEmbeddingPipeline$/, 'passages', `export async function startPassageEmbedding(){}`);
@@ -121,4 +124,24 @@ test('stopping an accepted provider operation never hides it while it is still r
 test.after(async () => {
   delete globalThis.__scanQueueLife;
   await rm(output, { recursive: true, force: true });
+});
+
+test('a transient failure after the analysis committed retries the chain, not the analysis', async () => {
+  // A forced rescan of a book re-pays every chunk of the analysis. When only the required
+  // summary after it times out, the retry must not run that analysis again.
+  scanQueue.clear();
+  await waitFor(() => !scanQueue.isBusy(), 'queue idle');
+  globalThis.__scanQueueLife.autoSummary = true;
+  globalThis.__scanQueueLife.summaryFailures = 1;
+  globalThis.__scanQueueLife.deepRuns = 0;
+  globalThis.__scanQueueLife.reprocessStarted = false;
+  scanQueue.enqueue('paper-1', 'Paper one', 'deep', null, { refresh: true });
+  const deadline = Date.now() + 6_000;
+  while (!globalThis.__scanQueueLife.reprocessStarted && Date.now() < deadline) await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.ok(globalThis.__scanQueueLife.reprocessStarted, 'the retried item completes');
+  assert.equal(globalThis.__scanQueueLife.summaryFailures, 0, 'the summary did fail once and was retried');
+  assert.equal(globalThis.__scanQueueLife.deepRuns, 1, 'the committed analysis is not run a second time');
+  globalThis.__scanQueueLife.releaseReprocess();
+  await waitFor(() => !scanQueue.snapshot().maintenanceRunning, 'maintenance settles');
+  globalThis.__scanQueueLife.autoSummary = false;
 });

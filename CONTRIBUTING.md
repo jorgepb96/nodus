@@ -237,7 +237,7 @@ Use commit email addresses associated with the correct GitHub accounts. Missing
 account mappings, incomplete contributor data, and unsigned accounts block the
 check. Maintainers must accept too. AI-assisted contributions are welcome: the
 person submitting them must review them, accept the CLA, and have the authority
-to grant the required rights. Recognized Claude/Codex tool attributions do not
+to grant the required rights. Recognized Claude/Codex/Copilot tool attributions do not
 need a separate signature; they never exempt the responsible human or another
 human coauthor. Unrecognized or misattributed identities must be corrected;
 never remove a real author's attribution to avoid obtaining their acceptance.

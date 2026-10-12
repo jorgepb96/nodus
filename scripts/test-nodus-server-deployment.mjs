@@ -19,12 +19,15 @@ test('production and Portainer compose pull the experimental image built from ma
   }
 });
 
-test('the main workflow tests then publishes amd64 and arm64 images', () => {
+test('explicit main publication tests then publishes amd64 and arm64 images', () => {
   const workflow = read('.github/workflows/nodus-server-image.yml');
   assert.doesNotMatch(read('.gitignore'), /^\.github\/$/m);
-  assert.match(workflow, /branches:\s*\[main\]/);
-  assert.match(workflow, /- 'package\.json'/, 'server publishing reruns when its test dependencies change');
-  assert.match(workflow, /- 'package-lock\.json'/, 'server publishing reruns when the dependency lock changes');
+  assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /\n  (?:push|pull_request):/, 'publication is explicitly requested');
+  assert.match(workflow, /inputs\.publish && github\.ref == 'refs\/heads\/main'/, 'publication requires an explicit request on main');
+  const ci = read('.github/workflows/ci.yml');
+  assert.match(ci, /Build the real server container without publishing/, 'PRs still build the shipped container');
+  assert.match(ci, /Container boots, reports health and protects anonymous access/, 'PRs still verify a real container');
   assert.match(workflow, /Install test dependencies[\s\S]*?run:\s*npm ci[\s\S]*?Test server and deployment contract/, 'dependencies are installed before server tests');
   // Every server suite has to run before an image is published, not just the two that
   // predate the client API: an image that fails a role check or an asset rejection is
@@ -92,7 +95,7 @@ test('every remote user receives the exact AGPL license and Corresponding Source
       const response = await fetch(`${origin}${endpoint}`);
       assert.equal(response.status, 200);
       const info = await response.json();
-      assert.equal(info.version, '5.8.0');
+      assert.equal(info.version, '5.8.1');
       assert.equal(info.license, 'AGPL-3.0-only');
       assert.equal(info.sourceCodeUrl, sourceCodeUrl);
     }

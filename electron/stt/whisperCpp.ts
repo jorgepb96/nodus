@@ -8,8 +8,10 @@ import path from 'node:path';
 import type { StudySttRequest, StudySttResult, WhisperCppStatus } from '@shared/sttModels';
 import { WHISPER_CPP_MODELS } from '@shared/sttModels';
 import { getSettings } from '../db/settingsRepo';
+import { transcribeWhisperLive, cancelWhisperLive, stopWhisperLive } from './whisperLive';
 
 const active = new Map<string, ChildProcess>();
+const cancelled = new Set<string>();
 
 function brewExecutable(): string | null {
   for (const candidate of ['/opt/homebrew/bin/brew', '/usr/local/bin/brew', '/home/linuxbrew/.linuxbrew/bin/brew']) if (fs.existsSync(candidate)) return candidate;
@@ -150,11 +152,21 @@ export async function transcribeWhisperCpp(
   const weights = modelPath(model);
   if (!fs.existsSync(weights)) throw new Error(`Descarga ${model} desde Ajustes antes de transcribir.`);
   const bytes = request.audioBytes instanceof Uint8Array ? request.audioBytes : new Uint8Array(request.audioBytes);
+  if (request.realtime) {
+    if (request.requestId && cancelled.delete(request.requestId)) throw new Error('Transcripción cancelada.');
+    return transcribeWhisperLive(request, executable, weights, model);
+  }
   if (!bytes.byteLength) throw new Error('La grabación está vacía.');
 
-  const requestId = request.requestId?.trim() || randomUUID();
+  const requestId = request.requestId && /^[\w-]{1,128}$/.test(request.requestId) ? request.requestId : randomUUID();
+  if (active.has(requestId)) throw new Error('Ya hay una transcripción con este identificador.');
   const input = path.join(os.tmpdir(), `nodus-whisper-${requestId}.wav`);
   await fsp.writeFile(input, bytes);
+  // Cancellation can arrive while the temporary WAV is still being written.
+  if (cancelled.delete(requestId)) {
+    await fsp.rm(input, { force: true });
+    throw new Error('Transcripción cancelada.');
+  }
   const language = request.language?.trim().toLocaleLowerCase() || 'auto';
   const args = [
     '--model', weights,
@@ -207,7 +219,7 @@ export async function transcribeWhisperCpp(
       if (signal === 'SIGTERM') { reject(new Error('Transcripción cancelada.')); return; }
       if (code !== 0) { reject(new Error(stderr.trim() || `whisper.cpp terminó con código ${code}.`)); return; }
       const text = chunks.map((chunk) => chunk.text).join(' ').trim() || partial.trim();
-      if (!text) { reject(new Error('whisper.cpp no devolvió texto para este audio.')); return; }
+      if (!text && !request.allowEmpty) { reject(new Error('whisper.cpp no devolvió texto para este audio.')); return; }
       handlers.onProgress?.(1);
       resolve({ text, provider: 'whisper_cpp', model, chunks });
     });
@@ -215,7 +227,13 @@ export async function transcribeWhisperCpp(
 }
 
 export function cancelWhisperCpp(requestId: string): void {
-  active.get(requestId)?.kill('SIGTERM');
+  if (cancelWhisperLive(requestId)) return;
+  const child = active.get(requestId);
+  if (child) child.kill('SIGTERM');
+  else {
+    cancelled.add(requestId);
+    if (cancelled.size > 100) cancelled.delete(cancelled.values().next().value!);
+  }
 }
 
 /**
@@ -232,6 +250,7 @@ export function cancelWhisperCpp(requestId: string): void {
  * observed in tests and logs.
  */
 export function stopAllWhisperCpp(): number {
+  const live = stopWhisperLive();
   let killed = 0;
   for (const [requestId, child] of active) {
     if (!child.killed && child.exitCode === null) {
@@ -247,7 +266,8 @@ export function stopAllWhisperCpp(): number {
     }
   }
   active.clear();
-  return killed;
+  cancelled.clear();
+  return killed + live;
 }
 
 /** Test seam: how many transcriptions are currently running. */

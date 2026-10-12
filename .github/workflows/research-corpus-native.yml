@@ -1,17 +1,8 @@
 name: Research corpus native integration
+# Automatic validation is selected by CI; this entry point is explicitly manual.
 on:
-  pull_request:
-    paths:
-      - 'runtime/zotero-mcp/**'
-      - 'scripts/*research*'
-      - 'scripts/*zotero-mcp*'
-      - 'electron/ai/*research*'
-      - 'electron/ai/documentary*'
-      - 'electron/db/documentary*'
-      - 'electron/citations/*'
-      - 'shared/research*'
-      - '.github/workflows/research-corpus-native.yml'
   workflow_dispatch:
+
 permissions:
   contents: read
 concurrency:
@@ -23,27 +14,28 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        os: [macos-latest, macos-15-intel, windows-latest, ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
-    # Intel builds cryptography/OpenSSL from source before the app build and
-    # Electron integration tests; the cold build exceeded the 30-minute budget.
-    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 60 || 30 }}
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx electron-builder install-app-deps
       - name: Materialize Electron before parallel tests
         run: node scripts/prepare-electron-tests.mjs
-      - name: Install pinned native crypto compiler on Intel macOS
-        if: matrix.os == 'macos-15-intel'
-        run: rustup toolchain install 1.93.0 --profile minimal
+      - name: Rebuild Electron native dependencies on Linux
+        if: runner.os == 'Linux'
+        env:
+          CC: clang-15
+          CXX: clang++-15
+        run: npx electron-builder install-app-deps
+      - name: Rebuild Electron native dependencies on macOS and Windows
+        if: runner.os != 'Linux'
+        run: npx electron-builder install-app-deps
       - name: Hash-locked private runtime and installed-byte license inventory
-        # Intel macOS uses the current cryptography sdist with pinned static OpenSSL.
-        # Other targets use the hash-locked upstream wheels.
         run: npm run research:runtime
       - name: Native stdio against synthetic local API
         run: node scripts/verify-managed-zotero-mcp.mjs --disposable-ci
@@ -69,3 +61,4 @@ jobs:
             build/zotero-mcp/runtime.json
             build/zotero-mcp/legal/**
           if-no-files-found: warn
+          retention-days: 3

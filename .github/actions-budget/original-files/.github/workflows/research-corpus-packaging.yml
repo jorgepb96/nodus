@@ -1,0 +1,199 @@
+name: Research corpus disposable installer validation
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/agentic-corpus-notebooks]
+    paths:
+      - '.github/workflows/research-corpus-packaging.yml'
+      - 'scripts/verify-research-installer.mjs'
+      - 'scripts/download-research-upgrade-base.mjs'
+      - 'scripts/verify-research-pdf.mjs'
+      - 'electron/bootstrap.ts'
+      - 'electron/qa/isolatedProfile.ts'
+      - 'electron/workers/background*.ts'
+      - 'electron/workers/documentary*.ts'
+      - 'runtime/zotero-mcp/**'
+      - 'build/**'
+permissions:
+  contents: read
+concurrency:
+  group: research-installers-${{ github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: '--linux deb --x64'
+            arch: x64
+          - os: macos-latest
+            platform: '--mac --arm64'
+            arch: arm64
+          - os: macos-15-intel
+            platform: '--mac --x64'
+            arch: x64
+          - os: windows-latest
+            platform: '--win --x64'
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      NODUS_RELEASE_CHANNEL: beta
+      NODUS_RESEARCH_CANDIDATE_VERSION: 5.6.1-research.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx electron-builder install-app-deps
+      - run: node scripts/prepare-electron-tests.mjs
+      - name: Install pinned native crypto compiler on Intel macOS
+        if: matrix.os == 'macos-15-intel'
+        run: rustup toolchain install 1.93.0 --profile minimal
+      - run: npm run research:runtime
+      - run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+      - run: npm run capabilities:bootstrap
+        env:
+          NODUS_REQUIRE_BOOTSTRAP: '1'
+      - name: Prepare temporary macOS signing keychain
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          set -euo pipefail
+          required=(
+            MACOS_CERTIFICATE_BASE64
+            MACOS_CERTIFICATE_PASSWORD
+            APPLE_API_KEY_BASE64
+            APPLE_API_KEY_ID
+            APPLE_API_ISSUER
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required macOS release secret is not configured: $name"
+              exit 1
+            fi
+          done
+
+          certificate_path="$RUNNER_TEMP/nodus-signing-certificate.p12"
+          api_key_path="$RUNNER_TEMP/nodus-notary-api-key.p8"
+          keychain_path="$RUNNER_TEMP/nodus-signing.keychain-db"
+          keychain_password="$(openssl rand -base64 32)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"
+          chmod 600 "$certificate_path" "$api_key_path"
+          openssl pkey -in "$api_key_path" -noout
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path" >/dev/null
+
+          # codesign only resolves identities from the user's keychain search
+          # list, even when --keychain is also supplied. Preserve the runner's
+          # existing keychains while making this isolated one discoverable.
+          search_keychains=("$keychain_path")
+          while IFS= read -r existing_keychain; do
+            if [[ -n "$existing_keychain" && "$existing_keychain" != "$keychain_path" ]]; then
+              search_keychains+=("$existing_keychain")
+            fi
+          done < <(security list-keychains -d user | sed -E 's/^[[:space:]]*"([^"]+)".*/\1/')
+          security list-keychains -d user -s "${search_keychains[@]}"
+
+          signing_identities="$(security find-identity -v -p codesigning "$keychain_path")"
+          if [[ "$signing_identities" != *'"Developer ID Application:'* ]]; then
+            echo "::error::The imported .p12 does not contain a valid Developer ID Application identity and private key"
+            exit 1
+          fi
+
+          # Fail before the expensive app build if codesign cannot use the
+          # imported private key in this non-interactive runner session.
+          identity_hash="$(awk '/"Developer ID Application:/ { print $2; exit }' <<< "$signing_identities")"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          cp /usr/bin/true "$signing_probe"
+          codesign --force \
+            --sign "$identity_hash" \
+            --keychain "$keychain_path" \
+            --timestamp \
+            --options runtime \
+            "$signing_probe"
+          codesign --verify --strict "$signing_probe"
+          rm -f "$signing_probe"
+
+          {
+            echo "CSC_KEYCHAIN=$keychain_path"
+            echo "APPLE_API_KEY=$api_key_path"
+            echo "NODUS_MACOS_CERTIFICATE_PATH=$certificate_path"
+            echo "NODUS_NOTARY_KEY_PATH=$api_key_path"
+          } >> "$GITHUB_ENV"
+
+      - name: Package signed and notarized macOS application without publishing
+        if: startsWith(matrix.os, 'macos')
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          NODUS_REQUIRE_MACOS_SIGNING: true
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.research.cjs
+      - name: Verify signed and notarized macOS artifacts
+        if: startsWith(matrix.os, 'macos')
+        run: node scripts/verify-macos-release.cjs release ${{ matrix.arch }}
+      - name: Package native Windows or Linux installer without publishing
+        if: runner.os != 'macOS'
+        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.research.cjs
+      - name: Remove temporary macOS credentials
+        if: always() && startsWith(matrix.os, 'macos')
+        shell: bash
+        run: |
+          set +e
+          keychain_path="${CSC_KEYCHAIN:-$RUNNER_TEMP/nodus-signing.keychain-db}"
+          certificate_path="${NODUS_MACOS_CERTIFICATE_PATH:-$RUNNER_TEMP/nodus-signing-certificate.p12}"
+          api_key_path="${NODUS_NOTARY_KEY_PATH:-$RUNNER_TEMP/nodus-notary-api-key.p8}"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          security lock-keychain "$keychain_path" >/dev/null 2>&1
+          security delete-keychain "$keychain_path" >/dev/null 2>&1
+          rm -f "$certificate_path" "$api_key_path" "$keychain_path" "$signing_probe"
+
+      - name: Fetch hash-verified v5.6.0 installer on disposable host
+        run: node scripts/download-research-upgrade-base.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Native installation, real v5.6.0 upgrade and removal
+        if: runner.os != 'Linux'
+        run: node scripts/verify-research-installer.mjs release --upgrade-base=release-base
+      - name: Native Linux installation, real v5.6.0 upgrade and removal
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum node scripts/verify-research-installer.mjs release --upgrade-base=release-base
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: research-installer-evidence-${{ matrix.os }}
+          path: |
+            research-installer-evidence.json
+            release-base/upgrade-base.json
+            build/zotero-mcp/runtime.json
+            build/zotero-mcp/legal/**
+          if-no-files-found: warn

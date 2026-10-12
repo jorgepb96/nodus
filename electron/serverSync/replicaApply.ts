@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import type Database from 'better-sqlite3';
-import { quoteIdentifier, identityColumns, tableColumns } from '../db/rowIdentity';
-import { MUTABLE_TABLES, withOutboxSuppressed } from './outboxTriggers';
+import { quoteIdentifier, identityColumnsInDatabase, tableColumnsInDatabase } from '../db/rowIdentityCore';
+import { MUTABLE_TABLES } from './generatedMutableTables';
+import { withOutboxSuppressed } from './outboxSuppression';
 import { ASSET_SOURCES, type SnapshotAssetRef } from './serverSnapshot';
 
 /**
@@ -70,7 +71,7 @@ function captureLocalOnly(
 ): { keyColumns: string[]; entries: { key: unknown[]; values: Record<string, unknown> }[] } | null {
   const wanted = LOCAL_ONLY_COLUMNS[table];
   if (!wanted) return null;
-  const columns = tableColumns(table, db);
+  const columns = tableColumnsInDatabase(db, table);
   const keyColumns = columns.filter((column) => column.pk > 0).sort((a, b) => a.pk - b.pk).map((column) => column.name);
   const local = columns.map((column) => column.name).filter((name) => wanted.has(name));
   if (keyColumns.length === 0 || local.length === 0) return null;
@@ -91,7 +92,7 @@ function captureLocalOnly(
 
 /** Only the columns the local schema actually has: an older replica simply drops the rest. */
 function usableColumns(db: Database.Database, table: string, rows: Record<string, unknown>[]): string[] {
-  const local = new Set(tableColumns(table, db).map((column) => column.name));
+  const local = new Set(tableColumnsInDatabase(db, table).map((column) => column.name));
   const localOnly = LOCAL_ONLY_COLUMNS[table];
   const seen = new Set<string>();
   for (const row of rows) {
@@ -242,6 +243,9 @@ export function applySnapshotToReplica(db: Database.Database, snapshot: { tables
         db.prepare(`DELETE FROM ${quoteIdentifier(table)}`).run();
       }
       db.prepare('DELETE FROM sync_snapshot_tables').run();
+      const tombstoneOf = present.has('sync_tombstones')
+        ? db.prepare('SELECT deleted_at FROM sync_tombstones WHERE table_name = ? AND row_key = ?')
+        : null;
       const rememberProjection = db.prepare('INSERT INTO sync_snapshot_tables (table_name, projected_at) VALUES (?, ?)');
       const projectedAt = new Date().toISOString();
       for (const table of incomingNames) rememberProjection.run(table, projectedAt);
@@ -291,7 +295,7 @@ export function applySnapshotToReplica(db: Database.Database, snapshot: { tables
         }
 
         // Authored table: newest wins, and a purely local row is never touched.
-        const identity = identityColumns(table, undefined, db);
+        const identity = identityColumnsInDatabase(db, table);
         if (identity.length === 0) { summary.skipped.push(table); continue; }
         const columns = usableColumns(db, table, rows);
         if (columns.length === 0) { summary.merged[table] = { inserted: 0, updated: 0, kept: 0 }; continue; }
@@ -311,6 +315,16 @@ export function applySnapshotToReplica(db: Database.Database, snapshot: { tables
           const key = identity.map((column) => row[column] ?? null);
           const local = find.get(...key) as Record<string, unknown> | undefined;
           if (!local) {
+            // Absent because it was DELETED here. A snapshot is the owner's last
+            // publication and keeps carrying the row until the owner has collected this
+            // deletion and republished, so inserting it would resurrect it — and the merge
+            // never removes a local row, so it would then outlive every other copy. Same
+            // rule as mergeSyncPackage: only an edit made after the deletion brings it back.
+            const deletedAt = tombstoneOf?.get(table, JSON.stringify(key)) as { deleted_at: string } | undefined;
+            if (deletedAt) {
+              const stamp = typeof row.updated_at === 'string' ? row.updated_at : typeof row.created_at === 'string' ? row.created_at : '';
+              if (!stamp || stamp <= deletedAt.deleted_at) { counts.kept += 1; continue; }
+            }
             insert.run([
               ...columns.map((column) => (row[column] === undefined ? null : row[column])),
               ...insertPlaceholders.map(() => Buffer.alloc(0)),
@@ -355,6 +369,7 @@ export async function downloadReplicaAssets(
   db: Database.Database,
   assets: SnapshotAssetRef[],
   fetchAsset: (hash: string) => Promise<Buffer | null>,
+  maxDownloads = 32,
 ): Promise<{ downloaded: number; bytes: number; skipped: number }> {
   const result = { downloaded: 0, bytes: 0, skipped: 0 };
   if (!assets?.length) return result;
@@ -369,7 +384,8 @@ export async function downloadReplicaAssets(
   interface Pending { table: string; key: readonly string[]; blobColumn: string; mimeColumn: string | null; hash: string; mime: string | null }
   const pending: Pending[] = [];
 
-  for (const asset of assets) {
+  for (const [index, asset] of assets.entries()) {
+    if (index % 4 === 0) await new Promise<void>((resolve) => setImmediate(resolve));
     const source = sources.get(asset.table);
     // A table this vault type does not publish still has its images uploaded, so the row
     // may simply not be here. Nothing to attach them to; skip rather than invent a row.
@@ -399,31 +415,27 @@ export async function downloadReplicaAssets(
   }
   if (pending.length === 0) return result;
 
-  const fetched: (Pending & { bytes: Buffer })[] = [];
-  for (const item of pending) {
+  // Bound network work per pass and retain at most one image in memory. Each
+  // atomic write yields before the next image; missing images resume on HTTP 304.
+  for (const item of pending.slice(0,maxDownloads)) {
     const bytes = await fetchAsset(item.hash);
-    if (!bytes) continue;
-    // Verify before storing. Content addressing is only a guarantee if it is checked.
-    if (createHash('sha256').update(bytes).digest('hex') !== item.hash) continue;
-    fetched.push({ ...item, bytes });
+    if (!bytes || bytes.length>8*1024*1024 || createHash('sha256').update(bytes).digest('hex')!==item.hash) continue;
+    withOutboxSuppressed(db, () => {
+      const where = (sources.get(item.table)!).keyColumns.map((column)=>`${quoteIdentifier(column)} = ?`).join(' AND ');
+      const columns = [item.blobColumn,...(item.mimeColumn && item.mime ? [item.mimeColumn] : [])];
+      const values: unknown[] = [bytes,...(columns.length>1 ? [item.mime] : [])];
+      db.prepare(`UPDATE ${quoteIdentifier(item.table)} SET ${columns.map((column)=>`${quoteIdentifier(column)} = ?`).join(', ')} WHERE ${where}`)
+        .run([...values,...item.key]);
+    });
+    result.downloaded+=1;result.bytes+=bytes.length;
+    await new Promise<void>((resolve)=>setImmediate(resolve));
   }
-  if (fetched.length === 0) return result;
-
-  // Suppressed, and this is not optional: `decorative_images` is a table a writer replica
-  // may queue changes from, so storing the owner's own illustrations without this would
-  // enqueue every one of them and try to send the images straight back where they came from.
-  withOutboxSuppressed(db, () => {
-    db.transaction(() => {
-      for (const item of fetched) {
-        const where = (sources.get(item.table)!).keyColumns.map((column) => `${quoteIdentifier(column)} = ?`).join(' AND ');
-        const columns = [item.blobColumn, ...(item.mimeColumn && item.mime ? [item.mimeColumn] : [])];
-        const values: unknown[] = [item.bytes, ...(columns.length > 1 ? [item.mime] : [])];
-        db.prepare(`UPDATE ${quoteIdentifier(item.table)} SET ${columns.map((column) => `${quoteIdentifier(column)} = ?`).join(', ')} WHERE ${where}`)
-          .run([...values, ...item.key]);
-        result.downloaded += 1;
-        result.bytes += item.bytes.length;
-      }
-    })();
-  });
   return result;
+}
+
+export function storedReplicaAssets(db: Database.Database): SnapshotAssetRef[] {
+  try {
+    const value=db.prepare('SELECT refs FROM sync_snapshot_assets WHERE id=1').get() as {refs:string}|undefined;
+    return value ? JSON.parse(value.refs) as SnapshotAssetRef[] : [];
+  } catch {return [];}
 }

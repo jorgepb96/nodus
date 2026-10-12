@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Nodus for Zotero",
-  "version": "5.8.0",
+  "version": "5.8.1",
   "license": "AGPL-3.0-only",
   "description": "Evidence-grounded research assistant for Zotero with full-text semantic retrieval, audited citations, OCR and visual document understanding.",
   "author": "Nodus",

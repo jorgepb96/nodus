@@ -1299,7 +1299,12 @@ async function pdfBlocks(
       if (options.ocrMode === 'local') {
         const recognized = await ocrPdfPages(pdf, pages, options.ocrLanguages, ({ page, totalPages }) => onProgress?.({
           phase: 'ocr', progress: 0.55 + (page / totalPages) * 0.2, message: `OCR local ${page} de ${totalPages}…`, page, totalPages,
-        }), { localOnly: options.localOcrOnly, signal });
+        }), {
+          localOnly: options.localOcrOnly, signal,
+          // A page OCR cannot read stays blank and is counted in the quality report,
+          // instead of failing the whole copy and every page already recognised.
+          onPageError: (page, error) => console.warn(`[library-extraction] OCR failed on p. ${page}: ${error instanceof Error ? error.message : String(error)}`),
+        });
         for (const [pageNumber, result] of recognized) {
           if (!result.text.trim()) continue;
           const layout = layouts[pageNumber - 1];

@@ -1,4 +1,5 @@
 import { sanitizeCustomThemes } from '@shared/appThemes';
+import { VAULT_TYPE_COLORS } from '@shared/vaultColors';
 import type { ThemeMode } from '@shared/types';
 import { deriveThemeTokens, SHADES, THEMES } from './themes.mjs';
 
@@ -11,6 +12,12 @@ import { deriveThemeTokens, SHADES, THEMES } from './themes.mjs';
  */
 export const APP_THEME_STORAGE_KEY = 'nodus-app-theme';
 export const APP_THEME_DEFINITIONS_STORAGE_KEY = 'nodus-app-theme-definitions';
+
+/** Keep floating editor UI on the same canonical vault accent as the app shell. */
+export function applyVaultAccent(type: string | null | undefined): void {
+  const color = VAULT_TYPE_COLORS[type as keyof typeof VAULT_TYPE_COLORS] ?? VAULT_TYPE_COLORS.academic;
+  document.documentElement.style.setProperty('--vault-accent', color);
+}
 
 /** Apply the light/dark root classes immediately, including system-mode resolution. */
 export function applyThemeMode(theme: ThemeMode): boolean {

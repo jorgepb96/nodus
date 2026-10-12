@@ -94,7 +94,7 @@ import nodusLogoOrange from './assets/nodus-logo-orange.svg';
 import nodusLogoViolet from './assets/nodus-logo-violet.svg';
 import nodusLogoCyan from './assets/nodus-logo-cyan.svg';
 import { buildDockIconDataUrl, dockColorForVaultType } from './dockIcon';
-import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, applyThemeMode } from './theme/themeBoot';
+import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, applyThemeMode, applyVaultAccent } from './theme/themeBoot';
 import { APP_THEME_IDS } from '@shared/appThemes';
 import { useBrowserNativeOverlayGuard } from './browserOverlay';
 
@@ -645,6 +645,8 @@ export function App() {
     }
   }), []);
 
+  // Floating UI shares the active vault's canonical accent with the app shell.
+  useEffect(() => applyVaultAccent(activeVault?.type), [activeVault?.type]);
   // Genealogy vaults wear a golden accent + logo instead of the indigo default.
   const isGenealogy = activeVault?.type === 'genealogy';
   useEffect(() => {

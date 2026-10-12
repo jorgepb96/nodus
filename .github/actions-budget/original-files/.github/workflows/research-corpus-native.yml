@@ -1,0 +1,71 @@
+name: Research corpus native integration
+on:
+  pull_request:
+    paths:
+      - 'runtime/zotero-mcp/**'
+      - 'scripts/*research*'
+      - 'scripts/*zotero-mcp*'
+      - 'electron/ai/*research*'
+      - 'electron/ai/documentary*'
+      - 'electron/db/documentary*'
+      - 'electron/citations/*'
+      - 'shared/research*'
+      - '.github/workflows/research-corpus-native.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: research-native-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        os: [macos-latest, macos-15-intel, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    # Intel builds cryptography/OpenSSL from source before the app build and
+    # Electron integration tests; the cold build exceeded the 30-minute budget.
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 60 || 30 }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx electron-builder install-app-deps
+      - name: Materialize Electron before parallel tests
+        run: node scripts/prepare-electron-tests.mjs
+      - name: Install pinned native crypto compiler on Intel macOS
+        if: matrix.os == 'macos-15-intel'
+        run: rustup toolchain install 1.93.0 --profile minimal
+      - name: Hash-locked private runtime and installed-byte license inventory
+        # Intel macOS uses the current cryptography sdist with pinned static OpenSSL.
+        # Other targets use the hash-locked upstream wheels.
+        run: npm run research:runtime
+      - name: Native stdio against synthetic local API
+        run: node scripts/verify-managed-zotero-mcp.mjs --disposable-ci
+      - name: Managed SearXNG answers on loopback only, with a token and no orphans
+        run: node scripts/verify-managed-searxng.mjs --disposable-ci
+      - name: Private runtime directory lifecycle and two-profile coexistence
+        run: node scripts/verify-research-runtime-lifecycle.mjs --disposable-ci > research-runtime-lifecycle.json
+      - name: Compile renderer and native entry points
+        run: npm run build
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+      - name: Synthetic scope and durable queue regressions
+        run: node --test --test-concurrency=2 scripts/test-research-activity.mjs scripts/test-research-background-process.mjs scripts/test-documentary-store.mjs scripts/test-documentary-requests.mjs scripts/test-research-notebooks.mjs scripts/test-research-corpus-run.mjs scripts/test-research-request-budget.mjs scripts/test-documentary-writers.mjs scripts/test-documentary-ocr-deferred.mjs scripts/test-documentary-campaigns.mjs scripts/test-documentary-automatic-lifecycle.mjs scripts/test-research-actions.mjs scripts/test-research-original-read.mjs scripts/test-research-zotero-sessions.mjs scripts/test-research-claim-audit.mjs scripts/test-research-preflight.mjs scripts/test-research-listener.mjs
+      - name: Isolated real Electron notebooks on macOS
+        if: runner.os == 'macOS'
+        run: node scripts/e2e-research-isolated.mjs --notebooks --pdf --activity
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: research-runtime-${{ matrix.os }}
+          path: |
+            research-runtime-lifecycle.json
+            build/zotero-mcp/runtime.json
+            build/zotero-mcp/legal/**
+          if-no-files-found: warn

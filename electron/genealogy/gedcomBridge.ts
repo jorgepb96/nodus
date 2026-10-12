@@ -219,11 +219,10 @@ function assignCouple(parents: string[], persons: Person[]): [string | undefined
   const sexOf = (id: string) => persons.find((p) => p.personId === id)?.sex ?? 'unknown';
   const male = parents.find((p) => sexOf(p) === 'male');
   const female = parents.find((p) => sexOf(p) === 'female');
-  if (male || female) {
-    const husband = male;
-    const wife = female ?? parents.find((p) => p !== male);
-    return [husband, wife];
-  }
+  if (male) return [male, female ?? parents.find((p) => p !== male)];
+  // No male parent: the female takes WIFE and the other parent (female or of unknown sex)
+  // still takes HUSB. Leaving HUSB empty dropped that parent from the export entirely.
+  if (female) return [parents.find((p) => p !== female), female];
   return [parents[0], parents[1]];
 }
 

@@ -14,25 +14,18 @@
 // Runs under Electron-as-Node so better-sqlite3 matches the app ABI.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 
-if (!process.argv.includes('--electron-candidate-pool-test')) {
-  execFileSync(
-    path.join(repoRoot, 'node_modules/.bin/electron'),
-    [path.join(repoRoot, 'scripts/test-writing-workshop-candidate-pools.mjs'), '--electron-candidate-pool-test'],
-    { cwd: repoRoot, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'inherit' }
-  );
-  process.exit(0);
-}
+if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--electron-candidate-pool-test')) process.exit(0);
 
 const source = fs.readFileSync(path.join(repoRoot, 'electron/ai/writingWorkshop.ts'), 'utf8');
 

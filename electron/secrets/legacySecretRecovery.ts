@@ -1,4 +1,4 @@
-import { safeStorage } from 'electron';
+import { safeStorage } from './safeStorageGate';
 import { spawn } from 'node:child_process';
 import { createDecipheriv, pbkdf2Sync } from 'node:crypto';
 import fs from 'node:fs';

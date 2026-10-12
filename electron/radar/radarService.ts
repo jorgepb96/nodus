@@ -306,62 +306,88 @@ export class RadarService {
     const startedAt = this.now();
     this.checking = true;
     this.notify?.(this.snapshot());
+    // The fetches below take seconds. Anything the user does meanwhile (a follow added,
+    // removed or paused, an update read) writes the store, so this check must not write back
+    // the copy it read at the start: it records what it learned and merges that into a fresh
+    // read at the end.
     const store = this.read();
     const requested = request.followIds ? new Set(request.followIds) : null;
     const follows = store.follows.filter((follow) => !follow.paused && (!requested || requested.has(follow.id)));
     let errors = 0;
-    const newUpdates: RadarUpdate[] = [];
+    let newUpdates: RadarUpdate[] = [];
     const seen = new Set(store.seenKeys);
+    const newKeys: string[] = [];
+    const followResults = new Map<string, { checkpoint?: RadarFollow['checkpoint']; added: number; checkedAt: number }>();
+    const healthEvents: Array<{ sources: RadarSourceName[]; error: string | null }> = [];
 
-    for (const current of follows) {
-      const follow = store.follows.find((candidate) => candidate.id === current.id);
-      if (!follow) continue;
-      try {
-        const batch = await this.fetchCandidates(follow);
-        if (batch.checkpoint) follow.checkpoint = batch.checkpoint;
-        for (const candidate of batch.candidates) {
-          const key = candidateKey(follow.id, candidate);
-          if (seen.has(key)) continue;
-          seen.add(key);
-          const update: RadarUpdate = {
-            id: `radar-update-${randomUUID()}`,
-            followId: follow.id,
-            followTitle: follow.title,
-            followType: follow.type,
-            source: candidate.source,
-            externalId: clean(candidate.externalId, 1_000) || hash(candidate.url || candidate.title),
-            title: clean(candidate.title, 500) || 'Research update',
-            authors: clean(candidate.authors, 500),
-            summary: clean(candidate.summary, 1_500),
-            url: clean(candidate.url, 2_000),
-            ...(candidate.doi ? { doi: clean(candidate.doi, 300) } : {}),
-            ...(candidate.publishedAt ? { publishedAt: candidate.publishedAt } : {}),
-            detectedAt: this.now(),
-            read: false,
-            ...(candidate.signal ? { signal: clean(candidate.signal, 80) } : {}),
-          };
-          newUpdates.push(update);
-          follow.updateCount += 1;
+    let snapshot: RadarSnapshot;
+    try {
+      for (const follow of follows) {
+        let checkpoint: RadarFollow['checkpoint'] | undefined;
+        let added = 0;
+        try {
+          const batch = await this.fetchCandidates(follow);
+          if (batch.checkpoint) checkpoint = batch.checkpoint;
+          for (const candidate of batch.candidates) {
+            const key = candidateKey(follow.id, candidate);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            newKeys.push(key);
+            const update: RadarUpdate = {
+              id: `radar-update-${randomUUID()}`,
+              followId: follow.id,
+              followTitle: follow.title,
+              followType: follow.type,
+              source: candidate.source,
+              externalId: clean(candidate.externalId, 1_000) || hash(candidate.url || candidate.title),
+              title: clean(candidate.title, 500) || 'Research update',
+              authors: clean(candidate.authors, 500),
+              summary: clean(candidate.summary, 1_500),
+              url: clean(candidate.url, 2_000),
+              ...(candidate.doi ? { doi: clean(candidate.doi, 300) } : {}),
+              ...(candidate.publishedAt ? { publishedAt: candidate.publishedAt } : {}),
+              detectedAt: this.now(),
+              read: false,
+              ...(candidate.signal ? { signal: clean(candidate.signal, 80) } : {}),
+            };
+            newUpdates.push(update);
+            added += 1;
+          }
+          healthEvents.push({ sources: follow.sources, error: null });
+        } catch (error) {
+          errors += 1;
+          healthEvents.push({ sources: follow.sources, error: error instanceof Error ? error.message : String(error) });
         }
-        this.updateSourceHealth(store, follow.sources, null);
-      } catch (error) {
-        errors += 1;
-        this.updateSourceHealth(store, follow.sources, error instanceof Error ? error.message : String(error));
+        followResults.set(follow.id, { checkpoint, added, checkedAt: this.now() });
       }
-      follow.lastCheckedAt = this.now();
-      follow.nextCheckAt = nextCheck(this.now(), follow.cadence);
-      follow.updatedAt = this.now();
-    }
 
-    store.updates = [...newUpdates.reverse(), ...store.updates]
-      .sort((a, b) => b.detectedAt - a.detectedAt)
-      .slice(0, MAX_UPDATES);
-    store.seenKeys = [...seen].slice(-MAX_SEEN_KEYS);
-    store.lastCheckedAt = this.now();
-    this.recountSources(store);
-    this.write(store);
-    this.checking = false;
-    const snapshot = this.emit(store);
+      const fresh = this.read();
+      const live = new Set(fresh.follows.map((follow) => follow.id));
+      // A follow removed during the check takes its new updates with it.
+      newUpdates = newUpdates.filter((update) => live.has(update.followId));
+      for (const follow of fresh.follows) {
+        const result = followResults.get(follow.id);
+        if (!result) continue;
+        if (result.checkpoint) follow.checkpoint = result.checkpoint;
+        follow.updateCount += newUpdates.filter((update) => update.followId === follow.id).length;
+        follow.lastCheckedAt = result.checkedAt;
+        follow.nextCheckAt = nextCheck(result.checkedAt, follow.cadence);
+        follow.updatedAt = result.checkedAt;
+      }
+      for (const event of healthEvents) this.updateSourceHealth(fresh, event.sources, event.error);
+      fresh.updates = [...newUpdates.slice().reverse(), ...fresh.updates]
+        .sort((a, b) => b.detectedAt - a.detectedAt)
+        .slice(0, MAX_UPDATES);
+      fresh.seenKeys = [...new Set([...fresh.seenKeys, ...newKeys])].slice(-MAX_SEEN_KEYS);
+      fresh.lastCheckedAt = this.now();
+      this.recountSources(fresh);
+      this.write(fresh);
+      this.checking = false;
+      snapshot = this.emit(fresh);
+    } finally {
+      // A failed write must not leave the interface saying "checking" until restart.
+      this.checking = false;
+    }
 
     if (newUpdates.length > 0) {
       const recent = listNotifications().find((notification) =>

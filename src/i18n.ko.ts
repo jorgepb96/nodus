@@ -1,4 +1,5 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -86,6 +87,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * translator's review debt and should be treated as a first pass.
  */
 export const KO: Record<string, string> = {
+  ...BACKUPS_TRANSLATIONS.ko,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,
   ...CALENDAR_SYNC_TRANSLATIONS["ko"],
@@ -8268,4 +8270,17 @@ export const KO: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "네이티브 연결을 사용할 수 없습니다. macOS와 로컬 네트워크 권한이 필요합니다.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter로 스캔하세요. 컴퓨터와 휴대폰을 같은 로컬 네트워크에 연결하세요.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "앱 연결을 사용할 수 없습니다. 네트워크 연결을 확인하고 프레젠테이션을 다시 시작하세요.",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "마이크를 시작할 수 없습니다.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "대기 중인 오디오를 처리하기 위해 받아쓰기를 일시 중지했습니다. 완료되면 다시 시작하세요.",
+  "Preparando dictado…": "받아쓰기 준비 중…",
+  "Cancelar dictado": "받아쓰기 취소",
+  "Dictado en directo · Local": "실시간 받아쓰기 · 로컬",
+  "Escuchando…": "듣는 중…",
+  "El texto se inserta automáticamente en el cursor.": "텍스트가 커서 위치에 자동으로 삽입됩니다.",
+  "Opciones de dictado": "받아쓰기 옵션",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "받아쓰기를 사용하려면 설정 → AI 모델에서 로컬 전사 모델을 다운로드하세요.",
+  "Audio pendiente": "대기 중인 오디오",
+  "Modelo local": "로컬 모델",
+  "Detener dictado": "받아쓰기 중지",
 };

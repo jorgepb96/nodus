@@ -6,7 +6,7 @@
 // actions between the phones and the app's control hub.
 //
 // This is the only Nodus server that faces the LAN rather than 127.0.0.1 — every
-// request is gated by isAuthorized(), and the whole thing is torn down the moment
+// request is gated by the PIN gate (createPinGate), and the whole thing is torn down the moment
 // the presentation ends.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import fs from 'node:fs';
@@ -15,7 +15,7 @@ import path from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { PresenterAction, PresenterRuntimeState } from '@shared/presenterState';
 import { readLibrary } from './library';
-import { contentTypeFor, isAuthorized, makePin, safePdfPath, safeStaticPath } from './serverAuth';
+import { contentTypeFor, createPinGate, makePin, safePdfPath, safeStaticPath, type PinGate } from './serverAuth';
 
 const RENDERER_DIST = path.join(__dirname, '../dist');
 
@@ -46,6 +46,7 @@ interface Client {
 let server: Server | null = null;
 let wss: WebSocketServer | null = null;
 let pin: string | null = null;
+let gate: PinGate | null = null;
 let deps: PresenterServerDeps | null = null;
 let nextClientId = 1;
 const clients = new Set<Client>();
@@ -79,12 +80,23 @@ function serveStatic(req: IncomingMessage, res: ServerResponse): void {
   fs.createReadStream(filePath).pipe(res);
 }
 
+/** Anything a LAN client can make throw — a malformed escape, an unparsable Host — runs before
+ *  the PIN check; uncaught it left the socket hanging and logged an uncaught exception per
+ *  request. It is answered 400 instead. */
 function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+  try { handleRequestUnsafe(req, res); }
+  catch {
+    if (!res.headersSent) res.writeHead(400).end('Bad request');
+    else res.destroy();
+  }
+}
+
+function handleRequestUnsafe(req: IncomingMessage, res: ServerResponse): void {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   const remote = req.socket.remoteAddress;
 
   if (url.pathname.startsWith('/api/')) {
-    if (!isAuthorized(remote, url.searchParams.get('pin'), pin)) {
+    if (!gate?.admit({ remoteAddress: remote, providedPin: url.searchParams.get('pin'), host: req.headers.host, origin: req.headers.origin })) {
       res.writeHead(403).end('Forbidden');
       return;
     }
@@ -148,12 +160,13 @@ export function startPresenterServer(d: PresenterServerDeps): Promise<PresenterS
   stopPresenterServer();
   deps = d;
   pin = makePin();
+  gate = createPinGate(pin);
   return new Promise((resolve, reject) => {
     server = createServer(handleRequest);
     server.on('error', reject);
     wss = new WebSocketServer({ server });
     wss.on('connection', (ws, req) => {
-      if (!isAuthorized(req.socket.remoteAddress, readPin(req), pin)) {
+      if (!gate?.admit({ remoteAddress: req.socket.remoteAddress, providedPin: readPin(req), host: req.headers.host, origin: req.headers.origin })) {
         ws.close(4001, 'Invalid PIN');
         return;
       }
@@ -203,5 +216,6 @@ export function stopPresenterServer(): void {
   server?.close();
   server = null;
   pin = null;
+  gate = null;
   deps = null;
 }

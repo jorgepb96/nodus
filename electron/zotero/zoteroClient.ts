@@ -468,9 +468,12 @@ export async function collectionItems(
     const data = (await res.json()) as any[];
     for (const it of data) out.push(mapItem(it, parsed.library));
     opts.onProgress?.(out.length);
-    const total = parseInt(res.headers.get('Total-Results') ?? '0', 10);
-    start += limit;
-    if (data.length < limit || start >= total) break;
+    // A missing Total-Results header is "unknown", not zero: reading it as 0 stopped after the
+    // first 100 items, and a sync then treated the rest as gone from the collection.
+    const totalHeader = res.headers.get('Total-Results');
+    const total = totalHeader === null ? null : Number(totalHeader);
+    start += data.length;
+    if (data.length === 0 || data.length < limit || (Number.isFinite(total) && start >= (total as number))) break;
   }
   return out;
 }

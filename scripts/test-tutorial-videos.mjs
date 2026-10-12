@@ -551,7 +551,9 @@ test('the catalogue is fetched in the main process, cached, and never fatal', as
   assert.match(main, /readCache\(\)/);
   assert.match(main, /return \[\.\.\.TUTORIAL_VIDEOS\]/, 'the built-in list is the last resort');
   // A failed check must not be remembered as done for the rest of the run.
-  assert.match(main, /inFlight\.catch\(\(\) => \{ inFlight = null; \}\)/);
+  // A fallen-back (offline) check is forgotten so the next open retries; behaviour is
+  // covered by test-tutorial-catalogue-retry.mjs.
+  assert.match(main, /if \(fellBack && inFlight === attempt\) inFlight = null;/);
 });
 
 test('a packaged renderer still gets the real player, not YouTube error 153', async () => {

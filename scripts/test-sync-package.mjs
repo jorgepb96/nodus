@@ -199,7 +199,9 @@ try {
   // without asking for a passphrase.
   const builtManifest = JSON.parse(builtZip.readAsText('manifest.json'));
   assert.equal(builtManifest.formatVersion, 3, 'packages are written encrypted');
-  assert.equal(builtManifest.schemaVersion, SCHEMA_VERSION);
+  // The wire version: the last migration that changed a table (see syncSchemaVersion.ts).
+  const { SYNC_SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/syncSchemaVersion.ts'));
+  assert.equal(builtManifest.schemaVersion, SYNC_SCHEMA_VERSION);
   assert.equal(builtManifest.kdf.name, 'scrypt');
   assert.equal(builtManifest.counts, undefined, 'row counts are not exposed in the clear');
 

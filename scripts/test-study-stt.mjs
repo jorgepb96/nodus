@@ -120,7 +120,7 @@ try {
   assert.match(progressUi, /\$\{testid\}-stream/, 'the shared panel renders partial transcription while processing');
   assert.match(progressUi, /\{partial\}/, 'and shows the text as it arrives');
   assert.match(editor, /StudyDictation/, 'dictation is mounted inside the editor');
-  assert.match(editor, /canvasRef\.current\?\.insertText/, 'dictation inserts through the shared canvas selection API');
+  assert.match(editor, /canvasRef\.current\?\.updateDictation/, 'dictation updates its native text range instead of appending independent phrases');
   const canvas = await readFile(path.join(root,'src/components/editor/BlockNoteCanvas.tsx'),'utf8');
   assert.match(canvas, /editor\.insertInlineContent\(text\)/, 'the canvas uses native inline insertion and undo');
   assert.match(html, /worker-src 'self' blob:/, 'CSP permits the packaged Whisper worker');

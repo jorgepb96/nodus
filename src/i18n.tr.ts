@@ -1,4 +1,5 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -81,6 +82,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 
 /** Complete static Turkish interface table; coverage prohibits runtime fallbacks. */
 export const TR: Record<string, string> = {
+  ...BACKUPS_TRANSLATIONS.tr,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.tr,
   ...CALENDAR_SYNC_TRANSLATIONS["tr"],
@@ -8657,4 +8659,17 @@ export const TR: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "Yerel uygulama bağlantısı kullanılamıyor. macOS ve yerel ağ izni gerekir.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Nodus Presenter ile tarayın. Bilgisayarı ve telefonu aynı yerel ağa bağlayın.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "Uygulama bağlantısı kullanılamıyor. Ağ bağlantısını kontrol edip sunumu yeniden başlatın.",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "Mikrofon başlatılamadı.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "Bekleyen sesi tamamlamak için dikte duraklatıldı. Hazır olduğunda devam edin.",
+  "Preparando dictado…": "Dikte hazırlanıyor…",
+  "Cancelar dictado": "Dikteyi iptal et",
+  "Dictado en directo · Local": "Canlı dikte · Yerel",
+  "Escuchando…": "Dinleniyor…",
+  "El texto se inserta automáticamente en el cursor.": "Metin imleç konumuna otomatik olarak eklenir.",
+  "Opciones de dictado": "Dikte seçenekleri",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "Dikte için Ayarlar → Yapay zekâ modelleri bölümünden yerel bir transkripsiyon modeli indirin.",
+  "Audio pendiente": "Bekleyen ses",
+  "Modelo local": "Yerel model",
+  "Detener dictado": "Dikteyi durdur",
 };

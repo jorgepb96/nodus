@@ -10,7 +10,8 @@ import { createContext, useContext, forwardRef, useCallback, useEffect, useImper
 import { BlockNoteSchema, COLORS_DEFAULT, createHeadingBlockSpec, createStyleSpec, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSpecs, type PartialBlock } from '@blocknote/core';
 import { en, es } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/ariakit';
-import { createReactBlockSpec, createReactInlineContentSpec, FilePanelController, FormattingToolbar, FormattingToolbarController, getFormattingToolbarItems, SideMenuController, SuggestionMenuController, useCreateBlockNote, type SideMenuProps } from '@blocknote/react';
+import { createReactBlockSpec, createReactInlineContentSpec, FilePanelController, FormattingToolbar, FormattingToolbarController, GenericPopover, getFormattingToolbarItems, SideMenuController, SuggestionMenuController, useComponentsContext, useCreateBlockNote, type SideMenuProps } from '@blocknote/react';
+import { flip, offset, shift } from '@floating-ui/react';
 import { editorSideMenuOptions } from './editorSideMenu';
 import { insertOrUpdateBlockForSlashMenu, SuggestionMenu as SuggestionMenuExtension } from '@blocknote/core/extensions';
 import { editorLinkAllowed, searchEditorReferences, type EditorReference } from '@shared/editorReferences';
@@ -107,7 +108,9 @@ function fromEditor(document: BlockNoteDocument, originals: Map<string, NativeBl
 }
 
 export interface BlockNoteCanvasHandle {
-  insertText(text: string, replaceSelection: boolean): void;
+  insertText(text: string, replaceSelection: boolean, spaceAround?: boolean): void;
+  updateDictation(text: string, id: string, final: boolean, replaceSelection: boolean): void;
+  endDictation(): void;
   insertMarkdown(markdown: string): void;
   preserveSelection(): void;
   restoreSelection(): boolean;
@@ -152,6 +155,21 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   const initialContent = useMemo(() => forEditor(initial), [initial]);
   const editor = useCreateBlockNote({ schema, initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
   const root = useRef<HTMLDivElement>(null);
+  const dictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; time: number; detached?: boolean } | null>(null);
+  useEffect(() => {
+    const mapRange = ({ transaction: tr }: { transaction: import('@tiptap/pm/state').Transaction }) => {
+      const range = dictation.current;
+      if (!range || !tr.docChanged || tr.getMeta('nodusDictation')) return;
+      // Map around ordinary typing elsewhere. If the writer edits these words,
+      // relinquish them instead of overwriting their edit with a later result.
+      tr.mapping.maps.forEach(map => {
+        map.forEach((from, to) => { if (from < range.to && to > range.from || from === to && from > range.from && from < range.to) range.detached = true; });
+        range.from = map.map(range.from, 1); range.to = map.map(range.to, -1);
+      });
+    };
+    editor._tiptapEditor.on('transaction', mapRange);
+    return () => { editor._tiptapEditor.off('transaction', mapRange); dictation.current = null; };
+  }, [editor]);
   const insertController = useRef<EditorInsertHandle>(null);
   const InsertSideMenu = useMemo(() => function NodusSideMenu(props: SideMenuProps) {
     return <EditorSideMenu {...props} onAddBlock={blockId => insertController.current?.openAtBlock(blockId)} />;
@@ -216,9 +234,33 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   // endless unmount/setState/remount cycle while text is selected.
   const SelectionToolbar = useMemo(() => function NodusSelectionToolbar() {
     const [more, setMore] = useState(false);
+    const moreAnchor = useRef<HTMLButtonElement>(null);
+    const Components = useComponentsContext()!;
     const advanced = new Set(['strikeStyleButton', 'textAlignLeftButton', 'textAlignCenterButton', 'textAlignRightButton', 'nestBlockButton', 'unnestBlockButton']);
     const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item);
-    return <FormattingToolbar>{items.filter(item => !advanced.has(String(item.key)))}{onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}>❞</button>}<span ref={mountToolbar} className="study-selection-tools-host" /><div className="editorial-selection-more"><button type="button" className="bn-button" aria-label={t('Más formato')} title={t('Más formato')} aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(!more)}>···</button>{more && <div className="editorial-selection-more-menu">{items.filter(item => advanced.has(String(item.key)))}<button type="button" className="bn-button" title={t('Fórmula en línea')} onClick={() => editor.insertInlineContent([{ type: 'nodusFormula', props: { formula: editor.getSelectedText() || 'x^2' } }])}>ƒx</button></div>}</div></FormattingToolbar>;
+    return <FormattingToolbar>
+      {items.filter(item => !advanced.has(String(item.key)))}
+      {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}>❞</button>}
+      <span ref={mountToolbar} className="study-selection-tools-host" />
+      <button ref={moreAnchor} type="button" className="bn-button editorial-selection-more" aria-label={t('Más formato')} title={t('Más formato')} aria-haspopup="dialog" aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(open => !open)}>···</button>
+      {/* Escape the toolbar's layout and clipping while retaining BlockNote's
+          themed, registered editor UI so keyboard focus keeps the selection. */}
+        <GenericPopover reference={moreAnchor.current ? { element: moreAnchor.current, getBoundingClientRect: () => {
+          const button = moreAnchor.current!, anchor = button.getBoundingClientRect();
+          const bar = button.closest('.bn-formatting-toolbar')?.getBoundingClientRect() ?? anchor;
+          // Align with the trigger horizontally, but clear the whole toolbar
+          // vertically, including its padding and taller neighbouring controls.
+          return new DOMRect(anchor.x, bar.y, anchor.width, bar.height);
+        } } : undefined}
+          useFloatingOptions={{ open: more, onOpenChange: setMore, strategy: 'fixed', placement: 'bottom-end', middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12 })] }}
+          focusManagerProps={{ modal: false, returnFocus: true }}
+          elementProps={{ className: 'editorial-selection-more-popover', role: 'dialog', 'aria-label': t('Más formato'), style: { zIndex: 120 }, onMouseDown: event => event.preventDefault() }}>
+          <Components.FormattingToolbar.Root className="bn-toolbar editorial-selection-more-menu">
+            {items.filter(item => advanced.has(String(item.key)))}
+            <Components.FormattingToolbar.Button className="bn-button" label={t('Fórmula en línea')} mainTooltip={t('Fórmula en línea')} icon={<span aria-hidden="true">ƒx</span>} onClick={() => { editor.focus(); editor.insertInlineContent([{ type: 'nodusFormula', props: { formula: editor.getSelectedText() || 'x^2' } }]); setMore(false); }} />
+          </Components.FormattingToolbar.Root>
+        </GenericPopover>
+    </FormattingToolbar>;
   }, [editor,mountToolbar]);
   useEffect(() => {
     const content = root.current?.querySelector<HTMLElement>('.bn-editor');
@@ -274,9 +316,52 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     },
     jumpToBlock(id) {const element=root.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`);element?.scrollIntoView({block:'center',behavior:'smooth'});if(editor.getBlock(id)){editor.setTextCursorPosition(id,'start');editor.focus();}},
     openReferenceMenu() { editor.focus(); editor.getExtension(SuggestionMenuExtension)?.openSuggestionMenu('[['); },
-    insertText(text, replaceSelection) {
-      editor.transact(tr => { if (!replaceSelection) tr.setSelection(TextSelection.near(tr.doc.resolve(tr.selection.from))); editor.insertInlineContent(text); });
+    insertText(text, replaceSelection, spaceAround) {
+      editor.transact(tr => {
+        if (!replaceSelection) tr.setSelection(TextSelection.near(tr.doc.resolve(tr.selection.from)));
+        if (spaceAround) {
+          const { $from, $to } = tr.selection;
+          const before = $from.parent.textBetween(0, $from.parentOffset, '', '\ufffc');
+          const after = $to.parent.textBetween($to.parentOffset, $to.parent.content.size, '', '\ufffc');
+          const prefix = before && !/\s$/.test(before) && !/^[\s,.;:!?]/.test(text) ? ' ' : '';
+          const suffix = after && !/^[\s,.;:!?]/.test(after) && !/\s$/.test(text) ? ' ' : '';
+          text = `${prefix}${text}${suffix}`;
+        }
+        editor.insertInlineContent(text);
+      });
       editor.focus();
+    },
+    updateDictation(text, id, final, replaceSelection) {
+      let range = dictation.current;
+      if (range?.id === id && range.detached) { if (final) dictation.current = null; return; }
+      if (!text && range?.id !== id) return;
+      editor.transact(tr => {
+        if (!range || range.id !== id) {
+          closeHistory(tr);
+          const from = tr.selection.from, to = replaceSelection ? tr.selection.to : from;
+          const before = tr.doc.resolve(from).nodeBefore?.textContent ?? '';
+          const after = tr.doc.resolve(to).nodeAfter?.textContent ?? '';
+          range = { id, from, to, text: '', time: Date.now(), prefix: before && !/\s$/.test(before) && !/^[\s,.;:!?]/.test(text) ? ' ' : '', suffix: after && !/^[\s,.;:!?]/.test(after) ? ' ' : '' };
+          dictation.current = range;
+        }
+        const next = text ? `${range.prefix}${text}${range.suffix}` : '';
+        const previous = range.text;
+        // Modify only the changed tail: leave existing DOM, formatting, focus
+        // and scroll alone. All hypotheses of an utterance share one undo step.
+        let common = 0;
+        while (common < previous.length && common < next.length && previous[common] === next[common]) common++;
+        tr.setMeta('nodusDictation', true); tr.setTime(range.time);
+        if (next !== previous || range.to > range.from && !previous) tr.insertText(next.slice(common), range.from + common, range.to);
+        range.to = range.from + next.length; range.text = next;
+      });
+      if (final) {
+        dictation.current = null;
+        editor.transact(tr => { closeHistory(tr); tr.setMeta('addToHistory', false); });
+      }
+    },
+    endDictation() {
+      dictation.current = null;
+      editor.transact(tr => { closeHistory(tr); tr.setMeta('addToHistory', false); });
     },
     insertMarkdown(markdown) {
       const cursor = editor.getTextCursorPosition().block;
@@ -339,7 +424,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     <AcademicRender.Provider value={academicRender}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
       const next = read(); onChange(blockNoteToMarkdown(next), next); notifyHistory();
     }}>
-      <FormattingToolbarController formattingToolbar={SelectionToolbar} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } } }} />
+      <FormattingToolbarController formattingToolbar={SelectionToolbar} portalElement={document.body} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } }, useDismissProps: { outsidePress: event => !(event.target instanceof Element && event.target.closest('.editorial-selection-more-popover')) } }} />
       {editable && <FilePanelController filePanel={EditorFilePanel} floatingUIOptions={editorInsertMenuOptions} />}
       {editable && <SideMenuController sideMenu={InsertSideMenu} floatingUIOptions={editorSideMenuOptions} />}
       {listReferences && editable && <SuggestionMenuController triggerCharacter="[[" getItems={getReferences} suggestionMenuComponent={ReferenceSuggestionMenu} shouldOpen={tr => !tr.selection.$from.parent.type.spec.code} onItemClick={item => {

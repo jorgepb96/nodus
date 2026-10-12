@@ -1,0 +1,75 @@
+name: SearXNG engine health
+
+# The web step depends on engines that are not under anyone's control: they change
+# their markup (which an upstream SearXNG bump fixes) and they block addresses that
+# search a lot (which nothing fixes). This job answers two questions on a schedule
+# instead of on the day a user reports it: is the pinned upstream still current, and
+# do the engines still answer?
+#
+# An engine that refuses, throttles or CAPTCHAs is REPORTED, never an error: that is
+# what engines do, the app already surfaces it per turn, and no bump fixes it. The
+# job goes red only for the version signal and genuine breakage — the runtime not
+# booting, none of the scholarly APIs answering, an engine reporting a parsing error,
+# or a pin older than 90 days while upstream has moved. The JSON artifact carries the
+# whole picture either way.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: searxng-health
+  cancel-in-progress: true
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Stage the pinned runtime
+        run: npm run research:runtime
+      - name: Upstream drift and engine canary
+        id: health
+        continue-on-error: true
+        run: node scripts/check-searxng-health.mjs --disposable-ci --json searxng-health.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: searxng-health
+          path: searxng-health.json
+          if-no-files-found: warn
+      - name: Report the alert once, without opening a new issue every week
+        if: steps.health.outcome == 'failure'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const title = 'SearXNG engine health: version signal';
+            const report = require('fs').readFileSync('searxng-health.json', 'utf8');
+            const body = [
+              `The scheduled check raised an alert on ${new Date().toISOString().slice(0, 10)}.`,
+              '',
+              'This job only fails for the version signal or genuine breakage: the runtime not booting,',
+              'none of the scholarly APIs answering, an engine reporting a parsing error, or the pin having',
+              'aged past 90 days while upstream moved. Engines that refuse, throttle or CAPTCHA are in the',
+              'artifact and are not errors — a runner is a datacenter address and the scraped engines treat',
+              'those harshly, so nothing about the engines themselves can be concluded from a runner.',
+              '',
+              '```json',
+              report.slice(0, 60000),
+              '```',
+            ].join('\n');
+            const existing = await github.rest.issues.listForRepo({ owner: context.repo.owner, repo: context.repo.repo, state: 'open', labels: 'searxng-health' });
+            if (existing.data.length) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: existing.data[0].number, body });
+            } else {
+              await github.rest.issues.create({ owner: context.repo.owner, repo: context.repo.repo, title, labels: ['searxng-health'], body });
+            }
+      - name: Fail the job after reporting
+        if: steps.health.outcome == 'failure'
+        run: exit 1

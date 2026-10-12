@@ -1,4 +1,5 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -85,6 +86,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * every non-Spanish interface language.
  */
 export const EN: Record<string, string> = {
+  ...BACKUPS_TRANSLATIONS.en,
   ...CALENDAR_SYNC_TRANSLATIONS["en"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["en"],
   // Nodus Tools catalogue
@@ -9133,4 +9135,17 @@ export const EN: Record<string, string> = {
   "El enlace nativo no está disponible. Requiere macOS y permiso de red local.": "The native connection is unavailable. It requires macOS and local network permission.",
   "Escanea desde Nodus Presenter. Conecta el ordenador y el móvil a la misma red local.": "Scan using Nodus Presenter. Connect the computer and phone to the same local network.",
   "El enlace de la app no está disponible. Comprueba la conexión de red e inicia de nuevo la presentación.": "The app connection is unavailable. Check the network connection and restart the presentation.",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "Could not start the microphone.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "Dictation paused to finish the pending audio. Resume when ready.",
+  "Preparando dictado…": "Preparing dictation…",
+  "Cancelar dictado": "Cancel dictation",
+  "Dictado en directo · Local": "Live dictation · Local",
+  "Escuchando…": "Listening…",
+  "El texto se inserta automáticamente en el cursor.": "Text is inserted automatically at the cursor.",
+  "Opciones de dictado": "Dictation options",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "Download a local transcription model in Settings → AI models to dictate.",
+  "Audio pendiente": "Pending audio",
+  "Modelo local": "Local model",
+  "Detener dictado": "Stop dictation",
 };

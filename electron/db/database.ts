@@ -1,3 +1,4 @@
+import { protectReplicaImportWait } from './replicaImportWait';
 import Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
@@ -14,6 +15,7 @@ import { auditQaDatabaseOpen } from '../qa/databaseAudit';
 import { migrateDatabaseSafely } from './migrationSafety';
 import { scheduleMigrationRecoveryRetention } from './migrationRecoveryUtilityHost';
 import { ensureBackupRevisionTriggers } from '../export/backupVaultRevision';
+import { ensureVectorScanGenerationTriggers } from './vectorScanGenerations';
 import { embeddingTextForIdea, embeddingTextHash } from './ideaEmbeddingText';
 
 let db: Database.Database | null = null;
@@ -117,6 +119,7 @@ export function ensureWorkspaceDevice(database: Database.Database): void {
 
 function openDatabase(file: string): Database.Database {
   let next = new Database(file);
+  protectReplicaImportWait(next);
   try {
     auditQaDatabaseOpen(file, 'read-write');
   } catch (error) {
@@ -136,6 +139,8 @@ function openDatabase(file: string): Database.Database {
   // stops a reader from queueing anything: without triggers, nothing can write to
   // server_outbox no matter what the rest of the app believes.
   ensureOutboxTriggers(next, mayQueueMutations(file));
+  // Before the backup triggers, so its counter table is tracked like any other.
+  ensureVectorScanGenerationTriggers(next);
   ensureBackupRevisionTriggers(next);
   // A chat history's folders and projects are checked on every open: a placement that
   // names a folder or project that is gone (or a folder of another project) is cleared
@@ -147,6 +152,7 @@ function openDatabase(file: string): Database.Database {
     console.warn('[db] chat history repair skipped:', error instanceof Error ? error.message : error);
   }
   next.pragma('busy_timeout = 5000');
+  protectReplicaImportWait(next);
   next.pragma('synchronous = NORMAL');
   next.pragma('temp_store = MEMORY');
   next.pragma('cache_size = -32768');
@@ -200,13 +206,14 @@ function openDatabase(file: string): Database.Database {
 
 export function getDb(): Database.Database {
   const scoped = jobDatabase.getStore();
-  if (scoped) return scoped;
+  if (scoped) { protectReplicaImportWait(scoped); return scoped; }
   if (!db) {
     const target = dbPath();
     const dir = path.dirname(target);
     fs.mkdirSync(dir, { recursive: true });
     db = openDatabase(target);
   }
+  protectReplicaImportWait(db);
   return db;
 }
 
@@ -271,11 +278,28 @@ export function closeDb(): void {
   }
 }
 
-/** Replace the live DB file with an imported one and re-open. Used by import. */
+/**
+ * Replace the live DB file with an imported one and re-open. Used by import.
+ *
+ * Copied to a sibling first and renamed into place, never copied over the vault: a copy that
+ * fails part way (disk full, volume gone) would otherwise leave a truncated vault, and a copy
+ * onto the same file opens THROUGH the `-wal` that any other connection still open on the vault
+ * keeps beside it — the restore then reads back the old vault's rows, and that connection later
+ * checkpoints its log into the new file. Renaming gives the import a new file of its own; the
+ * stale log and shared-memory files are removed so SQLite starts it with fresh ones.
+ */
 export function replaceDbFile(sourceFile: string): void {
   closeDb();
   const target = dbPath();
-  fs.copyFileSync(sourceFile, target);
+  const staged = `${target}.incoming-${process.pid}-${randomUUID()}`;
+  try {
+    fs.copyFileSync(sourceFile, staged);
+    for (const sibling of [`${target}-wal`, `${target}-shm`]) fs.rmSync(sibling, { force: true });
+    fs.renameSync(staged, target);
+  } catch (error) {
+    fs.rmSync(staged, { force: true });
+    throw error;
+  }
   db = openDatabase(target); // brings an older import up to the current schema
 }
 

@@ -11,6 +11,10 @@ const cla = agreement(document);
 const alice = { __typename: 'User', id: 'user-1', login: 'alice' };
 const bob = { __typename: 'User', id: 'user-2', login: 'bob' };
 const bot = { __typename: 'Bot', id: 'bot-1', login: 'automation' };
+const copilot = { __typename: 'User', id: 'BOT_kgDOC9w8XQ', login: 'Copilot' };
+const copilotActor = {
+  name: 'copilot-swe-agent[bot]', email: '198982749+Copilot@users.noreply.github.com', user: copilot,
+};
 const commit = (...users) => ({
   oid: 'a'.repeat(40), authors: { totalCount: users.length, nodes: users.map(user => ({ user })) },
 });
@@ -88,6 +92,7 @@ test('only a new, exact acceptance from the actual human account is a signature'
   assert.equal(acceptance(signingComment(alice, { body: `  ${cla.statement}\n` }), cla), true);
   for (const comment of [
     signingComment(bot),
+    signingComment(copilot),
     signingComment(alice, { lastEditedAt: '2026-09-05T13:00:00Z' }),
     signingComment(alice, { body: `> ${cla.statement}` }),
     signingComment(alice, { body: `- [x] ${cla.statement}` }),
@@ -138,6 +143,43 @@ test('recognized AI attributions are allowed but never exempt the human submitte
   assert.equal(contributors({ author: bot }, [{
     ...commit(alice), authors: { totalCount: 1, nodes: [ai] },
   }]).problems.length, 1);
+});
+
+test('the verified Copilot bot attribution never exempts a human contributor or PR author', () => {
+  assert.equal(isAiAttribution(copilotActor), true);
+  assert.equal(isAiAttribution({
+    ...copilotActor, name: 'COPILOT-SWE-AGENT[BOT]', email: copilotActor.email.toLowerCase(),
+  }), true);
+  for (const actor of [
+    { ...copilotActor, user: null },
+    { ...copilotActor, user: { ...copilot, id: bob.id } },
+    { ...copilotActor, user: { ...copilot, login: bob.login } },
+    { ...copilotActor, name: 'A human' },
+    { ...copilotActor, email: 'copilot@example.org' },
+  ]) assert.equal(isAiAttribution(actor), false);
+
+  const authors = { totalCount: 3, nodes: [copilotActor, { user: alice }, { user: bob }] };
+  const result = contributors({ author: alice }, [{ ...commit(alice), authors }]);
+  assert.deepEqual(result.users, [alice, bob]);
+  assert.deepEqual(result.problems, []);
+  assert.equal(contributors({ author: copilot }, [commit(alice)]).problems.length, 1);
+});
+
+test('Copilot commits still require the human submitter signature and create no bot record', async () => {
+  const pr = fixture();
+  pr.commits = [{ ...commit(alice), authors: { totalCount: 1, nodes: [copilotActor] } }];
+  const unsigned = harness([pr]);
+  await unsigned.execute();
+  assert.equal(unsigned.statuses.at(-1).state, 'failure');
+  assert.match(unsigned.statuses.at(-1).description, /@alice/);
+  assert.doesNotMatch(unsigned.statuses.at(-1).description, /@Copilot/);
+
+  pr.comments = [signingComment(copilot), signingComment()];
+  const signed = harness([pr]);
+  await signed.execute();
+  assert.equal(signed.statuses.at(-1).state, 'success');
+  assert.equal(signed.writes.length, 1);
+  assert.equal(JSON.parse(Buffer.from(signed.writes[0].content, 'base64').toString()).user.id, alice.id);
 });
 
 test('unsigned PRs fail with signing instructions and the exact agreement', async () => {

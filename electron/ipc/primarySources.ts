@@ -21,8 +21,9 @@ import { clearPrimarySourceLocalMetrics, getPrimarySourceLocalMetricSummary, rec
 import { extractPrimarySourceProposals } from '../ai/primarySourceProposals';
 import { createArchiveRepository, createCaptureSession } from '../db/archiveHierarchyRepo';
 import path from 'node:path';
+import { openDocumentPath } from '../util/openDocument';
 import fs from 'node:fs';
-import { shell, BrowserWindow, dialog, app } from 'electron';
+import { BrowserWindow, dialog, app } from 'electron';
 import { showImportOpenDialog } from '../privacy';
 import { getSettings } from '../db/settingsRepo';
 import { getActiveVault } from '../vaults/vaultRegistry';
@@ -219,7 +220,7 @@ export function registerPrimarySourcesIpc({ h, getWindow }: IpcContext): void {
     fs.mkdirSync(folder, { recursive: true });
     const target = path.join(folder, `${file.contentHash?.slice(0, 12) || file.fileId}-${safeName}`);
     if (!fs.existsSync(target)) fs.writeFileSync(target, blob, { flag: 'wx' });
-    const error = await shell.openPath(target);
+    const error = await openDocumentPath(target);
     if (error) throw new Error(error);
     recordArchiveAudit({
       itemId: file.itemId,

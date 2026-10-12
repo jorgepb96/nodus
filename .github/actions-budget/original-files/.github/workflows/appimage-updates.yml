@@ -1,0 +1,34 @@
+name: AppImage update compatibility
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'build/electron-builder.release.cjs'
+      - 'scripts/*appimage*.mjs'
+      - 'scripts/upload-release-assets.mjs'
+      - '.github/workflows/*release*.yml'
+      - '.github/workflows/appimage-updates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install packaging verification dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y zsync libfuse2
+          npm ci --ignore-scripts
+      - name: Verify both AppImage update formats on real packaged fixtures
+        run: node scripts/verify-appimage-updates.mjs

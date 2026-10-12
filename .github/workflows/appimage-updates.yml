@@ -1,15 +1,7 @@
 name: AppImage update compatibility
 
+# Automatic validation is selected by CI; this entry point is explicitly manual.
 on:
-  pull_request:
-    paths:
-      - 'package.json'
-      - 'package-lock.json'
-      - 'build/electron-builder.release.cjs'
-      - 'scripts/*appimage*.mjs'
-      - 'scripts/upload-release-assets.mjs'
-      - '.github/workflows/*release*.yml'
-      - '.github/workflows/appimage-updates.yml'
   workflow_dispatch:
 
 permissions:
@@ -30,5 +22,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y zsync libfuse2
           npm ci --ignore-scripts
+      - name: Materialize Electron for the real updater fixtures
+        run: node scripts/prepare-electron-tests.mjs
       - name: Verify both AppImage update formats on real packaged fixtures
         run: node scripts/verify-appimage-updates.mjs

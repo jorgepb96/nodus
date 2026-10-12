@@ -41,7 +41,7 @@ export const mapSourceTransport: MapSourceTransport = {
   async read(url, signal, limit) {
     assertApprovedMapUrl(url);
     await assertPublicHost(new URL(url).hostname); signal.throwIfAborted();
-    const response = await fetch(url, { signal, redirect:'error', credentials:'omit', headers:{Accept:'application/json, application/geo+json, text/plain', 'User-Agent':'NodusResearch/5.8.0 (https://nodusresearch.com)'} });
+    const response = await fetch(url, { signal, redirect:'error', credentials:'omit', headers:{Accept:'application/json, application/geo+json, text/plain', 'User-Agent':'NodusResearch/5.8.1 (https://nodusresearch.com)'} });
     if (!response.ok) { await response.body?.cancel(); throw new Error(`Map source returned HTTP ${response.status}.`); }
     if (Number(response.headers.get('content-length') ?? 0) > limit) { await response.body?.cancel(); throw new Error('Map source exceeds its byte limit.'); }
     const reader=response.body?.getReader(); if(!reader) throw new Error('Map source returned an empty response.');

@@ -23,6 +23,9 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
+// Mesa provides real WebGL on CPU; retain software UI compositing and sandboxing.
+const ciGpuArgs = process.env.CI && process.platform === 'linux'
+  ? ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing'] : [];
 
 // Re-exec under Electron-as-Node so the final better-sqlite3 check matches the
 // app ABI (same pattern as every other script in this suite). Playwright then
@@ -91,6 +94,24 @@ setTimeout(() => {
 }, 30);
 `, 'utf8');
   await chmod(fakeWhisperPath, 0o755);
+  // Live dictation uses a resident loopback server rather than the recording
+  // CLI. Keep recognition synthetic while exercising real IPC and capture.
+  const fakeWhisperServer = path.join(userData, 'whisper-server');
+  await writeFile(fakeWhisperServer, `#!/usr/bin/env node
+import { createServer } from 'node:http';
+const option = name => process.argv[process.argv.indexOf(name) + 1];
+const route = option('--request-path');
+createServer((request, response) => {
+  request.resume();
+  request.on('end', () => {
+    response.setHeader('Content-Type', 'application/json');
+    if (request.url === route + '/health') response.end('{"status":"ok"}');
+    else if (request.method === 'POST' && request.url === route + '/inference') response.end('{"text":"Hola mundo."}');
+    else { response.statusCode = 404; response.end('{}'); }
+  });
+}).listen(Number(option('--port')), option('--host'));
+`, 'utf8');
+  await chmod(fakeWhisperServer, 0o755);
   const modelDir = path.join(userData, 'whisper.cpp', 'models');
   await mkdir(modelDir, { recursive: true });
   await writeFile(path.join(modelDir, 'ggml-base.bin'), 'e2e-placeholder');
@@ -109,6 +130,9 @@ async function closeElectronApp(instance) {
 }
 
 let app = null;
+let page = null;
+const pageErrors = [];
+const consoleMessages = [];
 try {
   // The child must run as a real GUI app: strip the runner's as-Node flag.
   const childEnv = {
@@ -126,6 +150,7 @@ try {
   app = await electron.launch({
     executablePath: packagedExecutable || require('electron'),
     args: [
+      ...ciGpuArgs,
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
       ...(packagedExecutable ? [] : [repoRoot]),
@@ -135,16 +160,14 @@ try {
   if (packagedExecutable) console.log(`[e2e] packaged executable: ${packagedExecutable}`);
 
   // ── Window + renderer mount ─────────────────────────────────────────────────
-  const page = await app.firstWindow();
+  page = await app.firstWindow();
   page.setDefaultTimeout(30_000);
-  const pageErrors = [];
   page.on('pageerror', (err) => {
     pageErrors.push(err);
     process.stderr.write(`[e2e][pageerror] ${err?.stack ?? err}\n`);
   });
   // Kept so the tutorial walk can prove the CSP actually admits the video embed: a
   // blocked frame never attaches, it only logs "Refused to frame …".
-  const consoleMessages = [];
   page.on('console', (message) => { consoleMessages.push(message.text()); });
   await page.waitForLoadState('domcontentloaded');
   await page.waitForFunction(() => {
@@ -152,6 +175,18 @@ try {
     return !!root && root.children.length > 0;
   }, { timeout: 30_000 });
   console.log('[e2e] renderer mounted');
+  if (process.env.CI && process.platform === 'linux') {
+    const graphics = await page.evaluate(() => {
+      const gl = document.createElement('canvas').getContext('webgl2');
+      if (!gl) return null;
+      const debug = gl.getExtension('WEBGL_debug_renderer_info');
+      const renderer = gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+      return { renderer };
+    });
+    assert.ok(graphics, 'the Linux runner supplies a real WebGL2 context');
+    console.log('[e2e] Linux graphics:', graphics);
+  }
 
   // Suppress the "what's new" modal: a fresh profile has no last-seen version, so it
   // would otherwise overlay the app and intercept later clicks. localStorage persists
@@ -1154,8 +1189,8 @@ try {
   // measured on the real rendered shell rather than trusted from the classes.
   await page.locator('[data-tour="toolkit"]').click();
   await page.getByTestId('toolkit-home').waitFor({ timeout: 30_000 });
-  const toolCards = ['toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter'];
-  assert.deepEqual(await page.locator('.toolkit-card').evaluateAll((cards) => cards.map((card) => card.dataset.testid)), toolCards, 'the shared catalogue shows all twelve tools in alphabetical order');
+  const toolCards = ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter'];
+  assert.deepEqual(await page.locator('.toolkit-card').evaluateAll((cards) => cards.map((card) => card.dataset.testid)), toolCards, 'the shared catalogue shows all thirteen tools in alphabetical order');
   const cardBoxes = [];
   for (const testId of toolCards) {
     const box = await page.getByTestId(testId).boundingBox();
@@ -1228,12 +1263,16 @@ try {
   await page.getByTestId('toolkit-app-fullscreen').locator('[data-testid="toolkit-app-iframe"]').waitFor();
   await page.getByTestId('toolkit-app-fullscreen-close').click();
   assert.equal(await page.getByTestId('toolkit-app-fullscreen').count(), 0, 'bundled apps can enter and leave the full-screen view');
+  // Leaving fullscreen mounts a new iframe. Its heading renders before the
+  // asynchronous storage hydration; wait for the restored setup before editing.
+  await distributorFrame.getByText('Hay 0 temas activos para 4 grupos. Añade o activa 4 más.', { exact: true }).waitFor();
   assert.equal(await distributorFrame.getByRole('button', { name: 'Generar asignaciones' }).isDisabled(), true, 'assignments require enough active topics');
   await distributorFrame.locator('#group-count').fill('4');
   await distributorFrame.locator('#group-count').press('Tab');
   for (const topic of ['Tema uno', 'Tema dos', 'Tema tres']) {
     await distributorFrame.getByPlaceholder('Ej. Energías renovables').fill(topic);
     await distributorFrame.getByRole('button', { name: 'Añadir', exact: true }).click();
+    await distributorFrame.getByRole('button', { name: `Eliminar ${topic}`, exact: true }).waitFor();
   }
   await distributorFrame.getByPlaceholder('Ej. Tema de recuperación').fill('Tema excepcional');
   await distributorFrame.getByRole('button', { name: 'Añadir excepcional', exact: true }).click();
@@ -2084,28 +2123,69 @@ try {
   await page.locator('.nodus-blocknote .bn-editor').first().waitFor({ timeout: 30_000 });
   await clickEditorAction(page.getByTestId('study-dictation-toggle'));
   await page.getByTestId('study-dictation').waitFor({ timeout: 30_000 });
-  assert.match(await page.getByTestId('study-dictation').innerText(), /ONNX|Local|offline/i, 'dictation panel defaults to the offline ONNX backend');
-  await page.getByTestId('study-dictation').getByRole('button', { name: 'Dictado', exact: true }).click();
-  const dictationLanguage = page.getByTestId('study-dictation-language');
-  await dictationLanguage.waitFor();
-  assert.equal(await dictationLanguage.locator('option').first().getAttribute('value'), 'auto', 'dictation supports automatic language detection');
-  assert.ok(await dictationLanguage.locator('option').count() >= 100, 'dictation exposes every language supported by multilingual Whisper');
-  await dictationLanguage.selectOption('es');
-  await page.getByTestId('study-dictation').getByRole('button', { name: 'Dictado', exact: true }).click();
-  await page.getByTestId('study-dictation-start').click();
+  const dictationPanel = page.getByTestId('study-dictation');
+  assert.match(await dictationPanel.innerText(), /Local/i, 'live dictation stays local');
   const microphonePrivacyDialog = page.getByRole('dialog', { name: 'Antes de activar el micrófono' });
   await microphonePrivacyDialog.waitFor({ timeout: 30_000 });
   assert.match(
     await microphonePrivacyDialog.innerText(),
     /localmente|base jurídica|no sustituye el consentimiento/i,
-    'the recording privacy notice blocks microphone access and explains the local/controller boundary',
+    'opening dictation automatically requests microphone consent',
   );
+  await microphonePrivacyDialog.getByRole('button', { name: 'Rechazar', exact: true }).click();
+  await page.getByTestId('study-dictation-start').waitFor();
+  await page.evaluate(() => {
+    window.__e2eDictationStreams = [];
+    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async constraints => {
+      const stream = await getUserMedia(constraints);
+      window.__e2eDictationStreams.push(stream);
+      return stream;
+    };
+  });
+  await dictationPanel.getByRole('button', { name: 'Opciones de dictado', exact: true }).click();
+  const dictationSettings = page.getByTestId('study-dictation-settings');
+  await dictationSettings.waitFor();
+  assert.equal(await dictationSettings.evaluate(element => !!element.closest('[data-testid="study-dictation"]')), false, 'settings render in an independent popover outside the dictation bar');
+  assert.equal(await page.getByTestId('study-dictation-model').inputValue(), 'whisper_cpp:base', 'dictation falls back to an installed local model when the preferred ONNX model is unavailable');
+  const dictationLanguage = page.getByTestId('study-dictation-language');
+  await dictationLanguage.waitFor();
+  assert.equal(await dictationLanguage.locator('option').first().getAttribute('value'), 'auto', 'dictation supports automatic language detection');
+  assert.ok(await dictationLanguage.locator('option').count() >= 100, 'dictation exposes every language supported by multilingual Whisper');
+  await dictationLanguage.selectOption('es');
+  await page.keyboard.press('Escape');
+  await dictationSettings.waitFor({ state: 'hidden' });
+  await page.getByTestId('study-dictation-start').click();
+  await microphonePrivacyDialog.waitFor({ timeout: 30_000 });
+  assert.equal(await page.evaluate(() => window.__e2eDictationStreams.length), 0, 'the privacy notice blocks microphone access');
   await microphonePrivacyDialog.getByRole('button', { name: 'Aceptar', exact: true }).click();
-  await page.getByTestId('study-dictation-discard').waitFor({ timeout: 30_000 });
+  const dictationStatus = page.getByTestId('study-dictation-status');
+  await dictationStatus.filter({ hasText: 'Escuchando' }).waitFor();
+  assert.equal(await page.evaluate(() => window.__e2eDictationStreams.length), 1, 'consent starts real fake-device microphone capture');
+  await waitForCondition('live dictation inserts recognized text before stopping', async () =>
+    (await page.locator('.nodus-blocknote .bn-editor').first().innerText()).includes('Hola mundo'));
+  await page.getByTestId('study-dictation-pause').click();
+  await dictationStatus.filter({ hasText: 'Pausado' }).waitFor();
+  await dictationPanel.getByRole('button', { name: 'Opciones de dictado', exact: true }).click();
+  await dictationSettings.waitFor();
+  assert.equal(await dictationLanguage.isDisabled(), true, 'the language is fixed while capture is active');
+  await page.keyboard.press('Escape');
+  await dictationSettings.waitFor({ state: 'hidden' });
+  await page.getByTestId('study-dictation-pause').click();
+  await dictationStatus.filter({ hasText: 'Escuchando' }).waitFor();
   await page.getByTestId('study-dictation-discard').click();
   await page.getByTestId('study-dictation-start').waitFor({ timeout: 30_000 });
-  await clickEditorAction(page.getByTestId('study-dictation-toggle'));
-  console.log('[e2e] study dictation panel + fake microphone capture ok');
+  assert.equal(await page.evaluate(() => window.__e2eDictationStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended'))), true, 'cancel releases the microphone');
+  await page.getByTestId('study-dictation-start').click();
+  await microphonePrivacyDialog.getByRole('button', { name: 'Aceptar', exact: true }).click();
+  await dictationStatus.filter({ hasText: 'Escuchando' }).waitFor();
+  await page.getByTestId('study-dictation-stop').click();
+  await page.getByTestId('study-dictation-start').waitFor();
+  assert.equal(await page.evaluate(() => window.__e2eDictationStreams.length), 2, 'dictation can restart after cancellation');
+  assert.equal(await page.evaluate(() => window.__e2eDictationStreams.every(stream => stream.getTracks().every(track => track.readyState === 'ended'))), true, 'stop releases the restarted microphone');
+  await dictationPanel.getByRole('button', { name: 'Cerrar', exact: true }).click();
+  await dictationPanel.waitFor({ state: 'hidden' });
+  console.log('[e2e] live dictation consent, independent settings, pause/resume, cancel/stop and fake microphone capture ok');
   if (process.env.NODUS_E2E_STT_UI_ONLY === '1') {
     const recordingId = await page.evaluate(async () => (await window.nodus.createStudyRecording({
       fileName: 'idioma-smoke.wav', mimeType: 'audio/wav', bytes: new Uint8Array([82, 73, 70, 70]), language: 'auto',
@@ -3053,7 +3133,13 @@ try {
   await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-map-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-relations').click();
-  await page.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
+  const relationsView = page.getByTestId('primary-sources-relations-view');
+  await relationsView.waitFor({ timeout: 30_000 }).catch(async (error) => {
+    console.error('[e2e] relations render diagnostics', consoleMessages.slice(-12), pageErrors.map((entry) => entry.stack));
+    console.error(await page.evaluate(() => document.body.innerText.slice(-2000)).catch(() => 'No renderer DOM'));
+    throw error;
+  });
+  await relationsView.getByRole('button', { name: 'Tabla accesible', exact: true }).click();
   await page.getByTestId('primary-sources-relations-table').waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-nav-search').click();
   await page.getByTestId('primary-sources-search-input').fill('San Martín');
@@ -4585,6 +4671,19 @@ try {
   console.log(`[e2e] database at schema v${version}`);
 
   console.log('e2e smoke test passed');
+} catch (error) {
+  if (page && !page.isClosed()) {
+    console.error('[e2e] recent renderer console:', consoleMessages.slice(-20));
+    for (const frame of page.frames()) {
+      console.error('[e2e] failure frame state:', await frame.evaluate(() => ({
+        text: document.body?.innerText.slice(-9000),
+        inputs: Array.from(document.querySelectorAll('input')).map(input => ({
+          id: input.id, value: input.value, valid: input.validity.valid,
+        })),
+      })).catch(() => 'frame detached'));
+    }
+  }
+  throw error;
 } finally {
   if (app) await closeElectronApp(app);
   await rm(userData, { recursive: true, force: true });

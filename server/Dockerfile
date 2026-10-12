@@ -16,13 +16,13 @@ RUN node scripts/generate-third-party-licenses.mjs --server-web
 
 FROM node:22-alpine
 
-ARG NODUS_VERSION=5.8.0
+ARG NODUS_VERSION=5.8.1
 ARG NODUS_REVISION=unknown
 LABEL org.opencontainers.image.title="Nodus Server" \
       org.opencontainers.image.description="Experimental self-hosted Nodus MCP server" \
       org.opencontainers.image.source="https://github.com/jorgepb96/nodus" \
       org.opencontainers.image.url="https://github.com/jorgepb96/nodus" \
-      org.opencontainers.image.documentation="https://github.com/jorgepb96/nodus/blob/v5.8.0/server/README.md" \
+      org.opencontainers.image.documentation="https://github.com/jorgepb96/nodus/blob/v5.8.1/server/README.md" \
       org.opencontainers.image.licenses="AGPL-3.0-only" \
       org.opencontainers.image.version="${NODUS_VERSION}" \
       org.opencontainers.image.revision="${NODUS_REVISION}" \
@@ -52,7 +52,7 @@ COPY --from=web-build /src/legal/generated ./legal/generated
 ENV NODUS_DATA_DIR=/data \
     NODUS_HOST=0.0.0.0 \
     NODUS_PORT=7443 \
-    NODUS_SOURCE_URL=https://github.com/jorgepb96/nodus/tree/v5.8.0
+    NODUS_SOURCE_URL=https://github.com/jorgepb96/nodus/tree/v5.8.1
 
 RUN mkdir -p /data && chown -R node:node /app /data
 USER node

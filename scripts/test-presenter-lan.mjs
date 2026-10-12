@@ -48,6 +48,8 @@ class Client {
     this.socket.write(Buffer.concat([prefix, data]));
   }
   next(predicate, timeout = 10000) {
+    // Capture the waiting call site before entering the timer callback.
+    const deadlineError = new Error('Message deadline exceeded');
     return new Promise((resolve, reject) => {
       let timer;
       const check = () => {
@@ -55,7 +57,11 @@ class Client {
         if (index < 0) return;
         clearTimeout(timer); this.waiters = this.waiters.filter(fn => fn !== check); resolve(this.messages.splice(index, 1)[0]);
       };
-      timer = setTimeout(() => { this.waiters = this.waiters.filter(fn => fn !== check); reject(new Error('Message deadline exceeded')); }, timeout);
+      timer = setTimeout(() => {
+        this.waiters = this.waiters.filter(fn => fn !== check);
+        deadlineError.message += ` (queued kinds: ${this.messages.map(message => message.kind).join(', ') || 'none'}; socket closed: ${this.socket.destroyed})`;
+        reject(deadlineError);
+      }, timeout);
       this.waiters.push(check); check();
     });
   }

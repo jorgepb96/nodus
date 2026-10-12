@@ -6,9 +6,9 @@ import { getActiveVault } from '../vaults/vaultRegistry';
 import * as notebooks from '../db/researchNotebooksRepo';
 import { researchCorpusInventory } from './researchCorpusInventory';
 import { researchFingerprint, resolveNotebookScope, selectResearchDocuments } from './researchCorpusScope';
-import { resolveResearchSourceScope } from './researchSourceScope';
+import { resolveResearchSourceWorkIds } from './researchSourceScope';
 import { notifyAuthoredResearchSourceChanged } from './researchCorpusEvents';
-import { embeddingConfigurationUsable, getResearchPreparationInventory, pinPublishedResearchDocument, prepareResearchDocuments } from './documentaryPreparation';
+import { embeddingConfigurationUsable, getResearchPreparationInventory, pinPublishedResearchDocuments, prepareResearchDocuments } from './documentaryPreparation';
 import { effectiveEmbeddingConfig } from './aiClient';
 import { readResearchAttachmentSource } from './researchAttachmentSources';
 
@@ -60,7 +60,7 @@ export function resolveResearchNotebook(id: string): ResolvedResearchScope {
   const inventory = researchCorpusInventory();
   const notebook = notebooks.getResearchNotebook(id);
   if (!notebook) throw new Error('Notebook not found');
-  const scope = resolveNotebookScope(getActiveVault().id, notebook, inventory.documents.map(pinPublishedResearchDocument), inventory.collections);
+  const scope = resolveNotebookScope(getActiveVault().id, notebook, pinPublishedResearchDocuments(inventory.documents), inventory.collections);
   notebooks.recordResearchScope(scope);
   return scope;
 }
@@ -84,8 +84,10 @@ export function hasResearchSourceRestriction(input: ResearchChatRequest): boolea
 export function resolveAcademicResearchScope(filter?: ResearchChatRequest['selection']['sourceFilter'], attachments?: Pick<ResearchChatRequest, 'conversationId' | 'attachmentIds'>): ResolvedResearchScope {
   if (attachments?.attachmentIds !== undefined && (!Array.isArray(attachments.attachmentIds) || attachments.attachmentIds.length > 20)) throw new Error('Invalid research attachments');
   const vault = getActiveVault();
-  const allowed = filter?.enabled ? resolveResearchSourceScope(filter, true) : null;
-  const documents = researchCorpusInventory().documents.filter(document => document.workId && (!allowed || allowed.workIds.has(document.workId))).map(pinPublishedResearchDocument).sort((a, b) => a.id.localeCompare(b.id));
+  // Only the admitted works are read here; the whole source scope (ideas, themes, authors, edges)
+  // was computed and dropped on every scope check.
+  const allowed = filter?.enabled ? resolveResearchSourceWorkIds(filter) : null;
+  const documents = pinPublishedResearchDocuments(researchCorpusInventory().documents.filter(document => document.workId && (!allowed || allowed.has(document.workId)))).sort((a, b) => a.id.localeCompare(b.id));
   const permissionFingerprint = researchFingerprint(documents.map(document => [document.id, document.permissionRevision]));
   const conversationAttachments = [...new Set(attachments?.attachmentIds ?? [])].map(attachmentId => {
     const conversationId = attachments?.conversationId;

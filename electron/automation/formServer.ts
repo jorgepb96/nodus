@@ -111,7 +111,12 @@ async function handle(request:IncomingMessage,response:ServerResponse):Promise<v
 }
 
 export async function startDatabaseFormServer(requestedPort=0):Promise<DatabaseFormServerStatus> { if(server)return databaseFormServerStatus(); server=createServer((request,response)=>{void handle(request,response).catch((cause)=>{ const url=new URL(request.url??'/',`http://127.0.0.1:${port}`); const language=formLanguage(request,url); const copy=chrome(language); if(!response.headersSent)headers(response,500);response.end(shell(copy.error,`<main class="card"><div class="error">${escapeHtml(localizeRuntimeError(cause instanceof Error?cause.message:String(cause),language))}</div></main>`,false,language));});});
-  await new Promise<void>((resolve,reject)=>{server!.once('error',reject);server!.listen(requestedPort,'127.0.0.1',()=>{server!.off('error',reject);resolve();});}); const address=server.address(); port=typeof address==='object'&&address?address.port:null; return databaseFormServerStatus(); }
+  const candidate=server;
+  // A failed listen (EADDRINUSE on a fixed port) must not leave `server` set: every later
+  // start would then report {running:false} without ever trying again.
+  try{await new Promise<void>((resolve,reject)=>{candidate.once('error',reject);candidate.listen(requestedPort,'127.0.0.1',()=>{candidate.off('error',reject);resolve();});});}
+  catch(cause){if(server===candidate){server=null;port=null;}candidate.close();throw cause;}
+  const address=candidate.address(); port=typeof address==='object'&&address?address.port:null; return databaseFormServerStatus(); }
 export async function stopDatabaseFormServer():Promise<void> { const current=server;server=null;port=null;if(!current)return;await new Promise<void>((resolve)=>current.close(()=>resolve())); }
 export function databaseFormServerStatus():DatabaseFormServerStatus { return {running:Boolean(server&&port),port,origin:port?`http://127.0.0.1:${port}`:null}; }
 export function databaseFormPublicUrl(slug:string):string|null { return port?`http://127.0.0.1:${port}/forms/${encodeURIComponent(slug)}`:null; }

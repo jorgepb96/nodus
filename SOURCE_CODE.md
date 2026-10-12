@@ -5,18 +5,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 # Corresponding source for Nodus
 
-Nodus 5.8.0 is licensed exclusively under the GNU Affero General Public
+Nodus 5.8.1 is licensed exclusively under the GNU Affero General Public
 License v3.0 (`AGPL-3.0-only`). The complete, unmodified license text is in
 [`LICENSE`](LICENSE). Versions published through Nodus 3.2.7 remain available
 under the MIT license that accompanied those releases.
 
-The preferred form for modifying the official Nodus 5.8.0 release is available
+The preferred form for modifying the official Nodus 5.8.1 release is available
 from the immutable release tag and its source archives:
 
-- Tag and release: https://github.com/jorgepb96/nodus/releases/tag/v5.8.0
-- Source tree: https://github.com/jorgepb96/nodus/tree/v5.8.0
-- Tar archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.8.0.tar.gz
-- ZIP archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.8.0.zip
+- Tag and release: https://github.com/jorgepb96/nodus/releases/tag/v5.8.1
+- Source tree: https://github.com/jorgepb96/nodus/tree/v5.8.1
+- Tar archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.8.1.tar.gz
+- ZIP archive: https://github.com/jorgepb96/nodus/archive/refs/tags/v5.8.1.zip
 
 The source includes the desktop app, Nodus Server, the Zotero add-on, build
 scripts, lockfile and the material needed to rebuild the distributed work.

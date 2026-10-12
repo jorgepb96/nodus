@@ -339,15 +339,29 @@ export function importBibliographyFiles(options: {
   files: string[]; collectionId?: string | null; store: LibraryDiskStore; catalog: LibraryCatalog;
 }): LibraryBibliographyImportReport {
   const report: LibraryBibliographyImportReport = { created: 0, updated: 0, duplicates: 0, skipped: 0, itemIds: [], warnings: [] };
-  const records = options.store.scanMaterializedItems().records;
-  const citationKeys = new Set(records.map((record) => record.citationKey).filter((value): value is string => !!value));
+  const all = options.store.scanMaterializedItems().records;
+  // Citation keys stay unique across every record, but only a live record can be the
+  // one an entry duplicates: an item in the trash, or the losing side of a merge (kept
+  // with deletedAt), would swallow the entry and report an ID nobody can see.
+  const records = all.filter((record) => !record.deletedAt);
+  const citationKeys = new Set(all.map((record) => record.citationKey).filter((value): value is string => !!value));
   for (const file of options.files) {
     let entries: ParsedBibliographicItem[];
     try { entries = parseBibliographyFile(file); } catch (error) { report.skipped += 1; report.warnings.push(`${path.basename(file)}: ${error instanceof Error ? error.message : String(error)}`); continue; }
     if (!entries.length) { report.skipped += 1; report.warnings.push(`${path.basename(file)} no contenía referencias reconocibles.`); continue; }
     for (const entry of entries) {
       const same = duplicate(records, entry.metadata);
-      if (same) { report.duplicates += 1; report.itemIds.push(same.id); continue; }
+      if (same) {
+        report.duplicates += 1; report.itemIds.push(same.id);
+        // Importing into a collection files the reference there whether or not the
+        // library already held it; otherwise the collection silently lacks it.
+        if (options.collectionId && !same.collectionIds.includes(options.collectionId)) {
+          const filed = options.store.upsertItem({ ...same, collectionIds: [...same.collectionIds, options.collectionId] }, same.clock.revision);
+          records[records.indexOf(same)] = filed;
+          report.updated += 1;
+        }
+        continue;
+      }
       const uuid = randomUUID(); const id = `nodus:${uuid}`;
       const citationKey = generateCitationKey(entry.metadata, citationKeys, entry.citationKey); citationKeys.add(citationKey);
       const created = options.store.upsertItem({

@@ -7,7 +7,7 @@ import type { ResolvedResearchScope, ZoteroMcpStatus } from '@shared/researchCor
 import { ManagedZoteroConnection, type ManagedZoteroScopeManifest, type ManagedZoteroTool } from './managedZotero';
 import { registerNotebookRun, resolveResearchNotebook, resolveAcademicResearchScope } from '../ai/researchNotebookService';
 import { researchCorpusInventory } from '../ai/researchCorpusInventory';
-import { assertResearchDocument } from '../ai/researchCorpusScope';
+import { assertResearchDocument, documentsById } from '../ai/researchCorpusScope';
 import { itemChildren, attachmentFilePath, ZOTERO_API_BASE } from '../zotero/zoteroClient';
 import { getGlobalLibraryItem } from '../library/libraryService';
 import { getActiveVault } from '../vaults/vaultRegistry';
@@ -94,7 +94,11 @@ function validateScope(expected: ResolvedResearchScope): void {
   const inventory = researchCorpusInventory();
   const notebook = expected.notebookId ? resolveResearchNotebook(expected.notebookId) : null;
   if (notebook && notebook.notebookRevision !== expected.notebookRevision) throw new Error('research_scope_changed');
-  for (const document of expected.documents) assertResearchDocument(expected, document.id, inventory.documents.find(item => item.id === document.id));
+  // Indexed once: a linear find per scope document is quadratic in the library. A failed automatic
+  // read checks the whole scope, and on a 14,000-work library that one check took 1.7 s of the main
+  // thread (profile of a real chat turn, 2026-10-09).
+  const current = documentsById(inventory.documents);
+  for (const document of expected.documents) assertResearchDocument(expected, document.id, current.get(document.id));
 }
 export type ZoteroOriginalPins = Map<string, { serverId: string; attachments: Record<string, number> } | null>;
 export async function pinZoteroOriginals(scope: ResolvedResearchScope, signal?: AbortSignal): Promise<ZoteroOriginalPins> {

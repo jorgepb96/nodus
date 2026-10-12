@@ -1,21 +1,14 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { requireElectronRuntime } from './lib/tsRuntimeHooks.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-if (!process.argv.includes('--electron-backup-revision-test')) {
-  execFileSync(
-    path.join(repoRoot, 'node_modules/.bin/electron'),
-    [fileURLToPath(import.meta.url), '--electron-backup-revision-test'],
-    { cwd: repoRoot, env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, stdio: 'inherit' },
-  );
-  process.exit(0);
-}
+if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--electron-backup-revision-test')) process.exit(0);
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
 require.extensions['.ts'] = function loadTs(module, filename) {

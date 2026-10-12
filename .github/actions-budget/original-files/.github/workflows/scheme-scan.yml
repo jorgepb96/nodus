@@ -1,0 +1,33 @@
+name: Scheme scan
+
+on:
+  pull_request:
+    paths:
+      - 'tools/scheme-scan/**'
+      - 'tools/reaction-index/**'
+      - '.github/workflows/scheme-scan.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/scheme-scan/**'
+      - 'tools/reaction-index/**'
+      - '.github/workflows/scheme-scan.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install chemistry test dependencies
+        run: python -m pip install rdkit==2026.3.6 rdchiral==1.1.0 requests==2.34.2
+      - name: Check syntax and chemistry regressions
+        run: |
+          python -m compileall -q tools/scheme-scan
+          python -m unittest discover -s tools/scheme-scan/tests -v

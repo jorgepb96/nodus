@@ -6,6 +6,12 @@ import { readFile } from 'node:fs/promises';
 export const STATUS = 'CLA / signature';
 export const SIGNATURE_BRANCH = 'cla-signatures';
 
+function isCopilotAccount(user) {
+  // GitHub exposes this automated account as a GraphQL User. Pin its stable
+  // bot ID as well as its login; a human with a similar name is not exempt.
+  return user?.id === 'BOT_kgDOC9w8XQ' && user.login?.toLowerCase() === 'copilot';
+}
+
 export function agreement(text) {
   const version = text.match(/^Version (\d+) \(/m)?.[1];
   if (!version) throw new Error('CLA.md must have an explicit version.');
@@ -34,6 +40,7 @@ export function acceptance(comment, cla) {
   // The GitHub account, not a name written in the body, is the signer. Reject
   // edited comments (including maintainer edits) and all automated accounts.
   return comment.author?.__typename === 'User' && Boolean(comment.author.id)
+    && !isCopilotAccount(comment.author)
     && comment.lastEditedAt === null && comment.body.trim() === cla.statement;
 }
 
@@ -41,14 +48,16 @@ export function isAiAttribution(actor) {
   const email = actor.email?.toLowerCase();
   const name = actor.name?.trim() ?? '';
   return (email === 'noreply@anthropic.com' && /^Claude(?: (?:Opus|Sonnet|Haiku)(?: \d+(?:\.\d+)*)?)?$/i.test(name))
-    || (['codex@openai.com', 'noreply@openai.com'].includes(email) && /^Codex$/i.test(name));
+    || (['codex@openai.com', 'noreply@openai.com'].includes(email) && /^Codex$/i.test(name))
+    || (isCopilotAccount(actor.user) && /^copilot-swe-agent\[bot\]$/i.test(name)
+      && email === '198982749+copilot@users.noreply.github.com');
 }
 
 export function contributors(pr, commits) {
   const users = new Map();
   const problems = [];
   const add = (user, source) => {
-    if (!user?.id || user.__typename !== 'User') {
+    if (!user?.id || user.__typename !== 'User' || isCopilotAccount(user)) {
       problems.push(`${source}: a human GitHub account is required.`);
     } else {
       users.set(user.id, user);

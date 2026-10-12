@@ -15,7 +15,7 @@
 // SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
 // SPDX-License-Identifier: AGPL-3.0-only
 
-export const NODUS_VERSION = '5.8.0';
+export const NODUS_VERSION = '5.8.1';
 export const NODUS_LICENSE = 'AGPL-3.0-only';
 
 const OFFICIAL_SOURCE_URL = `https://github.com/jorgepb96/nodus/tree/v${NODUS_VERSION}`;

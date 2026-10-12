@@ -144,11 +144,11 @@ test('the hub renders every built tool including Nodus Translate', async () => {
   // set of tools from each other.
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.map((tool) => `toolkit-card-${tool.testid}`),
-    ['toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter']
+    ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter']
   );
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.map((tool) => tool.name),
-    ['Nodus Apps', 'Nodus Browser', 'Nodus Compass', 'Nodus Convert', 'Nodus Drift', 'Nodus Focus', 'Nodus Protect', 'Nodus Radar', 'Nodus Scriptor', 'Nodus Translate', 'OCR Workspace', 'PDF Presenter'],
+    ['Backups', 'Nodus Apps', 'Nodus Browser', 'Nodus Compass', 'Nodus Convert', 'Nodus Drift', 'Nodus Focus', 'Nodus Protect', 'Nodus Radar', 'Nodus Scriptor', 'Nodus Translate', 'OCR Workspace', 'PDF Presenter'],
     'brand names stay untranslated'
   );
   assert.match(view, /name=\{tool\.name\}/, 'the card shows the brand name verbatim, never through t()');
@@ -166,7 +166,7 @@ test('the hub renders every built tool including Nodus Translate', async () => {
   );
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.filter((tool) => tool.state === 'wip').map((tool) => tool.page),
-    ['apps', 'browser', 'compass', 'convert', 'drift', 'studyFocus', 'protect', 'radar', 'workspace', 'translate', 'ocr', 'presenter'],
+    ['backups', 'apps', 'browser', 'compass', 'convert', 'drift', 'studyFocus', 'protect', 'radar', 'workspace', 'translate', 'ocr', 'presenter'],
     'every tool uses the in-development badge'
   );
   assert.match(view, /const disabled = state === 'soon'/);

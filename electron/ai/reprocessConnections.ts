@@ -344,16 +344,27 @@ export async function reprocessConnections(
 
   // Apply idea→theme membership across every occurrence of each idea.
   let themedIdeas = 0;
+  // The model calls above take minutes and deep scans keep committing meanwhile (a scan
+  // queued during the post-batch pass starts at once; the manual reprocess has no queue
+  // guard). Write links for the occurrences as they are now, not as they were read: the
+  // snapshot would drop a work that fused into an idea since, and relink a work whose
+  // rescan dropped one.
+  const currentWorks = db.prepare(
+    `SELECT io.nodus_id FROM idea_occurrences io JOIN works w ON w.nodus_id = io.nodus_id
+      WHERE io.global_id = ? AND w.archived = 0 AND w.deep_status = 'done'`
+  );
+  const affectedWorks = new Set<string>();
   const applyThemes = db.transaction(() => {
     for (const idea of activeIdeas) {
       const labels = themesByIdea.get(idea.global_id) ?? [];
-      const works = worksByIdea.get(idea.global_id) ?? [];
+      const before = worksByIdea.get(idea.global_id) ?? [];
+      const works = (currentWorks.all(idea.global_id) as Array<{ nodus_id: string }>).map((row) => row.nodus_id);
       replaceIdeaThemeLinks(idea.global_id, works, labels, 0.8, 'explicit');
+      for (const nodusId of [...before, ...works]) affectedWorks.add(nodusId);
       if (labels.length > 0) themedIdeas++;
     }
     // Rebuild only works touched by this pass. Querying the persisted links keeps
     // unchanged ideas in those works represented during an incremental run.
-    const affectedWorks = new Set(activeIdeas.flatMap((idea) => worksByIdea.get(idea.global_id) ?? []));
     for (const nodusId of affectedWorks) {
       const topLabels = (db
         .prepare(

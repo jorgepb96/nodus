@@ -15,9 +15,20 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: nodus-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
 jobs:
+  quality-gate:
+    needs: validate-release
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ inputs.tag }}
+
   validate-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
@@ -31,8 +42,9 @@ jobs:
         run: npm run citation:check && npm run release:verify-source
 
   prepare-release:
-    needs: validate-release
+    needs: [validate-release, quality-gate]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_TAG: ${{ inputs.tag }}
@@ -80,25 +92,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macOS ships one single-architecture product per slice. npm selects
-          # native optional dependencies from the host architecture, so each
-          # slice must be packed on a host of that same architecture: there is
-          # no runner that can honestly produce both. macos-15-intel is the last
-          # x86_64 image GitHub offers, available until August 2027.
-          #
-          # The arch flag is what picks the slice: build.mac.target deliberately
-          # carries no `arch` key, because an explicit one there is NOT narrowed
-          # by the CLI flag (computeArchToTargetNamesMap only falls back to the
-          # requested arch when the target omits it) and each runner would try
-          # to pack the architecture it has no dependencies for.
+          # Release builds keep native checks on each supported platform.
+          # Supported macOS releases target Apple silicon; Intel stays historical.
           - os: macos-latest
             platform: '--mac --arm64'
             asset-platform: mac-arm64
             mac_arch: arm64
-          - os: macos-15-intel
-            platform: '--mac --x64'
-            asset-platform: mac-x64
-            mac_arch: x64
           - os: windows-latest
             platform: '--win'
             asset-platform: win
@@ -113,6 +112,7 @@ jobs:
             platform: '--linux'
             asset-platform: linux
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
@@ -151,6 +151,27 @@ jobs:
       - name: Verify adaptive concurrency contracts
         run: npm run test:adaptive-concurrency
 
+      - name: Verify platform-specific macOS contracts
+        if: runner.os == 'macOS'
+        run: node scripts/ci-native-checks.mjs macos
+
+      - name: Checkout the marketplace for native platform checks
+        if: runner.os != 'Linux'
+        uses: actions/checkout@v7
+        with:
+          repository: NodusResearch/nodus-research-skill-marketplace
+          path: .marketplace
+
+      - name: Verify Windows and macOS capability contracts
+        if: runner.os != 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:cross-repo
+
+      - name: Verify Windows and macOS Python credential boundary
+        if: runner.os != 'Linux'
+        run: node scripts/ci-native-checks.mjs python
+
       # Electron 43 exposes its runtime downloader as a CLI instead of running
       # it during npm install. beforePack inventories LICENSES.chromium.html
       # from that verified distribution on every packaging platform.
@@ -161,6 +182,22 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
+
+      - name: Verify Windows and macOS native package lifecycle
+        if: runner.os != 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:capability-packages
+
+      - name: Verify Windows and macOS native migration and rollback
+        if: runner.os != 'Linux'
+        env:
+          NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+        run: npm run verify:capability-migration
+
+      - name: Verify Windows Presenter native controller
+        if: runner.os == 'Windows'
+        run: node scripts/verify-presenter-lan.cjs
 
       # The signed capability packages that travel inside the build, so a profile
       # upgrading from 5.3.1 can adopt its three disciplines with no network at all. They
@@ -314,16 +351,17 @@ jobs:
           security delete-keychain "$keychain_path" >/dev/null 2>&1
           rm -f "$certificate_path" "$api_key_path" "$keychain_path" "$signing_probe"
 
+      - name: Verify native Research runtime and real isolated notebooks
+        if: runner.os != 'Linux'
+        run: node scripts/ci-native-checks.mjs research
+
       - name: Upload platform assets to the single draft
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/upload-release-assets.mjs ${{ matrix.asset-platform }}
 
-      # upload-release-assets.mjs deliberately does not publish the macOS
-      # manifest: both runners write a <channel>-mac.yml naming only their own
-      # files, so uploading them would leave whichever job finished last and
-      # break updates for the other architecture. Park them under distinct
-      # names for merge-mac-manifest, which removes them again.
+      # Stage the arm64 manifest for the existing audited normalization and
+      # publication gate. Do not require an Intel file that is no longer built.
       - name: Park this architecture's update manifest for the merge job
         if: startsWith(matrix.os, 'macos')
         env:
@@ -339,14 +377,11 @@ jobs:
             --clobber
 
   merge-mac-manifest:
-    # electron-updater reads exactly one <channel>-mac.yml per release and picks
-    # its file from the `files` list by architecture. Two runners each produced
-    # a manifest listing only their own half, so combine them here instead of
-    # letting the second upload overwrite the first. Both halves are required:
-    # publishing a manifest that names only one architecture would leave the
-    # other one either unable to update or silently updating to the wrong build.
+    # Normalize the arm64-only manifest with the audited merger. Publication
+    # still waits for this gate and all three supported native builds.
     needs: release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_TAG: ${{ inputs.tag }}
@@ -366,11 +401,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Merge both macOS update manifests into the published one
+      - name: Normalize the supported macOS update manifest
         run: |
           set -euo pipefail
           work="$(mktemp -d)"
-          for arch in arm64 x64; do
+          for arch in arm64; do
             gh release download "$RELEASE_TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --pattern "${CHANNEL}-mac-${arch}.yml" \
@@ -378,8 +413,7 @@ jobs:
           done
           node scripts/merge-mac-update-manifest.mjs \
             "$work/${CHANNEL}-mac.yml" \
-            "$work/${CHANNEL}-mac-arm64.yml" \
-            "$work/${CHANNEL}-mac-x64.yml"
+            "$work/${CHANNEL}-mac-arm64.yml"
           gh release upload "$RELEASE_TAG" \
             "$work/${CHANNEL}-mac.yml" \
             --repo "$GITHUB_REPOSITORY" \
@@ -388,7 +422,7 @@ jobs:
       - name: Remove the per-architecture manifests from the release
         run: |
           set -euo pipefail
-          for arch in arm64 x64; do
+          for arch in arm64; do
             gh release delete-asset "$RELEASE_TAG" "${CHANNEL}-mac-${arch}.yml" \
               --repo "$GITHUB_REPOSITORY" --yes
           done
@@ -399,6 +433,7 @@ jobs:
     if: inputs.channel == 'latest'
     needs: release
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       RELEASE_TAG: ${{ inputs.tag }}
     steps:
@@ -462,6 +497,7 @@ jobs:
       - merge-mac-manifest
       - build-zotero-plugin
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       RELEASE_TAG: ${{ inputs.tag }}
       RELEASE_CHANNEL: ${{ inputs.channel }}
@@ -472,7 +508,6 @@ jobs:
           assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
           expected=(
             Nodus-mac-arm64.dmg
-            Nodus-mac-x64.dmg
             Nodus-win-x64.exe
             Nodus-linux-amd64.deb
             Nodus-x86_64.AppImage
@@ -506,7 +541,7 @@ jobs:
             done
           fi
 
-      - name: Verify the published macOS manifest serves both architectures
+      - name: Verify the published macOS manifest serves Apple silicon
         run: |
           set -euo pipefail
           verify_dir="$(mktemp -d)"
@@ -515,7 +550,7 @@ jobs:
             --pattern "${RELEASE_CHANNEL}-mac.yml" \
             --dir "$verify_dir"
           manifest="$verify_dir/${RELEASE_CHANNEL}-mac.yml"
-          for arch in arm64 x64; do
+          for arch in arm64; do
             if ! grep -q "Nodus-mac-${arch}.zip" "$manifest"; then
               echo "::error::The published macOS update manifest does not list Nodus-mac-${arch}.zip"
               exit 1
@@ -528,7 +563,7 @@ jobs:
             echo "::error::The macOS compatibility pointer must stay on the arm64 ZIP"
             exit 1
           fi
-          for arch in arm64 x64; do
+          for arch in arm64; do
             if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets \
               --jq '.assets[].name' | grep -Fxq "${RELEASE_CHANNEL}-mac-${arch}.yml"; then
               echo "::error::The per-architecture manifest ${RELEASE_CHANNEL}-mac-${arch}.yml was left on the release"

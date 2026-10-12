@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { allServerLibraryItems, buildServerLibraryPublication, type BuiltServerLibraryPublication } from '../serverSync/serverLibrary';
 import { withOwningVault } from '../vaults/vaultRegistry';
 import { withVaultDatabase } from '../db/database';
+import {retainLibraryCatalogueVersion} from './libraryCatalogueVersion';
 
 const catalogues = new Map<string, { time: number; value: BuiltServerLibraryPublication }>();
 const packages = new Map<string, { time: number; value: BuiltServerLibraryPublication }>();
@@ -27,6 +28,7 @@ export async function serveLiveLibrary(req: IncomingMessage, res: ServerResponse
     while (changed) { changed = false; for (const collection of value.manifest.collections) if (used.has(collection.id) && collection.parentId && !used.has(collection.parentId)) { used.add(collection.parentId); changed = true; } }
     value.manifest.collections = value.manifest.collections.filter(collection => used.has(collection.id)).map(collection => ({ ...collection,
       directItemCount: value.manifest.documents.filter(document => document.collectionIds.includes(collection.id)).length }));
+    retainLibraryCatalogueVersion(cached?.value.manifest, value.manifest);
     cached = { time: Date.now(), value }; catalogues.set(vaultId, cached);
     if (catalogues.size > 9) catalogues.delete(catalogues.keys().next().value!);
   }

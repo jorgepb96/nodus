@@ -8,6 +8,10 @@ import {invalidateLiveCorpus} from './liveCorpus';
 export class WorkspaceOrganizationFailure extends Error {
   constructor(public readonly code:string,public readonly remote?:unknown){super(code);}
 }
+export function workspaceOrganizationFailureResponse(error:unknown){
+ if(!(error instanceof WorkspaceOrganizationFailure))return undefined;
+ return {status:error.code.endsWith('conflict')||error.code.endsWith('unavailable')?409:error.code==='workspace_edit_too_large'?413:400,body:{error:error.code,...(error.remote?{remote:error.remote}:{})}};
+}
 const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 type Row=Record<string,unknown>;
 export function workspaceFolderAncestry(id:string|null,tree=getNotesTree(true)):unknown[]{

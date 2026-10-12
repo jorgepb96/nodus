@@ -14,6 +14,7 @@ import { MOBILE_OPERATIONS, MOBILE_JOB_OPERATIONS } from '../../shared/mobileOpe
 import { BridgeJobStore, type BridgeJob } from './jobs';
 import { applyBridgeMutations, mobileWorldContentMutationTables } from './mutations';
 import { applyWorkspaceEdit, WorkspaceEditFailure } from './workspaceEdits';
+import { workspaceOrganizationFailureResponse } from './workspaceOrganizationEdits';
 import { applyStudyEdit, StudyEditFailure } from './studyEdits';
 import {saveMobilePageDocument,PageDocumentFailure} from './pageDocuments';
 import {validateCompanionSpaceAction,validateCompanionActionJob,companionActionKey,companionActionResponse} from './spaceActions';
@@ -503,9 +504,12 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     const vaultId = decodeURIComponent(workspaceEdit[1]);
     if (!pairing.vaultIds.includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, MOBILE_WORKSPACE_EDIT_MAX_BYTES);
+    if ((input as {command?:unknown})?.command && !pairing.domains.includes('corpus')) { reply(response,403,{error:'permission_denied'});return; }
     try { reply(response, 200, await applyWorkspaceEdit(vaultId, pairing.id, input)); }
     catch (error) {
-      if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : error.code === 'workspace_edit_too_large' ? 413 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
+      const organizationFailure = workspaceOrganizationFailureResponse(error);
+      if (organizationFailure) reply(response, organizationFailure.status, organizationFailure.body);
+      else if (error instanceof WorkspaceEditFailure) reply(response, error.code.endsWith('conflict') ? 409 : error.code === 'document_unavailable' ? 404 : error.code === 'workspace_edit_too_large' ? 413 : 400, { error: error.code, ...(error.remote ? { remote: error.remote } : {}) });
       else reply(response, 400, { error: 'invalid_document', error_description: error instanceof Error ? error.message : 'The document could not be saved.' });
     }
     return;

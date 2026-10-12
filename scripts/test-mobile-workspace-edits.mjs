@@ -295,7 +295,7 @@ try {
   const orgNativeBefore=await scoped(()=>workspace.getWorkspaceNoteEditorData(duplicateTarget));
   const movePacket=orgPacket({type:'move',id:duplicateTarget,expectedFolderId:orgSource.folderId,targetFolderId:orgChildID,targetAncestry:await scoped(()=>organization.workspaceFolderAncestry(orgChildID))});
   await applyWorkspaceEdit(first.id,'phone-grant',movePacket);
-  await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',{...movePacket,id:randomUUID()}),e=>e.code==='organization_conflict');
+  await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',{...movePacket,id:randomUUID()}),e=>{const http=organization.workspaceOrganizationFailureResponse(e);assert.equal(http.status,409);assert.equal(http.body.error,'organization_conflict');assert.ok(http.body.remote);assert.equal(http.body.remote.notes.some(n=>'content' in n||'nativeDocument' in n),false);return true;});
   await scoped(()=>notes.patchNoteTags([duplicateTarget],{add:['External Mac tag']}));
   const tagPacket=orgPacket({type:'tags',id:duplicateTarget,add:['Mobile tag'],remove:['Real tag']});
   await applyWorkspaceEdit(first.id,'phone-grant',tagPacket);

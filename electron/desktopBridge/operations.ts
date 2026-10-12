@@ -24,6 +24,7 @@ import { generateMobileWorldMap, mobileWorldMapGenerationSource, saveMobileWorld
 import { generateMobileReportImage } from './reportImageGeneration';
 import { mobileStudyEditorData } from './studyEdits';
 import { mobileWorkspaceEditorData } from './workspaceEdits';
+import { mobileWorkspaceOrganizationTree } from './workspaceOrganizationEdits';
 
 type Handler = (event: IpcMainInvokeEvent, ...args: any[]) => unknown;
 const allowedChannels = new Set(Object.values(MOBILE_OPERATIONS).map(([channel]) => channel));
@@ -173,6 +174,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     let value = await (signal ? withGenerationSignal(signal, invoke) : invoke());
     if (method === 'getStudyDocEditorData') value = withMobileOperation(() => mobileStudyEditorData(String(args[0])), domains);
     if (method === 'getWorkspaceNoteEditorData') value = withMobileOperation(() => mobileWorkspaceEditorData(String(args[0])), domains);
+    if (method === 'getNotesTree') {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid_workspace_tree');
+      value = {...value, mobileOrganizationTree: withMobileOperation(() => mobileWorkspaceOrganizationTree(), domains)};
+    }
     if (method === 'getImmersionSession' && !domains.includes('writing') && value && typeof value === 'object') {
       value = {...value, progress: emptyImmersionProgress()};
     }

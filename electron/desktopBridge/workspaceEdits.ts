@@ -1,4 +1,5 @@
 import { parseMobileAnnotationCommand, type MobileAnnotationCommand } from './mobileAnnotationEdits';
+import {applyWorkspaceOrganization} from './workspaceOrganizationEdits';
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
 import { withOwningVault } from '../vaults/vaultRegistry';
@@ -49,6 +50,7 @@ export function mobileWorkspaceEditorData(noteId: string) {
 /** A complete editor save and its acknowledgement commit together in the owning
  * vault. Replaying a lost acknowledgement must not create another Yjs revision. */
 export async function applyWorkspaceEdit(vaultId: string, grantId: string, raw: unknown): Promise<unknown> {
+  if ((raw as {command?:{action?:unknown}} | null)?.command?.action === 'workspaceOrganization') return applyWorkspaceOrganization(vaultId, grantId, raw);
   if (Buffer.byteLength(JSON.stringify(raw) ?? '', 'utf8') > MOBILE_WORKSPACE_EDIT_MAX_BYTES) throw new WorkspaceEditFailure('workspace_edit_too_large');
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new WorkspaceEditFailure('invalid_workspace_edit');
   const { id, noteId, input, creation, command } = raw as { id?: unknown; noteId?: unknown; input?: unknown; creation?: unknown; command?: unknown };

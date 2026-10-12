@@ -74,6 +74,15 @@ function publishedWorldImages(snapshot, entityKind, entityId) {
     .map((image) => ({ ...image, asset: assets.get(String(image.image_id)) ?? null }));
 }
 
+function genealogyRecordEvidence(snapshot, targetKind, targetId) {
+  if (snapshot?.capabilities?.genealogyEvidenceAccess === 'requires-primary-source-files') {
+    return { evidenceAccess: { state: 'requires-primary-source-files' } };
+  }
+  return { evidence: rows(snapshot, 'record_evidence')
+    .filter(entry => String(entry.target_kind) === targetKind && String(entry.target_id) === String(targetId))
+    .map(({ created_by: _createdBy, ...entry }) => entry) };
+}
+
 function publishedPersons(snapshot) {
   const portraits = new Map(
     (Array.isArray(snapshot?.assets) ? snapshot.assets : [])
@@ -1656,6 +1665,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         return send(res, json, {
           person: row,
           names: involved('person_names', 'person_id'),
+          ...genealogyRecordEvidence(snapshot, 'person', personId),
           places: rows(snapshot, 'places').filter((entry) => placeIds.has(String(entry.place_id))),
           placeLinks,
           // `from_person`/`to_person`, which is what migration 1154 actually creates. Filtering
@@ -1682,6 +1692,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         const personIds = new Set(personLinks.map((entry) => String(entry.person_id)));
         return send(res, json, {
           place: row,
+          ...genealogyRecordEvidence(snapshot, 'place', placeId),
           profile: rows(snapshot, 'place_profiles').find((entry) => String(entry.place_id) === placeId) ?? null,
           parent: rows(snapshot, 'places').find((entry) => String(entry.place_id) === String(row.parent_id ?? '')) ?? null,
           children: rows(snapshot, 'places').filter((entry) => String(entry.parent_id ?? '') === placeId),
@@ -1700,6 +1711,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         const personIds = new Set(participantRows.map((entry) => String(entry.person_id)));
         return send(res, json, {
           event: row,
+          ...genealogyRecordEvidence(snapshot, 'event', eventId),
           participants: rows(snapshot, 'persons').filter((entry) => personIds.has(String(entry.person_id))),
           participantRows,
           place: rows(snapshot, 'places').find((entry) => String(entry.place_id) === String(row.place_id)) ?? null,
@@ -1711,6 +1723,7 @@ export function createCorpusRoutes({ readSnapshot, readAssetBytes, renderPdf }) 
         if (notModified(req, res, json, space, url, key)) return true;
         return send(res, json, {
           relationship: row,
+          ...genealogyRecordEvidence(snapshot, 'relationship', row.rel_id),
           from: rows(snapshot, 'persons').find((entry) => String(entry.person_id) === String(row.from_person)) ?? null,
           to: rows(snapshot, 'persons').find((entry) => String(entry.person_id) === String(row.to_person)) ?? null,
           revision: space.revision,

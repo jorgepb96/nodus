@@ -41,14 +41,19 @@ export async function serveLiveCorpus(req: IncomingMessage, res: ServerResponse,
   const vault = getVault(vaultId);
   if (!vault) { res.writeHead(404); res.end(); return; }
   if (segments[0] === 'library') { await serveLiveLibrary(req, res, url, vaultId, segments.slice(1)); return; }
+  // Evidence quotations are private source content. Ordinary kinship/place metadata
+  // remains corpus-only; a cache built with a stronger grant cannot answer a weaker one.
+  const bridgeGenealogyEvidence = vault.type === 'genealogy' && domains.includes('corpus') && domains.includes('primary-source-files');
+  const stamp = `${databaseStamp(vault.path)}:genealogy-evidence=${bridgeGenealogyEvidence}`;
   let cached = snapshots.get(vaultId);
-  if (!cached || cached.stamp !== databaseStamp(vault.path)) {
+  if (!cached || cached.stamp !== stamp) {
     const value = await withVaultDatabase(vaultId, () => buildServerSnapshot(vault, {
       nodusServerIncludePassages: true, nodusServerIncludeUserContent: true,
       // Private domains remain separately granted, never part of this corpus projection.
       nodusServerIncludePrimarySources: false, nodusServerIncludeTestimonies: false,
+      ...(vault.type === 'genealogy' ? { bridgeGenealogyEvidence } : {}),
     }, getDb()));
-    cached = { stamp: databaseStamp(vault.path), value, document: JSON.parse(value.buffer.toString('utf8')), vectors: new Map() };
+    cached = { stamp, value, document: JSON.parse(value.buffer.toString('utf8')), vectors: new Map() };
     snapshots.delete(vaultId); snapshots.set(vaultId, cached);
     if (snapshots.size > 2) snapshots.delete(snapshots.keys().next().value!);
   }

@@ -478,6 +478,8 @@ export interface ServerSnapshotSettings {
   nodusServerIncludePrimarySources?: boolean;
   nodusServerIncludeTestimonies?: boolean;
   nodusServerIncludePersonalImports?: boolean;
+  /** Private owner Bridge only; absent for publication. Quotes require the source grant. */
+  bridgeGenealogyEvidence?: boolean;
 }
 
 function personalRowKey(table: string, row: Record<string, unknown>): unknown[] {
@@ -647,6 +649,22 @@ export function buildServerSnapshot(
 
   const tables: Record<string, Record<string, unknown>[]> = {};
   for (const table of [...selected].sort()) tables[table] = readTable(db, table);
+  if (vault.type === 'genealogy' && settings.bridgeGenealogyEvidence === true && present.has('record_evidence')) {
+    const people = new Set((tables.persons ?? []).map(row => String(row.person_id)));
+    const targets = new Map([
+      ['person', people],
+      ['place', new Set((tables.places ?? []).map(row => String(row.place_id)))],
+      ['event', new Set((tables.events ?? []).map(row => String(row.event_id)))],
+      ['relationship', new Set((tables.relationships ?? []).filter(row =>
+        people.has(String(row.from_person)) && people.has(String(row.to_person)))
+        .map(row => String(row.rel_id)))],
+    ]);
+    const fields = new Set(['id', 'target_kind', 'target_id', 'nodus_id', 'source_kind', 'quote', 'location',
+      'confidence', 'excerpt_id', 'evidence_role', 'certainty', 'review_status', 'source_version_id', 'created_at', 'updated_at']);
+    tables.record_evidence = readTable(db, 'record_evidence').filter(row =>
+      targets.get(String(row.target_kind))?.has(String(row.target_id)))
+      .map(row => Object.fromEntries(Object.entries(row).filter(([key]) => fields.has(key))));
+  }
   // Prosopography is not a raw publication family.  Add only the generated,
   // identity-free aggregates after normal table selection; no prosop_* source
   // table is ever copied into the snapshot.
@@ -707,6 +725,8 @@ export function buildServerSnapshot(
       includesPassages: Boolean(settings.nodusServerIncludePassages),
       hasAssets: assetRefs.length > 0,
       includesLibraryDocuments: Boolean(library),
+      ...(vault.type === 'genealogy' && typeof settings.bridgeGenealogyEvidence === 'boolean'
+        ? { genealogyEvidenceAccess: settings.bridgeGenealogyEvidence ? 'granted' : 'requires-primary-source-files' } : {}),
     },
     assets: assetRefs,
     library,
@@ -727,6 +747,8 @@ export function buildServerSnapshot(
     // upload and is not content. Excluding it keeps an unchanged library revision stable.
     library: library ? { ...library, generatedAt: undefined } : null,
     tables,
+    ...(vault.type === 'genealogy' && typeof settings.bridgeGenealogyEvidence === 'boolean'
+      ? { bridgeGenealogyEvidence: settings.bridgeGenealogyEvidence } : {}),
   });
   const revision = revisionHash.digest('base64url');
   logPublishPerf('revision-stream-hash:complete', phaseStartedAt, { bytes: raw.byteLength });

@@ -4,6 +4,7 @@ import { confirm } from './feedback';
 import { AiBadge, Icon } from './ui';
 import { t } from '../i18n';
 import { DecorativeImageModal, type DecorativeImageQueueAction } from './DecorativeImageModal';
+import { readDecorativeImage } from './decorativeImageLoad';
 
 /** A small pill button that opens the design modal without cluttering the view. */
 function DesignPill({ onClick, floating = false }: { onClick: () => void; floating?: boolean }) {
@@ -84,7 +85,7 @@ export function DecorativeImageCard({
     if (current?.status !== 'ready') {
       return;
     }
-    void window.nodus.getDecorativeImageDataUrl(entityKind, entityId, thumbnail).then((url) => {
+    void readDecorativeImage(() => window.nodus.getDecorativeImageDataUrl(entityKind, entityId, thumbnail), () => active).then((url) => {
       if (!active) return;
       if (url) setDataUrl(url);
       else setImageLoadError(t('No se ha podido cargar la imagen.'));

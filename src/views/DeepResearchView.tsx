@@ -286,6 +286,7 @@ export function DeepResearchView({
   onOpenStudyMaterial,
   onOpenStudyRecording,
   onNativeRead,
+  onRetryResearch,
   completeGuideTarget,
   onCompleteGuideTargetConsumed,
 }: {
@@ -306,6 +307,7 @@ export function DeepResearchView({
   onOpenStudyRecording?: (id: string, timestamp?: number | null) => void;
   /** Companion owns a native document reader; Desktop keeps its reader tabs. */
   onNativeRead?: (id: string) => void;
+  onRetryResearch?: (id:string)=>Promise<void>;
   /** Study vaults: open the composer as a complete guide over these sources (from Materials). */
   completeGuideTarget?: { sourceKeys: string[]; nonce: number } | null;
   onCompleteGuideTargetConsumed?: () => void;
@@ -991,6 +993,7 @@ export function DeepResearchView({
         progress: job.status === 'running' || job.status === 'queued' ? job.progress : null,
         error: job.error ?? job.saveError,
         origin: job.origin,
+        retryable: Boolean((job as DeepResearchJobRecord & {retryable?:boolean}).retryable),
         enqueuedAt: job.enqueuedAt,
       }];
     })
@@ -1206,6 +1209,7 @@ export function DeepResearchView({
           running={deepRunning || activeQueue.some((item) => item.status === 'running')}
           onRemove={removeQueued}
           onClearFinished={clearFinished}
+          onRetry={onRetryResearch ? item=>{void onRetryResearch(item.id).catch(error=>setError(error instanceof Error?error.message:String(error)));}:undefined}
         />
       )}
 

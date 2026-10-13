@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import {execFileSync} from 'node:child_process';
+import {build} from 'esbuild';
+import {pathToFileURL} from 'node:url';
+const root=process.cwd(),scratch=await fs.mkdtemp(path.join(os.tmpdir(),'nodus-mobile-deep-contract-'));
+try {
+ const bundle=path.join(scratch,'contract.mjs');
+ const built=await build({entryPoints:[path.join(root,'shared/mobileDeepResearch.ts')],outfile:bundle,bundle:true,platform:'browser',format:'esm',metafile:true,alias:{'@shared':path.join(root,'shared')},logLevel:'silent'});
+ assert(!Object.keys(built.metafile.inputs).some(input=>input.includes('electron/ai/aiClient')),'Portable contracts must never bundle credentials or Desktop providers');
+ const {normalizeMobileDeepResearchRequest,durableDeepResearchCall}=await import(pathToFileURL(bundle));
+ const request={objective:'Evidence-led report',model:{provider:'openai',model:'actual-selection'},sectionLimit:'single',sectionLength:500,approach:'comparative',deepResearchVersion:'v2',notebookId:'real-scope',retrieval:{preset:'deep'},thinkingEffort:'high',documentSkills:{enabled:true}};
+ const normalized=normalizeMobileDeepResearchRequest(request);
+ for(const field of ['sectionLimit','sectionLength','approach','deepResearchVersion','notebookId','retrieval','thinkingEffort','documentSkills'])assert.deepEqual(normalized[field],request[field],`${field} must not disappear while adapting the mobile request`);
+ assert.throws(()=>normalizeMobileDeepResearchRequest({...request,model:null}),/model_missing/);
+ let providerInvocations=0,writes=[];
+ const checkpoint={id:'retained-paid-request',entityKey:'key',request:normalized,state:'running',calls:{},createdAt:'2026-10-13'};
+ const invoke=async()=>{providerInvocations++;return {text:'Paid result with [citation](nodus://work/owned)'};};
+ const persist=async()=>{writes.push(structuredClone(checkpoint));};
+ const paid=await durableDeepResearchCall(checkpoint,'section:1',{stage:'writer',question:'same'},invoke,persist);
+ assert.equal(writes.length,1);assert.deepEqual(writes[0].calls['section:1'].output,paid,'Completed response is durable before control returns');
+ const reopened=structuredClone(writes[0]);
+ assert.deepEqual(await durableDeepResearchCall(reopened,'section:1',{question:'same',stage:'writer'},invoke,persist),paid);
+ assert.equal(providerInvocations,1,'Reopening does not buy a second completion');
+ await assert.rejects(durableDeepResearchCall(reopened,'section:1',{stage:'writer',question:'changed'},invoke,persist),/input_conflict/);
+ assert.equal(providerInvocations,1);
+ // A process loss after the durable sending marker must never buy another response.
+ const uncertain={...checkpoint,calls:{}};let paidCount=0;const uncertainWrites=[];
+ await assert.rejects(durableDeepResearchCall(uncertain,'host:paid',{question:'paid'},async()=>{paidCount++;assert.equal(uncertainWrites.length,1,'Sending marker persisted before provider');throw new Error('process_response_lost');},async()=>{uncertainWrites.push(structuredClone(uncertain));},{paid:true,request:{generationId:checkpoint.id}}),/process_response_lost/);
+ const killed=structuredClone(uncertainWrites[0]);
+ await assert.rejects(durableDeepResearchCall(killed,'host:paid',{question:'paid'},async()=>{paidCount++;return 'wrong';},async()=>{}, {paid:true,recover:async()=>undefined}),/mobile_paid_response_uncertain/);
+ assert.equal(paidCount,1,'Unconfirmed paid step cannot automatically invoke provider again');
+ const recoveryWrites=[];
+ const recovered=await durableDeepResearchCall(killed,'host:paid',{question:'paid'},async()=>{paidCount++;return 'wrong';},async()=>{recoveryWrites.push(structuredClone(killed));},{paid:true,recover:async()=>'actual durable raw response'});
+ assert.equal(recovered,'actual durable raw response');assert.equal(paidCount,1);assert.equal(recoveryWrites[0].inflight,undefined);assert.equal(recoveryWrites[0].calls['host:paid'].output,recovered);
+ const original=execFileSync('git',['show','02ac5b212ec8a86a10a12ea24c08d346b1065641:electron/ai/deepResearch.ts'],{encoding:'utf8'});
+ const current=await fs.readFile(path.join(root,'shared/portableDeepResearchAI.ts'),'utf8');
+ const old=original.slice(original.indexOf('async function aiReviewReport(')).replace('export const __decomposeObjectiveForTesting = aiDecomposeObjective;','').replace('export const __verifyCitationsForTesting = aiVerifyCitations;','').replace('export async function aiVerifyCitations','async function aiVerifyCitations').replaceAll('ReturnType<typeof academicRelationshipContext>','AcademicApproachContext["relationships"]').replaceAll("getActiveVault().type === 'academic'",'host.documentaryEvidence');
+ assert(current.includes(old),'The canonical academic AI stages were moved exactly, rather than replaced with simplified mobile prompts');
+ const aiBundle=path.join(scratch,'ai.mjs');
+ const aiBuilt=await build({entryPoints:[path.join(root,'shared/portableDeepResearchAI.ts')],outfile:aiBundle,bundle:true,platform:'browser',format:'esm',metafile:true,alias:{'@shared':path.join(root,'shared')},logLevel:'silent'});
+ assert(!Object.keys(aiBuilt.metafile.inputs).some(input=>/aiClient|settingsRepo|database\.ts$/.test(input)),'Canonical prompt factory must remain provider/SQLite-free');
+ console.log('PASS mobile Deep Research contracts: exact canonical stage extraction, browser boundary, complete request preservation, durable replay, NoResponseRecovery and changed-input rejection. Provider invocations above are test callbacks, not real E2E.');
+} finally {await fs.rm(scratch,{recursive:true,force:true});}

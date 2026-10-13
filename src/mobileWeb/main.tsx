@@ -1,3 +1,4 @@
+import {enqueueAutonomousDeepResearch,localDeepResearchJobs,localDeepResearchReports,cancelAutonomousDeepResearch,clearLocalDeepResearchJobs,retryLocalDeepResearch} from './autonomousDeepResearch';
 import { autonomousDictionary } from './autonomousDictionary';
 import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
 import { autonomousTranslation } from './autonomousTranslation';
@@ -195,6 +196,7 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
       }
     }
   }
+  if(method==='listDeepResearchJobs'&&config.executionMode==='autonomous')return localDeepResearchJobs(call);
   try { return await native.nodusMobileCall(method, ...args); }
   catch (error) {
     if((error as {code?:string})?.code==='offline'&&config.surface==='databaseResearch'&&databaseOfflineComposerMethods.has(method)) {
@@ -279,6 +281,15 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
   if (method.startsWith('on')) return (listener: (...args: unknown[]) => void) => {
     const bucket = subscriptions.get(method) ?? new Set(); bucket.add(listener); subscriptions.set(method, bucket);
     return () => bucket.delete(listener);
+  };
+  if(method==='enqueueDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous') return (request:Parameters<typeof enqueueAutonomousDeepResearch>[1])=>enqueueAutonomousDeepResearch(call,request,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);for(const listener of subscriptions.get('onWritingDraftsChanged')??[])listener(null);});
+  if(method==='listDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>localDeepResearchJobs(call);
+  if(method==='cancelDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous')return (id:string)=>cancelAutonomousDeepResearch(call,id);
+  if(method==='clearFinishedDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>clearLocalDeepResearchJobs(call);
+  if(method==='listWritingWorkshopDrafts'&&config.surface==='deepResearch') return async()=>{
+    const own=await localDeepResearchReports(call);
+    try {const remote=await call(method);return [...own,...remote];}
+    catch(error){if((error as {code?:string})?.code!=='offline')throw error;return own;}
   };
   if (method === 'startDictionaryGeneration' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousDictionary>[2]) => autonomousDictionary(call, progress => { for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(progress); if (['done','degraded'].includes(progress.phase)) for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null); }, request);
   if (method === 'generateContentTranslation' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousTranslation>[1]) => autonomousTranslation(call, request, () => {for (const listener of subscriptions.get('onContentTranslationsChanged') ?? []) listener(request.entityKind,request.entityId);});
@@ -434,7 +445,7 @@ function App() {
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'studyDocument' ? <MobileStudyDocument id={config.initialStudyDocumentId??''} settings={settings} draftScope={config.documentDraftScope??''} call={call} onOpen={(kind,id)=>navigate(kind,id)}/>
       : config.surface === 'page' ? <MobilePageDocument id={config.initialPageId??''} onOpen={id=>navigate('page',id)}/>
-      : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onRetryResearch={config.executionMode==='autonomous'?id=>retryLocalDeepResearch(call,id,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);}):undefined} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'

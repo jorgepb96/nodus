@@ -504,10 +504,18 @@ export class ResearchCorpusRun {
   }
 }
 
-export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResearchRequest, signal?: AbortSignal): DeepResearchDeps {
+export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResearchRequest, signal?: AbortSignal, options?: {sourceOnly: true}): DeepResearchDeps {
   const scope = resolveAcademicRunScope(request.notebookId);
   const settings = validateRetrievalSettings(request.retrieval ?? (request.notebookId ? getResearchNotebook(request.notebookId)?.settings : undefined) ?? RETRIEVAL_PRESETS.deep);
-  const run = new ResearchCorpusRun(scope, settings, signal, true);
+  const run = new ResearchCorpusRun(scope, settings, signal, !options?.sourceOnly);
+  if (options?.sourceOnly) {
+    // A companion may consult prepared evidence, never trigger PDF extraction,
+    // Zotero original fetching, OCR, indexing or new derived profiles.
+    run.readOriginal = async () => {
+      run.budget.partial = true; run.limitations.add('research_read_unavailable');
+      throw new Error('desktop_preparation_required');
+    };
+  }
   let windowPromise: ReturnType<typeof researchModelContextWindow> | undefined;
   const model = request.model ?? getSettings().deepResearchModel ?? getSettings().synthesisModel;
   // One auditor per report: a proposition rejected in any part stays rejected in

@@ -1,3 +1,4 @@
+import {mobileDeepResearchSource,saveMobileDeepResearchReport} from './mobileDeepResearch';
 import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import { MOBILE_OPERATIONS, type MobileOperation } from '../../shared/mobileOperations';
@@ -50,6 +51,13 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(method==='getMobileDeepResearchSource'||method==='saveMobileDeepResearchReport') {
+    if(args.length!==1||!domains.includes('corpus'))throw new Error('permission_denied');
+    if(method==='saveMobileDeepResearchReport'&&(!bridgeJobId||!jobIdentity))throw new Error('job_required');
+    const invoke=()=>withMobileOperation(()=>method==='getMobileDeepResearchSource'?mobileDeepResearchSource(args[0],signal):saveMobileDeepResearchReport(args[0],jobIdentity!.deviceGrant,signal),domains);
+    const result=await withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>signal?withGenerationSignal(signal,invoke):invoke()));
+    if(method==='saveMobileDeepResearchReport')invalidateLiveCorpus(vaultId);return result;
+  }
   if (method === 'getMobileWorldMapGenerationSource' || method === 'saveMobileWorldMapImage') {
     if (args.length !== 1 || !domains.includes('corpus')) throw new Error('permission_denied');
     if (method === 'saveMobileWorldMapImage' && (!bridgeJobId || !jobIdentity)) throw new Error('job_required');

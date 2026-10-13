@@ -62,11 +62,10 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
 
-      # The application comes from the tag, but the signing verifiers are
-      # build tooling that never enters the bundle. Taking them from this
-      # workflow's commit lets a verifier fix reach a tag cut before it, as
-      # v5.9.0's Intel build needed for a flaky Apple ticket lookup.
-      - name: Checkout this workflow's macOS verifiers
+      # The application comes from the tag. Signing tooling comes from this
+      # workflow's commit and stays outside the bundle, so a tooling fix can
+      # recover the Intel build of an already published tag.
+      - name: Checkout this workflow's macOS build tooling
         uses: actions/checkout@v7
         with:
           ref: ${{ github.workflow_sha }}
@@ -74,11 +73,12 @@ jobs:
           sparse-checkout: |
             scripts/verify-macos-code-signing.cjs
             scripts/verify-macos-release.cjs
+            scripts/macos-stapler-retry.cjs
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      - name: Apply this workflow's macOS verifiers
-        run: cp .release-tools/scripts/verify-macos-code-signing.cjs .release-tools/scripts/verify-macos-release.cjs scripts/
+      - name: Apply this workflow's macOS build tooling
+        run: cp .release-tools/scripts/verify-macos-code-signing.cjs .release-tools/scripts/verify-macos-release.cjs .release-tools/scripts/macos-stapler-retry.cjs scripts/
 
       - name: Verify the release is one this may touch
         run: |
@@ -217,11 +217,12 @@ jobs:
 
       - name: Build, sign and notarize the Intel artifacts
         env:
+          NODUS_RETRY_MACOS_STAPLING: '1'
           CSC_IDENTITY_AUTO_DISCOVERY: true
           NODUS_REQUIRE_MACOS_SIGNING: true
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: npx electron-builder --mac --x64 --publish never --config build/electron-builder.release.cjs
+        run: node --require ./scripts/macos-stapler-retry.cjs node_modules/.bin/electron-builder --mac --x64 --publish never --config build/electron-builder.release.cjs
 
       - name: Verify signed and notarized Intel artifacts
         run: node scripts/verify-macos-release.cjs release x64

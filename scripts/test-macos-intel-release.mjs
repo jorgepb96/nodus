@@ -29,7 +29,7 @@ function comparable(text) {
 test('Intel runs only after publication, outside the gate that publishes', () => {
   // The whole point: a slow or failing Intel runner must never hold back the
   // release everyone else is waiting for.
-  assert.match(release, /release-macos-intel:\n(?:    #.*\n)*    needs: verify-and-publish\n/);
+  assert.match(release, /release-macos-intel:\n(?: {4}#.*\n)* {4}needs: verify-and-publish\n/);
   assert.match(release, /uses: \.\/\.github\/workflows\/release-macos-intel\.yml/);
   const publish = release.slice(release.indexOf('  verify-and-publish:'), release.indexOf('  release-macos-intel:'));
   assert.doesNotMatch(publish, /release-macos-intel/, 'publication never waits for Intel');
@@ -40,13 +40,16 @@ test('Intel runs only after publication, outside the gate that publishes', () =>
 test('the Intel build is the released application, signed exactly like a release', () => {
   assert.match(intel, /runs-on: macos-15-intel/);
   assert.match(intel, /ref: \$\{\{ inputs\.tag \}\}/, 'the Intel build comes from the release tag itself');
-  // Only the verifiers are taken from the workflow commit, never product code.
-  const tools = step(intel, "Checkout this workflow's macOS verifiers");
+  // Only signing and stapling tooling comes from the workflow commit.
+  const tools = step(intel, "Checkout this workflow's macOS build tooling");
   assert.match(tools, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.deepEqual([...tools.matchAll(/^ {12}(\S+)$/gm)].map((match) => match[1]),
-    ['scripts/verify-macos-code-signing.cjs', 'scripts/verify-macos-release.cjs']);
-  assert.ok(intel.indexOf("Apply this workflow's macOS verifiers") < intel.indexOf('Build, sign and notarize the Intel artifacts'),
-    'the verifiers are in place before afterSign runs them');
+    ['scripts/verify-macos-code-signing.cjs', 'scripts/verify-macos-release.cjs', 'scripts/macos-stapler-retry.cjs']);
+  assert.ok(intel.indexOf("Apply this workflow's macOS build tooling") < intel.indexOf('Build, sign and notarize the Intel artifacts'),
+    'the signing tooling is in place before the packager starts');
+  const build = step(intel, 'Build, sign and notarize the Intel artifacts');
+  assert.match(build, /NODUS_RETRY_MACOS_STAPLING: '1'/);
+  assert.match(build, /node --require \.\/scripts\/macos-stapler-retry\.cjs node_modules\/\.bin\/electron-builder/);
   assert.match(intel, /verify-release-channel\.mjs "\$CHANNEL" "\$RELEASE_TAG"/);
   assert.match(intel, /NODUS_REQUIRE_BOOTSTRAP: '1'/, 'the offline capability bootstrap is required, as on every release build');
   assert.match(intel, /electron-builder --mac --x64 --publish never --config build\/electron-builder\.release\.cjs/);

@@ -46,15 +46,10 @@ import { ProsopographyTour } from './views/ProsopographyTour';
 import { WorldbuildingTour } from './views/WorldbuildingTour';
 import { FIRST_VAULT_VERSION } from './views/FirstVaultSetup';
 import { hasPendingWhatsNew, WhatsNewModal } from './components/WhatsNewModal';
-import { PdfPresenterTutorialAnnouncement } from './components/PdfPresenterTutorialAnnouncement';
-import { TutorialVideosUpdateTour } from './components/TutorialVideosGuide';
-import { PlatformHighlightsUpdateTour } from './components/PlatformHighlightsGuide';
-import { ToolkitBetaUpdateTour } from './components/ToolkitBetaGuide';
 import { useUpdateProgress } from './useUpdateProgress';
 import { pendingUpdateVersion, updateInstallBusy } from './updateStatus';
 import { UpdateReadyNotice } from './components/UpdateReadyNotice';
 import { AiModelRequiredModal } from './components/AiModelRequiredModal';
-import { MobileTeaserGuide } from './components/MobileTeaserGuide';
 import { recoveryHealthAdvice, recoveryHealthHeadline } from './recoveryHealth';
 import { NodiMascot } from './components/nodi/NodiMascot';
 import { NodiStyleModal } from './components/NodiStyleModal';
@@ -211,24 +206,8 @@ export function App() {
   const [whatsNewSettled, setWhatsNewSettled] = useState(() => !hasPendingWhatsNew());
   const [manualWhatsNewOpen, setManualWhatsNewOpen] = useState(false);
   const [aiModelRequiredOpen, setAiModelRequiredOpen] = useState(false);
-  // The mobile app does not exist in this build, so there is no tutorial chapter that
-  // could have covered it: every 3.2.4 user gets the teaser once, new install or not.
-  const [mobileTeaserSettled, setMobileTeaserSettled] = useState(false);
-  // Existing users receive the current MCP/Server/Zotero/Toolkit overview directly
-  // after release notes. Fresh installs already saw the same three chapters in v5.
-  const [platformHighlightsSettled, setPlatformHighlightsSettled] = useState(false);
-  // The 2.4.0 toolkit/model guide queues directly behind release notes. Its own
-  // versioned guard settles immediately for new installs and for users who saw it.
-  const [toolkitBetaTourSettled, setToolkitBetaTourSettled] = useState(false);
-  // The Nodus Presenter video announcement queues immediately after release notes.
-  const [pdfPresenterTutorialSettled, setPdfPresenterTutorialSettled] = useState(false);
-  // Users who completed the essential guide before the video tutorials existed were
-  // never asked "video or text", so the catalogue is announced to them once, here.
-  const [tutorialVideosSettled, setTutorialVideosSettled] = useState(false);
   // Startup progress is non-blocking; later checks stay silent until ready to install.
   const [updateProgress, setUpdateProgress, showStartupProgress] = useUpdateProgress({ checkOnStartup: true });
-  const startupGuidesSettled = whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled
-    && platformHighlightsSettled && toolkitBetaTourSettled && tutorialVideosSettled;
   const [deferredUpdate, setDeferredUpdate] = useState<string | null>(null);
   const readyVersion = pendingUpdateVersion(updateProgress);
   const updateNoticeKey = readyVersion ? `${readyVersion}${updateProgress?.errorCode ?? ''}` : null;
@@ -2350,48 +2329,10 @@ export function App() {
         />
       )}
 
-      {whatsNewSettled && !pdfPresenterTutorialSettled && !manualWhatsNewOpen && (
-        <PdfPresenterTutorialAnnouncement
-          language={settings.uiLanguage}
-          onSettled={() => setPdfPresenterTutorialSettled(true)}
-        />
-      )}
-
-      {whatsNewSettled && pdfPresenterTutorialSettled && !mobileTeaserSettled && !manualWhatsNewOpen && (
-        <MobileTeaserGuide
-          uiLanguage={settings.uiLanguage}
-          onSettled={() => setMobileTeaserSettled(true)}
-        />
-      )}
-
-      {whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && !platformHighlightsSettled && !manualWhatsNewOpen && (
-        <PlatformHighlightsUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setPlatformHighlightsSettled(true)}
-        />
-      )}
-
-      {whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && !toolkitBetaTourSettled && !manualWhatsNewOpen && (
-        <ToolkitBetaUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setToolkitBetaTourSettled(true)}
-        />
-      )}
-
-      {whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && toolkitBetaTourSettled && !tutorialVideosSettled && !manualWhatsNewOpen && (
-        <TutorialVideosUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setTutorialVideosSettled(true)}
-        />
-      )}
-
       {/* Users who already saw the cinematic tutorial were never offered the choice of
-          Nodi, so it is made here instead — once, after the startup guides. New users
+          Nodi, so it is made here instead — once, after release notes. New users
           pick inside the tutorial and reach this already chosen. */}
-      {startupGuidesSettled && !manualWhatsNewOpen && !isPreviewVault &&
+      {whatsNewSettled && !manualWhatsNewOpen && !isPreviewVault &&
         settings.onboardingComplete &&
         settings.basicsTutorialVersion > 0 &&
         !recoveryStatus?.needsSetup &&
@@ -2400,7 +2341,7 @@ export function App() {
           <NodiStyleModal onChosen={async () => { await reloadSettings(); }} />
         )}
 
-      {!focusReduced && !manualWhatsNewOpen && startupGuidesSettled && <NodiMascot settings={settings} />}
+      {!focusReduced && !manualWhatsNewOpen && whatsNewSettled && <NodiMascot settings={settings} />}
     </div>
   );
 }

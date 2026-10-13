@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TutorialLanguage } from '@shared/tutorialPreferences';
 import { tutorialVideo, tutorialVideoCopy, videoCopyFor, youtubeEmbedUrl } from '@shared/tutorialVideos';
-import { Icon, ModalBackdrop } from './ui';
+import { Icon, ModalBackdrop } from '../../src/components/ui';
 import './pdfPresenterTutorialAnnouncement.css';
 
 export const PDF_PRESENTER_TUTORIAL_SEEN_KEY = 'nodus.pdfPresenterTutorialSeen.e2js_u-05OA';

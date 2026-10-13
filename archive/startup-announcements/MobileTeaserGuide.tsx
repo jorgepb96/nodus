@@ -1,17 +1,17 @@
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import type { AppLanguage } from '@shared/types';
-import { Icon } from './ui';
-import { NodiAvatar } from './nodi/NodiAvatar';
-import homeShot from '../assets/mobile-teaser/01-home.webp';
-import libraryShot from '../assets/mobile-teaser/02-library.webp';
-import workShot from '../assets/mobile-teaser/03-work.webp';
-import ideaShot from '../assets/mobile-teaser/04-idea.webp';
-import searchShot from '../assets/mobile-teaser/05-search.webp';
-import argumentShot from '../assets/mobile-teaser/06-argument-map.webp';
-import gapsShot from '../assets/mobile-teaser/07-gaps.webp';
-import deepResearchShot from '../assets/mobile-teaser/08-deep-research.webp';
-import byoModelShot from '../assets/mobile-teaser/09-byo-model.webp';
+import { Icon } from '../../src/components/ui';
+import { NodiAvatar } from '../../src/components/nodi/NodiAvatar';
+import homeShot from '../../src/assets/mobile-teaser/01-home.webp';
+import libraryShot from '../../src/assets/mobile-teaser/02-library.webp';
+import workShot from '../../src/assets/mobile-teaser/03-work.webp';
+import ideaShot from '../../src/assets/mobile-teaser/04-idea.webp';
+import searchShot from '../../src/assets/mobile-teaser/05-search.webp';
+import argumentShot from '../../src/assets/mobile-teaser/06-argument-map.webp';
+import gapsShot from '../../src/assets/mobile-teaser/07-gaps.webp';
+import deepResearchShot from '../../src/assets/mobile-teaser/08-deep-research.webp';
+import byoModelShot from '../../src/assets/mobile-teaser/09-byo-model.webp';
 
 /**
  * "A tease of what's coming" — the one-time look at Nodus on a phone.

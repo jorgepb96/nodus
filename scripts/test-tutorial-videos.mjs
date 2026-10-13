@@ -310,9 +310,9 @@ test('Settings holds the whole catalogue, with tabs and a search box', async () 
   assert.match(css, /\.light \.tutorial-video-player/);
 });
 
-test('the videos are announced once to installs that predate them', async () => {
+test('the historical video announcement is archived and no longer participates in startup', async () => {
   const [guide, app] = await Promise.all([
-    read('src/components/TutorialVideosGuide.tsx'),
+    read('archive/startup-announcements/TutorialVideosGuide.tsx'),
     read('src/App.tsx'),
   ]);
   // The announcement shows the videos rather than describing them: the same grid and
@@ -326,19 +326,14 @@ test('the videos are announced once to installs that predate them', async () => 
   // Marked seen on dismissal, never merely on mount.
   assert.match(guide, /const finish = \(\) => \{\s*\/\/[^\n]*\n\s*\/\/[^\n]*\n\s*markTutorialVideosAnnouncementSeen\(\);/);
 
-  // Completing the cinematic guide answers the same question, so it settles the
-  // announcement too — a fresh install must never be told about a choice it just made.
-  assert.match(await read('src/app/StartupGate.tsx'), /markTutorialVideosAnnouncementSeen\(\);\s*\n\s*await window\.nodus\.updateSettings\(\{ basicsTutorialVersion: BASICS_TUTORIAL_VERSION \}\)/);
-  // It queues behind the other one-time tours and ahead of the Nodi choice, so two
-  // modals never fight for the foreground.
-  const order = ['<WhatsNewModal', '<PlatformHighlightsUpdateTour', '<ToolkitBetaUpdateTour', '<TutorialVideosUpdateTour', '<NodiStyleModal'].map((tag) => app.indexOf(tag));
-  assert.deepEqual(order, [...order].sort((a, b) => a - b), 'the videos announcement sits between the toolkit tour and the Nodi choice');
-  assert.match(app, /startupGuidesSettled && !manualWhatsNewOpen/);
+  assert.doesNotMatch(app, /TutorialVideosUpdateTour|tutorialVideosSettled/);
+  assert.doesNotMatch(await read('src/app/StartupGate.tsx'), /markTutorialVideosAnnouncementSeen|TutorialVideosGuide/);
+  assert.match(app, /whatsNewSettled && !manualWhatsNewOpen/);
 });
 
 test('the announcement speaks every interface language', async () => {
   const [guide, types] = await Promise.all([
-    read('src/components/TutorialVideosGuide.tsx'),
+    read('archive/startup-announcements/TutorialVideosGuide.tsx'),
     read('@api'),
   ]);
   // Read the languages from the type itself, so a new UI language fails here.
@@ -588,12 +583,14 @@ test('a packaged renderer still gets the real player, not YouTube error 153', as
   assert.deepEqual(original, { 'User-Agent': 'Clean Chromium', Accept: '*/*' }, 'incoming headers are not mutated');
 });
 
-test('Nodus Presenter queues after release notes and before every other startup announcement', async () => {
-  const app = await read('src/App.tsx');
-  assert.match(app, /whatsNewSettled && !pdfPresenterTutorialSettled && !manualWhatsNewOpen && \(\s*<PdfPresenterTutorialAnnouncement/);
-  for (const component of ['MobileTeaserGuide', 'PlatformHighlightsUpdateTour', 'ToolkitBetaUpdateTour', 'TutorialVideosUpdateTour']) {
-    assert.match(app, new RegExp(`whatsNewSettled && pdfPresenterTutorialSettled &&[^\\n]+\\(\\s*<${component}`));
-  }
+test('Nodus Presenter stays in the video catalogue after its announcement is retired', async () => {
+  const [app, announcement] = await Promise.all([
+    read('src/App.tsx'),
+    read('archive/startup-announcements/PdfPresenterTutorialAnnouncement.tsx'),
+  ]);
+  assert.doesNotMatch(app, /PdfPresenterTutorialAnnouncement|pdfPresenterTutorialSettled/);
+  assert.match(announcement, /data-testid="pdf-presenter-tutorial-announcement"/);
+  assert.equal(catalogue.tutorialVideo('pdf-presenter').youtubeId, 'e2js_u-05OA');
   const wiki = await read('site/wiki/wiki.js');
   assert.match(wiki, /'pdf-presenter': \['Features', 'Nodus Presenter'\]/);
 });

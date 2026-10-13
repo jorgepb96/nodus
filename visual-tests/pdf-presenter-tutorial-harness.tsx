@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import { PdfPresenterTutorialAnnouncement } from '../src/components/PdfPresenterTutorialAnnouncement';
+import { PdfPresenterTutorialAnnouncement } from '../archive/startup-announcements/PdfPresenterTutorialAnnouncement';
 import type { TutorialLanguage } from '../shared/tutorialPreferences';
 window.nodus = {
   getSettings: async () => ({ tutorialVideosWatched: [] }),

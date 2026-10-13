@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { AppLanguage } from '@shared/types';
-import { Icon } from './ui';
-import { NodiAvatar } from './nodi/NodiAvatar';
-import { TutorialVideoGrid } from './TutorialVideos';
-import './tutorialVideos.css';
+import { Icon } from '../../src/components/ui';
+import { NodiAvatar } from '../../src/components/nodi/NodiAvatar';
+import { TutorialVideoGrid } from '../../src/components/TutorialVideos';
+import '../../src/components/tutorialVideos.css';
 
 /**
  * "The tutorials are now on video too" — the one-time announcement.

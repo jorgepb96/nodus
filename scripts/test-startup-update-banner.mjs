@@ -8,5 +8,5 @@ test('the shell uses a startup banner and keeps guides independent of update com
   assert.doesNotMatch(app, /StartupUpdateModal|updateSettled/);
   assert.match(app, /useUpdateProgress\(\{ checkOnStartup: true \}\)/);
   assert.match(app, /updateInstallBusy\(updateProgress\) \|\| showStartupProgress \|\| \(updateNoticeKey && deferredUpdate !== updateNoticeKey\)/);
-  assert.match(app, /startupGuidesSettled && !manualWhatsNewOpen/);
+  assert.match(app, /whatsNewSettled && !manualWhatsNewOpen/);
 });

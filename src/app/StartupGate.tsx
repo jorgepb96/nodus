@@ -19,7 +19,6 @@ import { BASICS_TUTORIAL_VERSION, BasicsTutorial } from '../views/BasicsTutorial
 import { FirstVaultSetup } from '../views/FirstVaultSetup';
 import { Onboarding } from '../views/Onboarding';
 import { RecoverySetupWizard } from '../views/RecoverySetupWizard';
-import { markTutorialVideosAnnouncementSeen } from '../components/TutorialVideosGuide';
 import { RecoveryStatusLoading } from '../components/RecoveryStatusLoading';
 import { preferencesForTutorialLanguage } from '@shared/tutorialPreferences';
 import { t, setActiveLang } from '../i18n';
@@ -98,9 +97,6 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
           await state.reloadSettings();
         }}
         onComplete={async () => {
-          // The guide itself asks video or text, so whoever finishes it has already met
-          // the catalogue: the announcement for older installs must not follow them out.
-          markTutorialVideosAnnouncementSeen();
           await window.nodus.updateSettings({ basicsTutorialVersion: BASICS_TUTORIAL_VERSION });
           await state.reloadSettings();
         }}

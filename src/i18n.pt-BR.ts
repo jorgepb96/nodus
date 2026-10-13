@@ -4,6 +4,7 @@ import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
@@ -90,6 +91,7 @@ export const PT_BR: Record<string, string> = {
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['pt-BR'],
   ...CALENDAR_SYNC_TRANSLATIONS["pt-BR"],
+  ...AGENT_RUNTIME_TRANSLATIONS["pt-BR"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["pt-BR"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Navegue na web e salve fontes para sua pesquisa.",

@@ -18,8 +18,8 @@ import { setApiKey, clearApiKey, getApiKey, getLocalServerAdminPassword } from '
 import { recoverLegacyApiKeys } from '../secrets/legacySecretRecovery';
 import { listEmbeddingModels, listModels, testCustomProvider, testLocalProvider } from '../ai/providers';
 import { getModelCatalog } from '../ai/modelCatalog';
-import { cancelChatGptSubscriptionLogin, getChatGptSubscriptionStatus, listChatGptSubscriptionModels, logoutChatGptSubscription, startChatGptSubscriptionLogin } from '../ai/codexSubscription';
-import { cancelGitHubCopilotSubscriptionLogin, getGitHubCopilotSubscriptionStatus, listGitHubCopilotSubscriptionModels, logoutGitHubCopilotSubscription, startGitHubCopilotSubscriptionLogin } from '../ai/githubCopilotSubscription';
+import { cancelChatGptSubscriptionLogin, getChatGptSubscriptionStatus, installChatGptSubscriptionRuntime, listChatGptSubscriptionModels, logoutChatGptSubscription, startChatGptSubscriptionLogin } from '../ai/codexSubscription';
+import { cancelGitHubCopilotSubscriptionLogin, getGitHubCopilotSubscriptionStatus, installGitHubCopilotSubscriptionRuntime, listGitHubCopilotSubscriptionModels, logoutGitHubCopilotSubscription, startGitHubCopilotSubscriptionLogin } from '../ai/githubCopilotSubscription';
 import { getOpenCodeGoUsageStatus } from '../ai/openCodeGoUsage';
 import { listImageModels } from '../ai/imageModels';
 import { generateEditorImage } from '../ai/editorImages';
@@ -228,12 +228,14 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
   });
 
   h('ai:chatgptSubscription:status', async () => getChatGptSubscriptionStatus());
+  h('ai:chatgptSubscription:installRuntime', async () => installChatGptSubscriptionRuntime());
   h('ai:chatgptSubscription:login', async () => startChatGptSubscriptionLogin());
   h('ai:chatgptSubscription:cancelLogin', async (_event, loginId: string) =>
     cancelChatGptSubscriptionLogin(loginId)
   );
   h('ai:chatgptSubscription:logout', async () => logoutChatGptSubscription());
   h('ai:githubCopilotSubscription:status', async () => getGitHubCopilotSubscriptionStatus());
+  h('ai:githubCopilotSubscription:installRuntime', async () => installGitHubCopilotSubscriptionRuntime());
   h('ai:githubCopilotSubscription:login', async () => startGitHubCopilotSubscriptionLogin());
   h('ai:githubCopilotSubscription:cancelLogin', async () => cancelGitHubCopilotSubscriptionLogin());
   h('ai:githubCopilotSubscription:logout', async () => logoutGitHubCopilotSubscription());

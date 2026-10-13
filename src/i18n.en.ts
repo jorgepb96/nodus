@@ -4,6 +4,7 @@ import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
@@ -87,6 +88,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 export const EN: Record<string, string> = {
   ...BACKUPS_TRANSLATIONS.en,
   ...CALENDAR_SYNC_TRANSLATIONS["en"],
+  ...AGENT_RUNTIME_TRANSLATIONS["en"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["en"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Browse the web and save sources for your research.",

@@ -124,6 +124,18 @@ const UNUSED_PACKAGE_FILES = [
   '!node_modules/better-sqlite3/{deps,src}{,/**}',
 ];
 
+// The vendor CLIs behind the subscription providers: OpenAI's Codex and GitHub's
+// Copilot, ~540 MB of a macOS app between them. They stay production dependencies —
+// development runs them from node_modules — but installers leave their platform
+// packages out, and electron/ai/agentRuntime.ts downloads the one it needs the first
+// time the provider is used, checked against the integrity in agentRuntimeManifest().
+const ON_DEMAND_PACKAGE = /^@openai\/codex-(?:darwin|linux|win32)-[a-z0-9]+$|^@github\/copilot-(?:darwin|linux|linuxmusl|win32)-[a-z0-9]+$/;
+const ON_DEMAND_PACKAGE_FILES = [
+  '!**/node_modules/@openai/codex-{darwin,linux,win32}-*{,/**}',
+  '!**/node_modules/@github/copilot-{darwin,linux,linuxmusl,win32}-*{,/**}',
+];
+const AGENT_RUNTIME_MANIFEST = 'agent-runtimes.json';
+
 /** `@scope/name/sub/path` → `@scope/name`; `name/sub` → `name`. */
 function packageNameOf(specifier) {
   const parts = specifier.split('/');
@@ -198,7 +210,41 @@ function packagedNodeModuleExclusions(packages = readLockPackages()) {
   return [
     ...unusedProductionPackages(packages).map((at) => `!${at}{,/**}`),
     ...UNUSED_PACKAGE_FILES,
+    ...ON_DEMAND_PACKAGE_FILES,
   ];
+}
+
+/**
+ * What Resources/agent-runtimes.json tells the app: for every platform package of the
+ * vendor CLIs, the exact npm tarball and the integrity npm installed it with here.
+ */
+function agentRuntimeManifest(packages = readLockPackages()) {
+  const entries = {};
+  for (const [at, metadata] of Object.entries(packages)) {
+    if (!at.startsWith('node_modules/') || parentLockPath(at) !== '') continue;
+    const name = packageNameAt(at);
+    if (!ON_DEMAND_PACKAGE.test(name) || metadata.dev === true) continue;
+    if (!metadata.resolved || !/^sha512-/.test(metadata.integrity ?? '')) {
+      throw new Error(`${name} has no pinned tarball and sha512 integrity in package-lock.json`);
+    }
+    entries[name] = { version: metadata.version, resolved: metadata.resolved, integrity: metadata.integrity };
+  }
+  return { version: 1, packages: Object.fromEntries(Object.entries(entries).sort(([a], [b]) => a.localeCompare(b))) };
+}
+
+/** The on-demand packages a build for this platform and architecture must download. */
+function onDemandPackagesFor(platform, arch) {
+  return [`@openai/codex-${platform}-${arch}`, `@github/copilot-${platform}-${arch}`];
+}
+
+/** Packed entries (asar listing or unpacked paths) that belong to an on-demand package. */
+function packedOnDemandPackages(packedFiles) {
+  const found = new Set();
+  for (const file of packedFiles) {
+    const match = file.match(/(?:^|\/)node_modules\/(@openai\/codex-[^/]+|@github\/copilot-[^/]+)/);
+    if (match && ON_DEMAND_PACKAGE.test(match[1])) found.add(match[1]);
+  }
+  return [...found].sort();
 }
 
 // The bare specifiers a bundled file can still hand to Node at runtime: those it
@@ -282,6 +328,11 @@ module.exports = {
   BROWSER_ONLY_DEPENDENCIES,
   UNDECLARED_DEPENDENCIES,
   UNUSED_PACKAGE_FILES,
+  ON_DEMAND_PACKAGE_FILES,
+  AGENT_RUNTIME_MANIFEST,
+  agentRuntimeManifest,
+  onDemandPackagesFor,
+  packedOnDemandPackages,
   packageNameOf,
   readLockPackages,
   resolveLockPath,

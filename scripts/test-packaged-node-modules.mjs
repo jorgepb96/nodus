@@ -146,7 +146,10 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-common/dist/cjs/index.js',
     'node_modules/pdfjs-dist/legacy/build/pdf.mjs',
     'node_modules/sharp/package.json',
-    'node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex',
+    // The loaders and the SDK stay; only the CLIs themselves are downloaded at first use.
+    'node_modules/@openai/codex/package.json',
+    'node_modules/@github/copilot/package.json',
+    'node_modules/@github/copilot-sdk/dist/index.js',
   ]) assert.ok(keeps(kept), `${kept} is packed`);
   for (const dropped of [
     'node_modules/onnxruntime-node/bin/napi-v3/darwin/x64/libonnxruntime.1.21.0.dylib',
@@ -159,6 +162,10 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
     'node_modules/@mathjax/src/package.json',
     'node_modules/pdfjs-dist/build/pdf.mjs.map',
     'node_modules/better-sqlite3/deps/sqlite3/sqlite3.c',
+    'node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex',
+    'node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex',
+    'node_modules/@github/copilot-darwin-arm64/copilot',
+    'node_modules/@github/copilot-linuxmusl-x64/copilot',
   ]) assert.ok(!keeps(dropped), `${dropped} is left out`);
   assert.ok(!keeps('node_modules/@mathjax/src', true), 'an excluded package is not even walked');
 
@@ -284,3 +291,36 @@ test('the load probe reports a dependency a packed package cannot find', () => {
     fs.rmSync(app, { recursive: true, force: true });
   }
 });
+
+test('the packed app carries the download manifest for its platform and none of the CLIs', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-on-demand-'));
+  try {
+    const resources = path.join(root, 'Resources');
+    const app = path.join(root, 'app');
+    fs.mkdirSync(path.join(app, 'node_modules/@openai/codex'), { recursive: true });
+    fs.writeFileSync(path.join(app, 'node_modules/@openai/codex/package.json'), '{}');
+    fs.mkdirSync(resources);
+    await asar.createPackage(app, path.join(resources, 'app.asar'));
+
+    const manifest = verifier.stageAndVerifyOnDemandRuntimes({ resources }, 'darwin', 'arm64', packages);
+    const written = JSON.parse(fs.readFileSync(path.join(resources, pruning.AGENT_RUNTIME_MANIFEST), 'utf8'));
+    assert.deepEqual(written, manifest);
+    assert.equal(written.packages['@openai/codex-darwin-arm64'].integrity, packages['node_modules/@openai/codex-darwin-arm64'].integrity);
+
+    // An app that still carries a CLI, even unpacked and nested, is refused.
+    const nested = path.join(resources, 'app.asar.unpacked/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor');
+    fs.mkdirSync(nested, { recursive: true });
+    fs.writeFileSync(path.join(nested, 'codex'), '');
+    assert.throws(
+      () => verifier.stageAndVerifyOnDemandRuntimes({ resources }, 'darwin', 'arm64', packages),
+      /still carries CLIs[\s\S]*@openai\/codex-darwin-arm64/,
+    );
+    assert.throws(
+      () => verifier.stageAndVerifyOnDemandRuntimes({ resources }, 'freebsd', 'x64', packages),
+      /cannot download @openai\/codex-freebsd-x64/,
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+

@@ -257,6 +257,13 @@ try {
   assert.equal(signedOutChatGpt.available, true, `official Codex runtime is available: ${signedOutChatGpt.error ?? 'ok'}`);
   assert.equal(signedOutChatGpt.connected, false, 'throwaway profile starts without a ChatGPT account');
   assert.equal(signedOutChatGpt.loginPending, false, 'throwaway profile has no pending OAuth flow');
+  // Installers no longer carry the Codex and Copilot CLIs: a packaged app downloads them at
+  // first use, and reading the status must never be that use (every visit to Providers reads it).
+  if (process.env.NODUS_E2E_EXECUTABLE) {
+    assert.equal(signedOutChatGpt.runtime?.state, 'missing', 'a packaged app does not carry the Codex CLI and reading the status does not fetch it');
+    const signedOutCopilot = await page.evaluate(() => window.nodus.getGitHubCopilotSubscriptionStatus());
+    assert.equal(signedOutCopilot.runtime?.state, 'missing', 'a packaged app does not carry the Copilot CLI and reading the status does not fetch it');
+  }
   console.log('[e2e] preload bridge ok');
 
   // ── Essential tutorial: first screen, language preferences, seen-once gate ──
@@ -671,7 +678,11 @@ try {
   const chatGptProvider = page.getByTestId('chatgpt-subscription-provider');
   await chatGptProvider.waitFor();
   await chatGptProvider.locator('button').first().click();
-  await chatGptProvider.getByRole('button', { name: 'Conectar suscripción de ChatGPT', exact: true }).waitFor();
+  // Until the Codex CLI is on this machine the card offers its download instead of the login.
+  await chatGptProvider.getByRole('button', {
+    name: process.env.NODUS_E2E_EXECUTABLE ? 'Descargar el motor oficial' : 'Conectar suscripción de ChatGPT',
+    exact: true,
+  }).waitFor();
   await chatGptProvider.getByText('El uso consume la cuota o los créditos de Codex incluidos en tu plan de ChatGPT; no consume saldo de la API de OpenAI.', { exact: true }).waitFor();
   const githubCopilotProvider = page.getByTestId('github-copilot-subscription-provider');
   await githubCopilotProvider.waitFor();

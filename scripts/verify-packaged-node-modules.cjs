@@ -13,10 +13,15 @@
 // errors behind (electron-updater asks for Electron's own API, pagedjs for a
 // document), and those say nothing about what was packed.
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 const asar = require('@electron/asar');
 const {
+  AGENT_RUNTIME_MANIFEST,
+  agentRuntimeManifest,
   findMissingRuntimePackages,
+  onDemandPackagesFor,
+  packedOnDemandPackages,
   isProductionPackage,
   packageNameOf,
   readLockPackages,
@@ -146,7 +151,50 @@ function verifyPackagedNodeModules({ executable, resources }, { load = true, pac
   return results;
 }
 
-module.exports = { PROBE, packedLayout, missingPackage, verifyPackagedNodeModules };
+/** Every file below a directory, '/'-separated and relative to it. */
+function filesBelow(directory) {
+  const found = [];
+  const pending = [''];
+  while (pending.length > 0) {
+    const relative = pending.pop();
+    let entries;
+    try { entries = fs.readdirSync(path.join(directory, relative), { withFileTypes: true }); } catch { continue; }
+    for (const entry of entries) {
+      const child = relative ? `${relative}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) pending.push(child);
+      else found.push(child);
+    }
+  }
+  return found;
+}
+
+/**
+ * The Codex and Copilot CLIs are downloaded at first use (electron/ai/agentRuntime.ts).
+ * Write the manifest that says from where and with which integrity, then prove the
+ * packed app carries it for this platform and carries none of the CLIs themselves.
+ */
+function stageAndVerifyOnDemandRuntimes({ resources }, platform, arch, packages = readLockPackages()) {
+  const manifest = agentRuntimeManifest(packages);
+  fs.writeFileSync(path.join(resources, AGENT_RUNTIME_MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+  for (const name of onDemandPackagesFor(platform, arch)) {
+    if (!manifest.packages[name]) {
+      throw new Error(`${AGENT_RUNTIME_MANIFEST} cannot download ${name}, which this ${platform}-${arch} app needs`);
+    }
+  }
+  const archive = path.join(resources, 'app.asar');
+  const packed = [
+    ...asar.listPackage(archive).map((entry) => entry.replace(/\\/g, '/').replace(/^\//, '')),
+    ...filesBelow(path.join(resources, 'app.asar.unpacked')),
+  ];
+  const shipped = packedOnDemandPackages(packed);
+  if (shipped.length > 0) {
+    throw new Error(`The packaged app still carries CLIs it should download on demand:\n${shipped.join('\n')}`);
+  }
+  console.log(`[node-modules] ${onDemandPackagesFor(platform, arch).join(' and ')} download on demand`);
+  return manifest;
+}
+
+module.exports = { PROBE, packedLayout, missingPackage, verifyPackagedNodeModules, stageAndVerifyOnDemandRuntimes };
 
 if (require.main === module) {
   // node scripts/verify-packaged-node-modules.cjs <appOutDir> [platform] [executableName]

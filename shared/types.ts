@@ -1502,6 +1502,18 @@ export interface ChatGptSubscriptionRateLimits {
 }
 
 /** Renderer-safe view of the managed ChatGPT login. OAuth tokens never cross IPC. */
+/**
+ * The vendor CLI behind a subscription provider (Codex, GitHub Copilot). Installers no
+ * longer carry it: it is fetched from npm, checked against the integrity hash pinned
+ * at build time, the first time the provider is used. A development checkout still
+ * finds it in node_modules and is always `ready`.
+ */
+export interface AgentRuntimeStatus {
+  state: 'ready' | 'missing' | 'installing' | 'failed';
+  receivedBytes: number;
+  totalBytes: number | null;
+}
+
 export interface ChatGptSubscriptionStatus {
   available: boolean;
   connected: boolean;
@@ -1510,6 +1522,7 @@ export interface ChatGptSubscriptionStatus {
   planType: string | null;
   rateLimits: ChatGptSubscriptionRateLimits | null;
   error: string | null;
+  runtime?: AgentRuntimeStatus;
 }
 
 export interface ChatGptSubscriptionLogin {
@@ -1553,6 +1566,7 @@ export interface GitHubCopilotSubscriptionStatus {
   quota: GitHubCopilotSubscriptionQuotaWindow[];
   lastSession: GitHubCopilotSessionUsage | null;
   error: string | null;
+  runtime?: AgentRuntimeStatus;
 }
 
 /** Usage Nodus can observe locally for OpenCode Go. The authoritative balance

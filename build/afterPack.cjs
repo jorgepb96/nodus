@@ -7,7 +7,11 @@ const path = require('node:path');
 const { Arch } = require('electron-builder');
 const { assertServerWeb } = require('../scripts/packaged-server-web.cjs');
 const { verifyPackagedNativeRuntime, assertBinaryArchitecture } = require('../scripts/verify-packaged-native-runtime.cjs');
-const { packedLayout, verifyPackagedNodeModules } = require('../scripts/verify-packaged-node-modules.cjs');
+const {
+  packedLayout,
+  stageAndVerifyOnDemandRuntimes,
+  verifyPackagedNodeModules,
+} = require('../scripts/verify-packaged-node-modules.cjs');
 const {
   packagedExecutable,
   stagePackagedServerRuntime,
@@ -61,14 +65,14 @@ exports.default = async function afterPack(context) {
   for (const line of server.passed) console.log(`[afterPack] Nodus Server: ${line}`);
 
   // node_modules is pruned to what the main process loads (build/packagedNodeModules.cjs).
-  // Prove that nothing it loads went missing: every package must be packed, and must
-  // load in the packaged runtime. A macOS app can only be run once it is signed, so
-  // there the loading waits for the ad-hoc signature below, or for afterSign.
-  const isMac = context.electronPlatformName === 'darwin';
+  // Prove that nothing it loads went missing: every package must be packed, and must load
+  // in the executable just packed, run as Node the same way the server check above runs it.
   const layout = packedLayout(context.appOutDir, context.electronPlatformName, appName, context.packager.executableName);
-  verifyPackagedNodeModules(layout, { load: !isMac });
+  verifyPackagedNodeModules(layout);
+  // Codex and Copilot are downloaded at first use, from the tarballs this manifest pins.
+  stageAndVerifyOnDemandRuntimes(layout, context.electronPlatformName, Arch[context.arch]);
 
-  if (!isMac) return;
+  if (context.electronPlatformName !== 'darwin') return;
 
   // npm optional native packages follow the runner architecture, so each macOS
   // product must be packed on a host of its own architecture. Fail before
@@ -88,5 +92,4 @@ exports.default = async function afterPack(context) {
   // local/dev bundles launchable while remaining recognisably non-production.
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], { stdio: 'inherit' });
   console.log(`[afterPack] Ad-hoc signed ${appPath} (local/dev fallback)`);
-  verifyPackagedNodeModules(layout);
 };

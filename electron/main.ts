@@ -65,6 +65,7 @@ import type { UpdateCheckResponse, UpdateProgressEvent } from '@shared/types';
 import { installMediaRequestHeaders } from './mediaRequestHeaders';
 import { installDefaultWindowGuards } from './windowGuards';
 import { killChatGptSubscriptionServer } from './ai/codexSubscription';
+import { prefetchAgentRuntimesInUse } from './ai/agentRuntime';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
@@ -1017,6 +1018,9 @@ app.whenReady().then(async () => {
   // its handshake and is torn down in the same millisecond — reported either way as a
   // capability that would not start, for a worker that comes up in about 100 ms on a free
   // loop. Nothing here is urgent, and 5.4.0 shipped this in the contended window.
+  // A profile that already used Codex or Copilot gets its CLI back in the background
+  // after updating to an installer that no longer carries it (./ai/agentRuntime).
+  void afterFirstPaint(() => prefetchAgentRuntimesInUse(getSettings()));
   if (!process.env.NODUS_ISOLATED_ROOT) void afterFirstPaint(() => {
     void settleInstalledPluginMigrations()
       .then(settled => { if (settled.length) rebuildCapabilityRegistry(); })

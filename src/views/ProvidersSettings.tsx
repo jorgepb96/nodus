@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type {
+  AgentRuntimeStatus,
   AiProvider,
   AppSettings,
   ChatGptSubscriptionRateLimitWindow,
@@ -200,6 +201,12 @@ function ChatGptSubscriptionRow({
     });
   }, []);
 
+  const installRuntime = async () => {
+    setError(null);
+    try { setStatus(await window.nodus.installChatGptSubscriptionRuntime()); }
+    catch (e) { setError(ipcErrorText(e)); }
+  };
+
   const connect = async () => {
     setError(null);
     try {
@@ -330,6 +337,8 @@ function ChatGptSubscriptionRow({
                 </>
               )}
             </>
+          ) : status?.runtime && status.runtime.state !== 'ready' ? (
+            <AgentRuntimeDownload runtime={status.runtime} onInstall={() => void installRuntime()} />
           ) : (
             <div className="flex flex-wrap items-center gap-2">
               <button className="btn btn-primary" onClick={() => void connect()} disabled={status?.loginPending}>
@@ -343,6 +352,40 @@ function ChatGptSubscriptionRow({
           )}
 
           {(error || status?.error) && <div className="text-xs text-red-600 dark:text-red-400">{error || status?.error}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const ipcErrorText = (cause: unknown) =>
+  (cause instanceof Error ? cause.message : String(cause)).replace(/^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/, '');
+
+/**
+ * Installers no longer carry the Codex and Copilot CLIs: the first use downloads the
+ * vendor's own package from npm and checks it against the hash pinned at build time.
+ */
+function AgentRuntimeDownload({ runtime, onInstall }: { runtime: AgentRuntimeStatus; onInstall: () => void }) {
+  const installing = runtime.state === 'installing';
+  const percent = installing && runtime.totalBytes
+    ? Math.min(100, Math.floor((runtime.receivedBytes / runtime.totalBytes) * 100))
+    : null;
+  return (
+    <div className="space-y-2 text-xs" data-testid="agent-runtime-download" data-state={runtime.state}>
+      <p className="leading-5 text-neutral-600 dark:text-neutral-400">
+        {t('Nodus descarga el motor oficial la primera vez que lo necesitas, desde el registro de npm, y comprueba su huella antes de usarlo.')}
+      </p>
+      {runtime.state === 'failed' && (
+        <p className="text-red-600 dark:text-red-400">{t('La descarga del motor oficial ha fallado.')}</p>
+      )}
+      <button className="btn btn-primary" onClick={onInstall} disabled={installing}>
+        {installing
+          ? `${t('Descargando el motor oficial…')}${percent === null ? '' : ` ${percent} %`}`
+          : t('Descargar el motor oficial')}
+      </button>
+      {percent !== null && (
+        <div className="h-1 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800">
+          <div className="h-full bg-indigo-500 transition-[width]" style={{ width: `${percent}%` }} />
         </div>
       )}
     </div>
@@ -394,6 +437,12 @@ function GitHubCopilotSubscriptionRow({
     void refresh();
     return window.nodus.onGitHubCopilotSubscriptionStatusChanged(setStatus);
   }, []);
+
+  const installRuntime = async () => {
+    setError(null);
+    try { setStatus(await window.nodus.installGitHubCopilotSubscriptionRuntime()); }
+    catch (reason) { setError(ipcErrorText(reason)); }
+  };
 
   const connect = async () => {
     setError(null);
@@ -488,6 +537,8 @@ function GitHubCopilotSubscriptionRow({
                 </SettingsModelList>
               )}
             </>
+          ) : status?.runtime && status.runtime.state !== 'ready' ? (
+            <AgentRuntimeDownload runtime={status.runtime} onInstall={() => void installRuntime()} />
           ) : (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">

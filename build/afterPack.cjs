@@ -5,6 +5,7 @@ const { execFileSync } = require('node:child_process');
 const { copyFileSync, existsSync, mkdirSync } = require('node:fs');
 const path = require('node:path');
 const { Arch } = require('electron-builder');
+const { assertServerWeb } = require('../scripts/packaged-server-web.cjs');
 const { verifyPackagedNativeRuntime, assertBinaryArchitecture } = require('../scripts/verify-packaged-native-runtime.cjs');
 
 exports.default = async function afterPack(context) {
@@ -28,6 +29,10 @@ exports.default = async function afterPack(context) {
   mkdirSync(resourcesPath, { recursive: true });
   copyFileSync(electronLicense, path.join(resourcesPath, 'LICENSE.electron.txt'));
   copyFileSync(chromiumLicenses, path.join(resourcesPath, 'LICENSES.chromium.html'));
+
+  // Basic mode's server boots without its web app and only its /app, /view and published links
+  // break, so nothing else would notice an app that lost the build beforePack made.
+  assertServerWeb(path.join(resourcesPath, 'nodus-server', 'dist', 'web'), `The packed ${appName}`);
 
   // Every recording the catalogue approves must be inside the packed app.asar, intact, and nothing
   // else may be: an app that lost them (a failed download, an ignored directory) must not become an

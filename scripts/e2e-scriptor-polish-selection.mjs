@@ -62,6 +62,7 @@ try {
     { id: 'first', type: 'paragraph', props, content: [{ type: 'text', text: 'La memoria del paisaje.', styles: {} }], children: [] },
     { id: 'second', type: 'paragraph', props, content: [{ type: 'text', text: 'El paisaje', styles: { bold: true } }, { type: 'text', text: ' conserva una memoria.', styles: {} }], children: [] },
     { id: 'duplicate', type: 'paragraph', props: { ...props, nodusEvidence: 'keep' }, content: [{ type: 'text', text: 'La memoria del paisaje.', styles: { italic: true } }], children: [] },
+    { id: 'protected', type: 'paragraph', props, content: [{ type: 'text', text: 'Una fórmula ', styles: {} }, { type: 'nodusFormula', props: { formula: 'x^2' } }, { type: 'text', text: ' protegida.', styles: {} }], children: [] },
   ];
   const noteId = await page.evaluate(async native => {
     const note = await window.nodus.createNote({ title: 'Selección de Pulir', content: '' });
@@ -76,7 +77,7 @@ try {
   if (await warning.isVisible().catch(() => false)) await warning.click();
   const saved = () => page.evaluate(async id => (await window.nodus.getWorkspaceNoteEditorData(id)).nativeDocument, noteId);
   const original = await saved();
-  const select = async (id, keyboard = false) => {
+  const select = async (id, keyboard = false, dispatchEditorEvent = true) => {
     const inline = page.locator(`[data-id="${id}"] .bn-inline-content`);
     await inline.scrollIntoViewIfNeeded();
     await inline.evaluate(element => {
@@ -89,6 +90,7 @@ try {
       document.dispatchEvent(new Event('selectionchange'));
     });
     await page.waitForTimeout(100);
+    if (!dispatchEditorEvent) return;
     await inline.dispatchEvent(keyboard ? 'keyup' : 'mouseup', keyboard ? { key: 'Shift' } : {});
     await page.getByTestId('study-selection-improve').waitFor();
   };
@@ -126,6 +128,31 @@ try {
   await send('El paisaje conserva una memoria.');
   await acceptAndUndo('second');
   checks.push('mouse selection updates an open composer; acceptance and undo preserve other blocks and formatting');
+
+  await open();
+  await select('second', false, false);
+  await send('El paisaje conserva una memoria.');
+  await acceptAndUndo('second');
+  checks.push('submission reads the latest native selection even without an editor mouseup or keyup event');
+
+  await open();
+  await send('La memoria del paisaje.');
+  await select('second', false, false);
+  await send('El paisaje conserva una memoria.');
+  await acceptAndUndo('second');
+  checks.push('regeneration reads a changed native selection without editor events');
+
+  await open();
+  await send('La memoria del paisaje.');
+  const requestsBeforeProtected = await app.evaluate(() => globalThis.selectionRequests.length);
+  await select('protected', false, false);
+  await page.getByTestId('scriptor-ai-send').click();
+  await page.getByTestId('scriptor-ai-error').waitFor();
+  assert.equal(await app.evaluate(() => globalThis.selectionRequests.length), requestsBeforeProtected);
+  assert.equal(await page.getByTestId('scriptor-ai-accept').count(), 0, 'a preflight failure cannot leave an old proposal attached to the new range');
+  assert.deepEqual(await saved(), original);
+  await page.getByTestId('scriptor-ai-close').click();
+  checks.push('a protected new selection clears the old proposal before preflight and makes no provider request');
 
   await open();
   await select('duplicate', true);

@@ -71,6 +71,13 @@ interface ImproveTarget {
   range?: { from: number; to: number };
 }
 
+function sameImproveTarget(previous: ImproveTarget, next: ImproveTarget) {
+  // The same phrase can appear twice, so compare its positions too.
+  return previous.text === next.text && previous.scope === next.scope && previous.visual === next.visual
+    && previous.from === next.from && previous.to === next.to
+    && previous.range?.from === next.range?.from && previous.range?.to === next.range?.to;
+}
+
 interface SynonymPanelState {
   sessionId: number;
   x: number;
@@ -435,15 +442,12 @@ export function StudyEditor({
   const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number; target?: EventTarget | null }) => {
     const editorSelection = event?.target instanceof Element && Boolean(event.target.closest('.bn-editor, [data-testid="study-markdown-editor"]'));
     window.setTimeout(() => {
+      if (active.id !== activeIdRef.current) return;
       const target = resolveImproveSelection(false);
       const source = aiSource.current;
       if (editorSelection && aiPanel === 'polish' && source?.id === activeIdRef.current && target) {
-        const previous = source.target;
-        // Compare positions as well as text: the same phrase can appear twice.
         const changed = source.base !== draft || source.native !== JSON.stringify(nativeRef.current)
-          || previous.text !== target.text || previous.visual !== target.visual
-          || previous.from !== target.from || previous.to !== target.to
-          || previous.range?.from !== target.range?.from || previous.range?.to !== target.range?.to;
+          || !sameImproveTarget(source.target, target);
         if (changed) {
           cancelAi(); discardProposal(); capturePolishSource(target);
         }
@@ -489,8 +493,10 @@ export function StudyEditor({
     setImproveStreamingStyleId(null); setImageBusy(false); setImprovePreview('');
   };
   const capturePolishSource = (target: ImproveTarget) => {
-    aiSource.current = { id: active.id, base: draft, native: JSON.stringify(nativeRef.current), target };
+    const source = { id: active.id, base: draft, native: JSON.stringify(nativeRef.current), target };
+    aiSource.current = source;
     preserveSelection(); setLastImprovement(null); setImproveStreamError('');
+    return source;
   };
   const closeAiPanel = () => { cancelAi(); discardProposal(); setAiPanel(null); setSelectionImprove(null); setImproveStreamError(''); aiSource.current = null; imageSource.current = null; requestAnimationFrame(restoreSelection); };
   closeAiRef.current = closeAiPanel;
@@ -512,9 +518,16 @@ export function StudyEditor({
   };
   const runQuickImprovement = (style: StudyStyle, target = selectionImprove?.target ?? resolveImproveSelection(false)) => openPolish(target, style);
   const runPolish = async () => {
-    const source = aiSource.current, style = allImproveStyles.find(item => item.id === aiStyleId);
+    let source = aiSource.current;
+    const style = allImproveStyles.find(item => item.id === aiStyleId);
     if (!source || !style || !active || !data || improvementRunning.current) return;
-    if (source.id !== active.id || source.base !== draft || source.native !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    if (source.id !== active.id || active.id !== activeIdRef.current) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    // Native menus or a mouseup outside the editor may not reach its handlers.
+    const selected = resolveImproveSelection(false);
+    if (selected && !sameImproveTarget(source.target, selected)) {
+      cancelAi(); discardProposal(); source = capturePolishSource(selected);
+    }
+    if (source.base !== draft || source.native !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
     const target = source.target;
     try {
       if (target.visual && target.range) canvasRef.current?.validateAiSelection(target.range);

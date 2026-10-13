@@ -42,7 +42,9 @@ jobs:
         run: npm run citation:check && npm run release:verify-source
 
   prepare-release:
-    needs: [validate-release, quality-gate]
+    # Package the validated tag while its complete CI runs. Only the final
+    # publication job may expose assets, and it also requires quality-gate.
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -490,10 +492,12 @@ jobs:
   verify-and-publish:
     if: >-
       always() &&
+      needs.quality-gate.result == 'success' &&
       needs.release.result == 'success' &&
       needs.merge-mac-manifest.result == 'success' &&
       (inputs.channel == 'beta' || needs.build-zotero-plugin.result == 'success')
     needs:
+      - quality-gate
       - release
       - merge-mac-manifest
       - build-zotero-plugin

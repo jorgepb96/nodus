@@ -1,6 +1,7 @@
 name: CI
 
-# Complete Linux coverage; native and specialized checks follow changed paths.
+# Build once, then run all three Linux test shards and E2E on isolated runners.
+# Complete coverage; native and specialized checks follow changed paths.
 # Documentation has a fast lane. The final test job is an unconditional gate.
 # Exact original configuration: .github/actions-budget/ (explicit restore only).
 on:
@@ -89,7 +90,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 20
+    outputs:
+      artifact_id: ${{ steps.share-build.outputs.artifact-id }}
+      plan_artifact_id: ${{ steps.share-plan.outputs.artifact-id }}
+      node_version: ${{ steps.runtime.outputs.node_version }}
+      marketplace_ref: ${{ steps.runtime.outputs.marketplace_ref }}
     env:
       NODE_OPTIONS: --max-old-space-size=4096
       LIBGL_ALWAYS_SOFTWARE: 'true'
@@ -119,15 +125,20 @@ jobs:
           xvfb-run --auto-servernum glxinfo -B
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
-      - name: Restore incremental checks and Electron download cache
+      - name: Restore incremental check caches
         uses: actions/cache@v6
         with:
-          path: |
-            .ci/cache
-            ~/.cache/electron
+          path: .ci/cache
           key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
           restore-keys: |
             checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
+      - name: Restore Electron download cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-${{ runner.arch }}-
       - name: Materialize Electron once and rebuild native modules
         # Match the proven Linux release toolchain; Electron 43 headers do not
         # compile with Ubuntu 22.04's default GCC.
@@ -167,10 +178,110 @@ jobs:
           git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null
           git fetch --depth 1 origin "$BRANCH"
           git checkout FETCH_HEAD
-      - name: Both repositories agree and signed packages install
-        run: npm run verify:cross-repo
+      - name: Pin the consumer runtime and marketplace revision
+        id: runtime
+        run: |
+          echo "node_version=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+          echo "marketplace_ref=$(git -C .marketplace rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Assign every test file to exactly one parallel group
+        run: node scripts/ci-test-shards.mjs plan
+      - name: Package this commit's build and Electron native runtime
+        run: |
+          node scripts/ci-build-artifact.mjs pack
+          node scripts/ci-native-artifact.mjs pack
+      - name: Share this run's verified build and complete test plan
+        id: share-build
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-build-${{ github.run_attempt }}
+          path: |
+            .ci/build.tgz
+            .ci/build-manifest.json
+            .ci/native.tgz
+            .ci/native-manifest.json
+            .ci/plan.json
+          include-hidden-files: true
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Share the small plan separately for the final inventory gate
+        id: share-plan
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-plan-${{ github.run_attempt }}
+          path: .ci/plan.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  unit:
+    needs: [changes, linux]
+    if: needs.changes.outputs.full == 'true'
+    name: Linux tests (${{ matrix.shard }})
+    strategy:
+      # Every group must finish and report even if another group fails.
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      LIBGL_ALWAYS_SOFTWARE: 'true'
+      NODUS_CI_COMPONENT_STYLES: .ci/component-styles.css
+      NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/ci-linux
+        with:
+          artifact-id: ${{ needs.linux.outputs.artifact_id }}
+          node-version: ${{ needs.linux.outputs.node_version }}
+          marketplace-ref: ${{ needs.linux.outputs.marketplace_ref }}
       # Match the original hash-verified OCR resource rather than letting an
       # individual test fetch an unpinned language model.
+      - name: Prepare hash-verified local OCR test resource
+        run: node scripts/prepare-research-ocr-fixture.mjs
+      - name: Every assigned unit and integration test passes
+        run: xvfb-run --auto-servernum npm run test:ci:shard -- ${{ matrix.shard }}
+      - name: Preserve this group's execution inventory, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          # On a failed-job rerun, replace only that group's report. Other
+          # successful groups and the original build remain usable.
+          name: ci-tests-${{ matrix.shard }}
+          overwrite: true
+          path: .ci/reports/shard-${{ matrix.shard }}.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
+
+  e2e:
+    needs: [changes, linux]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 35
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      LIBGL_ALWAYS_SOFTWARE: 'true'
+      NODUS_MARKETPLACE_DIR: ${{ format('{0}/.marketplace', github.workspace) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/ci-linux
+        with:
+          artifact-id: ${{ needs.linux.outputs.artifact_id }}
+          node-version: ${{ needs.linux.outputs.node_version }}
+          marketplace-ref: ${{ needs.linux.outputs.marketplace_ref }}
+      - name: Both repositories agree and signed packages install
+        run: npm run verify:cross-repo
       - name: Prepare hash-verified local OCR test resource
         run: node scripts/prepare-research-ocr-fixture.mjs
       - name: Real AppImage update compatibility
@@ -203,24 +314,13 @@ jobs:
         run: xvfb-run --auto-servernum npm run verify:capability-packages
       - name: A 5.3.1 profile migrates, fails and retries
         run: xvfb-run --auto-servernum npm run verify:capability-migration
-      # Catch display/runtime problems before spending time on the complete suite.
-      - name: Every discovered unit and integration test passes exactly once
-        run: |
-          xvfb-run --auto-servernum bash -e -c '
-            node scripts/ci-test-shards.mjs plan
-            status=0
-            for shard in 1 2 3; do npm run test:ci:shard -- "$shard" || status=1; done
-            node scripts/ci-test-shards.mjs verify || status=1
-            exit "$status"
-          '
-      - name: Preserve complete execution inventory, including failures
+      - name: Preserve real-app and native lifecycle diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ci-tests-${{ github.run_attempt }}
+          name: ci-e2e-${{ github.run_attempt }}
+          overwrite: true
           path: |
-            .ci/plan.json
-            .ci/reports/*.json
             .ci/backups-e2e/*.png
             .ci/backups-e2e/verification.json
             research-runtime-lifecycle.json
@@ -354,7 +454,7 @@ jobs:
           exit 1
 
   test:
-    needs: [changes, linux, light, platform, scheme, server]
+    needs: [changes, linux, unit, e2e, light, platform, scheme, server]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -371,3 +471,20 @@ jobs:
           CI_SELECTION: ${{ needs.changes.outputs.selection }}
           CI_JOB_RESULTS: ${{ toJSON(needs) }}
         run: node scripts/ci-routing.mjs gate
+      - name: Download this run's complete test plan
+        if: needs.changes.outputs.full == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.linux.outputs.plan_artifact_id }}
+          path: .ci
+          merge-multiple: true
+      - name: Download all three execution reports
+        if: needs.changes.outputs.full == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: ci-tests-*
+          path: .ci/reports
+          merge-multiple: true
+      - name: Every discovered test file passed exactly once on this commit
+        if: needs.changes.outputs.full == 'true'
+        run: node scripts/ci-test-shards.mjs verify

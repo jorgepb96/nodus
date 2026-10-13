@@ -130,7 +130,9 @@ test('stable and beta publication have isolated entry points and shared build lo
   assert.match(shared, /needs\.merge-mac-manifest\.result == 'success'/, 'publication waits for the merged manifest');
   assert.match(shared, /merge-mac-update-manifest\.mjs/, 'the merge job runs the audited merger');
   assert.match(shared, /uses: \.\/\.github\/workflows\/ci\.yml/, 'the release validates its exact tag with the complete Linux suite');
-  assert.match(shared, /needs: \[validate-release, quality-gate\]/, 'a failing quality gate prevents draft preparation');
+  assert.match(shared, /prepare-release:\n(?:    #.*\n)*    needs: validate-release/, 'draft packaging can overlap CI after validating the tag');
+  assert.match(shared, /needs\.quality-gate\.result == 'success'/, 'a failed or skipped quality gate always prevents publication');
+  assert.match(shared, /verify-and-publish:[\s\S]*?needs:\n\s+- quality-gate/, 'publication waits for CI even when packaging finishes first');
   assert.match(shared, /Verify platform-specific macOS contracts/);
   assert.match(shared, /Verify Windows and macOS native migration and rollback/);
   assert.match(shared, /node node_modules\/electron\/install\.js/, 'release runners install Electron legal files before packaging');

@@ -124,6 +124,12 @@ function installedProductionPackages() {
     // that are not represented as separate package-lock nodes.
     for (const nested of bundledPackageJsonsBelow(packageRoot)) packageFiles.add(nested);
   }
+  // The Nodus Server ships with a node_modules of its own, inside the app and inside the image
+  // (scripts/packaged-server-runtime.cjs). Some of those packages, esbuild and playwright-core,
+  // are only development dependencies of the desktop, but they are distributed all the same.
+  for (const entry of require('./packaged-server-runtime.cjs').serverPackageClosure(root)) {
+    packageFiles.add(path.join(entry.directory, 'package.json'));
+  }
 
   const packages = [];
   for (const packageFile of packageFiles) {

@@ -6,6 +6,11 @@ const { copyFileSync, existsSync, mkdirSync } = require('node:fs');
 const path = require('node:path');
 const { Arch } = require('electron-builder');
 const { verifyPackagedNativeRuntime, assertBinaryArchitecture } = require('../scripts/verify-packaged-native-runtime.cjs');
+const {
+  packagedExecutable,
+  stagePackagedServerRuntime,
+  verifyPackagedServerRuntime,
+} = require('../scripts/packaged-server-runtime.cjs');
 
 exports.default = async function afterPack(context) {
   const appName = context.packager.appInfo.productFilename; // "Nodus"
@@ -35,6 +40,19 @@ exports.default = async function afterPack(context) {
   execFileSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'verify-drift-assets.mjs'), '--asar', resourcesPath, '--require-all'], {
     stdio: 'inherit',
   });
+
+  // Basic mode runs nodus-server/server.mjs with this app's own executable as Node, and the
+  // extra resource that put it there carries the server's source and nothing it imports. Give it
+  // its packages and the files it reaches beside it, then start it with the executable just
+  // packed: a server that cannot load must stop the build, not surface on a user's machine as a
+  // phone that never connects. Before signing, so everything staged here is signed with the app.
+  const staged = await stagePackagedServerRuntime({ repoRoot: path.join(__dirname, '..'), resourcesPath });
+  console.log(
+    `[afterPack] Staged the Nodus Server runtime: ${staged.packages.length} packages `
+    + `(${(staged.bytes / 1024 / 1024).toFixed(1)} MB), ${staged.outsideFiles.length + staged.migrationFiles.length} source files`,
+  );
+  const server = await verifyPackagedServerRuntime({ executable: packagedExecutable(context), resourcesPath });
+  for (const line of server.passed) console.log(`[afterPack] Nodus Server: ${line}`);
 
   if (context.electronPlatformName !== 'darwin') return;
 

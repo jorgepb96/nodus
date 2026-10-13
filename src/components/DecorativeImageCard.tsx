@@ -182,13 +182,11 @@ export function DecorativeImageCard({
   if (thumbnail) {
     if (current?.status === 'ready' && imageLoadError) {
       return (
-        <div className={`flex min-h-24 items-center justify-center gap-2 rounded-lg bg-neutral-100 px-3 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300 ${className}`}>
-          <Icon name="alert" size={14} />
-          <span>{t('Imagen no disponible')}</span>
-          <button type="button" onClick={() => setImageLoadRevision((value) => value + 1)} title={imageLoadError}
-            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 underline focus-visible:outline focus-visible:outline-2">
-            <Icon name="sync" size={14} /> {t('Reintentar')}
-          </button>
+        <div role="img" aria-label={t('Imagen no disponible')} title={imageLoadError}
+          className={`flex h-24 items-center justify-center rounded-lg bg-neutral-100 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300 ${className}`}>
+          {/* Thumbnails also appear inside catalogue buttons. Keep their
+              failure indicator passive; the opened reader owns the retry. */}
+          <Icon name="alert" size={18} />
         </div>
       );
     }

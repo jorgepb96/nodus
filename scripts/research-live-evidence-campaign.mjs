@@ -78,8 +78,18 @@ async function prepareOcrResources(root) {
   const targetRoot = path.join(rootPath, 'cache/tessdata');
   await fsp.mkdir(targetRoot, { recursive: true, mode: 0o700 });
   const resources = [];
+  const copySource = arg('ocr-source');
   for (const [language, pin] of Object.entries(tessdataLanguages)) {
     const url = `https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/${tessdataCommit}/${language}.traineddata`;
+    if (copySource) {
+      const { copyResearchQaPinnedResource } = await import('./lib/researchQaPinnedResource.mjs');
+      const copyProof = copyResearchQaPinnedResource({ sourceRoot: copySource, targetRoot: rootPath,
+        relativePath: `cache/tessdata/${language}.traineddata`, ...pin });
+      resources.push({ language, file: `${language}.traineddata`, sourceUrl: url, sourceCommit: tessdataCommit,
+        license: 'Apache-2.0 (tesseract-ocr/tessdata_fast)', sha256: pin.sha256, bytes: pin.bytes,
+        path: copyProof.targetPath, copyProof });
+      continue;
+    }
     const response = await fetch(url, { signal: AbortSignal.timeout(120_000) });
     if (!response.ok) throw new Error(`Pinned OCR resource ${language} failed: HTTP ${response.status}`);
     const bytes = Buffer.from(await response.arrayBuffer());

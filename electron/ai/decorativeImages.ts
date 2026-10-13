@@ -249,11 +249,11 @@ function generateOpenAI(model: string, prompt: string, key: string, signal?: Abo
   );
 }
 
-function generateOpenRouter(model: string, prompt: string, key: string, signal?: AbortSignal): Promise<GeneratedImageBytes> {
+function generateOpenRouter(model: string, prompt: string, key: string, signal?: AbortSignal, aspectRatio: ChatImageAspectRatio = '16:9'): Promise<GeneratedImageBytes> {
   // Model endpoints expose different optional knobs. Keeping the request to the
   // documented common denominator (plus an explicit single output) prevents a
   // provider-specific parameter from making an otherwise compatible model fail.
-  return postBase64Image('https://openrouter.ai/api/v1/images', { model, prompt, n: 1 }, key, signal);
+  return postBase64Image('https://openrouter.ai/api/v1/images', { model, prompt, n: 1, aspect_ratio: aspectRatio }, key, signal);
 }
 
 export async function callImageProvider(provider: ImageProvider, model: string, prompt: string, signal?: AbortSignal, aspectRatio?: ChatImageAspectRatio): Promise<GeneratedImageBytes> {
@@ -280,7 +280,7 @@ export async function callImageProvider(provider: ImageProvider, model: string, 
     case 'openai':
       return generateOpenAI(model, prompt, key, signal, aspectRatio);
     case 'openrouter':
-      return generateOpenRouter(model, prompt, key, signal);
+      return generateOpenRouter(model, prompt, key, signal, aspectRatio);
   }
 }
 

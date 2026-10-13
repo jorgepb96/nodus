@@ -116,7 +116,14 @@ function sectionClaimsForWriting(section: DeepResearchPlanSection): string[] {
 // here we only bind the injected dependencies to real provider/DB calls.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function generateDeepResearchReport(request: DeepResearchRequest, onProgress?: (p: DeepResearchProgress) => void, signal?: AbortSignal): Promise<DeepResearchReport> {
+export interface CompanionDeepResearchRun {
+ sourceOnly:true;
+ onSources:(sources:unknown[],knowledge:unknown)=>void;
+ onWorkText?:(id:string,text:string)=>void;
+}
+export async function generateDeepResearchReport(request: DeepResearchRequest, onProgress?: (p: DeepResearchProgress) => void, signal?: AbortSignal, companion?:CompanionDeepResearchRun): Promise<DeepResearchReport> {
+  if(companion&&(!hasMobileCompletionReplay()||!request.model))throw new Error("mobile_completion_scope_required");
+  if(companion&&request.completeGuide)throw new Error("mobile_complete_guide_binding_pending");
   const settings = getSettings();
   const academic = getActiveVault().type === 'academic';
   if (request.notebookId && !academic) throw new Error('Research notebooks require an academic vault');
@@ -131,7 +138,7 @@ export async function generateDeepResearchReport(request: DeepResearchRequest, o
     // The language chosen in the form, when present, is the output language of every
     // call; the vault-wide setting only applies to requests that do not name one.
     return await withJobOutputLanguage(request.language, () => withJobThinkingEffort(request.thinkingEffort, request.model ?? settings.deepResearchModel ?? settings.synthesisModel,
-      () => withDocumentVisualPlanning(catalog, hints, () => generateDeepResearchReportWithVisualPlan(request, onProgress, runSignal, hints)), runSignal));
+      () => withDocumentVisualPlanning(catalog, hints, () => generateDeepResearchReportWithVisualPlan(request, onProgress, runSignal, hints, companion)), runSignal));
   } finally { release(); }
 }
 
@@ -140,6 +147,7 @@ async function generateDeepResearchReportWithVisualPlan(
   onProgress?: (p: DeepResearchProgress) => void,
   signal?: AbortSignal,
   documentVisualHints: string[] = [],
+  companion?:CompanionDeepResearchRun,
 ): Promise<DeepResearchReport> {
   signal?.throwIfAborted();
   const settings = getSettings();
@@ -171,14 +179,14 @@ async function generateDeepResearchReportWithVisualPlan(
     const routedRequest = deepResearchVersion === 'v2'
       ? await requestWithCoverageQuestions(versionedRequest, model, signal)
       : versionedRequest;
-    report = await generateStudyDeepResearchReport({ ...routedRequest, unitMode: true }, model, onProgress, signal);
+    report = await generateStudyDeepResearchReport({ ...routedRequest, unitMode: true }, model, onProgress, signal, companion);
     return finish(report);
   }
   if (request.studyMode || getActiveVault().type === 'estudio') {
     const routedRequest = deepResearchVersion === 'v2'
       ? await requestWithCoverageQuestions(versionedRequest, model, signal)
       : versionedRequest;
-    report = await generateStudyDeepResearchReport(routedRequest, model, onProgress, signal);
+    report = await generateStudyDeepResearchReport(routedRequest, model, onProgress, signal, companion);
     return finish(report);
   }
   // A genealogy vault has no idea graph; its Deep Research writes a family-history
@@ -187,7 +195,7 @@ async function generateDeepResearchReportWithVisualPlan(
     const routedRequest = deepResearchVersion === 'v2'
       ? await requestWithCoverageQuestions(versionedRequest, model, signal)
       : versionedRequest;
-    report = await generateGenealogyDeepResearchReport(routedRequest, onProgress, signal);
+    report = await generateGenealogyDeepResearchReport(routedRequest, onProgress, signal, companion);
     return finish(report);
   }
   // Both academic routes are graph-first. Full-document profiles are prepared and

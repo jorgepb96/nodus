@@ -56,6 +56,9 @@ try {
  release();const pending=await job;assert(pending.completion);assert.equal(pending.completion.model.provider,model.provider);
  const completed=await withMobileCompletionReplay('actual-vault+request-binding',model,{[pending.completion.id]:'{"canonical":"response"}'},async()=>mobileCompletionReply(model,{system:'canonical-system',user:'canonical-user',maxTokens:200},true,'off'));
  assert.equal(completed.value,'{"canonical":"response"}');
+ await assert.rejects(withMobileCompletionReplay('actual-vault+request-binding',model,{[pending.completion.id]:'{"canonical":"response"}'},async()=>{
+  try {return mobileCompletionReply(model,{system:'changed-canonical-system',user:'canonical-user',maxTokens:200},true,'off');}catch{return 'unsafe optional-stage fallback';}
+ },undefined,[pending.completion.id]),/transcript_changed/,'A changed canonical prompt fails closed even if a stage catches the host error');
  const foreign=await withMobileCompletionReplay('other-vault+request-binding',model,{[pending.completion.id]:'{"canonical":"response"}'},async()=>mobileCompletionReply(model,{system:'canonical-system',user:'canonical-user',maxTokens:200},true,'off'));
  assert.notEqual(foreign.completion.id,pending.completion.id,'A reply is bound to its actual owning request/vault, not borrowed by another transcript');
  await assert.rejects(withMobileCompletionReplay('actual',model,{},async()=>mobileCompletionReply({provider:'anthropic',model:'fallback'}, {system:'same',user:'same'},true,'off')),/fallback_forbidden/);

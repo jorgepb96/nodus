@@ -50,6 +50,8 @@ import { allSocialRelations } from '../db/socialRepo';
 import { listItems, listItemsForPerson, findArchiveItemsSimilar } from '../db/archiveRepo';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import { getWork } from '../db/worksRepo';
+import {getLibraryReaderRawContent} from '../libraryReader/libraryReaderStore';
+import {libraryMarkdownWithPageMarkers,readDocumentarySourceMap} from '../library/librarySourcePages';
 import { resolveWorkText } from '../extraction/textExtractor';
 import { LOCAL_USER_ID } from '../zotero/zoteroClient';
 import { completeJson, completeText, embed } from './aiClient';
@@ -572,10 +574,16 @@ export async function orchestrateGenealogyDeepResearch(
 }
 
 /** Production entry point: gather the source pool + family facts, then orchestrate. */
+export interface CompanionGenealogyRunOptions {
+ sourceOnly?:boolean;
+ onSources?:(sources:GenSource[],family:FamilyFacts)=>void;
+ onWorkText?:(id:string,text:string)=>void;
+}
 export async function generateGenealogyDeepResearchReport(
   request: DeepResearchRequest,
   onProgress?: (p: DeepResearchProgress) => void,
   signal?: AbortSignal,
+  companion?: CompanionGenealogyRunOptions,
 ): Promise<DeepResearchReport> {
   signal?.throwIfAborted();
   const settings = getSettings();
@@ -589,7 +597,8 @@ export async function generateGenealogyDeepResearchReport(
   const focusPerson = request.focusPersonId ? buildFocusPerson(request.focusPersonId, family) : null;
   // The historical General path remains byte-for-byte the same after source gathering.
   if (approach === 'general') {
-    return orchestrateGenealogyDeepResearch(request, ordinarySources, family, realDeps(model, signal), onProgress, focusPerson, signal);
+    companion?.onSources?.(ordinarySources,family);
+    return orchestrateGenealogyDeepResearch(request, ordinarySources, family, realDeps(model, signal, companion), onProgress, focusPerson, signal);
   }
   const retrieval = await planApproachRetrieval({
     approach,
@@ -609,11 +618,12 @@ export async function generateGenealogyDeepResearchReport(
   );
   const sources = mergeGenealogyApproachSources(ordinarySources, supplementalPools.flat(), approach);
   signal?.throwIfAborted();
+  companion?.onSources?.(sources,family);
   return orchestrateGenealogyDeepResearch(
     request,
     sources,
     family,
-    specializedGenealogyDeps(model, approach, retrieval, language, signal),
+    specializedGenealogyDeps(model, approach, retrieval, language, signal, companion),
     onProgress,
     focusPerson,
     signal,
@@ -638,7 +648,7 @@ function mergeGenealogyApproachSources(
   return merged;
 }
 
-function realDeps(model: ModelRef | null, signal?: AbortSignal): GenDeepDeps {
+function realDeps(model: ModelRef | null, signal?: AbortSignal, companion?:CompanionGenealogyRunOptions): GenDeepDeps {
   return {
     planReport: (input) => aiPlan(input, model),
     writeSection: (input) => aiWriteSection(input, model, undefined, signal),
@@ -648,6 +658,12 @@ function realDeps(model: ModelRef | null, signal?: AbortSignal): GenDeepDeps {
     resolveWorkFullText: async (nodusId) => {
       const w = getWork(nodusId);
       if (!w) return '';
+      if(companion?.sourceOnly){
+        const prepared=getLibraryReaderRawContent(w.zotero_key);
+        if(!prepared?.markdown?.trim())throw new Error('desktop_preparation_required');
+        const text=libraryMarkdownWithPageMarkers(prepared.markdown,readDocumentarySourceMap(prepared.folder,prepared.sourceMapFile));
+        companion.onWorkText?.(nodusId,text);return text;
+      }
       const settings = getSettings();
       const doc = await resolveWorkText(
         settings.zoteroUserId || LOCAL_USER_ID,
@@ -675,13 +691,14 @@ function specializedGenealogyDeps(
   retrieval: ApproachRetrievalPlan,
   language: ReturnType<typeof normalizePromptLanguage>,
   signal?: AbortSignal,
+  companion?:CompanionGenealogyRunOptions,
 ): GenDeepDeps {
   const context: GenealogyApproachContext = {
     approach,
     retrieval,
     rules: approachRules(approach, 'genealogy', language),
   };
-  const base = realDeps(model, signal);
+  const base = realDeps(model, signal, companion);
   return {
     ...base,
     planReport: (input) => aiPlan(input, model, context),

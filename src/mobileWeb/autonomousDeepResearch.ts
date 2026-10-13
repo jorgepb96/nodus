@@ -1,5 +1,5 @@
 import {orchestrateDeepResearch,type DeepResearchDeps,type SectionRetrievalInput} from '../../electron/ai/deepResearchCore';
-import {durableDeepResearchCall,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource} from '@shared/mobileDeepResearch';
+import {durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource} from '@shared/mobileDeepResearch';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {structuredPrompt} from './structuredPrompt';
 import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord,WritingWorkshopSnapshot} from '@shared/types';
@@ -19,7 +19,7 @@ export async function enqueueAutonomousDeepResearch(call:Call,raw:DeepResearchRe
  const task=execute(call,checkpoint,controller,notify).finally(()=>active.delete(entityKey));active.set(entityKey,{controller,task,checkpoint});void task.catch(()=>{});return 'accepted';
 }
 async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,controller:AbortController,notify:(progress:DeepResearchProgress)=>void):Promise<void> {
- const persist=async()=>{await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);};
+ const persist=async()=>{checkpoint.citationIndex=indexMobileDeepResearchCitations(checkpoint);await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);};
  const request=checkpoint.request,model=request.model!,signal=controller.signal;
  let progressWrites=Promise.resolve();
  const source=async<T>(stage:string,input:unknown):Promise<T>=>{
@@ -30,10 +30,11 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
     signal.throwIfAborted();
     const replies=Object.fromEntries(Object.entries(checkpoint.calls).filter(([key])=>key.startsWith('host:')).map(([key,value])=>[key.slice(5),value.output]));
     let result:any;
-    try {result=await call('getMobileDeepResearchSource',{request,generationId:checkpoint.id,expectedVaultId:checkpoint.context?.vaultId,expectedRevision:checkpoint.context?.revision,stage,input,history:checkpoint.history??[],replies});}
+    try {result=await call('getMobileDeepResearchSource',{request,generationId:checkpoint.id,expectedVaultId:checkpoint.context?.vaultId,expectedRevision:checkpoint.context?.revision,stage,input,history:checkpoint.history??[],transcript:checkpoint.completionTranscript,replies});}
     catch(error){controller.abort();throw error;}
 
     if(result?.version!==1)throw new Error('invalid_deep_research_stage_response');
+    if(result.progress){checkpoint.progress=result.progress;notify(result.progress);}
     if(Object.hasOwn(result,'value')){
      checkpoint.history??=[];checkpoint.history.push({stage,input:structuredClone(input)});return result.value as T;
     }
@@ -48,6 +49,14 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
  };
  try {
   if(!checkpoint.report){
+   const description=await source<{variant:string;context:MobileDeepResearchCheckpoint['context']}>('describe',[]);
+   if(!description.context||description.context.version!==1)throw new Error('invalid_deep_research_source_description');
+   checkpoint.context??=description.context;checkpoint.state='running';delete checkpoint.error;await persist();
+   if(description.variant!=='academic'){
+    const completed=await source<{report:NonNullable<MobileDeepResearchCheckpoint['report']>}>('variantRun',[]);
+    if(!completed.report?.draft||!completed.report.meta)throw new Error('invalid_deep_research_variant_result');
+    checkpoint.report=completed.report;
+   } else {
    const deps:DeepResearchDeps={
     strictDocumentaryGrounding:true,
     buildSnapshot:async brief=>{const captured=await source<MobileDeepResearchSource>('snapshot',{brief});assertMobileDeepResearchSource(captured);checkpoint.context??={version:captured.version,vaultId:captured.vaultId,vaultType:captured.vaultType,revision:captured.revision,sourceScope:captured.sourceScope,queryEmbeddingModel:captured.queryEmbeddingModel,preparedSourcesOnly:captured.preparedSourcesOnly};await persist();return captured.snapshot;},
@@ -65,6 +74,7 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
    checkpoint.report=await orchestrateDeepResearch({...request,studyMode:false,unitMode:false,documentSkills:undefined},deps,progress=>{checkpoint.progress=progress;notify(progress);progressWrites=progressWrites.then(persist);},signal);
    await progressWrites;signal.throwIfAborted();
    const report=checkpoint.report;report.draft={...report.draft,brief:{...report.draft.brief,deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion},deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion,deepResearchSectionLength:request.sectionLength,generationModel:model,documentSkills:undefined};
+   }
    checkpoint.state='saved';await persist();
   }
   try {checkpoint.result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await persist();}
@@ -73,7 +83,7 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
   // Cancellation stops future stages, while an accepted completion may already
   // have reached durable native storage. Attach it without buying a new answer.
   if(checkpoint.inflight?.request){
-   try {const recovered=await call('mobileSavedStructuredCompletion',checkpoint.inflight.request);if(recovered!==null){checkpoint.calls[checkpoint.inflight.key]={input:checkpoint.inflight.input,output:recovered};delete checkpoint.inflight;}}catch{/* Original failure remains; unresolved marker still forbids automatic repayment. */}
+   try {const recovered=await call('mobileSavedStructuredCompletion',checkpoint.inflight.request);if(recovered!==null){checkpoint.calls[checkpoint.inflight.key]={input:checkpoint.inflight.input,output:recovered};checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(checkpoint.inflight.key.slice(5)))checkpoint.completionTranscript.push(checkpoint.inflight.key.slice(5));delete checkpoint.inflight;}}catch{/* Original failure remains; unresolved marker still forbids automatic repayment. */}
   }
   checkpoint.state=signal.aborted&&checkpoint.state==='cancelled'?'cancelled':'failed';checkpoint.error=String(error).includes('mobile_paid_response_uncertain')?'El paso quedó sin una respuesta confirmada y pudo haberse enviado al proveedor. No se volverá a comprar automáticamente; revisa este paso antes de reintentarlo.':String(error);await persist();throw error;
  } finally {await progressWrites.catch(()=>{});await call('endAutonomousAuthoring',checkpoint.id);}
@@ -99,7 +109,7 @@ export async function retryLocalDeepResearch(call:Call,id:string,notify:(progres
  if(!checkpoint||active.has(checkpoint.entityKey)||checkpoint.state==='cancelled'||checkpoint.recoveryReviewRequired)throw new Error('Esta investigación no está disponible para continuar sin revisar sus fuentes.');
  if(checkpoint.inflight){
   const recovered=await call('mobileSavedStructuredCompletion',checkpoint.inflight.request);
-  if(recovered!==null){checkpoint.calls[checkpoint.inflight.key]={input:checkpoint.inflight.input,output:recovered};delete checkpoint.inflight;}
+  if(recovered!==null){checkpoint.calls[checkpoint.inflight.key]={input:checkpoint.inflight.input,output:recovered};checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(checkpoint.inflight.key.slice(5)))checkpoint.completionTranscript.push(checkpoint.inflight.key.slice(5));delete checkpoint.inflight;}
   else {
    if(!window.confirm('Este paso quedó sin respuesta confirmada y pudo haber consumido una llamada al proveedor. ¿Quieres volver a solicitarlo? Puede generar un nuevo cargo. Las respuestas anteriores se conservarán.'))return;
    checkpoint.uncertainAttempts??=[];checkpoint.uncertainAttempts.push(structuredClone(checkpoint.inflight));delete checkpoint.inflight;checkpoint.completionAttempt=crypto.randomUUID();

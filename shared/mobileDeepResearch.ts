@@ -15,6 +15,8 @@ export interface MobileDeepResearchSource {
 export type MobileDeepResearchProof = Pick<MobileDeepResearchSource,"version"|"vaultId"|"vaultType"|"revision"|"sourceScope"|"queryEmbeddingModel"|"preparedSourcesOnly">;
 export interface MobileDeepResearchCheckpoint {
  id:string;entityKey:string;request:DeepResearchRequest;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';createdAt:string;
+ completionTranscript?:string[];
+ citationIndex?:Record<string,{callKey:string;path:Array<string|number>;citation?:string}>;
  context?:MobileDeepResearchProof;calls:Record<string,{input:string;output:unknown}>;report?:DeepResearchReport;
  inflight?:{key:string;input:string;request?:unknown;createdAt:string};
  uncertainAttempts?:Array<{key:string;input:string;request?:unknown;createdAt:string}>;completionAttempt?:string;
@@ -46,11 +48,40 @@ export async function durableDeepResearchCall<T>(checkpoint:MobileDeepResearchCh
  if(existing){if(existing.input!==canonical)throw new Error('deep_research_checkpoint_input_conflict');return structuredClone(existing.output) as T;}
  if(options?.paid&&checkpoint.inflight){
   if(checkpoint.inflight.key===key&&checkpoint.inflight.input===canonical&&options.recover){
-   const recovered=await options.recover();if(recovered!==undefined){checkpoint.calls[key]={input:canonical,output:structuredClone(recovered)};delete checkpoint.inflight;await persist();return recovered;}
+   const recovered=await options.recover();if(recovered!==undefined){checkpoint.calls[key]={input:canonical,output:structuredClone(recovered)};checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(key.slice(5)))checkpoint.completionTranscript.push(key.slice(5));delete checkpoint.inflight;await persist();return recovered;}
   }
   throw new Error('mobile_paid_response_uncertain');
  }
  if(options?.paid){checkpoint.inflight={key,input:canonical,request:structuredClone(options.request),createdAt:new Date().toISOString()};await persist();}
- const output=await invoke();checkpoint.calls[key]={input:canonical,output:structuredClone(output)};if(checkpoint.inflight?.key===key)delete checkpoint.inflight;await persist();return output;
+ const output=await invoke();checkpoint.calls[key]={input:canonical,output:structuredClone(output)};if(options?.paid){checkpoint.completionTranscript??=[];checkpoint.completionTranscript.push(key.slice(5));}if(checkpoint.inflight?.key===key)delete checkpoint.inflight;await persist();return output;
 }
 export interface MobileDeepResearchCompletion {system:string;user:string;temperature?:number;maxTokens?:number;model?:ModelRef|null;format:'json'|'text'}
+
+/** Point to the exact captured candidate, without copying source bodies into
+ * another index or recursively searching provider prompts on every citation. */
+export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCheckpoint):Record<string,{callKey:string;path:Array<string|number>;citation?:string}> {
+ const index:Record<string,{callKey:string;path:Array<string|number>;citation?:string}>=Object.create(null);
+ const groups={ideas:'idea',works:'work',passages:'passage',gaps:'gap',contradictions:'contradiction'} as const;
+ for(const [callKey,call] of Object.entries(checkpoint.calls)){
+  if(!callKey.startsWith('source:')||!call.output||typeof call.output!=='object')continue;
+  const output=call.output as Record<string,unknown>;
+  const containers:Array<{value:Record<string,unknown>;path:Array<string|number>;citation?:string}>= [{value:output,path:[]}];
+  if(output.snapshot&&typeof output.snapshot==='object')containers.push({value:output.snapshot as Record<string,unknown>,path:['snapshot']});
+  if(Array.isArray(output.sources))output.sources.forEach((row,position)=>{
+   if(!row||typeof row!=='object')return;
+   let citation=typeof row.url==='string'?row.url:typeof row.refId==='string'&&['document','work'].includes(row.kind)?`nodus://${row.kind==='document'?'archive':'work'}/${encodeURIComponent(row.refId)}`:undefined;
+   if(!citation)return;
+   try {const url=new URL(citation);if(url.protocol!=='nodus:')return;const identity=decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1)??'');if(!identity)return;index[`${url.hostname}:${identity}`]??={callKey,path:['sources',position],citation};}catch{/* An invalid source locator is never indexed. */}
+  });
+  for(const container of containers)for(const [group,kind] of Object.entries(groups)){
+   const rows=container.value[group];if(!Array.isArray(rows))continue;
+   rows.forEach((row,position)=>{
+    if(!row||typeof row!=='object'||typeof row.id!=='string'||!row.id)return;
+    const key=`${kind}:${row.id}`;
+    index[key]??={callKey,path:[...container.path,group,position]};
+    if(kind==='contradiction')index[`debate:${row.id}`]??=index[key];
+   });
+  }
+ }
+ return index;
+}

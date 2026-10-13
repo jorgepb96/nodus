@@ -7,7 +7,7 @@ import {getDb} from '../db/database';
 import {getActiveVault} from '../vaults/vaultRegistry';
 import {buildIdeaFirstWritingWorkshopSnapshot,buildHistoricalWritingWorkshopSnapshot,retrieveSectionMaterial,retrieveSectionMaterialLegacy} from '../ai/writingWorkshop';
 import {academicRelationshipContext} from '../ai/deepResearchApproaches';
-import {companionCanonicalDeepResearchDeps} from '../ai/deepResearch';
+import {companionCanonicalDeepResearchDeps,generateDeepResearchReport} from '../ai/deepResearch';
 import {withJobOutputLanguage} from '../ai/jobOutputLanguage';
 import {withJobThinkingEffort} from '../ai/thinkingEffort';
 import {withMobileCompletionReplay} from '../ai/mobileCompletionReplay';
@@ -15,30 +15,32 @@ import {prepareRelevantDocumentProfiles} from '../ai/documentPreparation';
 import {getWritingWorkshopDraft,saveWritingWorkshopDraft} from '../db/writingDraftsRepo';
 import {canonicalJson} from '../../shared/canonicalJson';
 import {normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchProof,type MobileDeepResearchSource} from '../../shared/mobileDeepResearch';
-import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief} from '../../shared/types';
+import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepResearchProgress} from '../../shared/types';
 import type {SectionRetrievalInput,PlanEvidencePreparationInput} from '../ai/deepResearchCore';
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
 /** Corpus source revision excludes derived indexes/profiles and their status.
  * It includes actual authored graph content and authoritative work text identity. */
 export function mobileDeepResearchCorpusRevision(request?:DeepResearchRequest):string {
  const db=getDb(),digest=createHash('sha256');
- for(const table of ['works','ideas','themes','gaps','edges']){
+ const vaultType=getActiveVault().type;
+ const tables=vaultType==='academic'?['works','ideas','themes','gaps','edges']:vaultType==='genealogy'?['works','persons','events','relationships','social_relations','archive_items','archive_item_persons','evidence','places']:['study_docs','study_subjects','study_materials','study_transcripts','study_transcript_segments','study_ideas','study_idea_connections','study_questions'];
+ for(const table of tables){
   if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))continue;
   const rows=db.prepare(`SELECT * FROM ${table}`).all() as Record<string,unknown>[];
   const source=rows.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>!/^deep_|^embedding|^updated_at$|^last_|^document_profile|^resolved_text_cached|^read_tag$|^read_at$|^created_at$/.test(key)))).sort((a,b)=>canonicalJson(a).localeCompare(canonicalJson(b)));
   digest.update(canonicalJson([table,source]));
  }
- const scope=resolveAcademicRunScope(request?.notebookId);
+ const scope=vaultType==='academic'?resolveAcademicRunScope(request?.notebookId):null;
  digest.update(canonicalJson(effectiveEmbeddingConfig()));
- digest.update(canonicalJson({scopeId:scope.id,notebookId:scope.notebookId,notebookRevision:scope.notebookRevision,permissionFingerprint:scope.permissionFingerprint,documents:scope.documents.map(item=>({id:item.id,revision:item.revision})).sort((a,b)=>a.id.localeCompare(b.id))}));
+ if(scope)digest.update(canonicalJson({scopeId:scope.id,notebookId:scope.notebookId,notebookRevision:scope.notebookRevision,permissionFingerprint:scope.permissionFingerprint,documents:scope.documents.map(item=>({id:item.id,revision:item.revision})).sort((a,b)=>a.id.localeCompare(b.id))}));
  return digest.digest('hex');
 }
-const STAGES = ['snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
+const STAGES = ['describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
 type Stage = typeof STAGES[number];
 type StageInput = {stage:Stage;input:unknown};
 export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):Promise<unknown> {
- const value=raw as {request:DeepResearchRequest;generationId:string;expectedVaultId?:string;expectedRevision?:string;stage:Stage;input:any;history:StageInput[];replies:Record<string,string>};
- if(!value||Object.keys(value).some(key=>!['request','generationId','expectedVaultId','expectedRevision','stage','input','history','replies'].includes(key))||!STAGES.includes(value.stage)||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value.generationId)||!Array.isArray(value.history)||value.history.length>256||!value.replies||typeof value.replies!=='object'||Array.isArray(value.replies)||Object.entries(value.replies).some(([key,reply])=>!/^[a-f0-9]{64}:\d+$/.test(key)||typeof reply!=='string'||reply.length>1_000_000)||Buffer.byteLength(JSON.stringify(value))>32*1024*1024)throw new Error('invalid_deep_research_source_request');
+ const value=raw as {request:DeepResearchRequest;generationId:string;expectedVaultId?:string;expectedRevision?:string;stage:Stage;input:any;history:StageInput[];transcript?:string[];replies:Record<string,string>};
+ if(!value||Object.keys(value).some(key=>!['request','generationId','expectedVaultId','expectedRevision','stage','input','history','replies','transcript'].includes(key))||!STAGES.includes(value.stage)||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value.generationId)||(value.transcript!==undefined&&(!Array.isArray(value.transcript)||value.transcript.length>4096||value.transcript.some(id=>typeof id!=='string'||!/^[a-f0-9]{64}:\d+$/.test(id))))||!Array.isArray(value.history)||value.history.length>256||!value.replies||typeof value.replies!=='object'||Array.isArray(value.replies)||Object.entries(value.replies).some(([key,reply])=>!/^[a-f0-9]{64}:\d+$/.test(key)||typeof reply!=='string'||reply.length>1_000_000)||Buffer.byteLength(JSON.stringify(value))>32*1024*1024)throw new Error('invalid_deep_research_source_request');
  const request=normalizeMobileDeepResearchRequest(value.request),vault=getActiveVault();
  if(value.expectedVaultId!=null&&value.expectedVaultId!==vault.id)throw new Error('deep_research_source_scope_conflict');
  if(value.expectedRevision!=null&&value.expectedRevision!==mobileDeepResearchCorpusRevision(request))throw new Error('deep_research_source_conflict');
@@ -58,10 +60,19 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
   db.prepare('INSERT OR IGNORE INTO mobile_deep_research_query_vectors VALUES(?,?,?)').run(binding,key,JSON.stringify(vector));
   return vector;
  };
+ let progress:DeepResearchProgress|undefined;
  const replay=await withMobileCompletionReplay(binding,request.model!,value.replies,()=>withJobOutputLanguage(request.language,()=>withJobThinkingEffort(request.thinkingEffort,request.model,async()=>{
-  const deps=companionCanonicalDeepResearchDeps(request,signal);
+  const deps=vault.type==='academic'?companionCanonicalDeepResearchDeps(request,signal):null;
   async function stage(entry:StageInput):Promise<unknown>{
    signal?.throwIfAborted();
+   if(entry.stage==='describe')return {variant:vault.type==='academic'?'academic':request.completeGuide?'completeGuide':vault.type==='docencia'||request.unitMode?'unit':vault.type==='estudio'||request.studyMode?'study':vault.type==='genealogy'?'genealogy':'academic',context:{version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(request),sourceScope:'linked_corpus',queryEmbeddingModel:{provider:effectiveEmbeddingConfig().provider,model:effectiveEmbeddingConfig().modelId},preparedSourcesOnly:true}};
+   if(entry.stage==='variantRun'){
+    if(vault.type==='academic'||request.completeGuide)throw new Error('mobile_deep_research_variant_stage_invalid');
+    let sources:unknown[]=[],knowledge:unknown;
+    const report=await generateDeepResearchReport(request,value=>{progress=value;},signal,{sourceOnly:true,onSources:(captured,facts)=>{sources=structuredClone(captured);knowledge=structuredClone(facts);},onWorkText:(id,text)=>{for(const source of sources as Array<{refId?:string;fullText?:string}>){if(source.refId===id)source.fullText=text;}}});
+    return {report,sources,knowledge};
+   }
+   if(!deps)throw new Error('mobile_deep_research_stage_variant_conflict');
    if(entry.stage==='snapshot'){
     const input=entry.input as {brief:WritingWorkshopBrief};
     if(input?.brief?.kind!=='deep_research'||input.brief.objective!==request.objective)throw new Error('invalid_deep_research_snapshot');
@@ -76,8 +87,8 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
   }
   for(const entry of value.history)await stage(entry);
   return stage({stage:value.stage,input:value.input});
- },signal)),queryMemo);
- return replay.completion?{version:1,completion:replay.completion}:{version:1,value:replay.value};
+ },signal)),queryMemo,value.transcript);
+ return replay.completion?{version:1,completion:replay.completion,progress}:{version:1,value:replay.value,progress};
 }
 export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,signal?:AbortSignal) {
  const input=raw as {request:DeepResearchRequest;source:MobileDeepResearchProof;report:DeepResearchReport;requestId:string};
@@ -97,7 +108,7 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
     let id:string;try{id=decodeURIComponent(match[2]);}catch{throw new Error('invalid_deep_research_citation');}
     const table=match[1]==='idea'?'ideas':match[1]==='work'?'works':'passages',column=match[1]==='idea'?'global_id':match[1]==='work'?'nodus_id':'passage_id';
     const scoped=match[1]==='passage'&&(id.startsWith('documentary:')?getDocumentaryPassageDetail(id):id.startsWith('scoped:')?getScopedLegacyPassageDetail(id):null);
-    const globalWork=match[1]==='work'&&resolveAcademicRunScope(request.notebookId).documents.some(document=>document.workId===id);
+    const globalWork=getActiveVault().type==='academic'&&match[1]==='work'&&resolveAcademicRunScope(request.notebookId).documents.some(document=>document.workId===id);
     if(!scoped&&!globalWork&&!db.prepare(`SELECT 1 FROM ${table} WHERE ${column}=?`).get(id))throw new Error('deep_research_citation_source_missing');
   }
   if(getWritingWorkshopDraft(input.requestId))throw new Error('deep_research_identity_conflict');

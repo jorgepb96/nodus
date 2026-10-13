@@ -704,6 +704,7 @@ export async function generateStudyDeepResearchReport(
   model: ModelRef | null,
   onProgress?: (progress: DeepResearchProgress) => void,
   signal?: AbortSignal,
+  companion?: { onSources?: (sources: StudyResearchSource[], knowledge: ReturnType<typeof listStudyIdeasForSources>) => void },
 ): Promise<DeepResearchReport> {
   const emit = (progress: DeepResearchProgress) => {
     signal?.throwIfAborted();
@@ -770,6 +771,7 @@ export async function generateStudyDeepResearchReport(
   const knowledge = unitMode || approach !== 'general'
     ? listStudyIdeasForSources(sources.map((source) => `${source.kind}:${source.sourceId}`))
     : { ideas: [], connections: [] };
+  companion?.onSources?.(sources, knowledge);
   const ideaLabels = new Map(knowledge.ideas.map((idea) => [idea.id, idea.label]));
   const ideaPayload = knowledge.ideas.map((idea) => ({ id: idea.id, type: idea.type, label: idea.label, statement: idea.statement }));
   const relationPayload = knowledge.connections

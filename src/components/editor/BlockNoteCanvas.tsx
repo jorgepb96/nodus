@@ -254,9 +254,9 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item);
     return <FormattingToolbar>
       {items.filter(item => !advanced.has(String(item.key)))}
-      {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}>❞</button>}
+      {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}><Icon name="quote" size={18} /></button>}
       <span ref={mountToolbar} className="study-selection-tools-host" />
-      <button ref={moreAnchor} type="button" className="bn-button editorial-selection-more" aria-label={t('Más formato')} title={t('Más formato')} aria-haspopup="dialog" aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(open => !open)}>···</button>
+      <button ref={moreAnchor} type="button" className="bn-button editorial-selection-more" aria-label={t('Más formato')} title={t('Más formato')} aria-haspopup="dialog" aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(open => !open)}><Icon name="moreVertical" size={18} className="rotate-90" /></button>
       {/* Escape the toolbar's layout and clipping while retaining BlockNote's
           themed, registered editor UI so keyboard focus keeps the selection. */}
         <GenericPopover reference={moreAnchor.current ? { element: moreAnchor.current, getBoundingClientRect: () => {

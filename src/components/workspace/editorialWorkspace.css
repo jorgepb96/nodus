@@ -141,21 +141,30 @@ html.theme-active:is(.light,.dark) .editorial-editor.editorial-editor { backgrou
 .editorial-create-menu button { display: flex; width: 100%; justify-content: flex-start; align-items: center; gap: 8px; padding: 8px; font-size: 12px; border-radius: 5px; background: transparent; color: var(--ew-text); }
 .editorial-create-menu button:hover { background: var(--ew-tint); }
 .editorial-inspector .text-neutral-300 { color: var(--ew-text); }
-.editorial-editor .study-selection-tools-host { display: inline-flex; align-items: center; gap: 4px; }
-.editorial-editor .study-selection-color { display: inline-flex; align-items: center; position: relative; }
-.editorial-editor .study-selection-color input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 24px; }
-.editorial-editor .study-selection-heading { font-family: system-ui; font-size: 11px; background: transparent; max-width: 65px; }
 .bn-toolbar.bn-formatting-toolbar:has(.study-selection-tools-host) { max-width: min(820px,calc(100vw - 24px)); flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px; overflow: visible; }
-.editorial-selection-more { flex-shrink: 0; min-width: 28px; min-height: 28px; border-radius: 5px; }
 .editorial-selection-more:hover, .editorial-selection-more[aria-expanded="true"] { background: var(--bn-colors-hovered-background,#efefef); }
 .editorial-selection-more-popover { max-width: calc(100vw - 24px); }
 .bn-toolbar.editorial-selection-more-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px; width: 224px; max-width: calc(100vw - 24px); overflow: visible; border: 1px solid var(--bn-colors-border,#e5e5e5); border-radius: 10px; background: var(--bn-colors-menu-background,#fff); color: var(--bn-colors-menu-text,#3f3f3f); box-shadow: 0 8px 24px #0002; }
 .bn-toolbar:has(.study-selection-tools-host), .bn-toolbar.editorial-selection-more-menu { background: var(--ew-paper); color: var(--ew-text); border-color: var(--ew-line); }
-.bn-toolbar:has(.study-selection-tools-host) button:is(:hover,[data-selected],[aria-expanded="true"]), .bn-toolbar.editorial-selection-more-menu button:is(:hover,[data-selected]) { background: var(--ew-tint); color: var(--ew-accent); }
-.study-selection-tools-host .study-selection-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 28px; padding: 4px 6px; border-radius: 5px; white-space: nowrap; font: 12px system-ui,sans-serif; }
-.study-selection-tools-host .study-selection-tool:hover { background: var(--ew-tint); }
-.study-selection-tools-host .study-selection-color { display: inline-flex; position: relative; align-items: center; padding: 4px; }
-.study-selection-tools-host .study-selection-heading { width: 44px; padding: 4px; font-size: 12px; background: transparent; }
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) button:is(:hover,[data-selected],[aria-expanded="true"]) { background: var(--ew-tint); color: var(--ew-accent); }
+/* Native Ariakit controls and Scriptor's portalled tools share one geometry.
+   Only controls with a label or a dropdown arrow need a rectangular footprint. */
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) { --scriptor-control-size: 36px; font: 13px system-ui,sans-serif; }
+.bn-formatting-toolbar .study-selection-tools-host { display: contents; }
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) :is(.bn-ak-button,.bn-button,.study-selection-tool,.study-selection-color,.study-selection-heading) {
+  box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: var(--scriptor-control-size); min-width: var(--scriptor-control-size); height: var(--scriptor-control-size); min-height: var(--scriptor-control-size);
+  margin: 0; padding: 0; border: 0; border-radius: 6px; background-color: transparent; color: inherit;
+  font: inherit; line-height: 1; white-space: nowrap; cursor: pointer;
+}
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) :is(.bn-ak-button,.bn-button,.study-selection-tool,.study-selection-color) > svg { width: 18px; height: 18px; flex-shrink: 0; }
+.bn-toolbar.bn-formatting-toolbar:has(.study-selection-tools-host) :is([aria-haspopup="listbox"],.study-selection-polish) { width: auto; gap: 6px; padding-inline: 10px; }
+.bn-toolbar.bn-formatting-toolbar .study-selection-color { position: relative; }
+.bn-toolbar.bn-formatting-toolbar .study-selection-color input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.bn-toolbar.bn-formatting-toolbar:has(.study-selection-tools-host) .study-selection-heading { width: 52px; max-width: none; padding: 0 22px 0 8px; background-position: right 6px center; text-align: left; font-weight: 600; }
+.bn-toolbar.bn-formatting-toolbar :is(.study-selection-color,.study-selection-heading):hover { background-color: var(--ew-tint); color: var(--ew-accent); }
+.bn-toolbar:is(.bn-formatting-toolbar:has(.study-selection-tools-host),.editorial-selection-more-menu) :is(button,select):focus-visible,
+.bn-toolbar.bn-formatting-toolbar .study-selection-color:focus-within { outline: 2px solid var(--ew-accent); outline-offset: -2px; }
 @media print {
   .editorial-editor, .editorial-document-scroll, .editorial-document-scroll * { visibility: visible !important; }
   .editorial-editor-header, .editorial-inspector, .editorial-navigator, .bn-toolbar, .bn-side-menu { display: none !important; }

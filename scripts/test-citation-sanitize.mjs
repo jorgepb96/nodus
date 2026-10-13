@@ -128,6 +128,23 @@ try {
   );
   assert.ok(mixed.includes('[b](nodus://idea/g-1)'), 'allowed link untouched by bare-url removal');
   assert.ok(!mixed.includes('9b1afd69'), 'bare malformed url removed');
+  assert.equal(
+    stripDisallowedCitations('Measured value [](nodus://passage/known).', new Set(['passage:known'])),
+    'Measured value.',
+    'an unresolved empty-label citation cannot leak a raw URI after empty-bracket cleanup',
+  );
+  assert.equal(
+    stripDisallowedCitations('Measured value [Source, p. 4](nodus://passage/known).', new Set(['passage:known'])),
+    'Measured value [Source, p. 4](nodus://passage/known).',
+    'a labelled authorized citation remains clickable',
+  );
+  assert.equal(
+    stripDisallowedCitations('Value [Source](nodus://passage/known) [Same page](nodus://passage/known) [Source](nodus://passage/known).', new Set(['passage:known'])),
+    'Value [Source](nodus://passage/known).', 'only adjacent duplicate targets collapse',
+  );
+  const distinctClaims = 'Value [Source](nodus://passage/known). A second fact [Source](nodus://passage/known) [Other](nodus://passage/other).';
+  assert.equal(stripDisallowedCitations(distinctClaims, new Set(['passage:known', 'passage:other'])), distinctClaims,
+    'citations for another claim or different source survive');
 
   // Chat answers must pass two gates: the id resolves and the exact id was in the
   // context sent to the model. Existing-but-out-of-context references are not enough.

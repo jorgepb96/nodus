@@ -70,6 +70,11 @@ const install = (mode = 'ok', controller = null) => {
           : mode === 'repair' && omitPlannedFacet2 ? [{ facetId: 'f2', complaint: facets[1], kind: 'available-fact',
             requiredFact: 'Report the stated limit for flow measurement.', sourceId: passage.id, quote: 'The flow rate was not measured.' }] : [],
       };
+    } else if (input.coverageRequirementProof) {
+      const claim = input.claims.find(row => row.sentence.includes('The flow rate was not measured.'));
+      assert.ok(claim, 'the carried flow qualification must have a supported repaired claim');
+      value = { addressed: input.requirements.map(requirement => ({ requirementId: requirement.id,
+        claimIds: [claim.id], answerQuotes: [claim.sentence] })), omissions: [] };
     } else if (input.sources) value = { complete: true, missing: [] };
     else value = load('electron/ai/researchTurnPlanner.ts').literalResearchTurnPlan(question);
     if (!validate(value)) throw new ai.AiError('Fixture schema mismatch', false, false, 'schema_mismatch');
@@ -195,6 +200,11 @@ async function runUnplannedMetadataAttribution() {
           { facetId: 'f2', complaint: authorFacet, answerQuotes: [authorAnswer] },
         ], omissions: [] };
       }
+    } else if (input.coverageRequirementProof) {
+      const claim = input.claims.find(row => row.sentence.includes(authorAnswer));
+      assert.ok(claim, 'the repaired attribution must be freshly supported by source-record metadata');
+      value = { addressed: input.requirements.map(requirement => ({ requirementId: requirement.id,
+        claimIds: [claim.id], answerQuotes: [authorAnswer] })), omissions: [] };
     } else if (input.sources) value = { complete: true, missing: [] };
     else throw new Error('Unexpected unplanned metadata attribution request');
     if (!validate(value)) throw new ai.AiError('Unplanned metadata fixture schema mismatch', false, false, 'schema_mismatch');
@@ -305,6 +315,17 @@ try {
     ? { id, text: passage.summary, page_label: '2', work: { title: passage.label, authors: [], year: null } } : null;
   ai.embedQuery = async () => null;
   const research = load('electron/ai/researchAssistant.ts');
+  assert.equal(research.humanizeResearchCitations(`[](${passage.citation})`),
+    `[River survey, p. 2](${passage.citation})`,
+    'empty documentary labels use the authorized citation-navigation lookup and source title');
+  assert.equal(research.sanitizeResearchCitations(`The river level is 18 metres. [${passage.citation}]`, context),
+    `The river level is 18 metres. [River survey, p. 2](${passage.citation})`,
+    'the actual chat sanitizer repairs a provider bare target without publishing a raw URI');
+  assert.equal(research.humanizeResearchCitations('[](nodus://passage/documentary%3Adenied%230)'),
+    '[](nodus://passage/documentary%3Adenied%230)',
+    'a denied documentary target receives no title from a fallback database lookup');
+  assert.equal(research.sanitizeResearchCitations('Unverified [](nodus://passage/documentary%3Adenied%230).', context),
+    'Unverified.', 'the unresolved empty link is removed through the normal authorization path');
   const request = { model, messages: [{ role: 'user', content: question }], selection: { ideas: false, themes: false, contradictions: false, gaps: false,
     readingPath: false, authors: false, documents: true, passages: true, graph: false, graphParts: {} } };
   install();

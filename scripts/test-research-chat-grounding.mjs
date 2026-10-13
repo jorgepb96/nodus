@@ -222,9 +222,15 @@ test('verified but irrelevant background is repaired when the requested fact exi
   ai.completeJson = async (options, validate) => {
     const input = JSON.parse(options.user);
     if (input.fullQuestionProof) return { addressed: [{ complaint: input.question, answerQuote: input.answer }], omissions: [] };
-    const result = input.sentences ? { claims: input.sentences.map((_row, index) => accepted(index, 'The flow rate was not measured.')) }
+    const result = input.coverageRequirementProof ? { addressed: input.requirements.map(requirement => {
+      const claim = input.claims.find(row => row.sentence.includes('18 metres'));
+      assert.ok(claim, 'the repaired measurement must be freshly audited');
+      return { requirementId: requirement.id, claimIds: [claim.id], answerQuotes: [claim.sentence] };
+    }), omissions: [] }
+      : input.sentences ? { claims: input.sentences.map((row, index) => accepted(index,
+        row.text.includes('18 metres') ? 'The river level is 18 metres.' : 'The flow rate was not measured.')) }
       : input.coverageComplaint ? { complete: false, missing: input.coverageComplaint.missing, addressed: [], omissions: input.coverageComplaint.missing.map(complaint =>
-        ({ complaint, kind: 'available-fact', requiredFact: 'Give the requested river level of 18 metres.', sourceId: passage.id, quote: passage.summary })) }
+        ({ complaint, kind: 'available-fact', requiredFact: 'Give the requested river level of 18 metres.', sourceId: passage.id, quote: 'The river level is 18 metres.' })) }
       : input.answer.includes('18 metres') ? valid : { complete: false, missing: ['Give the requested river level of 18 metres.'] };
     assert(validate(result)); return result;
   };
@@ -521,6 +527,11 @@ test('independent positive proof repairs refused reasoning from literal premises
       const complaint = input.question;
       verdict = input.answer.includes('My inference:') ? { addressed: [{ complaint, answerQuote: input.answer }], omissions: [] }
         : { addressed: [], omissions: [{ complaint, kind: 'available-fact', requiredFact: 'Compare the measured level with the unmeasured flow as your own labelled reasoning from those premises.', sourceId: passage.id, quote: passage.summary }] };
+    } else if (input.coverageRequirementProof) {
+      const claim = input.claims.find(row => row.sentence.startsWith('My inference:'));
+      assert.ok(claim, 'the comparison must be newly audited as a labelled inference');
+      verdict = { addressed: input.requirements.map(requirement => ({ requirementId: requirement.id,
+        claimIds: [claim.id], answerQuotes: [claim.sentence] })), omissions: [] };
     } else verdict = { complete: true, missing: [] };
     assert(validate(verdict)); return verdict;
   };

@@ -73,6 +73,7 @@ import {
   supportedCitationKeys,
 } from './citationSanitize';
 import { repairLooseCitations } from './deepResearchCore';
+import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { verifyCitations } from '../citations/verifyCitations';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import {
@@ -577,6 +578,15 @@ function workCiteLabel(nodusId: string): string | null {
 }
 
 function passageCiteLabel(passageId: string): string | null {
+  if (passageId.startsWith('documentary:')) {
+    // Use the same vault, notebook and revision permission gate as citation
+    // navigation. A model-supplied ID alone never authorizes a label lookup.
+    const passage = getDocumentaryPassageDetail(passageId);
+    if (!passage) return null;
+    const base = authorYearLabel(JSON.stringify(passage.work.authors ?? []), passage.work.year)
+      || truncateTitle(passage.work.title).replace(/[[\]\r\n]/gu, ' ').trim();
+    return base ? (passage.page_label ? `${base}, p. ${passage.page_label}` : base) : null;
+  }
   if (passageId.startsWith('web:')) {
     const web = getWebPassage(passageId);
     if (!web) return null;

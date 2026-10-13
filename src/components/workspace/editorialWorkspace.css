@@ -51,10 +51,6 @@ html.theme-active:is(.light,.dark) .editorial-editor.editorial-editor { backgrou
 .editorial-workspace .library-action-menu { background: var(--ew-paper); border-color: var(--ew-line); color: var(--ew-text); }
 .editorial-editor-header { height: 56px; flex: 0 0 56px; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 18px; border-bottom: 1px solid var(--ew-line); background: var(--ew-bg); position: relative; z-index: 50; }
 .editorial-header-leading { display: flex; align-items: center; flex: 1; min-width: 0; gap: 8px; overflow: hidden; }
-.editorial-header-leading .library-workspace-tabs { min-width: 0; flex: 1; height: 36px; padding: 0; }
-.editorial-header-leading .library-workspace-tabs-scroll { height: 36px; padding: 4px 2px; align-items: center; }
-.editorial-header-leading .library-workspace-tab { height: 28px; flex: 0 0 170px; }
-.editorial-header-leading .library-workspace-tab.is-library { flex: 0 0 auto; }
 .editorial-location { max-width: 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--ew-muted); font-size: 11px; }
 .editorial-location span { margin-inline: 8px; opacity: .5; }
 .editorial-save-status { width: 82px; flex-shrink: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; font-size: 10px; white-space: nowrap; color: var(--ew-muted); }
@@ -114,10 +110,6 @@ html.theme-active:is(.light,.dark) .editorial-editor.editorial-editor { backgrou
 .editorial-navigator-note[aria-current="true"] { background: var(--ew-tint); color: var(--ew-accent); }
 .editorial-navigator-note b { display: block; font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editorial-navigator-note small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 10px; line-height: 1.6; margin-top: 4px; color: var(--ew-muted); }
-.editorial-workspace .library-workspace-tabs, .editorial-editor .library-workspace-tabs { border: 0; min-height: 0; background: transparent; }
-.editorial-editor .study-editor-tabs { border: 0; background: transparent; min-width: 0; flex: 1; padding: 0; }
-.editorial-editor-header > nav { max-width: 40%; padding: 0; border: 0; align-items: center; }
-.editorial-editor .study-editor-tabs > div { border: 0; background: transparent; }
 .editorial-save-error { display: flex; align-items: center; gap: 14px; padding: 12px 18px; color: #a53c3c; background: #fff0ef; font-size: 12px; }
 .editorial-save-error span { flex: 1; }
 .editorial-save-error button { text-decoration: underline; }

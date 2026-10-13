@@ -849,7 +849,7 @@ export function WorkspaceView({
               return false;
             }}
             onRegisterFlush={flush => { flushRef.current = flush; }}
-            headerContent={<><button className="editorial-header-action" aria-label={t('Navegador de documentos')} aria-pressed={layout === 'navigator'} onClick={() => setLayout(layout === 'navigator' ? 'editorial' : 'navigator')}><Icon name="list" size={14} /></button>{workspaceTabs}</>}
+            headerContent={<button className="editorial-header-action" aria-label={t('Navegador de documentos')} aria-pressed={layout === 'navigator'} onClick={() => setLayout(layout === 'navigator' ? 'editorial' : 'navigator')}><Icon name="list" size={14} /></button>}
             contextDetails={<>
         <div className="px-3 py-3">
           <b className="text-[10px] uppercase tracking-wider text-neutral-500">{t('Detalles')}</b>
@@ -1199,7 +1199,7 @@ export function WorkspaceView({
 
   return (
     <div className="library-theme editorial-workspace relative flex h-full min-h-0 flex-col">
-      {!active && <div className="editorial-editor-header"><button className="editorial-header-action" disabled aria-label={t('Navegador de documentos')}><Icon name="list" size={14} /></button><div className="editorial-header-leading">{workspaceTabs}</div></div>}
+      {workspaceTabs}
 
       <div className={`min-h-0 flex-1 overflow-hidden ${active ? 'hidden' : ''}`} aria-hidden={active ? true : undefined}>
         {browser}

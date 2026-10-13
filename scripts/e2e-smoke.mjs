@@ -23,6 +23,13 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
+const RETIRED_STARTUP_ANNOUNCEMENTS = [
+  { testId: 'pdf-presenter-tutorial-announcement', seenKey: 'nodus.pdfPresenterTutorialSeen.e2js_u-05OA' },
+  { testId: 'mobile-teaser-guide', seenKey: 'nodus.mobileTeaserSeen.3.2.4' },
+  { testId: 'platform-highlights-update-tour', seenKey: 'nodus.platformHighlightsSeen.2026-07' },
+  { testId: 'toolkit-beta-update-tour', seenKey: 'nodus.toolkitBetaGuideSeen.2.4.0' },
+  { testId: 'tutorial-videos-update-tour', seenKey: 'nodus.tutorialVideosAnnouncementSeen.2026-07' },
+];
 // Mesa provides real WebGL on CPU; retain software UI compositing and sandboxing.
 const ciGpuArgs = process.env.CI && process.platform === 'linux'
   ? ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing'] : [];
@@ -193,9 +200,6 @@ try {
   // across the reloads below (same origin).
   await page.evaluate((version) => {
     localStorage.setItem('nodus.lastSeenVersion', version);
-    localStorage.setItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA', '1');
-    // The mobile teaser sits between release notes and everything behind it.
-    localStorage.setItem(`nodus.mobileTeaserSeen.${version}`, '1');
   }, appVersion);
 
   // ── Preload bridge ──────────────────────────────────────────────────────────
@@ -367,21 +371,23 @@ try {
   }
   console.log(`[e2e] ${Object.keys(SIDEBAR_BY_LANGUAGE).length} translated UIs render on the real shell (sidebar + document lang)`);
 
-  // Existing users (tutorial v4) receive the new three-part connected-workflows
-  // summary immediately after release notes. This profile is throwaway, so the
-  // seen key exercised here never touches the developer's real Nodus profile.
-  await page.evaluate(async (version) => {
+  async function assertRetiredAnnouncementsAbsent(profile) {
+    for (const { testId } of RETIRED_STARTUP_ANNOUNCEMENTS) {
+      assert.equal(await page.getByTestId(testId).count(), 0, `${profile}: ${testId} stays retired`);
+    }
+    const markers = await page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)),
+      RETIRED_STARTUP_ANNOUNCEMENTS.map(({ seenKey }) => seenKey));
+    assert.deepEqual(markers, Array(RETIRED_STARTUP_ANNOUNCEMENTS.length).fill(null), `${profile}: obsolete seen markers are not written`);
+  }
+  await assertRetiredAnnouncementsAbsent('fresh installation');
+
+  // Existing users with an older tutorial and no historical seen markers still get
+  // release notes, but none of the retired feature announcements can follow them.
+  await page.evaluate(async (seenKeys) => {
     localStorage.removeItem('nodus.lastSeenVersion');
-    localStorage.removeItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA');
-    localStorage.removeItem('nodus.platformHighlightsSeen.2026-07');
-    // Walking the tutorial above marked the videos announcement seen, exactly as it
-    // does for a real first run. Clear it here so the announcement this existing user
-    // never got is exercised too — it must be cleared BEFORE the render, since
-    // eligibility is read once, when the modal mounts.
-    localStorage.removeItem('nodus.tutorialVideosAnnouncementSeen.2026-07');
-    localStorage.removeItem(`nodus.mobileTeaserSeen.${version}`);
+    for (const key of seenKeys) localStorage.removeItem(key);
     await window.nodus.updateSettings({ uiLanguage: 'es', promptLanguage: 'es', basicsTutorialVersion: 4 });
-  }, appVersion);
+  }, RETIRED_STARTUP_ANNOUNCEMENTS.map(({ seenKey }) => seenKey));
   await page.reload();
   const whatsNewForExistingUser = page.getByTestId('whats-new-cinematic-modal');
   await whatsNewForExistingUser.waitFor();
@@ -418,57 +424,9 @@ try {
   await page.evaluate((className) => { document.documentElement.className = className; }, releaseOriginalClasses);
   await whatsNewForExistingUser.getByRole('button', { name: 'Explorar las novedades', exact: true }).click();
 
-  const pdfPresenterAnnouncement = page.getByTestId('pdf-presenter-tutorial-announcement');
-  await pdfPresenterAnnouncement.waitFor();
-  assert.match(await pdfPresenterAnnouncement.locator('iframe').getAttribute('src'), /e2js_u-05OA/);
-  await pdfPresenterAnnouncement.getByRole('button', { name: 'Cerrar', exact: true }).click();
-  await pdfPresenterAnnouncement.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA')), '1');
-
-  // First behind release notes sat the look at the mobile app, and it was a 3.2.4
-  // one-off: it presents only on the version it names, and its seen-key carries that
-  // version, so pointing the constant at a later release would show the gallery again to
-  // everyone who already met it. Past 3.2.4 the step must retire WITHOUT stalling the
-  // chain it holds — it sits between release notes and the connected-workflows summary,
-  // so a retired modal that forgets to settle strands everything behind it. Reaching the
-  // summary at all is the proof; the carousel itself is covered by
-  // scripts/test-mobile-teaser-guide.mjs, which still pins all nine shipped screenshots.
-  const platformTour = page.getByTestId('platform-highlights-update-tour');
-  await platformTour.waitFor();
-  assert.equal(
-    await page.getByTestId('mobile-teaser-guide').count(),
-    0,
-    'the 3.2.4 teaser must not come back on a later release',
-  );
-  console.log('[e2e] the retired mobile teaser hands the chain straight to the summary');
-
-  assert.equal(await platformTour.locator('.toolkit-guide-progress button').count(), 3, 'existing-user summary has three ordered chapters');
-  await platformTour.getByRole('heading', { name: 'MCP local y Nodus Server', exact: true }).waitFor();
-  await platformTour.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await platformTour.getByRole('heading', { name: 'Nodus para Zotero', exact: true }).waitFor();
-  assert.equal(await platformTour.locator('img[alt="Zotero"]').count(), 1, 'the Zotero chapter renders the official Zotero mark');
-  await platformTour.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await platformTour.getByRole('heading', { name: 'El Toolkit completo', exact: true }).waitFor();
-  await platformTour.getByTestId('platform-highlights-tour-complete').click();
-  await platformTour.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.platformHighlightsSeen.2026-07')), '1', 'the summary is marked seen only after its final action');
-  console.log('[e2e] release notes hand off to the translated three-part connected-workflows summary');
-
-  // …and behind that, the videos announcement: the one modal that embeds the catalogue
-  // instead of describing it, for users who completed the guide when it was text-only.
-  const videosTour = page.getByTestId('tutorial-videos-update-tour');
-  await videosTour.waitFor();
-  await videosTour.getByRole('heading', { name: 'Tutoriales en vídeo', exact: true }).waitFor();
-  // The WHOLE catalogue, arranged on its shelves — the announcement's claim is that it
-  // shows the tutorials rather than describing them. Asserted by shape, not by a count
-  // that has to be edited every time a tutorial is published.
-  assert.ok(await videosTour.locator('.tutorial-video-card').count() >= 4, 'the announcement embeds the published catalogue');
-  assert.equal(await videosTour.locator('.tutorial-videos-shelf-title').count(), 4, 'introduction, vaults, features, integrations');
-  assert.equal(await videosTour.locator('iframe').count(), 0, 'nothing is framed until a card is opened');
-  await videosTour.getByTestId('tutorial-videos-tour-complete').click();
-  await videosTour.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.tutorialVideosAnnouncementSeen.2026-07')), '1', 'the announcement is marked seen only when dismissed');
-  console.log('[e2e] the video tutorials announcement shows the catalogue in-modal, once');
+  await whatsNewForExistingUser.waitFor({ state: 'detached' });
+  await assertRetiredAnnouncementsAbsent('existing installation after release notes');
+  console.log('[e2e] all five retired startup announcements stay absent without seen markers');
 
   // Back to Spanish for the rest of the suite, which asserts on Spanish copy. The
   // reload above already consumed the once-per-session startup update check, so reset
@@ -486,6 +444,7 @@ try {
   ));
   await page.getByTestId('update-ready-notice').waitFor({ state: 'detached' });
   assert.equal(await page.getByTestId('startup-update-modal').count(), 0);
+  await assertRetiredAnnouncementsAbsent('existing installation after restart');
   console.log('[e2e] essential tutorial language preferences + persistent seen-once gate ok');
 
   // No startup dialog offers document understanding any more: it is opted into from

@@ -29,7 +29,7 @@ try {
   const visualization = require(path.join(repoRoot, 'shared/databaseVisualization.ts'));
   const { normalizeDatabaseViewConfig } = require(path.join(repoRoot, 'shared/databaseViewConfig.ts'));
   const { normalizeCsvValue } = require(path.join(repoRoot, 'shared/databaseCsv.ts'));
-  assert.match(fs.readFileSync(path.join(repoRoot, 'vite.config.ts'), 'utf8'), /const mainExternals = \[[\s\S]*?['"]sharp['"]/,
+  assert.ok(require(path.join(repoRoot, 'build/packagedNodeModules.cjs')).MAIN_PROCESS_EXTERNALS.includes('sharp'),
     'sharp must remain external so Electron can load its native runtime');
   assert.equal(normalizeCsvValue('date', '2026-08-14T13:30:00+02:00'), '2026-08-14T13:30:00+02:00');
 

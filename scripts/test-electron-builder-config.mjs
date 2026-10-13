@@ -70,6 +70,14 @@ test('the release config the workflow actually loads is valid on both channels',
   delete process.env.NODUS_RELEASE_CHANNEL;
 });
 
+test('the config local packaging loads, with the node_modules pruning, is valid', () => {
+  // `npm run dist*` pass --config build/electron-builder.config.cjs: package.json
+  // "build" plus the computed exclusions, which the release config extends.
+  const config = require(path.join(repoRoot, 'build/electron-builder.config.cjs'));
+  assert.ok(validate(config), `the local config is invalid:\n  ${describeErrors(validate.errors)}`);
+  assert.ok(config.files.length > pkg.build.files.length, 'the pruning patterns are present');
+});
+
 test('the release config refuses to load without an explicit channel', () => {
   const configPath = path.join(repoRoot, 'build/electron-builder.release.cjs');
   delete process.env.NODUS_RELEASE_CHANNEL;

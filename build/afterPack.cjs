@@ -6,6 +6,7 @@ const { copyFileSync, existsSync, mkdirSync } = require('node:fs');
 const path = require('node:path');
 const { Arch } = require('electron-builder');
 const { verifyPackagedNativeRuntime, assertBinaryArchitecture } = require('../scripts/verify-packaged-native-runtime.cjs');
+const { packedLayout, verifyPackagedNodeModules } = require('../scripts/verify-packaged-node-modules.cjs');
 
 exports.default = async function afterPack(context) {
   const appName = context.packager.appInfo.productFilename; // "Nodus"
@@ -36,7 +37,15 @@ exports.default = async function afterPack(context) {
     stdio: 'inherit',
   });
 
-  if (context.electronPlatformName !== 'darwin') return;
+  // node_modules is pruned to what the main process loads (build/packagedNodeModules.cjs).
+  // Prove that nothing it loads went missing: every package must be packed, and must
+  // load in the packaged runtime. A macOS app can only be run once it is signed, so
+  // there the loading waits for the ad-hoc signature below, or for afterSign.
+  const isMac = context.electronPlatformName === 'darwin';
+  const layout = packedLayout(context.appOutDir, context.electronPlatformName, appName, context.packager.executableName);
+  verifyPackagedNodeModules(layout, { load: !isMac });
+
+  if (!isMac) return;
 
   // npm optional native packages follow the runner architecture, so each macOS
   // product must be packed on a host of its own architecture. Fail before
@@ -56,4 +65,5 @@ exports.default = async function afterPack(context) {
   // local/dev bundles launchable while remaining recognisably non-production.
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], { stdio: 'inherit' });
   console.log(`[afterPack] Ad-hoc signed ${appPath} (local/dev fallback)`);
+  verifyPackagedNodeModules(layout);
 };

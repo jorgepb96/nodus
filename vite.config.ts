@@ -27,51 +27,12 @@ const databaseComputeWorkerAliases = () => ({
   },
 });
 
-// Native node modules and Electron-only deps must stay external in the main process bundle.
-const mainExternals = [
-  'better-sqlite3',
-  'electron',
-  'pdfjs-dist',
-  'mammoth',
-  'word-extractor',
-  'xlsx',
-  'adm-zip',
-  'tesseract.js',
-  '@napi-rs/canvas',
-  'sharp',
-  'heic-decode',
-  '@anthropic-ai/sdk',
-  '@google/genai',
-  '@huggingface/transformers',
-  // ws (pulled in by the SDKs above) optionally requires these native addons via
-  // try/catch; keep them external so that fallback works instead of the bundler
-  // hard-failing to resolve an uninstalled optional dependency.
-  'ws',
-  'selfsigned',
-  'bufferutil',
-  'utf-8-validate',
-  '@modelcontextprotocol/sdk',
-  '@modelcontextprotocol/sdk/server/mcp.js',
-  '@modelcontextprotocol/sdk/server/streamableHttp.js',
-  '@modelcontextprotocol/sdk/types.js',
-  '@github/copilot-sdk',
-  'openai',
-  'electron-updater',
-  // Turndown picks its HTML parser at module-evaluation time: with no `window` — i.e.
-  // in the main process — it takes the Node branch, which is a bare
-  // `require('@mixmark-io/domino')`. Bundled into an ESM chunk that call throws
-  // "require is not defined in ES module scope" the moment the chunk is imported,
-  // which took down the whole Zotero note-mirroring step. Kept external so it loads
-  // as the real CommonJS package, where the require resolves normally.
-  'turndown',
-  '@mixmark-io/domino',
-  // Chemistry Studio loads node-tikzjax's WASM and TeX tree from the package at
-  // runtime. Keeping both chemistry dependencies external preserves those paths
-  // and avoids embedding OpenChemLib's large pure-JS bundle in the main chunk.
-  'node-tikzjax',
-  'openchemlib',
-  '@rdkit/rdkit',
-];
+// Native node modules and Electron-only deps must stay external in the main process
+// bundle. The list lives with the packager, which ships exactly these packages (and
+// what they need) in the app's node_modules: see build/packagedNodeModules.cjs.
+const { MAIN_PROCESS_EXTERNALS: mainExternals } = require('./build/packagedNodeModules.cjs') as {
+  MAIN_PROCESS_EXTERNALS: string[];
+};
 
 /**
  * One preload build, emitting `<name>.cjs` into dist-electron.

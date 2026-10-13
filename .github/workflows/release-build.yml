@@ -317,6 +317,15 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: node scripts/verify-macos-release.cjs release ${{ matrix.mac_arch }}
 
+      # afterPack loads every runtime package inside the packed app by running its
+      # Electron as Node (scripts/verify-packaged-node-modules.cjs), and that binary
+      # links these libraries; the CI jobs that run Electron install the same set.
+      - name: Install Electron's runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y libgtk-3-0 libnss3 libasound2
+
       # better-sqlite3 has no prebuilt binary for Electron 43, so it compiles
       # here. Electron 43's V8 headers are rejected by GCC 11 and 12, the
       # compilers 22.04 carries; clang 15 accepts them and still links against

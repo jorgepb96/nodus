@@ -42,6 +42,8 @@ export function DecorativeImageCard({
 }) {
   const [current, setCurrent] = useState(image);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [imageLoadError, setImageLoadError] = useState<string | null>(null);
+  const [imageLoadRevision, setImageLoadRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -77,17 +79,24 @@ export function DecorativeImageCard({
 
   useEffect(() => {
     let active = true;
+    setDataUrl(null);
+    setImageLoadError(null);
     if (current?.status !== 'ready') {
-      setDataUrl(null);
       return;
     }
     void window.nodus.getDecorativeImageDataUrl(entityKind, entityId, thumbnail).then((url) => {
-      if (active) setDataUrl(url);
+      if (!active) return;
+      if (url) setDataUrl(url);
+      else setImageLoadError(t('No se ha podido cargar la imagen.'));
+    }).catch((reason: unknown) => {
+      // A missing or temporarily unreachable cover has its own retry control;
+      // it must not become an unhandled rejection over the entire reader.
+      if (active) setImageLoadError(reason instanceof Error ? reason.message : t('No se ha podido cargar la imagen.'));
     });
     return () => {
       active = false;
     };
-  }, [current?.status, current?.updatedAt, entityKind, entityId, thumbnail]);
+  }, [current?.status, current?.updatedAt, entityKind, entityId, thumbnail, imageLoadRevision]);
 
   const queue = async (
     action: DecorativeImageQueueAction,
@@ -170,6 +179,18 @@ export function DecorativeImageCard({
   };
 
   if (thumbnail) {
+    if (current?.status === 'ready' && imageLoadError) {
+      return (
+        <div className={`flex min-h-24 items-center justify-center gap-2 rounded-lg bg-neutral-100 px-3 text-xs text-neutral-600 dark:bg-neutral-900 dark:text-neutral-300 ${className}`}>
+          <Icon name="alert" size={14} />
+          <span>{t('Imagen no disponible')}</span>
+          <button type="button" onClick={() => setImageLoadRevision((value) => value + 1)} title={imageLoadError}
+            className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 underline focus-visible:outline focus-visible:outline-2">
+            <Icon name="sync" size={14} /> {t('Reintentar')}
+          </button>
+        </div>
+      );
+    }
     if (current?.status !== 'ready' || !dataUrl) return null;
     return (
       <div className={`relative h-24 overflow-hidden rounded-lg ${className}`}>
@@ -187,7 +208,7 @@ export function DecorativeImageCard({
       dataUrl={dataUrl}
       defaultStyle={defaultStyle}
       busy={busy}
-      error={actionError}
+      error={actionError ?? imageLoadError}
       onQueue={(action, opts) => void queue(action, opts)}
       onUpload={(file) => void upload(file)}
       onRevert={() => void revert()}
@@ -196,6 +217,22 @@ export function DecorativeImageCard({
       onClose={() => setModalOpen(false)}
     />
   );
+
+  if (status === 'ready' && imageLoadError) {
+    return (
+      <>
+        <div className={`flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-sm dark:border-neutral-800 dark:bg-neutral-950/40 ${className}`}>
+          <span role="status" className="min-w-0 break-words"><Icon name="alert" size={16} /> {imageLoadError}</span>
+          <button type="button" onClick={() => setImageLoadRevision((value) => value + 1)}
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 underline focus-visible:outline focus-visible:outline-2">
+            <Icon name="sync" size={15} /> {t('Reintentar')}
+          </button>
+          {interactive && <DesignPill onClick={() => setModalOpen(true)} />}
+        </div>
+        {modal}
+      </>
+    );
+  }
 
   if (status === 'ready' && dataUrl) {
     return (

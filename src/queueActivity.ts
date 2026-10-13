@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { clearBackgroundJob, subscribeBackgroundJobs, type AnyJob } from './backgroundJobs';
 import type { ResearchPreparationProgress, ResearchPreparationCampaign } from '@shared/researchCorpus';
 import type { OcrDocProgress } from '@shared/aiOcrTypes';
-import type { DeepResearchJobRecord, DocumentIndexProgress, EmbeddingPipelineProgress, PassageEmbeddingProgress, QueueProgress } from '@shared/types';
+import type { AgentRuntimeStatus, DeepResearchJobRecord, DocumentIndexProgress, EmbeddingPipelineProgress, PassageEmbeddingProgress, QueueProgress } from '@shared/types';
 import type { DictionaryProgress } from '@shared/dictionary';
 import type { LibraryExtractionJob, ZoteroImportProgress } from '@shared/libraryTypes';
 import { documentLaneActivity } from '@shared/documentIndexProgress';
@@ -12,6 +12,16 @@ export const ZOTERO_FINISHED = new Set(['complete', 'canceled', 'failed']);
 export const DICTIONARY_FINISHED = new Set(['done', 'degraded', 'failed']);
 export const embeddingVisible = (p: EmbeddingPipelineProgress | null) => Boolean(p && (p.running || p.paused || p.cancelled || p.totalIdeas > 0 || p.error));
 export const passageVisible = (p: PassageEmbeddingProgress | null) => Boolean(p && (p.running || p.paused || p.cancelled || p.totalPassages > 0 || p.error));
+
+/** A vendor CLI (Codex, Copilot) being downloaded at first use, or whose download failed. */
+export interface AgentRuntimeTask {
+  kind: 'codex' | 'copilot';
+  state: 'installing' | 'failed';
+  receivedBytes: number;
+  totalBytes: number | null;
+  /** When this attempt failed: what a dismissal remembers, so a later failure shows again. */
+  failedAt: number | null;
+}
 
 interface QueueSnapshot {
   preparation: ResearchPreparationProgress;
@@ -25,6 +35,7 @@ interface QueueSnapshot {
   dictionary: DictionaryProgress[];
   background: AnyJob[];
   ocr: (OcrDocProgress & { id: string; name?: string; updatedAt?: number })[];
+  runtimes: AgentRuntimeTask[];
 }
 export function backgroundFailure(job: AnyJob): string | number | null {
   if (job.error) return job.error;
@@ -39,7 +50,7 @@ export function backgroundFailure(job: AnyJob): string | number | null {
   return null;
 }
 const activeFirst = (a: boolean, b: boolean) => Number(b) - Number(a);
-const EMPTY: QueueSnapshot = { preparation: { paused: false, campaigns: [] }, queue: null, zotero: null, documents: null, embeddings: null, passages: null, extraction: [], research: [], dictionary: [], background: [], ocr: [] };
+const EMPTY: QueueSnapshot = { preparation: { paused: false, campaigns: [] }, queue: null, zotero: null, documents: null, embeddings: null, passages: null, extraction: [], research: [], dictionary: [], background: [], ocr: [], runtimes: [] };
 const DISMISSED_STORAGE_KEY = 'nodus.queue.dismissed.v1';
 export const preparationLive = (campaign: ResearchPreparationCampaign) => campaign.jobs.some(job => ['queued', 'running', 'paused'].includes(job.state));
 export const preparationVersion = (campaign: ResearchPreparationCampaign) => JSON.stringify([campaign.state, campaign.updatedAt, campaign.jobs.map(job => [job.state, job.stage, job.completedPassages, job.error])]);
@@ -47,6 +58,22 @@ export const researchVersion = (job: DeepResearchJobRecord) => `${job.status}:${
 export const ocrVersion = (job: QueueSnapshot['ocr'][number]) => `${job.status}:${job.doneCount}:${job.errorCount}:${job.error ?? ''}`;
 const scanVersion = (job: QueueProgress['items'][number]) => `${job.state}:${job.enqueued_at}:${job.finished_at}:${job.error ?? ''}`;
 const pipelineVersion = (progress: EmbeddingPipelineProgress | PassageEmbeddingProgress) => JSON.stringify(progress);
+export const runtimeVersion = (task: AgentRuntimeTask) => String(task.failedAt ?? '');
+
+/** The queue entry a provider's status implies for its CLI: only a download or a failure shows. */
+export function nextRuntimeTasks(current: AgentRuntimeTask[], kind: AgentRuntimeTask['kind'], runtime: AgentRuntimeStatus | undefined): AgentRuntimeTask[] {
+  const others = current.filter((task) => task.kind !== kind);
+  const previous = current.find((task) => task.kind === kind);
+  if (runtime?.state === 'installing') {
+    return [...others, { kind, state: 'installing', receivedBytes: runtime.receivedBytes, totalBytes: runtime.totalBytes, failedAt: null }];
+  }
+  if (runtime?.state === 'failed') {
+    // Status is re-broadcast while it stays failed; keep the moment of this failure.
+    const failedAt = previous?.state === 'failed' && previous.failedAt ? previous.failedAt : Date.now();
+    return [...others, { kind, state: 'failed', receivedBytes: 0, totalBytes: null, failedAt }];
+  }
+  return others;
+}
 
 function readDismissed(): Record<string, string> {
   try {
@@ -76,6 +103,7 @@ function taskStates(snapshot: Partial<QueueSnapshot>) {
     ...(snapshot.zotero ? [{ key: 'zotero', version: `${snapshot.zotero.requestId}:${snapshot.zotero.phase}`, active: !ZOTERO_FINISHED.has(snapshot.zotero.phase), settled: false, updatedAt: undefined }] : []),
     ...(embeddingVisible(snapshot.embeddings ?? null) && snapshot.embeddings ? [{ key: 'embeddings', version: pipelineVersion(snapshot.embeddings), active: snapshot.embeddings.running || snapshot.embeddings.paused, settled: false, updatedAt: undefined }] : []),
     ...(passageVisible(snapshot.passages ?? null) && snapshot.passages ? [{ key: 'passages', version: pipelineVersion(snapshot.passages), active: snapshot.passages.running || snapshot.passages.paused, settled: false, updatedAt: undefined }] : []),
+    ...(snapshot.runtimes ?? []).map((task) => ({ key: `agent-runtime:${task.kind}`, version: runtimeVersion(task), active: task.state === 'installing', settled: false, updatedAt: undefined })),
   ];
 }
 
@@ -156,6 +184,14 @@ export function useQueueActivity() {
     off.push(subscribeBackgroundJobs((background) => { if (!cancelled) setSnapshot((current) => ({ ...current, background })); }));
     watchJobs<'ocr', QueueSnapshot['ocr'][number]>('ocr', async () => (await api.listOcrDocs()).map((job) => ({ ...job, docId: job.id })), (cb: (p: OcrDocProgress & { id: string; name?: string }) => void) => api.onOcrEvent((id, p) => cb({ ...p, id })), (p) => p.id);
     watchJobs('dictionary', () => api.listDictionaryGenerationJobs(), (cb) => api.onDictionaryProgress(cb), (p) => p.entryId);
+    // The Codex and Copilot CLIs download at first use; their progress travels with the
+    // providers' status. Only broadcasts are read: asking for a status would start the CLI.
+    off.push(api.onChatGptSubscriptionStatusChanged((status) => {
+      if (!cancelled) setSnapshot((current) => ({ ...current, runtimes: nextRuntimeTasks(current.runtimes, 'codex', status.runtime) }));
+    }));
+    off.push(api.onGitHubCopilotSubscriptionStatusChanged((status) => {
+      if (!cancelled) setSnapshot((current) => ({ ...current, runtimes: nextRuntimeTasks(current.runtimes, 'copilot', status.runtime) }));
+    }));
     return () => { cancelled = true; off.forEach((unsubscribe) => unsubscribe()); };
   }, []);
 
@@ -165,6 +201,7 @@ export function useQueueActivity() {
   const dictionary = snapshot.dictionary.filter((job) => dismissed[`dictionary:${job.entryId}`] !== job.phase).sort((a, b) => activeFirst(!DICTIONARY_FINISHED.has(a.phase), !DICTIONARY_FINISHED.has(b.phase)));
   const ocr = snapshot.ocr.filter((job) => dismissed[`ocr:${job.id}`] !== ocrVersion(job)).sort((a, b) => activeFirst(a.status === 'processing' || a.status === 'pending', b.status === 'processing' || b.status === 'pending'));
   const background = [...snapshot.background].sort((a, b) => activeFirst(a.status === 'running', b.status === 'running'));
+  const runtimes = snapshot.runtimes.filter((task) => task.state === 'installing' || dismissed[`agent-runtime:${task.kind}`] !== runtimeVersion(task));
   const embeddings = snapshot.embeddings && (snapshot.embeddings.running || snapshot.embeddings.paused || dismissed.embeddings !== pipelineVersion(snapshot.embeddings)) ? snapshot.embeddings : null;
   const passages = snapshot.passages && (snapshot.passages.running || snapshot.passages.paused || dismissed.passages !== pipelineVersion(snapshot.passages)) ? snapshot.passages : null;
   const items = snapshot.queue?.items.filter((job) => DOCUMENT_LIVE.has(job.state) || dismissed[`scan:${job.id}`] !== scanVersion(job)) ?? [];
@@ -183,21 +220,24 @@ export function useQueueActivity() {
   const documentLane = documentLaneActivity(documents ?? null);
   const visible = Number(preparation.campaigns.length > 0) + Number(Boolean(queue && (queue.total > 0 || queue.maintenanceRunning || queue.maintenanceError)))
     + Number(Boolean(zotero)) + Number(documentLane.visible) + Number(embeddingVisible(embeddings)) + Number(passageVisible(passages))
-    + Number(extraction.length > 0) + Number(research.length > 0) + Number(dictionary.length > 0) + Number(ocr.length > 0) + Number(background.length > 0);
+    + Number(extraction.length > 0) + Number(research.length > 0) + Number(dictionary.length > 0) + Number(ocr.length > 0) + Number(background.length > 0)
+    + Number(runtimes.length > 0);
   const live = Number(preparation.campaigns.some(preparationLive)) + Number(queueActive) + Number(Boolean(zotero && !ZOTERO_FINISHED.has(zotero.phase)))
     + Number(documentLane.active) + Number(Boolean(embeddings && (embeddings.running || embeddings.paused)))
     + Number(Boolean(passages && (passages.running || passages.paused)))
     + Number(extraction.some((job) => job.status === 'queued' || job.status === 'processing'))
     + Number(research.some((job) => job.status === 'queued' || job.status === 'running'))
     + Number(dictionary.some((job) => !DICTIONARY_FINISHED.has(job.phase)))
-    + Number(ocr.some((job) => job.status === 'pending' || job.status === 'processing')) + Number(background.some((job) => job.status === 'running'));
+    + Number(ocr.some((job) => job.status === 'pending' || job.status === 'processing')) + Number(background.some((job) => job.status === 'running'))
+    + Number(runtimes.some((task) => task.state === 'installing'));
   const attention = Boolean(preparation.campaigns.some(campaign => campaign.jobs.some(job => ['failed', 'blocked'].includes(job.state))) || queue?.maintenanceError || queue?.failed || queue?.pausedReason || embeddings?.error || passages?.error
     || zotero?.phase === 'failed' || documentLane.attention
     || extraction.some((job) => job.status === 'failed') || research.some((job) => job.status === 'failed' || job.saveError)
-    || dictionary.some((job) => job.phase === 'failed' || job.phase === 'degraded') || ocr.some((job) => job.status !== 'cancelled' && (job.status === 'error' || job.errorCount > 0 || job.error)) || background.some((job) => job.status === 'failed' || backgroundFailure(job)));
+    || dictionary.some((job) => job.phase === 'failed' || job.phase === 'degraded') || ocr.some((job) => job.status !== 'cancelled' && (job.status === 'error' || job.errorCount > 0 || job.error)) || background.some((job) => job.status === 'failed' || backgroundFailure(job))
+    || runtimes.some((task) => task.state === 'failed'));
   const finished = taskStates(snapshot).filter((task) => !task.active && dismissed[task.key] !== task.version);
   const finishedBackground = background.filter((job) => job.status !== 'running');
-  return { ...snapshot, preparation, queue, embeddings, passages, documents, zotero, extraction, research, dictionary, ocr, background, visible, live, attention,
+  return { ...snapshot, preparation, queue, embeddings, passages, documents, zotero, extraction, research, dictionary, ocr, background, runtimes, visible, live, attention,
     canClearFinished: finished.length > 0 || finishedBackground.length > 0,
     clearFinished: () => {
       setDismissed((current) => ({ ...current, ...Object.fromEntries(finished.map((task) => [task.key, task.version])) }));

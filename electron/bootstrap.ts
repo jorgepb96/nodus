@@ -5,6 +5,9 @@ import os from 'node:os';
 import { assertIsolatedProductionSeparation, isolatedPath, validateIsolatedRoot } from './qa/isolatedProfile';
 
 const requestedRoot = process.env.NODUS_ISOLATED_ROOT;
+if (process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS !== undefined && !requestedRoot) {
+  throw new Error('Deferred credential status requires an isolated QA profile');
+}
 if (requestedRoot) {
   const root = validateIsolatedRoot(requestedRoot);
   assertIsolatedProductionSeparation(root, app.getPath('appData'), os.userInfo().homedir, process.platform);

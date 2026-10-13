@@ -163,6 +163,52 @@ try {
   assert.equal(requests.length, 1);
   assert.equal(requests[0].body.response_format.json_schema.name, schema.name);
 
+  // The structured-answer path carries bounded validator diagnostics into its one
+  // existing retry. This uses real completeJson/custom-provider transport; only the
+  // loopback response is synthetic, so it verifies feedback routing, not model quality.
+  const structuredAnswers = require(path.join(repo, 'electron/ai/researchStructuredAnswer.ts'));
+  const researchModel = { provider: 'custom', model: 'offline-test-model' };
+  const dateQuestion = 'Identifica por separado los años de apertura de la biblioteca y del laboratorio de Puerto Claro.';
+  const dateSources = [{ id: 'fixture:dates:0', label: 'fixture 01', citation: 'nodus://passage/fixture%3Adates%3A0',
+    text: 'Source title: fixture 01\nVerbatim excerpt:\nLa escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca.' }];
+  const invalidDatePlan = { facets: [
+    { questionQuote: 'años de apertura de la biblioteca', evidence: [{ sourceId: dateSources[0].id, quote: 'abrió su biblioteca en 1912' }] },
+    { questionQuote: 'años de apertura del laboratorio de Puerto Claro', evidence: [{ sourceId: dateSources[0].id, quote: 'En 1913 abrió el laboratorio' }] },
+  ], format: 'prose' };
+  const validDatePlan = { ...invalidDatePlan, facets: [invalidDatePlan.facets[0],
+    { ...invalidDatePlan.facets[1], questionQuote: 'del laboratorio de Puerto Claro' }] };
+  const response = content => ({ content: JSON.stringify(content) });
+  const requestUser = index => JSON.parse(requests[index].body.messages.find(message => message.role === 'user').content);
+
+  run([response(invalidDatePlan), response(validDatePlan)]);
+  const recoveredPlan = await structuredAnswers.planStructuredResearchAnswer(dateQuestion, dateSources, researchModel);
+  assert.equal(requests.length, 2, 'one invalid schema response uses only the existing bounded retry');
+  assert.equal(recoveredPlan.facets[1].questionQuote, 'del laboratorio de Puerto Claro', 'the exact returned quote is validated and retained');
+  const retryBody = requestUser(1);
+  assert.deepEqual(retryBody.schemaValidationIssues, [{ path: 'facets[1].questionQuote', code: 'question_quote',
+    message: 'Facet must quote a bounded literal span of the user question.' }],
+  'retry includes the exact application validator diagnostic without echoing raw completion data');
+  assert.match(retryBody.schemaCorrection, /literal-span, authorized-source, and evidence constraints/u);
+  assert.equal(JSON.stringify(retryBody.schemaValidationIssues).includes('años de apertura del laboratorio de Puerto Claro'), false);
+
+  run([response(validDatePlan)]);
+  await structuredAnswers.planStructuredResearchAnswer(dateQuestion, dateSources, researchModel);
+  assert.equal(requests.length, 1, 'valid first response causes no diagnostic retry');
+
+  run([{ content: 'not JSON' }, response(validDatePlan)]);
+  await structuredAnswers.planStructuredResearchAnswer(dateQuestion, dateSources, researchModel);
+  assert.equal(requests.length, 2, 'invalid JSON retains the existing single retry');
+  assert.equal(requestUser(1).schemaValidationIssues, undefined, 'parse failure does not fabricate validator diagnostics');
+  assert.match(requestUser(1).schemaCorrection, /previous response failed validation/u);
+
+  run([response(invalidDatePlan), response(invalidDatePlan)]);
+  await assert.rejects(() => structuredAnswers.planStructuredResearchAnswer(dateQuestion, dateSources, researchModel));
+  assert.equal(requests.length, 2, 'repeated validation failure remains closed after exactly one retry');
+
+  run([{ status: 401, error: 'unauthorized test fixture' }, response(validDatePlan)]);
+  await assert.rejects(() => structuredAnswers.planStructuredResearchAnswer(dateQuestion, dateSources, researchModel));
+  assert.equal(requests.length, 1, 'transport/auth failure is terminal and never receives schema retry');
+
   // Unsupported providers fail before dispatch instead of receiving a weaker request.
   run([{ content: '{"ok":true}' }]);
   await assert.rejects(() => aiClient.completeJson({ system: 's', user: 'u', maxTokens: 128, responseSchema: schema }, guard,

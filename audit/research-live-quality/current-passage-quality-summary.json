@@ -1,0 +1,293 @@
+{
+  "format": "nodus.current-passage-quality-summary/1",
+  "createdAt": "2026-10-13T13:05:14.967Z",
+  "provenance": {
+    "annotations": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/retrieval-passage-annotations-v2-frozen.json",
+      "sha256": "3e9f488865cb78586abe6832dba485579106568ee4e587f923e3241beb7eb328"
+    },
+    "freeze": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/retrieval-passage-annotations-v2-freeze.json",
+      "sha256": "15cde59db769eba54cbca2b2a4c94a118568f48897c3f2a20b060a99997449b4"
+    },
+    "rankings": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/passage-rankings-current-001.json",
+      "sha256": "fc40bded635f14384c1d9bf525509a8cfdc7b4ffb5059f41792e98d03165db44"
+    },
+    "score": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/passage-retrieval-score-current-001.json",
+      "sha256": "2ef8d8013cb6e1d6afe1228380fb25298ee93a124169c7e8c9e30f3a52412570"
+    }
+  },
+  "k": 10,
+  "arms": [
+    {
+      "arm": "semantic",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9833333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9833333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.9861111111111112,
+            "plannedDenominatorLowerBound": 0.5916666666666667,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9583333333333334,
+            "plannedDenominatorLowerBound": 0.575,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.9413875053234118,
+            "plannedDenominatorLowerBound": 0.5648325031940471,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    },
+    {
+      "arm": "lexical",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 1,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 0.9907407407407409,
+            "plannedDenominatorLowerBound": 0.9836111111111111,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.8564814814814814,
+            "plannedDenominatorLowerBound": 0.5138888888888888,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9398148148148149,
+            "plannedDenominatorLowerBound": 0.5638888888888889,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.8192540063784215,
+            "plannedDenominatorLowerBound": 0.4915524038270529,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    },
+    {
+      "arm": "hybrid-selected",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9333333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9333333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.9861111111111112,
+            "plannedDenominatorLowerBound": 0.5916666666666667,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9282407407407407,
+            "plannedDenominatorLowerBound": 0.5569444444444444,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.9202727720066455,
+            "plannedDenominatorLowerBound": 0.5521636632039874,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    }
+  ],
+  "rankingSource": {
+    "format": "nodus.recorded-live-retrieval-order/1",
+    "sourceSnapshotSha256": "5531fcd91ad7690710836b8d686ebe2e9436cf907308c91cf274627a60bd8e6b",
+    "profileContractSha256": "f778397b96240a28a54c1d04230dcc1edb20ae318ba2a596c6b5172285b83b39",
+    "scopeContractSha256": "bfe596930c4887a19ad4f878e62aa6f2036ed23b4394d1a6bf694e08901fb261",
+    "ordering": "Exact saved array order; no sorting, deduplication, gold-dependent selection or top-K expansion.",
+    "arms": {
+      "semantic": "saved semantic candidates",
+      "lexical": "saved lexical candidates, including the recorded lexical query expansion",
+      "hybrid-selected": "actual product evidence selection; this includes its context budget and diversity filters, not an unrestricted hybrid ranking"
+    },
+    "limitation": "All three arrays come from the same product search. They are candidate-lane diagnostics, not separately executed ablation runs."
+  },
+  "limits": [
+    "Fixed directed80 cohort,60 positive/20 insufficient; not a blinded population holdout.",
+    "36 positive queries have complete exhaustive passage gold;24 retain explicit pending exhaustive review.",
+    "EvidenceHit and FactCoverage planned-denominator lower bounds credit only verified literal facts. These are not full-corpus Recall or answer-quality percentages.",
+    "Arrays diagnose lanes from one product search, not independent ablations. Hybrid-selected includes production context and diversity selection.",
+    "All no-evidence queries still return candidate passages; falseHitAt10 records this candidate presence, not whether Research Chat invents an answer.",
+    "No answer-precision, published-fidelity or insufficiency-handling target is measured by this receipt.",
+    "No frozen annotations or original source artifacts were rewritten after rank inspection."
+  ]
+}

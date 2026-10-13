@@ -10,6 +10,10 @@ import { createResearchTestRoot, macResearchSandbox, researchTestEnvironment, ve
 const require = createRequire(import.meta.url);
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const root = createResearchTestRoot();
+// This zero-provider-call UI smoke never needs credentials. Disable OS Safe
+// Storage through the existing harness gate before application startup.
+const emptyKeysFile = path.join(root, 'fixtures/empty-provider-keys.json');
+fs.writeFileSync(emptyKeysFile, '{}\n', { mode: 0o600, flag: 'wx' });
 const sandbox = macResearchSandbox(root);
 const proof = verifyResearchSandbox(root, sandbox);
 const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
@@ -21,6 +25,7 @@ let app;
 const sha256 = file => createHash('sha256').update(fs.readFileSync(path.join(repoRoot, file))).digest('hex');
 const builtFiles = fs.readdirSync(path.join(repoRoot, 'dist-electron')).filter(name => name.endsWith('.js')).sort().map(name => `dist-electron/${name}`);
 const report = { root, proof, completed: false, modelCalls: 0, productionFixtures: false,
+  safeStorage: 'disabled by an empty isolated harness key file',
   startedAt: new Date().toISOString(), sourceVersion: {
     commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).trim(),
     workingTreeDirty: Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' }).trim()),
@@ -30,7 +35,7 @@ try {
   // Seatbelt cannot be nested. This test uses the inherited OS profile above
   // for the entire process tree instead of Chromium's additional child profile.
   app = await _electron.launch({ executablePath: wrapper, args: ['--no-sandbox', '--disable-gpu', repoRoot], cwd: root,
-    env: researchTestEnvironment(root), timeout: 60_000 });
+    env: { ...researchTestEnvironment(root), NODUS_HARNESS_KEYS_FILE: emptyKeysFile }, timeout: 60_000 });
   const page = await app.firstWindow();
   report.runtime = await app.evaluate(() => ({ versions: process.versions, platform: process.platform, arch: process.arch }));
   await page.waitForFunction(() => Boolean(document.getElementById('root')?.children.length), null, { timeout: 60_000 });

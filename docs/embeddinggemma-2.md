@@ -19,7 +19,7 @@ Tokenization includes prompts and special tokens, with truncation disabled. More
 
 Legacy Transformers models now dispatch at most eight inputs and 2,048 padded tokens per native call, with larger inputs individually. Their tokenizer, text, pooling and normalization are unchanged. Real Electron runs exposed native allocator crashes with large E5/GTE batches; changing dispatch bounds addresses those crashes without assigning new vector semantics to historical indices.
 
-There is one worker for this asset family, one active operation, at most four CPU threads and query priority between inference batches. Batches contain at most eight entries with a maximum padded input cost of 2,048 tokens; longer entries run individually. Cancellation drops queued results and terminates active native work. Crashes reject outstanding work; a later explicit request can recreate the worker. Idle workers terminate after five minutes and application shutdown closes them.
+There is one isolated utility process for this asset family, hosting a Node worker thread for native ONNX, with one active operation, at most four CPU threads and query priority between inference batches. Batches contain at most eight entries with a maximum padded input cost of 2,048 tokens; longer entries run individually. Cancelling active native work terminates its process and preserves queued independent requests. Invalid or oversized inputs fail their own request. Runtime crashes reject outstanding work without changing the selected profile or quantization; a later explicit request can recreate the process. The ready handshake is bounded, idle processes terminate after five minutes, and application shutdown closes them. Native failures are contained outside Electron's main process.
 
 ## Index identity and publication
 
@@ -39,10 +39,13 @@ Use Node 22.12+ and rebuild native SQLite for the installed Electron version:
 npm install
 npx electron-builder install-app-deps
 npm run test:embeddinggemma:contracts
+npm run test:embeddinggemma:process
 npm run test:embeddinggemma:runtime
 npm run audit:embeddinggemma -- --all
 npm run test:e2e:embeddinggemma
 ```
+
+`npm run audit:embeddinggemma:process-parity` defaults to a dry run. Its explicit `--prepare` and `--run --root=…` phases verify owned isolated assets, compare the same Q8 weights through the direct-thread reference and the isolated production-source host at both dimensions, then kill only the recorded QA utility process and check that the application and the same profile recover. See [the current campaign receipts and limits](../audit/research-live-quality/README.md); numerical parity, answer quality and packaged-platform coverage are separate checks.
 
 Commands create marked roots under the OS temporary directory and retain artifacts for inspection. Every model uses its own process, profile, library, caches and stores. The macOS sandbox proves outside writes, descendant writes, external network and unauthorized loopback denial before launch. The sentinel is deliberately created outside QA’s inherited TMPDIR. Other operating systems require a native disposable environment with equivalent enforcement; they are not inferred from macOS results.
 

@@ -1,23 +1,52 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { constants, createReadStream } from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { createResearchApp, waitFor } from './lib/research-app-harness.mjs';
+import { createResearchTestRoot } from './research-isolation.mjs';
+async function fileHash(file) {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(file)) hash.update(chunk);
+  return hash.digest('hex');
+}
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
 const executablePath = argument('executable'), source = argument('model-root');
 if (!executablePath || !source) throw new Error('Provide --executable and a marked --model-root QA profile');
 const sourceRoot = await fs.realpath(source), marker = JSON.parse(await fs.readFile(path.join(sourceRoot, 'isolation.json'), 'utf8'));
 assert.equal(marker.root, sourceRoot); assert.equal(marker.format, 'nodus.isolated-research-profile/1');
 const model = JSON.parse(await fs.readFile(path.join(sourceRoot, 'artifacts/model-manifest.json'), 'utf8'));
-const harness = await createResearchApp({ executablePath, appArgs: [], extraEnv: { NODUS_EMBEDDING_QA_TRACE: '1' } });
-const report = { format: 'nodus.embedding-package-smoke/1', root: harness.root, executablePath, platform: process.platform, architecture: process.arch, isolation: harness.proof, completed: false };
+const sourceDirectory = path.join(sourceRoot, 'profile/local-ai/models/embeddinggemma-2-text-q8-v1');
+assert.equal(model.directory, sourceDirectory, 'assets must belong to the marked QA profile');
+assert.equal(await fs.realpath(sourceDirectory), sourceDirectory, 'model directory must not redirect outside QA');
+const qaRoot = createResearchTestRoot();
+const keysFile = path.join(qaRoot, 'fixtures/empty-provider-keys.json');
+await fs.writeFile(keysFile, '{}\n', { mode: 0o600, flag: 'wx' });
+const harness = await createResearchApp({ root: qaRoot, executablePath, appArgs: [],
+  extraEnv: { NODUS_EMBEDDING_QA_TRACE: '1', NODUS_HARNESS_KEYS_FILE: keysFile } });
+const report = { format: 'nodus.embedding-package-smoke/1', root: harness.root, executablePath, platform: process.platform, architecture: process.arch,
+  isolation: harness.proof, safeStorageGate: { keysFile, literalEmptyKeys: true }, assetProof: [], completed: false };
 try {
   const target = path.join(harness.root, 'profile/local-ai/models/embeddinggemma-2-text-q8-v1');
   // APFS/reflink copies keep independent paths and copy-on-write file contents;
   // the sandbox still forbids access to the source profile. No shared symlinks.
-  for (const asset of model.assets) { const file = path.join(target, asset.file); await fs.mkdir(path.dirname(file), { recursive: true }); await fs.copyFile(path.join(model.directory, asset.file), file, constants.COPYFILE_FICLONE); }
+  for (const asset of model.assets) {
+    assert.equal(typeof asset.file, 'string');
+    assert(!path.isAbsolute(asset.file) && !asset.file.split(/[\\/]/u).includes('..'));
+    const origin = path.join(sourceDirectory, asset.file);
+    const stat = await fs.lstat(origin);
+    assert(stat.isFile() && !stat.isSymbolicLink());
+    assert.equal(await fs.realpath(origin), origin);
+    const hash = await fileHash(origin);
+    assert.equal(stat.size, asset.bytes); assert.equal(hash, asset.sha256);
+    const file = path.join(target, asset.file);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.copyFile(origin, file, constants.COPYFILE_FICLONE);
+    assert.equal(await fileHash(file), hash);
+    report.assetProof.push({ file: asset.file, bytes: stat.size, sha256: hash });
+  }
   const { app, page } = await harness.launch();
-  report.package = await app.evaluate(({ app }) => ({ packaged: app.isPackaged, appPath: app.getAppPath(), metrics: app.getAppMetrics() }));
+  report.package = await app.evaluate(({ app }) => ({ packaged: app.isPackaged, appPath: app.getAppPath(), pid: process.pid, metrics: app.getAppMetrics() }));
   assert(report.package.packaged); assert(report.package.appPath.endsWith('.asar'));
   const legalNotice = path.join(path.dirname(report.package.appPath), 'legal/EMBEDDINGGEMMA_2_NOTICE.md');
   const noticeText = await fs.readFile(legalNotice, 'utf8');
@@ -74,6 +103,11 @@ try {
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   assert((await page.evaluate(() => window.nodus.getNodusLocalAiStatus())).models.filter(model => model.id.startsWith('embeddinggemma')).every(model => model.downloaded));
   report.settings = { language: 'en', sharedCardCount: 1, experimentalBadge: true, licenseTermsLocalized: true, sharedDeletionWarning: true, cancelledDeletionPreservesBothProfiles: true };
+  const traces = (await fs.readFile(path.join(harness.root, 'profile/embedding-trace.jsonl'), 'utf8')).trim().split('\n').map(JSON.parse);
+  const inferenceProcesses = traces.filter(trace => trace.type === 'embedding-gemma-process' && trace.phase === 'spawn');
+  assert(inferenceProcesses.length > 0, 'packaged embeddings must run through the isolated utility process');
+  assert(inferenceProcesses.every(trace => Number.isSafeInteger(trace.pid) && trace.pid !== report.package.pid));
+  report.inferenceProcesses = inferenceProcesses;
   report.completed = true;
 } catch (error) { report.failure = { message: error.message, stack: error.stack }; process.exitCode = 1; }
 finally { await harness.close(); await fs.writeFile(path.join(harness.root, 'artifacts/package-smoke.json'), JSON.stringify(report, null, 2)); console.log(`Package report: ${harness.root}/artifacts/package-smoke.json`); }

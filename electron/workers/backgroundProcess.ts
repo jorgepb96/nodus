@@ -13,15 +13,19 @@ export interface BackgroundProcess extends EventEmitter {
   setIdle(idle: boolean): void;
 }
 
+export interface BackgroundProcessOptions { captureOutput?: boolean }
+
 /** CPU/memory-heavy document work has its own OS process, not an isolate inside
  * Electron's main process. Plain Node/Electron-as-Node harnesses use fork IPC. */
-export function backgroundProcess(filename: string, serviceName: string): BackgroundProcess {
+export function backgroundProcess(filename: string, serviceName: string, options: BackgroundProcessOptions = {}): BackgroundProcess {
   const events = new EventEmitter() as BackgroundProcess;
   let stopped = false;
+  const captureOutput = options.captureOutput === true;
   if (process.type === 'browser' && utilityProcess?.fork) {
     // Playwright/dev launches inspect the main process. Inheriting those flags
     // leaves a utility waiting for a debugger, before its spawn/IPC handshake.
-    const child = utilityProcess.fork(path.join(__dirname, 'backgroundUtility.js'), [filename], { serviceName, stdio: 'ignore', execArgv: [] });
+    const stdio: Array<'ignore' | 'pipe'> | 'ignore' = captureOutput ? ['ignore', 'pipe', 'pipe'] : 'ignore';
+    const child = utilityProcess.fork(path.join(__dirname, 'backgroundUtility.js'), [filename], { serviceName, stdio, execArgv: [] });
     let ready = false;
     const pending: unknown[] = [];
     child.once('spawn', () => {
@@ -37,16 +41,25 @@ export function backgroundProcess(filename: string, serviceName: string): Backgr
     child.once('spawn', () => clearTimeout(startup));
     child.on('message', message => { if (!stopped) events.emit('message', message); });
     child.on('error', error => { if (!stopped) events.emit('error', error); });
+    if (captureOutput) {
+      child.stdout?.on('data', chunk => events.emit('output', { stream: 'stdout', data: String(chunk) }));
+      child.stderr?.on('data', chunk => events.emit('output', { stream: 'stderr', data: String(chunk) }));
+    }
     events.postMessage = message => { if (!stopped) { if (ready) child.postMessage(message); else pending.push(message); } };
     events.terminate = () => { stopped = true; clearTimeout(startup); pending.length = 0; child.kill(); return exited; };
     events.unref = () => { /* The bounded operation owns this utility process. */ };
     events.setIdle = () => { /* See setIdle. */ };
   } else {
-    const child = fork(filename, [], { serialization: 'advanced', stdio: ['ignore', 'ignore', 'ignore', 'ipc'], execArgv: [] });
+    const child = fork(filename, [], { serialization: 'advanced', stdio: ['ignore', captureOutput ? 'pipe' : 'ignore', captureOutput ? 'pipe' : 'ignore', 'ipc'], execArgv: [] });
     Object.defineProperty(events, 'pid', { get: () => child.pid });
     const exited = new Promise<number>(resolve => child.once('exit', code => { events.emit('exit', code); resolve(code ?? 1); }));
     child.on('message', message => { if (!stopped) events.emit('message', message); });
     child.on('error', error => { if (!stopped) events.emit('error', error); });
+    child.once('spawn', () => events.emit('spawn', child.pid));
+    if (captureOutput) {
+      child.stdout?.on('data', chunk => events.emit('output', { stream: 'stdout', data: String(chunk) }));
+      child.stderr?.on('data', chunk => events.emit('output', { stream: 'stderr', data: String(chunk) }));
+    }
     events.postMessage = message => {
       if (!stopped && child.connected) child.send(message as Parameters<typeof child.send>[0], error => { if (error && !stopped) events.emit('error', error); });
     };

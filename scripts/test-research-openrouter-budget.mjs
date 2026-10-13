@@ -23,3 +23,17 @@ test('one authorization retains unknown costs across attempts and blocks crash r
     assert.ok(Math.abs(second.limitUsd - 0.29788477) < 1e-9);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+
+test('stopped credential access blocks a new attempt without changing remaining authorization', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-budget-stopped-'));
+  try {
+    const authorization = path.join(root, 'authorization.json');
+    const record = { format: 'research-openrouter-authorization/1', limitUsd: 0.5,
+      oldDeepSeekCampaignReopened: false, credentialAccessStoppedByUser: true,
+      priorAttempts: [], remainingUsd: 0.5, state: 'closed' };
+    fs.writeFileSync(authorization, JSON.stringify(record));
+    assert.throws(() => claimOpenRouterBudget(root, authorization, path.join(root, 'attempt'), 'isolated-root'), /stopped by the user/);
+    assert.deepEqual(JSON.parse(fs.readFileSync(authorization, 'utf8')), record);
+    assert.equal(fs.existsSync(`${authorization}.lock`), false);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});

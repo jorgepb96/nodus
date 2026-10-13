@@ -18,6 +18,31 @@ export const RESEARCH_CHAT_PRECISION_RULES = [
 
 const object = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+export interface ResearchCoveragePlannedFacet {
+  id: string;
+  questionQuote: string;
+}
+
+/** Bind only absent routing metadata to one uniquely exact planned question span.
+ * Explicit IDs, complaint text, quote proof and omissions are never rewritten. */
+export function bindResearchCoverageFacetIds(input: unknown,
+  plannedFacets: readonly ResearchCoveragePlannedFacet[]): unknown {
+  if (!object(input) || !Array.isArray(plannedFacets)) return input;
+  const matches = (complaint: unknown) => typeof complaint === 'string'
+    ? plannedFacets.filter(facet => facet.questionQuote === complaint) : [];
+  const output: Record<string, unknown> = { ...input };
+  for (const key of ['addressed', 'omissions'] as const) {
+    const rows = input[key];
+    if (!Array.isArray(rows)) continue;
+    output[key] = rows.map(row => {
+      if (!object(row) || Object.prototype.hasOwnProperty.call(row, 'facetId')) return row;
+      const exact = matches(row.complaint);
+      return exact.length === 1 ? { ...row, facetId: exact[0].id } : row;
+    });
+  }
+  return output;
+}
+
 export interface ResearchAnswerQuoteProof {
   answerQuote?: string;
   answerQuotes?: string[];

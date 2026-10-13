@@ -1,0 +1,466 @@
+{
+  "format": "nodus.embeddinggemma-process-parity-result/1",
+  "root": "/private/tmp/nodus-research-2bueN7",
+  "finishedAt": "2026-10-13T09:35:37.633Z",
+  "profiles": [
+    "embeddinggemma-2-text-q8-512-v1",
+    "embeddinggemma-2-text-q8-256-v1"
+  ],
+  "runtime": {
+    "electron": "43.6.0",
+    "node": "24.20.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "coordinatorNode": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "referenceElectronAsNode": {
+      "electron": "43.6.0",
+      "node": "24.20.0",
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "isolation": {
+      "writeInsideAllowed": true,
+      "writeOutsideDenied": true,
+      "descendantWriteDenied": true,
+      "externalNetworkDenied": true,
+      "forbiddenLoopbackPortDenied": true,
+      "allowedLoopbackPorts": []
+    },
+    "network": "macOS sandbox denies outbound and all loopback",
+    "externalProviderCalls": 0
+  },
+  "isolation": {
+    "markerFormat": "nodus.isolated-research-profile/1",
+    "safeStorageGate": {
+      "storedCredentialCount": 0,
+      "config": {},
+      "providerKeys": {},
+      "rootCreatedFromEmptyState": true
+    },
+    "providerKeysPresent": false,
+    "copiedAssets": [
+      {
+        "file": "config.json",
+        "bytes": 5031,
+        "sha256": "8d011bfe08b5e345bbe0b81e5c6fd02c381920b345b986047bc2a33ce7b90d1d"
+      },
+      {
+        "file": "tokenizer.json",
+        "bytes": 32170510,
+        "sha256": "4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4"
+      },
+      {
+        "file": "tokenizer_config.json",
+        "bytes": 1599,
+        "sha256": "17bd5d6e9364ca49a534e1502076593317c298d4a663623091ed45388f004874"
+      },
+      {
+        "file": "onnx/model_quantized.onnx",
+        "bytes": 495165,
+        "sha256": "d06edd601f851c633a2519304cbeb8dc6170d7ceb61b436625c17fb9b6e74953"
+      },
+      {
+        "file": "onnx/model_quantized.onnx_data",
+        "bytes": 313724928,
+        "sha256": "278a7ff1248c3618e4bd11a607fc54f7bdc7778854230f3956d3f86bd9db4f3b"
+      }
+    ],
+    "referenceChildExit": 0,
+    "utilityPidKilled": 85944,
+    "mainSettingsReadableAfterKill": true
+  },
+  "fixtures": [
+    {
+      "role": "document",
+      "titleHash": "b97994d0d4da82298b67a197f949a03c5c8e2f5cba4dfbf2dff6bf6f89838056"
+    },
+    {
+      "role": "document",
+      "titleHash": "25feb004d7edf4585c51d52226a1d4e3d035264bad43768afa93ec912192f37b"
+    },
+    {
+      "role": "document",
+      "titleHash": "5ef9908c3927095277c4b6011bf86d12d4ead7887c799c13a87ab9f1df745e03"
+    },
+    {
+      "role": "document",
+      "titleHash": "296667caff26433577242725b001da353736747b0cd92225238194f87434eb5c"
+    },
+    {
+      "role": "document",
+      "titleHash": "a391ba930a25462ddccf6443073de15e7a22fb35e7af50fb16b38da1cd2f57a1"
+    },
+    {
+      "role": "query"
+    },
+    {
+      "role": "query"
+    }
+  ],
+  "comparisons": {
+    "embeddinggemma-2-text-q8-512-v1": {
+      "count": 7,
+      "dimension": 512,
+      "referenceSha256": "a01217ce43dcc7af8fe379d4234dd05c979726545844dad2394503cb39ebe635",
+      "hostSha256": "a01217ce43dcc7af8fe379d4234dd05c979726545844dad2394503cb39ebe635",
+      "maxAbsDiff": 0,
+      "maxNormError": 1.1102230246251565e-16,
+      "rowOrder": "identical fixtures and input order"
+    },
+    "embeddinggemma-2-text-q8-256-v1": {
+      "count": 7,
+      "dimension": 256,
+      "referenceSha256": "fdd870f4c6125127a243d0b55394b00364d8090655166fded71739903baf492c",
+      "hostSha256": "fdd870f4c6125127a243d0b55394b00364d8090655166fded71739903baf492c",
+      "maxAbsDiff": 0,
+      "maxNormError": 1.1102230246251565e-16,
+      "rowOrder": "identical fixtures and input order"
+    }
+  },
+  "trace": [
+    {
+      "at": "2026-10-13T09:34:10.523Z",
+      "type": "embedding-gemma-process",
+      "phase": "spawn",
+      "pid": 85944,
+      "service": "Nodus EmbeddingGemma Q8"
+    },
+    {
+      "at": "2026-10-13T09:34:11.781Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "70069687cff8ef563f636f2916d25ad28035406dbf92a4135ba4a5c233c82417"
+    },
+    {
+      "at": "2026-10-13T09:34:18.154Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "70069687cff8ef563f636f2916d25ad28035406dbf92a4135ba4a5c233c82417",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 289538048
+    },
+    {
+      "at": "2026-10-13T09:34:18.156Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 857,
+      "maxRequestBytes": 857,
+      "requestSha256": "34a80e5655ad54ef9158ba0f91dda0c0d18103afb8c9f4a3ff08a132753f9942"
+    },
+    {
+      "at": "2026-10-13T09:34:29.427Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 857,
+      "maxRequestBytes": 857,
+      "requestSha256": "34a80e5655ad54ef9158ba0f91dda0c0d18103afb8c9f4a3ff08a132753f9942",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 310951936,
+      "stderrTail": "2026-10-13 11:34:26.284 Electron Helper[85944:188546549] NetworkStorageDB:_openDBReadConnections: failed to open read connection to DB @ /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.  Error=14. Cause=unable to open database file\n2026-10-13 11:34:26.284 Electron Helper[85944:188546549] The read-connection to the DB=/Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db is NOT valid.  Unable to determine schema version.\n2026-10-13 11:34:26.284 Electron Helper[85944:188546549] NetworkStorageDB:_openDBWriteConnections: failed to open write connection to DB @ /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.  Error=14. Cause=unable to open database file\n2026-10-13 11:34:26.286 Electron Helper[85944:188546549] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.\n2026-10-13 11:34:26.287 Electron Helper[85944:188546549] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db-shm.\n2026-10-13 11:34:26.287 Electron Helper[85944:188546549] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db-wal.\n"
+    },
+    {
+      "at": "2026-10-13T09:34:29.429Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 286,
+      "maxRequestBytes": 286,
+      "requestSha256": "27f6da03fd4ef17f6c1b0cf6283ec8a243e24a2267bfb7a12cae6f45c8b21cb2"
+    },
+    {
+      "at": "2026-10-13T09:34:29.463Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 286,
+      "maxRequestBytes": 286,
+      "requestSha256": "27f6da03fd4ef17f6c1b0cf6283ec8a243e24a2267bfb7a12cae6f45c8b21cb2",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 329465856
+    },
+    {
+      "at": "2026-10-13T09:34:29.464Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "c28b7299529ac2d2ba1c7a24c75a43589d31b1cf65d6b32d707f6122410f6219"
+    },
+    {
+      "at": "2026-10-13T09:34:32.571Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "c28b7299529ac2d2ba1c7a24c75a43589d31b1cf65d6b32d707f6122410f6219",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 342802432
+    },
+    {
+      "at": "2026-10-13T09:34:32.881Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "8a5d1066081b8062940372073f7b14787049155a5de819655d933e4b78f650a0"
+    },
+    {
+      "at": "2026-10-13T09:34:32.892Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "8a5d1066081b8062940372073f7b14787049155a5de819655d933e4b78f650a0",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 349405184
+    },
+    {
+      "at": "2026-10-13T09:34:32.892Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 857,
+      "maxRequestBytes": 857,
+      "requestSha256": "d0f617ea0b861fb349ad8aaca9e02a166ec07b91105e36d298132bf230860c41"
+    },
+    {
+      "at": "2026-10-13T09:34:46.765Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 857,
+      "maxRequestBytes": 857,
+      "requestSha256": "d0f617ea0b861fb349ad8aaca9e02a166ec07b91105e36d298132bf230860c41",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 350814208
+    },
+    {
+      "at": "2026-10-13T09:34:46.767Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 286,
+      "maxRequestBytes": 286,
+      "requestSha256": "9794cce4c66d9f45bb17f4f48e2d2805d8a28513e950d2e811196833bd1fb1ae"
+    },
+    {
+      "at": "2026-10-13T09:34:46.774Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 286,
+      "maxRequestBytes": 286,
+      "requestSha256": "9794cce4c66d9f45bb17f4f48e2d2805d8a28513e950d2e811196833bd1fb1ae",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 282869760
+    },
+    {
+      "at": "2026-10-13T09:34:46.775Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "a47d173f6c549fa7e4c84ec73e8ff4f9ac6ebc5503bdc2d71673b4fa4fb9cca8"
+    },
+    {
+      "at": "2026-10-13T09:34:54.216Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 85944,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "a47d173f6c549fa7e4c84ec73e8ff4f9ac6ebc5503bdc2d71673b4fa4fb9cca8",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 313458688
+    },
+    {
+      "at": "2026-10-13T09:34:54.401Z",
+      "type": "embedding-gemma-process",
+      "phase": "terminate-requested",
+      "pid": 85944,
+      "errorCode": "Error"
+    },
+    {
+      "at": "2026-10-13T09:34:54.403Z",
+      "type": "embedding-gemma-process",
+      "phase": "exit",
+      "pid": 85944,
+      "exitCode": 9
+    },
+    {
+      "at": "2026-10-13T09:34:54.590Z",
+      "type": "embedding-gemma-process",
+      "phase": "spawn",
+      "pid": 86270,
+      "service": "Nodus EmbeddingGemma Q8"
+    },
+    {
+      "at": "2026-10-13T09:34:56.137Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 86270,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "17828d1b73a378ef1b26d2df481ebe7da4efdd47cd7851e71e8693e12c9855a0"
+    },
+    {
+      "at": "2026-10-13T09:35:06.445Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 86270,
+      "rows": 5,
+      "operation": "plan",
+      "requestBytes": 856,
+      "maxRequestBytes": 856,
+      "requestSha256": "17828d1b73a378ef1b26d2df481ebe7da4efdd47cd7851e71e8693e12c9855a0",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 262488064
+    },
+    {
+      "at": "2026-10-13T09:35:06.447Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 86270,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 858,
+      "maxRequestBytes": 858,
+      "requestSha256": "2c1d3d43f96191abde207296c796bcf834a073b363a2afcc5465dc3580bac4f4"
+    },
+    {
+      "at": "2026-10-13T09:35:33.380Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 86270,
+      "rows": 5,
+      "operation": "infer",
+      "requestBytes": 858,
+      "maxRequestBytes": 858,
+      "requestSha256": "2c1d3d43f96191abde207296c796bcf834a073b363a2afcc5465dc3580bac4f4",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 268124160,
+      "stderrTail": "2026-10-13 11:35:13.143 Electron Helper[86270:188549210] NetworkStorageDB:_openDBReadConnections: failed to open read connection to DB @ /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.  Error=14. Cause=unable to open database file\n2026-10-13 11:35:13.143 Electron Helper[86270:188549210] The read-connection to the DB=/Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db is NOT valid.  Unable to determine schema version.\n2026-10-13 11:35:13.143 Electron Helper[86270:188549210] NetworkStorageDB:_openDBWriteConnections: failed to open write connection to DB @ /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.  Error=14. Cause=unable to open database file\n2026-10-13 11:35:13.143 Electron Helper[86270:188549210] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db.\n2026-10-13 11:35:13.144 Electron Helper[86270:188549210] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db-shm.\n2026-10-13 11:35:13.144 Electron Helper[86270:188549210] DEBUG: there is no SQL cache DB located at /Users/jorgepb96/Library/Caches/com.github.Electron.helper/Cache.db-wal.\n"
+    },
+    {
+      "at": "2026-10-13T09:35:33.386Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 86270,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "4509ea6c70972fb2bf699123d0bafd7bc041facafbe7e807485f5459a4b12cec"
+    },
+    {
+      "at": "2026-10-13T09:35:33.435Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 86270,
+      "rows": 2,
+      "operation": "plan",
+      "requestBytes": 287,
+      "maxRequestBytes": 287,
+      "requestSha256": "4509ea6c70972fb2bf699123d0bafd7bc041facafbe7e807485f5459a4b12cec",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 283361280
+    },
+    {
+      "at": "2026-10-13T09:35:33.437Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-start",
+      "pid": 86270,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 288,
+      "maxRequestBytes": 288,
+      "requestSha256": "ac5fd8089501815592a7d01050bbe680221f52eaefe53b6cf5a6fe98864b53f2"
+    },
+    {
+      "at": "2026-10-13T09:35:37.176Z",
+      "type": "embedding-gemma-process",
+      "phase": "job-end",
+      "pid": 86270,
+      "rows": 2,
+      "operation": "infer",
+      "requestBytes": 288,
+      "maxRequestBytes": 288,
+      "requestSha256": "ac5fd8089501815592a7d01050bbe680221f52eaefe53b6cf5a6fe98864b53f2",
+      "outcome": "completed",
+      "peakRssWorkerBytes": 340688896
+    },
+    {
+      "at": "2026-10-13T09:35:37.578Z",
+      "type": "embedding-gemma-process",
+      "phase": "terminate-requested",
+      "pid": 86270,
+      "errorCode": "Error"
+    },
+    {
+      "at": "2026-10-13T09:35:37.638Z",
+      "type": "embedding-gemma-process",
+      "phase": "exit",
+      "pid": 86270,
+      "exitCode": 0
+    }
+  ],
+  "hostBundleNature": "The host under test is an esbuild bundle of current production source loaded in the isolated QA app profile; it is not the host export loaded by main.js.",
+  "parity": "Direct worker reference vs production-source embedding host vectors; Q8 model weights/tokenizer/prompt contracts unchanged.",
+  "recovery": {
+    "profile": "embeddinggemma-2-text-q8-512-v1",
+    "vectorCount": 7,
+    "maxAbsDiffFromPreCrash": 0,
+    "sameProfileNoFallback": true
+  }
+}

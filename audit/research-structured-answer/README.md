@@ -59,9 +59,11 @@ npm run test:research:grounding
 npm run test:research:retrieval
 npm run test:research:openrouter
 npm run audit:research:openrouter               # dry run, no provider calls
-npm run audit:research:openrouter -- --run-paid # requires remaining authorization
+# OpenRouter dispatch is stopped by the recorded user instruction.
 node scripts/collect-research-openrouter.mjs
 node scripts/e2e-research-isolated.mjs --notebooks --verification --pdf --activity
+npm run test:research:luna
+npm run audit:research:luna                    # fixed-plan dry run
 ```
 
 ## Quality and cost
@@ -95,4 +97,70 @@ for the full gather to size its exact context. Their expectations were preserved
 and all four pass locally. They now belong to the focused commands above. The
 full CI result for the new commit must be assessed independently.
 
+The additional `local-runtime/` records exercise the real Q8 CPU worker under
+network/write isolation with separate 512- and 256-dimensional profiles. Worker
+startup took 2.21/0.87 seconds; five warm query calls ranged 62–98/63–80 ms. Pinned
+asset and worker/source hashes are retained. These are native Node worker smokes,
+not current packaged Electron proofs or 10,000-chunk product latency measurements.
+They do not establish retrieval or factual-answer accuracy or promote a profile.
+
 The OpenRouter comparison is not complete. The first availability attempt retained 33 reservations (USD 0.09076114), with repeated upstream 429 responses; a prior Qwen ZDR refusal retained USD 0.00211523. The integrated Electron 43.6.0 launch then blocked inside the macOS Keychain before any model request. A native process sample establishes that wait; it does not establish a bad credential. Isolated startup already skips legacy-key recovery; neither a recovery scan nor a plaintext credential workaround was used. The authorized encrypted QA copy was removed after shutdown. The cumulative additional committed upper bound is USD 0.09287637 of USD 0.50; USD 0.40712363 remains. The production corrections are verified offline, but no new factual-answer accuracy rate or 95% acceptance is claimed.
+
+After the user confirmed accepting the macOS prompt, the next retained attempt
+(`../research-openrouter-credential-unavailable/`) launched successfully but the
+production reader reported no available OpenRouter credential before preflight.
+It made zero provider calls and committed USD 0. Availability, decryption identity
+and credential validity must not be conflated.
+The subsequent `../research-openrouter-deferred-credential-timeout/` attempt
+opened the QA window, but its explicit encrypted reader remained in the native
+Keychain wait. It made zero provider calls and committed USD 0. The owned process
+was stopped and its encrypted copy removed. On the user's instruction, further
+credential access is now stopped in the durable authorization record; budget
+claiming rejects new attempts before any credential import. No further native
+credential diagnostics or prompts are authorized by this campaign.
+
+`qa-credential-guards/` records 18 passing offline guard tests, typecheck, lint,
+the production build and another isolated real Electron UI run (15 guarded
+database opens, zero model calls). Delayed credential metadata is an explicit
+QA-only opt-in checked against the isolation manifest; actual key reads retain
+the ordinary encrypted reader. Ordinary profiles do not defer metadata.
+
+CI for `72a47e75` passed full Linux coverage and native macOS/Windows checks in
+[run 38272033596](https://github.com/jorgepb96/nodus/actions/runs/38272033596).
+Windows initially timed out waiting for a Presenter PDF preview; the exact job
+passed on rerun without changing its deadline or assertions. These results do
+not cover subsequent uncommitted harness/credential-guard changes.
+
+The distinct Luna campaign uses real fresh `gpt-6-luna` agents through a local
+file-queue custom provider, with an empty isolated key file disabling OS Safe
+Storage. Nodus makes no HTTP requests to paid provider APIs; agent inference
+uses the ordinary Codex service and allowance, whose usage is not independently
+priced by this harness. It is not local CPU inference, an OpenRouter model, or
+an offline generation test. The first `../research-luna-bridge-probe/` attempt
+was stopped after missing completion receipts exposed a transport problem.
+Its incomplete answers and diagnostics are retained; they establish no quality
+acceptance. The fixed ten-case, twenty-answer plan is a directed regression,
+with the same frozen source evidence for both arms, not an untouched holdout.
+
+The next retained run, `../research-luna-facet-id-failure/`, completed all ten
+accepted calls but withheld its structured answer. Two actual coverage proofs
+copied all three planned question quotes and literal answer spans while omitting
+their routing IDs: the request required IDs but its final shape example omitted
+them. `facet-routing/` records the correction and replay of both captured proofs.
+Only absent IDs can bind to unique exact frozen question quotes; explicit wrong
+IDs, paraphrased questions, duplicate or omitted facets and forged answer quotes
+still fail the original guards. Raw proofs and application bindings are separate
+trace fields. This fixes a measured availability problem without changing vectors
+or weakening source validation.
+
+`../research-luna-directed/` retains the current paired generation run. The first
+four attempts and their 30 completed receipts are preserved, including a baseline
+JSON-format failure; the remaining sixteen are continued once in the same
+isolated root with a cumulative 150-request ceiling. A completed receipt-backed
+verification refusal is a negative measured outcome. Transport failure, missing
+receipts, cancellation or changed runtime sources pause acceptance. The fixed
+eight-positive/two-absence denominators include every failed answer; a baseline
+failure does not veto a passing structured arm. Hash-bound source review is still
+pending for the complete campaign, and no new acceptance rate is claimed here.
+The collector uses exact full URL tokens for blinded source links, preventing
+numeric prefix collisions without changing generated answers.

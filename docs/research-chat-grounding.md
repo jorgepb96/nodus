@@ -15,8 +15,19 @@ to the source record, but cannot establish world facts. The full prose audit and
 independent full-question coverage proof remain required. If the latter finds an
 omitted planner facet, a bounded repair receives an expanded checklist and must
 pass fresh audit and proof. A requested table must survive factual filtering.
+The coverage request explicitly distinguishes planned and legacy proof shapes.
+An absent routing ID can be bound in code only when its unchanged complaint is
+exactly one unique frozen planned question quote. Explicit incorrect IDs,
+paraphrases, duplicate facets and incomplete proofs still fail. The raw proof
+and application-added routing metadata are recorded separately; this binding
+does not approve claims, rewrite answer quotes or infer evidence.
 Native OpenAI/OpenRouter schema bytes count toward the conservative context
 budget, and a provider error cannot silently remove the schema.
+The planner and structured writer keep their existing single validation retry.
+That retry receives up to twelve bounded validator diagnostics (path, code and
+message), so it can correct the actual contract failure without relaxing literal
+quotes or source authorization. Invalid JSON receives generic contract guidance;
+transport and provider failures are not retried by this mechanism.
 
 The `legacy` setting remains available to the controlled comparison. Its drafting
 and source-only redrafting behavior is described below. `off` uses the ordinary
@@ -119,9 +130,12 @@ npm run test:research:retrieval
 npm run test:research:openrouter
 npm run build
 npm run audit:research:openrouter               # dry run, no provider calls
-npm run audit:research:openrouter -- --run-paid # requires remaining authorization
+# Further OpenRouter credential access is stopped by the user instruction.
 node scripts/collect-research-openrouter.mjs
 node scripts/e2e-research-isolated.mjs --notebooks --verification --pdf --activity
+npm run test:research:luna
+npm run audit:research:luna                    # fixed-plan dry run
+npm run collect:research:luna -- --reviews=audit/research-luna-directed/source-reviews.json
 ```
 
 The additional OpenRouter comparison has a separate USD 0.50 cumulative ceiling.
@@ -132,6 +146,31 @@ answers never enter provider context. This is a controlled generation regression
 not a fresh retrieval run or an untouched holdout. First upstream availability
 or accounting failure stops further dispatch, retaining unknown reservations.
 See the [implementation checks and current campaign limits](../audit/research-structured-answer/README.md).
+
+Further encrypted-reader attempts are stopped in the durable authorization
+record before credential import. The alternative directed comparison uses fresh
+`gpt-6-luna` agents through an isolated file-queue custom provider. An empty harness
+key file disables OS Safe Storage before startup. Nodus makes no DeepSeek or
+OpenRouter requests; delegated generation uses Codex service and normal account
+quota, whose internal usage is not priced by this harness. It is not local CPU
+generation or an OpenRouter model. Both arms use identical frozen excerpts;
+failures remain in fixed eight-positive/two-absence denominators. Source reviews
+are distinct from automatic auditor verdicts and are not external human reviews.
+The resulting directed generation gate does not establish new retrieval,
+embedding, packaging or product citation-dialog acceptance.
+
+The subsequent campaign uses the prospective `research-answer-quality/3`
+policy. It keeps correct-and-complete answers over all planned answerable cases
+separate from fidelity among published answers. Its targets are 85% utility,
+95% published answers without material unsupported claims, and 90% correct
+insufficient-evidence responses. Withheld answers and transport failures do not
+count as successful abstentions. Each arm requires at least sixty preregistered
+answerable cases; repeated arms cannot be pooled to satisfy that sample minimum.
+Actual product citation resolution and scope/contract checks require their own
+runtime receipts. The separate passage-level retrieval target is Recall@10 of
+90%; finding only the right document does not meet it. These are project targets,
+not a claimed industry standard or population guarantee. Historical campaigns
+retain their original policy and failed or pending results.
 
 The original DeepSeek campaign is closed at USD 7.9559 committed of USD 8 and
 must not be reopened. The following describes that retained historical campaign.
@@ -202,7 +241,7 @@ and full-campaign rates are not extrapolated. The 95% positive gate is already
 impossible even if all remaining cases pass. The partly synthetic, repeated
 regression sample is not a population or blinded accuracy estimate.
 
-The implementation still permits coverage false positives on omitted requested
+That measured runtime permits coverage false positives on omitted requested
 interpretations and mechanisms. Some proof responses concatenate noncontiguous
 quotes with synthetic ellipses and correctly fail the literal-span guard; other
 verifiers reject already-scoped evidence gaps. One unsupported comparison escaped

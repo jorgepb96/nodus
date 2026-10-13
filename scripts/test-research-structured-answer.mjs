@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { installRuntimeHooks, requireElectronRuntime, repoRoot } from './lib/tsRuntimeHooks.mjs';
 
 if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--structured-answer')) process.exit(0);
@@ -12,6 +13,10 @@ installRuntimeHooks(root);
 const require = createRequire(import.meta.url), load = file => require(path.join(repoRoot, file));
 globalThis.fetch = () => { throw new Error('Network forbidden in structured answer regressions'); };
 const ai = load('electron/ai/aiClient.ts');
+const coverageRouting = load('shared/researchChatGrounding.ts');
+const traceEvents = [];
+const embeddingTrace = load('electron/qa/embeddingTrace.ts');
+embeddingTrace.recordEmbeddingTrace = event => traceEvents.push(event);
 const { groundResearchChatAnswer } = load('electron/ai/researchChatGrounding.ts');
 const model = { provider: 'openrouter', model: 'qwen/qwen3.7-flash' };
 const question = 'What is the river level, and what was measured about flow?';
@@ -52,9 +57,14 @@ const install = (mode = 'ok', controller = null) => {
       const planOmitsFacet2 = mode.startsWith('unplanned-') && input.plannedFacets.length === 1;
       assert.deepEqual(input.plannedFacets.map(facet => facet.id), planOmitsFacet2 ? ['f1'] : ['f1', 'f2']);
       const omitPlannedFacet2 = mode === 'missing-id' || (mode === 'repair' && counts.writer === 1);
+      const addressed = [{ facetId: 'f1', complaint: facets[0], answerQuotes: ['The river level is 18 metres.'] },
+        ...(!planOmitsFacet2 && !omitPlannedFacet2 ? [{ facetId: 'f2', complaint: facets[1], answerQuotes: [mode === 'invented' ? 'The flow rate is 25 metres.' : 'The flow rate was not measured.'] }] : [])];
+      if (mode === 'omitted-ids') addressed.forEach(row => { delete row.facetId; });
+      if (mode === 'wrong-explicit-id') addressed[0].facetId = 'f9';
+      if (mode === 'paraphrased-complaint') addressed[1].complaint = 'What did they measure about flow?';
+      if (mode === 'duplicate-facet') addressed[1].facetId = 'f1';
       value = {
-        addressed: [{ facetId: 'f1', complaint: facets[0], answerQuotes: ['The river level is 18 metres.'] },
-          ...(!planOmitsFacet2 && !omitPlannedFacet2 ? [{ facetId: 'f2', complaint: facets[1], answerQuotes: [mode === 'invented' ? 'The flow rate is 25 metres.' : 'The flow rate was not measured.'] }] : [])],
+        addressed,
         omissions: planOmitsFacet2
           ? [{ facetId: 'unplanned', complaint: facets[1], kind: 'available-fact', requiredFact: 'Report the stated limit for flow measurement.',
             sourceId: passage.id, quote: mode === 'unplanned-invented' ? 'The flow was always 25 metres per second.' : 'The flow rate was not measured.' }]
@@ -200,12 +210,70 @@ async function runUnplannedMetadataAttribution() {
 }
 
 try {
+  // Replay the two actual Luna proofs which withheld an otherwise audited
+  // three-facet answer. This checks representation and literal spans only;
+  // independent source inspection still supplies the quality score.
+  const captured = gunzipSync(fs.readFileSync(path.join(repoRoot,
+    'audit/research-luna-facet-id-failure/transcript.jsonl.gz'))).toString('utf8').trim().split('\n').map(JSON.parse);
+  const capturedProofs = captured.filter(row => row.kind === 'requests').map(row => {
+    const request = JSON.parse(row.raw);
+    const input = JSON.parse(request.request.messages[1].content);
+    if (!input.plannedFacets || !input.fullQuestionProof) return null;
+    const completion = captured.find(row => row.kind === 'completions' && row.filename === `${request.id}.json`);
+    assert.ok(completion, 'the original model response receipt is retained');
+    return { input, proof: JSON.parse(JSON.parse(completion.raw).content) };
+  }).filter(Boolean);
+  assert.equal(capturedProofs.length, 2, 'both original bounded proof attempts are replayed');
+  for (const { input, proof } of capturedProofs) {
+    assert.equal(proof.addressed.length, 3);
+    assert.ok(proof.addressed.every(row => !Object.hasOwn(row, 'facetId')), 'the actual failure omitted routing IDs');
+    const before = JSON.stringify(proof);
+    const bound = coverageRouting.bindResearchCoverageFacetIds(proof, input.plannedFacets);
+    assert.deepEqual(bound.addressed.map(row => row.facetId), ['f1', 'f2', 'f3']);
+    for (const row of bound.addressed) {
+      assert.equal(input.plannedFacets.find(facet => facet.id === row.facetId).questionQuote, row.complaint);
+      assert.equal(coverageRouting.validResearchAnswerQuotes(input.answer, row, 4000), true,
+        'original answer quotes pass the unchanged literal quote guard');
+    }
+    assert.equal(JSON.stringify(proof), before, 'the model proof is never rewritten');
+  }
+
+  const rawWithoutIds = { addressed: [
+    { complaint: facets[0], answerQuotes: ['The river level is 18 metres.'] },
+    { complaint: facets[1], answerQuotes: ['The flow rate was not measured.'] },
+  ], omissions: [] };
+  const boundWithoutIds = coverageRouting.bindResearchCoverageFacetIds(rawWithoutIds, [
+    { id: 'f1', questionQuote: facets[0] }, { id: 'f2', questionQuote: facets[1] },
+  ]);
+  assert.deepEqual(boundWithoutIds.addressed.map(row => row.facetId), ['f1', 'f2']);
+  assert.equal(rawWithoutIds.addressed.every(row => !Object.hasOwn(row, 'facetId')), true, 'binding clones instead of mutating raw proof');
+  for (const [raw, planned] of [
+    [{ addressed: [{ facetId: 'wrong', complaint: facets[0] }], omissions: [] }, [{ id: 'f1', questionQuote: facets[0] }]],
+    [{ addressed: [{ complaint: 'paraphrased question', answerQuotes: [] }], omissions: [] }, [{ id: 'f1', questionQuote: facets[0] }]],
+    [{ addressed: [{ complaint: facets[0] }], omissions: [] }, [{ id: 'f1', questionQuote: facets[0] }, { id: 'f2', questionQuote: facets[0] }]],
+  ]) {
+    const bound = coverageRouting.bindResearchCoverageFacetIds(raw, planned);
+    assert.equal(Object.hasOwn(bound.addressed[0], 'facetId'), Object.hasOwn(raw.addressed[0], 'facetId'), 'explicit, paraphrased or ambiguous rows are not bound');
+    if (Object.hasOwn(raw.addressed[0], 'facetId')) assert.equal(bound.addressed[0].facetId, raw.addressed[0].facetId, 'explicit IDs are never changed');
+  }
+
   install();
   const answer = await groundResearchChatAnswer('', context, question, model, 'en', undefined, { structured: true });
   assert.match(answer, /18 metres/); assert.match(answer, /not measured/);
   assert.doesNotMatch(answer, /facetId|f1|f2/);
   assert.deepEqual([counts.plan, counts.writer, counts.proof], [1, 1, 1]);
-  for (const mode of ['missing-id', 'invented']) {
+  install('omitted-ids');
+  const traceOffset = traceEvents.length;
+  const boundAnswer = await groundResearchChatAnswer('', context, question, model, 'en', undefined, { structured: true });
+  assert.match(boundAnswer, /18 metres/); assert.match(boundAnswer, /not measured/);
+  const completionTrace = traceEvents.slice(traceOffset).find(event => event.type === 'research-answer-grounding' && event.status === 'complete');
+  assert.ok(completionTrace);
+  assert.equal(completionTrace.coverageRawProofs[0].addressed.every(row => !Object.hasOwn(row, 'facetId')), true, 'trace retains raw model proof without IDs');
+  assert.deepEqual(completionTrace.coverageRoutingBindings[0].bindings.map(row => row.facetId), ['f1', 'f2'], 'application-added IDs are reported separately');
+  assert.deepEqual(completionTrace.coverageConfirmations[0].addressed.map(row => row.facetId), ['f1', 'f2']);
+  assert.match(completionTrace.coverageConfirmationFacetIdSource, /application routing metadata/u);
+
+  for (const mode of ['missing-id', 'invented', 'wrong-explicit-id', 'paraphrased-complaint', 'duplicate-facet']) {
     install(mode);
     await assert.rejects(groundResearchChatAnswer('', context, question, model, 'en', undefined, { structured: true }), /No se pudo verificar/);
     assert.equal(counts.proof, 2, 'invalid coverage gets one bounded retry, never publication');

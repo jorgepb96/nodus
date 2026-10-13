@@ -14,6 +14,9 @@ export function claimOpenRouterBudget(repo, authorizationFile, output, root) {
   const descriptor = fs.openSync(lock, 'wx');
   try {
     const authorization = JSON.parse(fs.readFileSync(authorizationFile, 'utf8'));
+    if (authorization.credentialAccessStoppedByUser === true) {
+      throw new Error('OpenRouter QA credential access was stopped by the user; no new attempt may start');
+    }
     if (authorization.format !== 'research-openrouter-authorization/1' || authorization.limitUsd !== 0.5
       || authorization.oldDeepSeekCampaignReopened !== false || authorization.activeAttempt) throw new Error('Campaign authorization unavailable or already active');
     let committed = 0;

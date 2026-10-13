@@ -1,6 +1,30 @@
 /* Themed component surfaces. Runtime palette variables are applied to the document root.
  * Keep exceptional selectors scoped to `.theme-active` so the default palette is untouched. */
 
+/* Both desktop and server chrome follow built-in/custom palette and mode changes. */
+html.theme-active {
+  --chrome-accent-300: var(--a-dark-300);
+  --chrome-accent-400: var(--a-dark-400);
+  --chrome-accent-500: var(--a-dark-500);
+  --chrome-accent-600: var(--a-dark-600);
+}
+html.theme-active.light {
+  --chrome-accent-300: var(--a-light-300);
+  --chrome-accent-400: var(--a-light-400);
+  --chrome-accent-500: var(--a-light-500);
+  --chrome-accent-600: var(--a-light-600);
+}
+html.theme-active.dark .vault-sidebar-scroll,
+html.theme-active.light .vault-sidebar-scroll {
+  scrollbar-color: var(--chrome-accent-400) transparent;
+}
+html.theme-active.dark .vault-sidebar-scroll::-webkit-scrollbar-thumb,
+html.theme-active.light .vault-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--chrome-accent-400);
+}
+html.theme-active .nodus-header-logo-vault { display: none; }
+html.theme-active .nodus-header-logo-theme { display: block; }
+
 /* Native <select> option lists. index.css hard-codes `select.input option` to
  * #171717 / #ffffff — `@apply` can't reach a bare `option`, so the open dropdown
  * kept the default neutral while the rest of the field was themed. */

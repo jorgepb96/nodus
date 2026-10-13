@@ -126,6 +126,7 @@
     "verify:gallery-virtualization": "node scripts/verify-gallery-virtualization.mjs",
     "verify:debates-payload": "node scripts/verify-debates-payload.mjs",
     "verify:single-instance": "node scripts/verify-single-instance.mjs",
+    "verify:packaged-server": "node scripts/verify-packaged-server.mjs",
     "verify:announcements": "npm run build && node scripts/verify-announcements.mjs",
     "verify:api-key-recovery-macos": "node scripts/verify-api-key-recovery-macos.mjs",
     "verify:toolkit-heic": "node scripts/verify-toolkit-heic.mjs",
@@ -286,6 +287,7 @@
     "playwright-core": "^1.61.1",
     "postcss": "^8.4.49",
     "remark-parse": "^11.0.0",
+    "semver": "^7.8.5",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "unified": "^11.0.5",
@@ -343,7 +345,9 @@
           "**/*",
           "!data",
           "!data/**/*",
-          "!.env"
+          "!.env",
+          "!node_modules",
+          "!node_modules/**/*"
         ]
       },
       {

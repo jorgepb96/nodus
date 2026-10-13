@@ -43,6 +43,7 @@ import nodusLogoTeal from "../assets/nodus-logo-teal.svg";
 import nodusLogoOrange from "../assets/nodus-logo-orange.svg";
 import nodusLogoViolet from "../assets/nodus-logo-violet.svg";
 import nodusLogoCyan from "../assets/nodus-logo-cyan.svg";
+import { NodusHeaderLogo } from "../components/NodusHeaderLogo";
 import { api, ApiError } from "./api";
 import { flushServerEditors } from "./editorNavigation";
 import {
@@ -2621,9 +2622,8 @@ export default function App() {
             data-testid="sidebar-header-brand"
             className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap"
           >
-            <img
+            <NodusHeaderLogo
               src={logoFor(type)}
-              alt=""
               className="h-6 w-6"
               data-testid="nodus-logo"
               data-vault-logo={type}

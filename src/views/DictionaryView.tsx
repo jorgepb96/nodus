@@ -1378,6 +1378,7 @@ export function DictionaryView({
           </button>
         </div>
         <WorkspaceTabStrip
+          className="workspace-tabs-in-header"
           homeLabel={tx("Diccionario ({n})", { n: total })}
           homeIcon="list"
           homeTestId="dictionary-tab-home"

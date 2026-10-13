@@ -16,6 +16,7 @@
     "esbuild": "^0.28.2",
     "pdf-lib": "^1.17.1",
     "subset-font": "^2.7.0",
-    "playwright-core": "1.61.1"
+    "playwright-core": "1.61.1",
+    "yjs": "^13.6.27"
   }
 }

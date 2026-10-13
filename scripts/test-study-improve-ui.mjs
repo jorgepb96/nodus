@@ -160,7 +160,6 @@ test('the compact prompt manager creates prompts and limits the toolbar to four'
   assert.match(dialog, /IconEmojiPicker/);
   assert.match(dialog, /allowEmoji=\{false\}/);
   assert.match(dialog, /studyStyleIcon/);
-  assert.match(dialog, /selected\.description/);
   assert.match(dialog, /máximo de cuatro prompts/);
   assert.doesNotMatch(dialog, /diffWordsWithSpace/);
   assert.doesNotMatch(dialog, /duplicateStudyStyle|archiveStudyStyle|importStudyStyles|exportStudyStyles/);

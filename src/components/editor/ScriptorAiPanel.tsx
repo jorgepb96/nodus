@@ -6,6 +6,7 @@ import { ModelPicker } from '../ModelPicker';
 import { useModelPickerPopover } from '../useModelPickerPopover';
 import { getActiveLang, t } from '../../i18n';
 import './scriptorAi.css';
+import { studyStyleDisplay } from './studyStyleLocalization';
 
 export interface AiChoice { id: string; label: string; description?: string; disabled?: boolean }
 export function ScriptorSearchSelect({ label, testId, value, choices, onChange, disabled }: { label: string; testId: string; value: string; choices: AiChoice[]; onChange(id: string): void; disabled?: boolean }) {
@@ -61,9 +62,9 @@ export function ScriptorAiPanel(props: {
   return <section ref={panel} className="scriptor-ai-panel" role="dialog" aria-modal="false" aria-label={t(props.mode === 'image' ? 'Crear imagen con IA' : 'Pulir')} data-testid="scriptor-ai-panel" data-streaming={props.status === 'streaming'} onKeyDown={event => { if (event.key === 'Escape' && !event.defaultPrevented) { event.preventDefault(); event.stopPropagation(); if (tools) setTools(false); else props.onClose(); } }}>
     <header><Icon name={props.mode === 'image' ? 'image' : 'aiPolish'} size={17} /><strong>{t(props.mode === 'image' ? 'Crear imagen con IA' : 'Pulir')}</strong><span className="scriptor-ai-status" role="status">{t(props.status === 'streaming' ? 'Comparación provisional…' : review ? 'Revisa la propuesta' : props.status === 'generating' ? 'Generando imagen…' : props.mode === 'polish' ? 'Texto seleccionado' : 'Vista previa antes de insertar')}</span><button type="button" aria-label={t('Cerrar')} data-testid="scriptor-ai-close" onClick={props.onClose}><Icon name="x" size={15} /></button></header>
     {props.mode === 'polish' && <div className="scriptor-ai-controls">
-      <ScriptorSearchSelect label={t('Estilo')} testId="scriptor-ai-style" choices={props.styles.map(style => ({ id: style.id, label: style.name, description: style.description }))} value={props.styleId} onChange={props.onStyleChange} disabled={busy} />
+      <ScriptorSearchSelect label={t('Estilo')} testId="scriptor-ai-style" choices={props.styles.map(style => { const display = studyStyleDisplay(style); return { id: style.id, label: display.name, description: display.description }; })} value={props.styleId} onChange={props.onStyleChange} disabled={busy} />
       <ModelPicker settings={props.settings} value={props.model} onChange={props.onModelChange} disabled={busy} compact menu allowEmpty={false} triggerModelOnly ariaLabel={t('Modelo de texto')} />
-      {props.quickStyles.map(style => <button type="button" className="scriptor-ai-quick" key={style.id} aria-pressed={style.id === props.styleId} disabled={busy} onClick={() => props.onStyleChange(style.id)}>{style.name}</button>)}
+      {props.quickStyles.map(style => <button type="button" className="scriptor-ai-quick" key={style.id} aria-pressed={style.id === props.styleId} disabled={busy} onClick={() => props.onStyleChange(style.id)}>{studyStyleDisplay(style).name}</button>)}
     </div>}
     {props.mode === 'image' && <div className="scriptor-ai-controls"><ScriptorSearchSelect label={t('Modelo de imagen')} testId="scriptor-ai-image-model" choices={props.imageChoices} value={`${props.imageModel.provider}:${props.imageModel.model}`} onChange={id => { const at = id.indexOf(':'); props.onImageModelChange({ provider: id.slice(0, at) as EditorImageModel['provider'], model: id.slice(at + 1) }); }} disabled={busy} /></div>}
     {props.error && <p role="alert" className="scriptor-ai-error" data-testid="scriptor-ai-error">{t(props.error)}</p>}

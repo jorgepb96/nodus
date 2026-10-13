@@ -47,6 +47,7 @@ import { t } from '../../i18n';
 import { DocOutline } from './DocOutline';
 import { StudyDictation, type StudyDictationHandle } from './StudyDictation';
 import { StudyImproveDialog } from './StudyImproveDialog';
+import { studyStyleDisplay } from './studyStyleLocalization';
 import { ScriptorAiPanel, type AiChoice } from './ScriptorAiPanel';
 import { editorReviewDiff, savedEditorImageModels, type EditorImageModel, type EditorImageResult } from '@shared/editorAiReview';
 import type { StudyImproveResult } from '@shared/studyImprove';
@@ -571,7 +572,8 @@ export function StudyEditor({
       replaceImprovedSelection(source.base, source.target, result.text, true);
       resultRef.current = null; setAiResult(null); setImprovePreview(''); setAiPanel(null);
       if (raw) focusRawAt(source.id, source.target.from + result.text.length);
-      setLastImprovement(allImproveStyles.find(style => style.id === result.styleId)?.name ?? t('Pulir'));
+      const style = allImproveStyles.find(style => style.id === result.styleId);
+      setLastImprovement(style ? studyStyleDisplay(style).name : t('Pulir'));
       void window.nodus.updateStudyImprovementAction(result.logId, 'replace').catch(cause => setImproveStreamError(aiErrorMessage(cause)));
     } catch (cause) { setImproveStreamError(aiErrorMessage(cause)); }
   };
@@ -1200,7 +1202,7 @@ export function StudyEditor({
             {(contextTab==='checks'||contextTab==='structure')&&<AcademicPanel document={nativeDocument??[]} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef.current} view={contextTab} unresolvedComments={data.annotations.filter(a=>!a.resolvedAt).length} onOpenSource={(href,evidence)=>void navigateReference(href,evidence)} onSettings={()=>academicTools.current?.open('settings')} />}
             {contextTab === 'details' && contextDetails}
             {contextTab === 'outline' && <DocOutline markdown={draft} onJump={jumpToHeading} />}
-            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{prompt.name}</button>)}</div>}
+            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{studyStyleDisplay(prompt).name}</button>)}</div>}
       {contextTab === 'details' && (
         <div className="grid grid-cols-2 gap-3 p-4">
           {onUpdateMetadata && <label className="text-[10px] text-neutral-500">{t('Tipo de material')}<select data-testid="study-doc-kind" className="input mt-1 w-full" value={active.kind} onChange={(event) => void onUpdateMetadata({ kind: event.target.value as StudyDocumentKind })}>{STUDY_DOCUMENT_KINDS.map((kind) => <option key={kind} value={kind}>{t(STUDY_KIND_LABEL[kind])}</option>)}</select></label>}

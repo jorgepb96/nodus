@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -90,5 +93,30 @@ test('the pinned notarize integration retries stapling without resubmitting nota
     notary.notarizeAndWaitForNotaryTool = original.submit;
     spawn.spawn = original.spawn;
     staple.stapleApp = original.staple;
+  }
+});
+
+test('native rebuild forks can preload retries after changing their working directory', () => {
+  const temporary = mkdtempSync(path.join(os.tmpdir(), 'nodus-stapler-fork-'));
+  const childPath = path.join(temporary, 'child.cjs');
+  const parentPath = path.join(temporary, 'parent.cjs');
+  const staplerPath = path.join(path.dirname(require.resolve('@electron/notarize')), 'staple.js');
+  try {
+    writeFileSync(childPath, `const staple = require(${JSON.stringify(staplerPath)}).stapleApp;
+process.send({ installed: staple[Symbol.for('nodus.macos.staplerRetries')] === true });\n`);
+    writeFileSync(parentPath, `const { fork } = require('node:child_process');
+const child = fork(${JSON.stringify(childPath)}, { cwd: ${JSON.stringify(temporary)}, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+child.stderr.pipe(process.stderr);
+child.on('message', (message) => process.stdout.write(JSON.stringify(message)));
+child.on('exit', (code) => process.exit(code));\n`);
+    const output = execFileSync(process.execPath, [
+      '--require', require.resolve('./macos-stapler-retry.cjs'), parentPath,
+    ], {
+      encoding: 'utf8', timeout: 15_000,
+      env: { ...process.env, NODUS_RETRY_MACOS_STAPLING: '1' },
+    });
+    assert.deepEqual(JSON.parse(output), { installed: true });
+  } finally {
+    rmSync(temporary, { recursive: true, force: true });
   }
 });

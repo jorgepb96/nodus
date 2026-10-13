@@ -222,7 +222,9 @@ jobs:
           NODUS_REQUIRE_MACOS_SIGNING: true
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: node --require ./scripts/macos-stapler-retry.cjs node_modules/.bin/electron-builder --mac --x64 --publish never --config build/electron-builder.release.cjs
+        # Native rebuild workers inherit Node's execArgv and change cwd. The
+        # preload must stay resolvable from those workers too.
+        run: node --require "$GITHUB_WORKSPACE/scripts/macos-stapler-retry.cjs" node_modules/.bin/electron-builder --mac --x64 --publish never --config build/electron-builder.release.cjs
 
       - name: Verify signed and notarized Intel artifacts
         run: node scripts/verify-macos-release.cjs release x64

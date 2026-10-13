@@ -49,7 +49,7 @@ test('the Intel build is the released application, signed exactly like a release
     'the signing tooling is in place before the packager starts');
   const build = step(intel, 'Build, sign and notarize the Intel artifacts');
   assert.match(build, /NODUS_RETRY_MACOS_STAPLING: '1'/);
-  assert.match(build, /node --require \.\/scripts\/macos-stapler-retry\.cjs node_modules\/\.bin\/electron-builder/);
+  assert.match(build, /node --require "\$GITHUB_WORKSPACE\/scripts\/macos-stapler-retry\.cjs" node_modules\/\.bin\/electron-builder/);
   assert.match(intel, /verify-release-channel\.mjs "\$CHANNEL" "\$RELEASE_TAG"/);
   assert.match(intel, /NODUS_REQUIRE_BOOTSTRAP: '1'/, 'the offline capability bootstrap is required, as on every release build');
   assert.match(intel, /electron-builder --mac --x64 --publish never --config build\/electron-builder\.release\.cjs/);

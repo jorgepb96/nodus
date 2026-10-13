@@ -93,6 +93,7 @@ import nodusLogoTeal from './assets/nodus-logo-teal.svg';
 import nodusLogoOrange from './assets/nodus-logo-orange.svg';
 import nodusLogoViolet from './assets/nodus-logo-violet.svg';
 import nodusLogoCyan from './assets/nodus-logo-cyan.svg';
+import { NodusHeaderLogo } from './components/NodusHeaderLogo';
 import { buildDockIconDataUrl, dockColorForVaultType } from './dockIcon';
 import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, applyThemeMode, applyVaultAccent } from './theme/themeBoot';
 import { APP_THEME_IDS } from '@shared/appThemes';
@@ -1555,11 +1556,10 @@ export function App() {
           aria-label={navCollapsed ? t('Mostrar el menú lateral') : t('Ocultar el menú lateral (más espacio para el grafo)')}
         >
           <span data-testid="sidebar-header-brand" className="flex items-center justify-center gap-2" style={{ transform: sidebarCompact && IS_MAC ? 'translateY(0.5625rem)' : undefined }}>
-            <img
+            <NodusHeaderLogo
               data-testid="nodus-logo"
               data-vault-logo={isPrimarySources ? 'primary_sources' : isGenealogy ? 'genealogy' : isDatabases ? 'databases' : isEstudio ? 'estudio' : isDocencia ? 'docencia' : isWorldbuilding ? 'worldbuilding' : isTestimonios ? 'testimonios' : isProsopography ? 'prosopography' : 'academic'}
               src={isGenealogy ? nodusLogoGold : isDatabases ? nodusLogoCrimson : isEstudio ? nodusLogoTeal : isDocencia ? nodusLogoOrange : isWorldbuilding ? nodusLogoViolet : isTestimonios ? nodusLogoCyan : nodusLogo}
-              alt=""
               className={sidebarCompact && IS_MAC
                 ? 'h-[18px] w-[18px]'
                 : sidebarCompact || (IS_MAC && sidebarWidth < MACOS_FULL_SIDEBAR_BRAND_MIN_WIDTH)

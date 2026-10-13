@@ -1614,8 +1614,14 @@ html.theme-active.light .nodus-tooltip { border-color: var(--theme-border-light)
   background: transparent;
 }
 
-/* The shared left navigation serves every vault type. Its inherited accent is
-   supplied by the app shell from the canonical VAULT_TYPE_COLORS map. */
+/* Header artwork keeps its exact vault variant in the default palette. */
+.nodus-header-logo { display: inline-flex; flex-shrink: 0; }
+.nodus-header-logo > img,
+.nodus-header-logo > svg { width: 100%; height: 100%; }
+.nodus-header-logo-theme { display: none; }
+
+/* The default palette uses the canonical vault accent. Active app themes
+   override it with their mode-specific accent in theme-components.css. */
 .vault-sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--vault-accent, #6366f1) transparent;

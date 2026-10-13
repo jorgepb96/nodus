@@ -783,11 +783,16 @@ export function addOption(
   label: string,
   color: string | null = null,
   group: DatabaseSelectOption['group'] = null,
+  identity?: string,
 ): DatabaseSelectOption {
   const db = getDb();
   const column = getColumn(columnId);
   if (!column) throw new Error('Propiedad de base de datos no encontrada.');
-  const id = newId('dopt');
+  const id = identity ?? newId('dopt');
+  if (identity) {
+    if (!/^dopt_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(identity)) throw new Error('Identidad de opción no válida.');
+    if (db.prepare('SELECT 1 FROM db_select_options WHERE id = ?').get(identity)) throw new Error('La opción ya existe.');
+  }
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_select_options WHERE column_id = ?').get(columnId) as {
       n: number;
@@ -2598,6 +2603,7 @@ function rowToAttachment(row: AttachmentMetaRow): DatabaseAttachment {
 }
 
 export interface AddAttachmentInput {
+  identity?: string;
   rowId: string;
   columnId: string;
   fileName: string | null;
@@ -2617,7 +2623,9 @@ export function addAttachment(input: AddAttachmentInput): DatabaseAttachment {
   const db = getDb();
   const context = cellContext(input.rowId, input.columnId);
   if (!context) throw new Error('Fila o propiedad de base de datos no encontrada.');
-  const id = newId('datt');
+  const id = input.identity ?? newId('datt');
+  if (input.identity && (!/^datt_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.identity)
+    || db.prepare('SELECT 1 FROM db_attachments WHERE id = ?').get(input.identity))) throw new Error('Identidad de adjunto no válida o ya utilizada.');
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_attachments WHERE row_id = ? AND column_id = ?').get(
       input.rowId,

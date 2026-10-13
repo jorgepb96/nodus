@@ -1,3 +1,4 @@
+import {mobileDatabaseFileUpload,DatabaseFileUploadError,MOBILE_DATABASE_FILE_CHUNK_BYTES} from './databaseAttachmentUploads';
 import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual, X509Certificate } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer, request as httpsRequest, type Server as HttpsServer } from 'node:https';
@@ -386,6 +387,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   }
   const pairing = authorize(request);
   if (!pairing) { reply(response, 401, { error: 'invalid_token' }); return; }
+  const databaseFileUpload=/^\/bridge\/v2\/vaults\/([^/]+)\/database-files\/([^/]+)\/(begin|status|chunk|commit|cancel)$/.exec(url.pathname);
+  if(request.method==='POST'&&databaseFileUpload){
+    const vaultId=decodeURIComponent(databaseFileUpload[1]),id=decodeURIComponent(databaseFileUpload[2]),action=databaseFileUpload[3];
+    const stillAuthorized=()=>{const current=authorize(request);if(!current)throw new DatabaseFileUploadError(401,'invalid_token','Este enlace ya no autoriza la transferencia.');return current.id===pairing.id&&current.domains.includes('writing')&&current.domains.includes('corpus')&&effectiveVaultIds(current).includes(vaultId);};
+    try{if(!stillAuthorized()){reply(response,403,{error:'permission_denied'});return;}reply(response,200,await mobileDatabaseFileUpload(vaultId,pairing.id,id,action,await body(request,MOBILE_DATABASE_FILE_CHUNK_BYTES*2),stillAuthorized));}
+    catch(error){if(error instanceof DatabaseFileUploadError)reply(response,error.status,{error:error.code,error_description:error.description});else throw error;}
+    return;
+  }
   if (request.method === 'GET' && url.pathname === '/bridge/v2/pairing') {
     reply(response, 200, { pairing: { ...pairing, vaultIds: effectiveVaultIds(pairing), tokenHash: undefined, relaySecret: undefined },
       relay: pairing.relayKeyId && pairing.relaySecret ? relayFor(pairing.relayKeyId, pairing.relaySecret) : undefined });

@@ -4,7 +4,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { gunzipSync } from 'node:zlib';
 import { installRuntimeHooks, requireElectronRuntime, repoRoot } from './lib/tsRuntimeHooks.mjs';
 
 if (!requireElectronRuntime(fileURLToPath(import.meta.url), '--structured-answer')) process.exit(0);
@@ -213,16 +212,12 @@ try {
   // Replay the two actual Luna proofs which withheld an otherwise audited
   // three-facet answer. This checks representation and literal spans only;
   // independent source inspection still supplies the quality score.
-  const captured = gunzipSync(fs.readFileSync(path.join(repoRoot,
-    'audit/research-luna-facet-id-failure/transcript.jsonl.gz'))).toString('utf8').trim().split('\n').map(JSON.parse);
-  const capturedProofs = captured.filter(row => row.kind === 'requests').map(row => {
-    const request = JSON.parse(row.raw);
-    const input = JSON.parse(request.request.messages[1].content);
-    if (!input.plannedFacets || !input.fullQuestionProof) return null;
-    const completion = captured.find(row => row.kind === 'completions' && row.filename === `${request.id}.json`);
-    assert.ok(completion, 'the original model response receipt is retained');
-    return { input, proof: JSON.parse(JSON.parse(completion.raw).content) };
-  }).filter(Boolean);
+  // Commit only the exact fields this regression needs. Original full receipts
+  // remain hash-bound in the local audit, outside the portable test dependency.
+  const capturedFixture = JSON.parse(fs.readFileSync(path.join(repoRoot,
+    'scripts/fixtures/research-coverage-missing-facet-ids.json'), 'utf8'));
+  assert.equal(capturedFixture.format, 'nodus.research-coverage-proof-regression/1');
+  const capturedProofs = capturedFixture.proofs;
   assert.equal(capturedProofs.length, 2, 'both original bounded proof attempts are replayed');
   for (const { input, proof } of capturedProofs) {
     assert.equal(proof.addressed.length, 3);

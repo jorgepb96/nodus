@@ -1,0 +1,102 @@
+{
+  "format": "nodus.research-coverage-proof-regression/1",
+  "origin": {
+    "archive": "audit/research-luna-facet-id-failure/transcript.jsonl.gz",
+    "archiveSha256": "2aafb86145285522958d350aaae130d8bb9b15610d11f792abe6cfaab279b9ce",
+    "selection": "Only the exact original answer, planned facets, proof and receipt hashes; no source corpus or credential data."
+  },
+  "proofs": [
+    {
+      "requestId": "0868e918-2365-4323-8c3a-0ab2b4191108",
+      "requestEnvelopeSha256": "f74ba012b1cc9f7925ed617bb0138f84f7452657ce4df23f52f359eb5522c589",
+      "completionEnvelopeSha256": "ba3e91a0a3959e8b5eec9e5fbc26702e46bde891f6f345d644c50a52dc7fb37c",
+      "input": {
+        "answer": "Linde permite que el endpoint /restore recupere elementos borrados. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)\n\nEse endpoint no recupera cuentas cerradas. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)\n\nPor separado, la API conserva eventos durante 14 días. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)",
+        "plannedFacets": [
+          {
+            "id": "f1",
+            "questionQuote": "lo que Linde permite restaurar"
+          },
+          {
+            "id": "f2",
+            "questionQuote": "lo que excluye"
+          },
+          {
+            "id": "f3",
+            "questionQuote": "sin mezclarlo con la retención de eventos"
+          }
+        ]
+      },
+      "proof": {
+        "addressed": [
+          {
+            "complaint": "lo que Linde permite restaurar",
+            "answerQuotes": [
+              "Linde permite que el endpoint /restore recupere elementos borrados."
+            ]
+          },
+          {
+            "complaint": "lo que excluye",
+            "answerQuotes": [
+              "Ese endpoint no recupera cuentas cerradas."
+            ]
+          },
+          {
+            "complaint": "sin mezclarlo con la retención de eventos",
+            "answerQuotes": [
+              "Por separado, la API conserva eventos durante 14 días."
+            ]
+          }
+        ],
+        "omissions": []
+      }
+    },
+    {
+      "requestId": "56a394a8-7ec7-4954-bc84-b3886635216b",
+      "requestEnvelopeSha256": "3649e53f6ddfe72f1ecf82199b0d8972bd659392ac7df60dfe7a22bb0e43f4dc",
+      "completionEnvelopeSha256": "e6aedda29b43c78cdbe527b93c35b027dae0977c1aa55dd7f69bfb031a7e0c90",
+      "input": {
+        "answer": "Linde permite que el endpoint /restore recupere elementos borrados. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)\n\nEse endpoint no recupera cuentas cerradas. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)\n\nPor separado, la API conserva eventos durante 14 días. [fixture 25, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fpolicy%3A0)",
+        "plannedFacets": [
+          {
+            "id": "f1",
+            "questionQuote": "lo que Linde permite restaurar"
+          },
+          {
+            "id": "f2",
+            "questionQuote": "lo que excluye"
+          },
+          {
+            "id": "f3",
+            "questionQuote": "sin mezclarlo con la retención de eventos"
+          }
+        ]
+      },
+      "proof": {
+        "addressed": [
+          {
+            "complaint": "lo que Linde permite restaurar",
+            "answerQuotes": [
+              "Linde permite que el endpoint /restore recupere elementos borrados."
+            ]
+          },
+          {
+            "complaint": "lo que excluye",
+            "answerQuotes": [
+              "Ese endpoint no recupera cuentas cerradas."
+            ]
+          },
+          {
+            "complaint": "sin mezclarlo con la retención de eventos",
+            "answerQuotes": [
+              "Linde permite que el endpoint /restore recupere elementos borrados.",
+              "Ese endpoint no recupera cuentas cerradas.",
+              "Por separado, la API conserva eventos durante 14 días."
+            ]
+          }
+        ],
+        "omissions": []
+      }
+    }
+  ]
+}

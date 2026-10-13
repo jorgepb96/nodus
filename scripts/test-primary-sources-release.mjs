@@ -119,19 +119,28 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
     'docs/primary-sources/acceptance-checklist.md',
     'docs/architecture/adr-005-primary-sources-release-privacy.md',
   ]) assert.ok(fs.existsSync(path.join(repoRoot, relative)), `${relative} exists`);
+  // Lossy WebP since 5.9.2 (quality 75): as PNG they were 18 MB of every installer.
+  // What matters for the learning corpus is the resolution a reader zooms into.
+  const sharp = require('sharp');
   for (const fileName of [
-    'letter-page-1.png',
-    'letter-page-2.png',
-    'letter-page-3.png',
-    'workshop-photograph.png',
-    'valley-voice-newspaper.png',
-    'river-road-sketch-map.png',
-    'flour-delivery-register.png',
+    'letter-page-1.webp',
+    'letter-page-2.webp',
+    'letter-page-3.webp',
+    'workshop-photograph.webp',
+    'valley-voice-newspaper.webp',
+    'river-road-sketch-map.webp',
+    'flour-delivery-register.webp',
   ]) {
     const bytes = fs.readFileSync(path.join(repoRoot, 'electron/assets/primary-sources-demo', fileName));
-    assert.ok(bytes.byteLength > 500_000, `${fileName} is a high-resolution demo asset`);
-    assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], `${fileName} is a PNG`);
+    assert.equal(bytes.subarray(0, 4).toString(), 'RIFF', `${fileName} is a WebP`);
+    assert.equal(bytes.subarray(8, 12).toString(), 'WEBP', `${fileName} is a WebP`);
+    const { width, height } = await sharp(bytes).metadata();
+    assert.ok(Math.max(width, height) >= 1500, `${fileName} is a high-resolution demo asset (${width}×${height})`);
   }
+  assert.ok(
+    !fs.readdirSync(path.join(repoRoot, 'electron/assets/primary-sources-demo')).some((fileName) => fileName.endsWith('.png')),
+    'no PNG copy ships beside them',
+  );
 
   execFileSync(
     path.join(repoRoot, 'node_modules/.bin/electron'),
@@ -175,7 +184,7 @@ try {
   assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_description_units WHERE unit_id LIKE 'demo-ps-series-%'").get().value, 2);
   assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_item_files WHERE item_id='demo-ps-item-letter' AND role='master'").get().value, 3);
   assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_item_files WHERE item_id='demo-ps-item-letter' AND role='access'").get().value, 1);
-  assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_item_files WHERE mime_type='image/png' AND json_extract(capture_metadata_json, '$.synthetic')=1 AND item_id LIKE 'demo-ps-%'").get().value, 8);
+  assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_item_files WHERE mime_type='image/webp' AND json_extract(capture_metadata_json, '$.synthetic')=1 AND item_id LIKE 'demo-ps-%'").get().value, 8);
   assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_text_versions WHERE status='automatic' AND item_id LIKE 'demo-ps-%'").get().value, 1);
   assert.ok(db.prepare("SELECT COUNT(*) AS value FROM archive_text_versions WHERE status='reviewed' AND item_id LIKE 'demo-ps-%'").get().value >= 2);
   assert.equal(db.prepare("SELECT COUNT(*) AS value FROM archive_entity_proposals WHERE source_engine='demo_fixture' AND status='pending'").get().value, 1);

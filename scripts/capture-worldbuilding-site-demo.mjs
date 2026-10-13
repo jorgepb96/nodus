@@ -5,8 +5,8 @@
 //   npm run capture:worldbuilding-site
 //
 // The throwaway profile keeps the operation reproducible and never touches a user's
-// vaults. PNG originals remain in electron/assets/worldbuilding-demo; the public site
-// receives only their smaller WebP derivatives.
+// vaults. The full originals (`*.original.webp`) stay in electron/assets/worldbuilding-demo;
+// the public site receives only their smaller card derivatives.
 
 import assert from 'node:assert/strict';
 import { cp, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
@@ -34,7 +34,7 @@ await mkdir(screenshotsDir, { recursive: true });
 await mkdir(siteAssetsDir, { recursive: true });
 
 const webpAssets = (await readdir(sourceAssetsDir))
-  .filter((fileName) => fileName.endsWith('.webp'))
+  .filter((fileName) => fileName.endsWith('.webp') && !fileName.endsWith('.original.webp'))
   .sort();
 assert.equal(webpAssets.length, 55, 'the Worldbuilding demo must expose all 55 WebP assets');
 await Promise.all(webpAssets.map((fileName) => (

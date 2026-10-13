@@ -102,7 +102,7 @@ function sources(L: DemoLocale): DemoSource[] {
       docType: 'letter', dateDisplay: { es: 'primavera de 1894', en: 'spring 1894' },
       dateStart: '1894-03-01', dateEnd: '1894-05-31', dateCertainty: 'circa',
       seriesId: ID.seriesCorrespondence, reference: 'FCA/COR/001', kind: 'image',
-      fileName: 'carta-clara-hoja-1.png', mimeType: 'image/png', content: demoAsset('letter-page-1.png'),
+      fileName: 'carta-clara-hoja-1.webp', mimeType: 'image/webp', content: demoAsset('letter-page-1.webp'),
       description: { es: 'Carta manuscrita sobre ayuda tras una crecida y una reunión vecinal.', en: 'Handwritten letter about relief after a flood and a neighbourhood meeting.' },
       metadata: {
         remitente: text(L, { es: 'Clara Montes', en: 'Clara Montes' }),
@@ -137,7 +137,7 @@ function sources(L: DemoLocale): DemoSource[] {
       docType: 'photograph', dateDisplay: { es: 'hacia 1895', en: 'circa 1895' },
       dateStart: '1894-01-01', dateEnd: '1896-12-31', dateCertainty: 'circa',
       seriesId: ID.seriesCommunity, reference: 'FCA/COM/003', kind: 'image',
-      fileName: 'taller-comunitario.png', mimeType: 'image/png', content: demoAsset('workshop-photograph.png'),
+      fileName: 'taller-comunitario.webp', mimeType: 'image/webp', content: demoAsset('workshop-photograph.webp'),
       description: { es: 'Cinco figuras no identificadas; la demo no usa reconocimiento facial.', en: 'Five unidentified figures; the demo does not use facial recognition.' },
       metadata: {
         personas: text(L, { es: 'Cinco personas no identificadas', en: 'Five unidentified people' }),
@@ -152,7 +152,7 @@ function sources(L: DemoLocale): DemoSource[] {
       docType: 'recorte_de_hemeroteca_noticia_de_periodi', dateDisplay: { es: '3 de febrero de 1895', en: '3 February 1895' },
       dateStart: '1895-02-03', dateEnd: '1895-02-03', dateCertainty: 'exact',
       seriesId: ID.seriesCommunity, reference: 'FCA/COM/004', kind: 'image',
-      fileName: 'voz-del-valle-1895.png', mimeType: 'image/png', content: demoAsset('valley-voice-newspaper.png'),
+      fileName: 'voz-del-valle-1895.webp', mimeType: 'image/webp', content: demoAsset('valley-voice-newspaper.webp'),
       description: { es: 'Página ficticia con OCR automático y una versión revisada.', en: 'Fictional page with automatic OCR and a reviewed version.' },
       metadata: {
         titular: text(L, { es: 'La crecida moviliza al valle', en: 'Flood mobilises the valley' }),
@@ -167,7 +167,7 @@ function sources(L: DemoLocale): DemoSource[] {
       docType: 'map', dateDisplay: { es: 'sin fecha [c. 1894]', en: 'undated [c. 1894]' },
       dateStart: '1893-01-01', dateEnd: '1895-12-31', dateCertainty: 'uncertain',
       seriesId: ID.seriesCommunity, reference: 'FCA/COM/Δ-1895/07', kind: 'image',
-      fileName: 'croquis-rio.png', mimeType: 'image/png', content: demoAsset('river-road-sketch-map.png'),
+      fileName: 'croquis-rio.webp', mimeType: 'image/webp', content: demoAsset('river-road-sketch-map.webp'),
       description: { es: 'El topónimo «San Martín» permanece ambiguo.', en: 'The place-name “San Martín” remains ambiguous.' },
       metadata: {
         titulo: text(L, { es: 'Croquis del camino del río', en: 'Sketch map of the river road' }),
@@ -182,7 +182,7 @@ function sources(L: DemoLocale): DemoSource[] {
       docType: 'administrative', dateDisplay: { es: '1894–1895', en: '1894–1895' },
       dateStart: '1894-01-01', dateEnd: '1895-12-31', dateCertainty: 'between',
       seriesId: ID.seriesCommunity, reference: 'FCA/COM/006', kind: 'image',
-      fileName: 'registro-entregas.png', mimeType: 'image/png', content: demoAsset('flour-delivery-register.png'),
+      fileName: 'registro-entregas.webp', mimeType: 'image/webp', content: demoAsset('flour-delivery-register.webp'),
       description: { es: 'Registro seriado con menciones personales.', en: 'Serial register containing personal mentions.' },
       metadata: {
         tipo_tramite: text(L, { es: 'Entrega de suministros', en: 'Supply distribution' }),
@@ -473,10 +473,10 @@ export function seedPrimarySourcesDemoData(): boolean {
     // The letter is a three-page batch. Each page is an immutable master and page
     // one also has a documented access derivative.
     for (let page = 2; page <= 3; page += 1) {
-      const bytes = demoAsset(`letter-page-${page}.png`);
+      const bytes = demoAsset(`letter-page-${page}.webp`);
       insertFile.run(
         `${PREFIX}file-letter-page-${page}`, `${PREFIX}item-letter`, null, 'master',
-        page - 1, String(page), `carta-clara-hoja-${page}.png`, 'image/png',
+        page - 1, String(page), `carta-clara-hoja-${page}.webp`, 'image/webp',
         bytes.byteLength, bytes, sha256(bytes), null,
         JSON.stringify({
           demo: true,
@@ -491,10 +491,10 @@ export function seedPrimarySourcesDemoData(): boolean {
         now, now, 'verified',
       );
     }
-    const accessCopy = demoAsset('letter-page-1.png');
+    const accessCopy = demoAsset('letter-page-1.webp');
     insertFile.run(
       `${PREFIX}file-letter-access`, `${PREFIX}item-letter`, `${PREFIX}file-letter-master`,
-      'access', 0, '1', 'carta-clara-acceso.png', 'image/png',
+      'access', 0, '1', 'carta-clara-acceso.webp', 'image/webp',
       accessCopy.byteLength, accessCopy, sha256(accessCopy),
       JSON.stringify({ operation: 'demo_access_copy', sourcePreserved: true }),
       JSON.stringify({

@@ -379,7 +379,8 @@ export function AiBadge({
  * is always in the accessibility tree (`aria-label` plus the `title` tooltip); only its
  * width is animated, so nothing is hidden from a screen reader or a pointerless user.
  * `showLabel` pins the text open — use it for an action in progress or one that must be
- * noticed. Sizing and tone come from `className` (`h-9 min-h-9 btn-ghost`, …).
+ * noticed. `iconOnly` keeps the width fixed and exposes the label through the tooltip.
+ * Sizing and tone come from `className` (`h-9 min-h-9 btn-ghost`, …).
  */
 export function HoverLabelButton({
   icon,
@@ -389,6 +390,7 @@ export function HoverLabelButton({
   className = '',
   spinning = false,
   showLabel = false,
+  iconOnly = false,
   disabled = false,
   trailing,
   ...rest
@@ -400,6 +402,7 @@ export function HoverLabelButton({
   className?: string;
   spinning?: boolean;
   showLabel?: boolean;
+  iconOnly?: boolean;
   disabled?: boolean;
   /** Rendered inside the expanding label (a keyboard shortcut, a dropdown chevron). */
   trailing?: React.ReactNode;
@@ -408,6 +411,9 @@ export function HoverLabelButton({
   'data-inbox-trigger'?: string;
   'data-notifications-trigger'?: string;
   'data-testid'?: string;
+  'aria-pressed'?: boolean;
+  'aria-expanded'?: boolean;
+  'aria-haspopup'?: 'dialog' | 'menu';
 }) {
   return (
     <button
@@ -420,7 +426,7 @@ export function HoverLabelButton({
       className={`header-action group btn justify-center px-2.5 py-0 leading-none ${className}`}
     >
       <Icon name={icon} className={spinning ? 'animate-spin' : ''} />
-      <span
+      {!iconOnly && <span
         className={`flex items-center overflow-hidden whitespace-nowrap transition-all duration-200 ${
           showLabel
             ? 'ml-1.5 max-w-[14rem] opacity-100'
@@ -429,7 +435,7 @@ export function HoverLabelButton({
       >
         {label}
         {trailing}
-      </span>
+      </span>}
     </button>
   );
 }

@@ -111,6 +111,73 @@ try {
   settingsRepo.updateSettings({ customProvider: { baseUrl: '', models: [] } });
   assert.equal(aiClient.completionTimeoutMs({ provider: 'custom', model: 'x' }), cloudBudget);
 
+  // --- 1b. Size silence from the native body, including Research and model defaults ---
+  const openai = { provider: 'openai', model: 'gpt-6.1-sol' };
+  for (const effort of ['low', 'medium', 'high', 'xhigh', 'max']) {
+    assert.equal(aiClient.streamIdleTimeoutMs(openai, { reasoning_effort: effort }), 900_000);
+  }
+  assert.equal(aiClient.streamIdleTimeoutMs(openai), 900_000, 'a reasoning model thinks by default');
+  assert.equal(aiClient.streamIdleTimeoutMs({ provider: 'openai', model: 'gpt-4o' }), cloudBudget);
+  assert.equal(aiClient.streamIdleTimeoutMs({ provider: 'openai', model: 'gpt-4o' }, { reasoning_effort: 'high' }), cloudBudget, 'a global effort does not make a non-reasoning model think');
+  assert.equal(aiClient.streamIdleTimeoutMs({ provider: 'openai', model: 'new-model' }, {}, { reasoningMandatory: true }), 900_000, 'native metadata identifies mandatory thinking without guessing a model name');
+  assert.equal(aiClient.streamIdleTimeoutMs({ provider: 'openai', model: 'gpt-unknown' }), cloudBudget);
+  for (const model of ['gpt-5.1', 'gpt-5.4-mini']) {
+    const ref = { provider: 'openai', model };
+    assert.equal(aiClient.streamIdleTimeoutMs(ref), cloudBudget, 'optional reasoning may default to none');
+    assert.equal(aiClient.streamIdleTimeoutMs(ref, { reasoning_effort: 'high' }), 900_000);
+    assert.equal(aiClient.streamIdleTimeoutMs(ref, {}, { defaultReasoningEffort: 'medium' }), 900_000, 'published defaults take precedence');
+    assert.equal(aiClient.streamIdleTimeoutMs(ref, {}, { defaultReasoningEffort: 'none' }), cloudBudget);
+  }
+  assert.equal(aiClient.streamIdleTimeoutMs({ provider: 'openai', model: 'gpt-5.6' }, { reasoning_effort: 'none' }), cloudBudget);
+  for (const provider of ['deepseek', 'anthropic', 'gemini', 'openrouter', 'groq']) {
+    assert.equal(aiClient.streamIdleTimeoutMs({ provider, model: 'x' }, { reasoning_effort: 'high' }), cloudBudget);
+  }
+  for (const provider of ['lmstudio', 'ollama', 'nodus']) {
+    assert.equal(aiClient.streamIdleTimeoutMs({ provider, model: 'x' }), aiClient.completionTimeoutMs({ provider, model: 'x' }));
+  }
+
+  // Exercise generationOptions -> completeTextStream -> the SDK constructor and request body.
+  // No provider request leaves this test; only the SDK is replaced, not the transport policy.
+  const providers = require(path.join(repoRoot, 'electron/ai/providers.ts'));
+  const originalListModels = providers.listModels;
+  const sdkCalls = [];
+  globalThis.__streamSdk = class {
+    constructor(options) {
+      this.chat = { completions: { create: (body) => ({ withResponse: async () => {
+        sdkCalls.push({ options, body });
+        return { response: { headers: new Headers() }, data: (async function* () {
+          yield { choices: [{ delta: { content: 'answer' }, finish_reason: 'stop' }] };
+        })() };
+      } }) } };
+    }
+  };
+  providers.listModels = async () => [{ id: openai.model, researchReasoningLevels: ['low', 'medium', 'high', 'xhigh', 'max'], reasoningMandatory: true }];
+  require(path.join(repoRoot, 'electron/secrets/secretStore.ts')).setApiKey('openai', 'test-only');
+  try {
+    const { researchGenerationOptions } = require(path.join(repoRoot, 'electron/ai/researchGenerationOptions.ts'));
+    const opts = await researchGenerationOptions({ model: openai, thinkingEffort: 'high' }, 64, false);
+    assert.equal(opts.reasoning, 'off', 'Research uses its own native effort');
+    assert.equal(await aiClient.completeTextStream({ system: 's', user: 'u', ...opts }, () => {}, openai), 'answer');
+    assert.equal(sdkCalls.at(-1).body.reasoning_effort, 'high');
+    assert.equal(sdkCalls.at(-1).options.timeout, 900_000);
+    await aiClient.completeTextStream({ system: 's', user: 'u', ...opts, timeoutMs: 321 }, () => {}, openai);
+    assert.equal(sdkCalls.at(-1).options.timeout, 321, 'an explicit deadline wins');
+    await aiClient.completeTextStream({ system: 's', user: 'u', reasoning: 'off' }, () => {}, openai);
+    assert.equal(sdkCalls.at(-1).options.timeout, 900_000, 'omitting effort leaves model-default reasoning on');
+    await aiClient.completeTextStream({ system: 's', user: 'u', reasoning: 'off', researchEffort: 'none' }, () => {}, { provider: 'openai', model: 'gpt-5.6' });
+    assert.equal(sdkCalls.at(-1).body.reasoning_effort, 'none');
+    assert.equal(sdkCalls.at(-1).options.timeout, cloudBudget, 'a real opt-out keeps the tight deadline');
+    await aiClient.completeTextStream({ system: 's', user: 'u', reasoning: 'off' }, () => {}, { provider: 'openai', model: 'gpt-4o' });
+    assert.equal(sdkCalls.at(-1).options.timeout, cloudBudget);
+    await aiClient.completeTextStream({ system: 's', user: 'u', reasoning: 'high' }, () => {}, { provider: 'openai', model: 'gpt-4o' });
+    assert.equal(sdkCalls.at(-1).options.timeout, cloudBudget, 'unsupported global hints cannot widen the SDK deadline');
+    await aiClient.completeTextStream({ system: 's', user: 'u', reasoning: 'off' }, () => {}, { provider: 'openai', model: 'gpt-5.4-mini' });
+    assert.equal(sdkCalls.at(-1).options.timeout, cloudBudget, 'an optional model default does not acquire 15 minutes of silence');
+  } finally {
+    delete globalThis.__streamSdk;
+    providers.listModels = originalListModels;
+  }
+
   // --- 2. A timeout is tagged, not merely worded ------------------------------
   //
   // The deep scan answers a timeout by splitting the chunk, which it must not do for an
@@ -133,13 +200,16 @@ try {
   const client = read('electron/ai/aiClient.ts');
   assert.match(client, /const timeoutMs = opts\.timeoutMs \?\? completionTimeoutMs\(model\)/,
     'buffered leased Nodus-local clients size their timeout by provider');
-  assert.match(client, /const streamTimeoutMs = opts\.timeoutMs \?\? completionTimeoutMs\(model\)/,
-    'streaming clients size their timeout by provider');
+  // A stream is sized by streamIdleTimeoutMs, not completionTimeoutMs: same provider rule, plus
+  // the allowance for a provider that sends nothing while it reasons (section 1b). Pinned to the
+  // source because the distinction is invisible at runtime until a model thinks for 3 minutes.
+  assert.match(client, /const streamTimeoutMs = opts\.timeoutMs \?\? streamIdleTimeoutMs\(model, body, opts\.researchModelInfo\)/,
+    'streaming clients size their timeout by provider AND by whether the reasoning is streamed');
   assert.ok((client.match(/withTransportDeadline\(/g) ?? []).length >= 2,
     'buffered OpenAI-compatible clients keep the deadline until the complete body settles');
   // The stream keeps a deadline over the complete body too, measured as idle time (a reasoning
   // model streams for minutes before answering) with a total ceiling.
-  assert.match(client, /const executeStream = \(body: any\) => withIdleTransportDeadline\(\s*streamTimeoutMs,\s*Math\.max\(streamTimeoutMs, STREAM_TOTAL_MS\)/,
+  assert.match(client, /return withIdleTransportDeadline\(\s*streamTimeoutMs,\s*Math\.max\(streamTimeoutMs, STREAM_TOTAL_MS\)/,
     'the streaming OpenAI-compatible client keeps an idle deadline and a total ceiling until the body settles');
   assert.doesNotMatch(client, /timeout: opts\.timeoutMs \?\? 180_000/, 'no hard-coded ceiling survives');
   assert.match(client, /'Tiempo agotado esperando al proveedor de IA[^']*',\s*false,\s*false,\s*'timeout'/,
@@ -169,7 +239,7 @@ function installRuntimeHooks(userDataPath) {
   const originalLoad = Module._load;
   const electronStub = {
     app: { getPath: () => userDataPath, getVersion: () => '0.0.0-test', getAppPath: () => repoRoot, isPackaged: false },
-    safeStorage: { isEncryptionAvailable: () => false, encryptString: (value) => Buffer.from(String(value)), decryptString: (value) => Buffer.from(value).toString() },
+    safeStorage: { isEncryptionAvailable: () => true, encryptString: (value) => Buffer.from(String(value)), decryptString: (value) => Buffer.from(value).toString() },
     dialog: {}, shell: {}, BrowserWindow: class {}, ipcMain: { handle: () => undefined, on: () => undefined },
   };
   Module._resolveFilename = function resolveFilename(request, parent, isMain, options) {
@@ -178,6 +248,7 @@ function installRuntimeHooks(userDataPath) {
   };
   Module._load = function load(request, parent, isMain) {
     if (request === 'electron') return electronStub;
+    if (request === 'openai' && globalThis.__streamSdk) return globalThis.__streamSdk;
     return originalLoad.call(this, request, parent, isMain);
   };
   require.extensions['.ts'] = function loadTs(module, filename) {

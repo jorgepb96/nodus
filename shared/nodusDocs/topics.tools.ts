@@ -26,12 +26,12 @@ export const TOOL_DOC_TOPICS: readonly NodusDocTopic[] = [
     keywords: ['toolkit', 'herramientas', 'hub', 'nodus tools', 'catalogo', 'fijar', 'desfijar', 'nodus scriptor', 'utilidades', 'convert', 'protect', 'translate', 'presenter', 'ocr'],
     body: {
       es: `- Herramientas es una sección de la barra lateral en su propio grupo y también tiene icono en la cabecera («Abrir Nodus Toolkit»). Aparece en todos los tipos de bóveda.
-- Su página principal es un hub con las tarjetas del catálogo: Nodus Apps, Nodus Browser, Nodus Compass, Nodus Convert, Nodus Drift, Nodus Focus, Nodus Protect, Nodus Radar, Nodus Scriptor, Nodus Translate, PDF Presenter y OCR Workspace. Cada tarjeta se puede fijar como atajo en la barra lateral («Fijar» / «Desfijar»).
+- Su página principal es un hub con las tarjetas del catálogo: Nodus Apps, Nodus Browser, Nodus Compass, Nodus Convert, Nodus Drift, Nodus Focus, Nodus Protect, Nodus Radar, Nodus Scriptor, Nodus Translate, Nodus Presenter y OCR Workspace. Cada tarjeta se puede fijar como atajo en la barra lateral («Fijar» / «Desfijar»).
 - Nodus Scriptor está fijado por defecto en Herramientas, con fondo blanco y edición por bloques. El usuario puede desfijarlo; la elección se conserva después de la activación inicial de esta actualización.
 - Dentro de una herramienta, el botón a la izquierda de su título vuelve al hub.
 - Utilidades locales para investigación, docencia y estudio: convertir y procesar archivos sin salir de Nodus.`,
       en: `- Tools is a sidebar section in its own group and also has a header icon ("Open Nodus Toolkit"). It appears in every vault type.
-- Its home is a hub with the catalogue cards: Nodus Apps, Nodus Browser, Nodus Compass, Nodus Convert, Nodus Drift, Nodus Focus, Nodus Protect, Nodus Radar, Nodus Scriptor, Nodus Translate, PDF Presenter and OCR Workspace. Each card can be pinned as a sidebar shortcut ("Pin" / "Unpin").
+- Its home is a hub with the catalogue cards: Nodus Apps, Nodus Browser, Nodus Compass, Nodus Convert, Nodus Drift, Nodus Focus, Nodus Protect, Nodus Radar, Nodus Scriptor, Nodus Translate, Nodus Presenter and OCR Workspace. Each card can be pinned as a sidebar shortcut ("Pin" / "Unpin").
 - Nodus Scriptor is pinned under Tools by default, with a white background and block editing. Users can unpin it; that choice persists after this update initially enables it.
 - Inside a tool, the button to the left of its title returns to the hub.
 - Local utilities for research, teaching and study: convert and process files without leaving Nodus.`,
@@ -100,16 +100,16 @@ export const TOOL_DOC_TOPICS: readonly NodusDocTopic[] = [
   {
     id: 'toolkit-presenter',
     area: 'tools',
-    title: { es: 'PDF Presenter: biblioteca de presentaciones', en: 'PDF Presenter: presentation library' },
+    title: { es: 'Nodus Presenter: biblioteca de presentaciones', en: 'Nodus Presenter: presentation library' },
     keywords: ['presenter', 'presentaciones', 'diapositivas', 'powerpoint', 'keynote', 'libreoffice', 'notas del orador', 'youtube', 'video', 'pdf', 'biblioteca', 'pantalla externa', 'mando', 'qr', 'pin'],
     body: {
-      es: `- PDF Presenter importa archivos PDF o presentaciones creadas en PowerPoint, LibreOffice o Keynote a una biblioteca global de Herramientas, con etiquetas, búsqueda, orden (añadido recientemente, abierto recientemente, nombre A→Z y Z→A), renombrar, descargar, eliminar y miniaturas.
+      es: `- Nodus Presenter importa archivos PDF o presentaciones creadas en PowerPoint, LibreOffice o Keynote a una biblioteca global de Herramientas, con etiquetas, búsqueda, orden (añadido recientemente, abierto recientemente, nombre A→Z y Z→A), renombrar, descargar, eliminar y miniaturas.
 - Las presentaciones externas se convierten localmente a PDF y se avisa de que las animaciones y transiciones no se conservan; las notas de los PowerPoint modernos se importan automáticamente.
 - Permite escribir notas por diapositiva, exportarlas e importarlas juntas en TXT, añadir vídeos de YouTube por diapositiva y descargar el PDF de la presentación.
 - Al presentar abre la diapositiva a pantalla completa (en la pantalla externa si hay dos) y una vista del presentador con la diapositiva actual, la siguiente, las notas, un temporizador y el reloj, además de herramientas de anotación en directo (linterna, dibujo, puntero y lupa), pantalla en negro y control remoto desde el móvil con un código QR protegido por PIN.
 - Lo único que necesita conexión son los vídeos de YouTube; el resto funciona sin internet.
 - En esta versión, la vista disponible en Herramientas es la biblioteca con sus modales de notas y vídeo: si alguien pregunta por la presentación en vivo o el mando remoto dentro de Nodus, indícalo como no verificado en vez de prometerlo.`,
-      en: `- PDF Presenter imports PDF files or presentations made in PowerPoint, LibreOffice or Keynote into a global Tools library, with tags, search, ordering (recently added, recently opened, name A→Z and Z→A), rename, download, delete and thumbnails.
+      en: `- Nodus Presenter imports PDF files or presentations made in PowerPoint, LibreOffice or Keynote into a global Tools library, with tags, search, ordering (recently added, recently opened, name A→Z and Z→A), rename, download, delete and thumbnails.
 - External presentations are converted locally to PDF and a notice says animations and transitions are not preserved; notes from modern PowerPoint files are imported automatically.
 - It supports per-slide speaker notes, exporting and importing them together as TXT, per-slide YouTube videos and downloading the presentation's PDF.
 - While presenting it opens the slide full screen (on the external display when there are two) and a presenter view with the current slide, the next one, the notes, a timer and the clock, plus live annotation tools (flashlight, drawing, pointer and magnifier), a black screen, and a mobile remote through a QR code protected by a PIN.

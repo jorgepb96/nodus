@@ -47,6 +47,7 @@ ${free
 - ${copy.conflictInstruction}
 ${style.systemPrompt ? `\n${copy.styleHeader}\n${style.systemPrompt}` : ''}`;
   const user = `${styleInstruction}
+${request.additionalInstructions?.trim() ? `\n${request.additionalInstructions.trim()}\n` : ''}
 
 ${copy.scopeLabel}: ${request.scope}.
 ${copy.outputLanguage}: ${request.variables?.language || style.language || copy.sameOriginal}.
@@ -89,6 +90,8 @@ export async function improveStudyText(
   onDelta: (delta: string) => void,
   signal?: AbortSignal,
 ): Promise<StudyImproveResult> {
+  signal?.throwIfAborted();
+  if (request.additionalInstructions !== undefined && (typeof request.additionalInstructions !== 'string' || request.additionalInstructions.length > 4000)) throw new Error('Las instrucciones superan el límite de 4.000 caracteres.');
   const original = request.text.replace(/\r\n/g, '\n');
   if (!original.trim()) throw new Error('Selecciona texto para mejorarlo.');
   if (original.length > MAX_SELECTION_CHARS) throw new Error(`La selección supera el límite de ${MAX_SELECTION_CHARS.toLocaleString('es-ES')} caracteres.`);
@@ -136,6 +139,7 @@ export async function improveStudyText(
     }, model, signal);
   });
   const raw = completed.value; const model = completed.model;
+  signal?.throwIfAborted();
   const protectedResult = stripWrappingFence(raw || streamed);
   // Some small local models helpfully expand a placeholder back to the exact
   // protected value even though the prompt asks them not to touch it. That is
@@ -147,6 +151,7 @@ export async function improveStudyText(
     throw new Error(`La mejora alteró ${missing.length} fragmento(s) protegido(s). El original no se ha modificado.`);
   }
   const text = restoreProtectedSpans(protectedResult, protectedValue.spans);
+  if (!text.trim()) throw new Error('La IA no devolvió texto. El original no se ha modificado.');
   if (text.startsWith(visibleStreamed)) {
     const trailingDelta = text.slice(visibleStreamed.length);
     visibleStreamed = text;

@@ -7,6 +7,7 @@ import { Icon, ICON_NAMES, Spinner } from '../ui';
 import { IconEmojiPicker } from '../IconEmojiPicker';
 import { ConfirmModal } from '../ConfirmModal';
 import './studyImproveDialog.css';
+import { studyStyleDisplay } from './studyStyleLocalization';
 
 const TOOLBAR_LIMIT = 4;
 
@@ -85,10 +86,15 @@ export function StudyImproveDialog({ onToolbarChanged, onClose, onApply }: {
   useEffect(() => { void load(); }, []);
 
   const selected = styles.find((style) => style.id === selectedId) ?? null;
+  const selectedDisplay = selected ? studyStyleDisplay(selected) : null;
+  const language = getActiveLang();
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
-    return styles.filter((style) => !needle || `${style.name} ${style.description} ${style.prompt}`.toLocaleLowerCase().includes(needle));
-  }, [styles, query]);
+    return styles.filter((style) => {
+      const display = studyStyleDisplay(style);
+      return !needle || `${display.name} ${display.description} ${display.prompt}`.toLocaleLowerCase().includes(needle);
+    });
+  }, [styles, query, language]);
 
   const toggleToolbar = async (style: StudyStyle) => {
     const active = toolbarIds.includes(style.id);
@@ -171,8 +177,9 @@ export function StudyImproveDialog({ onToolbarChanged, onClose, onApply }: {
           <div className="study-prompts-list" data-testid="study-style-list" role="list" aria-label={t('Prompts de mejora')}>
             {filtered.map((style) => {
               const inToolbar = toolbarIds.includes(style.id);
+              const display = studyStyleDisplay(style);
               return <div key={style.id} className={`study-prompts-row${selectedId === style.id ? ' is-selected' : ''}`} role="listitem">
-                <button type="button" className="study-prompts-choice" data-testid={`study-style-${style.id.replace(':', '-')}`} aria-pressed={selectedId === style.id} title={style.name} onClick={() => { setSelectedId(style.id); setEditing(null); setMessage(''); }}><PromptMark style={style} size={16} /><span>{style.name}</span></button>
+                <button type="button" className="study-prompts-choice" data-testid={`study-style-${style.id.replace(':', '-')}`} aria-pressed={selectedId === style.id} title={display.name} onClick={() => { setSelectedId(style.id); setEditing(null); setMessage(''); }}><PromptMark style={style} size={16} /><span>{display.name}</span></button>
                 <button type="button" data-testid={`study-style-toolbar-${style.id.replace(':', '-')}`} className={`study-prompts-pin${inToolbar ? ' is-pinned' : ''}`} aria-pressed={inToolbar} title={inToolbar ? t('Quitar de la barra') : t('Mostrar en la barra')} aria-label={inToolbar ? t('Quitar de la barra') : t('Mostrar en la barra')} onClick={() => void toggleToolbar(style)}><Icon name="star" size={13} /></button>
               </div>;
             })}
@@ -191,17 +198,17 @@ export function StudyImproveDialog({ onToolbarChanged, onClose, onApply }: {
             </div>
           </> : selected ? <>
             <div className="study-prompts-detail-header">
-              <div className="study-prompts-identity"><PromptMark style={selected} size={18} /><div><h3>{selected.name}</h3><p>{t(selected.builtIn ? 'Prompt incluido' : 'Prompt personalizado')}</p></div></div>
+              <div className="study-prompts-identity"><PromptMark style={selected} size={18} /><div><h3>{selectedDisplay?.name}</h3><p>{t(selected.builtIn ? 'Prompt incluido' : 'Prompt personalizado')}</p></div></div>
               <div className="study-prompts-detail-actions">
                 <button type="button" data-testid="study-prompt-edit" className="btn" disabled={busy || selected.builtIn} title={selected.builtIn ? builtInNotice : t('Editar prompt')} onClick={() => startEdit(selected)}><Icon name="edit" size={13} />{t('Editar')}</button>
                 <button type="button" ref={deleteButtonRef} data-testid="study-prompt-delete" className="btn study-prompts-delete" disabled={busy || selected.builtIn} title={selected.builtIn ? builtInNotice : t('Eliminar prompt')} onClick={() => { setMessage(''); setPendingDeletion(selected); }}><Icon name="trash" size={13} />{t('Eliminar')}</button>
               </div>
             </div>
             <article className="study-prompts-content" data-testid="study-prompt-content" key={selected.id}>
-              <p className="study-prompts-description">{selected.description || t('Sin descripción.')}</p>
+              <p className="study-prompts-description">{selectedDisplay?.description || t('Sin descripción.')}</p>
               {selected.builtIn && <p className="study-prompts-builtin-notice">{builtInNotice}</p>}
               <h4>{t('Prompt guardado')}</h4>
-              <pre className="study-prompts-text">{selected.prompt}</pre>
+              <pre className="study-prompts-text">{selectedDisplay?.prompt}</pre>
             </article>
           </> : <div className="study-prompts-content study-prompts-empty">{t('No hay prompts guardados.')}</div>}
           {message && <p className="study-prompts-message" role="status">{message}</p>}

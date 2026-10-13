@@ -84,6 +84,8 @@ const ICON_PATHS: Record<string, string> = {
   strata: '<polyline points="4 5 9 5 11 4 14 6 20 5"/><polyline points="2 12 7 12 10 10 14 11 17 12 22 12"/><polyline points="5 19 9 19 11 18 14 19 17 17 20 18"/>',
   sigma: '<path d="M18 4H6l6 8-6 8h12"/>',
   wand: '<path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8L19 13"/><path d="M15 9h0"/><path d="M17.8 6.2L19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2L11 5"/>',
+  aiPolish: '<path d="m13 6 5 5M4 20l4-1L20 7a2.1 2.1 0 0 0-3-3L5 16z"/><path d="m6 2 1.2 2.8L10 6 7.2 7.2 6 10 4.8 7.2 2 6l2.8-1.2z"/>',
+  sliders: '<path d="M4 6h4m4 0h8M4 18h8m4 0h4"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="18" r="2"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
   cube: '<path d="M12 2 3 7v10l9 5 9-5V7Z"/><path d="M3 7l9 5 9-5"/><path d="M12 12v10"/>',
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
@@ -377,7 +379,8 @@ export function AiBadge({
  * is always in the accessibility tree (`aria-label` plus the `title` tooltip); only its
  * width is animated, so nothing is hidden from a screen reader or a pointerless user.
  * `showLabel` pins the text open — use it for an action in progress or one that must be
- * noticed. Sizing and tone come from `className` (`h-9 min-h-9 btn-ghost`, …).
+ * noticed. `iconOnly` keeps the width fixed and exposes the label through the tooltip.
+ * Sizing and tone come from `className` (`h-9 min-h-9 btn-ghost`, …).
  */
 export function HoverLabelButton({
   icon,
@@ -387,6 +390,7 @@ export function HoverLabelButton({
   className = '',
   spinning = false,
   showLabel = false,
+  iconOnly = false,
   disabled = false,
   trailing,
   ...rest
@@ -398,6 +402,7 @@ export function HoverLabelButton({
   className?: string;
   spinning?: boolean;
   showLabel?: boolean;
+  iconOnly?: boolean;
   disabled?: boolean;
   /** Rendered inside the expanding label (a keyboard shortcut, a dropdown chevron). */
   trailing?: React.ReactNode;
@@ -406,6 +411,9 @@ export function HoverLabelButton({
   'data-inbox-trigger'?: string;
   'data-notifications-trigger'?: string;
   'data-testid'?: string;
+  'aria-pressed'?: boolean;
+  'aria-expanded'?: boolean;
+  'aria-haspopup'?: 'dialog' | 'menu';
 }) {
   return (
     <button
@@ -418,7 +426,7 @@ export function HoverLabelButton({
       className={`header-action group btn justify-center px-2.5 py-0 leading-none ${className}`}
     >
       <Icon name={icon} className={spinning ? 'animate-spin' : ''} />
-      <span
+      {!iconOnly && <span
         className={`flex items-center overflow-hidden whitespace-nowrap transition-all duration-200 ${
           showLabel
             ? 'ml-1.5 max-w-[14rem] opacity-100'
@@ -427,7 +435,7 @@ export function HoverLabelButton({
       >
         {label}
         {trailing}
-      </span>
+      </span>}
     </button>
   );
 }

@@ -1,5 +1,6 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -170,6 +171,7 @@ export const TR: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["tr"],
   ...STUDY_FOCUS_TRANSLATIONS["tr"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["tr"],
+  ...SCRIPTOR_AI_TRANSLATIONS["tr"],
   ...STUDY_IMPROVE_TRANSLATIONS.tr,
   ...WORKSPACE_TRANSLATIONS.tr,
   "Lo que cuenta el mapa": "Haritanın anlattıkları",
@@ -1652,7 +1654,7 @@ export const TR: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Dosyaları dönüştürmek ve belgeleri işlemek için Nodus'ta yerleşik, kullanışlı, yerel öncelikli araçlar.",
-  "Nodus PDF Presenter": "Nodus PDF Sunucusu",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "Sunum yapan kişi görünümü, mobil uzaktan kumanda, konuşmacı notları ve canlı açıklama ekleme araçlarıyla PDF'ler ve harici sunumlar sunun.",
   "Nodus OCR Workspace": "Nodus OCR Çalışma Alanı",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "Taranan PDF'ler ve görüntüler için sayfa sayfa inceleme, metin temizleme, yeniden işleme ve Nodus kasalarıyla doğrudan entegrasyon özellikleriyle yapay zeka destekli OCR.",

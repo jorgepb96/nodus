@@ -104,6 +104,38 @@ export function findTargetName(text: string): string | null {
   return name.length >= 2 ? name : null;
 }
 
+/** What an assembled target is built from, as the decomposition found it.
+ *
+ *  `capped` is the unit as a free molecule — the cut ends restored — which is the form a retro
+ *  search or a stock check can take. `ids` empty means the library could not name it, which is not
+ *  a failure: an unnamed fragment is still a small molecule and still cheap to ask about. */
+export interface TargetUnit {
+  /** Library ids that cover this fragment exactly; several means the library cannot tell them apart. */
+  ids: string[];
+  /** The fragment as cut, carrying a dummy atom at each cut end. */
+  smiles: string;
+  /** The fragment as a free molecule, cut ends restored. */
+  capped?: string;
+  /** Which of the unit's attachment points were joined here. */
+  joinedAt?: string[];
+  /** Protecting groups taken off before it could be named. */
+  deprotected?: string[];
+}
+
+export interface TargetDecomposition {
+  input: string;
+  target: string;
+  atoms: number;
+  /** Bonds cut to separate the units. */
+  linkBonds: number;
+  /** Fraction of the target's atoms lying in a named unit. */
+  covered: number;
+  units: TargetUnit[];
+  unidentified: TargetUnit[];
+  /** Whether a unit library was available to name anything. */
+  hasLibrary: boolean;
+}
+
 export interface DisconnectionProposal {
   /** Precursor SMILES, dot-separated. */
   precursors: string;

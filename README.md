@@ -26,7 +26,7 @@ Download the installer for your computer and open it. There is no server to conf
 | Platform | Latest installer | Downloads |
 | --- | --- | --- |
 | macOS with Apple silicon | [Download DMG](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-mac-arm64.dmg) | <img alt="Downloads of the macOS Apple silicon build" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.macosArm64&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
-| macOS Intel (last supported release: 5.8.1) | [Download DMG](https://github.com/jorgepb96/nodus/releases/download/v5.8.1/Nodus-mac-x64.dmg) | <img alt="Downloads of the macOS Intel build" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.macosIntel&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
+| macOS with an Intel processor | [Download DMG](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-mac-x64.dmg) | <img alt="Downloads of the macOS Intel build" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.macosIntel&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
 | Windows 10 and 11 | [Download EXE](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-win-x64.exe) | <img alt="Downloads of the Windows build" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.windows&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
 | Ubuntu and Debian | [Download DEB](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-linux-amd64.deb) | <img alt="Downloads of the Debian and Ubuntu package" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.linuxDeb&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
 | Fedora, openSUSE and other RPM-based distributions | [Download RPM](https://github.com/jorgepb96/nodus/releases/latest/download/Nodus-linux-x86_64.rpm) | <img alt="Downloads of the RPM package" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fnodusresearch.com%2Fdata%2Fgithub-release-downloads.json&amp;query=%24.installers.linuxRpm&amp;label=downloads&amp;style=flat-square&amp;color=374151"> |
@@ -103,13 +103,13 @@ Teaching tools cover private student rosters, gradebooks, reusable rubrics and e
 
 ## Nodus Toolkit
 
-The Toolkit brings practical document tools together in every vault. Convert changes files between common formats, Protect combines files and adds permanent redactions, watermarks and traceable copies, and Translate works with text, files and Zotero attachments while preserving DOCX and EPUB structure. PDF Presenter and OCR Workspace complete the set. Nodus Drift, still in development, mixes ambient sounds while you read or study; it works offline and never uses the network.
+The Toolkit brings practical document tools together in every vault. Convert changes files between common formats, Protect combines files and adds permanent redactions, watermarks and traceable copies, and Translate works with text, files and Zotero attachments while preserving DOCX and EPUB structure. Nodus Presenter and OCR Workspace complete the set. Nodus Drift, still in development, mixes ambient sounds while you read or study; it works offline and never uses the network.
 
 Drift defaults to its recommended catalogue order. The sorting menu also offers alphabetical order, category followed by name, and most used first, with alphabetical ties and unused sounds at the end. The chosen order and use counts stay local. Sounds count a use when playback starts successfully; saved presets count their explicit loads and use their associated icon when sorting by type.
 
 You can open material from disk or from compatible vault sources, then save the result, share it or return it to the vault. Nodus Protect processes documents entirely on your computer and never sends them to an AI provider. Translate only uses the model you choose when you ask it to.
 
-![Nodus Toolkit showing Apps, Convert, Protect, Translate, PDF Presenter and OCR Workspace](docs/screenshots/readme-toolkit-demo.png)
+![Nodus Toolkit showing Apps, Convert, Protect, Translate, Nodus Presenter and OCR Workspace](docs/screenshots/readme-toolkit-demo.png)
 
 ## Skill marketplace
 

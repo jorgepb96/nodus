@@ -25,7 +25,7 @@ test('the 2.4.0 update queues a one-off toolkit guide behind release notes', asy
 test('the guide covers all five tools, extraction choices, performance and subscriptions', async () => {
   const guide = await read('src/components/ToolkitBetaGuide.tsx');
   const navigation = await read('src/navigation.ts');
-  for (const tool of ['Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'PDF Presenter', 'OCR Workspace']) assert.ok(navigation.includes(tool));
+  for (const tool of ['Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'Nodus Presenter', 'OCR Workspace']) assert.ok(navigation.includes(tool));
   for (const expected of [
     'Gemma 4 E2B Q4',
     '20 ejecuciones correctas de 20',

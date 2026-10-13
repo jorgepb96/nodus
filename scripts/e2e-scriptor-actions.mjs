@@ -94,7 +94,7 @@ try {
   });
   await select('second');await options.click();await bar.getByTestId('study-improve-toggle').click();
   const prompts=page.getByTestId('study-improve-dialog');await prompts.waitFor();await page.getByTestId('study-style-'+fixture.promptId).click();await page.getByTestId('study-prompt-apply').click();
-  await page.getByTestId('study-improve-complete').waitFor();assert.deepEqual(await app.evaluate(()=>globalThis.scriptorActionRequests.map(request=>({text:request.text,scope:request.scope}))),[{text:'La memoria del paisaje',scope:'selection'}]);
+  await page.getByTestId('scriptor-ai-send').click();await page.getByTestId('scriptor-ai-accept').click();await page.getByTestId('study-improve-complete').waitFor();assert.deepEqual(await app.evaluate(()=>globalThis.scriptorActionRequests.map(request=>({text:request.text,scope:request.scope}))),[{text:'La memoria del paisaje',scope:'selection'}]);
   assert.match(await page.locator('[data-id="second"] .bn-inline-content').innerText(),/La memoria documentada del paisaje/);assert.match(await page.locator('[data-id="first"] .bn-inline-content').innerText(),/^La memoria del paisaje/);
   await page.getByTestId('study-improve-undo').click();await page.keyboard.press('Meta+s');await page.waitForTimeout(1000);
   assert.deepEqual((await page.evaluate(id=>window.nodus.getWorkspaceNoteEditorData(id),fixture.noteId)).nativeDocument,original.nativeDocument,'one-step undo restores IDs, rich text and custom properties');

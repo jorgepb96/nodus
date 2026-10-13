@@ -1,7 +1,7 @@
-# PDF Presenter
+# Nodus Presenter
 
-PDF Presenter keeps a local library of imported presentation copies, independent
-of the active vault. Open it from **Nodus Toolkit → PDF Presenter**.
+Nodus Presenter keeps a local library of imported presentation copies, independent
+of the active vault. Open it from **Nodus Toolkit → Nodus Presenter**.
 
 ## Organizing presentations
 

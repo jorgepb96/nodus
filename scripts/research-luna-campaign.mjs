@@ -474,4 +474,3 @@ try {
   process.removeListener('SIGTERM', stop);
   if (!report.completed) process.exitCode = 1;
 }
-

@@ -1,5 +1,6 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -172,6 +173,7 @@ export const FR: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["fr"],
   ...STUDY_FOCUS_TRANSLATIONS["fr"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["fr"],
+  ...SCRIPTOR_AI_TRANSLATIONS["fr"],
   ...STUDY_IMPROVE_TRANSLATIONS.fr,
   ...WORKSPACE_TRANSLATIONS.fr,
   "Lo que cuenta el mapa": "Ce que raconte la carte",
@@ -1337,7 +1339,7 @@ export const FR: Record<string, string> = {
   'Nodus Tools': 'Nodus Tools',
   'Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.':
     'Des outils pratiques et local-first pour convertir des fichiers et traiter des documents, intégrés à Nodus.',
-  'Nodus PDF Presenter': 'Nodus PDF Presenter',
+  'Nodus Presenter': 'Nodus Presenter',
   'Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.':
     'Présentez des PDF et des présentations externes avec vue présentateur, contrôle à distance depuis le mobile, notes du conférencier et outils d\'annotation en direct.',
   'Nodus OCR Workspace': 'Nodus OCR Workspace',

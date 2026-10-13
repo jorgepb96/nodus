@@ -23,8 +23,19 @@ reagents, catalysts and solvents (USPTO inputs that give no atom to a product co
 temperature, time, atmosphere, yield and reference (DOI, or the patent for USPTO data). The worker
 attaches them to precedents so a step can be cited with what it was run with.
 
-Extraction checkpoints are content-addressed (file SHA-256 + row group), so a rebuild re-extracts
-only new data. `progress.py` / `reaction_progress.py` report a running build.
+Extraction checkpoints include the data SHA-256, row group, extractor version, template threshold,
+external mapping file SHA-256 and confidence floor. Rebuilds reuse only matching inputs.
+`progress.py` / `reaction_progress.py` report a running build.
+
+`retro-templates.tsv.zst` retains its three-column format for installed Chemistry Studio plugins.
+The additive `template-radii.tsv.zst` stores the radii of retained retro/forward templates;
+the manifest names its file and columns. Forward templates have their own four-column format.
+Decomposition is optional: packages without `decompose-target` keep whole-target searches.
+
+Run the builder regression suite with the CI dependencies:
+
+    python -m unittest discover -s tools/reaction-index -p 'test_builder_regressions.py' -v
+    python tools/reaction-index/test_template_radius.py
 
 ## Keep it current
 

@@ -2,6 +2,7 @@ import { withResearchActivity, researchActivityStep, startResearchActivity } fro
 import type { ResearchActivity } from '@shared/researchActivity';
 import { runConcilium } from './researchConcilium';
 import { conciliumAssessments, type ConciliumResult } from '@shared/researchConcilium';
+import { reducedResearchEffort, researchReasoningProfile } from '@shared/researchReasoning';
 import { prepareResearchAttachments, withResearchAttachmentFallback } from './researchAttachments';
 import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { resolveResearchSourceScope, type ResearchSourceScope } from './researchSourceScope';
@@ -437,9 +438,17 @@ async function streamResearchChatTurn(
   // Documentary prose is held until its claims have been checked. Thinking can
   // still stream; cancellation must never publish the unchecked partial draft.
   const deltas: typeof onDelta = (text, kind) => { if (!grounded || kind === 'reasoning') onDelta(text, kind); };
-  const write = () => researchActivityStep('response', 'write', () => structured
-    ? groundResearchChatAnswer('', sourceContext, execution.question ?? '', request.model, getSettings().promptLanguage ?? 'es', signal, { structured: true })
-    : withResearchAttachmentFallback(attachments, opts, options => completeTextStream(options, deltas, request.model, signal)), request.model?.model);
+  // On the retry, ask for one rung less thinking: the first attempt was cut off because the
+  // reasoning consumed the whole output ceiling, and repeating it unchanged reproduces that. The
+  // token budget is deliberately NOT recomputed — the same ceiling with less thinking in front of
+  // it is exactly the room the answer needs.
+  const write = (isRetry = false) => {
+    const less = isRetry && !structured ? reducedResearchEffort(opts.researchEffort, researchReasoningProfile(resolveModelRef(request.model), opts.researchModelInfo)) : null;
+    const attempt = less ? { ...opts, researchEffort: less } : opts;
+    return researchActivityStep('response', 'write', () => structured
+      ? groundResearchChatAnswer('', sourceContext, execution.question ?? '', request.model, getSettings().promptLanguage ?? 'es', signal, { structured: true })
+      : withResearchAttachmentFallback(attachments, attempt, options => completeTextStream(options, deltas, request.model, signal)), request.model?.model);
+  };
   // Streamed thinking is provisional; the retry repaints from nothing.
   let answer: string;
   try { answer = await retryOnceWhenCutOff(write, { isCutOff: error => error instanceof AiError && error.code === 'output_truncated', beforeRetry: () => onDelta('', 'replace'), signal }); }
@@ -983,7 +992,7 @@ function buildChatSystemPrompt(compact: boolean, language: PromptLanguage = getS
     'Treat retrieved sources as evidence. Attribute only what they support, distinguish your reasoning and general knowledge from documentary claims, and never invent quotations, citations, source content, or unavailable features.',
     'For a request specifically about the corpus, explain a real evidence gap briefly. For a general exercise or creative request, apply your knowledge and construct the answer; the sources do not need to contain the worked solution or output format.',
     'Chat skills are output utilities (drawings, figures, code), never the way the library is searched: Nodus researches the library before you write, and the context says what it consulted.',
-    'Write a synthesis: group what the sources share and contrast where they differ instead of giving each source its own section.',
+    'Write a synthesis: group what the sources share and contrast where they differ instead of giving each source its own section, and unless the user asks for depth keep the answer within about 1,200 words.',
     ...(getSettings().researchAnswerVerification && getSettings().researchAnswerVerification !== 'off' ? [RESEARCH_CHAT_PRECISION_RULES] : []),
     ...(compact ? prompt.citationRulesCompact : prompt.citationRules),
   ].join('\n');

@@ -2038,6 +2038,9 @@ export interface AppSettings {
   improveModel: ModelRef | null;
   /** Up to four study-writing prompts exposed as contextual editor shortcuts. */
   studyImproveToolbarStyleIds: string[];
+  studyImproveLastStyleId?: string;
+  /** Image favorites are separate from text models and shared across vaults. */
+  imageFavorites?: import('./editorAiReview').EditorImageModel[];
   questionGenModel: ModelRef | null;
   gradingModel: ModelRef | null;
   flashcardModel: ModelRef | null;

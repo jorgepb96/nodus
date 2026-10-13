@@ -85,13 +85,13 @@ export const CORE_DOC_TOPICS: readonly NodusDocTopic[] = [
       es: `- Se abre con el botón «Comandos» de la cabecera o con ⌘K en macOS (Ctrl K en Windows y Linux) desde cualquier punto de la aplicación.
 - Placeholder «Ir a una sección o ejecutar una acción…». La búsqueda es por subcadena sin acentos; ↑ y ↓ mueven la selección, Intro ejecuta, Escape cierra.
 - Contiene una entrada de navegación por cada sección permitida por el tipo de bóveda, agrupadas como la barra lateral (Explorar, Analizar, Escribir, Herramientas) o en General para Inicio y Ajustes.
-- Acciones: «Bóvedas», «Research chat», «Mis skills», «Marketplace», «PDF Presenter», «Sugerir función o reportar error», «Roadmap», «Usar tema claro»/«Usar tema oscuro», «Reducir animaciones»/«Activar animaciones» y «Cambiar paleta de tema» (rota a la siguiente paleta, incluidas las personalizadas).
+- Acciones: «Bóvedas», «Research chat», «Mis skills», «Marketplace», «Nodus Presenter», «Sugerir función o reportar error», «Roadmap», «Usar tema claro»/«Usar tema oscuro», «Reducir animaciones»/«Activar animaciones» y «Cambiar paleta de tema» (rota a la siguiente paleta, incluidas las personalizadas).
 - En una bóveda de Estudio aparece además «Entrar en modo lectura»/«Salir del modo lectura». En bóvedas académicas aparecen «Actualizar (sincronizar Zotero)» y «Colecciones de Zotero».
 - Si no hay coincidencias muestra «Sin resultados.».`,
       en: `- Opened from the header "Commands" button or with ⌘K on macOS (Ctrl K on Windows and Linux) from anywhere in the application.
 - Placeholder "Go to a section or run an action…". Search is accent-insensitive substring matching; ↑ and ↓ move the selection, Enter runs it, Escape closes.
 - It lists one navigation entry per section allowed by the vault type, grouped like the sidebar (Explore, Analyse, Write, Tools) or General for Home and Settings.
-- Actions: "Vaults", "Research chat", "My skills", "Marketplace", "PDF Presenter", "Suggest a feature or report a bug", "Roadmap", "Use light theme"/"Use dark theme", "Reduce animations"/"Enable animations" and "Change theme palette" (cycles to the next palette, custom ones included).
+- Actions: "Vaults", "Research chat", "My skills", "Marketplace", "Nodus Presenter", "Suggest a feature or report a bug", "Roadmap", "Use light theme"/"Use dark theme", "Reduce animations"/"Enable animations" and "Change theme palette" (cycles to the next palette, custom ones included).
 - In a Study vault it also offers "Enter reading mode"/"Leave reading mode". In academic vaults it offers "Refresh (sync Zotero)" and "Zotero collections".
 - With no matches it shows "No results.".`,
     },
@@ -190,12 +190,12 @@ export const CORE_DOC_TOPICS: readonly NodusDocTopic[] = [
     keywords: ['roadmap', 'planificado', 'en desarrollo', 'implementado', 'futuro', 'proximamente', 'estado', 'versiones', 'fechas', 'ios', 'ipad', 'colaboracion', 'servidor'],
     body: {
       es: `- El roadmap se abre desde Ajustes > Acerca de Nodus Research > «Ver roadmap de Nodus» y desde la paleta de comandos.
-- Estado actual: «Pulido y estabilidad» figura como En desarrollo. Como Planificado figuran «Servidor», «Compartir vaults y trabajo colaborativo» y «Apps para iOS y iPadOS». Como Implementado figuran Docencia, Fuentes primarias, Testimonios, los vaults sugeridos por usuarios (Prosopografía y Worldbuilding), Nodus Toolkit, Nodus Translate, PDF Presenter y OCR Workspace.
+- Estado actual: «Pulido y estabilidad» figura como En desarrollo. Como Planificado figuran «Servidor», «Compartir vaults y trabajo colaborativo» y «Apps para iOS y iPadOS». Como Implementado figuran Docencia, Fuentes primarias, Testimonios, los vaults sugeridos por usuarios (Prosopografía y Worldbuilding), Nodus Toolkit, Nodus Translate, Nodus Presenter y OCR Workspace.
 - No hay fechas cerradas para ninguna iniciativa: no atribuyas fechas ni versiones de llegada.
 - «Implementado» significa que la función existe y se puede abrir; no implica que sea estable. Cada tipo de bóveda indica además su fase (PRE-ALPHA, ALPHA o BETA).
 - El trabajo colaborativo y compartir vaults no están disponibles: no los presentes como funciones actuales. Nodus Server sí existe como infraestructura de publicación y réplica, y se configura en Ajustes > Servidor.`,
       en: `- The roadmap opens from Settings > About Nodus Research > "View roadmap" and from the command palette.
-- Current state: "Polish and stability" is In progress. Planned are "Server", "Vault sharing and collaboration" and "iOS and iPadOS apps". Implemented are Teaching, Primary sources, Testimonies, the user-suggested vaults (Prosopography and Worldbuilding), Nodus Toolkit, Nodus Translate, PDF Presenter and OCR Workspace.
+- Current state: "Polish and stability" is In progress. Planned are "Server", "Vault sharing and collaboration" and "iOS and iPadOS apps". Implemented are Teaching, Primary sources, Testimonies, the user-suggested vaults (Prosopography and Worldbuilding), Nodus Toolkit, Nodus Translate, Nodus Presenter and OCR Workspace.
 - No initiative has a committed date: never attach dates or release versions to one.
 - "Implemented" means the feature exists and can be opened; it does not imply stability. Every vault type also states its phase (PRE-ALPHA, ALPHA or BETA).
 - Collaboration and vault sharing are not available: never present them as current features. Nodus Server does exist as publishing and replication infrastructure, configured in Settings > Server.`,

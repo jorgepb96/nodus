@@ -1,4 +1,5 @@
 import { getDb } from './database';
+import { normalizeImageFavorites } from '@shared/editorAiReview';
 import type { AppSettings, ModelRef } from '@shared/types';
 import {
   DEFAULT_EMBEDDING_MODELS,
@@ -89,6 +90,8 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   localProviders: DEFAULT_LOCAL_PROVIDERS,
   customProvider: DEFAULT_CUSTOM_PROVIDER,
   favorites: [],
+  imageFavorites: [],
+  studyImproveLastStyleId: 'builtin:clear',
   defaultModel: null,
   modelSettingsMode: 'basic',
   modelSettingsVersion: 0,
@@ -401,6 +404,8 @@ export function getSettings(): AppSettings {
   merged.mascotScale = normalizeNodiScale(parsed.mascotScale);
   merged.studyImproveToolbarStyleIds = [...new Set((Array.isArray(merged.studyImproveToolbarStyleIds) ? merged.studyImproveToolbarStyleIds : [])
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0))].slice(0, 4);
+  merged.imageFavorites = normalizeImageFavorites(merged.imageFavorites);
+  merged.studyImproveLastStyleId = typeof merged.studyImproveLastStyleId === 'string' && merged.studyImproveLastStyleId.trim() ? merged.studyImproveLastStyleId : 'builtin:clear';
   merged.toolkitPinnedPages = normalizeToolkitToolPages(merged.toolkitPinnedPages);
   merged.customEventTypes = sanitizeCustomEventTypes(parsed.customEventTypes);
   // Pre-2.3 builds called the Transformers.js worker simply "local".
@@ -460,6 +465,7 @@ export function getSettings(): AppSettings {
   // app-prefs.json is user-editable; normalize custom themes after the global
   // overlay so malformed or legacy values can never reach the renderer.
   merged.customThemes = sanitizeCustomThemes(merged.customThemes);
+  merged.imageFavorites = normalizeImageFavorites(merged.imageFavorites);
   // The global preferences file is user-editable, so validate the shared size again
   // after it has overlaid the vault defaults.
   merged.mascotScale = normalizeNodiScale(merged.mascotScale);
@@ -646,6 +652,8 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   if (patch.studyImproveToolbarStyleIds) {
     patch = { ...patch, studyImproveToolbarStyleIds: [...new Set(patch.studyImproveToolbarStyleIds.filter((value) => typeof value === 'string' && value.trim()))].slice(0, 4) };
   }
+  if (patch.imageFavorites !== undefined) patch = { ...patch, imageFavorites: normalizeImageFavorites(patch.imageFavorites) };
+  if (patch.studyImproveLastStyleId !== undefined) patch = { ...patch, studyImproveLastStyleId: typeof patch.studyImproveLastStyleId === 'string' && patch.studyImproveLastStyleId.trim() ? patch.studyImproveLastStyleId : 'builtin:clear' };
   if (patch.toolkitPinnedPages !== undefined) {
     patch = { ...patch, toolkitPinnedPages: normalizeToolkitToolPages(patch.toolkitPinnedPages) };
   }

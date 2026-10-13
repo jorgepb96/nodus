@@ -2230,7 +2230,7 @@ function ReaderView({
   return (
     <div className="h-full flex flex-col min-h-0">
       <NodiViewContextSource title={contextTitle} text={contextMarkdown} />
-      <header className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-4 py-2.5">
+      <header data-testid="deep-research-reader-toolbar" className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-4 py-2.5">
         <button className="btn btn-ghost gap-1.5" onClick={onBack}>
           <Icon name="chevronLeft" /> {t('Volver a la galería')}
         </button>
@@ -2254,6 +2254,7 @@ function ReaderView({
         />
         {onExportCheatSheet && (
           <HoverLabelButton
+            iconOnly
             icon="flashcards"
             label={t('Descargar la ficha de repaso (PDF)')}
             onClick={onExportCheatSheet}
@@ -2262,10 +2263,12 @@ function ReaderView({
             className="btn-ghost h-9 min-h-9 border border-neutral-700"
           />
         )}
+        <AudioPanel entityKind="deep_research" entityId={saved.id} toolbar />
         <DocumentVisualActions />
         <ReaderFontControls targetRef={documentRef} scrollerRef={mainRef} initialSize={initialReaderFontSize} />
         <ReaderHighlighterControl value={highlighterColor} onChange={setHighlighterColor} />
         <HoverLabelButton
+          iconOnly
           icon={hasReaderMark ? 'bookmarkFill' : 'bookmark'}
           label={t('Ir al marcador de lectura')}
           onClick={() => markActionsRef.current?.goToMark()}
@@ -2276,33 +2279,34 @@ function ReaderView({
             is already looking, rather than back in the gallery they would have to
             return to first. */}
         <HoverLabelButton
+          iconOnly
           icon={saved.readAt ? 'eyeOff' : 'check'}
           label={saved.readAt ? t('Marcar como no leído') : t('Marcar como leído')}
           onClick={onToggleRead}
-          showLabel={!!saved.readAt}
+          aria-pressed={!!saved.readAt}
           className={`btn-ghost h-9 min-h-9 border ${saved.readAt ? 'border-emerald-700/60 text-emerald-300' : 'border-neutral-700'}`}
         />
         <HoverLabelButton
+          iconOnly
           icon="languages"
           label={t('Traducir')}
           onClick={onTranslate}
           className="btn-ghost h-9 min-h-9 border border-neutral-700"
         />
         <HoverLabelButton
+          iconOnly
           icon="layers"
           label={saved.draft.completeGuide ? t('Cobertura de la guía') : t('Matriz de apoyo')}
           onClick={onToggleMatrix}
-          showLabel={showMatrix}
+          aria-pressed={showMatrix}
           className={`btn-ghost h-9 min-h-9 border ${showMatrix ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
         />
-        {/* Clicked with the mouse, the button hands focus back: a focused toolbar
-            button keeps its label open, and a label that wide re-wraps the row under
-            whatever the reader reaches for next. Keyboard activation (detail 0) keeps
-            its focus, which is the whole point of having it there. */}
         <HoverLabelButton
+          iconOnly
           icon={fullscreen ? 'minimize' : 'maximize'}
           label={fullscreen ? t('Salir de pantalla completa') : t('Lectura a pantalla completa')}
-          onClick={(event) => { if (event.detail > 0) event.currentTarget.blur(); onToggleFullscreen(); }}
+          onClick={onToggleFullscreen}
+          aria-pressed={fullscreen}
           data-testid="deep-research-fullscreen-toggle"
           className={`btn-ghost h-9 min-h-9 border ${fullscreen ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
         />
@@ -2326,7 +2330,6 @@ function ReaderView({
               interactive
               onChange={onImageChange}
             />
-            <AudioPanel entityKind="deep_research" entityId={saved.id} />
             <div
               ref={documentRef}
               className="deep-research-reader-document relative"

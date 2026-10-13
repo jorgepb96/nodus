@@ -130,6 +130,7 @@ function assertFreshCampaignRoot(root) {
 }
 
 function fixedQueries(queries, historicalManifest) {
+  if (historicalManifest.format !== 'nodus.research-live-directed-queries/1') throw new Error('Unsupported fixed directed-question fixture');
   const coreCandidates = queries.filter(query => query.split === 'evaluation' && ['monolingual', 'cross-language'].includes(query.kind));
   const languageOrder = ['de', 'en', 'es', 'fr', 'it', 'pt'];
   const quotas = { de: 5, en: 8, es: 8, fr: 6, it: 5, pt: 8 };
@@ -250,7 +251,7 @@ async function verifyAssetSource(source, profileRoot) {
 if (process.argv.includes('--validate-cohort')) {
   const scriptText = fs.readFileSync(new URL(import.meta.url), 'utf8');
   const sourceQueries = JSON.parse(fs.readFileSync(path.join(repoRoot, 'audit/embeddinggemma-2/queries-gold.json'), 'utf8'));
-  const historical = JSON.parse(fs.readFileSync(path.join(repoRoot, 'audit/research-luna-directed/manifest.json'), 'utf8'));
+  const historical = JSON.parse(fs.readFileSync(path.join(repoRoot, 'scripts/fixtures/research-live-directed-queries.json'), 'utf8'));
   const { queries, annotationGold } = fixedQueries(sourceQueries, historical);
   const counts = { total: queries.length, answerable: queries.filter(query => query.isAnswerable).length,
     insufficient: queries.filter(query => !query.isAnswerable).length,
@@ -377,12 +378,12 @@ try {
   if (!fs.existsSync(path.join(corpusRoot, 'artifacts/corpus-manifest.json'))) await prepareEmbeddingCorpus(corpusRoot);
   const manifest = JSON.parse(await fsp.readFile(path.join(corpusRoot, 'artifacts/corpus-manifest.json'), 'utf8'));
   const allQueries = JSON.parse(await fsp.readFile(path.join(corpusRoot, 'artifacts/queries-gold.json'), 'utf8'));
-  const historicalManifest = JSON.parse(await fsp.readFile(path.join(repoRoot, 'audit/research-luna-directed/manifest.json'), 'utf8'));
+  const historicalManifest = JSON.parse(await fsp.readFile(path.join(repoRoot, 'scripts/fixtures/research-live-directed-queries.json'), 'utf8'));
   const { queries, annotationGold: annotations } = fixedQueries(allQueries, historicalManifest);
   const documents = await copyCampaignInputs(corpusRoot, campaignRoot, manifest);
   const preregistration = { format: 'nodus.research-live-evidence-preregistration/1', createdAt: now(),
     classification: 'directed regression set; current code and known defects may have influenced query selection; not an untouched holdout',
-    selection: 'Ordered as 10 complex cases (8 positives from audit/research-luna-directed/manifest.json plus 2 new annotated multi-source/table cases), all 10 original evaluation hard questions, 40 deterministic original evaluation core questions balanced across six languages, and all 20 original no-evidence questions (including development cases)',
+    selection: 'Ordered as 10 complex cases (8 exact historical positive questions from scripts/fixtures/research-live-directed-queries.json plus 2 annotated multi-source/table cases), all 10 original evaluation hard questions, 40 deterministic original evaluation core questions balanced across six languages, and all 20 original no-evidence questions (including development cases)',
     languageQuotas: { de: 5, en: 8, es: 8, fr: 6, it: 5, pt: 8 },
     counts: { total: 80, answerable: 60, insufficient: 20, core: 40, hard: 10, historicalComplex: 8, newComplex: 2 },
     queries,

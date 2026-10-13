@@ -1189,7 +1189,7 @@ try {
   // measured on the real rendered shell rather than trusted from the classes.
   await page.locator('[data-tour="toolkit"]').click();
   await page.getByTestId('toolkit-home').waitFor({ timeout: 30_000 });
-  const toolCards = ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter'];
+  const toolCards = ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-presenter', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr'];
   assert.deepEqual(await page.locator('.toolkit-card').evaluateAll((cards) => cards.map((card) => card.dataset.testid)), toolCards, 'the shared catalogue shows all thirteen tools in alphabetical order');
   const cardBoxes = [];
   for (const testId of toolCards) {
@@ -2241,9 +2241,8 @@ try {
   console.log('[e2e] study editor raw Markdown autosave + version ok');
 
   if (process.env.NODUS_E2E_MATERIAL_ANNOTATIONS_ONLY !== '1') {
-  // Compact prompt manager + contextual streaming actions. The smoke profile
-  // intentionally has no usable provider, so the direct action must restore
-  // the original selection after the streamed request fails.
+  // The prompt manager stays in place; contextual Polish opens the shared
+  // composer. This profile has no usable provider, so failures preserve text.
   await page.getByTestId('study-improve-toggle').click();
   await page.getByTestId('study-improve-dialog').waitFor();
   const improveDialogBox = await page.getByTestId('study-improve-dialog').locator('section').first().boundingBox();
@@ -2281,7 +2280,7 @@ try {
     throw new Error('Improvement selection fixture not found');
   });
   await page.getByTestId('study-selection-text-color').waitFor();
-  assert.equal(await page.locator('[data-testid^="study-quick-improve-"]').count(), 4, 'the selection exposes exactly the four configured prompt shortcuts');
+  assert.equal(await page.getByTestId('study-selection-improve').count(), 1, 'the selection exposes one Polish action');
   assert.equal(await page.getByTestId('study-synonyms-toggle').count(), 1, 'the selection exposes the contextual synonyms action');
   await page.getByTestId('study-synonyms-toggle').click();
   await page.getByTestId('study-synonyms-panel').waitFor();
@@ -2313,11 +2312,25 @@ try {
     }
   });
   assert.equal(failedImprovement, true, 'the deterministic provider failure reaches the renderer bridge');
+  await page.getByTestId('study-selection-improve').click();
+  const polishComposer = page.getByTestId('scriptor-ai-panel');
+  await polishComposer.waitFor();
+  assert.equal(await polishComposer.locator('.scriptor-ai-quick').count(), 4, 'the four configured prompt shortcuts belong to the composer');
+  await page.getByTestId('scriptor-ai-style').click();
+  await page.getByTestId('scriptor-ai-style-search').waitFor();
+  await page.keyboard.press('Escape');
+  await polishComposer.locator('.model-picker-trigger').click();
+  await polishComposer.getByTestId('model-picker-search').waitFor();
+  await page.keyboard.press('Escape');
+  await page.getByTestId('scriptor-ai-send').click();
+  await page.getByTestId('scriptor-ai-error').waitFor();
+  assert.equal(await page.getByTestId('scriptor-ai-added').count(), 0, 'failed generation leaves no temporary native changes');
+  await page.getByTestId('scriptor-ai-close').click();
   const unchangedAfterImprovement = await page.evaluate(async () => (await window.nodus.getStudyWorkspace()).documents.find((item) => item.title === 'Apunte smoke')?.contentMarkdown);
   // The native canvas can normalize equivalent table separators when leaving raw
   // mode; the selected source phrase itself must remain byte-for-byte intact.
   assert.match(unchangedAfterImprovement ?? '', /Texto \*\*importante\*\* con \$x\^2\$\./, 'failed improvement leaves the selected Markdown untouched');
-  console.log('[e2e] compact prompt manager + four contextual streaming shortcuts + failure preservation ok');
+  console.log('[e2e] prompt manager + searchable Polish composer + four pinned prompts + failure preservation ok');
 
   await page.locator('.nodus-blocknote .bn-editor').first().waitFor({ timeout: 30_000 });
   await page.locator('.nodus-blocknote .katex').first().waitFor({ timeout: 30_000 });

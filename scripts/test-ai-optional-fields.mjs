@@ -136,6 +136,12 @@ test('a streamed answer cut at the output ceiling is reported, not stored', () =
   assert.match(source, /finishReason = choice\.finish_reason/);
   assert.match(source, /test\(finishReason \?\? ''\)/);
   assert.match(source, /truncatedOutputMessage\(model, maxTokens\), false, false, 'output_truncated'/);
+  // The ONE retry a cut-off gets lives in cutOffRetry.ts, applied at the research layer; the
+  // transport only reports. A second retry here would nest under it and cost four provider calls
+  // on a request that already ran for minutes. Asserted so it does not get re-added.
+  assert.doesNotMatch(source, /retrying once at reasoning_effort=low/,
+    'the transport must not retry a cut-off; retryOnceWhenCutOff owns that');
+  assert.match(source, /retryOnceWhenCutOff owns the one retry this deserves/);
   // Adaptive models cannot disable thinking and its tokens count against `max_tokens`, so the
   // request reserves the documented depth instead of the manual `budget_tokens` allowance.
   assert.match(options, /const ADAPTIVE_THINKING_ALLOWANCE/);

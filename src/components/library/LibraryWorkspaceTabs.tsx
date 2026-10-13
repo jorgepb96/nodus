@@ -23,12 +23,11 @@ export interface WorkspaceStripTab {
 }
 
 /**
- * La tira de pestañas que estrenó la Biblioteca y que ahora comparte con el Workspace.
+ * Navegación de documentos con el diseño de pestañas de Ideas y Autores.
  *
- * La primera pestaña es siempre la vista principal —la Biblioteca, el Workspace— y no se
- * cierra: es el sitio al que se vuelve. Las demás son lo que se ha abierto desde ella.
- * Vive aquí, y no duplicada en cada vista, porque el gesto tiene que ser el mismo en las
- * dos: mismas teclas, mismo botón de cerrar, mismo desplazamiento a la pestaña activa.
+ * La primera pestaña es la vista principal y no se cierra. Los editores de Estudio
+ * y Docencia pueden omitirla cuando su contenedor ya gestiona el catálogo.
+ * Todas las vistas comparten las teclas, el cierre y el desplazamiento a la pestaña activa.
  */
 export function WorkspaceTabStrip({
   homeLabel,
@@ -41,7 +40,10 @@ export function WorkspaceTabStrip({
   onActivateHome,
   onActivateTab,
   onCloseTab,
-  alwaysShowHome = false,
+  alwaysShowHome = true,
+  showHome = true,
+  onRenameTab,
+  className = '',
 }: {
   homeLabel: string;
   homeIcon: string;
@@ -54,9 +56,13 @@ export function WorkspaceTabStrip({
   onActivateTab: (key: string) => void;
   onCloseTab: (key: string) => void;
   alwaysShowHome?: boolean;
+  showHome?: boolean;
+  onRenameTab?: (key: string) => void;
+  className?: string;
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const focusAfterActivation = useRef(false);
+  const activeTitle = tabs.find((tab) => tab.key === activeKey)?.title;
 
   useEffect(() => {
     const active = stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
@@ -64,7 +70,8 @@ export function WorkspaceTabStrip({
     // which makes the workspace header and sidebar jump during activation.
     const strip = stripRef.current;
     if (active && strip) {
-      const item = active.getBoundingClientRect();
+      // Include the close and rename controls, not just the title button.
+      const item = (active.closest('.library-workspace-tab') ?? active).getBoundingClientRect();
       const bounds = strip.getBoundingClientRect();
       const delta = item.left < bounds.left ? item.left - bounds.left : item.right > bounds.right ? item.right - bounds.right : 0;
       if (delta) strip.scrollLeft += delta;
@@ -72,15 +79,18 @@ export function WorkspaceTabStrip({
     // Activation can load a document asynchronously. Wait for its selected tab,
     // rather than moving focus to the old one on the next animation frame.
     if (active && focusAfterActivation.current) {
-      active.focus({ preventScroll: true });
-      focusAfterActivation.current = false;
+      const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (!dialog || dialog.contains(active)) {
+        active.focus({ preventScroll: true });
+        focusAfterActivation.current = false;
+      }
     }
-  }, [activeKey, tabs.length]);
+  }, [activeKey, tabs.length, activeTitle, homeLabel]);
 
-  if (!tabs.length && !alwaysShowHome) return null;
+  if (!tabs.length && (!alwaysShowHome || !showHome)) return null;
 
   const activateAdjacentTab = (currentKey: string | null, direction: -1 | 1) => {
-    const keys: Array<string | null> = [null, ...tabs.map((tab) => tab.key)];
+    const keys: Array<string | null> = [...(showHome ? [null] : []), ...tabs.map((tab) => tab.key)];
     const currentIndex = Math.max(0, keys.indexOf(currentKey));
     const nextKey = keys[(currentIndex + direction + keys.length) % keys.length];
     if (nextKey === null) onActivateHome();
@@ -96,26 +106,27 @@ export function WorkspaceTabStrip({
       return;
     }
     focusAfterActivation.current = true;
-    if (event.key === 'Home') onActivateHome();
+    if (event.key === 'Home') { if (showHome || !tabs.length) onActivateHome(); else onActivateTab(tabs[0].key); }
     else if (event.key === 'End') { if (tabs.length) onActivateTab(tabs[tabs.length - 1].key); else onActivateHome(); }
     else activateAdjacentTab(key, event.key === 'ArrowLeft' ? -1 : 1);
     requestAnimationFrame(() => {
-      stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
+      const active = stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+      const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (active && (!dialog || dialog.contains(active))) active.focus({ preventScroll: true });
     });
   };
 
   const closeTab = (key: string) => {
     focusAfterActivation.current = true;
     onCloseTab(key);
-    requestAnimationFrame(() => {
-      stripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.focus();
-    });
+    // Restore focus in the effect after the tab actually closes. An editor may
+    // first ask for confirmation or save asynchronously; its dialog keeps focus.
   };
 
   return (
-    <div data-testid="library-workspace-tabs" className="library-workspace-tabs shrink-0">
+    <div data-testid="library-workspace-tabs" className={`library-workspace-tabs shrink-0 ${className}`}>
       <div ref={stripRef} className="library-workspace-tabs-scroll" role="tablist" aria-label={homeLabel}>
-        <div className={`library-workspace-tab is-library ${activeKey === null ? 'is-active' : ''}`}>
+        {showHome && <div className={`library-workspace-tab is-library ${activeKey === null ? 'is-active' : ''}`}>
           <button
             type="button"
             role="tab"
@@ -129,7 +140,7 @@ export function WorkspaceTabStrip({
             <Icon name={homeIcon} size={13} />
             <span>{homeLabel}</span>
           </button>
-        </div>
+        </div>}
         {tabs.map((tab) => {
           const active = activeKey === tab.key;
           return (
@@ -150,6 +161,13 @@ export function WorkspaceTabStrip({
                 <Icon name={tab.icon} size={12} />
                 <span className="truncate">{tab.title}</span>
               </button>
+              {active && onRenameTab && <button
+                type="button"
+                className="library-workspace-tab-close"
+                aria-label={t('Renombrar apunte')}
+                title={t('Renombrar apunte')}
+                onClick={() => onRenameTab(tab.key)}
+              ><Icon name="edit" size={11} /></button>}
               <button
                 type="button"
                 data-testid={closeTestId(tab)}

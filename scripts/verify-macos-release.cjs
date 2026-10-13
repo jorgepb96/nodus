@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const { execFileSync } = require('node:child_process');
-const { existsSync, mkdtempSync, readdirSync, rmSync } = require('node:fs');
+const { existsSync, mkdtempSync, readdirSync, realpathSync, rmSync } = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { verifyMacApp } = require('./verify-macos-code-signing.cjs');
@@ -36,6 +36,44 @@ function assertSameApp(candidate, expected, label) {
 }
 
 const SUPPORTED_ARCHITECTURES = ['arm64', 'x64'];
+const DETACH_ATTEMPTS = 5;
+
+function pause(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+function isMounted(mountPoint) {
+  // mount(8) prints the resolved path: /private/var/... for a /var/... mount point.
+  let resolved = mountPoint;
+  try { resolved = realpathSync(mountPoint); } catch { return false; }
+  const lines = run('/sbin/mount', []).split('\n');
+  return [mountPoint, resolved].some((candidate) => lines.some((line) => line.includes(` on ${candidate} (`)));
+}
+
+// hdiutil can report a failed detach while the volume is in fact going away
+// (the system is still scanning the app that was just verified), and the
+// -force retry then fails with "No such file or directory" because there is
+// nothing left to detach. That aborted the v5.9.0 build after every signing
+// check had passed. Whether the volume is still mounted is the only answer
+// that matters, so ask that instead of trusting either exit code.
+function detachDiskImage(mountPoint, {
+  detach = (args) => run('/usr/bin/hdiutil', args),
+  mounted = isMounted,
+  wait = pause,
+} = {}) {
+  const errors = [];
+  for (let attempt = 0; attempt < DETACH_ATTEMPTS; attempt += 1) {
+    if (!mounted(mountPoint)) return { detached: true, errors };
+    try {
+      detach(attempt < 2 ? ['detach', mountPoint] : ['detach', '-force', mountPoint]);
+    } catch (error) {
+      errors.push(error.message);
+    }
+    if (!mounted(mountPoint)) return { detached: true, errors };
+    wait(2000);
+  }
+  return { detached: false, errors };
+}
 
 function verifyRelease(releaseDirectory, architecture) {
   if (process.platform !== 'darwin') fail('artifact verification must run on macOS');
@@ -55,6 +93,7 @@ function verifyRelease(releaseDirectory, architecture) {
   const zipOutput = path.join(scratch, 'zip');
   const mountPoint = path.join(scratch, 'dmg');
   let mounted = false;
+  let verificationError = null;
   try {
     run('/bin/mkdir', ['-p', zipOutput, mountPoint]);
     run('/usr/bin/ditto', ['-x', '-k', zipPath, zipOutput]);
@@ -67,12 +106,20 @@ function verifyRelease(releaseDirectory, architecture) {
     const dmgApp = findApp(mountPoint);
     if (!dmgApp) fail('the DMG does not contain Nodus.app');
     assertSameApp(dmgApp, expected, 'DMG');
-  } finally {
-    if (mounted) {
-      try { run('/usr/bin/hdiutil', ['detach', mountPoint]); } catch { run('/usr/bin/hdiutil', ['detach', '-force', mountPoint]); }
-    }
-    rmSync(scratch, { recursive: true, force: true });
+  } catch (error) {
+    verificationError = error;
   }
+
+  // Cleanup never replaces the verdict: a verification failure is reported as
+  // itself, and a volume that will not detach after a verification that passed
+  // is a runner problem, not a reason to withhold signed, verified artifacts.
+  const cleanup = mounted ? detachDiskImage(mountPoint) : { detached: true, errors: [] };
+  if (cleanup.detached) {
+    rmSync(scratch, { recursive: true, force: true });
+  } else {
+    console.warn(`::warning::Could not detach ${mountPoint}; leaving it for the runner to discard\n${cleanup.errors.join('\n')}`);
+  }
+  if (verificationError) throw verificationError;
 
   console.log(`[macOS release] Verified ${architecture} app, ZIP and DMG; publication may proceed`);
 }
@@ -81,4 +128,4 @@ if (require.main === module) {
   verifyRelease(process.argv[2] ?? path.join(__dirname, '..', 'release'), process.argv[3]);
 }
 
-module.exports = { SUPPORTED_ARCHITECTURES, verifyRelease };
+module.exports = { SUPPORTED_ARCHITECTURES, detachDiskImage, verifyRelease };

@@ -259,6 +259,8 @@ export interface StudyImproveRequest {
   subjectId?: string | null;
   text: string;
   styleId: string;
+  /** Extra instructions for this proposal; never updates the saved style. */
+  additionalInstructions?: string;
   scope: StudyImproveScope;
   level: StudyImproveLevel;
   length: StudyImproveLength;

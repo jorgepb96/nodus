@@ -40,7 +40,11 @@ Passage annotations were independently approved and frozen before opening the ne
 
 `current-passage-quality-summary.json` records the first measurement. Verified EvidenceHit@10 and FactCoverage@10 lower bounds over all sixty planned positive questions are 59/60 (98.33%) for semantic candidates and 56/60 (93.33%) for actual selected evidence. Lexical candidates have an EvidenceHit lower bound of 60/60 and FactCoverage lower bound of 98.36%. The arrays come from one recorded product search and are candidate-lane diagnostics, not independent ablations. Exhaustive Recall/MRR/nDCG remain partially pending; the means over thirty-six complete cases must not be reported as full-cohort results. All insufficient-evidence searches return candidates, so candidate-presence false hits do not measure whether a generated answer correctly acknowledges missing evidence.
 
-The corrected-source eighty-question answer campaign has started through the actual Research Chat API using fresh Luna completions. TypeScript checks, lint, build and extraction tests passed after the correction; current-source answer quality has not yet been measured.
+The corrected-source answer phase completed its first actual Research Chat case with fourteen fresh Luna completions and no abandoned requests. Source review confirms both requested restoration/exclusion facts; awkward attribution wording remains recorded as a fluency limitation. The other seventy-nine questions are unstarted, so this single case does not establish a campaign-level accuracy rate.
+
+Admission stopped normally at the case boundary for required upstream `main` integration. Two AI-client/Research Chat conflicts had prevented automatic PR CI. The resolved merge preserves embedding contracts, strict schemas, held verified prose and cancellation fences, while incorporating the hidden-reasoning timeout and lower-effort cutoff retry for ordinary streamed answers. Structured verification retains its existing independent JSON/audit path. A new combined orchestration regression confirms off/legacy/structured publication behavior. The pre-integration phase remains qualified and partial; it is not retagged as a result for the integrated runtime.
+
+After integration, build, TypeScript and lint pass; transport/reasoning checks pass 50 outer tests, grounding passes 25, and embedding contracts pass 39. A separately versioned source campaign is preparing the same original corpus and exact questions for the integrated version. The bounded question fixture is committed without original excerpts or answers. Current integrated-runtime answer quality remains pending.
 
 ## Evaluation method
 
@@ -58,4 +62,4 @@ On 2026-10-13 the owner conditionally authorized another EUR 0.50 for OpenRouter
 
 ## Pending
 
-Current-source answer reviews, per-language/format/difficulty metrics and passage-level retrieval annotations remain pending until captured. Real-weight package validation on Windows/Linux and Intel-native coverage remain pending; macOS checks are not extrapolated to those systems. EmbeddingGemma remains an additional experimental option, with no default or vector-contract change.
+Integrated-runtime answer reviews, exhaustive retrieval gold for twenty-four questions, and complete per-language/format/difficulty conclusions remain pending. The macOS ASAR proof above belongs to its recorded pre-integration build; a later head requires its own checks. Real-weight package validation on Windows/Linux and Intel-native coverage remain pending; macOS checks are not extrapolated to those systems. EmbeddingGemma remains an additional experimental option, with no default or vector-contract change.

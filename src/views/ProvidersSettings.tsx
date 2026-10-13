@@ -643,7 +643,9 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
         <SettingsModelList className="mt-3 max-h-[32rem] overflow-y-auto" data-testid="image-generation-model-list">
           {shown.map((model) => {
             const selected = settings.imageProvider === model.provider && settings.imageModel === model.id;
+            const favorite = settings.imageFavorites?.some(ref => ref.provider === model.provider && ref.model === model.id) ?? false;
             return (
+              <div key={`${model.provider}:${model.id}`} className="flex items-center gap-1">
               <button
                 key={`${model.provider}:${model.id}`}
                 className={settingsModelRowClass(selected, true, 'grid w-full grid-cols-[minmax(14rem,1.5fr)_repeat(3,minmax(7rem,1fr))] gap-3 text-left text-xs max-xl:grid-cols-2')}
@@ -660,6 +662,8 @@ export function ImageGenerationSettings({ settings, onChange }: { settings: AppS
                 <PriceCell label={t('Salida')} value={model.provider === 'nodus' ? t('Local') : money(model.outputPriceUsdPerMillion)} />
                 <PriceCell label={t('Imagen')} value={model.imagePriceLabel ?? t('No disponible')} />
               </button>
+              <button type="button" className="btn btn-ghost shrink-0" aria-label={`${favorite ? t('Quitar de favoritos') : t('Guardar en favoritos')}: ${model.name}`} aria-pressed={favorite} data-testid={`image-favorite-${model.provider}-${model.id}`} onClick={() => void window.nodus.updateSettings({ imageFavorites: favorite ? (settings.imageFavorites ?? []).filter(ref => !(ref.provider === model.provider && ref.model === model.id)) : [...(settings.imageFavorites ?? []), { provider: model.provider, model: model.id }] }).then(onChange)}><Icon name="star" size={15} className={favorite ? 'fill-current text-amber-500' : ''} /></button>
+              </div>
             );
           })}
           {shown.length === 0 && <div className="p-4 text-sm text-neutral-500">{t('No hay modelos compatibles que coincidan.')}</div>}

@@ -1038,14 +1038,14 @@ function BrowserTabStrip({
   };
 
   return (
-    <div data-testid="browser-tab-bar" className="flex items-center gap-1 border-b border-neutral-300 px-2 py-1 dark:border-neutral-800">
+    <div data-testid="browser-tab-bar" className="library-workspace-tabs flex items-start gap-1">
       {overflow.left && <TabStripArrow direction={-1} onClick={() => scrollByStep(-1)} />}
       <div
         ref={stripRef}
         role="tablist"
         data-testid="browser-tab-strip"
         onScroll={measureOverflow}
-        className="browser-tab-strip-scroll flex min-w-0 flex-1 items-center gap-1"
+        className="browser-tab-strip-scroll flex h-9 min-w-0 flex-1 items-end gap-1"
       >
         {tabs.map((tab) => {
           const selected = tab.id === activeTabId;
@@ -1055,13 +1055,11 @@ function BrowserTabStrip({
               role="tab"
               aria-selected={selected}
               data-testid="browser-tab"
-              className={`group flex ${TAB_WIDTH_CLASS} shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-xs transition-colors ${
-                selected ? 'bg-neutral-200 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100' : 'text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900'
-              }`}
+              className={`group flex ${TAB_WIDTH_CLASS} shrink-0 library-workspace-tab ${selected ? 'is-active' : ''}`}
             >
               <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                className="library-workspace-tab-main"
                 onClick={() => onSelect(tab.id)}
                 title={tab.url || tab.title}
               >
@@ -1076,7 +1074,7 @@ function BrowserTabStrip({
                 type="button"
                 aria-label={t('Cerrar pestaña')}
                 title={t('Cerrar pestaña')}
-                className="shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-neutral-300 group-hover:opacity-70 focus:opacity-100 dark:hover:bg-neutral-700"
+                className="library-workspace-tab-close"
                 onClick={() => onClose(tab.id)}
               >
                 <Icon name="x" size={11} />
@@ -1095,7 +1093,7 @@ function BrowserTabStrip({
         disabled={full}
         onClick={onNew}
         data-testid="browser-new-tab"
-        className="shrink-0 rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-neutral-400 dark:hover:bg-neutral-900"
+        className="shrink-0 self-center rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-neutral-400 dark:hover:bg-neutral-900"
       >
         <Icon name="plus" size={13} />
       </button>
@@ -1122,7 +1120,7 @@ function TabStripArrow({ direction, onClick }: { direction: -1 | 1; onClick: () 
       title={label}
       data-testid={direction < 0 ? 'browser-tab-scroll-left' : 'browser-tab-scroll-right'}
       onClick={onClick}
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:active:bg-neutral-800"
+      className="flex h-6 w-6 shrink-0 self-center items-center justify-center rounded-md text-neutral-600 hover:bg-neutral-100 active:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:active:bg-neutral-800"
     >
       <Icon name={direction < 0 ? 'chevronLeft' : 'chevronRight'} size={14} />
     </button>

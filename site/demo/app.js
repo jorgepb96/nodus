@@ -1246,7 +1246,7 @@
         ['sync', 'Nodus Convert', 'Convert documents, PDFs and images locally.'],
         ['shield', 'Nodus Protect', 'Redact data, watermark files and verify copies.'],
         ['languages', 'Nodus Translate', 'Translate text and documents while preserving structure.'],
-        ['play', 'PDF Presenter', 'Present a PDF with clean controls and notes.'],
+        ['play', 'Nodus Presenter', 'Present a PDF with clean controls and notes.'],
         ['search', 'OCR Workspace', 'Recover searchable text from scanned documents.'],
       ].map(([icon, name, description]) => `<button class="card click toolkit-card" onclick="UI.toast('${name} opens as a focused tool in the desktop app.')"><span class="toolkit-icon">${ICONS[icon]}</span><h3>${name}</h3><p class="muted small">${description}</p></button>`).join('')}
     </div>`;

@@ -181,6 +181,8 @@ export interface PlatformApi {
   getModelCatalog(provider: AiProvider): Promise<ModelCatalogResult>;
   listEmbeddingModels(provider: EmbeddingProvider): Promise<ModelInfo[]>;
   listImageModels(): Promise<ImageModelInfo[]>;
+  generateEditorImage(request: import('../editorAiReview').EditorImageRequest): Promise<import('../editorAiReview').EditorImageResult>;
+  cancelEditorImage(requestId: string): Promise<void>;
   getNodusLocalAiStatus(): Promise<NodusLocalAiStatus>;
   installNodusLocalRuntime(onProgress?: (fraction: number) => void): Promise<NodusLocalAiStatus>;
   downloadNodusLocalModel(model: string, onProgress?: (fraction: number) => void): Promise<NodusLocalAiStatus>;

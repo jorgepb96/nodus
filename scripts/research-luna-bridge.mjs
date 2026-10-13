@@ -400,4 +400,3 @@ export async function startResearchLunaBridge({ root, timeoutMs = 300_000, pollM
 }
 
 export const researchLunaBridgeProtocol = Object.freeze({ format: BRIDGE_FORMAT, model: MODEL_ID, contextWindowCap: 128_000 });
-

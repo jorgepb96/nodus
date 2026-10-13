@@ -1,5 +1,6 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -168,6 +169,7 @@ export const ZH_CN: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["zh-CN"],
   ...STUDY_FOCUS_TRANSLATIONS["zh-CN"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["zh-CN"],
+  ...SCRIPTOR_AI_TRANSLATIONS["zh-CN"],
   ...STUDY_IMPROVE_TRANSLATIONS['zh-CN'],
   ...WORKSPACE_TRANSLATIONS['zh-CN'],
   ...AI_OCR_TRANSLATIONS['zh-CN'],
@@ -1220,7 +1222,7 @@ export const ZH_CN: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "实用的本地优先工具，用于转换文件和处理文档，内置于Nodus。",
-  "Nodus PDF Presenter": "Nodus PDF Presenter",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "演示PDF文件和外部制作的演示文稿，支持演讲者视图、手机遥控、演讲者备注和实时注释工具。",
   "Nodus OCR Workspace": "Nodus OCR Workspace",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "面向扫描版PDF和图像的AI辅助OCR，支持逐页审阅、文本清理、重新处理，并与Nodus资料库直接集成。",

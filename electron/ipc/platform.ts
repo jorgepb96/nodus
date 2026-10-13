@@ -22,6 +22,8 @@ import { cancelChatGptSubscriptionLogin, getChatGptSubscriptionStatus, listChatG
 import { cancelGitHubCopilotSubscriptionLogin, getGitHubCopilotSubscriptionStatus, listGitHubCopilotSubscriptionModels, logoutGitHubCopilotSubscription, startGitHubCopilotSubscriptionLogin } from '../ai/githubCopilotSubscription';
 import { getOpenCodeGoUsageStatus } from '../ai/openCodeGoUsage';
 import { listImageModels } from '../ai/imageModels';
+import { generateEditorImage } from '../ai/editorImages';
+import type { EditorImageRequest } from '@shared/editorAiReview';
 import { deleteDecorativeImage, queueDecorativeImageGeneration, revertDecorativeImage, saveCustomDecorativeImage, streamDecorativeImageContext } from '../ai/decorativeImages';
 import { getDecorativeImage, getDecorativeImageData } from '../db/decorativeImagesRepo';
 import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, readClipBytes, saveClip, setStudyPronunciations } from '../audio/audioService';
@@ -80,6 +82,18 @@ function originalImageFileName(label: string | null | undefined, mime: string): 
 }
 
 export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
+  const editorImages = new Map<string, AbortController>();
+  h('ai:editorImage:generate', async (event, request: EditorImageRequest) => {
+    const key = `${event.sender.id}:${request?.requestId}`;
+    if (editorImages.has(key)) throw new Error('La solicitud ya está en curso.');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    event.sender.once('destroyed', abort);
+    editorImages.set(key, controller);
+    try { return await generateEditorImage(request, controller.signal); }
+    finally { editorImages.delete(key); event.sender.removeListener('destroyed', abort); }
+  });
+  h('ai:editorImage:cancel', async (event, requestId: string) => editorImages.get(`${event.sender.id}:${requestId}`)?.abort());
   h('mcp:status', async () => getMcpStatus());
   h('mcp:regenerateToken', async () => {
     await stopMcpTunnel();

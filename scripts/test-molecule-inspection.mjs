@@ -269,6 +269,15 @@ test('the route review is told not to re-check balance and to allow one-pot casc
   assert.doesNotMatch(ROUTE_REVIEW_SYSTEM, /it has passed/, 'the review is not told a failed route passed');
   assert.match(ROUTE_REVIEW_SYSTEM, /Never report a balance, stoichiometry or "cannot be written as one balanced equation" problem/);
   assert.match(ROUTE_REVIEW_SYSTEM, /one-pot cascade/);
+  // A canonical SMILES is written in the toolkit's atom order, not the author's numbering, and the
+  // review is given the canonical form on purpose (identical compounds must read as identical).
+  // Measured 2026-10-12, three times in one suite: the reviewer blocked a route because "the SMILES
+  // shows bromination at the carbon adjacent to the C7 carbonyl, but C3 is adjacent to C2" — on a
+  // symmetric dione where those are the same compound, and on a route whose every step passed. It
+  // also called `C1CC2CC3CCC2CC13` "a different tricyclic decane isomer" than twistane; that string
+  // is twistane, identical canonically to PubChem CID 5460768.
+  assert.match(ROUTE_REVIEW_SYSTEM, /NO relation to the locants/);
+  assert.match(ROUTE_REVIEW_SYSTEM, /Compare CONNECTIVITY, never numbering/);
   // A free amine vs its hydrochloride is a protonation-state choice: the review flipped between
   // the two across corrections and blocked each time. It is advisory; a folded workup still blocks.
   assert.match(ROUTE_REVIEW_SYSTEM, /a free amine or its hydrochloride, an acid or its carboxylate — is the author's choice/);

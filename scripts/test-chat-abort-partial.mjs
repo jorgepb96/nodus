@@ -132,6 +132,48 @@ try {
     console.log(`${surface.name}: cancellation preserves its publication contract`);
   }
 
+  // Main's reduced-effort cutoff retry and this branch's publication gate must
+  // coexist: an ordinary turn can stream, while verified documentary prose is
+  // held through both attempts and reaches its auditor only after completion.
+  aborter = null;
+  const grounding = load('electron/ai/researchChatGrounding.ts');
+  let auditCalls = 0;
+  grounding.groundResearchChatAnswer = async (answer, _context, _question, _model, _language, _signal, options) => {
+    auditCalls++;
+    return options?.structured ? 'Structured verified answer.' : answer;
+  };
+  for (const verification of ['off', 'legacy']) {
+    settings.updateSettings({ researchAnswerVerification: verification });
+    const sent = [], delivered = [];
+    const beforeAudits = auditCalls;
+    ai.completeTextStream = async (options, delta) => {
+      sent.push({ effort: options.researchEffort, maxTokens: options.maxTokens });
+      delta('Provisional documentary draft.', 'content');
+      delta('Thinking.', 'reasoning');
+      if (sent.length === 1) throw new ai.AiError('Output ceiling reached.', false, false, 'output_truncated');
+      return 'Completed documentary answer.';
+    };
+    const result = await research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn],
+      selection: verifiedResearchSelection, model: { provider: 'openai', model: 'gpt-6.1-sol' }, thinkingEffort: 'high' },
+    (text, kind) => delivered.push({ text, kind }), new AbortController().signal);
+    check(`${verification}: cutoff has exactly one retry`, sent.length === 2);
+    check(`${verification}: retry reduces effective thinking`, sent[0].effort === 'high' && sent[1].effort === 'medium');
+    check(`${verification}: retry retains its output allowance`, sent[0].maxTokens === sent[1].maxTokens);
+    check(`${verification}: returns completed answer`, result.answer === 'Completed documentary answer.');
+    check(`${verification}: reasoning can stream`, delivered.some(delta => delta.kind === 'reasoning'));
+    check(`${verification}: documentary draft follows publication gate`,
+      delivered.some(delta => delta.kind === 'content') === (verification === 'off'));
+    check(`${verification}: verification remains independent`, auditCalls - beforeAudits === (verification === 'legacy' ? 1 : 0));
+  }
+  settings.updateSettings({ researchAnswerVerification: 'structured' });
+  const beforeStructured = auditCalls;
+  ai.completeTextStream = async () => { throw new Error('Structured verification must not enter the ordinary stream writer'); };
+  const structured = await research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn],
+    selection: verifiedResearchSelection, model: { provider: 'openai', model: 'gpt-6.1-sol' }, thinkingEffort: 'high' },
+  () => {}, new AbortController().signal);
+  check('structured: uses its independently verified writer once', auditCalls === beforeStructured + 1);
+  check('structured: preserves the verified result', structured.answer === 'Structured verified answer.');
+
   // The owner registry must exist for the surfaces that key their assets by conversation.
   for (const [surface, id] of [['assistant', researchConversation.id], ['nodi', nodiConversation.id], ['world-assistant', worldConversation.id], ['database', dbConversation.id], ['study', studyConversation.id]]) {
     check(`${surface}: keeps its chat asset owner`, typeof owner(surface, id) === 'string');

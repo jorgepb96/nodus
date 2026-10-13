@@ -50,4 +50,3 @@ export function summarizeResearchLiveTerminalEvents(events, prior = {}) {
     bridgeAbandoned: (prior.bridgeAbandoned ?? 0) + count('abandoned'),
   };
 }
-

@@ -21,10 +21,10 @@ test('new installs learn MCP, Nodus Server, Zotero and the current six-tool cata
   assert.match(tutorial, /\.\.\.platformHighlightSlides\('en'\)/);
   assert.match(tutorial, /\.\.\.platformHighlightSlides\(language\)/);
 
-  for (const concept of ['MCP', 'Nodus Server', 'Nodus for Zotero', 'Nodus para Zotero', 'Nodus Apps', 'PDF Presenter', 'OCR Workspace']) {
+  for (const concept of ['MCP', 'Nodus Server', 'Nodus for Zotero', 'Nodus para Zotero', 'Nodus Apps', 'Nodus Presenter', 'OCR Workspace']) {
     assert.match(guide, new RegExp(concept), `missing platform tutorial concept: ${concept}`);
   }
-  for (const tool of ['Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'PDF Presenter', 'OCR Workspace']) {
+  for (const tool of ['Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'Nodus Presenter', 'OCR Workspace']) {
     assert.match(navigation, new RegExp(tool));
   }
   for (const language of ['es', 'en', 'fr', 'tr', 'de', 'it', 'pt', 'zh', 'ja', 'ru', 'uk']) {
@@ -38,7 +38,7 @@ test('new installs learn MCP, Nodus Server, Zotero and the current six-tool cata
   assert.match(guide, /<img src=\{zoteroLogo\} alt="Zotero" \/>/);
 });
 
-test('existing users get the cinematic summary after the PDF Presenter announcement and only mark it seen on completion', async () => {
+test('existing users get the cinematic summary after the Nodus Presenter announcement and only mark it seen on completion', async () => {
   const [guide, app, styles] = await Promise.all([
     read('src/components/PlatformHighlightsGuide.tsx'),
     read('src/App.tsx'),

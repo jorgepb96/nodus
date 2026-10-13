@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "real native transport, IPC and study service",
+    "streaming, protected prompt and persistent decision log",
+    "accept, undo, redo and persistence after reload",
+    "provider cancellation and empty response"
+  ],
+  "requests": 4,
+  "passed": true
+}

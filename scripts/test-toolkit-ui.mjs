@@ -144,11 +144,11 @@ test('the hub renders every built tool including Nodus Translate', async () => {
   // set of tools from each other.
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.map((tool) => `toolkit-card-${tool.testid}`),
-    ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr', 'toolkit-card-presenter']
+    ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-presenter', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr']
   );
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.map((tool) => tool.name),
-    ['Backups', 'Nodus Apps', 'Nodus Browser', 'Nodus Compass', 'Nodus Convert', 'Nodus Drift', 'Nodus Focus', 'Nodus Protect', 'Nodus Radar', 'Nodus Scriptor', 'Nodus Translate', 'OCR Workspace', 'PDF Presenter'],
+    ['Backups', 'Nodus Apps', 'Nodus Browser', 'Nodus Compass', 'Nodus Convert', 'Nodus Drift', 'Nodus Focus', 'Nodus Presenter', 'Nodus Protect', 'Nodus Radar', 'Nodus Scriptor', 'Nodus Translate', 'OCR Workspace'],
     'brand names stay untranslated'
   );
   assert.match(view, /name=\{tool\.name\}/, 'the card shows the brand name verbatim, never through t()');
@@ -166,7 +166,7 @@ test('the hub renders every built tool including Nodus Translate', async () => {
   );
   assert.deepEqual(
     navigation.TOOLKIT_TOOLS.filter((tool) => tool.state === 'wip').map((tool) => tool.page),
-    ['backups', 'apps', 'browser', 'compass', 'convert', 'drift', 'studyFocus', 'protect', 'radar', 'workspace', 'translate', 'ocr', 'presenter'],
+    ['backups', 'apps', 'browser', 'compass', 'convert', 'drift', 'studyFocus', 'presenter', 'protect', 'radar', 'workspace', 'translate', 'ocr'],
     'every tool uses the in-development badge'
   );
   assert.match(view, /const disabled = state === 'soon'/);
@@ -177,14 +177,14 @@ test('the hub renders every built tool including Nodus Translate', async () => {
   assert.match(view, /<ToolkitDriftView onBack=/, 'Nodus Drift renders its own page inside Tools');
   assert.match(view, /<ToolkitProtectView onBack=/, 'Nodus Protect renders the functional protection flow');
   assert.match(view, /<ToolkitTranslateView onBack=/, 'Nodus Translate renders the functional translation workspace');
-  assert.match(view, /<ToolkitPresenterView onBack=/, 'PDF Presenter renders the functional library');
+  assert.match(view, /<ToolkitPresenterView onBack=/, 'Nodus Presenter renders the functional library');
   assert.match(view, /<ToolkitAiOcrView onBack=/, 'OCR Workspace renders the functional library');
   // Any page other than the built ones falls back to the catalogue rather than
   // rendering an empty pane.
   assert.match(view, /page === 'drift'/, 'Nodus Drift has its own routed page');
   assert.match(view, /page === 'protect'/, 'Protect has its own routed workspace');
   assert.match(view, /page === 'translate'/, 'Translate has its own routed workspace');
-  assert.match(view, /page === 'presenter'/, 'PDF Presenter has its own routed workspace');
+  assert.match(view, /page === 'presenter'/, 'Nodus Presenter has its own routed workspace');
   assert.match(view, /page === 'ocr'/, 'OCR Workspace has its own routed workspace');
 });
 
@@ -464,7 +464,7 @@ test('Nodi documents the toolkit with its real, honest state', async () => {
   assert.match(docs, /## Herramientas \(Nodus Toolkit\)/);
   // The Toolkit surfaces can all be opened now; the guide and roadmap say so.
   assert.match(docs, /Nodus Convert ya funciona/, 'the guide states Convert works');
-  assert.match(docs, /PDF Presenter ya se puede abrir/, 'the guide states the presenter library is available');
+  assert.match(docs, /Nodus Presenter ya se puede abrir/, 'the guide states the presenter library is available');
   assert.match(docs, /OCR Workspace ya se puede abrir/, 'the guide states the OCR workspace is available');
   assert.match(docs, /determinista y 100 % offline/, 'the guide states the privacy/offline principle');
   // The roadmap line must no longer list the Toolkit as merely planned.

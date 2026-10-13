@@ -1,0 +1,67 @@
+name: Restore the verified Linux CI build
+description: Prepare isolated consumers of this run's exact build and Electron ABI.
+inputs:
+  artifact-id:
+    description: Immutable build artifact ID produced by the Linux build job.
+    required: true
+  node-version:
+    description: Exact Node version used to produce the native manifest.
+    required: true
+  marketplace-ref:
+    description: Exact marketplace commit selected by the Linux build job.
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+    - name: Install Linux test tools
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install --no-install-recommends -y xvfb libgl1-mesa-dri libegl-mesa0 mesa-utils ffmpeg zsync libfuse2 libgtk-3-0 libnss3 libasound2
+        ffmpeg -version >/dev/null
+        ffprobe -version >/dev/null
+        test -x /usr/bin/google-chrome
+        xvfb-run --auto-servernum glxinfo -B
+    - name: Install this checkout's locked dependencies
+      shell: bash
+      run: npm ci --no-audit --no-fund
+    - uses: actions/cache/restore@v6
+      with:
+        path: ~/.cache/electron
+        key: electron-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          electron-${{ runner.os }}-${{ runner.arch }}-
+    - name: Download only this run's immutable build artifact
+      uses: actions/download-artifact@v8
+      with:
+        artifact-ids: ${{ inputs.artifact-id }}
+        path: .ci
+        merge-multiple: true
+    - name: Restore and verify this commit's build
+      shell: bash
+      run: |
+        tar -xzf .ci/build.tgz
+        node scripts/ci-build-artifact.mjs verify
+    - name: Restore and verify the identical Electron native runtime
+      shell: bash
+      env:
+        CC: clang-15
+        CXX: clang++-15
+      run: |
+        node scripts/prepare-electron-tests.mjs
+        tar -xzf .ci/native.tgz
+        node scripts/ci-native-artifact.mjs verify
+        npx electron-builder install-app-deps
+        sudo chown root:root node_modules/electron/dist/chrome-sandbox
+        sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+    - name: Checkout the same marketplace revision as the build job
+      uses: actions/checkout@v7
+      with:
+        repository: NodusResearch/nodus-research-skill-marketplace
+        ref: ${{ inputs.marketplace-ref }}
+        path: .marketplace
+        persist-credentials: false

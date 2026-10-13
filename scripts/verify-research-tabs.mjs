@@ -59,11 +59,12 @@ try {
   await page.getByTestId('deep-research-close-report-0').click();
   assert.equal(await page.getByTestId('deep-research-tab-report-1').getAttribute('aria-selected'), 'true', 'closing a background tab keeps the active report');
   await page.getByTestId('deep-research-tab-report-1').press('Delete');
-  assert.equal(await page.getByRole('tab').count(), 0, 'closing the final tab returns to the original gallery');
+  assert.equal(await page.getByRole('tab').count(), 1, 'closing the final report keeps the permanent gallery tab');
+  assert.equal(await page.getByTestId('deep-research-tab-home').getAttribute('aria-selected'), 'true');
   await page.getByRole('button', { name: 'Leer', exact: true }).first().click();
   await page.evaluate(() => window.removeReport('report-0'));
   await page.getByRole('button', { name: 'Leer', exact: true }).first().waitFor();
-  assert.equal(await page.getByRole('tab').count(), 0, 'external deletion removes the tab and reader');
+  assert.equal(await page.getByRole('tab').count(), 1, 'external deletion removes the report and keeps the gallery tab');
 
   await page.goto(`${base}/visual-tests/research-tabs-harness.html?section=immersion`);
   await page.getByRole('button', { name: 'Empezar', exact: true }).first().click();
@@ -101,7 +102,8 @@ try {
   await page.getByTestId('immersion-close-session-1').click();
   await page.waitForFunction(() => document.querySelector('[data-testid="immersion-tab-session-0"]')?.getAttribute('aria-selected') === 'true');
   await page.getByTestId('immersion-close-session-0').click();
-  assert.equal(await page.getByRole('tab').count(), 0);
+  assert.equal(await page.getByRole('tab').count(), 1);
+  assert.equal(await page.getByTestId('immersion-tab-home').getAttribute('aria-selected'), 'true');
   assert.deepEqual(errors, [], 'no runtime errors');
   console.log('Research tabs: opening, deduplication, keyboard, closing, per-tab reading/progress, remount and deletion passed.');
   console.log(`Screenshots: ${output}`);

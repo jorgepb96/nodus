@@ -53,7 +53,8 @@ test('every specialist follows its real source, fixtures and workflow definition
 
 test('manual, empty, merge-queue and policy changes cannot silently omit coverage', () => {
   for (const [files, mode] of [[[], 'pull_request'], [[], 'manual'], [[], 'merge_group'],
-    [['.github/workflows/ci.yml'], 'pull_request'], [['scripts/ci-routing.mjs'], 'pull_request']]) {
+    [['.github/workflows/ci.yml'], 'pull_request'], [['.github/actions/ci-linux/action.yml'], 'pull_request'],
+    [['scripts/ci-routing.mjs'], 'pull_request']]) {
     const route = routeChanges(files, mode);
     for (const lane of ['full', 'macos', 'windows', 'research', 'scheme', 'server', 'appimage', 'presenter']) assert.equal(route[lane], true, lane);
     assert.equal(route.light, false);
@@ -69,15 +70,17 @@ test('manual, empty, merge-queue and policy changes cannot silently omit coverag
 test('the final gate rejects failed, cancelled, missing and unexpected skipped jobs', () => {
   const route = routeChanges(['src/views/Editor.tsx']);
   const jobs = { changes: { result: 'success' }, linux: { result: 'success' },
+    unit: { result: 'success' }, e2e: { result: 'success' },
     light: { result: 'skipped' }, platform: { result: 'skipped' }, scheme: { result: 'skipped' }, server: { result: 'skipped' } };
   assertJobResults(route, jobs);
-  for (const value of ['failure', 'cancelled', 'skipped', undefined]) {
-    assert.throws(() => assertJobResults(route, { ...jobs, linux: { result: value } }));
+  for (const lane of ['linux', 'unit', 'e2e']) for (const value of ['failure', 'cancelled', 'skipped', undefined]) {
+    assert.throws(() => assertJobResults(route, { ...jobs, [lane]: { result: value } }));
   }
   assert.throws(() => assertJobResults(route, { ...jobs, changes: { result: 'failure' } }));
   assert.throws(() => assertJobResults(route, { ...jobs, platform: { result: 'success' } }));
   const docs = routeChanges(['README.md']);
-  assertJobResults(docs, { ...jobs, linux: { result: 'skipped' }, light: { result: 'success' } });
+  const skipped = { result: 'skipped' };
+  assertJobResults(docs, { ...jobs, linux: skipped, unit: skipped, e2e: skipped, light: { result: 'success' } });
   assert.throws(() => assertJobResults(docs, { ...jobs, linux: { result: 'skipped' } }));
 });
 
@@ -110,7 +113,7 @@ test('CI uses an unconditional aggregate, exact refs, read-only PR permissions a
   assert.doesNotMatch(source.split('permissions:')[0], /paths(?:-ignore)?:/);
   assert.match(source, /contents: read/);
   assert.doesNotMatch(source, /(?:contents|packages|pull-requests): write/);
-  assert.match(source, /test:\n\s+needs: \[changes, linux, light, platform, scheme, server\]\n\s+if: always\(\)/);
+  assert.match(source, /test:\n\s+needs: \[changes, linux, unit, e2e, light, platform, scheme, server\]\n\s+if: always\(\)/);
   assert.match(source, /CI_JOB_RESULTS: \$\{\{ toJSON\(needs\) \}\}/);
   assert.match(source, /ref: \$\{\{ inputs\.ref \|\| github\.ref \}\}/);
   assert.match(source, /node scripts\/ci-native-checks\.mjs platform/);

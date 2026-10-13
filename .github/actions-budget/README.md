@@ -7,10 +7,20 @@ reactivación programada al comenzar otro mes.
 
 ## Política duradera de validación con consumo reducido
 
-Los PR de código conservan la suite Linux completa: una sola instalación y
-compilación, lint/TypeScript, todos los archivos descubiertos, cuatro E2E, contratos
+Los PR de código conservan la suite Linux completa: una sola compilación,
+lint/TypeScript, todos los archivos descubiertos, cinco E2E, contratos
 del marketplace, procesos nativos y migraciones. No se cachean resultados de tests
 ni se seleccionan pruebas individuales por los archivos modificados.
+
+Desde el 13 de octubre de 2026 se prioriza también el tiempo de espera: los tres
+grupos de tests se ejecutan en runners Linux independientes y los E2E y controles
+de integración en un cuarto runner, en paralelo con ellos. Cada consumidor instala
+sus dependencias bloqueadas y verifica por SHA-256 la compilación de esta ejecución,
+su commit y el runtime/ABI nativo exacto de Electron. Todos usan la misma revisión
+del marketplace. La puerta final vuelve a comprobar el inventario completo: cada
+archivo debe haber pasado exactamente una vez, sin nuevos skips. Esto añade
+instalaciones y transferencia de artefactos a cambio de reducir la espera, sin
+restaurar los workflows costosos desactivados ni modificar la aplicación.
 
 Los PR que solo cambian `README.md`, Markdown de `docs/`, documentación de esta
 restricción o el sitio (excepto `site/data/`, que también consume el desktop) usan
@@ -33,7 +43,7 @@ nativos y el E2E de notebooks/PDF/actividad aislado en macOS. Linux ejecuta esas
 regresiones dentro de su inventario completo, sin repetirlas. Scheme scan y la
 imagen del servidor se validan en Linux cuando cambia su código; el contenedor
 real arranca y comprueba salud y protección de acceso sin publicarse. AppImage y
-Presenter Linux se comprueban en el mismo runner principal cuando corresponde.
+Presenter Linux se comprueban en el runner de E2E e integración cuando corresponde.
 
 `CI / test` se ejecuta siempre y exige éxito de cada job seleccionado y omisión
 solo de los jobs no necesarios. Es obligatorio para fusionar, junto a
@@ -45,7 +55,7 @@ pendiente indefinidamente. Los PR obsoletos se cancelan; las releases no. Se adm
 
 Los E2E de Linux conservan Xvfb, Mesa por CPU, ANGLE y el sandbox normal de
 Electron. El compositor sigue por software y los grafos usan WebGL real. Se
-comprueba el runtime antes de la suite larga para fallar pronto. Los artefactos
+comprueba el runtime en cada consumidor antes de sus pruebas. Los artefactos
 diagnósticos tienen retención de tres días; npm, Electron y compilación incremental
 conservan sus cachés, pero ninguna caché sustituye una comprobación.
 
@@ -53,17 +63,28 @@ conservan sus cachés, pero ninguna caché sustituye una comprobación.
 
 Stable release y Beta release conservan sus tags y entradas manuales originales.
 La suite Linux completa y sus controles especializados validan el tag exacto
-antes de preparar un borrador. Las ejecuciones del mismo tag se serializan y
+en paralelo con el empaquetado del borrador, después de validar versión, canal,
+citas y oferta de código fuente. La publicación exige también que este CI completo
+haya terminado con éxito; un fallo, cancelación u omisión deja el borrador sin
+publicar. Las ejecuciones del mismo tag se serializan y
 ninguna release se cancela al empezar otra. Los jobs tienen límites explícitos de
 tiempo para evitar consumos por procesos colgados. Cada release conserva macOS Apple silicon, Windows
 y Linux, firma/notarización, procesos nativos, migraciones, runtime Research,
 integridad y el gate final: cualquier fallo impide publicar. Los controles nativos
 rechazan skips y se ejecutan aunque ese código no haya cambiado.
 
-El propietario pidió dejar de producir releases macOS Intel. Se conserva el
-merger auditado para normalizar el manifiesto arm64 y dejan de exigirse assets
-Intel. El backfill histórico sigue conservado y deshabilitado; las descargas Intel
-públicas apuntan a la última release existente con Intel, `v5.8.1`.
+macOS Intel queda fuera de la matriz que condiciona la publicación, a petición
+del propietario, para que su runner más lento no retrase la release. Se publica
+después: cuando `verify-and-publish` termina, `release-macos-intel.yml` compila
+Intel desde el mismo tag, lo firma y notariza, lo añade a la release ya publicada
+y fusiona sus entradas en el manifiesto con el merger auditado, sin tocar las de
+arm64 ni el puntero de compatibilidad. Si falla, la release publicada queda
+intacta y se reintenta lanzando ese workflow a mano con el tag y el canal. Hasta
+que termina, las instalaciones Intel no ven actualización y siguen en su versión;
+las descargas Intel públicas apuntan a `latest`. El backfill histórico sigue
+conservado y deshabilitado. La restauración completa elimina
+`release-macos-intel.yml`, porque la configuración original compila Intel dentro
+de la matriz.
 
 GitHub introdujo `macos-26-intel` en su
 [anuncio del 26 de febrero de 2026](https://github.blog/changelog/2026-02-26-macos-26-is-now-generally-available-for-github-hosted-runners/).

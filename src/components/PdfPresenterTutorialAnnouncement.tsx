@@ -43,7 +43,7 @@ export function PdfPresenterTutorialAnnouncement({ language, onSettled }: {
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         }}>
         <div className="pdf-tutorial-art" aria-hidden="true">
-          <div className="pdf-tutorial-screen"><span>NODUS / TOOLKIT</span><strong>PDF<br />Presenter<span>.</span></strong><div className="pdf-tutorial-screen-line" /></div>
+          <div className="pdf-tutorial-screen"><span>NODUS / TOOLKIT</span><strong>Nodus<br />Presenter<span>.</span></strong><div className="pdf-tutorial-screen-line" /></div>
           <div className="pdf-tutorial-play-symbol"><Icon name="play" size={28} /></div>
           <div className="pdf-tutorial-phone"><div /><i /><i /><span>← &nbsp; →</span></div>
         </div>

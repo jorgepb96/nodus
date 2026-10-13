@@ -120,15 +120,19 @@ test('stable and beta publication have isolated entry points and shared build lo
   assert.match(shared, /Beta release contains stable update manifest/);
   assert.match(shared, /--prerelease --latest=false/);
   assert.match(shared, /- os: macos-latest/, 'Apple silicon packaging runs on an ARM64 host for native optional dependencies');
-  assert.doesNotMatch(shared, /- os: macos-\d+-intel/, 'new releases do not consume an Intel runner');
+  assert.doesNotMatch(shared, /- os: macos-\d+-intel/, 'the Intel runner never sits in the matrix that gates publication');
   assert.match(shared, /platform: '--mac --arm64'/, 'each macOS runner packs exactly one architecture');
-  assert.doesNotMatch(shared, /platform: '--mac --x64'/, 'new macOS releases are Apple silicon only');
+  assert.doesNotMatch(shared, /platform: '--mac --x64'/, 'Intel is built after publication, not before it');
+  assert.match(shared, /release-macos-intel:\n(?:    #.*\n)*    needs: verify-and-publish\n    uses: \.\/\.github\/workflows\/release-macos-intel\.yml/,
+    'Intel is appended only once the release is published');
   // The audited manifest gate and all native builds must pass before publication.
   assert.match(shared, /merge-mac-manifest:/, 'the supported macOS manifest is normalized before publication');
   assert.match(shared, /needs\.merge-mac-manifest\.result == 'success'/, 'publication waits for the merged manifest');
   assert.match(shared, /merge-mac-update-manifest\.mjs/, 'the merge job runs the audited merger');
   assert.match(shared, /uses: \.\/\.github\/workflows\/ci\.yml/, 'the release validates its exact tag with the complete Linux suite');
-  assert.match(shared, /needs: \[validate-release, quality-gate\]/, 'a failing quality gate prevents draft preparation');
+  assert.match(shared, /prepare-release:\n(?:    #.*\n)*    needs: validate-release/, 'draft packaging can overlap CI after validating the tag');
+  assert.match(shared, /needs\.quality-gate\.result == 'success'/, 'a failed or skipped quality gate always prevents publication');
+  assert.match(shared, /verify-and-publish:[\s\S]*?needs:\n\s+- quality-gate/, 'publication waits for CI even when packaging finishes first');
   assert.match(shared, /Verify platform-specific macOS contracts/);
   assert.match(shared, /Verify Windows and macOS native migration and rollback/);
   assert.match(shared, /node node_modules\/electron\/install\.js/, 'release runners install Electron legal files before packaging');

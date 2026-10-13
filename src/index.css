@@ -3706,15 +3706,16 @@ select.input optgroup {
 }
 .library-workspace-tabs {
   height: 2.25rem;
+  min-width: 0;
   border-bottom: 1px solid #262626;
-  background: rgb(10 10 10 / 0.96);
-  padding: 0.25rem 0.5rem;
+  background: #0a0a0a;
+  padding: 0 1.25rem;
 }
 .library-workspace-tabs-scroll {
   display: flex;
-  height: 1.75rem;
+  height: 2.25rem;
   min-width: 0;
-  align-items: stretch;
+  align-items: flex-end;
   gap: 0.25rem;
   overflow-x: auto;
   overflow-y: hidden;
@@ -3723,6 +3724,11 @@ select.input optgroup {
 }
 .library-workspace-tabs-scroll::-webkit-scrollbar {
   display: none;
+}
+.library-workspace-tabs.workspace-tabs-in-header {
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
 }
 /* The Browser tab strip scrolls for the same reason, and hides its scrollbar for
    the same reason: the arrows at either end are the affordance, and a scrollbar
@@ -3738,27 +3744,28 @@ select.input optgroup {
 }
 .library-workspace-tab {
   display: flex;
-  min-width: 7rem;
-  max-width: 13.5rem;
-  flex: 0 1 13.5rem;
+  height: 2.25rem;
+  min-width: 0;
+  max-width: 23rem;
+  flex: 0 0 auto;
   align-items: center;
   border: 1px solid transparent;
-  border-radius: 0.45rem;
-  color: #a3a3a3;
+  border-bottom: 0;
+  border-radius: 0.5rem 0.5rem 0 0;
+  color: #737373;
 }
 .library-workspace-tab.is-library {
   min-width: auto;
   flex-basis: auto;
 }
 .library-workspace-tab:hover {
-  background: #171717;
-  color: #e5e5e5;
+  background: rgb(23 23 23 / 0.6);
+  color: #d4d4d4;
 }
 .library-workspace-tab.is-active {
   border-color: #404040;
-  background: #262626;
+  background: #171717;
   color: #f5f5f5;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.24);
 }
 .library-workspace-tab-main {
   display: flex;
@@ -3766,33 +3773,32 @@ select.input optgroup {
   height: 100%;
   flex: 1;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0 0.55rem;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
   text-align: left;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
+.library-workspace-tab-main > svg { flex-shrink: 0; }
+.library-workspace-tab-main > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.library-workspace-tab-main:focus-visible,
+.library-workspace-tab-close:focus-visible { outline: 2px solid var(--a-500, #6366f1); outline-offset: -2px; }
 .library-workspace-tab-close {
   display: grid;
   width: 1.5rem;
   height: 1.5rem;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 0.35rem;
-  color: #737373;
-  opacity: 0;
-}
-.library-workspace-tab:hover .library-workspace-tab-close,
-.library-workspace-tab.is-active .library-workspace-tab-close,
-.library-workspace-tab-close:focus-visible {
-  opacity: 1;
+  margin-right: 0.25rem;
+  border-radius: 0.25rem;
+  color: inherit;
 }
 .library-workspace-tab-close:hover {
-  background: #404040;
+  background: #262626;
   color: #f5f5f5;
 }
 .light .library-workspace-tabs {
-  border-color: #d4d4d4;
-  background: rgb(250 250 250 / 0.97);
+  border-color: #e5e5e5;
+  background: #ffffff;
 }
 .light .library-workspace-tab {
   color: #737373;
@@ -3805,10 +3811,9 @@ select.input optgroup {
   border-color: #d4d4d4;
   background: #ffffff;
   color: #171717;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 }
 .light .library-workspace-tab-close {
-  color: #a3a3a3;
+  color: inherit;
 }
 .light .library-workspace-tab-close:hover {
   background: #e5e5e5;
@@ -4092,13 +4097,13 @@ html.theme-active.light .library-workspace-tabs {
 }
 html.theme-active.dark .library-workspace-tab { color: var(--theme-text-dark-muted); }
 html.theme-active.dark .library-workspace-tab:hover { background: var(--n-900); color: var(--theme-text-dark); }
-html.theme-active.dark .library-workspace-tab.is-active { border-color: var(--theme-border-dark); background: var(--n-800); color: var(--theme-text-dark); }
-html.theme-active.dark .library-workspace-tab-close { color: var(--theme-text-dark-subtle); }
+html.theme-active.dark .library-workspace-tab.is-active { border-color: var(--n-700); background: var(--n-900); color: var(--theme-text-dark); }
+html.theme-active.dark .library-workspace-tab-close { color: inherit; }
 html.theme-active.dark .library-workspace-tab-close:hover { background: var(--n-700); color: var(--theme-text-dark); }
 html.theme-active.light .library-workspace-tab { color: var(--theme-text-light-muted); }
 html.theme-active.light .library-workspace-tab:hover { background: var(--n-100); color: var(--theme-text-light); }
 html.theme-active.light .library-workspace-tab.is-active { border-color: var(--theme-border-light); background: var(--n-50); color: var(--theme-text-light); }
-html.theme-active.light .library-workspace-tab-close { color: var(--theme-text-light-subtle); }
+html.theme-active.light .library-workspace-tab-close { color: inherit; }
 html.theme-active.light .library-workspace-tab-close:hover { background: var(--n-200); color: var(--theme-text-light); }
 html.theme-active.dark .library-scope-switcher { border-color: var(--theme-border-dark); background: color-mix(in srgb, var(--n-800) 72%, transparent); }
 html.theme-active.light .library-scope-switcher { border-color: var(--theme-border-light); background: var(--n-50); }

@@ -278,7 +278,7 @@
     ".github/workflows/release-build.yml": {
       "snapshot": "original-files/.github/workflows/release-build.yml",
       "originalSha256": "3cca54040718fbef65b48fde8f9ea698ccc058304aa8ee99c5620190551000bf",
-      "restrictedSha256": "94d95fc64cb1fca292b34ed22fab6a38cb291c402409c09964ad06ad62d71d70"
+      "restrictedSha256": "a588c9acdf5e993845676dd47b95dae583a8c1b98ec72cb512fb9870c50bcfff"
     },
     "scripts/ci-test-shards.mjs": {
       "snapshot": "original-files/scripts/ci-test-shards.mjs",
@@ -293,17 +293,17 @@
     "scripts/test-update-channels.mjs": {
       "snapshot": "original-files/scripts/test-update-channels.mjs",
       "originalSha256": "102a9ba1e170d26ff17a1abb8e2b5418f21a9b089fdc5a12e1fb5f45e1052e67",
-      "restrictedSha256": "c28cd97dc8b600d677dd04b7260b32041264bae15b2603b824665e56b9f55348"
+      "restrictedSha256": "d70e6eefc67a7fc0dd12a824f40d50e33cec6ba0aeeeea1218658606be0f0e2c"
     },
     "scripts/test-release-artifact-names.mjs": {
       "snapshot": "original-files/scripts/test-release-artifact-names.mjs",
       "originalSha256": "5a6aebdd8dc16de90ad9c9b5cc2f4ae11ba955839cb8c916bcbb16518d9e1973",
-      "restrictedSha256": "97c926aba58b4d452c47efb0f9c6ee4e4107de3724a4512a06f00e0ae8607aa6"
+      "restrictedSha256": "207024b8805f14e0b1d0aec60f2a641ab0b922b68b54cb341c87298887e71b28"
     },
     "README.md": {
       "snapshot": "original-files/README.md",
       "originalSha256": "1309d01ef861d7b6bb68a04d9a21da4261c47e67f023334dc83a43e3c123ce36",
-      "restrictedSha256": "5eba3c84c44fcdc4895a1e68e9fd7f862795acb13bea0f501467d28b2f747cc9"
+      "restrictedSha256": "1309d01ef861d7b6bb68a04d9a21da4261c47e67f023334dc83a43e3c123ce36"
     },
     "site/app/index.html": {
       "snapshot": "original-files/site/app/index.html",
@@ -328,7 +328,7 @@
     "scripts/test-site-pages.mjs": {
       "snapshot": "original-files/scripts/test-site-pages.mjs",
       "originalSha256": "69b8fccea8d47d4142e52c6e5298470b5202091e9b00ae0c49c0cae9060a8509",
-      "restrictedSha256": "0c8239896b115a2c1ffc66aeeabb608b93a9266b0ad64ee6033018aab011e715"
+      "restrictedSha256": "0b2d702926c058029637dc7961c803d6dc99216d59effb1dc595cb70d813fb73"
     },
     "scripts/test-nodi-notes-sync.mjs": {
       "snapshot": "original-files/scripts/test-nodi-notes-sync.mjs",
@@ -413,6 +413,8 @@
     }
   },
   "addedFiles": {
+    ".github/workflows/release-macos-intel.yml": "9b8b7ee939fae8c0b2301b5ad92ed742999f5cf961e9d60b8453fd8bd9e7e59f",
+    "scripts/test-macos-intel-release.mjs": "2cfaad6cb0735c3700af8901b6cc7cd8a5cc3b15f38735bfaeb180a735fd1424",
     "scripts/ci-routing.mjs": "b4f93db88c1fd5d9e01023bab1b3daa968583500ec1f117cc2636496da331130",
     "scripts/ci-native-checks.mjs": "c3ddb954a0d025883817044ae1fa376425b2a26467654599ffcb7a9e9741ee6f",
     "scripts/test-ci-routing.mjs": "f0147947a4329350d270844ce4e197e483170591047e473ff50dd89eb0e371a6",

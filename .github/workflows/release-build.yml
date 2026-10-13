@@ -42,7 +42,9 @@ jobs:
         run: npm run citation:check && npm run release:verify-source
 
   prepare-release:
-    needs: [validate-release, quality-gate]
+    # Package the validated tag while its complete CI runs. Only the final
+    # publication job may expose assets, and it also requires quality-gate.
+    needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -93,7 +95,8 @@ jobs:
       matrix:
         include:
           # Release builds keep native checks on each supported platform.
-          # Supported macOS releases target Apple silicon; Intel stays historical.
+          # Intel is not in this matrix on purpose: release-macos-intel builds
+          # it after publication so the slower runner never holds a release.
           - os: macos-latest
             platform: '--mac --arm64'
             asset-platform: mac-arm64
@@ -361,7 +364,7 @@ jobs:
         run: node scripts/upload-release-assets.mjs ${{ matrix.asset-platform }}
 
       # Stage the arm64 manifest for the existing audited normalization and
-      # publication gate. Do not require an Intel file that is no longer built.
+      # publication gate. Intel is appended to it after publication.
       - name: Park this architecture's update manifest for the merge job
         if: startsWith(matrix.os, 'macos')
         env:
@@ -489,10 +492,12 @@ jobs:
   verify-and-publish:
     if: >-
       always() &&
+      needs.quality-gate.result == 'success' &&
       needs.release.result == 'success' &&
       needs.merge-mac-manifest.result == 'success' &&
       (inputs.channel == 'beta' || needs.build-zotero-plugin.result == 'success')
     needs:
+      - quality-gate
       - release
       - merge-mac-manifest
       - build-zotero-plugin
@@ -616,3 +621,15 @@ jobs:
       - name: Publish beta prerelease
         if: inputs.channel == 'beta'
         run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
+
+  release-macos-intel:
+    # Intel is built only once the release is public and then appended to it,
+    # so the slower Intel runner never delays the three platforms above. If it
+    # fails, the published release is left as it was; retry it by dispatching
+    # the "macOS Intel release" workflow with the same tag and channel.
+    needs: verify-and-publish
+    uses: ./.github/workflows/release-macos-intel.yml
+    with:
+      channel: ${{ inputs.channel }}
+      tag: ${{ inputs.tag }}
+    secrets: inherit

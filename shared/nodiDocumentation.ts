@@ -32,7 +32,7 @@ export const NODUS_ROADMAP = [
   },
   { title: 'Nodus Toolkit', detail: 'Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.', status: 'implemented' },
   { title: 'Nodus Translate', detail: 'Traducir texto, documentos y adjuntos de Zotero con el modelo elegido, conservando la estructura de DOCX y EPUB y la apariencia de los PDF mediante un modo facsímil.', status: 'implemented' },
-  { title: 'Nodus PDF Presenter', detail: 'Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.', status: 'implemented' },
+  { title: 'Nodus Presenter', detail: 'Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.', status: 'implemented' },
   { title: 'Nodus OCR Workspace', detail: 'OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.', status: 'implemented' },
 ] satisfies readonly RoadmapItem[];
 
@@ -160,14 +160,14 @@ ${ROADMAP_GUIDE}
 
 ## Herramientas (Nodus Toolkit)
 - Herramientas es una sección de la barra lateral, en su propio grupo, y también tiene un icono en la cabecera. Aparece en todos los tipos de vault.
-- Su página principal es un hub con cinco tarjetas: Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter y OCR Workspace.
+- Su página principal es un hub con cinco tarjetas: Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter y OCR Workspace.
 - Nodus Convert ya funciona: convierte y procesa archivos en local, de uno en uno o en lote, en cinco categorías —Documentos (PDF, DOCX, EPUB, Markdown, HTML, texto), utilidades PDF (unir, dividir, rotar, reordenar, extraer imágenes, metadatos, imágenes→PDF), OCR ligero (imagen o PDF escaneado a texto, y PDF buscable), Imágenes (convertir formato incluido HEIC, redimensionar, comprimir) y Texto (limpiar texto pegado de PDF, mayúsculas/minúsculas, subtítulos a texto, checksums).
 - Nodus Protect ya funciona: admite PDF e imágenes del disco o de la bóveda activa, concatena documentos, permite ocultar o desenfocar datos, recortar, rotar, enderezar, convertir a escala de grises, añadir siete patrones de marca de agua y un pie legal, y exportar copias rasterizadas como PNG, ZIP o PDF.
 - Protect puede guardar una copia en disco, compartirla o incorporarla a la biblioteca «Copias protegidas» de la bóveda. También crea y verifica marcas trazables IDPS v1 compatibles con IDprotector; la marca autentica una copia, pero no la cifra y puede perderse por JPEG, capturas, reescalado o recompresión.
 - Nodus Translate ya funciona: traduce texto pegado, archivos TXT, Markdown, HTML, DOCX, EPUB y PDF, así como adjuntos importados de Zotero. Permite elegir idioma de destino, modelo, carpeta y formato de salida, además de añadir idioma de origen y glosario opcionales.
 - En DOCX y EPUB, Translate conserva directamente estilos, jerarquía, cabeceras, pies, notas, enlaces e imágenes del archivo original. En PDF ofrece un modo de lectura redistribuida y un modo facsímil rasterizado que mantiene páginas, geometría, fondos e imágenes y sustituye visiblemente el texto en su posición; puede usar visión para escaneados y texto dentro de imágenes. Si una traducción no cabe, reduce el tamaño y avisa de las páginas afectadas.
 - La traducción requiere el proveedor de IA seleccionado y puede enviarle el texto o las páginas que deban reconocerse. El archivo original nunca se modifica: el resultado se guarda como una copia nueva.
-- PDF Presenter ya se puede abrir: importa archivos PDF o presentaciones creadas en PowerPoint, LibreOffice o Keynote a una biblioteca global de Herramientas (con etiquetas, búsqueda, orden y miniaturas). Las presentaciones externas se convierten localmente a PDF, tras avisar de que las animaciones y transiciones no se conservan; las notas de los PowerPoint modernos se importan automáticamente. También permite escribir notas por diapositiva, exportarlas e importarlas juntas en TXT, añadir vídeos de YouTube por diapositiva y descargar el PDF de la presentación desde la biblioteca. Al presentar abre la diapositiva a pantalla completa (en la pantalla externa si hay dos) y una vista del presentador con la diapositiva actual, la siguiente, las notas, un temporizador y el reloj; incluye herramientas de anotación en directo (linterna, dibujo, puntero y lupa), pantalla en negro, y control remoto desde el móvil escaneando un código QR protegido por PIN. El único elemento que necesita conexión son los vídeos de YouTube; el resto funciona sin internet.
+- Nodus Presenter ya se puede abrir: importa archivos PDF o presentaciones creadas en PowerPoint, LibreOffice o Keynote a una biblioteca global de Herramientas (con etiquetas, búsqueda, orden y miniaturas). Las presentaciones externas se convierten localmente a PDF, tras avisar de que las animaciones y transiciones no se conservan; las notas de los PowerPoint modernos se importan automáticamente. También permite escribir notas por diapositiva, exportarlas e importarlas juntas en TXT, añadir vídeos de YouTube por diapositiva y descargar el PDF de la presentación desde la biblioteca. Al presentar abre la diapositiva a pantalla completa (en la pantalla externa si hay dos) y una vista del presentador con la diapositiva actual, la siguiente, las notas, un temporizador y el reloj; incluye herramientas de anotación en directo (linterna, dibujo, puntero y lupa), pantalla en negro, y control remoto desde el móvil escaneando un código QR protegido por PIN. El único elemento que necesita conexión son los vídeos de YouTube; el resto funciona sin internet.
 - OCR Workspace ya se puede abrir y ofrece un flujo asistido por IA para importar escaneados, revisar y corregir cada página y exportar el resultado.
 - Nodus Convert es determinista y 100 % offline (no hay IA), nunca modifica el archivo original y no sube nada a ningún servicio; la única llamada de red opcional es la descarga de idiomas de OCR de Tesseract, que el usuario decide.
 - El procesamiento documental de Nodus Protect es local y no envía documentos a IA, proveedores ni servicios externos. Esta afirmación se refiere a Protect, no a todas las funciones opcionales de red de Nodus.
@@ -185,7 +185,7 @@ ${ROADMAP_GUIDE}
 ## Estado resumido del roadmap
 - En desarrollo: Pulido y estabilidad.
 - Planificado: Servidor; Compartir vaults y trabajo colaborativo; Apps para iOS y iPadOS.
-- Implementado: Docencia, Fuentes primarias, Testimonios, Vaults sugeridos por usuarios —Prosopografía y Worldbuilding—, Nodus Toolkit, Nodus Translate, PDF Presenter y OCR Workspace.
+- Implementado: Docencia, Fuentes primarias, Testimonios, Vaults sugeridos por usuarios —Prosopografía y Worldbuilding—, Nodus Toolkit, Nodus Translate, Nodus Presenter y OCR Workspace.
 - No hay fechas cerradas para las iniciativas del roadmap.
 
 ## Protocolo para responder sobre la interfaz
@@ -213,7 +213,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Practical local-first tools for converting files and processing documents, integrated into Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Translate text, documents, and Zotero attachments with the selected model, preserving DOCX and EPUB structure and PDF appearance through a facsimile mode.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Present PDF files and external presentations with presenter view, mobile remote control, speaker notes, and live annotation tools.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Present PDF files and external presentations with presenter view, mobile remote control, speaker notes, and live annotation tools.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'AI-assisted OCR for scanned PDFs and images, with page-by-page review, text cleanup, reprocessing, and direct integration with Nodus vaults.', status: 'implemented' },
   ],
   fr: [
@@ -230,7 +230,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Outils pratiques et local-first pour convertir des fichiers et traiter des documents, intégrés à Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: "Traduire du texte, des documents et des pièces jointes Zotero avec le modèle choisi, en conservant la structure DOCX et EPUB et l'apparence des PDF grâce au mode fac-similé.", status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Présenter des PDF et des présentations externes avec vue présentateur, contrôle à distance depuis le mobile, notes et outils d’annotation en direct.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Présenter des PDF et des présentations externes avec vue présentateur, contrôle à distance depuis le mobile, notes et outils d’annotation en direct.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR assisté par IA pour les PDF numérisés et les images, avec révision page par page, nettoyage, retraitement et intégration directe aux vaults Nodus.', status: 'implemented' },
   ],
   de: [
@@ -247,7 +247,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Praktische local-first-Werkzeuge zum Konvertieren von Dateien und Verarbeiten von Dokumenten, in Nodus integriert.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Text, Dokumente und Zotero-Anhänge mit dem gewählten Modell übersetzen, wobei DOCX- und EPUB-Struktur sowie das PDF-Erscheinungsbild durch einen Faksimilemodus erhalten bleiben.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'PDF-Dateien und externe Präsentationen mit Referentenansicht, mobiler Fernsteuerung, Sprechernotizen und Live-Anmerkungswerkzeugen präsentieren.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'PDF-Dateien und externe Präsentationen mit Referentenansicht, mobiler Fernsteuerung, Sprechernotizen und Live-Anmerkungswerkzeugen präsentieren.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'KI-gestützte OCR für gescannte PDFs und Bilder mit seitenweiser Prüfung, Textbereinigung, erneuter Verarbeitung und direkter Integration in Nodus-Vaults.', status: 'implemented' },
   ],
   pt: [
@@ -264,7 +264,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Ferramentas práticas e local-first para converter ficheiros e processar documentos, integradas no Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Traduzir texto, documentos e anexos do Zotero com o modelo escolhido, conservando a estrutura de DOCX e EPUB e o aspeto dos PDF através de um modo fac-símile.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Apresentar ficheiros PDF e apresentações externas com vista do apresentador, controlo remoto a partir do telemóvel, notas do orador e ferramentas de anotação em direto.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Apresentar ficheiros PDF e apresentações externas com vista do apresentador, controlo remoto a partir do telemóvel, notas do orador e ferramentas de anotação em direto.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR assistido por IA para PDF digitalizados e imagens, com revisão página a página, limpeza de texto, reprocessamento e integração direta com os cofres do Nodus.', status: 'implemented' },
   ],
   'pt-BR': [
@@ -281,7 +281,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Ferramentas práticas e local-first para converter arquivos e processar documentos, integradas ao Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Traduzir texto, documentos e anexos do Zotero com o modelo escolhido, preservando a estrutura de DOCX e EPUB e a aparência dos PDFs por meio de um modo fac-símile.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Apresentar arquivos PDF e apresentações externas com visão do apresentador, controle remoto pelo celular, notas do orador e ferramentas de anotação ao vivo.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Apresentar arquivos PDF e apresentações externas com visão do apresentador, controle remoto pelo celular, notas do orador e ferramentas de anotação ao vivo.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR assistido por IA para PDFs digitalizados e imagens, com revisão página a página, limpeza de texto, reprocessamento e integração direta com os vaults do Nodus.', status: 'implemented' },
   ],
   it: [
@@ -298,7 +298,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Strumenti pratici e local-first per convertire file ed elaborare documenti, integrati in Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Tradurre testo, documenti e allegati Zotero con il modello scelto, conservando la struttura DOCX ed EPUB e l’aspetto dei PDF tramite una modalità facsimile.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Presentare file PDF e presentazioni esterne con vista del relatore, controllo remoto da mobile, note del relatore e strumenti di annotazione dal vivo.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Presentare file PDF e presentazioni esterne con vista del relatore, controllo remoto da mobile, note del relatore e strumenti di annotazione dal vivo.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR assistito dall’IA per PDF scansionati e immagini, con revisione pagina per pagina, pulizia del testo, rielaborazione e integrazione diretta con i vault Nodus.', status: 'implemented' },
   ],
   tr: [
@@ -315,7 +315,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Nodus’a entegre, dosyaları dönüştürmek ve belgeleri işlemek için pratik local-first araçlar.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Seçilen modelle metinleri, belgeleri ve Zotero eklerini çevirir; DOCX ve EPUB yapısını, PDF görünümünü ise faksimile moduyla korur.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'PDF dosyalarını ve harici sunumları sunucu görünümü, mobilden uzaktan kontrol, konuşmacı notları ve canlı açıklama araçlarıyla sunmak.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'PDF dosyalarını ve harici sunumları sunucu görünümü, mobilden uzaktan kontrol, konuşmacı notları ve canlı açıklama araçlarıyla sunmak.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'Taranmış PDF ve görseller için sayfa sayfa inceleme, metin temizleme, yeniden işleme ve Nodus kasalarıyla doğrudan bütünleşme sunan yapay zekâ destekli OCR.', status: 'implemented' },
   ],
   'zh-Hans': [
@@ -332,7 +332,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: '集成在 Nodus 中的实用 local-first 工具，用于转换文件和处理文档。', status: 'implemented' },
     { title: 'Nodus Translate', detail: '使用所选模型翻译文本、文档和 Zotero 附件，通过摹真模式保留 DOCX 与 EPUB 的结构以及 PDF 的外观。', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: '演示 PDF 文件和外部演示文稿，提供演讲者视图、手机遥控、演讲者备注和实时批注工具。', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: '演示 PDF 文件和外部演示文稿，提供演讲者视图、手机遥控、演讲者备注和实时批注工具。', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: '面向扫描版 PDF 和图像的 AI 辅助 OCR，支持逐页审阅、文本清理、重新处理，并与 Nodus vault 直接集成。', status: 'implemented' },
   ],
   'zh-Hant': [
@@ -349,7 +349,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: '整合於 Nodus 的實用 local-first 工具，用於轉換檔案與處理文件。', status: 'implemented' },
     { title: 'Nodus Translate', detail: '以所選模型翻譯文字、文件與 Zotero 附件，透過摹真模式保留 DOCX 與 EPUB 的結構及 PDF 的外觀。', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: '簡報 PDF 檔案與外部簡報，提供簡報者檢視、手機遠端控制、講者備註與即時註記工具。', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: '簡報 PDF 檔案與外部簡報，提供簡報者檢視、手機遠端控制、講者備註與即時註記工具。', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: '針對掃描 PDF 與影像的 AI 輔助 OCR，支援逐頁檢閱、文字清理、重新處理，並與 Nodus vault 直接整合。', status: 'implemented' },
   ],
   vi: [
@@ -366,7 +366,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Các công cụ local-first thiết thực để chuyển đổi tệp và xử lý tài liệu, được tích hợp trong Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Dịch văn bản, tài liệu và tệp đính kèm Zotero bằng mô hình đã chọn, giữ nguyên cấu trúc DOCX và EPUB cùng diện mạo PDF nhờ chế độ facsimile.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Trình bày tệp PDF và bài thuyết trình bên ngoài với chế độ xem người trình bày, điều khiển từ xa bằng điện thoại, ghi chú diễn giả và công cụ chú thích trực tiếp.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Trình bày tệp PDF và bài thuyết trình bên ngoài với chế độ xem người trình bày, điều khiển từ xa bằng điện thoại, ghi chú diễn giả và công cụ chú thích trực tiếp.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR hỗ trợ AI cho PDF quét và hình ảnh, với duyệt từng trang, làm sạch văn bản, xử lý lại và tích hợp trực tiếp với các vault của Nodus.', status: 'implemented' },
   ],
   ja: [
@@ -383,7 +383,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'ファイル変換と文書処理のための実用的な local-first ツールで、Nodus に統合されています。', status: 'implemented' },
     { title: 'Nodus Translate', detail: '選択したモデルでテキスト、文書、Zotero 添付ファイルを翻訳し、ファクシミリモードで DOCX と EPUB の構造および PDF の見た目を保ちます。', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'PDF ファイルや外部プレゼンテーションを、発表者ビュー、スマートフォンからのリモート操作、発表者ノート、ライブ注釈ツールとともに提示します。', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'PDF ファイルや外部プレゼンテーションを、発表者ビュー、スマートフォンからのリモート操作、発表者ノート、ライブ注釈ツールとともに提示します。', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'スキャンした PDF と画像に対する AI 支援 OCR で、ページごとの確認、テキスト整理、再処理、Nodus vault との直接統合を提供します。', status: 'implemented' },
   ],
   ru: [
@@ -400,7 +400,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Практичные local-first инструменты для преобразования файлов и обработки документов, интегрированные в Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Переводите текст, документы и вложения Zotero выбранной моделью, сохраняя структуру DOCX и EPUB и внешний вид PDF с помощью факсимильного режима.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Показывайте PDF-файлы и внешние презентации с режимом докладчика, удалённым управлением с телефона, заметками докладчика и инструментами аннотирования в реальном времени.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Показывайте PDF-файлы и внешние презентации с режимом докладчика, удалённым управлением с телефона, заметками докладчика и инструментами аннотирования в реальном времени.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR с поддержкой ИИ для отсканированных PDF и изображений: постраничная проверка, очистка текста, повторная обработка и прямая интеграция с vault Nodus.', status: 'implemented' },
   ],
   uk: [
@@ -417,7 +417,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: 'Практичні local-first інструменти для перетворення файлів і обробки документів, інтегровані в Nodus.', status: 'implemented' },
     { title: 'Nodus Translate', detail: 'Перекладайте текст, документи та вкладення Zotero вибраною моделлю, зберігаючи структуру DOCX і EPUB та вигляд PDF завдяки факсимільному режиму.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'Показуйте PDF-файли та зовнішні презентації з режимом доповідача, віддаленим керуванням із телефона, нотатками доповідача та інструментами анотування в реальному часі.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'Показуйте PDF-файли та зовнішні презентації з режимом доповідача, віддаленим керуванням із телефона, нотатками доповідача та інструментами анотування в реальному часі.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: 'OCR із підтримкою ШІ для сканованих PDF і зображень: посторінковий перегляд, очищення тексту, повторна обробка та пряма інтеграція з vault Nodus.', status: 'implemented' },
   ],
   ko: [
@@ -434,7 +434,7 @@ const LOCALIZED_ROADMAP: Record<PromptLanguage, readonly RoadmapItem[]> = {
     ] },
     { title: 'Nodus Toolkit', detail: '파일 변환과 문서 처리를 위한 실용적인 local-first 도구로, Nodus에 통합되어 있습니다.', status: 'implemented' },
     { title: 'Nodus Translate', detail: '선택한 모델로 텍스트, 문서 및 Zotero 첨부 파일을 번역하며, 팩시밀리 모드로 DOCX와 EPUB 구조 및 PDF 모양을 유지합니다.', status: 'implemented' },
-    { title: 'Nodus PDF Presenter', detail: 'PDF 파일과 외부 프레젠테이션을 발표자 보기, 휴대폰 원격 제어, 발표자 노트 및 실시간 주석 도구와 함께 발표합니다.', status: 'implemented' },
+    { title: 'Nodus Presenter', detail: 'PDF 파일과 외부 프레젠테이션을 발표자 보기, 휴대폰 원격 제어, 발표자 노트 및 실시간 주석 도구와 함께 발표합니다.', status: 'implemented' },
     { title: 'Nodus OCR Workspace', detail: '스캔한 PDF와 이미지를 위한 AI 지원 OCR로, 페이지별 검토, 텍스트 정리, 재처리 및 Nodus vault와의 직접 통합을 제공합니다.', status: 'implemented' },
   ],
 };
@@ -586,14 +586,14 @@ __ROADMAP_GUIDE__
 
 ## Tools (Nodus Toolkit)
 - Tools is a sidebar section in its own group and also has a header icon. It appears for every vault type.
-- Its home page is a hub with five cards: Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter, and OCR Workspace.
+- Its home page is a hub with five cards: Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter, and OCR Workspace.
 - Nodus Convert works: it converts and processes files locally, one at a time or in batches, in five categories — Documents (PDF, DOCX, EPUB, Markdown, HTML, text), PDF utilities (merge, split, rotate, reorder, extract images, metadata, images→PDF), light OCR (image or scanned PDF to text, and searchable PDF), Images (format conversion including HEIC, resize, compress), and Text (clean text pasted from PDF, upper/lower case, subtitles to text, checksums).
 - Nodus Protect works: it accepts PDFs and images from disk or the active vault, concatenates documents, can hide or blur data, crop, rotate, straighten, convert to grayscale, add seven watermark patterns and a legal footer, and export rasterized copies as PNG, ZIP, or PDF.
 - Protect can save a copy to disk, share it, or add it to the vault's “Protected copies” library. It also creates and verifies traceable IDPS v1 marks compatible with IDprotector; the mark authenticates a copy but does not encrypt it and may be lost through JPEG, screenshots, resizing, or recompression.
 - Nodus Translate works: it translates pasted text, TXT, Markdown, HTML, DOCX, EPUB, and PDF files, as well as attachments imported from Zotero. It allows choosing target language, model, folder, and output format, and adding optional source language and glossary.
 - In DOCX and EPUB, Translate directly preserves styles, hierarchy, headers, footers, notes, links, and images from the original. In PDF it offers a reflow reading mode and a rasterized facsimile mode that preserves pages, geometry, backgrounds, and images and visibly replaces text in position; it can use vision for scans and text inside images. If a translation does not fit, it reduces the size and warns about affected pages.
 - Translation requires the selected AI provider and may send it the text or pages that need recognition. The original file is never modified: the result is saved as a new copy.
-- PDF Presenter can be opened: it imports PDF files or presentations made in PowerPoint, LibreOffice, or Keynote into a global Tools library (with tags, search, sorting, and thumbnails). External presentations are converted locally to PDF after warning that animations and transitions are not preserved; modern PowerPoint notes are imported automatically. It also allows writing notes per slide, exporting and importing them together in TXT, adding YouTube videos per slide, and downloading the deck's PDF back out of the library. When presenting, it opens the slide full-screen (on the external display if there are two) and a presenter view with the current slide, next slide, notes, timer, and clock; it includes live annotation tools (torch, drawing, pointer, and magnifier), black screen, and remote control from a mobile by scanning a PIN-protected QR code. YouTube videos are the only element that needs a connection; everything else works offline.
+- Nodus Presenter can be opened: it imports PDF files or presentations made in PowerPoint, LibreOffice, or Keynote into a global Tools library (with tags, search, sorting, and thumbnails). External presentations are converted locally to PDF after warning that animations and transitions are not preserved; modern PowerPoint notes are imported automatically. It also allows writing notes per slide, exporting and importing them together in TXT, adding YouTube videos per slide, and downloading the deck's PDF back out of the library. When presenting, it opens the slide full-screen (on the external display if there are two) and a presenter view with the current slide, next slide, notes, timer, and clock; it includes live annotation tools (torch, drawing, pointer, and magnifier), black screen, and remote control from a mobile by scanning a PIN-protected QR code. YouTube videos are the only element that needs a connection; everything else works offline.
 - OCR Workspace can be opened and offers an AI-assisted flow to import scans, review and correct each page, and export the result.
 - Nodus Convert is deterministic and 100% offline (there is no AI), never modifies the original file, and uploads nothing to any service; the only optional network call is downloading Tesseract OCR languages, which the user decides.
 - Nodus Protect document processing is local and does not send documents to AI, providers, or external services. This statement concerns Protect, not every optional network feature of Nodus.
@@ -611,7 +611,7 @@ __ROADMAP_GUIDE__
 ## Roadmap summary status
 - In development: Polishing and stability.
 - Planned: Server; Vault sharing and collaborative work; Apps for iOS and iPadOS.
-- Implemented: Teaching, Primary sources, Testimonies, User-suggested vaults —Prosopography and Worldbuilding—, Nodus Toolkit, Nodus Translate, PDF Presenter, and OCR Workspace.
+- Implemented: Teaching, Primary sources, Testimonies, User-suggested vaults —Prosopography and Worldbuilding—, Nodus Toolkit, Nodus Translate, Nodus Presenter, and OCR Workspace.
 - There are no fixed dates for roadmap initiatives.
 
 ## Protocol for answering about the interface
@@ -682,8 +682,8 @@ __ROADMAP_GUIDE__
 - L’auteur est la source de vérité; Nodi distingue le canon établi de toute proposition.
 
 ## Outils (Nodus Toolkit)
-- Le hub contient Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter et OCR Workspace. Convert traite localement Documents (PDF, DOCX, EPUB, Markdown, HTML), utilitaires PDF, OCR léger, Images et Text.
-- Protect rasterise et exporte PNG, ZIP ou PDF, sans modifier l’original. Translate traite TXT, Markdown, HTML, DOCX, EPUB, PDF et pièces Zotero; il conserve la structure et propose un mode fac-similé. PDF Presenter importe PowerPoint, LibreOffice et Keynote; OCR Workspace révise chaque page.
+- Le hub contient Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter et OCR Workspace. Convert traite localement Documents (PDF, DOCX, EPUB, Markdown, HTML), utilitaires PDF, OCR léger, Images et Text.
+- Protect rasterise et exporte PNG, ZIP ou PDF, sans modifier l’original. Translate traite TXT, Markdown, HTML, DOCX, EPUB, PDF et pièces Zotero; il conserve la structure et propose un mode fac-similé. Nodus Presenter importe PowerPoint, LibreOffice et Keynote; OCR Workspace révise chaque page.
 - Convert est déterministe et 100 % offline; Protect ne transmet pas de documents à l’IA. La seule connexion facultative de Convert télécharge les langues OCR de Tesseract.
 
 ## MCP local et Nodus Server
@@ -691,7 +691,7 @@ __ROADMAP_GUIDE__
 - La copie publiée est filtrée et sortante; elle ne partage ni listener, ni port, ni token avec MCP. OAuth protège l’accès distant. Server et le partage collaboratif restent « Planifié ».
 
 ## État récapitulatif de la feuille de route
-- En développement : Polissage et stabilité. Planifié : Server, partage de vaults et travail collaboratif, applications iOS et iPadOS. Mis en œuvre : Teaching, Primary sources, Testimonies, vaults suggérés, Nodus Toolkit, Nodus Translate, PDF Presenter et OCR Workspace.
+- En développement : Polissage et stabilité. Planifié : Server, partage de vaults et travail collaboratif, applications iOS et iPadOS. Mis en œuvre : Teaching, Primary sources, Testimonies, vaults suggérés, Nodus Toolkit, Nodus Translate, Nodus Presenter et OCR Workspace.
 - Aucune date fixe n’est annoncée.
 
 ## Protocole d’interface
@@ -754,8 +754,8 @@ __ROADMAP_GUIDE__
 - O autor é a fonte de verdade; Nodi separa cânone estabelecido de propostas.
 
 ## Ferramentas (Nodus Toolkit)
-- O hub contém Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter e OCR Workspace. Convert processa localmente Documents, utilitários PDF, OCR leve, Images e Text.
-- Protect exporta PNG, ZIP ou PDF sem alterar o original; Translate trata TXT, Markdown, HTML, DOCX, EPUB, PDF e anexos Zotero; PDF Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revê cada página.
+- O hub contém Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter e OCR Workspace. Convert processa localmente Documents, utilitários PDF, OCR leve, Images e Text.
+- Protect exporta PNG, ZIP ou PDF sem alterar o original; Translate trata TXT, Markdown, HTML, DOCX, EPUB, PDF e anexos Zotero; Nodus Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revê cada página.
 - Convert é determinístico e 100 % offline; Protect não envia documentos à IA. Só a descarga opcional de idiomas OCR do Tesseract usa rede.
 
 ## MCP local e Nodus Server
@@ -763,7 +763,7 @@ __ROADMAP_GUIDE__
 - A cópia publicada é filtrada e apenas de saída; OAuth protege o acesso. Server e partilha colaborativa continuam «Planeado».
 
 ## Estado resumido do roteiro
-- Em desenvolvimento: Polimento e estabilidade. Planeado: Server, partilha de cofres e colaboração, aplicações iOS e iPadOS. Implementado: Teaching, Primary sources, Testimonies, cofres sugeridos, Nodus Toolkit, Nodus Translate, PDF Presenter e OCR Workspace.
+- Em desenvolvimento: Polimento e estabilidade. Planeado: Server, partilha de cofres e colaboração, aplicações iOS e iPadOS. Implementado: Teaching, Primary sources, Testimonies, cofres sugeridos, Nodus Toolkit, Nodus Translate, Nodus Presenter e OCR Workspace.
 - Não há datas fixas.
 
 ## Protocolo da interface
@@ -826,8 +826,8 @@ __ROADMAP_GUIDE__
 - O autor é a fonte da verdade; Nodi separa cânone estabelecido de propostas.
 
 ## Ferramentas (Nodus Toolkit)
-- O hub contém Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter e OCR Workspace. Convert processa localmente Documents, utilitários PDF, OCR leve, Images e Text.
-- Protect exporta PNG, ZIP ou PDF sem alterar o original; Translate trata TXT, Markdown, HTML, DOCX, EPUB, PDF e anexos Zotero; PDF Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revisa cada página.
+- O hub contém Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter e OCR Workspace. Convert processa localmente Documents, utilitários PDF, OCR leve, Images e Text.
+- Protect exporta PNG, ZIP ou PDF sem alterar o original; Translate trata TXT, Markdown, HTML, DOCX, EPUB, PDF e anexos Zotero; Nodus Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revisa cada página.
 - Convert é determinístico e 100% offline; Protect não envia documentos à IA. Só o download opcional de idiomas OCR do Tesseract usa rede.
 
 ## MCP local e Nodus Server
@@ -835,7 +835,7 @@ __ROADMAP_GUIDE__
 - A cópia publicada é filtrada e apenas de saída; OAuth protege o acesso. Server e compartilhamento colaborativo continuam “Planejado”.
 
 ## Status resumido do roadmap
-- Em desenvolvimento: Polimento e estabilidade. Planejado: Server, compartilhamento de vaults e colaboração, aplicativos para iOS e iPadOS. Implementado: Teaching, Primary sources, Testimonies, vaults sugeridos, Nodus Toolkit, Nodus Translate, PDF Presenter e OCR Workspace.
+- Em desenvolvimento: Polimento e estabilidade. Planejado: Server, compartilhamento de vaults e colaboração, aplicativos para iOS e iPadOS. Implementado: Teaching, Primary sources, Testimonies, vaults sugeridos, Nodus Toolkit, Nodus Translate, Nodus Presenter e OCR Workspace.
 - Não há datas fixas.
 
 ## Protocolo da interface
@@ -898,8 +898,8 @@ __ROADMAP_GUIDE__
 - L’autore è la fonte della verità; Nodi distingue il canone stabilito dalle proposte.
 
 ## Strumenti (Nodus Toolkit)
-- L’hub contiene Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter e OCR Workspace. Convert elabora localmente Documents, utilità PDF, OCR leggero, Images e Text.
-- Protect esporta PNG, ZIP o PDF senza modificare l’originale; Translate tratta TXT, Markdown, HTML, DOCX, EPUB, PDF e allegati Zotero; PDF Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revisiona ogni pagina.
+- L’hub contiene Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter e OCR Workspace. Convert elabora localmente Documents, utilità PDF, OCR leggero, Images e Text.
+- Protect esporta PNG, ZIP o PDF senza modificare l’originale; Translate tratta TXT, Markdown, HTML, DOCX, EPUB, PDF e allegati Zotero; Nodus Presenter importa PowerPoint, LibreOffice e Keynote; OCR Workspace revisiona ogni pagina.
 - Convert è deterministico e 100% offline; Protect non invia documenti all’IA. Solo il download facoltativo delle lingue OCR di Tesseract usa la rete.
 
 ## MCP locale e Nodus Server
@@ -907,7 +907,7 @@ __ROADMAP_GUIDE__
 - La copia pubblicata è filtrata e in uscita; OAuth protegge l’accesso. Server e condivisione collaborativa restano «Pianificati».
 
 ## Stato riassuntivo della roadmap
-- In sviluppo: Rifinitura e stabilità. Pianificato: Server, condivisione dei vault e collaborazione, app iOS e iPadOS. Implementato: Teaching, Primary sources, Testimonies, vault suggeriti, Nodus Toolkit, Nodus Translate, PDF Presenter e OCR Workspace.
+- In sviluppo: Rifinitura e stabilità. Pianificato: Server, condivisione dei vault e collaborazione, app iOS e iPadOS. Implementato: Teaching, Primary sources, Testimonies, vault suggeriti, Nodus Toolkit, Nodus Translate, Nodus Presenter e OCR Workspace.
 - Non ci sono date fissate.
 
 ## Protocollo dell’interfaccia
@@ -970,8 +970,8 @@ __ROADMAP_GUIDE__
 - Doğruluk kaynağı yazardır; Nodi yerleşik kanonu önerilerden ayırır.
 
 ## Araçlar (Nodus Toolkit)
-- Hub Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter ve OCR Workspace içerir. Convert Documents, PDF utilities, light OCR, Images ve Text kategorilerini yerel işler.
-- Protect özgün dosyayı değiştirmeden PNG, ZIP veya PDF dışa aktarır; Translate TXT, Markdown, HTML, DOCX, EPUB, PDF ve Zotero eklerini işler; PDF Presenter PowerPoint, LibreOffice ve Keynote içe aktarır; OCR Workspace her sayfayı inceler.
+- Hub Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter ve OCR Workspace içerir. Convert Documents, PDF utilities, light OCR, Images ve Text kategorilerini yerel işler.
+- Protect özgün dosyayı değiştirmeden PNG, ZIP veya PDF dışa aktarır; Translate TXT, Markdown, HTML, DOCX, EPUB, PDF ve Zotero eklerini işler; Nodus Presenter PowerPoint, LibreOffice ve Keynote içe aktarır; OCR Workspace her sayfayı inceler.
 - Convert deterministik ve %100 offline’dır; Protect belgeleri yapay zekâya göndermez. Yalnızca isteğe bağlı Tesseract OCR dil indirmesi ağ kullanır.
 
 ## Yerel MCP ve Nodus Server
@@ -979,7 +979,7 @@ __ROADMAP_GUIDE__
 - Yayınlanan kopya filtrelenmiş ve dışa giden bir kopyadır; OAuth uzaktan erişimi korur. Server ve ortak paylaşım “Planlandı” durumundadır.
 
 ## Yol haritası özet durumu
-- Geliştiriliyor: İyileştirme ve kararlılık. Planlandı: Server, kasa paylaşımı ve ortak çalışma, iOS ve iPadOS uygulamaları. Uygulandı: Teaching, Primary sources, Testimonies, önerilen kasalar, Nodus Toolkit, Nodus Translate, PDF Presenter ve OCR Workspace.
+- Geliştiriliyor: İyileştirme ve kararlılık. Planlandı: Server, kasa paylaşımı ve ortak çalışma, iOS ve iPadOS uygulamaları. Uygulandı: Teaching, Primary sources, Testimonies, önerilen kasalar, Nodus Toolkit, Nodus Translate, Nodus Presenter ve OCR Workspace.
 - Kesin tarihler yoktur.
 
 ## Arayüz protokolü
@@ -1042,8 +1042,8 @@ __ROADMAP_GUIDE__
 - Der Autor ist die Wahrheitsquelle; Nodi trennt etablierten Kanon von Vorschlägen.
 
 ## Werkzeuge (Nodus Toolkit)
-- Der Hub enthält Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter und OCR Workspace. Convert verarbeitet lokal Documents (PDF, DOCX, EPUB, Markdown, HTML), PDF utilities, light OCR, Images und Text.
-- Protect exportiert rasterisierte PNG-, ZIP- oder PDF-Kopien ohne das Original zu ändern. Translate verarbeitet TXT, Markdown, HTML, DOCX, EPUB, PDF und Zotero-Anhänge, bewahrt Struktur und bietet Faksimile. PDF Presenter importiert PowerPoint, LibreOffice und Keynote; OCR Workspace prüft jede Seite.
+- Der Hub enthält Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter und OCR Workspace. Convert verarbeitet lokal Documents (PDF, DOCX, EPUB, Markdown, HTML), PDF utilities, light OCR, Images und Text.
+- Protect exportiert rasterisierte PNG-, ZIP- oder PDF-Kopien ohne das Original zu ändern. Translate verarbeitet TXT, Markdown, HTML, DOCX, EPUB, PDF und Zotero-Anhänge, bewahrt Struktur und bietet Faksimile. Nodus Presenter importiert PowerPoint, LibreOffice und Keynote; OCR Workspace prüft jede Seite.
 - Convert ist deterministisch und 100 % offline; Protect sendet keine Dokumente an KI. Nur der optionale Download von Tesseract-OCR-Sprachen benötigt Netzwerk.
 
 ## Lokales MCP und Nodus Server
@@ -1051,7 +1051,7 @@ __ROADMAP_GUIDE__
 - Die veröffentlichte Kopie ist gefiltert und ausgehend; Listener, Port und Token werden nicht mit MCP geteilt. OAuth schützt Fernzugriff. Server und kollaboratives Teilen sind „Geplant“.
 
 ## Roadmap-Status zusammengefasst
-- In Entwicklung: Feinschliff und Stabilität. Geplant: Server, Vault-Sharing und Zusammenarbeit, iOS- und iPadOS-Apps. Implementiert: Teaching, Primary sources, Testimonies, vorgeschlagene Vaults, Nodus Toolkit, Nodus Translate, PDF Presenter und OCR Workspace.
+- In Entwicklung: Feinschliff und Stabilität. Geplant: Server, Vault-Sharing und Zusammenarbeit, iOS- und iPadOS-Apps. Implementiert: Teaching, Primary sources, Testimonies, vorgeschlagene Vaults, Nodus Toolkit, Nodus Translate, Nodus Presenter und OCR Workspace.
 - Es gibt keine festen Termine.
 
 ## Protokoll für die Oberfläche
@@ -1114,8 +1114,8 @@ __ROADMAP_GUIDE__
 - 作者是事实的来源；Nodi 区分既定设定与提议。
 
 ## 工具（Nodus Toolkit）
-- 中心页包含 Nodus Convert、Nodus Protect、Nodus Translate、PDF Presenter 和 OCR Workspace。Convert 在本地处理 Documents、PDF utilities、light OCR、Images 和 Text。
-- Protect 在不修改原文件的情况下导出 PNG、ZIP 或 PDF；Translate 处理 TXT、Markdown、HTML、DOCX、EPUB、PDF 和 Zotero 附件；PDF Presenter 导入 PowerPoint、LibreOffice 和 Keynote；OCR Workspace 逐页审阅。
+- 中心页包含 Nodus Convert、Nodus Protect、Nodus Translate、Nodus Presenter 和 OCR Workspace。Convert 在本地处理 Documents、PDF utilities、light OCR、Images 和 Text。
+- Protect 在不修改原文件的情况下导出 PNG、ZIP 或 PDF；Translate 处理 TXT、Markdown、HTML、DOCX、EPUB、PDF 和 Zotero 附件；Nodus Presenter 导入 PowerPoint、LibreOffice 和 Keynote；OCR Workspace 逐页审阅。
 - Convert 是确定性的且 100% 离线；Protect 不向 AI 发送文档。只有可选的 Tesseract OCR 语言下载需要联网。
 
 ## 本地 MCP 与 Nodus Server
@@ -1123,7 +1123,7 @@ __ROADMAP_GUIDE__
 - 发布的副本经过筛选且为出站；OAuth 保护访问。Server 与协作共享仍为 “已计划”。
 
 ## 路线图状态摘要
-- 开发中：打磨与稳定性。已计划：Server、vault 共享与协作、iOS 与 iPadOS 应用。已实现：Teaching、Primary sources、Testimonies、用户建议的 vault、Nodus Toolkit、Nodus Translate、PDF Presenter 和 OCR Workspace。
+- 开发中：打磨与稳定性。已计划：Server、vault 共享与协作、iOS 与 iPadOS 应用。已实现：Teaching、Primary sources、Testimonies、用户建议的 vault、Nodus Toolkit、Nodus Translate、Nodus Presenter 和 OCR Workspace。
 - 没有固定的日期。
 
 ## 界面答复协议
@@ -1186,8 +1186,8 @@ __ROADMAP_GUIDE__
 - 作者是事實的來源；Nodi 區分既定設定與提議。
 
 ## 工具（Nodus Toolkit）
-- 中樞頁面包含 Nodus Convert、Nodus Protect、Nodus Translate、PDF Presenter 與 OCR Workspace。Convert 在本機處理 Documents、PDF utilities、light OCR、Images 與 Text。
-- Protect 在不修改原始檔案的情況下匯出 PNG、ZIP 或 PDF；Translate 處理 TXT、Markdown、HTML、DOCX、EPUB、PDF 與 Zotero 附件；PDF Presenter 匯入 PowerPoint、LibreOffice 與 Keynote；OCR Workspace 逐頁檢閱。
+- 中樞頁面包含 Nodus Convert、Nodus Protect、Nodus Translate、Nodus Presenter 與 OCR Workspace。Convert 在本機處理 Documents、PDF utilities、light OCR、Images 與 Text。
+- Protect 在不修改原始檔案的情況下匯出 PNG、ZIP 或 PDF；Translate 處理 TXT、Markdown、HTML、DOCX、EPUB、PDF 與 Zotero 附件；Nodus Presenter 匯入 PowerPoint、LibreOffice 與 Keynote；OCR Workspace 逐頁檢閱。
 - Convert 具確定性且 100% 離線；Protect 不會將文件傳送給 AI。只有選用的 Tesseract OCR 語言下載需要連線。
 
 ## 本機 MCP 與 Nodus Server
@@ -1195,7 +1195,7 @@ __ROADMAP_GUIDE__
 - 發佈的副本經過篩選且為對外傳送；OAuth 保護存取。Server 與協作共享仍為「已規劃」。
 
 ## 藍圖狀態摘要
-- 開發中：打磨與穩定性。已規劃：Server、vault 共享與協作、iOS 與 iPadOS 應用程式。已實作：Teaching、Primary sources、Testimonies、使用者建議的 vault、Nodus Toolkit、Nodus Translate、PDF Presenter 與 OCR Workspace。
+- 開發中：打磨與穩定性。已規劃：Server、vault 共享與協作、iOS 與 iPadOS 應用程式。已實作：Teaching、Primary sources、Testimonies、使用者建議的 vault、Nodus Toolkit、Nodus Translate、Nodus Presenter 與 OCR Workspace。
 - 沒有固定日期。
 
 ## 介面答覆協定
@@ -1258,8 +1258,8 @@ __ROADMAP_GUIDE__
 - Tác giả là nguồn chân lý; Nodi phân biệt rõ canon đã thiết lập với đề xuất.
 
 ## Công cụ (Nodus Toolkit)
-- Trang trung tâm gồm Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter và OCR Workspace. Convert xử lý cục bộ Documents, PDF utilities, light OCR, Images và Text.
-- Protect xuất PNG, ZIP hoặc PDF mà không sửa tệp gốc; Translate xử lý TXT, Markdown, HTML, DOCX, EPUB, PDF và tệp đính kèm Zotero; PDF Presenter nhập PowerPoint, LibreOffice và Keynote; OCR Workspace duyệt từng trang.
+- Trang trung tâm gồm Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter và OCR Workspace. Convert xử lý cục bộ Documents, PDF utilities, light OCR, Images và Text.
+- Protect xuất PNG, ZIP hoặc PDF mà không sửa tệp gốc; Translate xử lý TXT, Markdown, HTML, DOCX, EPUB, PDF và tệp đính kèm Zotero; Nodus Presenter nhập PowerPoint, LibreOffice và Keynote; OCR Workspace duyệt từng trang.
 - Convert có tính xác định và 100% ngoại tuyến; Protect không gửi tài liệu cho AI. Chỉ thao tác tải ngôn ngữ OCR của Tesseract (tùy chọn) mới cần mạng.
 
 ## MCP cục bộ và Nodus Server
@@ -1267,7 +1267,7 @@ __ROADMAP_GUIDE__
 - Bản sao được công bố đã lọc và chỉ gửi ra ngoài; OAuth bảo vệ quyền truy cập. Server và chia sẻ cộng tác vẫn ở trạng thái “Đã lên kế hoạch”.
 
 ## Tình trạng tóm tắt lộ trình
-- Đang phát triển: Hoàn thiện và ổn định. Đã lên kế hoạch: Server, chia sẻ vault và cộng tác, ứng dụng iOS và iPadOS. Đã triển khai: Teaching, Primary sources, Testimonies, các vault do người dùng đề xuất, Nodus Toolkit, Nodus Translate, PDF Presenter và OCR Workspace.
+- Đang phát triển: Hoàn thiện và ổn định. Đã lên kế hoạch: Server, chia sẻ vault và cộng tác, ứng dụng iOS và iPadOS. Đã triển khai: Teaching, Primary sources, Testimonies, các vault do người dùng đề xuất, Nodus Toolkit, Nodus Translate, Nodus Presenter và OCR Workspace.
 - Không có mốc thời gian cố định.
 
 ## Giao thức trả lời về giao diện
@@ -1330,8 +1330,8 @@ __ROADMAP_GUIDE__
 - 作者が真実の源泉です。Nodi は確立された設定と提案を区別します。
 
 ## ツール（Nodus Toolkit）
-- ハブには Nodus Convert、Nodus Protect、Nodus Translate、PDF Presenter、OCR Workspace があります。Convert は Documents、PDF utilities、light OCR、Images、Text をローカルで処理します。
-- Protect は元ファイルを変更せずに PNG、ZIP、PDF をエクスポートし、Translate は TXT、Markdown、HTML、DOCX、EPUB、PDF、Zotero 添付を処理し、PDF Presenter は PowerPoint、LibreOffice、Keynote を取り込み、OCR Workspace は各ページを確認します。
+- ハブには Nodus Convert、Nodus Protect、Nodus Translate、Nodus Presenter、OCR Workspace があります。Convert は Documents、PDF utilities、light OCR、Images、Text をローカルで処理します。
+- Protect は元ファイルを変更せずに PNG、ZIP、PDF をエクスポートし、Translate は TXT、Markdown、HTML、DOCX、EPUB、PDF、Zotero 添付を処理し、Nodus Presenter は PowerPoint、LibreOffice、Keynote を取り込み、OCR Workspace は各ページを確認します。
 - Convert は決定的で 100% オフラインです。Protect は文書を AI に送信しません。ネットワークを使うのは任意の Tesseract OCR 言語のダウンロードだけです。
 
 ## ローカル MCP と Nodus Server
@@ -1339,7 +1339,7 @@ __ROADMAP_GUIDE__
 - 公開されるコピーはフィルター済みで送信方向のみです。OAuth がアクセスを保護します。Server と共同共有は「計画済み」のままです。
 
 ## ロードマップの状態まとめ
-- 開発中：磨き込みと安定性。計画済み：Server、vault の共有と共同作業、iOS および iPadOS アプリ。実装済み：Teaching、Primary sources、Testimonies、ユーザー提案の vault、Nodus Toolkit、Nodus Translate、PDF Presenter、OCR Workspace。
+- 開発中：磨き込みと安定性。計画済み：Server、vault の共有と共同作業、iOS および iPadOS アプリ。実装済み：Teaching、Primary sources、Testimonies、ユーザー提案の vault、Nodus Toolkit、Nodus Translate、Nodus Presenter、OCR Workspace。
 - 固定された日付はありません。
 
 ## インターフェース回答プロトコル
@@ -1402,8 +1402,8 @@ __ROADMAP_GUIDE__
 - Автор — источник истины; Nodi чётко разделяет установленный канон и предложения.
 
 ## Инструменты (Nodus Toolkit)
-- В центре собраны Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter и OCR Workspace. Convert локально обрабатывает Documents, PDF utilities, light OCR, Images и Text.
-- Protect экспортирует PNG, ZIP или PDF, не изменяя оригинал; Translate обрабатывает TXT, Markdown, HTML, DOCX, EPUB, PDF и вложения Zotero; PDF Presenter импортирует PowerPoint, LibreOffice и Keynote; OCR Workspace проверяет каждую страницу.
+- В центре собраны Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter и OCR Workspace. Convert локально обрабатывает Documents, PDF utilities, light OCR, Images и Text.
+- Protect экспортирует PNG, ZIP или PDF, не изменяя оригинал; Translate обрабатывает TXT, Markdown, HTML, DOCX, EPUB, PDF и вложения Zotero; Nodus Presenter импортирует PowerPoint, LibreOffice и Keynote; OCR Workspace проверяет каждую страницу.
 - Convert детерминирован и работает на 100 % офлайн; Protect не отправляет документы ИИ. Сеть нужна только для необязательной загрузки языков OCR Tesseract.
 
 ## Локальный MCP и Nodus Server
@@ -1411,7 +1411,7 @@ __ROADMAP_GUIDE__
 - Публикуемая копия отфильтрована и исходящая; OAuth защищает доступ. Server и совместная работа остаются «Запланировано».
 
 ## Сводный статус плана развития
-- В разработке: Оттачивание и стабильность. Запланировано: Server, совместное использование vault и командная работа, приложения для iOS и iPadOS. Реализовано: Teaching, Primary sources, Testimonies, предложенные пользователями vault, Nodus Toolkit, Nodus Translate, PDF Presenter и OCR Workspace.
+- В разработке: Оттачивание и стабильность. Запланировано: Server, совместное использование vault и командная работа, приложения для iOS и iPadOS. Реализовано: Teaching, Primary sources, Testimonies, предложенные пользователями vault, Nodus Toolkit, Nodus Translate, Nodus Presenter и OCR Workspace.
 - Фиксированных дат нет.
 
 ## Протокол ответов об интерфейсе
@@ -1474,8 +1474,8 @@ __ROADMAP_GUIDE__
 - Автор — джерело істини; Nodi чітко розділяє встановлений канон і пропозиції.
 
 ## Інструменти (Nodus Toolkit)
-- У центрі зібрано Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter і OCR Workspace. Convert локально обробляє Documents, PDF utilities, light OCR, Images і Text.
-- Protect експортує PNG, ZIP або PDF, не змінюючи оригінал; Translate обробляє TXT, Markdown, HTML, DOCX, EPUB, PDF і вкладення Zotero; PDF Presenter імпортує PowerPoint, LibreOffice і Keynote; OCR Workspace переглядає кожну сторінку.
+- У центрі зібрано Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter і OCR Workspace. Convert локально обробляє Documents, PDF utilities, light OCR, Images і Text.
+- Protect експортує PNG, ZIP або PDF, не змінюючи оригінал; Translate обробляє TXT, Markdown, HTML, DOCX, EPUB, PDF і вкладення Zotero; Nodus Presenter імпортує PowerPoint, LibreOffice і Keynote; OCR Workspace переглядає кожну сторінку.
 - Convert детермінований і працює на 100 % офлайн; Protect не надсилає документи ШІ. Мережа потрібна лише для необов’язкового завантаження мов OCR Tesseract.
 
 ## Локальний MCP і Nodus Server
@@ -1483,7 +1483,7 @@ __ROADMAP_GUIDE__
 - Опублікована копія відфільтрована й вихідна; OAuth захищає доступ. Server і спільна робота залишаються «Заплановано».
 
 ## Підсумковий стан плану розвитку
-- У розробці: Доопрацювання та стабільність. Заплановано: Server, спільне використання vault і командна робота, застосунки для iOS та iPadOS. Реалізовано: Teaching, Primary sources, Testimonies, запропоновані користувачами vault, Nodus Toolkit, Nodus Translate, PDF Presenter і OCR Workspace.
+- У розробці: Доопрацювання та стабільність. Заплановано: Server, спільне використання vault і командна робота, застосунки для iOS та iPadOS. Реалізовано: Teaching, Primary sources, Testimonies, запропоновані користувачами vault, Nodus Toolkit, Nodus Translate, Nodus Presenter і OCR Workspace.
 - Фіксованих дат немає.
 
 ## Протокол відповідей про інтерфейс
@@ -1546,8 +1546,8 @@ __ROADMAP_GUIDE__
 - 작가가 진실의 원천입니다. Nodi는 확립된 설정과 제안을 명확히 구분합니다.
 
 ## 도구(Nodus Toolkit)
-- 허브에는 Nodus Convert, Nodus Protect, Nodus Translate, PDF Presenter, OCR Workspace가 있습니다. Convert는 Documents, PDF utilities, light OCR, Images, Text를 로컬에서 처리합니다.
-- Protect는 원본을 수정하지 않고 PNG, ZIP, PDF로 내보내고, Translate는 TXT, Markdown, HTML, DOCX, EPUB, PDF, Zotero 첨부 파일을 처리하며, PDF Presenter는 PowerPoint, LibreOffice, Keynote를 가져오고, OCR Workspace는 각 페이지를 검토합니다.
+- 허브에는 Nodus Convert, Nodus Protect, Nodus Translate, Nodus Presenter, OCR Workspace가 있습니다. Convert는 Documents, PDF utilities, light OCR, Images, Text를 로컬에서 처리합니다.
+- Protect는 원본을 수정하지 않고 PNG, ZIP, PDF로 내보내고, Translate는 TXT, Markdown, HTML, DOCX, EPUB, PDF, Zotero 첨부 파일을 처리하며, Nodus Presenter는 PowerPoint, LibreOffice, Keynote를 가져오고, OCR Workspace는 각 페이지를 검토합니다.
 - Convert는 결정적이며 100% 오프라인으로 동작합니다. Protect는 문서를 AI로 보내지 않습니다. 선택적인 Tesseract OCR 언어 다운로드만 네트워크를 사용합니다.
 
 ## 로컬 MCP와 Nodus Server
@@ -1555,7 +1555,7 @@ __ROADMAP_GUIDE__
 - 게시되는 사본은 필터링된 발신 전용입니다. OAuth가 접근을 보호합니다. Server와 협업 공유는 여전히 “계획됨”입니다.
 
 ## 로드맵 상태 요약
-- 개발 중: 다듬기와 안정성. 계획됨: Server, vault 공유 및 협업, iOS 및 iPadOS 앱. 구현됨: Teaching, Primary sources, Testimonies, 사용자 제안 vault, Nodus Toolkit, Nodus Translate, PDF Presenter, OCR Workspace.
+- 개발 중: 다듬기와 안정성. 계획됨: Server, vault 공유 및 협업, iOS 및 iPadOS 앱. 구현됨: Teaching, Primary sources, Testimonies, 사용자 제안 vault, Nodus Toolkit, Nodus Translate, Nodus Presenter, OCR Workspace.
 - 고정된 날짜는 없습니다.
 
 ## 인터페이스 답변 프로토콜

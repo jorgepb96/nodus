@@ -204,20 +204,22 @@ try {
     await page.getByTestId('study-selection-improve').waitFor();
   };
   const originalText = await editor.innerText();
+  const storedBeforeStreaming = await page.evaluate(async id => (await window.nodus.getWorkspaceNoteEditorData(id)).nativeDocument, fixture.noteId);
   await selectArgument();
   await capture('selection-ai');
-  await page.getByTestId('study-quick-improve-' + fixture.promptId.replace(':', '-')).click();
-  await page.waitForFunction(() => document.querySelector('[data-testid="study-improve-preview"]')?.textContent?.includes('La mirada turística'));
-  assert.equal(await editor.innerText(), originalText, 'stream does not mutate the native document');
+  await page.getByTestId('study-selection-improve').click();await page.getByTestId('scriptor-ai-send').click();
+  await page.waitForFunction(() => document.querySelector('[data-testid="scriptor-ai-added"]')?.textContent?.includes('La mirada turística'));
+  assert.deepEqual(await page.evaluate(async id => (await window.nodus.getWorkspaceNoteEditorData(id)).nativeDocument, fixture.noteId), storedBeforeStreaming, 'preview leaves stored native document intact');
   const titleBefore = await page.getByTestId('editor-title').boundingBox();
   for (const {width,height} of [{width:1280,height:800},{width:1440,height:900},{width:1920,height:1080}]) {
     await page.setViewportSize({width,height});
-    const preview = page.getByTestId('study-improve-streaming');
-    assert.equal(await preview.evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(255, 255, 255)','AI preview is white, without a violet banner');
-    assert.ok((await preview.boundingBox()).height <= 175,'AI feedback is compact');
+    const preview = page.getByTestId('scriptor-ai-panel');
+    assert.notEqual(await preview.evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)','AI panel has an opaque Nodus paper surface');
+    assert.ok((await preview.boundingBox()).height <= 240,'AI feedback is compact');
     await capture('streaming-'+width);
   }
   await capture('streaming');
+  await page.getByTestId('scriptor-ai-accept').click();
   await page.getByTestId('study-improve-complete').waitFor();
   await capture('improvement-complete');
   assert.match(await editor.innerText(), /transforma la memoria del paisaje/);
@@ -232,11 +234,10 @@ try {
   const beforeCancel = await page.evaluate(async id => (await window.nodus.getWorkspaceNoteEditorData(id)).nativeDocument, fixture.noteId);
   await selectArgument();
   await page.getByTestId('study-selection-improve').click();
-  await page.getByTestId('study-style-' + fixture.promptId.replace(':', '-')).click();
-  await page.getByTestId('study-prompt-apply').click();
-  await page.getByTestId('study-improve-streaming').waitFor();
+  await page.getByTestId('scriptor-ai-send').click();
+  await page.locator('[data-testid=scriptor-ai-panel][data-streaming=true]').waitFor();
   await page.getByTestId('study-improve-cancel').click();
-  await page.getByTestId('study-improve-streaming').waitFor({ state: 'hidden' });
+  await page.locator('[data-testid=scriptor-ai-panel][data-streaming=true]').waitFor({ state: 'hidden' });
   assert.equal(await editor.innerText(), originalText, 'cancel preserves original');
   assert.equal(await page.getByTestId('study-improve-stream-error').count(), 0, 'cancel is not an error');
   assert.deepEqual(await page.evaluate(async id => (await window.nodus.getWorkspaceNoteEditorData(id)).nativeDocument, fixture.noteId), beforeCancel, 'cancel does not save partial stream');

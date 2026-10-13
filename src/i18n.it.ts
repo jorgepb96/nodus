@@ -1,5 +1,6 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -170,6 +171,7 @@ export const IT: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["it"],
   ...STUDY_FOCUS_TRANSLATIONS["it"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["it"],
+  ...SCRIPTOR_AI_TRANSLATIONS["it"],
   ...STUDY_IMPROVE_TRANSLATIONS.it,
   ...WORKSPACE_TRANSLATIONS.it,
   "Lo que cuenta el mapa": "Cosa racconta la mappa",
@@ -1261,7 +1263,7 @@ export const IT: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Pratici strumenti locali per la conversione di file e l'elaborazione di documenti, integrati in Nodus.",
-  "Nodus PDF Presenter": "Presentatore PDF Nodus",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "Presenta PDF e presentazioni esterne con la visualizzazione presentatore, il telecomando mobile, le note del relatore e gli strumenti di annotazione in tempo reale.",
   "Nodus OCR Workspace": "Area di lavoro Nodus OCR",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "OCR basato sull'intelligenza artificiale per PDF e immagini scansionati, con revisione pagina per pagina, pulizia del testo, rielaborazione e integrazione diretta con i tuoi archivi Nodus.",

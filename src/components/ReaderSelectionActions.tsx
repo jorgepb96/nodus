@@ -473,6 +473,7 @@ export function ReaderHighlighterControl({
         type="button"
         className={`btn btn-ghost h-9 min-h-9 gap-1.5 border ${value ? "border-indigo-600/70 text-indigo-200" : "border-neutral-700"}`}
         aria-label={t("Subrayar")}
+        title={t("Subrayar")}
         aria-pressed={!!value}
         data-testid="deep-research-fixed-highlighter"
         onClick={() => setOpen((current) => !current)}

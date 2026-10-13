@@ -113,6 +113,8 @@ export const platformApi: PlatformApi = {
   testCustomProvider: () => ipcRenderer.invoke('ai:testCustomProvider'),
   getLocalAiDiagnostics: () => ipcRenderer.invoke('ai:localDiagnostics'),
   listImageModels: () => ipcRenderer.invoke('ai:listImageModels'),
+  generateEditorImage: (request) => ipcRenderer.invoke('ai:editorImage:generate', request),
+  cancelEditorImage: (requestId) => ipcRenderer.invoke('ai:editorImage:cancel', requestId).then(() => undefined),
   getNodusLocalAiStatus: () => ipcRenderer.invoke('ai:nodusLocal:status'),
   installNodusLocalRuntime: async (onProgress) => {
     const requestId = `nodus-local-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}`;

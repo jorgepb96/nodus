@@ -1,5 +1,6 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
@@ -128,6 +129,7 @@ export const JA: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["ja"],
   ...STUDY_FOCUS_TRANSLATIONS["ja"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["ja"],
+  ...SCRIPTOR_AI_TRANSLATIONS["ja"],
   ...STUDY_IMPROVE_TRANSLATIONS.ja,
   ...WORKSPACE_TRANSLATIONS.ja,
   ...WORLDBUILDING_TRANSLATIONS.ja,
@@ -1278,7 +1280,7 @@ export const JA: Record<string, string> = {
   "Nodus Compass": "Nodusコンパス",
   "Nodus Tools": "ノダスツール",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Nodus に組み込まれた、ファイル変換とドキュメント処理のための便利なローカルファーストツール。",
-  "Nodus PDF Presenter": "Nodus PDF プレゼンター",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "プレゼンタービュー、モバイルリモートコントロール、スピーカーノート、ライブ注釈ツールを使用して、PDF および外部で作成されたプレゼンテーションを表示します。",
   "Nodus OCR Workspace": "Nodus OCR ワークスペース",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "ページごとのレビュー、テキストのクリーンアップ、再処理、Nodus Vaultとの直接統合を備えた、スキャンされた PDF および画像用の AI 搭載 OCR。",

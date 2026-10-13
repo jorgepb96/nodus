@@ -221,7 +221,7 @@ test('automatic mode grows only after sustained healthy saturation', async () =>
   }
 });
 
-test('known RPM/TPM headers are reserved before dispatch and release on reset', async () => {
+test('known RPM/TPM headers are reserved before dispatch and release on reset', { timeout: 10_000 }, async (t) => {
   const { Scheduler, output } = await loadGate();
   try {
     const scheduler = new Scheduler({
@@ -235,7 +235,10 @@ test('known RPM/TPM headers are reserved before dispatch and release on reset', 
     });
     const started = [];
     const beganAt = Date.now();
-    const keepAlive = setTimeout(() => {}, 150);
+    // The scheduler unrefs its quota timer. Keep this test alive until its jobs settle,
+    // rather than guessing a wall-clock allowance that expires under CI load.
+    const keepAlive = setInterval(() => {}, 1000);
+    t.after(() => clearInterval(keepAlive));
     const jobs = [0, 1].map((index) => scheduler.run(request, async () => {
       started.push({ index, at: Date.now() - beganAt });
       return index;
@@ -243,7 +246,7 @@ test('known RPM/TPM headers are reserved before dispatch and release on reset', 
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(scheduler.snapshots()[0].lastChangeReason, 'request-quota-reserved');
     assert.deepEqual(await Promise.all(jobs), [0, 1]);
-    clearTimeout(keepAlive);
+    clearInterval(keepAlive);
     assert.deepEqual(started.map((entry) => entry.index), [0, 1]);
     assert.ok(started[1].at >= 35, `second request started before the quota reset (${started[1].at}ms)`);
     assert.equal(scheduler.snapshots()[0].lastChangeReason, 'manual');

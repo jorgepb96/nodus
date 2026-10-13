@@ -1,5 +1,7 @@
+import {resolveEntityLabel} from '../db/crossVault';
+import type {RelationTargetKind} from '../../shared/databases';
 import {getDb} from '../db/database';
-import {createDatabase,createColumn,createRow,setCell,getColumn,getColumns,updateColumn,addOption,updateOption,deleteOption} from '../db/databasesRepo';
+import {createDatabase,createColumn,createRow,setCell,getColumn,getColumns,updateColumn,addOption,updateOption,deleteOption,addRelation,removeRelation,deleteAttachment} from '../db/databasesRepo';
 import {COLUMN_TYPES,normalizeCellValue,type DatabaseColumnType} from '../../shared/databases';
 import {databaseCellRaw} from '../../shared/databaseCellStorage';
 import {isReadOnlyDatabaseProperty} from '../../shared/databaseProperties';
@@ -9,7 +11,7 @@ import {parseFormulaExpression} from '../../shared/databaseFormulaExpression';
 import {orderFormulaColumns} from '../../shared/databaseFormulaEval';
 import type {DatabaseColumnConfig} from '../../shared/databases';
 
-export const mobileDatabaseMutationTables=['db_databases','db_columns','db_rows','db_cells','db_select_options'] as const;
+export const mobileDatabaseMutationTables=['db_databases','db_columns','db_rows','db_cells','db_select_options','db_relations','db_attachments'] as const;
 export class MobileDatabaseMutationError extends Error {
   get description(){return this.message==='database_cell_revision_conflict'
     ? 'La celda cambió en Nodus. Tu cambio se conserva en la cola de este dispositivo. Revisa ambas versiones antes de volver a guardarlo.'
@@ -57,10 +59,45 @@ function validateColumnConfig(databaseId:string,id:string,type:DatabaseColumnTyp
 }
 /** Mobile content controls invoke canonical repository operations. Raw SQL
  * replication would skip page creation, typed values, formula and rollup hooks. */
-export function applyMobileDatabaseMutation(raw:Mutation){
+export function applyMobileDatabaseMutation(raw:Mutation,authorizedVaultIds:readonly string[]=[],owningVaultId?:string){
   if(!mobileDatabaseMutationTables.includes(raw.table as typeof mobileDatabaseMutationTables[number]))return false;
   if(!['upsert','delete'].includes(raw.kind)||!raw.row||typeof raw.row!=='object'||Array.isArray(raw.row))fail('unsupported_database_operation');
   const db=getDb(),row=raw.row;
+  if(raw.table==='db_relations'||raw.table==='db_attachments') {
+    if(raw.key.length!==1||row.id!==raw.key[0])fail('invalid_database_identity');
+    const id=identity(raw.key[0]),rowId=identity(row.row_id),columnId=identity(row.column_id),column=getColumn(columnId);
+    const parent=db.prepare('SELECT database_id FROM db_rows WHERE id=?').get(rowId) as {database_id:string}|undefined;
+    if(!parent||!column||parent.database_id!==column.databaseId||row.database_id!==parent.database_id)fail('database_cell_parent_unavailable');
+    const revision=(db.prepare('SELECT revision FROM db_columns WHERE id=?').get(columnId) as {revision:number}).revision;
+    if(row._mobileExpectedColumnRevision!==revision)fail('database_column_revision_conflict');
+    if(raw.table==='db_attachments') {
+      if(raw.kind!=='delete'||!['files','attachment','ai_image'].includes(column.type))fail('unsupported_database_operation');
+      const existing=db.prepare('SELECT row_id,column_id,revision,content_hash FROM db_attachments WHERE id=?').get(id) as {row_id:string;column_id:string;revision:number;content_hash:string}|undefined;
+      if(!existing||existing.row_id!==rowId||existing.column_id!==columnId)fail('database_attachment_parent_unavailable');
+      if(existing.revision!==row._mobileExpectedRevision||existing.content_hash!==row._mobileExpectedContentHash)fail('database_attachment_revision_conflict');
+      deleteAttachment(id);return true;
+    }
+    if(column.type!=='relation')fail('database_relation_parent_unavailable');
+    const current=db.prepare("SELECT id,target_kind,target_id,COALESCE(target_vault_id,'') AS target_vault_id FROM db_relations WHERE row_id=? AND column_id=? ORDER BY id").all(rowId,columnId);
+    let expected:unknown;try{expected=typeof row._mobileExpectedRelationsJSON==='string'?JSON.parse(row._mobileExpectedRelationsJSON):null;}catch{fail('database_relation_revision_conflict');}
+    if(canonicalJson(current)!==canonicalJson(expected))fail('database_relation_revision_conflict');
+    if(raw.kind==='delete') {
+      if(!(current as Array<{id:string}>).some(value=>value.id===id))fail('database_relation_parent_unavailable');
+      removeRelation(id);return true;
+    }
+    const kind=row.target_kind;
+    if(typeof kind!=='string'||!['db_row','work','idea','gap','author','person'].includes(kind))fail('database_relation_target_unavailable');
+    const targetId=identity(row.target_id),targetVault=row.target_vault_id==null?null:identity(row.target_vault_id);
+    if(kind==='db_row') {
+      if(targetVault!==null&&targetVault!==owningVaultId)fail('database_relation_target_not_authorized');
+    } else {
+      const actualVault=targetVault??owningVaultId;
+      if(!actualVault||!authorizedVaultIds.includes(actualVault))fail('database_relation_target_not_authorized');
+      if(resolveEntityLabel(kind as Exclude<RelationTargetKind,'db_row'>,targetId,actualVault).broken)fail('database_relation_target_unavailable');
+    }
+    try{addRelation(rowId,columnId,kind as RelationTargetKind,targetId,kind==='db_row'?null:targetVault??owningVaultId??null,createdId(id,'drel'));}catch{fail('database_relation_target_unavailable');}
+    return true;
+  }
   if(raw.table==='db_select_options') {
     if(raw.key.length!==1||row.id!==raw.key[0])fail('invalid_database_identity');
     const id=identity(raw.key[0]),column=getColumn(identity(row.column_id));

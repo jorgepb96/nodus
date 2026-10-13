@@ -482,7 +482,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
     const vaultId = decodeURIComponent(corpus[1]);
     if (!effectiveVaultIds(pairing).includes(vaultId) || !pairing.domains.includes('writing')) { reply(response, 403, { error: 'permission_denied' }); return; }
     const input = await body(request, 16 * 1024 * 1024);
-    reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations, pairing.domains)); return;
+    reply(response, 200, await applyBridgeMutations(vaultId, pairing.id, input.mutations, pairing.domains, effectiveVaultIds(pairing))); return;
   }
   const chatHistory = /^\/bridge\/v2\/vaults\/([^/]+)\/chat-history\/([^/]+)(?:\/([^/]+))?$/.exec(url.pathname);
   if(chatHistory && ['GET','POST'].includes(request.method??'')) {

@@ -18,7 +18,7 @@ export function mobileWorldContentMutationTables(vaultId: string, domains: reado
   if(getVault(vaultId)?.type!==worldContent.family||!domains.includes('writing'))return [];
   return [...worldContent.tables,...(domains.includes('files')?worldContent.fileTables:[])];
 }
-export async function applyBridgeMutations(vaultId: string, grantId: string, input: unknown, domains: readonly string[] = ['corpus', 'writing']): Promise<unknown> {
+export async function applyBridgeMutations(vaultId: string, grantId: string, input: unknown, domains: readonly string[] = ['corpus', 'writing'], authorizedVaultIds: readonly string[] = [vaultId]): Promise<unknown> {
   if (!Array.isArray(input) || input.length > 100) throw new Error('invalid_mutations');
   const accepted: string[] = [], duplicate: string[] = [], rejected: Array<{ id: string; reason: string;error_description?:string }> = [];
   const worldTables = new Set(mobileWorldContentMutationTables(vaultId,domains));
@@ -37,7 +37,7 @@ export async function applyBridgeMutations(vaultId: string, grantId: string, inp
       try {db.transaction(() => {
         const creatingScene=worldTables.has(raw.table)&&raw.table==='world_scenes'&&raw.kind==='upsert'&&raw.key.length===1
           &&!db.prepare('SELECT 1 FROM world_scenes WHERE scene_id=?').get(raw.key[0]);
-        if(withMobileOperation(()=>applyMobileDatabaseMutation(raw))){
+        if(withMobileOperation(()=>applyMobileDatabaseMutation(raw,authorizedVaultIds,vaultId))){
           db.prepare('INSERT INTO desktop_bridge_receipts VALUES(?,?,?,?)').run(grantId,raw.id,payload,new Date().toISOString());accepted.push(raw.id);return;
         }
         const sqlRow=raw.row?Object.fromEntries(Object.entries(raw.row).map(([key,value])=>[key,typeof value==='boolean'?(value?1:0):value])):undefined;

@@ -2892,18 +2892,22 @@ function deleteRelationPair(db: ReturnType<typeof getDb>, relation: RelationRow,
 
 function insertRelationRow(
   db: ReturnType<typeof getDb>,
-  input: { rowId: string; column: DatabaseColumn; targetKind: RelationTargetKind; targetId: string; targetVaultId: string | null; label: string },
+  input: { rowId: string; column: DatabaseColumn; targetKind: RelationTargetKind; targetId: string; targetVaultId: string | null; label: string; identity?: string },
 ): RelationRow {
   const existing = db.prepare(
     `SELECT * FROM db_relations WHERE row_id = ? AND column_id = ? AND target_kind = ? AND target_id = ?
        AND COALESCE(target_vault_id, '') = COALESCE(?, '')`,
   ).get(input.rowId, input.column.id, input.targetKind, input.targetId, input.targetVaultId) as RelationRow | undefined;
-  if (existing) return existing;
+  if (existing) {
+    if(input.identity && input.identity!==existing.id) throw new Error('El destino ya tiene otra identidad de relación.');
+    return existing;
+  }
+  if(input.identity && (!/^drel_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.identity) || db.prepare('SELECT 1 FROM db_relations WHERE id=?').get(input.identity))) throw new Error('Identidad de relación no válida o ya utilizada.');
   if ((input.column.config.relationCardinality ?? 'many') === 'one') {
     const previous = db.prepare('SELECT * FROM db_relations WHERE row_id = ? AND column_id = ?').all(input.rowId, input.column.id) as RelationRow[];
     previous.forEach((relation) => deleteRelationPair(db, relation));
   }
-  const id = newId('drel');
+  const id = input.identity ?? newId('drel');
   const position = (db.prepare(
     'SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_relations WHERE row_id = ? AND column_id = ?',
   ).get(input.rowId, input.column.id) as { n: number }).n;
@@ -2923,13 +2927,14 @@ export function addRelation(
   columnId: string,
   targetKind: RelationTargetKind,
   targetId: string,
-  targetVaultId: string | null = null
+  targetVaultId: string | null = null,
+  identity?: string,
 ): DatabaseRelation {
   const db = getDb();
   const validated = validateRelationTarget(rowId, columnId, targetKind, targetId);
   let relationId = '';
   db.transaction(() => {
-    const relation = insertRelationRow(db, { rowId, column: validated.column, targetKind, targetId, targetVaultId, label: validated.label });
+    const relation = insertRelationRow(db, { rowId, column: validated.column, targetKind, targetId, targetVaultId, label: validated.label, identity });
     relationId = relation.id;
     const inverseColumnId = validated.column.config.relationInverseColumnId as string | undefined;
     if (targetKind !== 'db_row' || !inverseColumnId) return;

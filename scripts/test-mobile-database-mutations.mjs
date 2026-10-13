@@ -65,6 +65,27 @@ try{
     assert.equal((await applyBridgeMutations(vault.id,'grant',[wrongOwner])).rejected[0].reason,'database_option_parent_unavailable');
     const deletion={...option,id:randomUUID(),kind:'delete',row:{...option.row,_mobileExpectedRevision:1}};
     assert.equal((await applyBridgeMutations(vault.id,'grant',[deletion])).rejected.length,0);assert.equal(repo.getColumn(optionColumn).options.length,0);assert.equal(repo.getRow(rowId).cells[optionColumn],undefined,'Canonical option delete cleans every selected-cell reference');
+    const relationColumn=createdTypes.get('relation'),target=repo.createRow(databaseId),relationId=`drel_${randomUUID()}`;
+    const relationSet=()=>JSON.stringify(db.prepare("SELECT id,target_kind,target_id,COALESCE(target_vault_id,'') AS target_vault_id FROM db_relations WHERE row_id=? AND column_id=? ORDER BY id").all(rowId,relationColumn));
+    const relation=mutation('db_relations',[relationId],{id:relationId,database_id:databaseId,row_id:rowId,column_id:relationColumn,target_kind:'db_row',target_id:target.id,target_vault_id:null,_mobileExpectedColumnRevision:db.prepare('SELECT revision FROM db_columns WHERE id=?').get(relationColumn).revision,_mobileExpectedRelationsJSON:relationSet()});
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[relation])).applied,[relation.id]);assert.equal(repo.listRelations(rowId,relationColumn)[0].id,relationId);
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[relation])).duplicate,[relation.id]);
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[{...relation,id:randomUUID()}])).rejected[0].reason,'database_relation_revision_conflict');
+    const remove={...relation,id:randomUUID(),kind:'delete',row:{...relation.row,_mobileExpectedRelationsJSON:relationSet()}};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[remove])).rejected.length,0);assert.equal(repo.listRelations(rowId,relationColumn).length,0);
+    const targetVault=vaults.createVault('Personas autorizadas','genealogy');
+    await vaults.withOwningVault(targetVault.id,()=>database.withVaultDatabase(targetVault.id,()=>{
+      database.getDb().prepare('INSERT INTO persons(person_id,display_name,created_at,updated_at) VALUES(?,?,?,?)').run('cross-person','Persona autorizada',new Date().toISOString(),new Date().toISOString());
+    }));
+    const personColumn=repo.createColumn(databaseId,'Persona','relation',{relationTargetKind:'person',relationCardinality:'many'}),personRelationId=`drel_${randomUUID()}`;
+    const personRelation=mutation('db_relations',[personRelationId],{id:personRelationId,database_id:databaseId,row_id:rowId,column_id:personColumn.id,target_kind:'person',target_id:'cross-person',target_vault_id:targetVault.id,_mobileExpectedColumnRevision:1,_mobileExpectedRelationsJSON:'[]'});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[personRelation])).rejected[0].reason,'database_relation_target_not_authorized','Legacy/static grant cannot grow through a target argument');
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[personRelation],['corpus','writing'],[vault.id,targetVault.id])).rejected.length,0,'Only actual route-authorized vaults allow the existing canonical cross-vault entity');
+    assert.equal(repo.listRelations(rowId,personColumn.id)[0].targetVaultId,targetVault.id);
+    const fileColumn=createdTypes.get('files'),file=repo.addAttachment({rowId,columnId:fileColumn,fileName:'Own bytes',mimeType:'text/plain',bytes:3,blob:Buffer.from('own'),contentHash:'own-hash'});
+    const fileDelete={...mutation('db_attachments',[file.id],{id:file.id,database_id:databaseId,row_id:rowId,column_id:fileColumn,_mobileExpectedColumnRevision:db.prepare('SELECT revision FROM db_columns WHERE id=?').get(fileColumn).revision,_mobileExpectedRevision:1,_mobileExpectedContentHash:'wrong'}),kind:'delete'};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[fileDelete])).rejected[0].reason,'database_attachment_revision_conflict');assert(repo.getAttachment(file.id));
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[{...fileDelete,id:randomUUID(),row:{...fileDelete.row,_mobileExpectedContentHash:'own-hash'}}])).rejected.length,0);assert.equal(repo.getAttachment(file.id),null);
     const computed=mutation('db_cells',[rowId,createdTypes.get('formula')],{row_id:rowId,column_id:createdTypes.get('formula'),database_id:databaseId,value_text:'999',_mobileExpectedRevision:0,_mobileExpectedValue:''});
     assert.equal((await applyBridgeMutations(vault.id,'grant',[computed])).rejected[0].reason,'database_property_is_read_only');
     assert.equal((await applyBridgeMutations(vault.id,'grant',[mutation('automation_rules',['rule'],{id:'rule'})])).rejected[0].reason,'table_not_writable');

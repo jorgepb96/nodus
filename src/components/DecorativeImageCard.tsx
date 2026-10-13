@@ -88,10 +88,10 @@ export function DecorativeImageCard({
       if (!active) return;
       if (url) setDataUrl(url);
       else setImageLoadError(t('No se ha podido cargar la imagen.'));
-    }).catch((reason: unknown) => {
+    }).catch(() => {
       // A missing or temporarily unreachable cover has its own retry control;
       // it must not become an unhandled rejection over the entire reader.
-      if (active) setImageLoadError(reason instanceof Error ? reason.message : t('No se ha podido cargar la imagen.'));
+      if (active) setImageLoadError(t('No se ha podido cargar la imagen.'));
     });
     return () => {
       active = false;

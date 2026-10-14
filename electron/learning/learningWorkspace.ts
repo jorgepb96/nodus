@@ -50,6 +50,10 @@ export function closeLearningWorkspace(discard=false): void {
   closeSent=true;
   if(process.connected)process.send?.({kind:'learning-finished',requestId:entry!.requestId,discard,progress:getSettings().academicLearningProgress});
   setTimeout(()=>app.quit(),50);
+  // app.quit() is cooperative (see quitForUpdate in main.ts): an editor flush can cancel it
+  // and leave this hidden process alive, the user's own window hidden behind it and a
+  // discarded practice never deleted. The parent only acts on this process' exit.
+  setTimeout(()=>app.exit(0),5000).unref?.();
 }
 
 /** A second real app instance owns every practice store and background worker. */

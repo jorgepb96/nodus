@@ -226,6 +226,17 @@ test('failure comments escape untrusted logs and step names; expired logs keep u
   assert.ok(h.warnings.length > 0);
 });
 
+test('excerpts ignore successful TAP summaries and echoed command source before the actual error', () => {
+  const raw = ['# tests 6', '# pass 6', '# fail 0',
+    '##[group]Run node example.mjs', 'throw new Error("this is source, not the failure")', 'env:', '##[endgroup]',
+    ...Array.from({ length: 60 }, (_, i) => `Build progress ${i}`),
+    'src/example.ts(42,1): error TS2322: Type string is not assignable to number.',
+    '##[error]Process completed with exit code 2.'].join('\n');
+  const excerpt = logExcerpt(raw);
+  assert.match(excerpt, /error TS2322/);
+  assert.doesNotMatch(excerpt, /fail 0|this is source|Build progress 0/);
+});
+
 test('a repeated failure updates its existing comment; a green transition creates a real mention notification', async () => {
   const h = harness({ jobs: [job(10, 'Build', 'failure'), job(11, 'test')] });
   assert.equal(await h.sync(), 'created');

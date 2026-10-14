@@ -175,10 +175,18 @@ export function logExcerpt(raw, step) {
     if (selected.length) lines = selected;
   }
   lines = lines.map(line => line.replace(/^\d{4}-\d\d-\d\dT[\d:.]+Z\s*/, ''));
+  let command = false;
+  lines = lines.filter(line => {
+    // Runner command groups echo source code and environment variables before
+    // executing a step. They are not diagnostics and may themselves say Error.
+    if (/^##\[group\]Run /.test(line)) { command = true; return false; }
+    if (command && /^##\[endgroup\]/.test(line)) { command = false; return false; }
+    return !command;
+  });
   // Prefer the actual error and surrounding context to the final generic
   // "Process completed with exit code 1" line. Logs remain untrusted text.
-  const anchor = lines.findIndex(line => /(?:error|exception|assertion|not ok|FAIL(?:ED)?\b|✖)/i.test(line)
-    && !/Process completed with exit code|::(?:group|endgroup)::/i.test(line));
+  const anchor = lines.findIndex(line => /\b(?:error|exception|assertion(?:error)?)\b|^\s*(?:not ok\b|FAIL(?:ED)?(?:\s|:)|✖)/i.test(line)
+    && !/Process completed with exit code|\b0 errors?\b|::(?:group|endgroup)::/i.test(line));
   const start = anchor < 0 ? Math.max(0, lines.length - 30) : Math.max(0, anchor - 5);
   let text = lines.slice(start, start + 30).join('\n').trim();
   text = text.replace(/\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+|sk-[A-Za-z0-9_-]{20,})\b/g, '[REDACTED]')

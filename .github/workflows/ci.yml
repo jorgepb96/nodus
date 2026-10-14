@@ -325,26 +325,26 @@ jobs:
         if: matrix.group == 'integration' && needs.changes.outputs.research == 'true'
         run: node scripts/ci-native-checks.mjs research --no-synthetic
       - name: E2E smoke (real app boot)
-        if: matrix.group == 'smoke'
         timeout-minutes: 10
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e'
       - name: Backups export and restore E2E
-        if: matrix.group == 'backups'
         timeout-minutes: 10
+        if: matrix.group == 'backups'
         env:
           NODUS_BACKUPS_ARTIFACT_DIR: ${{ github.workspace }}/.ci/backups-e2e
         run: xvfb-run --auto-servernum npm run test:e2e:backups
       - name: Stellar canvas E2E
-        if: matrix.group == 'smoke'
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar'
       - name: Graph tabs E2E
-        if: matrix.group == 'smoke'
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar-tabs'
       - name: Argument map E2E
-        if: matrix.group == 'smoke'
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:argument-map'
       - name: Each package installs, migrates, registers and uninstalls
         if: matrix.group == 'integration'

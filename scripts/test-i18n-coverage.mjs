@@ -196,6 +196,8 @@ const INDIRECT_KEY_SOURCES = [
   { file: 'src/stellarGraph/palette.ts', pattern: /\blabel:\s*(["'])((?:\\.|(?!\1).)*?)\1/g },
   { file: 'src/stellarGraph/palette.ts', pattern: /^  (?:claim|finding|construct|method|framework): (["'])(?!#)((?:\\.|(?!\1).)*?)\1/gm },
   { file: 'src/navigation.ts', pattern: /\blabel:\s*(["'])((?:\\.|(?!\1).)*?)\1/g },
+  // The Bookmarks page's sort options, rendered as t(option.label).
+  { file: 'src/components/browser/NodusStartPages.tsx', pattern: /\{ sort: '[\w-]+', label: (["'])((?:\\.|(?!\1).)*?)\1/g },
   // Settings tab labels, rendered as t(tab.label).
   { file: 'src/views/Settings.tsx', pattern: /\blabel:\s*(["'])((?:\\.|(?!\1).)*?)\1/g },
   // Nodus Toolkit catalogue: category / operation / output / option / choice labels,

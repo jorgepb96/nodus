@@ -10,6 +10,7 @@ import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -171,6 +172,7 @@ export const FR: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["fr"],
   ...STUDY_FOCUS_TRANSLATIONS["fr"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["fr"],
+  ...BOOKMARK_SORT_TRANSLATIONS["fr"],
   ...SCRIPTOR_AI_TRANSLATIONS["fr"],
   ...STUDY_IMPROVE_TRANSLATIONS.fr,
   ...WORKSPACE_TRANSLATIONS.fr,

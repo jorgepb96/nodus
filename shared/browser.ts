@@ -127,7 +127,8 @@ export interface BrowserPrefs {
 }
 
 export const DEFAULT_BROWSER_PREFS: BrowserPrefs = {
-  homeMode: 'start',
+  // Until the user sets an address of their own, Home is their local bookmarks.
+  homeMode: 'bookmarks',
   homeUrl: '',
   searchEngine: 'google',
   searchTemplate: '',

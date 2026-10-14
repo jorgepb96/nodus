@@ -175,7 +175,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   betaUpdates: false,
   browserSitePermissions: {},
   browserDownloadFolder: null,
-  browserHomeMode: 'start',
+  browserHomeMode: 'bookmarks',
   browserHomeUrl: '',
   browserNewTabMode: 'home',
   browserSearchEngine: 'google',
@@ -484,6 +484,18 @@ export function getSettings(): AppSettings {
   // must not reach the pruning code, where an unknown window would mean "delete everything".
   // The language needs no repair here — `resolveTranslation` normalizes an unknown locale to
   // English on every read, and the write path validates it.
+  // Bookmarks replaced the Research Atlas as the default Home. Every profile created
+  // before that had 'start' seeded into app-prefs.json by the loop above whether or
+  // not it was ever chosen, so the stored value cannot tell a choice from the old
+  // default: move 'start' to bookmarks once. A custom address or a blank page is
+  // only ever set by hand and is kept; picking the Atlas again after this sticks.
+  if ((globalPrefs as Record<string, unknown>).browserHomeDefaultVersion !== 1) {
+    if (merged.browserHomeMode === 'start') {
+      merged.browserHomeMode = 'bookmarks';
+      seed.browserHomeMode = 'bookmarks';
+    }
+    seed.browserHomeDefaultVersion = 1;
+  }
   if (!isPipelineLogRetention(merged.pipelineLogRetention)) {
     merged.pipelineLogRetention = DEFAULTS.pipelineLogRetention;
     seed.pipelineLogRetention = merged.pipelineLogRetention;

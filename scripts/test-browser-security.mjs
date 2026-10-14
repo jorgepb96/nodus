@@ -275,7 +275,7 @@ test('every icon the browser view names actually exists', () => {
   assert.deepEqual(missing, [], `icons named but absent from ICON_PATHS: ${missing.join(', ')}`);
 });
 
-test('trusted local Atlas is the default and Bookmarks is a selectable local home', () => {
+test('Bookmarks is the default home and the trusted local Atlas stays selectable', () => {
   const contract = code('shared/browser.ts');
   const ipc = code('electron/ipc/browser.ts');
   const view = code('src/views/NodusBrowserView.tsx');
@@ -283,10 +283,12 @@ test('trusted local Atlas is the default and Bookmarks is a selectable local hom
   assert.match(contract, /NODUS_RESEARCH_ATLAS_URL\s*=\s*'https:\/\/nodusresearch\.com\/research-atlas\/'/);
   assert.match(contract, /NODUS_RESEARCH_ATLAS_START_URL\s*=\s*'nodus:\/\/research-atlas'/);
   assert.match(contract, /NODUS_BOOKMARKS_URL\s*=\s*'nodus:\/\/bookmarks'/);
-  assert.match(contract, /homeMode:\s*'start'/);
+  assert.match(contract, /homeMode:\s*'bookmarks'/);
   assert.match(contract, /newTabMode:\s*'home'/);
-  assert.match(ipc, /browserHomeMode === 'bookmarks'\) return NODUS_BOOKMARKS_URL/);
-  assert.match(ipc, /browserHomeMode === 'start' \? NODUS_RESEARCH_ATLAS_START_URL : 'about:blank'/);
+  assert.match(ipc, /browserHomeMode === 'start'\) return NODUS_RESEARCH_ATLAS_START_URL/);
+  assert.match(ipc, /browserHomeMode === 'blank'\) return 'about:blank'/);
+  // Without a usable address of the user's own, Home falls through to Bookmarks.
+  assert.match(ipc, /return NODUS_BOOKMARKS_URL;\n  \};/);
   assert.match(view, /onNew=\{\(\) => void window\.nodus\.openBrowserTab\(''\)\}/,
     'the tab-strip button must ask main to apply the new-tab preference');
 });

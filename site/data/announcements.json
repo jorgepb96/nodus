@@ -2,6 +2,142 @@
   "version": 1,
   "notices": [
     {
+      "id": "2026-10-14-github-star",
+      "date": "2026-10-14",
+      "severity": "info",
+      "url": "https://github.com/jorgepb96/nodus",
+      "copy": {
+        "es": {
+          "title": "Apoya Nodus",
+          "body": "Si Nodus te resulta útil, dale una estrella en GitHub para apoyar el proyecto.",
+          "linkLabel": "Dar una estrella"
+        },
+        "en": {
+          "title": "Support Nodus",
+          "body": "If Nodus is useful to you, give it a star on GitHub to support the project.",
+          "linkLabel": "Give a star"
+        },
+        "fr": {
+          "title": "Soutenez Nodus",
+          "body": "Si Nodus vous est utile, donnez-lui une étoile sur GitHub pour soutenir le projet.",
+          "linkLabel": "Donner une étoile"
+        },
+        "de": {
+          "title": "Unterstütze Nodus",
+          "body": "Wenn dir Nodus hilft, gib dem Projekt einen Stern auf GitHub, um es zu unterstützen.",
+          "linkLabel": "Stern auf GitHub vergeben"
+        },
+        "pt": {
+          "title": "Apoia o Nodus",
+          "body": "Se o Nodus te é útil, dá-lhe uma estrela no GitHub para apoiar o projeto.",
+          "linkLabel": "Dar uma estrela"
+        },
+        "pt-BR": {
+          "title": "Apoie o Nodus",
+          "body": "Se o Nodus é útil para você, dê uma estrela no GitHub para apoiar o projeto.",
+          "linkLabel": "Dar uma estrela"
+        },
+        "it": {
+          "title": "Sostieni Nodus",
+          "body": "Se Nodus ti è utile, lascia una stella su GitHub per sostenere il progetto.",
+          "linkLabel": "Lascia una stella"
+        },
+        "tr": {
+          "title": "Nodus’u destekleyin",
+          "body": "Nodus’u faydalı buluyorsanız, projeyi desteklemek için GitHub’da bir yıldız verin.",
+          "linkLabel": "Yıldız verin"
+        },
+        "zh-CN": {
+          "title": "支持 Nodus",
+          "body": "如果 Nodus 对你有帮助，请在 GitHub 上为项目点一颗星，支持它的发展。",
+          "linkLabel": "点一颗星"
+        },
+        "zh-TW": {
+          "title": "支持 Nodus",
+          "body": "如果 Nodus 對你有幫助，請在 GitHub 上為專案加上一顆星，支持它的發展。",
+          "linkLabel": "加上一顆星"
+        },
+        "ja": {
+          "title": "Nodus を応援する",
+          "body": "Nodus が役に立ったら、GitHub でスターを付けてプロジェクトを応援してください。",
+          "linkLabel": "スターを付ける"
+        },
+        "ko": {
+          "title": "Nodus를 응원해 주세요",
+          "body": "Nodus가 도움이 된다면 GitHub에서 Star를 눌러 프로젝트를 응원해 주세요.",
+          "linkLabel": "Star 누르기"
+        }
+      }
+    },
+    {
+      "id": "2026-10-14-request-feature",
+      "date": "2026-10-14",
+      "severity": "info",
+      "url": "https://github.com/jorgepb96/nodus/issues",
+      "copy": {
+        "es": {
+          "title": "Propón una nueva función",
+          "body": "¿Echas en falta alguna función en Nodus? Abre un issue en GitHub y cuéntanos qué necesitas.",
+          "linkLabel": "Abrir un issue"
+        },
+        "en": {
+          "title": "Suggest a new feature",
+          "body": "Missing a feature in Nodus? Open an issue on GitHub and tell us what you need.",
+          "linkLabel": "Open an issue"
+        },
+        "fr": {
+          "title": "Proposez une nouvelle fonctionnalité",
+          "body": "Il vous manque une fonctionnalité dans Nodus ? Ouvrez une issue sur GitHub et dites-nous ce dont vous avez besoin.",
+          "linkLabel": "Ouvrir une issue"
+        },
+        "de": {
+          "title": "Schlage eine neue Funktion vor",
+          "body": "Fehlt dir eine Funktion in Nodus? Erstelle ein Issue auf GitHub und beschreibe, was du brauchst.",
+          "linkLabel": "Issue erstellen"
+        },
+        "pt": {
+          "title": "Propõe uma nova funcionalidade",
+          "body": "Falta-te alguma funcionalidade no Nodus? Abre uma issue no GitHub e conta-nos o que precisas.",
+          "linkLabel": "Abrir uma issue"
+        },
+        "pt-BR": {
+          "title": "Sugira um novo recurso",
+          "body": "Sente falta de algum recurso no Nodus? Abra uma issue no GitHub e conte o que você precisa.",
+          "linkLabel": "Abrir uma issue"
+        },
+        "it": {
+          "title": "Proponi una nuova funzione",
+          "body": "Ti manca una funzione in Nodus? Apri una issue su GitHub e raccontaci di cosa hai bisogno.",
+          "linkLabel": "Apri una issue"
+        },
+        "tr": {
+          "title": "Yeni bir özellik önerin",
+          "body": "Nodus’ta eksik bulduğunuz bir özellik mi var? GitHub’da bir issue açın ve neye ihtiyacınız olduğunu anlatın.",
+          "linkLabel": "Issue açın"
+        },
+        "zh-CN": {
+          "title": "建议新功能",
+          "body": "希望 Nodus 添加某项功能？请在 GitHub 上提交 issue，告诉我们你的需求。",
+          "linkLabel": "提交 issue"
+        },
+        "zh-TW": {
+          "title": "建議新功能",
+          "body": "希望 Nodus 新增某項功能？請在 GitHub 上提出 issue，告訴我們你的需求。",
+          "linkLabel": "提出 issue"
+        },
+        "ja": {
+          "title": "新機能を提案する",
+          "body": "Nodus に追加してほしい機能はありますか？GitHub で issue を作成して、必要な機能を教えてください。",
+          "linkLabel": "issue を作成する"
+        },
+        "ko": {
+          "title": "새로운 기능을 제안해 주세요",
+          "body": "Nodus에 필요한 기능이 있나요? GitHub에서 issue를 열고 어떤 기능이 필요한지 알려 주세요.",
+          "linkLabel": "issue 열기"
+        }
+      }
+    },
+    {
       "id": "2026-10-08-nodus-presenter-ios",
       "date": "2026-10-08",
       "severity": "info",

@@ -96,7 +96,11 @@ test('the generated description is exactly the English modal text in displayed o
 
 test('draft creation, draft reuse and stable/beta publication require generated modal notes', async () => {
   const workflow = await readFile(new URL('../.github/workflows/release-build.yml', import.meta.url), 'utf8');
-  assert.equal(workflow.split('node scripts/generate-release-notes.mjs').length - 1, 2);
+  assert.equal(workflow.split('node scripts/generate-release-notes.mjs').length - 1, 1);
+  assert.match(workflow, /notes_artifact_id: \$\{\{ steps\.share-notes\.outputs\.artifact-id \}\}/);
+  assert.match(workflow, /artifact-ids: \$\{\{ needs\.prepare-release\.outputs\.notes_artifact_id \}\}/);
+  assert.match(workflow, /EXPECTED_NOTES_SHA256: \$\{\{ needs\.prepare-release\.outputs\.notes_sha256 \}\}/);
+  assert.match(workflow, /\$EXPECTED_NOTES_SHA256[\s\S]*sha256sum --check/);
   assert.match(workflow, /gh release create[\s\S]*?--notes-file "\$RUNNER_TEMP\/nodus-release-notes.md"/);
   assert.match(workflow, /gh release edit "\$RELEASE_TAG" --repo "\$GITHUB_REPOSITORY" --notes-file/);
   for (const publication of workflow.split('\n').filter(line => line.includes('--draft=false'))) {

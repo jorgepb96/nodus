@@ -39,6 +39,7 @@ test('every real-app check runs in exactly one isolated group and specialized pa
     ['Each package installs, migrates, registers and uninstalls', 'integration'],
     ['A 5.3.1 profile migrates, fails and retries', 'integration'],
     ['Real AppImage update compatibility', 'integration'],
+    ['Parallel Linux installer payload and updater contracts', 'integration'],
     ['Native Linux Presenter controller', 'integration'],
     ['Managed Research runtime, isolation and lifecycle', 'integration'],
   ]);

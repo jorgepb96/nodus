@@ -18,6 +18,9 @@ permissions:
 
 jobs:
   publish-beta:
+    permissions:
+      contents: write
+      actions: write
     uses: ./.github/workflows/release-build.yml
     with:
       channel: beta

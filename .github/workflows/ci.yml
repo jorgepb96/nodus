@@ -318,6 +318,11 @@ jobs:
       - name: Real AppImage update compatibility
         if: matrix.group == 'integration' && needs.changes.outputs.appimage == 'true'
         run: node scripts/verify-appimage-updates.mjs
+      - name: Parallel Linux installer payload and updater contracts
+        if: matrix.group == 'integration' && needs.changes.outputs.appimage == 'true'
+        run: |
+          sudo apt-get install --no-install-recommends -y libarchive-tools
+          node scripts/verify-linux-release-formats.mjs
       - name: Native Linux Presenter controller
         if: matrix.group == 'integration' && needs.changes.outputs.presenter == 'true'
         run: xvfb-run --auto-servernum node scripts/verify-presenter-lan.cjs

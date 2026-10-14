@@ -8,7 +8,10 @@ const keys = ['full', 'light', 'macos', 'windows', 'research', 'scheme', 'server
 const documentation = file => file === 'README.md' || file === '.github/actions-budget/README.md'
   || /^docs\/.*\.md$/.test(file) || (file.startsWith('site/') && !file.startsWith('site/data/'));
 const policy = file => file === '.github/workflows/ci.yml'
+  || /^\.github\/workflows\/release(?:-build|-beta|-macos-intel)?\.yml$/.test(file)
   || file.startsWith('.github/actions/ci-linux/')
+  || file.startsWith('.github/actions/release-inputs/')
+  || /^scripts\/(?:release-linux-|test-release-linux-|verify-linux-release-formats).*\.mjs$/.test(file)
   || /^scripts\/(?:ci-|test-ci-).*\.mjs$/.test(file);
 const dependencies = file => /^package(?:-lock)?\.json$/.test(file) || file === '.npmrc';
 const native = file => dependencies(file) || /^(?:electron|build|runtime|shared)\//.test(file)

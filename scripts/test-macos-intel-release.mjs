@@ -30,7 +30,13 @@ test('Intel runs only after publication, outside the gate that publishes', () =>
   // The whole point: a slow or failing Intel runner must never hold back the
   // release everyone else is waiting for.
   assert.match(release, /release-macos-intel:\n(?: {4}#.*\n)* {4}needs: verify-and-publish\n/);
-  assert.match(release, /uses: \.\/\.github\/workflows\/release-macos-intel\.yml/);
+  const dispatch = release.slice(release.indexOf('  release-macos-intel:'));
+  assert.match(dispatch, /runs-on: ubuntu-latest/);
+  assert.match(dispatch, /gh workflow run release-macos-intel\.yml/);
+  assert.match(dispatch, /actions: write/);
+  assert.match(dispatch, /--ref "\$INTEL_WORKFLOW_REF"/);
+  assert.match(dispatch, /-f tag="\$RELEASE_TAG"[\s\S]*-f channel="\$RELEASE_CHANNEL"/);
+  assert.doesNotMatch(dispatch, /uses:|gh run watch|gh run view/, 'the primary workflow never waits for an Intel build');
   const publish = release.slice(release.indexOf('  verify-and-publish:'), release.indexOf('  release-macos-intel:'));
   assert.doesNotMatch(publish, /release-macos-intel/, 'publication never waits for Intel');
   assert.doesNotMatch(release, /- os: macos-\d+-intel/, 'Intel is not in the matrix that gates publication');

@@ -76,9 +76,23 @@ y Linux, firma/notarización, procesos nativos, migraciones, runtime Research,
 integridad y el gate final: cualquier fallo impide publicar. Los controles nativos
 rechazan skips y se ejecutan aunque ese código no haya cambiado.
 
+Linux se prepara una sola vez en Ubuntu 22.04, incluyendo sus hooks nativos y el
+control de glibc. DEB, RPM y AppImage se generan después en tres runners aislados,
+en paralelo, desde el mismo archivo tar. Cada consumidor comprueba commit,
+lockfile, versión, canal, hashes, permisos y enlaces. Solo permite los metadatos
+de actualización y AppArmor propios del formato. La subida exige los tres
+informes y todos sus assets; el AppImage conserva sus verificaciones y alias.
+El plugin Zotero empieza junto al empaquetado nativo. Las notas se generan una
+sola vez y se verifican por ID inmutable y SHA-256 antes de publicar. Las cachés
+solo reutilizan descargas e información incremental, nunca una app compilada.
+La medición y la prueba de instaladores están en
+[Release execution and measurement](../../docs/release-performance.md).
+
 macOS Intel queda fuera de la matriz que condiciona la publicación, a petición
 del propietario, para que su runner más lento no retrase la release. Se publica
-después: cuando `verify-and-publish` termina, `release-macos-intel.yml` compila
+después: cuando `verify-and-publish` termina, un dispatch inicia una ejecución
+independiente de `release-macos-intel.yml` y el workflow principal finaliza sin
+esperarla. Esa ejecución compila
 Intel desde el mismo tag, lo firma y notariza, lo añade a la release ya publicada
 y fusiona sus entradas en el manifiesto con el merger auditado, sin tocar las de
 arm64 ni el puntero de compatibilidad. Si falla, la release publicada queda

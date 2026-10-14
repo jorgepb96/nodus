@@ -69,6 +69,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -165,6 +166,7 @@ export const KO: Record<string, string> = {
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.ko,
   ...DICTIONARY_TRANSLATIONS.ko,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.ko,
+  ...GALLERY_FILTER_TRANSLATIONS.ko,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.ko,
   ...STALE_MODEL_TRANSLATIONS.ko,
   ...SCHEME_DECLUTTER_TRANSLATIONS.ko,
@@ -2049,7 +2051,7 @@ export const KO: Record<string, string> = {
   "Detener y eliminar de la cola": "중지하고 대기열에서 제거",
   "Eliminar de la cola": "대기열에서 제거",
   "Se quitarán de la cola los elementos pendientes y los ya terminados. El elemento en curso seguirá procesándose.": "보류 중인 항목과 이미 완료된 항목은 대기열에서 제거됩니다. 진행 중인 항목은 계속 처리됩니다.",
-  "Limpiar": "분명한",
+  "Limpiar": "지우기",
   "Se detendrá el escaneo en curso y se eliminarán todos los elementos de la cola. Esta acción no se puede deshacer.": "진행 중인 검사가 중지되고 모든 대기열 항목이 제거됩니다. 이 작업은 취소할 수 없습니다.",
   "Detener y vaciar": "멈추고 비워라",
   "Error": "오류",

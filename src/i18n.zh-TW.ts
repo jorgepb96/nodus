@@ -69,6 +69,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -130,6 +131,7 @@ export const ZH_TW: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS['zh-TW'],
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS['zh-TW'],
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS['zh-TW'],
+  ...GALLERY_FILTER_TRANSLATIONS['zh-TW'],
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS['zh-TW'],
   ...STALE_MODEL_TRANSLATIONS['zh-TW'],
   ...SCHEME_DECLUTTER_TRANSLATIONS['zh-TW'],

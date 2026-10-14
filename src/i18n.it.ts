@@ -69,6 +69,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -132,6 +133,7 @@ export const IT: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.it,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.it,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.it,
+  ...GALLERY_FILTER_TRANSLATIONS.it,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.it,
   ...STALE_MODEL_TRANSLATIONS.it,
   ...SCHEME_DECLUTTER_TRANSLATIONS.it,
@@ -3341,7 +3343,7 @@ export const IT: Record<string, string> = {
   "Obras del autor": "Opere dell'autore",
   "sin DOI": "nessun DOI",
   "sin tipo": "nessun tipo",
-  "Tipo": "Digitare",
+  "Tipo": "Tipo",
   "Ver obras de este autor": "Visualizza le opere di questo autore",
   "Ver todas las ideas de esta obra": "Visualizza tutte le idee di questo lavoro",
   "Zotero key": "Chiave Zotero",

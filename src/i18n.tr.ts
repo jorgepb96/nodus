@@ -69,6 +69,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -132,6 +133,7 @@ export const TR: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.tr,
+  ...GALLERY_FILTER_TRANSLATIONS.tr,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.tr,
   ...STALE_MODEL_TRANSLATIONS.tr,
   ...SCHEME_DECLUTTER_TRANSLATIONS.tr,
@@ -2426,7 +2428,7 @@ export const TR: Record<string, string> = {
   "Detener y eliminar de la cola": "Durdurun ve kuyruktan kaldırın",
   "Eliminar de la cola": "Sıradan kaldır",
   "Se quitarán de la cola los elementos pendientes y los ya terminados. El elemento en curso seguirá procesándose.": "Bekleyen ve tamamlanan öğeler kuyruktan kaldırılacaktır. Devam eden öğe işlenmeye devam edecek.",
-  "Limpiar": "Temiz",
+  "Limpiar": "Temizle",
   "Se detendrá el escaneo en curso y se eliminarán todos los elementos de la cola. Esta acción no se puede deshacer.": "Devam eden tarama durdurulacak ve kuyruktaki tüm öğeler silinecek. Bu eylem geri alınamaz.",
   "Detener y vaciar": "Dur ve boşalt",
   "Obra": "iş",

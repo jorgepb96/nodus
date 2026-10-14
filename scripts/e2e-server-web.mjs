@@ -278,7 +278,9 @@ await withServer({ label: 'server-web-e2e', ai: true }, async (server) => {
     assert.equal(await page.getByTestId('deep-research-bookmark').getAttribute('aria-pressed'), 'true', 'deleting a highlight preserves the independent reading bookmark');
     await page.getByTestId('deep-research-reader').getByRole('button', { name: /Back to gallery|Volver a la galería/ }).click();
     await waitForSettled(page, 'deep-research-view');
-    await page.getByLabel(/Filter by status|Filtrar por estado/).selectOption(readBefore === 'true' ? 'read' : 'unread');
+    await page.getByTestId('deep-research-read-filter').click();
+    await page.getByTestId('deep-research-read-filter-menu').locator(`[data-value="${readBefore === 'true' ? 'read' : 'unread'}"]`).click();
+    await page.keyboard.press('Escape');
     assert.ok(await page.getByTestId('deep-research-gallery-card').count() > 0, 'gallery filter reflects private read overlay');
 
     await page.getByTestId('nav-library').click();

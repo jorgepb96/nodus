@@ -547,9 +547,11 @@ test('a place in a report is a block, and it says which rendering it was counted
 
 test('Deep Research restores its gallery, the report it was left in and the place inside it', async () => {
   const view = await readSource('src/views/DeepResearchView.tsx');
-  for (const restored of ['search', 'readFilter', 'sortKey', 'viewMode']) {
+  for (const restored of ['search', 'sortKey', 'viewMode']) {
     assert.match(view, new RegExp(`useState[^\\n]*\\(\\) => snapshot\\?\\.${restored}`), `${restored} survives leaving the section`);
   }
+  // The read filter is a multi-select now; the snapshot keeps the tri-state form.
+  assert.match(view, /useState<ReadState\[\]>\(\(\) => readStatesFromFilter\(snapshot\?\.readFilter\)\)/, 'readFilter survives leaving the section');
   // A reader with no report in it would render the gallery anyway.
   assert.match(view, /snapshot\?\.surface === 'reader' && snapshot\.openReport \? 'reader' : 'gallery'/);
   // The gallery is the only source of a saved report, so the reopen waits for it

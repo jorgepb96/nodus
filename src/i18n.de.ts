@@ -75,6 +75,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -134,6 +135,7 @@ export const DE: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.de,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.de,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.de,
+  ...GALLERY_FILTER_TRANSLATIONS.de,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.de,
   ...STALE_MODEL_TRANSLATIONS.de,
   ...SCHEME_DECLUTTER_TRANSLATIONS.de,

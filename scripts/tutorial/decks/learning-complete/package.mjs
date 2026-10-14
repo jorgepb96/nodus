@@ -8,7 +8,8 @@ await writeFile(path.join(source,'capture-timeline.json'),JSON.stringify(timelin
 for(const shot of timeline.shots){const duration=narration.cues.find(c=>c.id===shot.id).duration;shot.focus=null;shot.narration=duration;if(shot.end-shot.start<duration*.99||shot.end-shot.start>duration*1.1)shot.timelapse=true;}
 await writeFile(path.join(source,'timeline.json'),JSON.stringify(timeline,null,2));
 const env={...process.env,NODUS_TUTORIAL_MUSIC:path.join(os.homedir(),'Desktop/nodus_visual_identity/Quiet Dashboard Glow.mp3')};
-for(const phase of ['subtitles','assemble','cards']){console.log('PROCESSING',phase);const result=await run(process.execPath,[path.join(root,'scripts/tutorial/engine',phase+'.mjs'),'--deck='+deck],{env,maxBuffer:4000000});console.log(result.stdout);}
+const phases=process.argv.includes('--finish-cards')?['cards']:['subtitles','assemble','cards'];
+for(const phase of phases){console.log('PROCESSING',phase);const result=await run(process.execPath,[path.join(root,'scripts/tutorial/engine',phase+'.mjs'),'--deck='+deck],{env,maxBuffer:4000000});console.log(result.stdout);}
 const output=path.join(os.homedir(),'Desktop/Nodus_Academic_Walkthrough_EN_2026-10-14');await mkdir(output,{recursive:true});
 const video=path.join(output,'Nodus_Academic_Walkthrough_EN.mp4');await copyFile(path.join(source,`nodus-tutorial-${deck}-en-final-subtitled.mp4`),video);
 await copyFile(path.join(source,`subtitles/youtube/nodus-tutorial-${deck}.en.srt`),path.join(output,'Nodus_Academic_Walkthrough_EN.srt'));

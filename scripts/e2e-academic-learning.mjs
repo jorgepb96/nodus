@@ -30,6 +30,22 @@ async function waitState(page,check,label,timeout=60000){const deadline=Date.now
 async function open(page,lessonId,mode='invite'){await page.evaluate(({lessonId,mode})=>window.dispatchEvent(new CustomEvent('nodus:academic-learning',{detail:{lessonId,mode}})),{lessonId,mode});}
 async function closeDialog(page,id){await page.getByTestId(id).getByRole('button',{name:'Cerrar',exact:true}).click();await page.getByTestId(id).waitFor({state:'detached'});}
 async function chooseProfile(page,profile){await page.getByTestId('academic-interface-trigger').click();await page.getByTestId(`academic-profile-${profile}`).click();await page.getByTestId('academic-interface-picker').waitFor({state:'detached'});}
+async function verifyGuideMotion(page){
+ const result=await page.evaluate(()=>new Promise(resolve=>{
+  const until=performance.now()+700;let samples=0,arrows=0;const failures=[];
+  const frame=()=>{
+   const layer=document.querySelector('[data-testid="academic-learning-spotlight"]'),path=layer?.querySelector('.learning-guide-arrow > path');
+   if(path&&getComputedStyle(path.parentElement).visibility!=='hidden'){arrows++;if(path.getTotalLength()>96)failures.push('long connector');}
+   const coach=layer?.querySelector('.learning-coach'),composer=document.querySelector('.research-composer-shell');
+   if(coach&&composer&&composer.checkVisibility()){
+    const a=coach.getBoundingClientRect(),b=composer.getBoundingClientRect();
+    if(Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)failures.push('composer obscured');
+   }
+   samples++;if(performance.now()<until)requestAnimationFrame(frame);else resolve({samples,arrows,failures});
+  };frame();
+ }));
+ assert.ok(result.samples>1);assert.deepEqual(result.failures,[]);console.log('Verified: short connectors and reachable chat composer');
+}
 try{
  let page=await launch();
  // Configure only test infrastructure; the real first-run gates and model roles remain unset.
@@ -57,7 +73,7 @@ try{
  await waitState(page,s=>s.academicPracticeSession?.step===2,'source actually prepared');assert.ok(embeddings>0);assert.equal(generations,0);
  if(await page.getByTestId('header-queue-backdrop').count())await page.keyboard.press('Escape');
  const reference=await page.evaluate(async workId=>{const sources=await window.nodus.getResearchCorpusSources();const source=sources.documents.find(d=>d.workId===workId);const read=await window.nodus.readResearchDocument({documentId:source.id,operation:{kind:'search',query:'litros depósito reserva'}});return `documentary:${read.scopeId}:${read.evidence[0].id}`;},workId);passageId=reference;
- await page.getByTestId('learning-suggest-question').click();await page.getByTestId('research-chat-view').waitFor();const composer=page.locator('.research-composer-input');assert.match(await composer.inputValue(),/Resume la idea principal/);assert.equal(generations,0,'the coach only prepares text');
+ await page.getByTestId('learning-suggest-question').click();await page.getByTestId('research-chat-view').waitFor();const composer=page.locator('.research-composer-input');assert.match(await composer.inputValue(),/Resume la idea principal/);assert.equal(generations,0,'the coach only prepares text');await verifyGuideMotion(page);
  await page.locator('.research-composer-send').click();await waitState(page,s=>s.academicPracticeSession?.step===3,'a valid cited answer');
  await page.locator('.research-chat-view button.citation-link[data-citation-kind="passage"]').first().click();await page.getByTestId('source-citation-modal').waitFor();await waitState(page,s=>s.academicPracticeSession?.phase==='complete','opening actual evidence');await page.screenshot({path:path.join(shots,'real-answer-evidence.png')});await page.getByTestId('source-citation-close').click();
  assert.equal((await page.evaluate(()=>window.nodus.getSettings())).academicLearningProgress.lessons['first-answer'].practiceCompleted,true);

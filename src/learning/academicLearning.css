@@ -23,14 +23,14 @@ html:not(.dark) .learning-dialog { background:var(--app-panel,#fff); color:var(-
 html:not(.dark) .learning-coach { background:var(--app-panel,#fff); color:var(--app-text,#262626); }
 .learning-spotlight-layer { margin:0; padding:0; border:0; background:transparent; color:var(--app-text,#262626); overflow:visible; pointer-events:none; }
 .learning-spotlight-layer::backdrop { background:transparent; pointer-events:none; }
-.learning-coach-floating { position:absolute; margin:0; padding:14px; pointer-events:auto; background:var(--app-panel,#fff); border:1px solid var(--app-border,#d4d4d4); box-shadow:0 8px 28px #0002; transition:top 160ms ease,left 160ms ease; }
+.learning-coach-floating { position:absolute; margin:0; padding:14px; pointer-events:auto; background:var(--app-panel,#fff); border:1px solid var(--app-border,#d4d4d4); box-shadow:0 8px 28px #0002; }
 .learning-coach-floating h2 { margin-top:3px; font-size:14px; }
 .learning-coach-floating p { font-size:12px; line-height:1.6; }
 .learning-coach-floating .learning-eyebrow { font-size:10px; }
 .learning-current-source { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--app-muted,#737373); }
 .learning-dismiss-link { display:block; font-size:10px; color:var(--app-muted,#737373); margin-top:9px; padding:2px 0; }
 .learning-dismiss-link:hover { opacity:1; }
-.learning-control-highlight { position:absolute; border:2px solid var(--vault-accent,#6366f1); border-radius:9px; box-shadow:0 0 0 4px color-mix(in srgb,var(--vault-accent,#6366f1) 15%,transparent); pointer-events:none; transition:top 140ms ease,left 140ms ease,width 140ms ease,height 140ms ease; }
+.learning-control-highlight { position:absolute; border:2px solid var(--vault-accent,#6366f1); border-radius:9px; box-shadow:0 0 0 4px color-mix(in srgb,var(--vault-accent,#6366f1) 15%,transparent); pointer-events:none; }
 .learning-guide-arrow { position:absolute; inset:0; color:var(--vault-accent,#6366f1); pointer-events:none; }
 .dark .learning-spotlight-layer { color:var(--app-text,#e5e5e5); }
 .dark .learning-coach-floating { background:var(--app-panel,#171717); }

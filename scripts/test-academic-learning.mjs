@@ -123,6 +123,23 @@ test('guides render annotations of actual app controls and never a simulated wor
  const startup=await readFile('src/app/StartupGate.tsx','utf8');assert.ok(startup.indexOf("id: 'academic-learning-welcome'")<startup.indexOf("id: 'recovery-setup'"));assert.match(startup,/realSetupStarted/);
 });
 const G=load('src/learning/spotlightLayout.ts');
+test('guide geometry excludes clipped rows and keeps only the visible intersection',()=>{
+ assert.equal(G.intersectGuideRects({left:200,top:500,width:120,height:30},{left:180,top:100,width:400,height:200}),null);
+ assert.deepEqual(G.intersectGuideRects({left:200,top:280,width:120,height:30},{left:180,top:100,width:400,height:200}),{left:200,top:280,width:120,height:20});
+});
+test('guide arrows stay short and do not cross adjacent controls',()=>{
+ const target={left:700,top:300,width:40,height:36},card={left:350,top:220,width:318,height:220};
+ const line=G.guideConnector(card,target);assert.ok(line);
+ assert.ok(Math.hypot(line.start.x-line.end.x,line.start.y-line.end.y)<=96);
+ assert.equal(G.guideConnector({...card,left:12},target),null);
+ assert.equal(G.guideConnector(card,target,[{left:677,top:300,width:12,height:36}]),null);
+ assert.equal(G.guideConnector(card,{left:700,top:300,width:700,height:400}),null);
+});
+test('a guide uses adjacent free space rather than drawing an arrow from a corner',()=>{
+ const target={left:700,top:300,width:40,height:36};
+ const placed=G.placeGuide(target,{width:318,height:220},{width:1600,height:900});
+ assert.ok(G.guideConnector(placed,target));
+});
 test('annotations remain inside narrow and scaled windows and leave their controls uncovered',()=>{
  for(const viewport of [{width:1600,height:900},{width:819,height:614},{width:640,height:500}]) {
   for(const target of [{left:20,top:80,width:24,height:24},{left:viewport.width-160,top:viewport.height-60,width:140,height:32},{left:viewport.width/2,top:210,width:80,height:36}]) {

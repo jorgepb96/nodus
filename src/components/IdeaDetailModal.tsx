@@ -1,5 +1,5 @@
-import { useAcademicLearning } from '../learning/AcademicLearningContext';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {useLearningEvidenceVisibility} from '../learning/useLearningEvidenceVisibility';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { EdgeDetail, IdeaDetail, IdeaType } from '@shared/types';
 import { Badge, EDGE_LABELS, Icon, NODE_LABELS } from './ui';
@@ -26,7 +26,7 @@ export function IdeaDetailModal({
   onClose: () => void;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
 }) {
-  const learning = useAcademicLearning();
+  const modalRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState([initialIdeaId]);
   const [pos, setPos] = useState(0);
   const selectedId = history[pos] ?? initialIdeaId;
@@ -72,10 +72,7 @@ export function IdeaDetailModal({
     [pos]
   );
 
-  useEffect(() => {
-    const evidence = detail?.evidence.find(e => e.nodus_id === learning.session?.documentId && e.quote.trim());
-    if (evidence && detail) learning.emit({ kind: 'idea-evidence', documentId: evidence.nodus_id, ideaId: detail.idea.global_id, valid: true });
-  }, [detail, learning.emit, learning.session?.documentId]);
+  useLearningEvidenceVisibility(detail,modalRef);
 
   const connections = useMemo(
     () =>
@@ -99,7 +96,7 @@ export function IdeaDetailModal({
   // Into <body>, so a `space-y-*` stack in the caller (the author dossier) can
   // never hand the overlay a top margin that uncovers the title bar.
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 sm:p-8" data-testid="idea-detail-modal" role="dialog" aria-modal="true" onClick={onClose}>
+    <div ref={modalRef} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 sm:p-8" data-testid="idea-detail-modal" role="dialog" aria-modal="true" onClick={onClose}>
       <div
         className="card flex h-full w-full max-w-4xl flex-col overflow-hidden border border-neutral-700 bg-neutral-950 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
@@ -225,6 +222,7 @@ export function IdeaDetailModal({
                   {detail.evidence.map((evidence) => (
                     <blockquote
                       key={evidence.id}
+                      data-evidence-id={evidence.id}
                       className="my-2 rounded-r-md border-l-2 border-indigo-700 bg-neutral-950/35 py-2 pl-3 text-xs italic text-neutral-300"
                     >
                       “{evidence.quote}”{' '}

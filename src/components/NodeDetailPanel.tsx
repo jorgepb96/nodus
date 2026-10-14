@@ -1,5 +1,6 @@
 import { useAcademicLearning } from '../learning/AcademicLearningContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {useLearningEvidenceVisibility} from '../learning/useLearningEvidenceVisibility';
 import type { EdgeDetail, IdeaDetail, IdeaType, WorkMeta, WorkSummary, WorkView } from '@shared/types';
 import { EDGE_LABELS, NODE_LABELS, Badge, Icon } from './ui';
 import { SaveToNotesModal } from './SaveToNotesModal';
@@ -97,6 +98,8 @@ export function NodeDetailPanel({
   // A note pending capture: built lazily from whichever detail is open.
   const [saving, setSaving] = useState<{ content: string; title: string; ref: string } | null>(null);
   const [savingExternal, setSavingExternal] = useState(false);
+  const panelRef=useRef<HTMLDivElement>(null);
+  useLearningEvidenceVisibility(ideaDetail,panelRef);
 
   const startResize = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -114,7 +117,7 @@ export function NodeDetailPanel({
   };
 
   return (
-    <div className="relative flex min-h-0 shrink-0 flex-col border-l border-neutral-800 bg-neutral-900 graph-detail-panel" style={{ width, '--detail-font-size': `${fontSize}px` } as React.CSSProperties}>
+    <div ref={panelRef} data-testid="learning-evidence-panel" className="relative flex min-h-0 shrink-0 flex-col border-l border-neutral-800 bg-neutral-900 graph-detail-panel" style={{ width, '--detail-font-size': `${fontSize}px` } as React.CSSProperties}>
       <div
         className="absolute left-0 top-0 h-full w-2 -translate-x-1/2 cursor-col-resize hover:bg-indigo-500/25"
         role="separator"
@@ -250,7 +253,7 @@ export function NodeDetailPanel({
             <div>
               <div className="text-xs uppercase text-neutral-500 mb-1">{t('Evidencia anclada')}</div>
               {ideaDetail.evidence.map((ev) => (
-                <blockquote key={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
+                <blockquote key={ev.id} data-evidence-id={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
                   “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} suffix={` · ${ev.kind}`} onOpen={onOpenEvidence} />
                 </blockquote>
               ))}
@@ -286,7 +289,7 @@ export function NodeDetailPanel({
             </div>
           )}
           {edgeDetail.evidence.map((ev) => (
-            <blockquote key={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
+            <blockquote key={ev.id} data-evidence-id={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
               “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} onOpen={onOpenEvidence} />
             </blockquote>
           ))}

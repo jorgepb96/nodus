@@ -8,7 +8,7 @@ export function academicGuideStep(session:AcademicPracticeSession,view:View,hasS
  const nav=(destination:string)=>`[data-tour="nav-${destination}"]`;
  const citedMessage=session.messageId?`[data-message-id=${JSON.stringify(session.messageId)}] `:'';
  const citedReferences=(session.citationIds??[]).map(ref=>`${citedMessage}.citation-link[data-citation-id=${JSON.stringify(ref.slice(ref.indexOf(':')+1))}]:not([data-verified="false"])`);
- const evidence=['[data-testid="source-citation-content"] blockquote','[data-testid="source-citation-content"]','[data-testid="idea-detail-modal"] blockquote',...citedReferences,`${citedMessage}.citation-link:not([data-verified="false"])`];
+ const evidence=['[data-testid="learning-evidence-panel"] [data-evidence-id]','[data-testid="source-citation-content"] blockquote','[data-testid="source-citation-content"]','[data-testid="idea-detail-modal"] blockquote',...citedReferences,`${citedMessage}.citation-link:not([data-verified="false"])`];
  const composer=['.research-composer-stop','.research-composer-send:not(:disabled)','.research-composer-input'];
  let destination:View=lesson.destination,body:LearningCopyKey='guideEvidence',targets:string[]=[];
  if(session.lessonId==='first-answer'||session.lessonId==='first-idea'){
@@ -34,7 +34,7 @@ export function academicGuideStep(session:AcademicPracticeSession,view:View,hasS
    'argument-map':{body:'guideArgument',targets:['[data-testid^="argument-route-"]','[data-testid="argument-routes-search"]']},
    dictionary:{body:'guideDictionary',targets:['[data-testid="dictionary-concept-name-0"]','[data-testid="dictionary-new"]']},
   };({body,targets}=chapters[session.lessonId]);
- }else targets=session.lessonId==='scriptor'?['[data-testid="workspace-view"] .bn-editor',...evidence]:evidence;
+ }else targets=session.lessonId==='scriptor'?['[data-testid="workspace-view"] .bn-editor',...evidence]:session.lessonId==='authors'?[...evidence,'[data-testid="author-ideas"] button']:session.lessonId==='argument-map'?[...evidence,'.argument-node.is-root .argument-node-content']:evidence;
  const wrongView=session.lessonId!=='interface'&&view!==destination;
  // Actual view controls stay reachable through the guide even when a Custom sidebar hides them.
  return {destination,body,targets:wrongView?[nav(destination)]:targets,wrongView};

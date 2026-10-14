@@ -276,11 +276,14 @@ export async function record(deck) {
 
     /** Draw the ring. Accepts a list of candidates and uses the first that exists. */
     const highlight = async (selector) => {
+      // In-situ guides already identify their real control. A second, static ring
+      // around an entire workspace distracts from that control and can go stale.
+      if (await page.locator('[data-learning-guide="true"]').isVisible().catch(()=>false)) return true;
       const candidates = Array.isArray(selector) ? selector : [selector];
       for (const c of candidates) {
-        const box = await page.locator(c).first().boundingBox({ timeout: 1500 }).catch(() => null);
-        if (box) {
-          await page.evaluate((r) => window.__tutorialCursor?.highlight(r), box);
+        const target=page.locator(c).first();
+        if (await target.isVisible().catch(()=>false)) {
+          await target.evaluate(element=>window.__tutorialCursor?.highlightElement(element));
           return true;
         }
       }

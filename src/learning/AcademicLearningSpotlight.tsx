@@ -1,47 +1,59 @@
-import {useEffect,useId,useRef,useState,type ReactNode} from 'react';
+import {useEffect,useLayoutEffect,useId,useRef,useState,type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
-import {placeGuide,type GuideRect} from './spotlightLayout';
+import {placeGuide,guideConnector,type GuideRect} from './spotlightLayout';
+import {visibleGuideRect} from './spotlightTarget';
 import './academicLearning.css';
 
 /** A non-modal annotation of the real control. It never intercepts app actions. */
 export function AcademicLearningSpotlight({targets,stepKey,children,onPause,label,testId='academic-learning-coach'}:{targets:readonly string[];stepKey:string;children:ReactNode;onPause:()=>void;label:string;testId?:string}) {
  const layer=useRef<HTMLDivElement>(null),card=useRef<HTMLElement>(null);
- const [anchor,setAnchor]=useState<HTMLElement|null>(null);
- const [rect,setRect]=useState<GuideRect|null>(null);
+ const [target,setTarget]=useState<{key:string;element:HTMLElement;selector:string;rect:GuideRect}|null>(null);
  const [controls,setControls]=useState<GuideRect[]>([]);
  const [size,setSize]=useState({width:318,height:220});
  const [viewport,setViewport]=useState({width:window.innerWidth,height:window.innerHeight});
  const descriptionId=useId(),arrowId=useId().replace(/:/g,'');
  const selectors=JSON.stringify(targets);
- useEffect(()=>{
-  let frame=0,tracking=0,active=true,scrolled=false,current:HTMLElement|null=null;
+ const targetKey=stepKey+selectors;
+ const currentTarget=target?.key===targetKey?target:null;
+ const anchor=currentTarget?.element??null,rect=currentTarget?.rect??null;
+ useLayoutEffect(()=>{
+  let frame=0,active=true,stableAt=0,lastControls=0,dirty=true,scrolled=false;
+  let previous:{element:HTMLElement;rect:GuideRect}|null=null;
+  const parsed=JSON.parse(selectors) as string[];
+  const same=(a:GuideRect,b:GuideRect)=>Math.abs(a.left-b.left)<.5&&Math.abs(a.top-b.top)<.5&&Math.abs(a.width-b.width)<.5&&Math.abs(a.height-b.height)<.5;
   const measure=()=>{
-   frame=0;if(!active)return;
+   if(!active)return;
    const modal=[...document.querySelectorAll<HTMLElement>('dialog[open],[aria-modal="true"]')].filter(el=>!el.closest('[data-learning-guide]')&&el.getClientRects().length>0).at(-1);
-   let found:HTMLElement|null=null;
-   for(const selector of JSON.parse(selectors) as string[]){
-    found=[...document.querySelectorAll<HTMLElement>(selector)].find(el=>el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden'&&(!modal||modal.contains(el)))??null;
+   let found:HTMLElement|null=null,next:GuideRect|null=null,matched='';
+   for(const selector of parsed){
+    for(const el of document.querySelectorAll<HTMLElement>(selector)){
+     if(modal&&!modal.contains(el))continue;
+     let r=visibleGuideRect(el);
+     if(!r&&!scrolled&&!el.closest('[hidden],[inert],[aria-hidden="true"]')&&el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})){
+      scrolled=true;el.scrollIntoView({block:'nearest',behavior:'instant'});r=visibleGuideRect(el);
+     }
+     if(r){found=el;next=r;matched=selector;break;}
+    }
     if(found)break;
    }
-   if(found!==current){current=found;setAnchor(found);resize.disconnect();if(found)resize.observe(found);}
-   if(!scrolled&&found){scrolled=true;const r=found.getBoundingClientRect();if(r.bottom<48||r.top>window.innerHeight-16)found.scrollIntoView({block:'nearest',behavior:'instant'});}
-   const r=found?.getBoundingClientRect();
-   const next=r&&r.bottom>44&&r.top<window.innerHeight&&r.right>0&&r.left<window.innerWidth ? {left:Math.max(0,r.left),top:Math.max(44,r.top),width:Math.min(r.right,window.innerWidth)-Math.max(0,r.left),height:Math.min(r.bottom,window.innerHeight)-Math.max(44,r.top)} : null;
-   setRect(previous=>JSON.stringify(previous)===JSON.stringify(next)?previous:next);
-   const available=[...(modal??document).querySelectorAll<HTMLElement>('button,input:not([type="hidden"]),textarea,select,[contenteditable="true"],[role="button"],[role="tab"]')].filter(el=>!el.closest('[data-learning-guide]')&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden').map(el=>{const r=el.getBoundingClientRect();return{left:r.left,top:r.top,width:r.width,height:r.height};}).filter(r=>r.width>0&&r.height>0&&r.top<window.innerHeight&&r.top+r.height>44&&r.left<window.innerWidth&&r.left+r.width>0);
-   setControls(previous=>JSON.stringify(previous)===JSON.stringify(available)?previous:available);
-   setViewport(previous=>previous.width===window.innerWidth&&previous.height===window.innerHeight?previous:{width:window.innerWidth,height:window.innerHeight});
+   const changed=!found||!next||!previous||previous.element!==found||!same(previous.rect,next);
+   if(changed){stableAt=performance.now();previous=found&&next?{element:found,rect:next}:null;setTarget(null);dirty=true;}
+   if(found&&next&&!changed&&performance.now()-stableAt>=90)setTarget(old=>old?.key===targetKey&&old.element===found&&same(old.rect,next!)?old:{key:targetKey,element:found!,selector:matched,rect:next!});
+   // Hide before the compositor paints a moving or replaced control.
+   for(const el of layer.current?.querySelectorAll<HTMLElement|SVGElement>('.learning-control-highlight,.learning-guide-arrow')??[])el.style.visibility=changed?'hidden':'';
+   if(dirty||performance.now()-lastControls>=150){
+    lastControls=performance.now();dirty=false;
+    const available=[...(modal??document).querySelectorAll<HTMLElement>('button,input:not([type="hidden"]),textarea,select,[contenteditable="true"],[role="button"],[role="tab"],.research-composer-shell,[data-message-id]')].filter(el=>!el.closest('[data-learning-guide]')).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];});
+    setControls(old=>JSON.stringify(old)===JSON.stringify(available)?old:available);
+   }
+   setViewport(old=>old.width===window.innerWidth&&old.height===window.innerHeight?old:{width:window.innerWidth,height:window.innerHeight});
+   frame=requestAnimationFrame(measure);
   };
-  const schedule=()=>{if(!frame)frame=requestAnimationFrame(measure);};
-  const resize=new ResizeObserver(schedule);
-  const observer=new MutationObserver(schedule);
+  const observer=new MutationObserver(()=>{dirty=true;});
   observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden','aria-expanded','aria-selected','disabled']});
-  window.addEventListener('scroll',schedule,true);window.addEventListener('resize',schedule);
-  // Track the short selector/view transition without a permanent animation loop.
-  const until=performance.now()+400;
-  const track=()=>{measure();if(performance.now()<until)tracking=requestAnimationFrame(track);};track();
-  return()=>{active=false;cancelAnimationFrame(frame);cancelAnimationFrame(tracking);observer.disconnect();resize.disconnect();window.removeEventListener('scroll',schedule,true);window.removeEventListener('resize',schedule);};
- },[selectors,stepKey]);
+  measure();
+  return()=>{active=false;cancelAnimationFrame(frame);observer.disconnect();};
+ },[selectors,targetKey]);
  useEffect(()=>{
   const element=layer.current;if(!element)return;
   const accent=document.querySelector<HTMLElement>('[data-testid="app-shell"]')?.style.getPropertyValue('--vault-accent');if(accent)element.style.setProperty('--vault-accent',accent);
@@ -65,17 +77,12 @@ export function AcademicLearningSpotlight({targets,stepKey,children,onPause,labe
   window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);
  },[onPause]);
  const placed=placeGuide(rect,size,viewport,controls);
- const target=rect ? {x:rect.left+rect.width/2,y:rect.top+rect.height/2}:null;
- const start=target?{x:Math.max(placed.left+8,Math.min(target.x,placed.left+placed.width-8)),y:Math.max(placed.top+8,Math.min(target.y,placed.top+placed.height-8))}:null;
- const end=target&&start&&rect?{
-  x:start.x<rect.left?rect.left-7:start.x>rect.left+rect.width?rect.left+rect.width+7:target.x,
-  y:start.y<rect.top?rect.top-7:start.y>rect.top+rect.height?rect.top+rect.height+7:target.y,
- }:target;
+ const connector=guideConnector(placed,rect,controls);
  // Rendering inside a native dialog keeps the annotation accessible in its focus scope.
  const host=anchor?.closest('dialog[open],[aria-modal="true"]')??document.querySelector('[data-testid="app-shell"]')??document.body;
- return createPortal(<div ref={layer} className="learning-spotlight-layer" data-learning-guide="true" data-browser-native-overlay="true" data-testid="academic-learning-spotlight" style={{position:'fixed',left:0,top:0,width:viewport.width,height:viewport.height}}>
+ return createPortal(<div ref={layer} className="learning-spotlight-layer" data-learning-guide="true" data-learning-target={currentTarget?.selector} data-learning-step={stepKey} data-browser-native-overlay="true" data-testid="academic-learning-spotlight" style={{position:'fixed',left:0,top:0,width:viewport.width,height:viewport.height}}>
   {rect&&rect.width*rect.height<viewport.width*viewport.height*.4&&<div aria-hidden="true" data-testid="learning-control-highlight" className="learning-control-highlight" style={{left:rect.left-4,top:rect.top-4,width:rect.width+8,height:rect.height+8}}/>}
-  {end&&start&&<svg className="learning-guide-arrow" aria-hidden="true" width={viewport.width} height={viewport.height}><defs><marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><path d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`} fill="none" stroke="currentColor" strokeWidth="1.5" markerEnd={`url(#${arrowId})`}/></svg>}
+  {connector&&<svg className="learning-guide-arrow" data-testid="learning-guide-connector" aria-hidden="true" width={viewport.width} height={viewport.height}><defs><marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><path d={`M ${connector.start.x} ${connector.start.y} L ${connector.end.x} ${connector.end.y}`} fill="none" stroke="currentColor" strokeWidth="1.5" markerEnd={`url(#${arrowId})`}/></svg>}
   <section ref={card} className="learning-coach learning-coach-floating" data-testid={testId} role="region" aria-label={label} id={descriptionId} tabIndex={-1} style={{left:placed.left,top:placed.top,width:318,maxWidth:viewport.width-24,maxHeight:Math.max(130,Math.min(placed.height,340,viewport.height-72))}}>{children}</section>
  </div>,host);
 }

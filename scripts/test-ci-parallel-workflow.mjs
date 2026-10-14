@@ -8,6 +8,7 @@ const read = file => load(fs.readFileSync(new URL(`../${file}`, import.meta.url)
 const ci = read('.github/workflows/ci.yml');
 const release = read('.github/workflows/release-build.yml');
 const setup = read('.github/actions/ci-linux/action.yml');
+const scripts = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).scripts;
 
 test('all test groups and real-app checks can start together after the single build', () => {
   for (const lane of ['unit', 'e2e']) {
@@ -17,6 +18,8 @@ test('all test groups and real-app checks can start together after the single bu
   }
   assert.deepEqual(ci.jobs.unit.strategy.matrix.shard, Array.from({ length: shardCount }, (_, i) => i + 1));
   assert.equal(ci.jobs.unit.strategy['fail-fast'], false, 'one failure must not cancel other groups');
+  assert.deepEqual(ci.jobs.e2e.strategy.matrix.group, ['smoke', 'backups', 'integration']);
+  assert.equal(ci.jobs.e2e.strategy['fail-fast'], false, 'one E2E failure must not cancel another group');
   assert.ok(ci.jobs.test.needs.includes('unit') && ci.jobs.test.needs.includes('e2e'));
   assert.equal(ci.jobs.test.if, 'always()', 'skipped or failed prerequisites must still reach the gate');
   const commands = ci.jobs.e2e.steps.map(step => step.run || '').join('\n');
@@ -25,6 +28,50 @@ test('all test groups and real-app checks can start together after the single bu
     'scripts/verify-appimage-updates.mjs', 'scripts/verify-presenter-lan.cjs', 'scripts/ci-native-checks.mjs research --no-synthetic']) {
     assert.ok(commands.includes(command), `Lost real-app coverage: ${command}`);
   }
+});
+
+test('every real-app check runs in exactly one isolated group and specialized paths remain conditional', () => {
+  const checks = new Map([
+    ['E2E smoke (real app boot)', 'smoke'], ['Stellar canvas E2E', 'smoke'],
+    ['Graph tabs E2E', 'smoke'], ['Argument map E2E', 'smoke'],
+    ['Backups export and restore E2E', 'backups'],
+    ['Both repositories agree and signed packages install', 'integration'],
+    ['Each package installs, migrates, registers and uninstalls', 'integration'],
+    ['A 5.3.1 profile migrates, fails and retries', 'integration'],
+    ['Real AppImage update compatibility', 'integration'],
+    ['Native Linux Presenter controller', 'integration'],
+    ['Managed Research runtime, isolation and lifecycle', 'integration'],
+  ]);
+  const outputs = { appimage: 'true', presenter: 'true', research: 'true' };
+  const runs = (step, group, selected = outputs) => new Function('matrix', 'needs', `return (${step.if});`)(
+    { group }, { changes: { outputs: selected } });
+  for (const [name, expectedGroup] of checks) {
+    const step = ci.jobs.e2e.steps.find(step => step.name === name);
+    assert.ok(step?.run && step.if, `Missing or unconditional real-app check: ${name}`);
+    assert.deepEqual(ci.jobs.e2e.strategy.matrix.group.filter(group => runs(step, group)), [expectedGroup], name);
+  }
+  for (const [name, key] of [['Real AppImage update compatibility', 'appimage'],
+    ['Native Linux Presenter controller', 'presenter'], ['Managed Research runtime, isolation and lifecycle', 'research']]) {
+    const step = ci.jobs.e2e.steps.find(step => step.name === name);
+    assert.equal(runs(step, 'integration', { ...outputs, [key]: 'false' }), false);
+  }
+  const diagnostics = ci.jobs.e2e.steps.find(step => step.uses === 'actions/upload-artifact@v7');
+  assert.equal(diagnostics.if, 'always()');
+  assert.ok(diagnostics.with.name.includes('${{ matrix.group }}'), 'parallel diagnostics must not overwrite each other');
+});
+
+test('lint and TypeScript cannot be bypassed when the build publishes artifacts first', () => {
+  assert.equal(ci.jobs.quality.needs, 'changes');
+  assert.equal(ci.jobs.linux.needs, 'changes', 'tests should not wait for independent static checks');
+  assert.equal(ci.jobs.quality.if, ci.jobs.linux.if);
+  assert.ok(ci.jobs.test.needs.includes('quality'));
+  const commands = ci.jobs.quality.steps.filter(step => step.run).map(step => step.run);
+  assert.ok(commands.includes('npm run lint:ci') && commands.includes('npm run typecheck:ci'));
+  assert.ok(commands.indexOf('npm run build:cloudflare') < commands.indexOf('npm run typecheck:ci'));
+  assert.ok(ci.jobs.linux.steps.some(step => step.run === 'npm run build:ci:bundle'));
+  assert.equal(scripts['prebuild:ci:bundle'], 'npm run prebuild:ci');
+  assert.equal(scripts['build:ci:bundle'], 'npm run build:cloudflare && vite build');
+  assert.ok(scripts['build:ci'].includes('npm run typecheck:ci'), 'native builds retain their platform typecheck');
 });
 
 test('parallel consumers restore an immutable build, identical runtime and pinned marketplace', () => {

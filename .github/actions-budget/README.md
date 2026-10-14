@@ -12,9 +12,12 @@ lint/TypeScript, todos los archivos descubiertos, cinco E2E, contratos
 del marketplace, procesos nativos y migraciones. No se cachean resultados de tests
 ni se seleccionan pruebas individuales por los archivos modificados.
 
-Desde el 13 de octubre de 2026 se prioriza también el tiempo de espera: los tres
-grupos de tests se ejecutan en runners Linux independientes y los E2E y controles
-de integración en un cuarto runner, en paralelo con ellos. Cada consumidor instala
+Desde el 14 de octubre de 2026 los tests se reparten en seis runners Linux
+independientes, con tiempos recientes para equilibrar los grupos. Otros tres
+runners ejecutan por separado arranque y grafos, backups e integración. Lint y
+TypeScript se ejecutan junto al build y siguen siendo obligatorios en la puerta
+final, pero ya no retrasan el inicio de los tests. Los hosts nativos conservan
+su comprobación de tipos y añaden cachés incrementales. Cada consumidor instala
 sus dependencias bloqueadas y verifica por SHA-256 la compilación de esta ejecución,
 su commit y el runtime/ABI nativo exacto de Electron. Todos usan la misma revisión
 del marketplace. La puerta final vuelve a comprobar el inventario completo: cada

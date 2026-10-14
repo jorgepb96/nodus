@@ -75,6 +75,7 @@ export function changedPaths(base, head, cwd = process.cwd()) {
 export function assertJobResults(selection, jobs) {
   const expected = {
     changes: true,
+    quality: selection.full,
     linux: selection.full,
     unit: selection.full,
     e2e: selection.full,

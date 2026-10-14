@@ -7,9 +7,11 @@ import { WorldChatView } from '../src/views/WorldChatView';
 import ReactDOM from 'react-dom/client';
 import { ResearchAssistantModal } from '../src/views/ResearchAssistantModal';
 import { setActiveLang } from '../src/i18n';
+import { normalizeUiLanguage } from '../shared/uiLanguage';
 import type { AppSettings } from '../shared/types';
 import '../src/index.css';
 const params = new URLSearchParams(location.search);
+const language = normalizeUiLanguage(params.get('lang') ?? 'es');
 const view = params.get('view');
 const vaultType = params.get('vault') ?? ({ database: 'databases', study: 'estudio', teaching: 'docencia', world: 'worldbuilding' }[view ?? ''] ?? 'academic');
 // `?memory=` stands in for a relaunch: the composer then reads the levels a previous session
@@ -21,7 +23,7 @@ const storedEffort = (): Record<string, string> => {
     return {};
   }
 };
-const settings = { synthesisModel: { provider: 'openai', model: 'gpt-5.4' }, uiLanguage: 'es', chatModel: { provider: 'openai', model: 'gpt-5.4' }, favorites: [
+const settings = { synthesisModel: { provider: 'openai', model: 'gpt-5.4' }, uiLanguage: language, chatModel: { provider: 'openai', model: 'gpt-5.4' }, favorites: [
   { provider: 'gemini', model: 'gemini-3-pro-preview' }, { provider: 'xiaomi', model: 'mimo-v2.5' },
   { provider: 'openai', model: 'gpt-4.1' }, { provider: 'codex', model: 'gpt-6-astra' },
   // The unversioned DeepSeek ids each route serves, so the effort control they publish can be
@@ -151,7 +153,7 @@ window.nodus = new Proxy({
     return { answer: 'Respuesta de prueba.', stats: { sections: [], works: 0, documents: 0, passages: 0, contextChars: 0, truncated: false } };
   },
 }, { get(target: any, key: string) { return target[key] ?? (key.startsWith('on') ? () => () => {} : async () => []); } });
-setActiveLang(params.get('lang') === 'en' || params.get('concilium') ? 'en' : 'es');
+setActiveLang(params.get('concilium') ? 'en' : language);
 document.documentElement.className = `${params.get('theme') === 'dark' ? 'dark' : 'light'} ${vaultType}`;
 if (params.get('fallback') === 'chat') delete (settings as any).synthesisModel;
 const onEvidence = (id: string) => { win.openedEvidence = id; };

@@ -1,3 +1,11 @@
+import { useLearningOverlayBusy } from './learning/useLearningOverlayBusy';
+import { AcademicLearningContext } from './learning/AcademicLearningContext';
+import { useAcademicLearningController } from './learning/useAcademicLearning';
+import { AcademicLearningCoach, AcademicLearningDialogs,LearningWorkspaceBar } from './learning/AcademicLearningSurface';
+import { lessonForProfile } from '@shared/academicLearning';
+import { learningText } from '@shared/academicLearningCopy';
+import { requestLearningPrompt } from './learning/learningPrompt';
+import { createPortal } from 'react-dom';
 import { SHOW_FOCUS_PAGE_EVENT, openFocusLayout, openFocusTimer, toggleFocusTimer, useStudyFocusActions, useStudyFocusLayout, useStudyFocusReduced } from './components/focus/StudyFocusContext';
 import { useEditorialShellFocus } from './components/workspace/editorialFocus';
 import { parseEditorReference } from '@shared/editorReferences';
@@ -5,6 +13,11 @@ import { FocusExitDialog, FocusLayoutDialog, type FocusSectionOption } from './c
 import { focusDefaultSectionVisible, focusLayoutVisible } from '@shared/studyFocus';
 import { FocusCompletionNotice, FocusHeader } from './components/focus/FocusHeader';
 import { FocusRail, type FocusRailItem } from './components/focus/FocusRail';
+import { AcademicInterfaceContext } from './components/AcademicInterfaceContext';
+import { AcademicInterfacePicker } from './components/AcademicInterface';
+import { academicInitialView, academicNavigation, academicNavigationGroups, academicProfileLabel, academicProfilePatch } from './academicInterfaceProfiles';
+import { headerActionVisible, type HeaderActionId } from '@shared/headerActions';
+import type { AcademicInterfaceProfile } from '@shared/types';
 import { ResearchPreparationWelcome } from './components/ResearchPreparationWelcome';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AppSettings, CorpusHealthBucketId, DatabaseSummary, NodiNotification, RecoveryStatus, ServerInboxEntry, SyncLogEntry, VaultSummary } from '@shared/types';
@@ -55,7 +68,7 @@ import { NodiMascot } from './components/nodi/NodiMascot';
 import { NodiStyleModal } from './components/NodiStyleModal';
 import { Icon } from './components/ui';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
-import { t, tx, setActiveLang } from './i18n';
+import { t, tx, errorText, setActiveLang } from './i18n';
 import { resolveStartupGate } from './app/StartupGate';
 import { VIEW_REGISTRY } from './app/viewRegistry';
 import type { ViewContext } from './app/ViewContext';
@@ -141,6 +154,9 @@ function HeaderAction({
   queueTrigger = false,
   focusKeep = false,
   pressed,
+  visible = true,
+  actionId,
+  responsive = false,
 }: {
   icon: string;
   label: string;
@@ -163,11 +179,16 @@ function HeaderAction({
   focusKeep?: boolean;
   /** For a toggle: whether it is on. */
   pressed?: boolean;
+  visible?: boolean;
+  actionId?: HeaderActionId;
+  responsive?: boolean;
 }) {
   const titleText = kbd ? `${title ?? label} · ${kbd}` : title ?? label;
   return (
     <button
       data-tour={dataTour}
+      data-header-action={actionId}
+      hidden={!visible}
       data-vault-trigger={vaultTrigger ? '' : undefined}
       data-inbox-trigger={inboxTrigger ? '' : undefined}
       data-notifications-trigger={notificationsTrigger ? '' : undefined}
@@ -179,7 +200,7 @@ function HeaderAction({
       disabled={disabled}
       title={titleText}
       aria-label={label}
-      className={`header-action btn justify-center px-2.5 py-0 leading-none btn-ghost h-9 min-h-9 min-w-9 ${tone}`}
+      className={`header-action btn justify-center px-2.5 py-0 leading-none btn-ghost h-9 min-h-9 min-w-9 ${responsive ? 'header-responsive-action' : ''} ${tone}`}
     >
       <Icon name={icon} className={spinning ? 'animate-spin' : ''} />
       {showLabel && (
@@ -199,6 +220,20 @@ export function App() {
   // In focus mode the header keeps only what the student chose; elsewhere nothing changes.
   const focusKeeps = (id: string) => focusLayoutVisible(focusLayout.layout, id);
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [interfacePickerOpen, setInterfacePickerOpen] = useState(false);
+  const [headerMoreOpen, setHeaderMoreOpen] = useState(false);
+  const [headerVisibilityBusy, setHeaderVisibilityBusy] = useState(false);
+  const [headerVisibilityError, setHeaderVisibilityError] = useState('');
+  const headerMoreRef = useRef<HTMLDivElement>(null);
+  const [headerLeftEl, setHeaderLeftEl] = useState<HTMLDivElement | null>(null);
+  const [interfaceTrigger, setInterfaceTrigger] = useState<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    if (!headerMoreOpen) return;
+    const dismiss = (e: PointerEvent) => { if (!headerMoreRef.current?.contains(e.target as Node) && !(e.target as Element).closest('.academic-header-more-panel, [role="dialog"], dialog')) setHeaderMoreOpen(false); };
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') { setHeaderMoreOpen(false); headerMoreRef.current?.querySelector('button')?.focus(); } };
+    document.addEventListener('pointerdown', dismiss); document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', escape); };
+  }, [headerMoreOpen]);
   const [vaults, setVaults] = useState<VaultSummary[]>([]);
   const [activeVault, setActiveVault] = useState<VaultSummary | null>(null);
   const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus | null>(null);
@@ -236,9 +271,10 @@ export function App() {
     // Escritura and Proyectos were consolidated into one workspace. Keep their
     // historical ids as input aliases only so old deep links and notifications do
     // not resurrect removed sections in the shell.
-    const canonicalNext: View = next === 'writing' || next === 'projects'
+    const requestedNext = next === 'home' && normalizeVaultType(activeVault?.type) === 'academic' && settings?.academicInterfaceProfile === 'simple' ? 'researchChat' : next;
+    const canonicalNext: View = requestedNext === 'writing' || requestedNext === 'projects'
       ? (normalizeVaultType(activeVault?.type) === 'academic' ? 'workspace' : 'notes')
-      : next;
+      : requestedNext;
     const cur = viewRef.current;
     // Leaving Browser: hide the native WebContentsView BEFORE mounting the next
     // section. The previous `invoke` left one frame where Settings header was
@@ -251,7 +287,7 @@ export function App() {
       return;
     }
     setViewRaw(canonicalNext);
-  }, [activeVault?.type]);
+  }, [activeVault?.type, settings?.academicInterfaceProfile]);
   useBrowserNativeOverlayGuard(view === 'browser');
   useEffect(() => window.nodus.onAiModelRequired(() => setAiModelRequiredOpen(true)), []);
   // Página activa dentro de Herramientas. Vive aquí (y no en ToolkitView) porque
@@ -261,7 +297,8 @@ export function App() {
   const [navCollapsed, setNavCollapsed] = useState(() => localStorage.getItem('nodus.navCollapsed') === '1');
   const editorialFocus = useEditorialShellFocus();
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const stored = Number(localStorage.getItem('nodus.sidebarWidth'));
+    const savedWidth = localStorage.getItem('nodus.sidebarWidth');
+    const stored = savedWidth === null ? NaN : Number(savedWidth);
     return Number.isFinite(stored)
       ? Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, stored))
       : SIDEBAR_DEFAULT_WIDTH;
@@ -327,10 +364,11 @@ export function App() {
   const [headerActionsEl, setHeaderActionsEl] = useState<HTMLElement | null>(null);
   const [vaultBadgeEl, setVaultBadgeEl] = useState<HTMLElement | null>(null);
   const [vaultBadgePlacement, setVaultBadgePlacement] = useState<HeaderBadgePlacement | null>(null);
-  const toggleVaults = useCallback(
-    (el: HTMLElement) => setVaultAnchor((cur) => (cur === el ? null : el)),
-    []
-  );
+  const toggleVaults = useCallback((el: HTMLElement) => {
+    if(activeVault?.learningWorkspace)return;
+    setInterfacePickerOpen(false); setHeaderMoreOpen(false);
+    setVaultAnchor(cur => cur === el ? null : el);
+  }, [activeVault?.learningWorkspace]);
   const toggleInbox = useCallback(
     (el: HTMLElement) => setInboxAnchor((cur) => (cur === el ? null : el)),
     []
@@ -540,11 +578,11 @@ export function App() {
       ? NAV_ITEMS.filter((item) => item.id !== 'home' && item.id !== 'settings' && !dedicatedIds.includes(item.id)).map((item) => item.id)
       : [];
     return groupedNav(
-      settings?.sidebarOrder ?? [],
-      ['library', ...activeSidebarHidden, ...disallowed, ...outsideDedicatedWorkspace],
+      settings?.academicInterfaceProfile === 'advanced' && normalizeVaultType(activeVault?.type) === 'academic' ? [] : settings?.sidebarOrder ?? [],
+      ['library', ...(settings?.academicInterfaceProfile === 'advanced' && normalizeVaultType(activeVault?.type) === 'academic' ? ['notes'] : activeSidebarHidden), ...disallowed, ...outsideDedicatedWorkspace],
       settings?.toolkitPinnedPages ?? [],
     );
-  }, [settings?.sidebarOrder, settings?.toolkitPinnedPages, activeSidebarHidden, activeVault?.type]);
+  }, [settings?.sidebarOrder, settings?.academicInterfaceProfile, settings?.toolkitPinnedPages, activeSidebarHidden, activeVault?.type]);
 
   // If the active vault type doesn't allow the current view (e.g. switching from a
   // primary-source vault to an academic one while on Personas), fall back to Home.
@@ -663,6 +701,40 @@ export function App() {
   // 'academic' es también el tipo al que resuelve cualquier bóveda anterior a los tipos,
   // así que se pregunta por lo que NO es en vez de por lo que es.
   const isAcademic = normalizeVaultType(activeVault?.type) === 'academic' && !isPreviewVault;
+  const profile = isAcademic ? settings?.academicInterfaceProfile : undefined;
+  const academicItems = useMemo(() => isAcademic && settings ? academicNavigation(settings) : null, [isAcademic, settings]);
+  const academicGroups = useMemo(() => isAcademic && settings ? academicNavigationGroups(settings) : [], [isAcademic, settings]);
+  const headerVisible = (id: HeaderActionId) => headerActionVisible(id, settings?.headerActionVisibility, profile);
+  const toggleHeaderVisibility = async (id: HeaderActionId) => {
+    setHeaderVisibilityBusy(true); setHeaderVisibilityError('');
+    try {
+      const latest = await window.nodus.getSettings();
+      const updated = await window.nodus.updateSettings({ headerActionVisibility: { ...latest.headerActionVisibility, [id]: !headerActionVisible(id, latest.headerActionVisibility, profile) } });
+      setSettings(updated);
+    } catch (cause) { setHeaderVisibilityError(errorText(cause)); }
+    finally { setHeaderVisibilityBusy(false); }
+  };
+  const openInterfaceSettings = () => { localStorage.setItem('nodus.settingsTarget', 'sidebar'); window.dispatchEvent(new Event('nodus:settings-target')); setView('settings'); };
+  const openInterfacePreferences = (target: 'appearance' | 'nodi') => {
+    setInterfacePickerOpen(false);
+    localStorage.setItem('nodus.settingsTarget', target);
+    window.dispatchEvent(new Event('nodus:settings-target')); setView('settings');
+  };
+  const chooseInterface = async (next: AcademicInterfaceProfile) => {
+    if (!settings) return;
+    const updated = await window.nodus.updateSettings(academicProfilePatch(settings, next));
+    setSettings(updated); setInterfacePickerOpen(false);
+    if (next === 'custom') { learning.pause(); openInterfaceSettings(); }
+    else if (!academicNavigation(updated).some(item => item.id === view) && !['toolkit', 'workspace', 'browser', 'radar', 'compass', 'studyFocus'].includes(view)) setView(academicInitialView(next));
+  };
+  useEffect(() => { setInterfacePickerOpen(false); setHeaderMoreOpen(false); }, [activeVault?.id]);
+  const profileEntryVault = useRef<string | null>(null);
+  useEffect(() => {
+    if (!settings?.onboardingComplete || !activeVault) return;
+    if (profileEntryVault.current === activeVault.id) return;
+    profileEntryVault.current = activeVault.id;
+    if (isAcademic && settings.academicInterfaceProfile && viewRef.current === 'home') setView(academicInitialView(settings.academicInterfaceProfile));
+  }, [activeVault?.id, settings?.onboardingComplete, isAcademic, setView, settings?.academicInterfaceProfile]);
   useEffect(() => {
     document.documentElement.classList.toggle('prosopography', isProsopography);
   }, [isProsopography]);
@@ -871,7 +943,7 @@ export function App() {
   // restarts would look brand new and have their vault renamed under them.
   useEffect(() => {
     if (!settings || newInstallRef.current !== null) return;
-    const fresh = settings.basicsTutorialVersion === 0;
+    const fresh = settings.basicsTutorialVersion === 0 && settings.firstVaultVersion === 0 || Boolean(settings.academicLearningProgress && !settings.academicLearningProgress.welcomeComplete && !settings.onboardingComplete);
     newInstallRef.current = fresh;
     setNewInstall(fresh);
     if (!fresh && settings.firstVaultVersion === 0) {
@@ -916,7 +988,7 @@ export function App() {
     if (!window.nodus) return [];
     const next = await window.nodus.listVaults();
     setVaults(next);
-    setActiveVault(next.find((vault) => vault.active) ?? null);
+    setActiveVault(await window.nodus.getActiveVault());
     return next;
   }, []);
 
@@ -1133,7 +1205,7 @@ export function App() {
       const badge = vaultBadgeEl
         ? placeHeaderBadge({
             headerWidth: headerEl.clientWidth,
-            logoWidth: headerLogoEl.offsetWidth,
+            logoWidth: headerLeftEl?.offsetWidth ?? headerLogoEl.offsetWidth,
             actionsWidth: headerActionsEl.offsetWidth,
             badgeWidth: vaultBadgeEl.offsetWidth,
           })
@@ -1148,9 +1220,9 @@ export function App() {
     };
     measure();
     const observer = new ResizeObserver(measure);
-    for (const box of [headerEl, headerLogoEl, headerActionsEl, vaultBadgeEl]) if (box) observer.observe(box);
+    for (const box of [headerEl, headerLogoEl, headerLeftEl, headerActionsEl, vaultBadgeEl]) if (box) observer.observe(box);
     return () => observer.disconnect();
-  }, [headerEl, headerLogoEl, headerActionsEl, vaultBadgeEl]);
+  }, [headerEl, headerLogoEl, headerLeftEl, headerActionsEl, vaultBadgeEl]);
 
   // Global command palette: ⌘K / Ctrl+K toggles it from anywhere.
   useEffect(() => {
@@ -1357,6 +1429,9 @@ export function App() {
       run: () => setView(n.id),
     }));
     const actions: Command[] = [
+      ...(isAcademic ? [
+        { id: 'act:interface', label: t('Cambiar interfaz'), section: t('Acciones'), icon: 'layers', run: () => setInterfacePickerOpen(true) },
+      ] : []),
       // The last resort for the vault panel: the badge that opens it is placed by
       // measurement and can, in a window narrow enough, have nowhere to go.
       { id: 'act:vaults', label: t('Bóvedas'), section: t('Acciones'), icon: 'archive', keywords: 'vaults bovedas boveda cambiar crear renombrar duplicar eliminar', run: () => { const badge = document.querySelector<HTMLElement>('[data-testid="header-vault-badge"]'); if (badge) toggleVaults(badge); } },
@@ -1391,11 +1466,25 @@ export function App() {
       );
     }
     return [...navCommands, ...actions];
-  }, [settings?.uiLanguage, settings?.reduceMotion, settings?.readingFocusMode, focusReduced, focusActions, activeVault?.type, isPrimarySources, isGenealogy, isDatabases, isEstudio, isDocencia, isWorldbuilding, isProsopography, isTestimonios, isDark, onSync, openAssistant, reloadSettings, toggleVaults]);
+  }, [settings?.uiLanguage, settings?.reduceMotion, settings?.readingFocusMode, focusReduced, focusActions, activeVault?.type, isAcademic, isPrimarySources, isGenealogy, isDatabases, isEstudio, isDocencia, isWorldbuilding, isProsopography, isTestimonios, isDark, onSync, openAssistant, reloadSettings, toggleVaults]);
 
   // The startup sequence, as an ordered list of guards rather than a run of early
   // returns. It also sets this render's authoritative language, which is why it is
   // called before anything below reads `settings`.
+  const learningOverlayBusy = useLearningOverlayBusy(settings?.academicPracticeSession && !settings.academicPracticeSession.paused ? settings.academicPracticeSession.lessonId : undefined);
+  const learningSuspended = !settings?.onboardingComplete || !recoveryStatus || (!activeVault?.learningWorkspace && Boolean(recoveryStatus.needsSetup) && (!settings?.academicLearningProgress?.invitationsEligible || Boolean(settings.academicLearningProgress.realSetupStarted))) || paletteOpen || collectionsOpen || feedbackOpen || manualWhatsNewOpen;
+  const learningBlocked = learningOverlayBusy || learningSuspended || interfacePickerOpen;
+  const learning = useAcademicLearningController({ settings, vault: activeVault, enabled: isAcademic, blocked: learningBlocked, progress: queueActivity.preparation, queue: queueActivity.queue, workWaiting:view==='deepResearch'&&queueActivity.research.some(job=>job.vaultId===activeVault?.id&&['queued','running'].includes(job.status))||view==='dictionary'&&queueActivity.dictionary.some(job=>!['done','degraded','failed'].includes(job.phase)),extractionVersion: JSON.stringify(queueActivity.extraction.map(job=>[job.id,job.status])), view, onSettings: setSettings, navigate: setView });
+  useEffect(() => {
+    const open = () => { setVaultAnchor(null); setInterfacePickerOpen(true); };
+    window.addEventListener('nodus:interface-tab', open);
+    return () => window.removeEventListener('nodus:interface-tab', open);
+  }, []);
+  useEffect(() => {
+    if (!isAcademic || !settings?.academicLearningProgress?.invitationsEligible) return;
+    setWhatsNewSettled(true);
+  }, [isAcademic, settings?.academicLearningProgress?.invitationsEligible]);
+
   const startupGate = resolveStartupGate({
     loadError,
     settings,
@@ -1505,12 +1594,14 @@ export function App() {
   };
 
   return (
+    <AcademicInterfaceContext.Provider value={isAcademic ? profile ?? null : null}><AcademicLearningContext.Provider value={learning.context}>
     <div
       className="h-full flex flex-col"
       style={{ '--vault-accent': dockColorForVaultType(activeVault?.type) } as React.CSSProperties}
       data-testid="app-shell"
       data-editorial-focus={editorialFocus.active ? 'true' : undefined}
       data-vault-type={activeVault?.type}
+      data-academic-profile={isAcademic ? profile ?? 'legacy' : undefined}
       data-focus-reduced={focusReduced}
       data-interface-scale={settings.interfaceScale}
       data-high-contrast={settings.highContrast ? 'true' : 'false'}
@@ -1524,7 +1615,16 @@ export function App() {
         ref={setHeaderEl}
         className="app-titlebar relative flex h-11 items-center border-b border-neutral-800"
         data-platform={IS_MAC ? 'macos' : 'other'}
+        data-selector-open={interfacePickerOpen || Boolean(vaultAnchor) ? 'true' : undefined}
+        onPointerDownCapture={event => {
+          const target = event.target as Element;
+          // Portalled selector contents are React children of the header too.
+          if (!event.currentTarget.contains(target)) return;
+          if (!target.closest('[data-testid="academic-interface-trigger"]')) setInterfacePickerOpen(false);
+          if (!target.closest('[data-vault-trigger]')) setVaultAnchor(null);
+        }}
       >
+        <div ref={setHeaderLeftEl} className="flex shrink-0 items-center" data-testid="header-left-rail">
         <button
           ref={setHeaderLogoEl}
           data-testid="sidebar-header-toggle"
@@ -1556,6 +1656,12 @@ export function App() {
           )}
         </button>
 
+        {isAcademic && <button ref={setInterfaceTrigger} className="academic-interface-trigger" data-testid="academic-interface-trigger" aria-haspopup="dialog" aria-expanded={interfacePickerOpen} aria-label={`${t('Cambiar interfaz')}: ${t(academicProfileLabel(profile))}`} title={`${t('Cambiar interfaz')}: ${t(academicProfileLabel(profile))}`} onClick={() => { setVaultAnchor(null); setHeaderMoreOpen(false); setInterfacePickerOpen(current => !current); }}>
+          <Icon name="monitor" size={14} /><span className="academic-interface-name"><span className="academic-interface-prefix">{t('Interfaz')} · </span>{t(academicProfileLabel(profile))}</span><Icon name="chevronDown" size={12} className={`transition-transform ${interfacePickerOpen ? 'rotate-180' : ''}`} />
+        </button>}
+        {isAcademic && <FocusHeader onProgress={() => setView('studyFocus')} />}
+        </div>
+
         {/* Vault mode, centred, in the vault's accent colour (gold in genealogy /
             crimson in databases via the accent-utility remaps). Clicking it opens
             the vault panel right under the badge (see VaultSwitcher).
@@ -1576,22 +1682,22 @@ export function App() {
               visibility: vaultBadgePlacement?.fits ? 'visible' : 'hidden',
             }}
             className="header-vault-badge absolute top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-indigo-700/60 bg-indigo-950/30 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-200 transition-colors hover:border-indigo-500 hover:bg-indigo-900/40"
-            title={t('Bóveda activa')}
-            onClick={(e) => toggleVaults(e.currentTarget)}
+            title={activeVault.learningWorkspace?learningText('workspace',settings.uiLanguage):t('Bóveda activa')}
+            onClick={(e) => {if(!activeVault.learningWorkspace)toggleVaults(e.currentTarget);}}
           >
             <Icon name={vaultTypeIcon(activeVault.type)} size={13} />
             {/* The badge is now the only permanent way into the vault panel, so it is
                 shown at every width — the LABEL is what gives way on a narrow window,
                 not the button. Dropping the word leaves an icon-and-chevron chip that
                 fits in a band where the full badge would not. */}
-            <span className="hidden xl:inline">{vaultTypeLabel(activeVault.type)}</span>
-            <Icon name="chevronDown" size={12} className={`transition-transform ${vaultAnchor ? 'rotate-180' : ''}`} />
+            <span className="hidden xl:inline">{activeVault.learningWorkspace?learningText('workspace',settings.uiLanguage):vaultTypeLabel(activeVault.type)}</span>
+            {!activeVault.learningWorkspace&&<Icon name="chevronDown" size={12} className={`transition-transform ${vaultAnchor ? 'rotate-180' : ''}`} />}
           </button>
         )}
 
         {/* The focus counter takes the left half of the header (between the logo and the
             centred badge), centred in it; the right rail only ever has the focus icon. */}
-        <FocusHeader onProgress={() => setView('studyFocus')} />
+        {!isAcademic && <FocusHeader onProgress={() => setView('studyFocus')} />}
         <div className="flex-1" />
         {/* Right-side action rail: icon-only by default, with native title labels so
             the header stays a stable row of icons. */}
@@ -1599,6 +1705,7 @@ export function App() {
           {/* No Bóvedas button: the centred badge is the way in, and it is now shown at
               every width for exactly that reason (see the badge above). */}
           <HeaderAction
+            actionId="commands" visible={headerVisible('commands')}
             icon="search"
             label={t('Comandos')}
             title={t('Paleta de comandos')}
@@ -1607,13 +1714,13 @@ export function App() {
             onClick={() => setPaletteOpen(true)}
             focusKeep={focusKeeps('header:commands')}
           />
-          <HeaderAction
+          <HeaderAction actionId="researchChat" visible={headerVisible('researchChat')} responsive
             icon="chat"
             label="Research chat"
             title={((isEstudio || isDocencia ? settings.studyModel : null) ?? settings.chatModel ?? settings.synthesisModel) ? 'Research chat' : t('Configura un modelo de IA')}
             onClick={() => openAssistant()}
           />
-          <HeaderAction
+          <HeaderAction actionId="toolkit" visible={headerVisible('toolkit')} responsive
             dataTour="toolkit"
             icon="tools"
             label={t('Herramientas')}
@@ -1624,7 +1731,7 @@ export function App() {
               activation popover, so installing one meant opening a conversation first.
               It sits next to the Toolkit because it answers the same question — what
               this application can do — for capabilities rather than for tools. */}
-          <HeaderAction
+          <HeaderAction actionId="skills" visible={headerVisible('skills')} responsive
             dataTour="skills"
             icon="basket"
             label={t('Skills')}
@@ -1664,7 +1771,7 @@ export function App() {
             setToolkitPage('drift');
             setView('toolkit');
           }} />
-          <HeaderAction
+          <HeaderAction actionId="feedback" visible={headerVisible('feedback')} responsive
             icon="gitPr"
             label={t('Sugerir / Reportar')}
             title={t('Enviar una propuesta o reporte a GitHub')}
@@ -1674,7 +1781,7 @@ export function App() {
               condición es ahora la misma: fuentes primarias no sincroniza con Zotero y
               antes mostraba este botón por una asimetría entre el comentario y el código. */}
           {!isPrimarySources && !isGenealogy && !isDatabases && !isEstudio && !isDocencia && !isWorldbuilding && !isProsopography && !isTestimonios && (
-            <HeaderAction
+            <HeaderAction actionId="sync" visible={headerVisible('sync') || syncing} responsive={!syncing}
               dataTour="sync"
               icon="refresh"
               label={syncing ? t('Actualizando…') : t('Actualizar (sincronizar Zotero)')}
@@ -1684,7 +1791,7 @@ export function App() {
               onClick={onSync}
             />
           )}
-          <HeaderAction
+          <HeaderAction actionId="theme" visible={headerVisible('theme')}
             icon={isDark ? 'sun' : 'moon'}
             label={isDark ? t('Usar tema claro') : t('Usar tema oscuro')}
             title={isDark ? t('Cambiar a modo claro') : t('Cambiar a modo oscuro')}
@@ -1694,8 +1801,8 @@ export function App() {
           />
           {focusActions && (
             // The same panel as the timer chip: the mode toggle and its settings live inside.
-            <span className="focus-quick" data-testid="focus-quick-access" data-focus-timer-trigger="">
-              <HeaderAction
+            <span className="focus-quick" data-testid="focus-quick-access" data-focus-timer-trigger="" hidden={!headerVisible('focus')}>
+              <HeaderAction actionId="focus" visible={headerVisible('focus')} responsive
                 icon="focus"
                 label={t('Modo concentración')}
                 pressed={focusReduced}
@@ -1707,8 +1814,9 @@ export function App() {
           )}
           {/* Queue and task progress, moved here from the bottom strip: same dropdown
               treatment as the notification centre, with a live-work badge. */}
-          <span className="relative inline-flex">
+          <span className="relative inline-flex" hidden={!headerVisible('queue') && !queueLive && !queueActivity.attention}>
             <HeaderAction
+              actionId="queue" visible={headerVisible('queue') || queueLive > 0 || queueActivity.attention}
               dataTour="queue"
               icon="clock"
               label={t('Cola y tareas')}
@@ -1723,8 +1831,9 @@ export function App() {
           </span>
           {/* The notification centre, reachable whether or not Nodi is enabled — turning
               the mascot off used to take the only way to read these with it. */}
-          <span className="relative inline-flex">
+          <span className="relative inline-flex" hidden={!headerVisible('notifications') && !unreadNotifications}>
             <HeaderAction
+              actionId="notifications" visible={headerVisible('notifications') || unreadNotifications > 0}
               dataTour="notifications"
               icon="bell"
               label={t('Notificaciones')}
@@ -1736,7 +1845,34 @@ export function App() {
               <span className="header-action-badge">{unreadNotifications > 9 ? '9+' : unreadNotifications}</span>
             )}
           </span>
+          <div ref={headerMoreRef} className="academic-header-more" data-modal-layer="">
+            <HeaderAction icon="moreVertical" label={t('Más')} pressed={headerMoreOpen} focusKeep onClick={() => setHeaderMoreOpen(open => !open)} />
+            {headerMoreOpen && createPortal(<div className="academic-header-more-panel" data-testid="header-more-panel" data-browser-native-overlay="true" aria-label={t('Más')} style={{ position: 'fixed', top: (headerMoreRef.current?.getBoundingClientRect().bottom ?? 44) + 6, right: Math.max(8, window.innerWidth - (headerMoreRef.current?.getBoundingClientRect().right ?? window.innerWidth)) }}>
+              <p className="px-2 py-1 text-xs text-neutral-500">{t('Botones de la cabecera')}</p>
+              {[
+                { id: 'commands', label: t('Comandos'), icon: 'search', run: () => setPaletteOpen(true) },
+                { id: 'researchChat', label: 'Research chat', icon: 'chat', run: () => openAssistant() },
+                { id: 'toolkit', label: 'Nodus Tools', icon: 'tools', run: () => { setToolkitPage('home'); setView('toolkit'); } },
+                { id: 'skills', label: t('Skills y Marketplace'), icon: 'basket', run: () => setSkillsTab('library') },
+                { id: 'sync', label: t('Actualizar (sincronizar Zotero)'), icon: 'refresh', run: () => void onSync(), disabled: syncing, available: isAcademic },
+                { id: 'feedback', label: t('Sugerir / Reportar'), icon: 'gitPr', run: () => setFeedbackOpen(true) },
+                { id: 'theme', label: isDark ? t('Usar tema claro') : t('Usar tema oscuro'), icon: isDark ? 'sun' : 'moon', run: () => void toggleTheme() },
+                { id: 'focus', label: t('Modo concentración'), icon: 'focus', run: toggleFocusTimer, available: Boolean(focusActions) },
+                { id: 'queue', label: t('Cola y tareas'), icon: 'clock', run: () => { const anchor = headerMoreRef.current?.querySelector('button'); if (anchor) toggleQueue(anchor); } },
+                { id: 'notifications', label: t('Notificaciones'), icon: 'bell', run: () => { const anchor = headerMoreRef.current?.querySelector('button'); if (anchor) toggleNotifications(anchor); } },
+                { id: 'settings', label: t('Ajustes'), icon: 'settings', run: () => setView('settings') },
+              ].filter(action => action.available !== false).map(action => <div key={action.id} className="header-more-row" data-header-menu-action={action.id}>
+                <button className="header-more-run" disabled={action.disabled} onClick={() => { setHeaderMoreOpen(false); action.run(); }}><Icon name={action.icon} size={15} /><span>{action.label}</span></button>
+                <button className="header-more-visibility" data-testid={`header-visibility-${action.id}`} disabled={headerVisibilityBusy} aria-pressed={headerVisible(action.id as HeaderActionId)}
+                  aria-label={tx(headerVisible(action.id as HeaderActionId) ? 'Ocultar {action} de la cabecera' : 'Mostrar {action} en la cabecera', { action: action.label })}
+                  title={headerVisible(action.id as HeaderActionId) ? t('Ocultar de la cabecera') : t('Mostrar en la cabecera')}
+                  onClick={() => void toggleHeaderVisibility(action.id as HeaderActionId)}><Icon name={headerVisible(action.id as HeaderActionId) ? 'eye' : 'eyeOff'} size={15} /></button>
+              </div>)}
+              {headerVisibilityError && <p className="px-2 py-1 text-xs text-red-500" role="alert">{headerVisibilityError}</p>}
+            </div>, document.querySelector('[data-testid="app-shell"]') ?? document.body)}
+          </div>
           <HeaderAction
+            actionId="settings" visible={headerVisible('settings')}
             icon="settings"
             label={t('Ajustes')}
             title={t('Ajustes de la bóveda actual')}
@@ -1800,7 +1936,7 @@ export function App() {
       </header>
 
       {isEstudio && <FocusCompletionNotice />}
-      {updateProgress && (updateInstallBusy(updateProgress) || showStartupProgress || (updateNoticeKey && deferredUpdate !== updateNoticeKey)) && <UpdateReadyNotice
+      {!(isAcademic && settings.academicLearningProgress?.invitationsEligible && !settings.academicLearningProgress.lessons['first-answer']?.practiceCompleted) && updateProgress && (updateInstallBusy(updateProgress) || showStartupProgress || (updateNoticeKey && deferredUpdate !== updateNoticeKey)) && <UpdateReadyNotice
         update={updateProgress}
         onUpdate={setUpdateProgress}
         onLater={() => setDeferredUpdate(updateNoticeKey)}
@@ -1908,6 +2044,11 @@ export function App() {
                   </div>
                 );
               };
+              if (isAcademic && academicItems) return <>
+                {academicItems.filter(item => item.id === 'home' || item.id === 'library').map(item => navButton(item))}
+                {academicGroups.map(group => renderGroup(group))}
+                <div className="mt-2 flex flex-col gap-1">{navButton(settingsItem)}</div>
+              </>;
               if (isWorldbuilding) {
                 return (
                   <>
@@ -2095,7 +2236,7 @@ export function App() {
               trace of a broken schedule was a grey line inside a collapsed Settings
               section, so a user could go months believing they were protected. Only
               genuinely blocking states appear here, and only once per session. */}
-          {!isPreviewVault && recoveryStatus?.health.level === 'critical' && !recoveryStatus.needsSetup && !backupWarningDismissed && (
+          {!activeVault?.learningWorkspace && !isPreviewVault && recoveryStatus?.health.level === 'critical' && !recoveryStatus.needsSetup && !backupWarningDismissed && (
             <div data-testid="backup-health-banner" className="backup-health-banner">
               <Icon name="alert" size={16} className="shrink-0" />
               <span className="min-w-0 flex-1">
@@ -2117,6 +2258,10 @@ export function App() {
               </button>
             </div>
           )}
+          {isAcademic && <LearningWorkspaceBar controller={learning} settings={settings}/>}
+          {isAcademic && <AcademicLearningCoach controller={learning} settings={settings} blocked={learningSuspended || learningOverlayBusy} navigate={setView} openIdea={openIdea} openGraph={id => navigate('graph', { preset: 'overview', nodeId: id })} prepareQuestion={documentId => {
+            requestLearningPrompt({ vaultId: activeVault!.id, sessionId: learning.session!.id, documentId, prompt: learningText('suggestedQuestion', settings.uiLanguage) }); setView('researchChat');
+          }} />}
           <div className="min-h-0 flex-1 overflow-hidden">
           <Suspense fallback={<div className="grid h-full place-items-center text-sm text-neutral-500"><span className="flex items-center gap-2"><Icon name="sync" className="animate-spin" /> {t('Cargando...')}</span></div>}>
           {/* Per-view crash isolation: a render error in one section shows a
@@ -2132,8 +2277,10 @@ export function App() {
       </div>
 
       {isAcademic && activeVault && settings.onboardingComplete && <ResearchPreparationWelcome key={activeVault.id} vaultId={activeVault.id}
-        allowAutomatic={queueLive === 0 && settings.basicsTutorialVersion > 0 && settings.tourComplete && ['home', 'library'].includes(view) && !queueAnchor && !paletteOpen && !collectionsOpen && !feedbackOpen && !roadmapOpen}
+        allowAutomatic={false}
         onConfigure={() => setView('settings')} />}
+      {isAcademic && <AcademicInterfacePicker open={interfacePickerOpen} anchorEl={interfaceTrigger} settings={settings} onUpdate={async patch => { await window.nodus.updateSettings(patch); await reloadSettings(); }} onSettings={openInterfacePreferences} profile={profile} onSelect={chooseInterface} onClose={() => setInterfacePickerOpen(false)} onGuide={() => { setInterfacePickerOpen(false); learning.open(lessonForProfile(profile), 'invite'); }} />}
+      {isAcademic && <AcademicLearningDialogs controller={learning} settings={settings} blocked={learningBlocked} onActivateIntermediate={() => chooseInterface('intermediate')} onSettings={setSettings}/>}
       <FeedbackHost />
       <PrivacyRequestHost />
       <BrowserConnectorPairingRequestHost />
@@ -2159,10 +2306,11 @@ export function App() {
       {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
       {roadmapOpen && <RoadmapModal onClose={() => setRoadmapOpen(false)} />}
 
-      {!isPreviewVault && settings.onboardingComplete && settings.basicsTutorialVersion > 0 && !settings.tourComplete && !isPrimarySources && !isGenealogy && !isDatabases && !isEstudio && !isDocencia && !isWorldbuilding && !isProsopography && !isTestimonios && (
+      {!isPreviewVault && settings.onboardingComplete && settings.basicsTutorialVersion > 0 && !settings.tourComplete && localStorage.getItem(`nodus.academicTourReplay:${activeVault?.id}`) === '1' && !isAcademic && !isPrimarySources && !isGenealogy && !isDatabases && !isEstudio && !isDocencia && !isWorldbuilding && !isProsopography && !isTestimonios && (
         <Tour
           onNavigate={setView}
           onClose={async () => {
+            localStorage.removeItem(`nodus.academicTourReplay:${activeVault?.id}`);
             await window.nodus.updateSettings({ tourComplete: true });
             void reloadSettings();
           }}
@@ -2270,7 +2418,7 @@ export function App() {
       )}
       </Suspense>
 
-      {!isPreviewVault && settings.onboardingComplete && settings.basicsTutorialVersion > 0 && settings.tourComplete && !settings.advancedTourComplete && (
+      {!isPreviewVault && settings.onboardingComplete && settings.basicsTutorialVersion > 0 && settings.tourComplete && !settings.advancedTourComplete && !isAcademic && (
         <AdvancedTour
           onNavigate={setView}
           onClose={async () => {
@@ -2280,7 +2428,7 @@ export function App() {
         />
       )}
 
-      {!isPreviewVault && settings.onboardingComplete &&
+      {!activeVault?.learningWorkspace && !isPreviewVault && settings.onboardingComplete && !settings.academicLearningProgress?.invitationsEligible &&
         settings.basicsTutorialVersion > 0 &&
         !recoveryStatus?.needsSetup &&
         (isPrimarySources || isGenealogy || isDatabases || isTestimonios || isEstudio || isDocencia || settings.tourComplete) &&
@@ -2310,7 +2458,7 @@ export function App() {
         />
       )}
 
-      {!isPreviewVault && recoveryStatus?.needsSetup && recoveryStatus.previousInstallation && !whatsNewSettled && (
+      {!activeVault?.learningWorkspace && !settings.academicLearningProgress?.invitationsEligible && !isPreviewVault && recoveryStatus?.needsSetup && recoveryStatus.previousInstallation && !whatsNewSettled && (
         <WhatsNewModal
           settings={settings}
           activeVaultType={activeVault?.type ?? null}
@@ -2337,12 +2485,13 @@ export function App() {
         settings.basicsTutorialVersion > 0 &&
         !recoveryStatus?.needsSetup &&
         settings.mascotEnabled &&
-        !settings.mascotStyleChosen && (
+        !settings.mascotStyleChosen && !settings.academicLearningProgress?.invitationsEligible && (
           <NodiStyleModal onChosen={async () => { await reloadSettings(); }} />
         )}
 
       {!focusReduced && !manualWhatsNewOpen && whatsNewSettled && <NodiMascot settings={settings} />}
     </div>
+    </AcademicLearningContext.Provider></AcademicInterfaceContext.Provider>
   );
 }
 

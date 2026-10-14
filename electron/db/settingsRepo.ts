@@ -1,5 +1,9 @@
 import { getDb } from './database';
 import { normalizeImageFavorites } from '@shared/editorAiReview';
+import { sanitizeLearningProgress, sanitizePracticeSession } from '@shared/academicLearning';
+import { sanitizeHeaderActionVisibility } from '@shared/headerActions';
+import { migrateLegacyAcademicInterface } from '@shared/academicInterfaceSettings';
+import { getVaultByPath } from '../vaults/vaultRegistry';
 import type { AppSettings, ModelRef } from '@shared/types';
 import {
   DEFAULT_EMBEDDING_MODELS,
@@ -358,10 +362,18 @@ export function getSettings(): AppSettings {
     }
   }
   const merged = { ...DEFAULTS, ...parsed };
+  if(merged.academicPracticeSession!==undefined)merged.academicPracticeSession=sanitizePracticeSession(merged.academicPracticeSession);
+  if (merged.headerActionVisibility !== undefined) merged.headerActionVisibility = sanitizeHeaderActionVisibility(merged.headerActionVisibility);
+  if (merged.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(merged.academicInterfaceProfile)) delete merged.academicInterfaceProfile;
+  if (merged.academicInterfaceGuidesSeen) merged.academicInterfaceGuidesSeen = Object.fromEntries(Object.entries(merged.academicInterfaceGuidesSeen).filter(([key, value]) => ['simple', 'intermediate', 'advanced', 'custom'].includes(key) && Number.isSafeInteger(value) && Number(value) >= 0));
   const scriptorMigration = migrateScriptorSidebar(parsed);
   const { changed: scriptorMigrated, ...scriptorPreferences } = scriptorMigration;
   Object.assign(merged, scriptorPreferences);
-  if (scriptorMigrated) writeRaw('app', JSON.stringify({ ...parsed, ...scriptorPreferences }));
+  const interfaceMigration = migrateLegacyAcademicInterface(merged, getVaultByPath(getDb().name)?.type);
+  Object.assign(merged, interfaceMigration);
+  if (scriptorMigrated || Object.keys(interfaceMigration).length) {
+    writeRaw('app', JSON.stringify({ ...parsed, ...scriptorPreferences, ...interfaceMigration }));
+  }
   const storedConcurrencyVersion = Number.isInteger(parsed.aiConcurrencyVersion)
     ? Number(parsed.aiConcurrencyVersion)
     : 0;
@@ -564,6 +576,7 @@ export function getSettings(): AppSettings {
     merged.sttProvider = 'transformers';
     seed.sttProvider = 'transformers';
   }
+  if(merged.academicLearningProgress!==undefined)merged.academicLearningProgress=sanitizeLearningProgress(merged.academicLearningProgress);
   const modelMigration = migrateModelSettings(merged, globalPrefs);
   if (modelMigration.changed) {
     Object.assign(merged, modelMigration.settings);
@@ -603,7 +616,19 @@ export function getSettings(): AppSettings {
 }
 
 export function updateSettings(patch: Partial<AppSettings>): AppSettings {
+  if ('academicLearningProgress' in patch) patch = { ...patch, academicLearningProgress: sanitizeLearningProgress(patch.academicLearningProgress) };
+  if ('academicPracticeSession' in patch) patch = { ...patch, academicPracticeSession: sanitizePracticeSession(patch.academicPracticeSession) };
+  if (patch.headerActionVisibility !== undefined) patch = { ...patch, headerActionVisibility: sanitizeHeaderActionVisibility(patch.headerActionVisibility) };
+  if (patch.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(patch.academicInterfaceProfile)) throw new Error('Invalid academic interface profile.');
   const previous = getSettings();
+  if(patch.academicLearningProgress) {
+    const progress=patch.academicLearningProgress;
+    progress.lessons={...previous.academicLearningProgress?.lessons,...progress.lessons};
+    for(const id of Object.keys(progress.lessons) as (keyof typeof progress.lessons)[]) {
+      const before=previous.academicLearningProgress?.lessons[id], next=progress.lessons[id];
+      if(before&&next)progress.lessons[id]={...next,demoCompleted:before.demoCompleted||next.demoCompleted,practiceCompleted:before.practiceCompleted||next.practiceCompleted};
+    }
+  }
   if (patch.academicMode !== undefined) {
     if (patch.academicMode !== 'auto' && patch.academicMode !== 'manual') throw new Error('Invalid academic mode.');
     if (previous.onboardingComplete && patch.academicMode !== (previous.academicMode ?? 'auto')) {

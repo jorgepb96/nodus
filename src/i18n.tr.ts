@@ -1,3 +1,5 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
@@ -8676,4 +8678,6 @@ export const TR: Record<string, string> = {
   "Audio pendiente": "Bekleyen ses",
   "Modelo local": "Yerel model",
   "Detener dictado": "Dikteyi durdur",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["tr"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["tr"],
 };

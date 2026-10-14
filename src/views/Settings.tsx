@@ -1,3 +1,6 @@
+import { AcademicLearningCatalog } from '../learning/AcademicLearningSurface';
+import { openAcademicLearning } from '../learning/AcademicLearningContext';
+import { ACADEMIC_ALWAYS_VISIBLE, academicCustomizationPatch, academicSidebarEditorState, academicToolkitPages } from '../academicInterfaceProfiles';
 import { openResearchPreparation } from '../components/ResearchPreparationWelcome';
 // SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
 // SPDX-License-Identifier: AGPL-3.0-only
@@ -222,6 +225,7 @@ export function Settings({
   const [importSyncPassphrase, setImportSyncPassphrase] = useState('');
   const [importSyncPromptOpen, setImportSyncPromptOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<SettingsTabId>(readRememberedSettingsTab);
+  const [interfaceFocusRequest, setInterfaceFocusRequest] = useState<{ id: string } | null>(null);
   const [settingsQuery, setSettingsQuery] = useState('');
   const [openLegalDoc, setOpenLegalDoc] = useState<LegalDocId | null>(null);
   // Reset-graph flow: a confirm() dialog, then a modal that requires typing a
@@ -274,17 +278,36 @@ export function Settings({
   }, []);
 
   useEffect(() => {
-    const target = localStorage.getItem('nodus.settingsTarget');
-    if (target !== 'nodi' && target !== 'models') return;
-    localStorage.removeItem('nodus.settingsTarget');
-    if (target === 'models') {
-      setSettingsTab('models');
-      setSettingsQuery('');
-    } else {
-      setSettingsTab('interface');
-      setSettingsQuery('Nodi');
-    }
+    const applyTarget = () => {
+      const target = localStorage.getItem('nodus.settingsTarget');
+      if (target !== 'nodi' && target !== 'models' && target !== 'sidebar' && target !== 'appearance' && target !== 'help' && target !== 'tutorials') return;
+      localStorage.removeItem('nodus.settingsTarget');
+      if (target === 'sidebar' || target === 'appearance' || target === 'nodi') {
+        setSettingsTab('interface');
+        setSettingsQuery(target === 'sidebar' ? '' : target === 'appearance' ? t('Apariencia') : 'Nodi');
+        setInterfaceFocusRequest({ id: target === 'sidebar' ? 'settings-sidebar-editor' : target === 'appearance' ? 'settings-appearance-section' : 'settings-nodi-section' });
+      } else if (target === 'help' || target === 'tutorials') {
+        setSettingsTab('system'); setSettingsQuery(t('Ayuda'));
+      } else if (target === 'models') {
+        setSettingsTab('models');
+        setSettingsQuery('');
+      }
+    };
+    applyTarget();
+    window.addEventListener('nodus:settings-target', applyTarget);
+    return () => window.removeEventListener('nodus:settings-target', applyTarget);
   }, []);
+
+  useEffect(() => {
+    if (!interfaceFocusRequest || settingsTab !== 'interface') return;
+    const frame = requestAnimationFrame(() => {
+      const editor = document.getElementById(interfaceFocusRequest.id);
+      editor?.closest('section')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      editor?.focus({ preventScroll: true });
+      setInterfaceFocusRequest(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [interfaceFocusRequest, settingsTab]);
 
   useEffect(() => {
     if (activeVault?.type !== 'primary_sources' || !modelsTabRequested) {
@@ -998,7 +1021,7 @@ export function Settings({
   ].filter(Boolean).length;
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto p-6" data-testid="settings-scroll">
       <div className="flex flex-wrap items-start gap-4 mb-4">
         <div>
           <h1 className="text-xl font-semibold">{t('Ajustes')}</h1>
@@ -1177,7 +1200,7 @@ export function Settings({
       )}
 
       {visibleSettingsSection('interface', 'Apariencia', 'tema claro oscuro animaciones velocidad paleta color colores teal ocean forest sunset violet mint amber berry indigo rose') && (
-          <Section title={t('Apariencia')}>
+          <Section title={t('Apariencia')} id="settings-appearance-section">
             <Row label={t('Modo de color')} hint={t('Elige entre modo claro, oscuro o seguir el sistema operativo.')}>
               <select className="input" value={settings.theme} onChange={(e) => patch({ theme: e.target.value as any })}>
                 <option value="system">{t('Sistema')}</option>
@@ -1302,7 +1325,7 @@ export function Settings({
       )}
 
       {visibleSettingsSection('interface', 'Mascota Nodi', 'nodi mascota mascot flotante superpuesta always on top encima escritorio companion acompanante aspecto orbe esfera color') && (
-          <Section title={t('Mascota Nodi')}>
+          <Section title={t('Mascota Nodi')} id="settings-nodi-section">
             <p className="text-xs text-neutral-500 -mt-1">
               {t('Nodi es el nodo que acompaña la app, flotando abajo a la derecha. Haz clic en Nodi para abrir el chat, tus notificaciones y la ayuda.')}
             </p>
@@ -1558,23 +1581,33 @@ export function Settings({
       )}
 
       {visibleSettingsSection('interface', 'Barra lateral', 'menu lateral ordenar ocultar mostrar navegacion') && (
-          <Section title={t('Barra lateral')}>
+          <Section title={t('Barra lateral')} id="settings-sidebar-section">
             <p className="text-xs text-neutral-500 -mt-1">
               {t('Reordena u oculta las secciones del menú lateral. «Inicio» queda siempre la primera y «Ajustes» la última; ninguna de las dos puede moverse ni ocultarse.')}
             </p>
+            {activeVault?.type === 'academic' && settings.academicInterfaceProfile && settings.academicInterfaceProfile !== 'custom' && (
+              <p data-testid="sidebar-preset-notice" className="mt-2 flex items-start gap-2 rounded-md bg-indigo-500/5 p-2.5 text-xs text-indigo-700 dark:text-indigo-300">
+                <Icon name="info" size={14} className="shrink-0" />
+                {t('Los cambios en la barra lateral activarán Personalizado. Puedes cambiar los botones del header sin salir de este perfil.')}
+              </p>
+            )}
+            <div id="settings-sidebar-editor" tabIndex={-1}>
             <SidebarOrderEditor
-              sidebarOrder={settings.sidebarOrder}
-              sidebarHidden={effectiveSidebarHidden(settings.sidebarHidden, settings.sidebarCustomized, activeVault?.type)}
-              toolkitPinnedPages={settings.toolkitPinnedPages}
+              alwaysVisible={activeVault?.type === 'academic' ? ACADEMIC_ALWAYS_VISIBLE : []}
+              sidebarOrder={activeVault?.type === 'academic' ? academicSidebarEditorState(settings).order : settings.sidebarOrder}
+              sidebarHidden={activeVault?.type === 'academic' ? academicSidebarEditorState(settings).hidden : effectiveSidebarHidden(settings.sidebarHidden, settings.sidebarCustomized, activeVault?.type)}
+              toolkitPinnedPages={activeVault?.type === 'academic' ? academicToolkitPages(settings.toolkitPinnedPages) : settings.toolkitPinnedPages}
               vaultType={activeVault?.type}
-              onReorder={(ids) => void patch({ sidebarOrder: ids })}
-              onToggleHidden={(hidden) => void patch({ sidebarHidden: hidden, sidebarCustomized: true })}
+              onReorder={(ids) => void patch({ ...(activeVault?.type === 'academic' ? academicCustomizationPatch(settings) : {}), sidebarOrder: ids })}
+              onToggleHidden={(hidden) => void patch({ ...(activeVault?.type === 'academic' ? academicCustomizationPatch(settings) : {}), sidebarHidden: hidden, sidebarCustomized: true })}
             />
+            </div>
           </Section>
       )}
 
       {visibleSettingsSection('system', 'Ayuda', 'tutorial uso avanzado') && (
           <Section title={t('Ayuda')}>
+            {activeVault?.type === 'academic' && <AcademicLearningCatalog settings={settings} onPatch={patch}/>}
             {/* The videos come first: for most people they are the fastest way in. Their
                 copy comes from shared/tutorialVideos.ts rather than t() because that
                 table covers the tutorial's twelve languages, not the interface's seven.
@@ -1602,7 +1635,7 @@ export function Settings({
               </div>
               <button
                 className="btn btn-ghost border border-neutral-700"
-                onClick={() => patch({ tourComplete: false }).then(() => flash(t('Se mostrará el tutorial.')))}
+                onClick={() => { if (activeVault?.type === 'academic') { openAcademicLearning('first-answer'); return; } return patch({ tourComplete: false }).then(() => flash(t('Se mostrará el tutorial.'))); }}
               >
                 <Icon name="help" /> {t('Ver de nuevo')}
               </button>
@@ -1614,7 +1647,7 @@ export function Settings({
               </div>
               <button
                 className="btn btn-ghost border border-neutral-700"
-                onClick={() => patch({ advancedTourComplete: false }).then(() => flash(t('Se mostrará el tutorial avanzado.')))}
+                onClick={() => activeVault?.type === 'academic' ? openAcademicLearning('research-question') : patch({ advancedTourComplete: false }).then(() => flash(t('Se mostrará el tutorial avanzado.')))}
               >
                 <Icon name="route" /> {t('Empezar')}
               </button>
@@ -3856,6 +3889,7 @@ function NodusServerGuideModal({ onOpenGuide, onClose }: { onOpenGuide: () => vo
 function SidebarOrderEditor({
   sidebarOrder,
   sidebarHidden,
+  alwaysVisible = [],
   toolkitPinnedPages,
   vaultType,
   onReorder,
@@ -3863,6 +3897,7 @@ function SidebarOrderEditor({
 }: {
   sidebarOrder: string[];
   sidebarHidden: string[];
+  alwaysVisible?: string[];
   toolkitPinnedPages: AppSettings['toolkitPinnedPages'];
   vaultType: VaultType | undefined;
   onReorder: (ids: string[]) => void;
@@ -3910,6 +3945,7 @@ function SidebarOrderEditor({
     const orderedAll = orderedNav(sidebarOrder).filter(
       (item) => item.id !== 'home'
         && item.id !== 'settings'
+        && !(vaultType === 'academic' && item.id === 'notes')
         && isViewAllowedForVaultType(item.id, vaultType)
         && (!dedicated || dedicated.has(item.id)),
     );
@@ -3925,7 +3961,7 @@ function SidebarOrderEditor({
     groups.push({
       id: universalTools.id,
       label: universalTools.label,
-      items: universalTools.items.map((item) => ({ ...item, group: universalTools.id })),
+      items: universalTools.items.filter(item => !(vaultType === 'academic' && item.id === 'notes')).map((item) => ({ ...item, group: universalTools.id })),
     });
   }
   groups = groups.filter((group) => group.items.length > 0);
@@ -4025,7 +4061,9 @@ function SidebarOrderEditor({
                       ? 'text-neutral-600 hover:text-neutral-300'
                       : 'text-neutral-500 hover:text-neutral-100'
                   }`}
-                  title={hidden.has(item.id) ? t('Mostrar') : t('Ocultar')}
+                  disabled={alwaysVisible.includes(item.id)}
+                  aria-label={alwaysVisible.includes(item.id) ? t('Siempre visible') : hidden.has(item.id) ? t('Mostrar') : t('Ocultar')}
+                  title={alwaysVisible.includes(item.id) ? t('Siempre visible') : hidden.has(item.id) ? t('Mostrar') : t('Ocultar')}
                   onClick={() => toggleHidden(item.id)}
                 >
                   <Icon name={hidden.has(item.id) ? 'eyeOff' : 'eye'} size={14} />
@@ -4167,9 +4205,9 @@ function StudyDataAdministration() {
   </div>;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
   return (
-    <section className="card p-4 mb-4">
+    <section id={id} tabIndex={id ? -1 : undefined} className={`card p-4 mb-4${id ? ' scroll-mt-6' : ''}`}>
       <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-wide mb-3">{title}</h2>
       <div className="space-y-3">{children}</div>
     </section>

@@ -56,7 +56,7 @@ export const corpusViews = {
       onOpenArchive={isPrimarySources ? () => setView('archive') : undefined}
     />
   ),
-  graph: ({ graphTarget, reloadSettings, settings, snapshots, openIdea }) => <GraphView onEditManualIdea={openIdea} settings={settings} onSettingsChange={reloadSettings} target={graphTarget}
+  graph: ({ graphTarget, reloadSettings, settings, snapshots, openIdea, activeVault }) => <GraphView key={activeVault?.id} onEditManualIdea={openIdea} settings={settings} onSettingsChange={reloadSettings} target={graphTarget}
     snapshot={snapshots.read('graph')} onSnapshotChange={snapshot => snapshots.patch('graph', snapshot)} />,
   argument: ({ settings, snapshots }) => (
     <ArgumentMapView

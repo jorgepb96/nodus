@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ResearchPreparationPolicy, ResearchPreparationPreview } from '@shared/researchCorpus';
 import { errorText, t, tx } from '../i18n';
+import { Icon } from './ui';
 
 const OPEN_EVENT = 'nodus:research-preparation';
 interface PreparationRequest { workIds?: string[]; automatic?: boolean; manage?: boolean }
@@ -47,6 +48,8 @@ function PreparationDialog({ request, onClose, onConfigure }: { request: Prepara
   const [error, setError] = useState('');
   useEffect(() => {
     const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const accent = document.querySelector<HTMLElement>('[data-testid="app-shell"]')?.style.getPropertyValue('--vault-accent');
+    if (accent) dialog.current?.style.setProperty('--vault-accent', accent);
     dialog.current?.showModal();
     let current = true;
     void (async () => {
@@ -98,13 +101,13 @@ function PreparationDialog({ request, onClose, onConfigure }: { request: Prepara
   const matches = documents.filter(document => document.title.toLocaleLowerCase().includes(filter.toLocaleLowerCase()));
   return createPortal(<dialog ref={dialog} aria-labelledby={titleId} aria-describedby={request.manage ? undefined : descriptionId} onCancel={event => {
     event.preventDefault(); if (!busy) { if (confirmDecline) setConfirmDecline(false); else close(); }
-  }} className={`research-preparation-cinema${request.manage ? ' research-preparation-manage' : ''}`} data-testid="research-preparation-welcome">
-    <div className="research-preparation-scene" aria-hidden="true"><div className="whats-new-aurora" /><div className="whats-new-stars" /></div>
-    <button className="whats-new-close" aria-label={t('Cerrar')} disabled={busy} onClick={close}>×</button>
-    <div className="research-preparation-content">
-      <div className="research-preparation-kicker">NODUS RESEARCH</div>
-      <div className="research-preparation-mark" aria-hidden="true"><svg viewBox="0 0 80 72" fill="none"><rect x="13" y="7" width="43" height="54" rx="7" /><rect x="24" y="16" width="43" height="49" rx="7" /><path d="M35 30h21M35 39h21M35 48h12" /></svg></div>
+  }} className={`research-preparation-dialog${request.manage ? ' research-preparation-manage' : ''}`} data-browser-native-overlay="true" data-testid="research-preparation-welcome">
+    <header className="research-preparation-heading">
+      <Icon name="book" size={20} />
       <h2 id={titleId}>{t(confirmDecline ? '¿Dejar la indexación desactivada?' : request.manage ? 'Preparar fuentes' : 'Ahora Nodus indexa tus documentos automáticamente')}</h2>
+      <button className="btn btn-ghost" aria-label={t('Cerrar')} disabled={busy} onClick={close}><Icon name="x" size={17} /></button>
+    </header>
+    <div className="research-preparation-content">
       {confirmDecline ? <>
         <p id={descriptionId} className="research-preparation-description">{t('No se indexará tu biblioteca. Podrás activarlo manualmente desde Biblioteca → Indexar biblioteca.')}</p>
         <div className="research-preparation-actions">
@@ -175,8 +178,8 @@ function PreparationDialog({ request, onClose, onConfigure }: { request: Prepara
     <div className="mt-5 flex flex-wrap justify-end gap-2">
       <button className="btn btn-ghost" disabled={busy} onClick={close}>{t('Ahora no')}</button>
       {preview && !preview.embeddingAvailable && <button className="btn" disabled={busy} onClick={() => { onClose(); onConfigure(); }}>{t('Configurar embeddings')}</button>}
-      <button className="btn" disabled={busy || !preview || !selected.size} onClick={() => enqueue('text')}>{t('Preparar solo texto local')}</button>
-      <button className="btn btn-primary" disabled={busy || !preview?.embeddingAvailable || !selected.size} onClick={() => enqueue('embeddings')}>{t(choosing || request.workIds ? 'Encolar selección' : 'Encolar biblioteca actual')}</button>
+      <button data-testid="research-preparation-text" className="btn" disabled={busy || !preview || !selected.size} onClick={() => enqueue('text')}>{t('Preparar solo texto local')}</button>
+      <button data-testid="research-preparation-enqueue" className="btn btn-primary" disabled={busy || !preview?.embeddingAvailable || !selected.size} onClick={() => enqueue('embeddings')}>{t(choosing || request.workIds ? 'Encolar selección' : 'Encolar biblioteca actual')}</button>
     </div>
     </>}
     {error && <p role="alert" className="my-3 text-sm text-red-400">{error}</p>}

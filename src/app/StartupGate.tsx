@@ -16,6 +16,7 @@ import type { ReactNode } from 'react';
 import type { AppSettings, RecoveryStatus, VaultSummary } from '@shared/types';
 import type { View } from '../navigation';
 import { BASICS_TUTORIAL_VERSION, BasicsTutorial } from '../views/BasicsTutorial';
+import { AcademicLearningWelcome } from '../learning/AcademicLearningWelcome';
 import { FirstVaultSetup } from '../views/FirstVaultSetup';
 import { Onboarding } from '../views/Onboarding';
 import { RecoverySetupWizard } from '../views/RecoverySetupWizard';
@@ -87,6 +88,8 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
     when: (state) => !state.isPreviewVault && state.settings.basicsTutorialVersion === 0,
     render: (state) => (
       <BasicsTutorial
+        quickLanguageOnly={state.newInstall && state.settings.firstVaultVersion === 0}
+        initialTutorialLanguage={state.newInstall && state.settings.firstVaultVersion > 0 ? (state.settings.promptLanguage === 'ru' || state.settings.promptLanguage === 'uk' ? state.settings.promptLanguage : state.settings.uiLanguage) : undefined}
         language={state.settings.uiLanguage}
         onLanguageChosen={async (language) => {
           await window.nodus.updateSettings(preferencesForTutorialLanguage(language));
@@ -97,7 +100,7 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
           await state.reloadSettings();
         }}
         onComplete={async () => {
-          await window.nodus.updateSettings({ basicsTutorialVersion: BASICS_TUTORIAL_VERSION });
+          await window.nodus.updateSettings({ basicsTutorialVersion: BASICS_TUTORIAL_VERSION, ...(state.newInstall && state.settings.firstVaultVersion === 0 ? {academicLearningProgress:{version:1,invitationsEligible:false,welcomeComplete:false,freshIntroductionPending:true,lessons:{}}}: {}) });
           await state.reloadSettings();
         }}
       />
@@ -122,6 +125,11 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
     ),
   },
   {
+    id: 'academic-learning-welcome',
+    when: state => !state.isPreviewVault && (state.newInstall || Boolean(state.settings.academicLearningProgress?.freshIntroductionPending)) && state.activeVault?.type === 'academic' && state.settings.firstVaultVersion > 0 && !state.settings.onboardingComplete && !state.settings.academicLearningProgress?.welcomeComplete,
+    render: state => <AcademicLearningWelcome settings={state.settings} vault={state.activeVault!} onDone={state.reloadSettings}/>,
+  },
+  {
     id: 'recovery-status-unknown',
     when: (state) => !state.isPreviewVault && state.recoveryStatus === null,
     render: () => <RecoveryStatusLoading />,
@@ -131,6 +139,7 @@ const SETTLED_GUARDS: readonly Guard<SettledState>[] = [
     // installs first dismiss the release notes and then receive the migration wizard.
     id: 'recovery-setup',
     when: (state) => !state.isPreviewVault
+      && !(state.settings.academicLearningProgress?.invitationsEligible && !state.settings.academicLearningProgress.realSetupStarted)
       && !!state.recoveryStatus?.needsSetup
       && (!state.recoveryStatus.previousInstallation || state.whatsNewSettled),
     render: (state) => (

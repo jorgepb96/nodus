@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFile(path.join(root, file), 'utf8');
 
-test('the Auto Library guide is seen once; Manual keeps its own guidance', async () => {
+test('academic Library walkthrough is opt-in; other Auto libraries retain one-time guidance', async () => {
   const [modal, shell, library] = await Promise.all([
     read('src/components/LibraryTutorialModal.tsx'),
     read('src/views/GlobalLibraryView.tsx'),
@@ -19,7 +19,7 @@ test('the Auto Library guide is seen once; Manual keeps its own guidance', async
   assert.match(modal, /LIBRARY_TUTORIAL_SEEN_KEY = 'nodus\.libraryTutorialSeen\.v1'/);
   assert.match(modal, /localStorage\.setItem\(LIBRARY_TUTORIAL_SEEN_KEY, '1'\)/);
   assert.match(modal, /catch \{ return true; \}/, 'unavailable storage must not reopen the guide forever');
-  assert.match(shell, /useState\(\(\) => settings\.academicMode !== 'manual' && !libraryTutorialSeen\(\)\)/);
+  assert.match(shell, /useState\(\(\) => vaultType !== 'academic' && settings\.academicMode !== 'manual' && !libraryTutorialSeen\(\)\)/);
   assert.match(shell, /if \(autoPresented\.current\) markLibraryTutorialSeen\(\);/);
   assert.match(shell, /<LibraryTutorialModal/);
 

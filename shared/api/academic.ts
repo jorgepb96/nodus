@@ -830,7 +830,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   saveConversationMessages(
     id: string,
     messages: ChatMessageRecord[],
-    meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null }
+    meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null; vaultId?: string }
   ): Promise<void>;
   /** Ask the model for a short title from the conversation so far; persists + returns it. */
   generateConversationTitle(id: string, model?: ModelRef | null): Promise<string>;

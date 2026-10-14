@@ -1,3 +1,5 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
@@ -8287,4 +8289,6 @@ export const JA: Record<string, string> = {
   "Audio pendiente": "処理待ちの音声",
   "Modelo local": "ローカルモデル",
   "Detener dictado": "音声入力を停止",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["ja"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["ja"],
 };

@@ -1,3 +1,4 @@
+import { useLearningArtifact } from '../learning/useLearningArtifact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type {
@@ -541,6 +542,7 @@ function AuthorDetailTab({ author, vaultId, model, onOpenAuthor, onOpenGraph, on
   const [savingSaved, setSavingSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useLearningArtifact('authors', dossier?.author.author_id, dossier?.ideas.map(i=>({kind:'idea' as const,id:i.global_id})) ?? []);
   const reload = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
@@ -775,7 +777,7 @@ function AuthorDossierDetail({
 
       {/* 2. Works */}
       {dossier.works.length > 0 && (
-        <section>
+        <section data-testid="author-works" data-learning-protected>
           <h4 className="font-medium mb-2 flex items-center gap-2">
             <Icon name="book" size={15} className="text-neutral-400" /> {t('Obras')}
           </h4>
@@ -791,7 +793,7 @@ function AuthorDossierDetail({
              real bibliographic fact, kept apart because none of the ideas above
              come from them. */}
       {dossier.editedWorks.length > 0 && (
-        <section data-testid="author-edited-works">
+        <section data-testid="author-edited-works" data-learning-protected>
           <h4 className="font-medium mb-1 flex items-center gap-2">
             <Icon name="book" size={15} className="text-cyan-400" /> {t('Volúmenes que edita')}
           </h4>

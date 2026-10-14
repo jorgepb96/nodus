@@ -1,3 +1,5 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
@@ -8287,4 +8289,6 @@ export const KO: Record<string, string> = {
   "Audio pendiente": "대기 중인 오디오",
   "Modelo local": "로컬 모델",
   "Detener dictado": "받아쓰기 중지",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["ko"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["ko"],
 };

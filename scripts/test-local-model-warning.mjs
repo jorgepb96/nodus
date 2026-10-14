@@ -103,7 +103,7 @@ test('every place a processing/ideas or embedding model is chosen renders the re
   assert.match(localPanel, /<LocalModelWarning provider="nodus"/);
 });
 
-test('a new vault never opens the wizard with a model already chosen', async () => {
+test('new model roles stay empty while configured Simple chat roles are reused', async () => {
   const [onboarding, step, shared] = await Promise.all([
     read('src/views/Onboarding.tsx'),
     read('src/components/OnboardingModelStep.tsx'),
@@ -111,8 +111,8 @@ test('a new vault never opens the wizard with a model already chosen', async () 
   ]);
   // Both pickers start empty — "Choose a model" — for the AI and the embedding role alike:
   // the settings are shared app-wide, so anything they carry belongs to another vault.
-  assert.match(onboarding, /const \[aiModel, setAiModel\] = useState<ModelRef \| null>\(null\)/);
-  assert.match(onboarding, /const \[embeddingModel, setEmbeddingModel\] = useState<ModelRef \| null>\(null\)/);
+  assert.match(onboarding, /const \[aiModel, setAiModel\] = useState<ModelRef \| null>\(settings\.academicInterfaceProfile === 'simple' \? settings\.chatModel \?\? settings\.synthesisModel : null\)/);
+  assert.match(onboarding, /const \[embeddingModel, setEmbeddingModel\] = useState<ModelRef \| null>\(settings\.academicInterfaceProfile === 'simple' && \(settings\.chatModel \|\| settings\.synthesisModel\)/);
   assert.doesNotMatch(onboarding, /isLocalModelRef\(settings/);
   // Nothing seeds them again: not a favorite, not the first discovered model, not the
   // value already stored in the settings.

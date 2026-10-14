@@ -1,3 +1,5 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
@@ -8867,4 +8869,6 @@ export const PT: Record<string, string> = {
   "Audio pendiente": "Áudio pendente",
   "Modelo local": "Modelo local",
   "Detener dictado": "Parar ditado",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["pt"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["pt"],
 };

@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { createPortal } from "react-dom";
 import {
   useCallback,
@@ -508,7 +509,7 @@ function CreationDialog({
   onOpenExisting: (entry: DictionaryEntrySummary) => void;
   onQueued: (entries: Array<Pick<DictionaryEntry, "id" | "name">>) => void;
 }) {
-  const [input, setInput] = useState(emptyInput);
+  const [input, setInput] = useState(() => ({...emptyInput(), outputLanguage: settings.promptLanguage}));
   const [drafts, setDrafts] = useState<DictionaryCreationDraft[]>(() => [
     emptyCreationDraft(),
   ]);
@@ -1877,6 +1878,7 @@ function DictionaryEntryView({
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [hideBackgroundFailure, setHideBackgroundFailure] = useState(false);
   const choseTab = useRef(restoredTab !== undefined);
+  useLearningArtifact('dictionary', detail?.currentVersion?.id, learningMarkdownRefs(detail?.currentVersion?.contentMarkdown ?? ''));
   const load = useCallback(
     async () => setDetail(await window.nodus.getDictionaryEntry(entryId)),
     [entryId],

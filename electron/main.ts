@@ -1,4 +1,5 @@
 import { initializeChatSkillDefaults } from './chatSkills';
+import {initializeLearningWorkspace,isLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { flushWindowEditors, installEditorCloseGuard } from './editorFlush';
 import { claimIsolatedProfile } from './qa/isolatedProfile';
 import { initializePluginStore } from './skillPlugins';
@@ -578,6 +579,7 @@ function createWindow(): void {
   });
   protectMainWindowNavigation(mainWindow);
   installEditorCloseGuard(mainWindow, () => quitting);
+  if(isLearningWorkspace())mainWindow.on('close',()=>closeLearningWorkspace());
 
   // Right-clicking any text field in Nodus — the browser's address bar above all
   // — offers Cut, Copy and Paste. Views that draw their own HTML context menu
@@ -1062,6 +1064,7 @@ app.whenReady().then(async () => {
   });
   if (preV4.snapshotPath) console.log(`[recovery] pre-v4 snapshot: ${preV4.snapshotPath}`);
   getDb(); // open + migrate before anything touches data
+  initializeLearningWorkspace();
   const startupVault = getActiveVault();
   if (startupVault.type === 'databases') ensureDatabaseDeepResearchLane(startupVault.id);
   // Do this before creating either the main window or a browser tab: Chromium

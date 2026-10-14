@@ -362,26 +362,24 @@ test('a vault tour with a video offers three ways in', async () => {
   assert.match(engine, /vaultType\?: VaultType/);
   assert.match(engine, /data-testid="tour-watch-video"/);
   assert.match(engine, /tutorialVideoCopy\(getActiveLang\(\)\)\.tourVideo/);
-  // "Sí, enséñame" stays, demoted to secondary, and "Ahora no" is untouched: three
-  // options, with the video recommended.
+  // The in-app guide is the primary action; the optional video and dismissal remain.
   assert.match(engine, /Sí, enséñame/);
   assert.match(engine, /Ahora no/);
-  assert.match(engine, /video \? 'btn btn-ghost border border-neutral-700' : 'btn btn-primary'/);
-  // Three buttons do not fit side by side in a 360px card: they overflowed it and each
-  // label broke into three lines. The opening step stacks them full-width instead, in
-  // every vault — the layout the rest of the videos will land on.
-  assert.match(engine, /isInvitation \? 'flex flex-col gap-3' : 'flex items-center justify-between'/);
-  assert.match(engine, /isInvitation \? 'flex flex-col gap-2' : 'flex gap-2'/);
+  assert.match(engine, /data-testid="tour-start-walkthrough" className="btn btn-primary"/);
+  assert.match(engine, /learning-tour-invitation/);
+  assert.match(await read('src/learning/academicLearning.css'), /\.learning-tour-invitation \{ flex-direction:column; align-items:stretch;/);
   assert.match(engine, /const isInvitation = isFirst && !started/);
-  assert.match(engine, /if \(isInvitation\) return;/);
+  assert.match(engine, /if \(!isInvitation && step.view\) navigate.current\(step.view\)/);
   assert.match(engine, /showUnavailableVideo\?: boolean/);
   assert.match(engine, /showUnavailableVideo = true/);
   assert.match(engine, /disabled=\{!video\}/);
   assert.match(engine, /t\('Próximamente'\)/);
-  assert.match(engine, /className=\{`w-full \$\{video \?/);
-  // Escape must reach the player, not dismiss the tour behind it.
-  assert.match(engine, /if \(watchingVideo\) return;/);
-  assert.match(tour, /vaultType="academic"/);
+  // The coach is absent while the player owns the foreground and Escape.
+  assert.match(engine, /!watchingVideo && <GuidedPopover/);
+  assert.match(engine, /watchingVideo && video && <TutorialVideoPlayer/);
+  assert.match(tour, /openAcademicLearning\('first-answer'\)/);
+  const learning = await read('src/learning/AcademicLearningSurface.tsx');
+  assert.match(learning,/learning-start-guide/); assert.match(learning,/AcademicLearningSpotlight/); assert.match(learning,/learning-skip/);
   // Every dedicated vault tour declares its type, so each gains the option the day its
   // own video is published — without a release and without touching the engine.
   for (const [file, type] of [

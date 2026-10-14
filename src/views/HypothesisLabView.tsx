@@ -1,3 +1,4 @@
+import { useLearningArtifact } from '../learning/useLearningArtifact';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type React from 'react';
 import type {
@@ -13,6 +14,7 @@ import type { PendingAssistantNavigationTarget, PendingGraphNavigationTarget } f
 import { Badge, Icon, Spinner, modelLabel } from '../components/ui';
 import { ModelPicker } from '../components/ModelPicker';
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
+import { SourceCitationModal, type CitationTarget } from '../components/SourceCitationModal';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { t, tx } from '../i18n';
 
@@ -67,6 +69,7 @@ export function HypothesisLabView({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savingCandidate, setSavingCandidate] = useState<HypothesisCandidate | null>(null);
+  const [citation, setCitation] = useState<CitationTarget>(null);
 
   useEffect(() => {
     let on = true;
@@ -85,6 +88,7 @@ export function HypothesisLabView({
     [result, selectedId]
   );
 
+  useLearningArtifact('hypothesis', selected?.id, selected?.evidence.filter(e=>['idea','passage','work'].includes(e.kind)).map(e=>({kind:e.kind as 'idea'|'passage'|'work',id:e.refId})) ?? []);
   const generate = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -132,7 +136,7 @@ export function HypothesisLabView({
   }, [onOpenAssistant, selected]);
 
   return (
-    <div className="h-full min-h-0 flex flex-col p-6 overflow-hidden">
+    <div data-testid="hypothesis-view" className="h-full min-h-0 flex flex-col p-6 overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div>
           <h1 className="text-xl font-semibold">{t('Laboratorio de hipótesis')}</h1>
@@ -149,7 +153,7 @@ export function HypothesisLabView({
         </div>
         <div className="flex-1" />
         <ModelPicker settings={settings} value={model} onChange={setModel} compact menu />
-        <button className="btn btn-primary gap-1.5" onClick={() => void generate()} disabled={loading}>
+        <button data-testid="hypothesis-generate" className="btn btn-primary gap-1.5" onClick={() => void generate()} disabled={loading}>
           <Icon name={loading ? 'sync' : 'flask'} className={loading ? 'animate-spin' : ''} />
           {loading ? t('Generando…') : t('Generar hipótesis')}
         </button>
@@ -158,6 +162,7 @@ export function HypothesisLabView({
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_22rem] gap-4 mb-4">
         <div className="space-y-3">
           <textarea
+            data-testid="hypothesis-objective"
             className="input w-full min-h-24 resize-y"
             value={objective}
             onChange={(e) => setObjective(e.target.value)}
@@ -316,7 +321,10 @@ export function HypothesisLabView({
                         <button
                           key={`${evidence.kind}-${evidence.refId}-${index}`}
                           className="w-full text-left rounded-md border border-neutral-800 bg-neutral-950/35 hover:bg-neutral-900 p-3"
-                          onClick={() => openEvidence(evidence.kind, evidence.refId, evidence.label, onOpenGraph)}
+                          onClick={() => {
+                            if (evidence.kind === 'idea' || evidence.kind === 'passage' || evidence.kind === 'work') setCitation({kind:evidence.kind,id:evidence.refId});
+                            else openEvidence(evidence.kind, evidence.refId, evidence.label, onOpenGraph);
+                          }}
                         >
                           <div className="flex items-center gap-2">
                             <Badge color={evidence.kind === 'gap' ? 'amber' : evidence.kind === 'debate' ? 'indigo' : 'neutral'}>
@@ -359,6 +367,7 @@ export function HypothesisLabView({
           onClose={() => setSavingCandidate(null)}
         />
       )}
+      <SourceCitationModal target={citation} onClose={() => setCitation(null)} />
     </div>
   );
 }

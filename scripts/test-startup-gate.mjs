@@ -13,6 +13,7 @@ const EXPECTED_ORDER = [
   'settings-loading',
   'basics-tutorial',
   'first-vault',
+  'academic-learning-welcome',
   'recovery-status-unknown',
   'recovery-setup',
   'onboarding',

@@ -354,6 +354,14 @@ jobs:
       - name: Each package installs, migrates, registers and uninstalls
         if: matrix.group == 'integration'
         run: xvfb-run --auto-servernum npm run verify:capability-packages
+      - name: Guided academic learning E2E
+        timeout-minutes: 4
+        if: matrix.group == 'integration'
+        run: xvfb-run --auto-servernum node scripts/e2e-academic-learning.mjs
+      - name: Isolated learning workspace E2E
+        timeout-minutes: 4
+        if: matrix.group == 'integration'
+        run: xvfb-run --auto-servernum node scripts/e2e-learning-workspace.mjs
       - name: A 5.3.1 profile migrates, fails and retries
         if: matrix.group == 'integration'
         run: xvfb-run --auto-servernum npm run verify:capability-migration

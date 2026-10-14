@@ -1,0 +1,2 @@
+import {record} from '../../engine/recorder.mjs';import {SHOTS} from './shots.mjs';import {setup,helpers,withKey} from '../learning-real/common.mjs';
+const dry=process.argv.includes('--dry');await withKey(()=>record({failFast:true,name:'learning-hypothesis',masterProfile:process.env.NODUS_VIDEO_MASTER,settings:{firstVaultVersion:9999,academicInterfaceProfile:'advanced'},shots:dry?SHOTS.slice(0,1):SHOTS,prepare:ctx=>setup(ctx,{paid:!dry,master:true}),helpers}));

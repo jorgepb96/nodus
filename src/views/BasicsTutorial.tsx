@@ -1,3 +1,4 @@
+import { learningText, type LearningCopyKey } from '@shared/academicLearningCopy';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { AppLanguage, NodiStyle } from '@shared/types';
@@ -395,8 +396,14 @@ function CompactSlides(language: Exclude<TutorialLanguage, 'es' | 'en'>): Slide[
   ];
 }
 
-export function BasicsTutorial({ language, onLanguageChosen, onNodiStyleChosen, onComplete }: { language: AppLanguage; onLanguageChosen: (language: TutorialLanguage) => void | Promise<void>; onNodiStyleChosen: (style: NodiStyle) => void | Promise<void>; onComplete: () => void | Promise<void> }) {
-  const [tutorialLanguage, setTutorialLanguage] = useState<TutorialLanguage | null>(null);
+function LearningPrimer(language: TutorialLanguage): Slide {
+ const copy = (key:LearningCopyKey) => language === 'ru' || language === 'uk' ? '' : learningText(key,language==='zh'?'zh-CN':language);
+ const extra = language==='ru' ? {title:'Учитесь на практике',body:'Начните с одного документа: подготовьте его, задайте вопрос и откройте цитату. В простом режиме нужны модель диалога и эмбеддинги. Для извлечения идей рекомендуем облако: один документ может требовать много вызовов. Локальная модель, отвечающая на вопрос, не обязательно выдержит весь процесс. Профили, тема, языки и Nodi доступны в меню интерфейса.'} : {title:'Навчайтеся на практиці',body:'Почніть з одного документа: підготуйте його, поставте запитання та відкрийте цитату. У простому режимі потрібні модель діалогу й ембеддинги. Для вилучення ідей радимо хмару: один документ може потребувати багато викликів. Локальна модель, що відповідає на запитання, не обов’язково витримає весь процес. Профілі, тема, мови та Nodi доступні в меню інтерфейсу.'};
+ return {eyebrow:language==='ru'||language==='uk'?extra.title:copy('learn'),title:language==='ru'||language==='uk'?extra.title:copy('firstAnswer'),icon:'graduation',nodi:'discovering',summary:language==='ru'||language==='uk'?extra.body:copy('intro'),content:<>{language==='ru'||language==='uk'?<p>{extra.body}</p>:<><p>{copy('twoRoles')}</p><p>{copy('cloud')}</p><p>{copy('interfaceBody')}</p></>}</>};
+}
+
+export function BasicsTutorial({ language, onLanguageChosen, onNodiStyleChosen, onComplete, quickLanguageOnly = false, initialTutorialLanguage }: { initialTutorialLanguage?: TutorialLanguage; quickLanguageOnly?: boolean; language: AppLanguage; onLanguageChosen: (language: TutorialLanguage) => void | Promise<void>; onNodiStyleChosen: (style: NodiStyle) => void | Promise<void>; onComplete: () => void | Promise<void> }) {
+  const [tutorialLanguage, setTutorialLanguage] = useState<TutorialLanguage | null>(initialTutorialLanguage ?? null);
   // Which Nodi guides the rest of the tutorial is the user's first real choice, so the
   // deck that follows is already staged by the companion they picked.
   const [styleChosen, setStyleChosen] = useState(false);
@@ -404,7 +411,7 @@ export function BasicsTutorial({ language, onLanguageChosen, onNodiStyleChosen, 
   // path completes the guide, and both stay reachable from Settings → Tutorials.
   const [learnMode, setLearnMode] = useState<'video' | 'text' | null>(null);
   const activeLanguage = tutorialLanguage ?? language;
-  const slides = useMemo(() => activeLanguage === 'es' ? SpanishSlides() : activeLanguage === 'en' ? EnglishSlides() : CompactSlides(activeLanguage), [activeLanguage]);
+  const slides = useMemo(() => [LearningPrimer(activeLanguage), ...(activeLanguage === 'es' ? SpanishSlides() : activeLanguage === 'en' ? EnglishSlides() : CompactSlides(activeLanguage))], [activeLanguage]);
   const [index, setIndex] = useState(0);
   const [confirmSkip, setConfirmSkip] = useState(false);
   const slide = slides[index];
@@ -456,7 +463,9 @@ export function BasicsTutorial({ language, onLanguageChosen, onNodiStyleChosen, 
   // the dialog is built once and rendered by each of them.
   const skipDialog = confirmSkip && <ConfirmModal zIndex={220} title={t('¿Saltar la guía esencial?')} message={t('Esta guía explica los espacios de trabajo, los modelos que funcionan en tu equipo, los servicios externos y las búsquedas por significado.')} cancelLabel={t('Continuar tutorial')} confirmLabel={t('Saltar de todos modos')} danger onCancel={() => setConfirmSkip(false)} onConfirm={() => void onComplete()} />;
 
-  if (!tutorialLanguage) return <div className="tutorial-cinema tutorial-language-screen" data-testid="basics-tutorial-language" role="dialog" aria-modal="true" aria-labelledby="tutorial-language-title"><div className="tutorial-aurora" aria-hidden="true" /><main className="tutorial-language-card"><NodiAvatar state="waving" height={190} /><p className="tutorial-eyebrow tutorial-language-brand"><Icon name="languages" size={15} /> NODUS</p><h1 id="tutorial-language-title">Choose the language for the tutorial</h1><div className="tutorial-language-grid">{TUTORIAL_LANGUAGES.map(({ code, label, flag }) => <button key={code} data-testid={`tutorial-language-${code}`} className="tutorial-language-option" style={{ '--tutorial-flag': flag } as React.CSSProperties} onClick={() => { setTutorialLanguage(code); setIndex(0); void onLanguageChosen(code); }}>{label}</button>)}</div></main></div>;
+  if (!tutorialLanguage) return <div className="tutorial-cinema tutorial-language-screen" data-testid="basics-tutorial-language" role="dialog" aria-modal="true" aria-labelledby="tutorial-language-title"><div className="tutorial-aurora" aria-hidden="true" /><main className="tutorial-language-card"><NodiAvatar state="waving" height={190} /><p className="tutorial-eyebrow tutorial-language-brand"><Icon name="languages" size={15} /> NODUS</p><h1 id="tutorial-language-title">Choose the language for the tutorial</h1><div className="tutorial-language-grid">{TUTORIAL_LANGUAGES.map(({ code, label, flag }) => <button key={code} data-testid={`tutorial-language-${code}`} className="tutorial-language-option" style={{ '--tutorial-flag': flag } as React.CSSProperties} onClick={() => { setTutorialLanguage(code); setIndex(0); void Promise.resolve(onLanguageChosen(code)).then(() => { if (quickLanguageOnly) return onComplete(); }); }}>{label}</button>)}</div></main></div>;
+
+  if (quickLanguageOnly) return <div className="h-full grid place-items-center">Nodus…</div>;
 
   // Second screen, in the language just chosen: pick the companion. It gates the deck
   // the same way the language does, which also keeps it clear of the slide indexes.

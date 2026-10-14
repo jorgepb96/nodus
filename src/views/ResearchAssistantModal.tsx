@@ -1,3 +1,10 @@
+import { composerDraftStore, rememberComposerDraft } from '../researchComposerDrafts';
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
+import { takeLearningPrompt } from '../learning/learningPrompt';
+import { learningAnswerReferences } from '../learning/learningEvidence';
+import { learningChatRecovery } from '@shared/academicLearning';
+import { useAcademicInterface } from '../components/AcademicInterfaceContext';
+import { AcademicSecondary } from '../components/AcademicSecondary';
 import { ProjectInstructionsDialog } from '../components/ProjectInstructionsDialog';
 import { ResearchActivityPanel } from '../components/ResearchActivityPanel';
 import { ResearchWebSearchControl } from '../components/ResearchWebSearchControl';
@@ -50,7 +57,7 @@ import type { AssistantNavigationTarget } from '../navigation';
 import { t, tx } from '../i18n';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
-import { researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
+import { localizeResearchCitationLabels, researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
 import './researchAssistant.css';
 
 const DEFAULT_SELECTION: ResearchContextSelection = {
@@ -83,6 +90,7 @@ const CONTEXT_LAYERS = [
 // Starter prompts offered as clickable chips on an empty chat. They run against
 // whatever context is currently selected (every layer by default), so they read as
 // general research openers rather than mode switches.
+const SIMPLE_CHAT_SUGGESTIONS = ['Resume las fuentes de este vault.', 'Compara lo que dicen estas fuentes.', '¿Qué evidencia respalda esta afirmación?'];
 const CHAT_SUGGESTIONS = [
   '¿Cuáles son las ideas más centrales del corpus y por qué?',
   'Resume las principales contradicciones y tensiones.',
@@ -115,6 +123,13 @@ const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, s
   return <>{render(message, streaming)}</>;
 });
 
+// Scrolling and opening chat controls must not replace completed citation buttons.
+// Keep the callback stable so Markdown retains its DOM and the guide's anchor.
+const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language}:{content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
+  const cite=useCallback((citation:MarkdownCitation)=>onCitation(citation,{conversationId,messageId}),[onCitation,conversationId,messageId]);
+  return <ChatMarkdown key={language} content={content} streaming={streaming} onCitation={cite}/>;
+});
+
 export function ResearchAssistantModal({
   settings,
   initialTarget,
@@ -145,18 +160,23 @@ export function ResearchAssistantModal({
   studyNoteDestination?: StudyNoteDestination | null;
   onOpenSavedNote?: (noteId: string) => void;
 }) {
+  const simpleInterface = useAcademicInterface() === 'simple' && isAcademic && !adapter;
   const api = adapter ?? window.nodus;
   const apiRef = useRef(api);
   apiRef.current = api;
   const panelKey = adapter?.id ?? 'research';
-  const [historyOpen, setHistoryOpen] = useState(() => !embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) === '1');
+  const [historyOpen, setHistoryOpen] = useState(() => !embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) !== '0');
   const [contextOpen, setContextOpen] = useState(() => embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
   const toggleHistory = () => setHistoryOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatHistoryOpen`, open ? '0' : '1'); return !open; });
   const toggleContext = () => setContextOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatContextOpen`, open ? '0' : '1'); return !open; });
-  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(LAYERED_SELECTION));
+  const learning = useAcademicLearning();
+  const draftScope = isAcademic && embedded && !adapter ? learning.vaultId ?? null : null;
+  const draftSeed = useRef(composerDraftStore(draftScope));
+  const initialDraft = draftSeed.current.drafts[draftSeed.current.lastId ?? 'new'];
+  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ?? LAYERED_SELECTION));
   const [messages, setMessages] = useState<UiMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [attachments, setAttachments] = useState<ResearchAttachment[]>([]);
+  const [input, setInput] = useState(initialDraft?.input ?? '');
+  const [attachments, setAttachments] = useState<ResearchAttachment[]>(initialDraft?.attachments ?? []);
   const [attaching, setAttaching] = useState(false);
   const [attachmentError, setAttachmentError] = useState('');
   const attachmentBusyRef = useRef(false);
@@ -177,6 +197,10 @@ export function ResearchAssistantModal({
   const setWebSearch = (mode: ResearchWebSearchMode) => { setWebSearchState(mode); void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined); };
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const draftRestoring = useRef(Boolean(draftScope && draftSeed.current.lastId && !initialTarget && !initialConversationTarget));
+  useEffect(() => {
+    if(!draftRestoring.current)rememberComposerDraft(draftScope,activeId,{input,attachments,selection});
+  },[draftScope,activeId,input,attachments,selection]);
   const promptConversationKey = activeId ? `${adapter?.id ?? 'research'}:${activeId}` : null;
   const systemPrompts = useResearchSystemPrompts(promptConversationKey);
   const [showArchived, setShowArchived] = useState(false);
@@ -216,6 +240,7 @@ export function ResearchAssistantModal({
   // A notebook is read once its collections are indexed; until then it says so and waits.
   const notebookBlocked = !!activeNotebook && (!notebookPreparation || notebookPreparation.pending > 0);
   const [pendingDelete, setPendingDelete] = useState<ChatConversationSummary | null>(null);
+  const [citationOrigin, setCitationOrigin] = useState<{conversationId?:string;messageId?:string}>({});
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [noteTarget, setNoteTarget] = useState<{ content: string; title: string; source: NoteSource } | null>(null);
   const [conversationNotice, setConversationNotice] = useState<string | null>(null);
@@ -393,7 +418,7 @@ export function ResearchAssistantModal({
     setCopiedMessageId(null);
   }, [initialTarget]);
 
-  const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null): Promise<boolean> => {
+  const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null, restoringDraft = false): Promise<boolean> => {
     if (attachmentBusyRef.current) return false;
     const sequence = ++loadSequenceRef.current;
     const conversation = await api.getConversation(id);
@@ -416,9 +441,12 @@ export function ResearchAssistantModal({
     setStoppedMessageId(null);
     setSelection(cloneSelection(conversation.selection ?? LAYERED_SELECTION));
     setActiveNotebookId(conversation.selection?.notebookId ?? conversation.notebookId ?? null);
-    if (conversation.model) setSelectedModel(conversation.model);
+    if (conversation.model && !restoringDraft) setSelectedModel(conversation.model);
     setContextTitle(conversation.title || null);
-    setInput('');
+    const draft = composerDraftStore(draftScope).drafts[id];
+    setInput(draft?.input ?? '');
+    if(draft?.attachments.length)setAttachments(draft.attachments);
+    draftRestoring.current=false;
     setConversationNotice(null);
     const resolvedMessageId = loadedMessages.some((message) => message.id === messageId)
       ? messageId
@@ -574,13 +602,13 @@ export function ResearchAssistantModal({
         stats: m.stats ?? null,
         error: m.error ?? false,
       }));
-      await api.saveConversationMessages(conversationId, records, { model: selectedModel, selection });
-      if (shouldTitle) {
+      await api.saveConversationMessages(conversationId, records, { model: selectedModel, selection, ...(!adapter && draftScope ? {vaultId:draftScope} : {}) });
+      if (shouldTitle && (!draftScope || (await window.nodus.getActiveVault()).id === draftScope)) {
         await api.generateConversationTitle?.(conversationId, selectedModel)?.catch(() => '');
       }
       await refreshConversations();
     },
-    [api, refreshConversations, selectedModel, selection]
+    [api, adapter, draftScope, refreshConversations, selectedModel, selection]
   );
 
   // Runs one assistant turn against `priorMessages` + a fresh user turn. Shared by
@@ -630,7 +658,7 @@ export function ResearchAssistantModal({
       unpainted = '';
     };
     try {
-      if (requestMessages.some(message => message.attachments?.length)) await persist(conversationId, [...priorMessages, userMessage], false);
+      await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
         { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
@@ -688,7 +716,16 @@ export function ResearchAssistantModal({
         window.setTimeout(updateJumpIndicator, 0);
       }
       await persist(conversationId, finalMessages, isFirstExchange);
+      if (!adapter && learning.session && ['first-answer','research-question'].includes(learning.session.lessonId)) {
+        if (aborted) learning.emit({ kind: 'recovery', recovery: 'cancelled' });
+        else {
+          const refs = await learningAnswerReferences(answer, learning.session.documentId, learning.session.documentRevision);
+          if (refs.citationIds.length) learning.emit({ kind: 'answer', ...refs, conversationId, messageId: assistantId, valid: true });
+          else learning.emit({ kind: 'recovery', recovery: 'no-citation', conversationId, messageId: assistantId });
+        }
+      }
     } catch (e) {
+      if (!adapter) learning.emit({ kind: 'recovery', recovery: learningChatRecovery(e, stopRequestedRef.current), conversationId, messageId: assistantId });
       dropUnpainted();
       setActivityRun(current => current?.turnId === assistantId ? { ...current, activities: settleResearchActivities(current.activities, stopRequestedRef.current ? 'cancelled' : 'failed'), outcome: stopRequestedRef.current ? 'cancelled' : 'failed' } : current);
       if (stopRequestedRef.current) {
@@ -729,6 +766,26 @@ export function ResearchAssistantModal({
       setRepaintedId(null);
     }
   };
+
+  useEffect(() => {
+    if (adapter) return;
+    const prepare = () => {
+      const value = takeLearningPrompt(learning.vaultId, learning.session?.id);
+      if (!value) return;
+      if(selection.notebookId && activeId){rememberComposerDraft(draftScope,activeId,{input,attachments,selection});startNewConversation();}
+      loadSequenceRef.current++; draftRestoring.current=false;
+      setInput(current => current.includes(value.prompt) ? current : current.trim() ? `${current}\n\n${value.prompt}` : value.prompt);
+      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ideas: false, documents: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
+      inputRef.current?.focus();
+    };
+    prepare(); window.addEventListener('nodus:learning-prompt', prepare);
+    return () => window.removeEventListener('nodus:learning-prompt', prepare);
+  }, [adapter, learning.vaultId, learning.session?.id, selection.notebookId, activeId]);
+
+  useEffect(() => {
+    if(!draftRestoring.current || !draftSeed.current.lastId)return;
+    void loadConversation(draftSeed.current.lastId,undefined,undefined,true).finally(()=>{draftRestoring.current=false;});
+  },[]);
 
   const pendingCaretRef = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -873,7 +930,8 @@ export function ResearchAssistantModal({
   const archivedCount = conversations.filter((c) => c.archived).length;
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
   // Citations open their evidence workspace without replacing the conversation.
-  const handleCitation = useCallback((c: MarkdownCitation) => {
+  const handleCitation = useCallback((c: MarkdownCitation, origin?: {conversationId?:string;messageId?:string}) => {
+    setCitationOrigin(origin ?? {});
     // A web source opens where it lives: a new tab of Nodus' Browser, landing on the
     // quoted passage. Library sources keep their citation workspace.
     if (c.kind === 'passage' && c.id.startsWith('web:')) {
@@ -886,6 +944,20 @@ export function ResearchAssistantModal({
     setCitation({ kind: c.kind, id: c.id });
   }, []);
 
+  const chatModelControl = (<select
+            className="input text-xs py-1 max-w-xs"
+            title={concilium ? t('Chairman') : t('Modelo del chat')}
+            disabled={sending || !!concilium}
+            value={serializedModel}
+            onChange={(e) => setSelectedModel(e.target.value ? parseModel(e.target.value) : null)}
+          >
+            {!selectedModel && <option value="">{t('Sin modelo seleccionado')}</option>}
+            {availableModels.map((model) => (
+              <option key={serializeModel(model)} value={serializeModel(model)}>
+                {modelLabel(model)}
+              </option>
+            ))}
+          </select>);
   return (
     <div className={embedded ? "research-chat-surface research-chat-view h-full min-h-0 flex flex-col" : "research-chat-surface fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"} data-testid={embedded ? "research-chat-view" : undefined}>
       <div
@@ -905,25 +977,12 @@ export function ResearchAssistantModal({
           <div className="research-file-drop-label"><Icon name="plus" size={28} /><strong>{t('Suelta los archivos para adjuntarlos')}</strong></div>
         </div>}
         <header className="research-assistant-header px-4 py-3 border-b border-neutral-800 flex items-center gap-3">
-          {embedded && <button className="btn btn-ghost" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
+          {embedded && <button type="button" className="btn btn-ghost border border-neutral-700" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
           <div className="flex items-center gap-2 font-semibold">
             <Icon name="chat" className="research-accent-text" />
             {embedded ? 'Research chat' : t('Asistente de investigación')}
           </div>
-          <select
-            className="input text-xs py-1 max-w-xs"
-            title={concilium ? t('Chairman') : t('Modelo del chat')}
-            disabled={sending || !!concilium}
-            value={serializedModel}
-            onChange={(e) => setSelectedModel(e.target.value ? parseModel(e.target.value) : null)}
-          >
-            {!selectedModel && <option value="">{t('Sin modelo seleccionado')}</option>}
-            {availableModels.map((model) => (
-              <option key={serializeModel(model)} value={serializeModel(model)}>
-                {modelLabel(model)}
-              </option>
-            ))}
-          </select>
+          {!simpleInterface && chatModelControl}
           <div className="research-assistant-actions">
           {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
             <span
@@ -944,17 +1003,23 @@ export function ResearchAssistantModal({
               onClick={() => setShowContext((value) => !value)}
             >
               <Icon name="layers" size={15} />
-              <span className="hidden min-w-0 truncate sm:inline">{t('Contexto')}</span>
+              <span className="hidden min-w-0 truncate sm:inline">{t(simpleInterface ? 'Fuentes' : 'Contexto')}</span>
               {sourceFilterOn && <Icon name="library" size={12} aria-label={t('Biblioteca filtrada')} />}
               <span className="chat-skills-count">{selectedCount}</span>
             </button>
           )}
+          <AcademicSecondary compact={simpleInterface} label="Opciones">
+            {simpleInterface && chatModelControl}
           <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={sending || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
           <ChatSkillsControl surface="assistant" disabled={sending} />
           {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending} onChange={next => {
             setConcilium(next);
             if (next) setSelectedModel(next.models[next.chairman]);
           }} />}
+            {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
+          </AcademicSecondary>
+          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[contextLayers.ideas ? t('Ideas') : null, contextLayers.documents ? t('Documentos') : null, webSearch !== 'off' ? t('Búsqueda web') : null].filter(Boolean).join(' · ')}</span>}
+
 
           </div>
           <div className="flex-1" />
@@ -1045,11 +1110,11 @@ export function ResearchAssistantModal({
                       <p className="max-w-md text-sm text-neutral-400">
                         {adapter ? t(adapter.subtitle) : isGenealogy
                           ? t('Pregunta sobre personas, parentescos, eventos, documentos y evidencia de la familia.')
-                          : t('Pregunta sobre ideas, autores, temas, contradicciones o documentos.')}
+                          : simpleInterface ? t('Pregunta sobre tus fuentes y comprueba las citas de las respuestas.') : t('Pregunta sobre ideas, autores, temas, contradicciones o documentos.')}
                       </p>
                     </div>
                     <div className="flex max-w-xl flex-wrap justify-center gap-2">
-                      {(adapter?.suggestions ?? (isGenealogy ? GENEALOGY_SUGGESTIONS : CHAT_SUGGESTIONS)).map((suggestion) => (
+                      {(adapter?.suggestions ?? (isGenealogy ? GENEALOGY_SUGGESTIONS : simpleInterface ? SIMPLE_CHAT_SUGGESTIONS : CHAT_SUGGESTIONS)).map((suggestion) => (
                         <button
                           key={suggestion}
                           className="suggestion-chip"
@@ -1102,7 +1167,7 @@ export function ResearchAssistantModal({
                               const fallbackTitle = messages.find((candidate) => candidate.role === 'user' && candidate.content.trim())?.content.trim().slice(0, 80);
                               const conversationTitle = summary?.title || contextTitle || fallbackTitle || t('Research chat');
                               setNoteTarget({
-                                content: message.content,
+                                content: isAcademic ? localizeResearchCitationLabels(message.content,t('Fuente')) : message.content,
                                 title: deriveNoteTitle(message.content, conversationTitle),
                                 source: researchNoteSource({
                                   surface: attachmentSurface,
@@ -1133,7 +1198,7 @@ export function ResearchAssistantModal({
                       </div>
                       {message.attachments?.length ? renderAttachments(message.attachments) : null}
                       {message.skills?.length ? <InvokedSkillPills skills={message.skills} /> : null}
-                      {message.concilium && <ConciliumResponses result={message.concilium} onCitation={handleCitation} />}
+                      {message.concilium && <ConciliumResponses result={message.concilium} onCitation={c => handleCitation(c, {conversationId: activeId ?? undefined, messageId: message.id})} />}
                       {message.role === 'assistant' && message.reasoning?.trim() && (
                         <details className="mb-2 rounded border border-neutral-800 bg-neutral-950/60">
                           <summary className="cursor-pointer select-none px-2 py-1 text-[11px] text-neutral-400 hover:text-neutral-200">
@@ -1147,7 +1212,7 @@ export function ResearchAssistantModal({
                       {message.role === 'assistant' && !message.error ? (
                         message.content ? (
                           <div className={message.id === streamingId ? 'stream-body' : undefined}>
-                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ChatMarkdown content={message.content} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
+                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ResearchMessageBody language={settings.uiLanguage ?? 'es'} content={message.content} conversationId={activeId ?? undefined} messageId={message.id} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
                             {message.id === streamingId && <span aria-hidden className="stream-caret" />}
                           </div>
                         ) : message.id === streamingId ? (
@@ -1238,7 +1303,7 @@ export function ResearchAssistantModal({
                   }}
                 />
                 {!adapter && !isGenealogy && <ResearchWebSearchControl value={webSearch} onChange={setWebSearch} disabled={sending} />}
-                <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />
+                {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
                 {sending ? (
                   <button
                     className="research-composer-send research-composer-stop"
@@ -1360,7 +1425,7 @@ export function ResearchAssistantModal({
       )}
 
       {citation && (
-        <SourceCitationModal
+        <SourceCitationModal learningOrigin={citationOrigin}
           target={citation}
           onClose={() => setCitation(null)}
         />

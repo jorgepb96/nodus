@@ -19,8 +19,17 @@ try {
     assert.equal(await page.getByRole('region', { name: 'Research chat' }).count(), 1);
     assert.equal(await page.getByRole('dialog').count(), 0);
     assert.deepEqual(await page.locator('.research-composer').evaluate(el => { const s = getComputedStyle(el); return [s.borderRadius, s.minHeight, s.backgroundColor, s.padding]; }), composerStyle);
+    assert.equal(await page.getByTestId('research-history-sidebar').isVisible(), true, `${view}: history starts open`);
+    const historyToggle = page.getByTestId('research-history-toggle');
+    assert.equal(await historyToggle.getAttribute('aria-expanded'), 'true');
+    assert.deepEqual(await historyToggle.evaluate(el => { const style = getComputedStyle(el); return [style.borderTopStyle, style.borderTopWidth]; }), ['solid', '1px'], 'the history toggle shares the controls’ frame');
+    await historyToggle.click();
     assert.equal(await page.getByTestId('research-history-sidebar').isVisible(), false);
+    await page.reload();
+    assert.equal(await page.getByTestId('research-history-sidebar').isVisible(), false, `${view}: an explicit hide survives reload`);
+    assert.equal(await historyToggle.getAttribute('aria-expanded'), 'false');
     await page.getByTestId('research-history-toggle').click();
+    await page.reload();
     assert.equal(await page.getByTestId('research-history-sidebar').isVisible(), true);
     assert.equal(await page.locator('.research-assistant-header').getByRole('button', { name: 'Nueva conversación', exact: true }).count(), 0);
     if (view === 'embedded') {

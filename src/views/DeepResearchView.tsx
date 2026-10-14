@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
@@ -392,6 +393,7 @@ export function DeepResearchView({
   const [openDraft, setOpenDraft] = useState<WritingWorkshopSavedDraft | null>(null);
   const [showMatrix, setShowMatrix] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  useLearningArtifact('deep-research', mode === 'reader' ? openDraft?.id : null, learningMarkdownRefs(openDraft?.draft.draftMarkdown ?? ''));
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [savingToNotes, setSavingToNotes] = useState(false);
   const [translationOpen, setTranslationOpen] = useState(false);
@@ -1173,7 +1175,7 @@ export function DeepResearchView({
             {selecting && selected.size > 0 && <span className="text-xs text-indigo-300">({selected.size})</span>}
           </button>
         )}
-        <button className="btn btn-primary gap-1.5" onClick={() => setComposerOpen(true)}>
+        <button data-testid="deep-research-new" className="btn btn-primary gap-1.5" onClick={() => setComposerOpen(true)}>
           <Icon name="plus" /> {t(copy.newAction)}
         </button>
         </>)}
@@ -2575,6 +2577,7 @@ export function ComposerModal({
         role="dialog"
         aria-modal="true"
         aria-label={t(copy.newAction)}
+        data-testid="deep-research-composer"
         className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-neutral-700 bg-white shadow-2xl dark:bg-neutral-950"
         onMouseDown={(event) => event.stopPropagation()}
       >

@@ -1,3 +1,5 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
@@ -7932,4 +7934,6 @@ export const ZH_TW: Record<string, string> = {
   "Audio pendiente": "待處理音訊",
   "Modelo local": "本機模型",
   "Detener dictado": "停止聽寫",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["zh-TW"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["zh-TW"],
 };

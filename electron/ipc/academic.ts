@@ -319,7 +319,7 @@ import type { StudyNoteLinkFilter, StudyNoteLinkInput } from '@shared/studyNoteL
 import { getDb, withVaultDatabase } from '../db/database';
 import { deleteWorks, worksRunningNow } from '../db/workDeletion';
 import { removeGlobalLibraryLinksForWorks } from '../library/libraryService';
-import { getActiveVault, withOwningVault } from '../vaults/vaultRegistry';
+import { getActiveVault, getVault, withOwningVault } from '../vaults/vaultRegistry';
 import { completeGuideOrganization, listCompleteGuideCatalog, previewCompleteGuide } from '../ai/completeGuide/sources';
 import type { CompleteGuidePreviewRequest } from '@shared/completeGuide/preview';
 import { getCompleteGuideEvidence } from '../ai/completeGuide/evidence';
@@ -1903,8 +1903,13 @@ export function registerAcademicIpc(context: IpcContext): void {
       _e,
       id: string,
       messages: ChatMessageRecord[],
-      meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null }
-    ) => chat.saveMessages(id, messages, meta)
+      meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null; vaultId?: string }
+    ) => {
+      if (!meta?.vaultId) return chat.saveMessages(id, messages, meta);
+      const vault = getVault(meta.vaultId);
+      if (!vault || vault.type !== 'academic') throw new Error('invalid_academic_chat_vault');
+      return withOwningVault(vault.id, () => withVaultDatabase(vault.id, () => chat.saveMessages(id, messages, meta)));
+    }
   );
   h('chat:generateTitle', async (_e, id: string, model?: ModelRef | null) => {
     const conversation = chat.getConversation(id);

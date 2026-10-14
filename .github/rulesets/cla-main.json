@@ -24,7 +24,9 @@
       "parameters": {
         "strict_required_status_checks_policy": false,
         "required_status_checks": [
-          { "context": "CLA / signature", "integration_id": 15368 }
+          { "context": "CLA / signature", "integration_id": 15368 },
+          { "context": "test", "integration_id": 15368 },
+          { "context": "Issue linked", "integration_id": 15368 }
         ]
       }
     }

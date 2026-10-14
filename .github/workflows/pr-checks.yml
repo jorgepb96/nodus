@@ -1,0 +1,55 @@
+name: PR checks
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review, converted_to_draft, closed]
+  workflow_run:
+    workflows: [CI, Contributor License Agreement]
+    types: [completed]
+  check_run:
+    types: [completed]
+  status:
+  # Sidebar issue links have no dedicated Actions event. Also reconcile missed
+  # events and checks published by GITHUB_TOKEN, which cannot trigger workflows.
+  schedule:
+    - cron: '23 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/pr-checks.yml
+      - scripts/pr-checks.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+  statuses: write
+  issues: write
+  pull-requests: write
+
+# Each run reconciles every open PR. GitHub may replace a pending run; no PR's
+# verification or notification relies on that particular event being delivered.
+concurrency:
+  group: nodus-pr-checks
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Never check out a PR ref or execute code/artifacts supplied by a PR.
+      - name: Checkout trusted default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+          sparse-checkout: scripts/pr-checks.mjs
+          sparse-checkout-cone-mode: false
+      - name: Verify linked issues and report completed checks
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { run } = await import(`${process.env.GITHUB_WORKSPACE}/scripts/pr-checks.mjs`);
+            await run({ github, context, core });

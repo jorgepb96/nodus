@@ -1,7 +1,7 @@
 import { useLearningOverlayBusy } from './learning/useLearningOverlayBusy';
 import { AcademicLearningContext } from './learning/AcademicLearningContext';
 import { useAcademicLearningController } from './learning/useAcademicLearning';
-import { AcademicLearningCoach, AcademicLearningDialogs } from './learning/AcademicLearningSurface';
+import { AcademicLearningCoach, AcademicLearningDialogs,LearningWorkspaceBar } from './learning/AcademicLearningSurface';
 import { lessonForProfile } from '@shared/academicLearning';
 import { learningText } from '@shared/academicLearningCopy';
 import { requestLearningPrompt } from './learning/learningPrompt';
@@ -365,9 +365,10 @@ export function App() {
   const [vaultBadgeEl, setVaultBadgeEl] = useState<HTMLElement | null>(null);
   const [vaultBadgePlacement, setVaultBadgePlacement] = useState<HeaderBadgePlacement | null>(null);
   const toggleVaults = useCallback((el: HTMLElement) => {
+    if(activeVault?.learningWorkspace)return;
     setInterfacePickerOpen(false); setHeaderMoreOpen(false);
     setVaultAnchor(cur => cur === el ? null : el);
-  }, []);
+  }, [activeVault?.learningWorkspace]);
   const toggleInbox = useCallback(
     (el: HTMLElement) => setInboxAnchor((cur) => (cur === el ? null : el)),
     []
@@ -987,7 +988,7 @@ export function App() {
     if (!window.nodus) return [];
     const next = await window.nodus.listVaults();
     setVaults(next);
-    setActiveVault(next.find((vault) => vault.active) ?? null);
+    setActiveVault(await window.nodus.getActiveVault());
     return next;
   }, []);
 
@@ -1471,9 +1472,9 @@ export function App() {
   // returns. It also sets this render's authoritative language, which is why it is
   // called before anything below reads `settings`.
   const learningOverlayBusy = useLearningOverlayBusy(settings?.academicPracticeSession && !settings.academicPracticeSession.paused ? settings.academicPracticeSession.lessonId : undefined);
-  const learningSuspended = !settings?.onboardingComplete || !recoveryStatus || (Boolean(recoveryStatus.needsSetup) && (!settings?.academicLearningProgress?.invitationsEligible || Boolean(settings.academicLearningProgress.realSetupStarted))) || paletteOpen || collectionsOpen || feedbackOpen || manualWhatsNewOpen;
+  const learningSuspended = !settings?.onboardingComplete || !recoveryStatus || (!activeVault?.learningWorkspace && Boolean(recoveryStatus.needsSetup) && (!settings?.academicLearningProgress?.invitationsEligible || Boolean(settings.academicLearningProgress.realSetupStarted))) || paletteOpen || collectionsOpen || feedbackOpen || manualWhatsNewOpen;
   const learningBlocked = learningOverlayBusy || learningSuspended || interfacePickerOpen;
-  const learning = useAcademicLearningController({ settings, vault: activeVault, enabled: isAcademic, blocked: learningBlocked, progress: queueActivity.preparation, queue: queueActivity.queue, extractionVersion: JSON.stringify(queueActivity.extraction.map(job=>[job.id,job.status])), view, onSettings: setSettings, navigate: setView });
+  const learning = useAcademicLearningController({ settings, vault: activeVault, enabled: isAcademic, blocked: learningBlocked, progress: queueActivity.preparation, queue: queueActivity.queue, workWaiting:view==='deepResearch'&&queueActivity.research.some(job=>job.vaultId===activeVault?.id&&['queued','running'].includes(job.status))||view==='dictionary'&&queueActivity.dictionary.some(job=>!['done','degraded','failed'].includes(job.phase)),extractionVersion: JSON.stringify(queueActivity.extraction.map(job=>[job.id,job.status])), view, onSettings: setSettings, navigate: setView });
   useEffect(() => {
     const open = () => { setVaultAnchor(null); setInterfacePickerOpen(true); };
     window.addEventListener('nodus:interface-tab', open);
@@ -1681,16 +1682,16 @@ export function App() {
               visibility: vaultBadgePlacement?.fits ? 'visible' : 'hidden',
             }}
             className="header-vault-badge absolute top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-full border border-indigo-700/60 bg-indigo-950/30 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide text-indigo-200 transition-colors hover:border-indigo-500 hover:bg-indigo-900/40"
-            title={t('Bóveda activa')}
-            onClick={(e) => toggleVaults(e.currentTarget)}
+            title={activeVault.learningWorkspace?learningText('workspace',settings.uiLanguage):t('Bóveda activa')}
+            onClick={(e) => {if(!activeVault.learningWorkspace)toggleVaults(e.currentTarget);}}
           >
             <Icon name={vaultTypeIcon(activeVault.type)} size={13} />
             {/* The badge is now the only permanent way into the vault panel, so it is
                 shown at every width — the LABEL is what gives way on a narrow window,
                 not the button. Dropping the word leaves an icon-and-chevron chip that
                 fits in a band where the full badge would not. */}
-            <span className="hidden xl:inline">{vaultTypeLabel(activeVault.type)}</span>
-            <Icon name="chevronDown" size={12} className={`transition-transform ${vaultAnchor ? 'rotate-180' : ''}`} />
+            <span className="hidden xl:inline">{activeVault.learningWorkspace?learningText('workspace',settings.uiLanguage):vaultTypeLabel(activeVault.type)}</span>
+            {!activeVault.learningWorkspace&&<Icon name="chevronDown" size={12} className={`transition-transform ${vaultAnchor ? 'rotate-180' : ''}`} />}
           </button>
         )}
 
@@ -2235,7 +2236,7 @@ export function App() {
               trace of a broken schedule was a grey line inside a collapsed Settings
               section, so a user could go months believing they were protected. Only
               genuinely blocking states appear here, and only once per session. */}
-          {!isPreviewVault && recoveryStatus?.health.level === 'critical' && !recoveryStatus.needsSetup && !backupWarningDismissed && (
+          {!activeVault?.learningWorkspace && !isPreviewVault && recoveryStatus?.health.level === 'critical' && !recoveryStatus.needsSetup && !backupWarningDismissed && (
             <div data-testid="backup-health-banner" className="backup-health-banner">
               <Icon name="alert" size={16} className="shrink-0" />
               <span className="min-w-0 flex-1">
@@ -2257,6 +2258,7 @@ export function App() {
               </button>
             </div>
           )}
+          {isAcademic && <LearningWorkspaceBar controller={learning} settings={settings}/>}
           {isAcademic && <AcademicLearningCoach controller={learning} settings={settings} blocked={learningSuspended || learningOverlayBusy} navigate={setView} openIdea={openIdea} openGraph={id => navigate('graph', { preset: 'overview', nodeId: id })} prepareQuestion={documentId => {
             requestLearningPrompt({ vaultId: activeVault!.id, sessionId: learning.session!.id, documentId, prompt: learningText('suggestedQuestion', settings.uiLanguage) }); setView('researchChat');
           }} />}
@@ -2426,7 +2428,7 @@ export function App() {
         />
       )}
 
-      {!isPreviewVault && settings.onboardingComplete && !settings.academicLearningProgress?.invitationsEligible &&
+      {!activeVault?.learningWorkspace && !isPreviewVault && settings.onboardingComplete && !settings.academicLearningProgress?.invitationsEligible &&
         settings.basicsTutorialVersion > 0 &&
         !recoveryStatus?.needsSetup &&
         (isPrimarySources || isGenealogy || isDatabases || isTestimonios || isEstudio || isDocencia || settings.tourComplete) &&
@@ -2456,7 +2458,7 @@ export function App() {
         />
       )}
 
-      {!settings.academicLearningProgress?.invitationsEligible && !isPreviewVault && recoveryStatus?.needsSetup && recoveryStatus.previousInstallation && !whatsNewSettled && (
+      {!activeVault?.learningWorkspace && !settings.academicLearningProgress?.invitationsEligible && !isPreviewVault && recoveryStatus?.needsSetup && recoveryStatus.previousInstallation && !whatsNewSettled && (
         <WhatsNewModal
           settings={settings}
           activeVaultType={activeVault?.type ?? null}

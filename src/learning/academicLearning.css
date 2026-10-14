@@ -1,4 +1,5 @@
 .learning-dialog { margin:auto; width:min(960px,calc(100vw - 32px)); max-height:calc(100vh - 48px); padding:0; border:1px solid var(--app-border,#404040); border-radius:12px; background:var(--app-panel,#171717); color:var(--app-text,#f5f5f5); box-shadow:0 20px 80px #0005; overflow:auto; }
+.learning-dialog-compact { width:min(560px,calc(100vw - 32px)); }
 .learning-dialog::backdrop { background:#0007; backdrop-filter:blur(3px); }
 .learning-dialog-heading { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; gap:16px; border-bottom:1px solid #8883; }
 .learning-dialog-heading h2 { font-size:16px; font-weight:600; }

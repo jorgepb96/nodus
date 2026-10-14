@@ -2729,6 +2729,8 @@ export interface ReplicaPresenceInput {
 }
 
 export interface VaultSummary {
+  /** Internal practice instance; never listed in the user's vault selector. */
+  learningWorkspace?: boolean;
   id: string;
   name: string;
   path: string;
@@ -9313,6 +9315,10 @@ export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesAp
   getSettings(): Promise<AppSettings>;
   updateSettings(patch: Partial<AppSettings>): Promise<AppSettings>;
   updateAcademicLearning(vaultId: string, patch: Pick<Partial<AppSettings>, 'academicLearningProgress' | 'academicPracticeSession'>): Promise<AppSettings | null>;
+  getAcademicLearningWorkspace(): Promise<import('./learningWorkspace').LearningWorkspaceInfo | null>;
+  openAcademicLearningWorkspace(lessonId: import('./academicLearning').AcademicLessonId): Promise<void>;
+  academicLearningWorkspaceReady(): Promise<void>;
+  closeAcademicLearningWorkspace(discard?: boolean): Promise<void>;
   getAiConcurrencySnapshot(): Promise<AiConcurrencySnapshot[]>;
   onAiConcurrencySnapshot(cb: (snapshot: AiConcurrencySnapshot[]) => void): () => void;
   listVaults(): Promise<VaultSummary[]>;

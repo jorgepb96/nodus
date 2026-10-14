@@ -11,8 +11,9 @@ import { OnboardingModelStep } from '../components/OnboardingModelStep';
 import { Icon } from '../components/ui';
 import type { View } from '../navigation';
 import { openResearchPreparation, openResearchPreparationQueue } from '../components/ResearchPreparationWelcome';
-import { openAcademicLearning } from './AcademicLearningContext';
+import { openAcademicLearning,useAcademicLearning } from './AcademicLearningContext';
 import { t } from '../i18n';
+import {learningRequiresInteraction} from '@shared/learningWorkspace';
 
 export function AcademicLearningDialogs({ controller: c, settings, blocked, onActivateIntermediate, onSettings }: { controller: AcademicLearningController; settings: AppSettings; blocked: boolean; onActivateIntermediate: () => Promise<void>; onSettings: (s: AppSettings) => void }) {
  const copy = (key: LearningCopyKey) => learningText(key, settings.uiLanguage);
@@ -34,9 +35,10 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
  const s=c.session;
  const [interfaceViewed,setInterfaceViewed]=useState(false);
  const [chatBusy,setChatBusy]=useState(false);
+ const [controlBusy,setControlBusy]=useState(false);
  useEffect(()=>{
-  const read=()=>setChatBusy(!!document.querySelector('.research-composer-stop'));
-  read();const observer=new MutationObserver(read);observer.observe(document.body,{childList:true,subtree:true});return()=>observer.disconnect();
+  const read=()=>{setChatBusy(!!document.querySelector('.research-composer-stop'));setControlBusy(!!document.querySelector('[data-testid="hypothesis-generate"]:disabled,[data-testid="reading-refresh"]:disabled,[data-testid="coverage-catalog"][aria-busy="true"],[data-testid="source-citation-loading"]'));};
+  read();const observer=new MutationObserver(read);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled','aria-busy']});return()=>observer.disconnect();
  },[s?.id,c.view]);
  useEffect(()=>{
   if(s?.lessonId!=='interface'||s.paused)return;
@@ -58,9 +60,11 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
  const sourceSelection=s.step===0&&['first-answer','first-idea'].includes(s.lessonId);
  const interfaceTab=(index:number)=>window.dispatchEvent(new CustomEvent('nodus:interface-tab',{detail:{tab:GUIDE_INTERFACE_TABS[index]}}));
  const prepare=()=>{if(manual||!c.requireModels('chat'))openResearchPreparation([s.documentId!]);};
- return <AcademicLearningSpotlight guided={!ready} allowedTargets={guidance.wrongView?[]:academicGuideActions(s)} label={copy(lesson.goal)} targets={recovery==='missing-source'?['[data-testid^="vault-library-item-"] input[type="checkbox"]','[data-testid="library-vault-add-files"]']:ready?['[data-testid="source-citation-content"]',...guidance.targets]:guidance.targets} stepKey={`${s.id}:${s.step}:${s.phase}:${c.view}`} onPause={c.pause}>
+ const waiting=preparing||chatBusy||controlBusy||c.workWaiting;
+ return <AcademicLearningSpotlight guided={learningRequiresInteraction(s,waiting)} allowedTargets={['[data-testid="learning-workspace-bar"]',...(guidance.wrongView?[]:academicGuideActions(s))]} label={copy(lesson.goal)} targets={waiting?[]:recovery==='missing-source'?['[data-testid^="vault-library-item-"] input[type="checkbox"]','[data-testid="library-vault-add-files"]']:ready?['[data-testid="source-citation-content"]',...guidance.targets]:guidance.targets} stepKey={`${s.id}:${s.step}:${s.phase}:${c.view}`} onPause={c.pause}>
   <div className="learning-coach-head"><div><span className="learning-eyebrow">{copy('guideLabel')} · {copy('progress',{step:Math.min(s.step+1,lesson.steps.length),total:lesson.steps.length})}</span><h2 aria-live="polite">{ready?copy(s.lessonId==='first-idea'?'ideaVerified':['first-answer','research-question'].includes(s.lessonId)?'verified':'completed'):copy(step)}</h2></div><button className="btn btn-ghost" data-testid="learning-pause" aria-label={copy('pause')} onClick={c.pause}><Icon name="x" size={14}/></button></div>
   <p>{copy(body)}</p>
+  {sourceSelection&&!c.workspace&&<p>{copy('sampleIsolation')}</p>}
   {doc&&<p className="learning-current-source" title={doc.title}>{doc.title}</p>}
   {s.lessonId==='first-answer'&&s.step===1&&doc&&doc.preparation.passages>0&&<p>{copy('prepared',{ready:doc.preparation.embedded,total:doc.preparation.passages})}</p>}
   {s.lessonId==='first-idea'&&c.ideaCount>0&&<p>{copy('count',{n:c.ideaCount})}</p>}
@@ -75,9 +79,19 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
    {!ready&&s.lessonId==='first-idea'&&s.ideaId&&s.step===3&&<button className="btn btn-primary" data-testid="learning-open-idea" onClick={()=>openIdea(s.ideaId!)}>{copy('ideaEvidence')}</button>}
    {!ready&&s.lessonId==='first-idea'&&s.ideaId&&s.step===4&&<button className="btn btn-primary" data-testid="learning-open-graph" onClick={()=>openGraph(s.ideaId!)}>{copy('graph')}</button>}
    {!ready&&s.lessonId==='interface'&&<button className="btn btn-primary" data-testid="learning-interface-next" onClick={()=>{if(!interfaceViewed){interfaceTab(Math.min(s.step,3));return;}c.observe({sessionId:s.id,vaultId:s.vaultId,kind:'explanation'});if(s.step<3)interfaceTab(s.step+1);}}>{copy(!interfaceViewed?'continue':s.step===3?'finishGuide':'continue')}</button>}
-   {ready&&<><button className="btn btn-primary" onClick={c.pause}>{copy('backWork')}</button><button className="btn btn-ghost" onClick={()=>{c.pause();localStorage.setItem('nodus.settingsTarget','tutorials');window.dispatchEvent(new Event('nodus:settings-target'));navigate('settings');}}>{copy('learn')}</button></>}
+   {ready&&<><button className="btn btn-primary" data-testid="learning-return-work" onClick={()=>void c.returnToWork()}>{copy('backWork')}</button><button className="btn btn-ghost" onClick={()=>{c.pause();localStorage.setItem('nodus.settingsTarget','tutorials');window.dispatchEvent(new Event('nodus:settings-target'));navigate('settings');}}>{copy('learn')}</button></>}
   </div><button className="learning-dismiss-link" onClick={()=>c.dismiss(true)}>{copy('never')}</button>
  </AcademicLearningSpotlight>;
+}
+export function LearningWorkspaceBar({controller:c,settings}:{controller:AcademicLearningController;settings:AppSettings}) {
+ const [confirm,setConfirm]=useState(false);
+ const copy=(key:LearningCopyKey)=>learningText(key,settings.uiLanguage);
+ if(!c.workspace)return null;
+ return <><div data-testid="learning-workspace-bar" className="flex shrink-0 flex-wrap items-center gap-2 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2 text-xs">
+  <strong>{copy('workspace')}</strong><span className="flex-1">{learningText('workspaceOrigin',settings.uiLanguage,{name:c.workspace.originVaultName})}</span>
+  <button className="btn btn-ghost" data-testid="learning-workspace-return" onClick={()=>void c.returnToWork()}>{copy('backWork')}</button>
+  <button className="btn btn-ghost" data-testid="learning-workspace-discard" onClick={()=>setConfirm(true)}>{copy('workspaceDiscard')}</button>
+ </div>{confirm&&<LearningDialog compact title={copy('workspaceDiscard')} testId="learning-workspace-discard-dialog" onClose={()=>setConfirm(false)}><div className="learning-invitation"><p className="text-sm leading-6">{copy('workspaceDiscardBody')}</p><div className="flex gap-2 mt-4"><button className="btn btn-primary" data-testid="learning-workspace-discard-confirm" onClick={()=>void c.returnToWork(true)}>{copy('workspaceDiscard')}</button><button className="btn btn-ghost" onClick={()=>setConfirm(false)}>{t('Cancelar')}</button></div></div></LearningDialog>}</>;
 }
 function LearningModels({ purpose, settings, onClose, onSaved }: { purpose:'chat'|'analysis'; settings:AppSettings; onClose:()=>void; onSaved:(settings:AppSettings)=>void }) {
  const copy = (key:LearningCopyKey)=>learningText(key,settings.uiLanguage);
@@ -108,11 +122,13 @@ function LearningModels({ purpose, settings, onClose, onSaved }: { purpose:'chat
  </div></LearningDialog>;
 }
 export function AcademicLearningCatalog({ settings, onPatch }: { settings:AppSettings; onPatch:(patch:Partial<AppSettings>)=>Promise<unknown> }) {
+ const {workspace}=useAcademicLearning();
+ const [workspaceError,setWorkspaceError]=useState('');
  const user=learningProgress(settings.academicLearningProgress);
  const copy=(key:LearningCopyKey)=>learningText(key,settings.uiLanguage);
  return <div data-testid="academic-learning-catalog"><h2 className="font-semibold">{copy('learn')}</h2><p className="mt-2 text-xs text-neutral-500">{copy('guideIntro')}</p><div className="learning-catalog">{ACADEMIC_LESSONS.map(lesson=>{
   const checkpoint=settings.academicPracticeSession?.lessonId===lesson.id?settings.academicPracticeSession:settings.academicPracticeSession?.checkpoints?.[lesson.id];
   const resumable=!!checkpoint&&checkpoint.phase!=='complete';
-  return <article key={lesson.id} data-testid={`learning-lesson-${lesson.id}`}><h3>{copy(lesson.goal)}</h3>{user.lessons[lesson.id]?.practiceCompleted&&<p className="learning-achievement"><Icon name="check" size={12}/>{copy('completed')}</p>}<div className="learning-catalog-actions"><button className="btn btn-primary" onClick={()=>openAcademicLearning(lesson.id,resumable?'resume':'guide')}>{copy(resumable?'resume':user.lessons[lesson.id]?.practiceCompleted?'repeatGuide':'guide')}</button>{resumable&&<button className="btn btn-ghost" onClick={()=>openAcademicLearning(lesson.id,'guide')}>{copy('repeatGuide')}</button>}</div><label className="flex gap-2 items-start"><input type="checkbox" checked={user.invitationsEligible&&user.lessons[lesson.id]?.invitations!==false} onChange={e=>void onPatch({academicLearningProgress:learningInvitationPreference(user,lesson.id,e.target.checked)})}/>{copy('invite')}</label></article>;
- })}</div><p className="mb-4 text-xs text-neutral-500">{copy('interfaceBody')}</p></div>;
+  return <article key={lesson.id} data-testid={`learning-lesson-${lesson.id}`}><h3>{copy(lesson.goal)}</h3>{user.lessons[lesson.id]?.practiceCompleted&&<p className="learning-achievement"><Icon name="check" size={12}/>{copy('completed')}</p>}<div className="learning-catalog-actions"><button className="btn btn-primary" onClick={()=>openAcademicLearning(lesson.id,resumable?'resume':'guide')}>{copy(resumable?'resume':user.lessons[lesson.id]?.practiceCompleted?'repeatGuide':'guide')}</button>{resumable&&<button className="btn btn-ghost" onClick={()=>openAcademicLearning(lesson.id,'guide')}>{copy('repeatGuide')}</button>}{!workspace&&<button className="btn btn-ghost" data-testid="learning-workspace-lesson" onClick={()=>void window.nodus.openAcademicLearningWorkspace(lesson.id).catch(cause=>setWorkspaceError(cause instanceof Error?cause.message:String(cause)))}>{copy('workspace')}</button>}</div><label className="flex gap-2 items-start"><input type="checkbox" checked={user.invitationsEligible&&user.lessons[lesson.id]?.invitations!==false} onChange={e=>void onPatch({academicLearningProgress:learningInvitationPreference(user,lesson.id,e.target.checked)})}/>{copy('invite')}</label></article>;
+ })}</div>{workspaceError&&<p role="alert">{workspaceError}</p>}<p className="mb-4 text-xs text-neutral-500">{copy('interfaceBody')}</p></div>;
 }

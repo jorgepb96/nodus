@@ -193,11 +193,12 @@ import {
   withMigrationRecoverySnapshotsInUtility,
 } from './db/migrationRecoveryUtilityHost';
 import { documentIndexQueue } from './pipeline/documentIndexQueue';
+import {isLearningWorkspace,learningWorkspaceInfo,learningWorkspaceReady,openLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { ensureDatabaseDeepResearchLane } from './ai/databaseDeepResearchLane';
 
 
 function withVaultKeyProviders(vault: VaultSummary): VaultSummary {
-  return { ...vault, apiKeyProviders: listApiKeyProvidersForVault(vault.id) };
+  return { ...vault, ...(isLearningWorkspace()?{learningWorkspace:true}:{}), apiKeyProviders: listApiKeyProvidersForVault(vault.id) };
 }
 
 function vaultBusyMessage(): string | null {
@@ -401,6 +402,7 @@ export function registerIpc(
   h('settings:get', async () => { const settings = getSettings(); if (settings.academicMode === 'manual') scheduleManualIndex(); return settings; });
   h('ai:concurrency:get', async () => getAiConcurrencySnapshot());
   h('settings:update', async (_e, patch: Partial<AppSettings>) => {
+    if(isLearningWorkspace())patch={...patch,autoBackupEnabled:false,autoBackupFolder:path.join(app.getPath('userData'),'storage')};
     const previous = getSettings();
     if (
       patch.browserHistoryRetention !== undefined
@@ -776,7 +778,11 @@ export function registerIpc(
   h('nodi:windowDrag:end', async () => {
     endMascotWindowDrag();
   });
-  h('vaults:list', async () => listVaults().map(withVaultKeyProviders));
+  h('vaults:list', async () => isLearningWorkspace()?[]:listVaults().map(withVaultKeyProviders));
+  h('learning:workspace',async()=>learningWorkspaceInfo());
+  h('learning:workspace:open',async(event,lessonId)=>openLearningWorkspace(lessonId,BrowserWindow.fromWebContents(event.sender)));
+  h('learning:workspace:ready',async()=>learningWorkspaceReady());
+  h('learning:workspace:close',async(_event,discard)=>closeLearningWorkspace(discard===true));
   h('learning:update', async (_event, vaultId, input) => {
     const target=getVault(vaultId);
     if(!target || target.type!=='academic')throw new Error('Invalid learning scope.');

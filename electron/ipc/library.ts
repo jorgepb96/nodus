@@ -190,6 +190,7 @@ export function registerLibraryIpc({ h }: IpcContext): void {
     return importGlobalLibraryFilesIntoVault(filePaths, vaultId);
   });
   h('library:importAcademicLearningSample', async (_event, vaultId) => {
+    if(process.env.NODUS_LEARNING_WORKSPACE!=='1')throw new Error('The example is available only in the isolated learning workspace.');
     if (typeof vaultId !== 'string' || vaultId.length > 256) throw new Error('Invalid vault.');
     const sample = academicLearningSample(getSettings().uiLanguage);
     const folder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'nodus-learning-'));

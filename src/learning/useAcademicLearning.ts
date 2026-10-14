@@ -4,15 +4,16 @@ import type { ResearchPreparationInventory, ResearchPreparationPolicy, ResearchP
 import { ACADEMIC_LESSONS, LESSON_IDS, learningProgress, mergeLearningProgressChange, lessonForProfile, newPractice, observeLearning, type AcademicLessonId, type AcademicPracticeSession, type LearningObservation } from '@shared/academicLearning';
 import type { AcademicLearningContextValue } from './AcademicLearningContext';
 import type { View } from '../navigation';
+import type {LearningWorkspaceInfo} from '@shared/learningWorkspace';
 import { notifyDataChanged } from '../hooks';
 
 function readSkipped():AcademicLessonId[]{try{const value=JSON.parse(sessionStorage.getItem('nodus.learning.skipped')??'[]');return Array.isArray(value)?value.filter(id=>LESSON_IDS.includes(id)):[];}catch{return[];}}
 const skippedThisRun = new Set<AcademicLessonId>(readSkipped());
 function markSkipped(id:AcademicLessonId){skippedThisRun.add(id);sessionStorage.setItem('nodus.learning.skipped',JSON.stringify([...skippedThisRun]));}
 type Entry = { lessonId: AcademicLessonId; mode: 'invite'|'upgrade' } | null;
-export function useAcademicLearningController({ settings, vault, enabled, blocked, progress, queue, extractionVersion, onSettings, navigate, view }: {
+export function useAcademicLearningController({ settings, vault, enabled, blocked, progress, queue, workWaiting=false,extractionVersion, onSettings, navigate, view }: {
  settings: AppSettings | null; vault: VaultSummary | null; enabled: boolean; blocked: boolean;
- progress?: ResearchPreparationProgress; queue?: QueueProgress|null; extractionVersion?: string; view:View; onSettings: (settings: AppSettings) => void; navigate: (view: View) => void;
+ progress?: ResearchPreparationProgress; queue?: QueueProgress|null; workWaiting?:boolean;extractionVersion?: string; view:View; onSettings: (settings: AppSettings) => void; navigate: (view: View) => void;
 }) {
  const [session, setSession] = useState<AcademicPracticeSession | null>(null);
  const [entry, setEntry] = useState<Entry>(null);
@@ -21,6 +22,8 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
  const [policy, setPolicy] = useState<ResearchPreparationPolicy | null>(null);
  const [ideaCount, setIdeaCount] = useState(0);
  const [error, setError] = useState('');
+ const [workspace,setWorkspace]=useState<LearningWorkspaceInfo|null>(null);
+ const workspaceBootstrapped=useRef(false);
  const epoch = useRef(0);
  const scope = useRef({ settings, vault, enabled, session, blocked, epoch:0 });
  if(scope.current.vault?.id!==vault?.id)epoch.current++;
@@ -119,7 +122,7 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
  },[save]);
  const prepareAddition = useCallback(async () => {
   const current=scope.current;
-  if(!current.enabled||!current.session||current.session.paused||!current.settings?.academicLearningProgress?.invitationsEligible)return false;
+  if(current.vault?.learningWorkspace||!current.enabled||!current.session||current.session.paused||!current.settings?.academicLearningProgress?.invitationsEligible)return false;
   const status=await window.nodus.getRecoveryStatus();
   if(!status.needsSetup)return false;
   await save({academicLearningProgress:{...current.settings.academicLearningProgress,realSetupStarted:true}});
@@ -212,6 +215,9 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
   if (!captured || !vault) return;
   const capturedEpoch=scope.current.epoch;
   try {
+   if(!vault.learningWorkspace) {
+    await window.nodus.openAcademicLearningWorkspace(captured.lessonId);pause();return;
+   }
    if(await prepareAddition())return;
    const report = await window.nodus.importAcademicLearningSample(vault.id);
    if (scope.current.epoch!==capturedEpoch || scope.current.vault?.id !== vault.id || scope.current.session?.id !== captured.id) return;
@@ -220,7 +226,22 @@ export function useAcademicLearningController({ settings, vault, enabled, blocke
    notifyDataChanged(); await refresh();
   } catch (cause) { if(scope.current.epoch===capturedEpoch)setError(cause instanceof Error ? cause.message : String(cause)); }
  };
- const context: AcademicLearningContextValue | null = enabled && vault ? { vaultId: vault.id, epoch:epoch.current, session: session?.vaultId === vault.id ? session : null, observe, requestExtraction, requireModels, prepareAddition } : null;
- return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, open, startPractice, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
+ useEffect(()=>{
+  if(!enabled || !vault?.learningWorkspace || !settings?.onboardingComplete || workspaceBootstrapped.current)return;
+  workspaceBootstrapped.current=true;
+  void (async()=>{
+   const info=await window.nodus.getAcademicLearningWorkspace();if(!info)return;
+   setWorkspace(info);
+   await startPractice(info.lessonId,info.resume);
+   await window.nodus.academicLearningWorkspaceReady();
+   if(info.importExample && ['first-answer','first-idea'].includes(info.lessonId) && !scope.current.session?.documentId)await importSample();
+  })().catch(cause=>setError(cause instanceof Error?cause.message:String(cause)));
+ },[enabled,vault?.learningWorkspace,settings?.onboardingComplete,startPractice,importSample]);
+ const returnToWork=async(discard=false)=>{
+  pause();await writes.current;
+  if(vault?.learningWorkspace)await window.nodus.closeAcademicLearningWorkspace(discard);
+ };
+ const context: AcademicLearningContextValue | null = enabled && vault ? { vaultId: vault.id, workspace:!!vault.learningWorkspace,epoch:epoch.current, session: session?.vaultId === vault.id ? session : null, observe, requestExtraction, requireModels, prepareAddition } : null;
+ return { context, session, entry, modelsPurpose, setModelsPurpose, inventory, policy, ideaCount, error, progress, queue, workWaiting,workspace,returnToWork,open, startPractice, dismiss, selectSource, importSample, refresh, observe, save, pause, requireModels, view };
 }
 export type AcademicLearningController = ReturnType<typeof useAcademicLearningController>;

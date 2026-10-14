@@ -4,7 +4,7 @@ export const LEARNING_LANGUAGES = ['es','en','fr','de','pt','pt-BR','it','tr','z
 // Each row follows LEARNING_LANGUAGES. Examples are original tutorial text, never real evidence.
 const LABELS = {
  ...GUIDANCE_COPY,
- learn: ['Aprende haciendo','Learn by doing','Apprendre en pratiquant','Durch Ausprobieren lernen','Aprender fazendo','Aprender fazendo','Impara facendo','Yaparak öğren','边做边学','做中學','実践で学ぶ','직접 해 보며 배우기'],
+ learn: ['Aprende paso a paso','Learn step by step','Apprendre pas à pas','Schritt für Schritt lernen','Aprender passo a passo','Aprender passo a passo','Impara passo dopo passo','Adım adım öğren','一步步学习','一步步學習','ステップごとに学ぶ','단계별로 배우기'],
  demo: ['Probar una demo sin coste','Try a free demo','Essayer une démo gratuite','Kostenlose Demo ausprobieren','Experimentar uma demonstração gratuita','Experimentar uma demonstração gratuita','Prova una demo gratuita','Ücretsiz demoyu dene','试用免费演示','試用免費示範','無料デモを試す','무료 데모 체험'],
  practice: ['Practicar con mis documentos','Practice with my documents','Pratiquer avec mes documents','Mit eigenen Dokumenten üben','Praticar com os meus documentos','Praticar com meus documentos','Esercitati con i tuoi documenti','Belgelerimle pratik yap','用我的文档练习','用我的文件練習','自分の文書で練習','내 문서로 연습'],
  later: ['Ahora no','Not now','Pas maintenant','Jetzt nicht','Agora não','Agora não','Non ora','Şimdi değil','暂时不用','暫時不用','今はしない','나중에'],

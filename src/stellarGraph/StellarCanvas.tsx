@@ -103,7 +103,7 @@ export function StellarCanvas(props: Props) {
     canvas = useRef<HTMLCanvasElement>(null),
     live = useRef(props);
   live.current = props;
-  const [size, setSize] = useState({ w: 1000, h: 700, footer: 150 }),
+  const [size, setSize] = useState<{ w: number; h: number; footer: number; legend: DOMRect | null }>({ w: 1000, h: 700, footer: 150, legend: null }),
     [error, setError] = useState(""),
     [generation, setGeneration] = useState(0);
   const liveSize=useRef(size);liveSize.current=size;
@@ -157,11 +157,18 @@ export function StellarCanvas(props: Props) {
   useEffect(() => {
     const el = host.current!;
     const player = el.parentElement?.querySelector(".stellar-player");
+    // The legend toggle sits over the canvas' lower-left corner, in the same stage.
+    const legend = el.parentElement?.querySelector(".stellar-legend");
     const obs = new ResizeObserver(() => {
-      setSize({ w: el.clientWidth, h: el.clientHeight, footer: player?.getBoundingClientRect().height || 0 });
+      const host = el.getBoundingClientRect(), box = legend?.getBoundingClientRect();
+      setSize({
+        w: el.clientWidth, h: el.clientHeight, footer: player?.getBoundingClientRect().height || 0,
+        legend: box?.width ? new DOMRect(box.x - host.x, box.y - host.y, box.width, box.height) : null,
+      });
     });
     obs.observe(el);
     if (player) obs.observe(player);
+    if (legend) obs.observe(legend);
     return () => obs.disconnect();
   }, []);
   useEffect(() => {
@@ -611,6 +618,9 @@ export function StellarCanvas(props: Props) {
       const x = (pos.x - props.camera.x) * props.camera.zoom + size.w / 2;
       const y = (pos.y - props.camera.y) * props.camera.zoom + size.h / 2 + 12;
       if (x < 95 || x > size.w - 95 || y < 75 || y + 32 > captionBottom) continue;
+      // A context label is a button: never place it where the legend would take its clicks.
+      const legend = size.legend;
+      if (legend && x - 100 < legend.right && x + 100 > legend.left && y + 40 > legend.top && y - 8 < legend.bottom) continue;
       if (occupiedContext.some(p => Math.abs(p.x - x) < 245 && Math.abs(p.y - y) < 90)) continue;
       contextLabels.push({ n, x, y }); occupiedContext.push({ x, y });
       if (contextLabels.length >= 24) break;

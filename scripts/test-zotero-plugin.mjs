@@ -1687,7 +1687,7 @@ test('#9: stable release blocks publication until the Zotero assets exist', () =
   );
   const verificationJob = workflow.slice(workflow.indexOf('  verify-and-publish:'));
 
-  assert.match(pluginJob, /needs: release/, 'plugin build waits for the draft app release');
+  assert.match(pluginJob, /needs: prepare-release/, 'plugin assembly can overlap native builds after the shared draft exists');
   assert.match(pluginJob, /npm run zotero:xpi/, 'release builds the XPI');
   assert.match(pluginJob, /dist-zotero\/nodus-zotero\.xpi/, 'release uploads the fixed-name XPI');
   assert.match(pluginJob, /dist-zotero\/updates\.json/, 'release uploads the Zotero update manifest');

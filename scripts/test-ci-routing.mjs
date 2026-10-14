@@ -59,6 +59,12 @@ test('manual, empty, merge-queue and policy changes cannot silently omit coverag
     for (const lane of ['full', 'macos', 'windows', 'research', 'scheme', 'server', 'appimage', 'presenter']) assert.equal(route[lane], true, lane);
     assert.equal(route.light, false);
   }
+  for (const file of ['.github/workflows/release-build.yml', '.github/workflows/release.yml',
+    '.github/workflows/release-beta.yml', '.github/actions/release-inputs/action.yml',
+    'scripts/release-linux-artifact.mjs', 'scripts/verify-linux-release-formats.mjs']) {
+    const route = routeChanges([file]);
+    assert.ok(route.full && route.appimage && route.macos && route.windows && route.research, file);
+  }
   const release = routeChanges([], 'release');
   assert.ok(release.full && release.research && release.scheme && release.server && release.appimage);
   assert.equal(release.macos || release.windows, false, 'release packaging already owns native host checks');

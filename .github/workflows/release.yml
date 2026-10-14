@@ -19,6 +19,9 @@ permissions:
 
 jobs:
   publish-stable:
+    permissions:
+      contents: write
+      actions: write
     uses: ./.github/workflows/release-build.yml
     with:
       channel: latest

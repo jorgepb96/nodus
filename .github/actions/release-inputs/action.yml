@@ -1,0 +1,17 @@
+name: Restore verified release inputs
+description: Reuse downloaded tools and incremental type state; all build and integrity checks still run.
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v6
+      with:
+        path: |
+          ~/.cache/electron
+          ~/.cache/electron-builder
+          ~/Library/Caches/electron
+          ~/Library/Caches/electron-builder
+          artifacts/zotero-mcp-downloads
+          .ci/cache
+        key: release-inputs-v1-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'runtime/zotero-mcp/manifest.json', 'runtime/zotero-mcp/*lock*', 'tsconfig*.json', 'electron/tsconfig.json') }}
+        restore-keys: |
+          release-inputs-v1-${{ runner.os }}-${{ runner.arch }}-node22-

@@ -108,6 +108,14 @@ also be run manually by supplying the exact tag. The channel/version validator
 stops a stable tag from entering Beta or a beta tag from entering Stable before
 any native build begins.
 
+Full CI and platform packaging run in parallel. Linux prepares one verified app
+on Ubuntu 22.04, then generates DEB, RPM and AppImage on isolated runners in
+parallel. Publication requires all primary platforms, their updater manifests,
+full CI and, for Stable, the Zotero plugin. Intel starts in a separate workflow
+after publication and appends its signed assets later. See
+[Release execution and measurement](docs/release-performance.md) for installer
+validation and timing definitions.
+
 Linux AppImages support both the built-in Electron updater and external
 AppImageUpdate tools. See [AppImage update compatibility](docs/appimage-updates.md)
 for the finalization sequence, preserved download aliases and Linux checks.

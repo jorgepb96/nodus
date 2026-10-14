@@ -47,6 +47,9 @@ jobs:
     needs: validate-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      notes_artifact_id: ${{ steps.share-notes.outputs.artifact-id }}
+      notes_sha256: ${{ steps.notes.outputs.sha256 }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       RELEASE_TAG: ${{ inputs.tag }}
@@ -63,9 +66,20 @@ jobs:
           cache: npm
 
       - name: Generate required English modal notes
+        id: notes
         run: |
-          npm ci --ignore-scripts
+          npm ci --ignore-scripts --no-audit --no-fund
           node scripts/generate-release-notes.mjs "$RELEASE_TAG" "$RUNNER_TEMP/nodus-release-notes.md"
+          echo "sha256=$(sha256sum "$RUNNER_TEMP/nodus-release-notes.md" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Share this tag's verified English release notes
+        id: share-notes
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-notes-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nodus-release-notes.md
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Create or reuse the single draft release
         run: |
@@ -84,6 +98,153 @@ jobs:
               --title "${RELEASE_TAG#v}" \
               --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
           fi
+
+  linux-unpacked:
+    # Compile native modules on the same Ubuntu 22.04 glibc floor as before.
+    # The installer jobs reuse this exact verified app, not another build.
+    needs: validate-release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    outputs:
+      artifact_id: ${{ steps.share.outputs.artifact-id }}
+      archive_sha256: ${{ steps.pack.outputs.archive_sha256 }}
+      node_version: ${{ steps.runtime.outputs.node_version }}
+    env:
+      NODUS_RELEASE_CHANNEL: ${{ inputs.channel }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      NODE_OPTIONS: --max-old-space-size=4096
+      CC: clang-15
+      CXX: clang++-15
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: ./.github/actions/release-inputs
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify adaptive concurrency contracts
+        run: npm run test:adaptive-concurrency
+      - name: Install Electron runtime and native-host libraries
+        run: |
+          node node_modules/electron/install.js
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y libgtk-3-0 libnss3 libasound2
+      - name: Build renderer and main with the required typecheck
+        run: npm run build:ci
+      - name: Bundle the capability bootstrap
+        env:
+          NODUS_REQUIRE_BOOTSTRAP: '1'
+        run: npm run capabilities:bootstrap
+      - name: Prepare and verify the Linux application once
+        run: npx electron-builder --linux --x64 --dir --publish never --config build/electron-builder.release.cjs
+      - name: Verify the oldest supported Linux glibc floor
+        run: node scripts/verify-linux-glibc.mjs release/linux-unpacked
+      - name: Bind the prepared app to this tag, lockfile and complete payload
+        id: pack
+        run: node scripts/release-linux-artifact.mjs pack
+      - name: Pin the installer tool runtime
+        id: runtime
+        run: echo "node_version=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
+      - name: Share only this run's immutable Linux application
+        id: share
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-linux-unpacked-${{ github.run_attempt }}
+          path: .ci/linux-release/
+          include-hidden-files: true
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3
+
+  linux-format:
+    needs: linux-unpacked
+    name: Linux installer (${{ matrix.format }})
+    strategy:
+      fail-fast: false
+      matrix:
+        format: [deb, rpm, AppImage]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      NODUS_RELEASE_CHANNEL: ${{ inputs.channel }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout the same release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ needs.linux-unpacked.outputs.node_version }}
+          cache: npm
+      - uses: ./.github/actions/release-inputs
+      - name: Install installer tooling without rebuilding the application
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Download the immutable prepared application
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.linux-unpacked.outputs.artifact_id }}
+          path: .ci/linux-release
+          merge-multiple: true
+      - name: Verify and restore this exact Linux payload
+        run: node scripts/release-linux-artifact.mjs restore
+      - name: Build this format from the verified app
+        run: npx electron-builder --linux ${{ matrix.format }} --x64 --prepackaged release/linux-unpacked --publish never --config build/electron-builder.release.cjs
+      - name: Finalize and verify canonical AppImage update metadata
+        if: matrix.format == 'AppImage'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y zsync libfuse2
+          node scripts/finalize-linux-appimage.mjs release
+          test "$(release/Nodus-x86_64.AppImage --appimage-updateinformation)" = "$(node --input-type=module -e 'import { updateInformation } from "./scripts/finalize-linux-appimage.mjs"; console.log(updateInformation(process.env.NODUS_RELEASE_CHANNEL))')"
+          cmp release/Nodus-x86_64.AppImage release/Nodus-linux-x86_64.AppImage
+      - name: Verify unchanged app content and bind every installer asset
+        run: node scripts/release-linux-artifact.mjs stage ${{ matrix.format }}
+      - name: Share this format and its integrity report
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-linux-format-${{ matrix.format }}
+          overwrite: true
+          path: .ci/linux-format-${{ matrix.format }}/
+          include-hidden-files: true
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 3
+
+  upload-linux:
+    needs: [prepare-release, linux-unpacked, linux-format]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODUS_RELEASE_CHANNEL: ${{ inputs.channel }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      LINUX_PREPARED_SHA256: ${{ needs.linux-unpacked.outputs.archive_sha256 }}
+    steps:
+      - name: Checkout the same release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ needs.linux-unpacked.outputs.node_version }}
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Download all three format reports and their exact assets
+        uses: actions/download-artifact@v8
+        with:
+          pattern: release-linux-format-*
+          path: .ci/linux-formats
+          merge-multiple: true
+      - name: Reject missing, stale, mixed-channel or corrupted Linux installers
+        run: node scripts/release-linux-artifact.mjs collect
+      - name: Upload the complete Linux asset set to the shared draft
+        run: node scripts/upload-release-assets.mjs linux
 
   release:
     needs: prepare-release
@@ -104,16 +265,6 @@ jobs:
           - os: windows-latest
             platform: '--win'
             asset-platform: win
-          # Linux ships against the host's C library, so the runner's glibc is
-          # the oldest glibc the app can start on. Build on the oldest Ubuntu
-          # LTS GitHub still hosts, never ubuntu-latest: 5.7.1 came off 24.04
-          # and needed glibc 2.38, so it died at launch on Ubuntu 22.04 and
-          # Debian 12. Move this forward only when 22.04 leaves GitHub's
-          # runners (standard support ends April 2027), together with FLOOR in
-          # scripts/verify-linux-glibc.mjs.
-          - os: ubuntu-22.04
-            platform: '--linux'
-            asset-platform: linux
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     steps:
@@ -148,8 +299,10 @@ jobs:
       - name: Verify requested channel and version
         run: node scripts/verify-release-channel.mjs "${{ inputs.channel }}" "${{ inputs.tag }}"
 
+      - uses: ./.github/actions/release-inputs
+
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Verify adaptive concurrency contracts
         run: npm run test:adaptive-concurrency
@@ -184,7 +337,7 @@ jobs:
       - name: Build renderer + main
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm run build
+        run: npm run build:ci
 
       - name: Verify Windows and macOS native package lifecycle
         if: runner.os != 'Linux'
@@ -317,39 +470,6 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: node scripts/verify-macos-release.cjs release ${{ matrix.mac_arch }}
 
-      # afterPack loads every runtime package inside the packed app by running its
-      # Electron as Node (scripts/verify-packaged-node-modules.cjs), and that binary
-      # links these libraries; the CI jobs that run Electron install the same set.
-      - name: Install Electron's runtime libraries
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libgtk-3-0 libnss3 libasound2
-
-      # better-sqlite3 has no prebuilt binary for Electron 43, so it compiles
-      # here. Electron 43's V8 headers are rejected by GCC 11 and 12, the
-      # compilers 22.04 carries; clang 15 accepts them and still links against
-      # the stock glibc and libstdc++, which is the point of this runner.
-      - name: Build Linux installer
-        if: runner.os == 'Linux'
-        env:
-          CC: clang-15
-          CXX: clang++-15
-        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.release.cjs
-
-      - name: Verify the Linux build starts on the oldest supported Ubuntu LTS
-        if: runner.os == 'Linux'
-        run: node scripts/verify-linux-glibc.mjs release/linux-unpacked
-
-      - name: Add and verify AppImageUpdate metadata
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y zsync
-          node scripts/finalize-linux-appimage.mjs release
-          test "$(release/Nodus-x86_64.AppImage --appimage-updateinformation)" = "$(node --input-type=module -e 'import { updateInformation } from "./scripts/finalize-linux-appimage.mjs"; console.log(updateInformation(process.env.NODUS_RELEASE_CHANNEL))')"
-          cmp release/Nodus-x86_64.AppImage release/Nodus-linux-x86_64.AppImage
-
       - name: Remove temporary macOS credentials
         if: always() && startsWith(matrix.os, 'macos')
         shell: bash
@@ -411,7 +531,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Normalize the supported macOS update manifest
         run: |
@@ -443,7 +563,7 @@ jobs:
     # The fixed-name plugin assets remain stable-only: installed plugins resolve
     # updates through /releases/latest and must never be pointed at a prerelease.
     if: inputs.channel == 'latest'
-    needs: release
+    needs: prepare-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -478,7 +598,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Verify plugin
         run: node --test scripts/test-zotero-plugin.mjs
@@ -502,12 +622,16 @@ jobs:
     if: >-
       always() &&
       needs.quality-gate.result == 'success' &&
+      needs.prepare-release.result == 'success' &&
       needs.release.result == 'success' &&
+      needs.upload-linux.result == 'success' &&
       needs.merge-mac-manifest.result == 'success' &&
       (inputs.channel == 'beta' || needs.build-zotero-plugin.result == 'success')
     needs:
       - quality-gate
+      - prepare-release
       - release
+      - upload-linux
       - merge-mac-manifest
       - build-zotero-plugin
     runs-on: ubuntu-latest
@@ -516,6 +640,7 @@ jobs:
       RELEASE_TAG: ${{ inputs.tag }}
       RELEASE_CHANNEL: ${{ inputs.channel }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      EXPECTED_NOTES_SHA256: ${{ needs.prepare-release.outputs.notes_sha256 }}
     steps:
       - name: Verify channel-specific release assets
         run: |
@@ -607,21 +732,15 @@ jobs:
           fi
           unzip -t "$verify_dir/nodus-zotero.xpi" >/dev/null
 
-      - name: Checkout release tag
-        uses: actions/checkout@v7
+      - name: Download this run's verified English modal notes
+        uses: actions/download-artifact@v8
         with:
-          ref: ${{ inputs.tag }}
+          artifact-ids: ${{ needs.prepare-release.outputs.notes_artifact_id }}
+          path: ${{ runner.temp }}
+          merge-multiple: true
 
-      - name: Set up Node for release notes
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Generate required English modal notes
-        run: |
-          npm ci --ignore-scripts
-          node scripts/generate-release-notes.mjs "$RELEASE_TAG" "$RUNNER_TEMP/nodus-release-notes.md"
+      - name: Verify the notes have not changed since tag validation
+        run: printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" "$RUNNER_TEMP/nodus-release-notes.md" | sha256sum --check -
 
       - name: Publish stable release
         if: inputs.channel == 'latest'
@@ -632,13 +751,24 @@ jobs:
         run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
 
   release-macos-intel:
-    # Intel is built only once the release is public and then appended to it,
-    # so the slower Intel runner never delays the three platforms above. If it
-    # fails, the published release is left as it was; retry it by dispatching
-    # the "macOS Intel release" workflow with the same tag and channel.
+    # Dispatch a separate run after publication. Intel's build/result never
+    # keeps the primary release workflow open or changes its conclusion.
     needs: verify-and-publish
-    uses: ./.github/workflows/release-macos-intel.yml
-    with:
-      channel: ${{ inputs.channel }}
-      tag: ${{ inputs.tag }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_CHANNEL: ${{ inputs.channel }}
+      INTEL_WORKFLOW_REF: ${{ github.ref_name }}
+    steps:
+      - name: Start independent macOS Intel release
+        run: |
+          gh workflow run release-macos-intel.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$INTEL_WORKFLOW_REF" \
+            -f tag="$RELEASE_TAG" \
+            -f channel="$RELEASE_CHANNEL"

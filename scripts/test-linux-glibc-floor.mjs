@@ -11,6 +11,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { load } from 'js-yaml';
 import {
   ALLOWED,
   FLOOR,
@@ -117,9 +118,14 @@ test('known third-party files over the floor are reported, not fatal', () => {
 });
 
 test('the Linux release job builds on 22.04 with clang 15 and checks its output', () => {
-  assert.doesNotMatch(workflow, /- os: ubuntu-latest\s+platform: '--linux'/,
-    'Linux must not build on ubuntu-latest: its glibc becomes the oldest one the app starts on');
-  assert.match(workflow, /- os: ubuntu-22\.04\s+platform: '--linux'/);
-  assert.match(workflow, /name: Build Linux installer\s+if: runner\.os == 'Linux'\s+env:\s+CC: clang-15\s+CXX: clang\+\+-15/);
-  assert.match(workflow, /if: runner\.os == 'Linux'\s+run: node scripts\/verify-linux-glibc\.mjs release\/linux-unpacked/);
+  const jobs = load(workflow).jobs, linux = jobs['linux-unpacked'];
+  assert.equal(linux['runs-on'], 'ubuntu-22.04');
+  assert.equal(jobs['linux-format']['runs-on'], 'ubuntu-22.04');
+  assert.equal(linux.env.CC, 'clang-15');
+  assert.equal(linux.env.CXX, 'clang++-15');
+  const steps = linux.steps.map(step => step.run || '');
+  assert.ok(steps.some(command => command.includes('electron-builder --linux --x64 --dir')));
+  assert.ok(steps.includes('node scripts/verify-linux-glibc.mjs release/linux-unpacked'));
+  assert.ok(steps.indexOf('node scripts/verify-linux-glibc.mjs release/linux-unpacked')
+    < steps.indexOf('node scripts/release-linux-artifact.mjs pack'), 'every installer inherits the verified glibc floor');
 });

@@ -91,8 +91,8 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
     'the academic embedding pipeline is confined to the non-Primary-Sources branch',
   );
   assert.match(sources.app, /!settings\.primarySourcesTourComplete/);
-  assert.match(sources.tourEngine, /role="dialog"/);
-  assert.match(sources.tourEngine, /aria-modal="true"/);
+  assert.match(sources.tourEngine, /AcademicLearningSpotlight as GuidedPopover/);
+  assert.doesNotMatch(sources.tourEngine, /aria-modal="true"/);
   assert.match(sources.tourEngine, /previousFocus\.current/);
   assert.match(sources.tourEngine, /const isInvitation = isFirst && !started/);
   assert.match(sources.tourEngine, /disabled=\{!video\}/);

@@ -3,6 +3,24 @@ import type {LearningCopyKey} from '@shared/academicLearningCopy';
 import type {View} from '../navigation';
 
 export const GUIDE_INTERFACE_TABS=['profiles','theme','languages','nodi'] as const;
+/** Controls needed to perform this step, including its real dialogs and form fields. */
+export function academicGuideActions(session:AcademicPracticeSession) {
+ const evidence=['[data-testid="source-citation-modal"]','[data-testid="idea-detail-modal"]','[data-testid="learning-evidence-panel"]'];
+ if(session.lessonId==='interface')return ['[data-testid="academic-interface-picker"]'];
+ if(session.lessonId==='first-answer'||session.lessonId==='research-question')return session.step>=2||session.lessonId==='research-question'?['.research-composer-input','.research-composer-send','.research-composer-stop',...(session.lessonId==='first-answer'&&session.step===2||session.lessonId==='research-question'&&session.step===0?['[data-testid="research-new-conversation"]']:[]),...evidence]:['[data-testid="research-preparation-welcome"]','[data-testid="header-queue-panel"]','[data-header-action="queue"]'];
+ if(session.lessonId==='first-idea')return ['[data-testid="header-queue-panel"]','[data-header-action="queue"]','[data-testid="manual-idea-form"]','[data-testid="manual-create-idea"]',...evidence];
+ const regions:Record<string,string[]>={
+  'deep-research':['[data-testid="deep-research-composer"]','[data-anchor-id] button'],
+  overview:['[data-testid="coverage-catalog"]'],
+  hypothesis:['[data-testid="hypothesis-view"]','[data-testid="hypothesis-create-modal"]'],
+  reading:['[data-testid="reading-path-view"]'],
+  scriptor:['[data-testid="workspace-view"] .bn-editor'],
+  authors:['[data-testid="author-ideas"] button'],
+  'argument-map':['[data-testid="argument-map-view"]'],
+  dictionary:['[role="dialog"]:has([data-testid="dictionary-concept-name-0"])','[data-testid="dictionary-entry-detail"]'],
+ };
+ return [...(session.step===0?regions[session.lessonId]??[]:[]),...evidence];
+}
 export function academicGuideStep(session:AcademicPracticeSession,view:View,hasSources:boolean,preparing:boolean,manual=false) {
  const lesson=ACADEMIC_LESSONS.find(l=>l.id===session.lessonId)!;
  const nav=(destination:string)=>`[data-tour="nav-${destination}"]`;

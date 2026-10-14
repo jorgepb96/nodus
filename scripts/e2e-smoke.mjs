@@ -270,7 +270,10 @@ try {
   }
   console.log('[e2e] preload bridge ok');
 
-  // ── Essential tutorial: first screen, language preferences, seen-once gate ──
+  // Fresh academic setup is covered by e2e-academic-learning. Exercise the optional
+  // full essential guide here, as an existing vault replay, without recreating it.
+  await page.evaluate(() => window.nodus.updateSettings({firstVaultVersion:1,academicInterfaceProfile:'advanced'}));
+  // ── Essential tutorial: language preferences, seen-once gate ──
   await page.getByTestId('basics-tutorial-language').waitFor({ timeout: 30_000 });
   const languageButtonSizes = await page.locator('.tutorial-language-option').evaluateAll((buttons) =>
     buttons.map((button) => { const box = button.getBoundingClientRect(); return `${Math.round(box.width)}x${Math.round(box.height)}`; }));
@@ -342,7 +345,7 @@ try {
     const settings = await window.nodus.getSettings();
     return settings.uiLanguage === 'fr' && settings.promptLanguage === 'fr';
   }));
-  assert.equal(await page.locator('.tutorial-progress button').count(), 19, 'essential guide exposes thirteen core chapters plus three model-guidance and three connected-workflow chapters');
+  assert.equal(await page.locator('.tutorial-progress button').count(), 20, 'essential guide includes the interface profiles chapter alongside the existing chapters');
   await page.locator('.tutorial-topbar button').click();
   // The skip dialog follows the (now French) UI language, proving the French table
   // is actually wired into a real render.
@@ -567,6 +570,10 @@ try {
     assert.ok(!/nodus|ollama|lm studio/i.test(triggerText), `${role} does not open on a local model (shows "${triggerText.trim()}")`);
   }
   assert.equal(await startButton.isEnabled(), false, 'nothing is preselected, so starting stays disabled');
+  // Simple recommends cloud first. This offline fixture deliberately enables the
+  // advanced local choices instead of expecting them in the initial discovery.
+  const localChoice=modelStep.getByRole('button',{name:'Local: opción avanzada',exact:true});
+  if(await localChoice.count())await localChoice.click();
 
   // Choosing one per role is what enables it.
   for (const role of ['onboarding-ai-model', 'onboarding-embedding-model']) {
@@ -2985,7 +2992,7 @@ try {
   const primarySourcesTour = page.getByTestId('tour-card');
   await primarySourcesTour.getByText('Recorrido de fuentes primarias · 1/6', { exact: true }).waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-home').waitFor({ timeout: 30_000 });
-  assert.equal(await page.getByTestId('tour-spotlight').count(), 0, 'la invitación inicial no apunta ni navega antes del consentimiento');
+  assert.equal(await page.getByTestId('learning-control-highlight').count(), 0, 'la invitación inicial no apunta ni navega antes del consentimiento');
   const unavailablePrimarySourcesVideo = primarySourcesTour.getByRole('button', {
     name: 'Ver el tutorial en vídeo (Próximamente)',
     exact: true,
@@ -3006,12 +3013,11 @@ try {
     await primarySourcesTour.getByText(`Recorrido de fuentes primarias · ${step.number}/6`, { exact: true }).waitFor({ timeout: 30_000 });
     const target = page.locator(`[data-tour="${step.target}"]`);
     await target.waitFor({ state: 'visible', timeout: 30_000 });
-    // The spotlight deliberately animates between anchors. The step copy updates at
-    // the start of that 200 ms transition, so measuring immediately can observe the
-    // rectangle halfway between the previous and current targets on a busy runner.
+    // Shared guide highlights track the visible control without animating across
+    // unrelated anchors. Wait until this step's highlight has settled.
     await page.waitForFunction((targetName) => {
       const anchor = document.querySelector(`[data-tour="${targetName}"]`);
-      const focus = document.querySelector('[data-testid="tour-spotlight"]');
+      const focus = document.querySelector('[data-testid="learning-control-highlight"]');
       if (!(anchor instanceof HTMLElement) || !(focus instanceof HTMLElement)) return false;
       const targetRect = anchor.getBoundingClientRect();
       const focusRect = focus.getBoundingClientRect();
@@ -3022,7 +3028,7 @@ try {
     }, step.target, { timeout: 5_000 });
     const [targetBox, spotlightBox] = await Promise.all([
       target.boundingBox(),
-      page.getByTestId('tour-spotlight').boundingBox(),
+      page.getByTestId('learning-control-highlight').boundingBox(),
     ]);
     assert.ok(targetBox && spotlightBox, `el paso ${step.number}/6 conserva un ancla y un foco visibles`);
     assert.ok(
@@ -3233,10 +3239,10 @@ try {
   await teachingTourLabel.waitFor({ timeout: 30_000 });
   // Step 1 is target-less and centres; step 2 spotlights the courses nav entry.
   await tourCard.getByRole('button', { name: 'Sí, enséñame', exact: true }).click();
-  const spotlight = page.getByTestId('tour-spotlight');
+  const spotlight = page.getByTestId('learning-control-highlight');
   await spotlight.waitFor({ timeout: 30_000 });
   assert.equal(
-    await spotlight.evaluate((node) => getComputedStyle(node).outlineColor),
+    await spotlight.evaluate((node) => getComputedStyle(node).borderTopColor),
     'rgb(234, 88, 12)',
     'the teaching tutorial spotlights in the vault accent (orange), not the default indigo',
   );

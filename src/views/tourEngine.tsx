@@ -45,7 +45,7 @@ export function TourOverlay({ steps, label = 'Tutorial', vaultType, showUnavaila
   }, [vaultType]);
 
   return <>
-    {!watchingVideo && <GuidedPopover targets={isInvitation ? [] : step.target ? [`[data-tour="${step.target}"]`] : step.view ? [`[data-tour="nav-${step.view}"]`] : []}
+    {!watchingVideo && <GuidedPopover guided={!isInvitation} targets={isInvitation ? [] : step.target ? [`[data-tour="${step.target}"]`] : step.view ? [`[data-tour="nav-${step.view}"]`] : []}
       stepKey={`tour:${vaultType ?? label}:${i}:${started}`} label={t(label)} onPause={onClose} testId="tour-card">
       <div onKeyDown={event => {
         if (isInvitation || (event.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"],[role="textbox"]')) return;

@@ -244,6 +244,7 @@ try {
       uiLanguage: 'es',
       theme: 'light',
       toolkitPinnedPages: ['backups'],
+      academicInterfaceProfile: 'custom',
       sidebarCustomized: true,
       sidebarHidden: [],
     });
@@ -272,6 +273,7 @@ try {
         tourComplete: true,
         advancedTourComplete: true,
         sidebarCustomized: true,
+        academicInterfaceProfile: 'custom',
         sidebarHidden: [],
       });
       return result.vault;

@@ -136,7 +136,7 @@ export function HypothesisLabView({
   }, [onOpenAssistant, selected]);
 
   return (
-    <div className="h-full min-h-0 flex flex-col p-6 overflow-hidden">
+    <div data-testid="hypothesis-view" className="h-full min-h-0 flex flex-col p-6 overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div>
           <h1 className="text-xl font-semibold">{t('Laboratorio de hipótesis')}</h1>

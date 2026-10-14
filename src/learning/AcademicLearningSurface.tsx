@@ -6,7 +6,7 @@ import { getNodusLocalModel, modelRefSupportsExtraction } from '@shared/localAiM
 import type { AcademicLearningController } from './useAcademicLearning';
 import { LearningDialog } from './LearningDialog';
 import { AcademicLearningSpotlight } from './AcademicLearningSpotlight';
-import { academicGuideStep, GUIDE_INTERFACE_TABS } from './academicLearningTargets';
+import { academicGuideActions, academicGuideStep, GUIDE_INTERFACE_TABS } from './academicLearningTargets';
 import { OnboardingModelStep } from '../components/OnboardingModelStep';
 import { Icon } from '../components/ui';
 import type { View } from '../navigation';
@@ -58,7 +58,7 @@ export function AcademicLearningCoach({ controller: c, settings, blocked, naviga
  const sourceSelection=s.step===0&&['first-answer','first-idea'].includes(s.lessonId);
  const interfaceTab=(index:number)=>window.dispatchEvent(new CustomEvent('nodus:interface-tab',{detail:{tab:GUIDE_INTERFACE_TABS[index]}}));
  const prepare=()=>{if(manual||!c.requireModels('chat'))openResearchPreparation([s.documentId!]);};
- return <AcademicLearningSpotlight label={copy(lesson.goal)} targets={recovery==='missing-source'?['[data-testid^="vault-library-item-"] input[type="checkbox"]','[data-testid="library-vault-add-files"]']:ready?['[data-testid="source-citation-content"]',...guidance.targets]:guidance.targets} stepKey={`${s.id}:${s.step}:${s.phase}:${c.view}`} onPause={c.pause}>
+ return <AcademicLearningSpotlight guided={!ready} allowedTargets={guidance.wrongView?[]:academicGuideActions(s)} label={copy(lesson.goal)} targets={recovery==='missing-source'?['[data-testid^="vault-library-item-"] input[type="checkbox"]','[data-testid="library-vault-add-files"]']:ready?['[data-testid="source-citation-content"]',...guidance.targets]:guidance.targets} stepKey={`${s.id}:${s.step}:${s.phase}:${c.view}`} onPause={c.pause}>
   <div className="learning-coach-head"><div><span className="learning-eyebrow">{copy('guideLabel')} · {copy('progress',{step:Math.min(s.step+1,lesson.steps.length),total:lesson.steps.length})}</span><h2 aria-live="polite">{ready?copy(s.lessonId==='first-idea'?'ideaVerified':['first-answer','research-question'].includes(s.lessonId)?'verified':'completed'):copy(step)}</h2></div><button className="btn btn-ghost" data-testid="learning-pause" aria-label={copy('pause')} onClick={c.pause}><Icon name="x" size={14}/></button></div>
   <p>{copy(body)}</p>
   {doc&&<p className="learning-current-source" title={doc.title}>{doc.title}</p>}

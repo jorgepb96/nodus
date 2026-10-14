@@ -140,6 +140,11 @@ test('a guide uses adjacent free space rather than drawing an arrow from a corne
  const placed=G.placeGuide(target,{width:318,height:220},{width:1600,height:900});
  assert.ok(G.guideConnector(placed,target));
 });
+test('guide placement never shrinks readable content to avoid busy controls',()=>{
+ const viewport={width:1440,height:900},target={left:700,top:350,width:100,height:36};
+ const card=G.placeGuide(target,{width:318,height:410},viewport,[{left:0,top:60,width:1440,height:500}]);
+ assert.equal(card.height,410,'the complete balloon fits instead of imposing 160px or 340px');
+});
 test('annotations remain inside narrow and scaled windows and leave their controls uncovered',()=>{
  for(const viewport of [{width:1600,height:900},{width:819,height:614},{width:640,height:500}]) {
   for(const target of [{left:20,top:80,width:24,height:24},{left:viewport.width-160,top:viewport.height-60,width:140,height:32},{left:viewport.width/2,top:210,width:80,height:36}]) {

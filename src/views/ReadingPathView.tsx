@@ -70,7 +70,7 @@ export function ReadingPathView({
   const phases = plan?.phases ?? [];
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div data-testid="reading-path-view" className="h-full overflow-y-auto p-6">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div>
           <h1 className="text-xl font-semibold mb-1">{t('Ruta de lectura')}</h1>

@@ -7,6 +7,13 @@ const polished=JSON.parse(await readFile(path.join(root,'.tutorial-out/learning-
 if(polished.warnings.length)throw new Error('Polished captures contain warnings');
 const replacements=new Map(polished.shots.map(s=>[s.id,{shot:s,frames:polished.frames}]));
 const writing=JSON.parse(await readFile(path.join(root,'.tutorial-out/learning-complete-writing/timeline.json')));if(writing.warnings.length)throw new Error('Writing capture contains warnings');for(const shot of writing.shots)replacements.set(shot.id,{shot,frames:writing.frames});
+// Bounded corrections reuse all untouched captures. The partial take contains
+// only completed checkpoints; its failed final attempt is never included.
+for(const [deck,file,count] of [['learning-balloon-fix','progress.json',10],['learning-entry-fix','timeline.json',2],['learning-reader-fix','timeline.json',2]]){
+ const corrected=JSON.parse(await readFile(path.join(root,'.tutorial-out',deck,file)));
+ if(corrected.warnings.length||corrected.shots.length!==count)throw new Error(`${deck}: correction is incomplete`);
+ for(const shot of corrected.shots)replacements.set(shot.id,{shot,frames:corrected.frames});
+}
 const oldFrames=frames;let nextOffset=0;const nextFrames=[];
 shots=shots.map(original=>{
  const replacement=replacements.get(original.id),shot=replacement?.shot??original,pool=replacement?.frames??oldFrames;

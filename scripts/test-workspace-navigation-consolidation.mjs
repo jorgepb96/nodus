@@ -27,7 +27,7 @@ test('Desktop exposes one authoring section and keeps old ids as aliases only', 
   assert.match(navigation, /id: 'workspace', label: 'Nodus Scriptor', icon: 'notebook', group: 'tools'/);
   assert.doesNotMatch(navigation, /\{ id: 'writing', label: 'Escritura'/);
   assert.doesNotMatch(navigation, /\{ id: 'projects', label: 'Proyectos'/);
-  assert.match(app, /next === 'writing' \|\| next === 'projects'/);
+  assert.match(app, /requestedNext === 'writing' \|\| requestedNext === 'projects'/);
   assert.match(app, /\? 'workspace' : 'notes'/);
   assert.match(corpus, /Compatibility aliases[\s\S]*writing:[\s\S]*<WorkspaceView/);
   assert.match(corpus, /projects:[\s\S]*<WorkspaceView/);

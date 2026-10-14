@@ -27,7 +27,7 @@ const stubs = {
   './database': `
     const rows = new Map();
     globalThis.__nodusSettingsRows = rows;
-    exports.getDb = () => ({ prepare: (sql) => ({
+    exports.getDb = () => ({ name: ${JSON.stringify(path.join(profileDir, 'fixture.sqlite'))}, prepare: (sql) => ({
       get: (key) => rows.has(key) ? { value: rows.get(key) } : undefined,
       run: (key, value) => { rows.set(key, value); },
     }) });`,

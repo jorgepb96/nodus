@@ -2,6 +2,8 @@
 // of Electron/DB dependencies so it is unit-testable in isolation (scripts/test-local-chat-fit.mjs).
 // The DB-backed "id → Autor, Año" label lookup is injected by the caller.
 
+import { isGenericCitationLabel } from '../../shared/citationWords';
+
 type SectionPayload = Record<string, unknown>;
 
 // Least → most query-relevant. enforceContextBudget trims sections in this order, so the
@@ -154,6 +156,9 @@ export function humanizeCitationLabels(answer: string, lookup: CitationLabelLook
 function isBareCitationLabel(label: string, id: string): boolean {
   const l = label.trim();
   if (!l) return true;
+  // A placeholder noun ("fuente", "source 2") copied from the citation contract
+  // names nothing, and in any language but the template's it is a foreign word.
+  if (isGenericCitationLabel(l)) return true;
   if (l === id) return true;
   if (l.toLowerCase() === id.toLowerCase()) return true;
   if (/^g-?\d+$/i.test(l)) return true; // idea id shape (g-0286)

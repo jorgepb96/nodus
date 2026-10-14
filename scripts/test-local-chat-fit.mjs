@@ -120,6 +120,20 @@ try {
     humanizeCitationLabels('Segun [11111111-2222-3333-4444-555555555555].', lookup),
     'Segun [11111111-2222-3333-4444-555555555555].'
   );
+  // A placeholder noun copied from the citation contract names nothing, in any
+  // language: it becomes the source's author-year.
+  for (const placeholder of ['fuente', 'Fuente', 'source', 'Source 2', 'Quelle', 'fonte', '出典']) {
+    assert.equal(
+      humanizeCitationLabels(`Dato ([${placeholder}](nodus://work/w-1)).`, lookup),
+      'Dato ([Kossoy, 2014](nodus://work/w-1)).',
+      placeholder
+    );
+  }
+  // Real prose labels are never treated as placeholders.
+  assert.equal(
+    humanizeCitationLabels('Ver [la fuente original](nodus://work/w-1).', lookup),
+    'Ver [la fuente original](nodus://work/w-1).'
+  );
   // No citations at all → identity.
   assert.equal(humanizeCitationLabels('Texto sin citas.', lookup), 'Texto sin citas.');
 

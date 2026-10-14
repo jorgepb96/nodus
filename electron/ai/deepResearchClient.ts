@@ -32,6 +32,7 @@ import {
   collectCitedWorkIds,
   countWords,
   deepResearchNarrativeRules,
+  labels,
   resolveSectionPlan,
   type CitationCatalog,
   type DeepResearchPlanSection,
@@ -267,6 +268,7 @@ export async function assembleClientDeepResearchReport(
     input.sectionLimit,
   );
 
+  const L = labels(language);
   const matrix: WritingWorkshopMatrixRow[] = [...cited.ideas]
     .map((id) => maps.ideaById.get(id))
     .filter((idea): idea is NonNullable<typeof idea> => !!idea)
@@ -274,10 +276,10 @@ export async function assembleClientDeepResearchReport(
     .map((idea) => ({
       claim: (idea.statement || idea.label).slice(0, 240),
       role: idea.type === 'method' ? 'method' : 'support',
-      sourceLabel: idea.works[0]?.authors[0] ?? 'Fuente del corpus',
+      sourceLabel: idea.works[0]?.authors[0] ?? L.corpusSource,
       citation: `nodus://idea/${encodeURIComponent(idea.id)}`,
-      evidence: idea.evidenceCount > 0 ? `${idea.evidenceCount} evidencia(s) ancladas en el corpus.` : 'Idea derivada del corpus.',
-      notes: idea.workCount > 1 ? `Sostenida por ${idea.workCount} obras.` : 'Una obra de respaldo.',
+      evidence: idea.evidenceCount > 0 ? L.anchoredEvidence(idea.evidenceCount) : L.derivedIdea,
+      notes: idea.workCount > 1 ? L.supportedBy(idea.workCount) : L.singleSupport,
     }));
 
   const words = countWords(cleanedBody);

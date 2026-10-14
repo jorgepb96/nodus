@@ -1479,7 +1479,7 @@ export function registerAcademicIpc(context: IpcContext): void {
       filters: [{ name: 'Markdown', extensions: ['md'] }],
     });
     if (picked.canceled || !picked.filePath) return null;
-    fs.writeFileSync(picked.filePath, studyAssessments.renderStudyAssessmentMarkdown(assessment, Boolean(includeAnswers)), 'utf8');
+    fs.writeFileSync(picked.filePath, studyAssessments.renderStudyAssessmentMarkdown(assessment, Boolean(includeAnswers), getSettings().uiLanguage), 'utf8');
     return { path: picked.filePath };
   });
   h('study:grading:rubrics:list', async (_e, includeArchived?: boolean) => studyGrading.listStudyRubrics(includeArchived));

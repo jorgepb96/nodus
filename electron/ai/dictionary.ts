@@ -1273,7 +1273,7 @@ function insufficientDictionaryMarkdown(
 ): string {
   const copy = dictionaryRuntimeCopy(language);
   const citation = evidence[0]
-    ? ` [${copy.evidenceCitationLabel} disponible](nodus://${evidence[0].kind}/${encodeURIComponent(evidence[0].id)})`
+    ? ` [${copy.evidenceCitationLabel}](nodus://${evidence[0].kind}/${encodeURIComponent(evidence[0].id)})`
     : "";
   return `## ${copy.insufficientTitle}\n\n${copy.insufficientIntro}${citation}\n\n${copy.insufficientLimits}`;
 }

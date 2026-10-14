@@ -71,6 +71,7 @@ import {
   supportedCitationKeys,
 } from './citationSanitize';
 import { repairLooseCitations } from './deepResearchCore';
+import { citationWords } from '@shared/citationWords';
 import { verifyCitations } from '../citations/verifyCitations';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import {
@@ -506,9 +507,9 @@ function citationDisplayLabel(kind: string, id: string): string | null {
     case 'passage':
       return passageCiteLabel(id);
     case 'gap':
-      return 'hueco';
+      return citationWords(getSettings().promptLanguage ?? 'es').gap;
     case 'contradiction':
-      return 'contradiccion';
+      return citationWords(getSettings().promptLanguage ?? 'es').contradiction;
     default:
       return null;
   }
@@ -884,7 +885,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       ...(assessments ? { council_assessments: assessments } : {}),
       ...(moleculeDossiers.length ? { estructura_objetivo_verificada: moleculeDossiers } : {}),
       ...(routeEvidence ? { [SYNTHESIS_EVIDENCE_KEY]: routeEvidence } : {}),
-      ...(skills.length ? {} : { contrato_de_salida_obligatorio: buildCitationOutputContract(JSON.stringify(context)) ?? undefined }),
+      ...(skills.length ? {} : { contrato_de_salida_obligatorio: buildCitationOutputContract(JSON.stringify(context), promptLanguage) ?? undefined }),
       application_output_contract: council?.member ? undefined : chatSkillsOutputContract(skills),
     },
     null,
@@ -904,7 +905,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   // A skill (chemistry route/synthesis) is a construction task, not a corpus-grounded literature
   // answer: the citation contract above is already null when a skill is active, so the enforcement
   // flag must match — otherwise the route gets citation retries/refusals it was never told to satisfy.
-  return { system, user: serializeUser(), stats, generationOptions, local, citationRequired: skills.length ? false : (buildCitationOutputContract(JSON.stringify(context)) != null) };
+  return { system, user: serializeUser(), stats, generationOptions, local, citationRequired: skills.length ? false : (buildCitationOutputContract(JSON.stringify(context), promptLanguage) != null) };
 }
 
 /** Canonical Spanish exports retained for Nodi's shared citation contract. */

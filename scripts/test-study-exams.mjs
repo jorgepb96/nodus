@@ -37,6 +37,7 @@ try {
   const variant = assessments.createStudyAssessment({ kind: 'exam', title: `${exam.title} · Variante 2`, description: exam.description, durationMinutes: exam.durationMinutes, questionIds: exam.items.map((item) => item.questionId), points: Object.fromEntries(exam.items.map((item) => [item.questionId, item.points])), config: { ...exam.config, randomizeQuestions: true, seed: 99 } });
   assert.equal(variant.items.length, exam.items.length); assert.notEqual(variant.id, exam.id);
   const printable = assessments.renderStudyAssessmentMarkdown(exam, true); assert.match(printable, /Historia contemporánea/); assert.match(printable, /Respuesta:/); assert.match(printable, /6 pt/);
+  const english = assessments.renderStudyAssessmentMarkdown(exam, true, 'en'); assert.match(english, /\*\*Answer:\*\*/); assert.match(english, /\*\*Source:\*\*/); assert.doesNotMatch(english, /Respuesta|Fuente|Duración/);
   closeDb(); console.log('Study exams phase 10c tests passed!');
 } finally { await rm(root, { recursive: true, force: true }); }
 

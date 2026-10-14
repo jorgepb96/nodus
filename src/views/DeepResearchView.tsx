@@ -967,7 +967,7 @@ export function DeepResearchView({
     const reports = savedDrafts.filter((draft) => !draft.draft.completeGuide);
     const readCounts = count(savedDrafts.map((draft): ReadState => (draft.readAt ? 'read' : 'unread')));
     const approachCounts = count(reports.map(draftApproach));
-    const languageCounts = count(savedDrafts.map((draft) => draft.brief.language).filter((value): value is string => Boolean(value)));
+    const languageCounts = count(savedDrafts.flatMap((draft): string[] => (draft.brief.language ? [draft.brief.language] : [])));
     const read: GalleryFilterOption<ReadState>[] = [
       { value: 'unread', label: t('No leídos'), count: readCounts.get('unread') ?? 0 },
       { value: 'read', label: t('Leídos'), count: readCounts.get('read') ?? 0 },

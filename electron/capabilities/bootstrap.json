@@ -3,58 +3,58 @@
   "packages": [
     {
       "id": "chemistry-studio",
-      "version": "2.5.8",
-      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/chemistry-studio-v2.5.8",
+      "version": "2.7.0",
+      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/chemistry-studio-v2.7.0",
       "assets": [
         {
           "target": "any",
-          "asset": "chemistry-studio-2.5.8-any.nodus-plugin",
-          "bytes": 19525484,
-          "sha256": "5666abd16f1568287313319b5e650835a21c13da15f6b2c5ed03fb9c0c3ad32c"
+          "asset": "chemistry-studio-2.7.0-any.nodus-plugin",
+          "bytes": 19593064,
+          "sha256": "ca05ff0da93b1b3926500c84e400ea5938fe6c33b27599a80e9e716eeed428e8"
         }
       ]
     },
     {
       "id": "legalize",
-      "version": "2.0.0",
-      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/legalize-v2.0.0",
+      "version": "2.0.1",
+      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/legalize-v2.0.1",
       "assets": [
         {
           "target": "any",
-          "asset": "legalize-2.0.0-any.nodus-plugin",
-          "bytes": 57411,
-          "sha256": "071e9896716453053df1e158b919436e14fb353f2a75b26023a9d5d69b7912bf"
+          "asset": "legalize-2.0.1-any.nodus-plugin",
+          "bytes": 57495,
+          "sha256": "0f7ae3fc09970d2b3c4d7a1e00c4c0de8bf97c422990d724f0825843d5d04b65"
         }
       ]
     },
     {
       "id": "alphagenome",
-      "version": "2.0.0",
-      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/alphagenome-v2.0.0",
+      "version": "2.0.1",
+      "releaseUrl": "https://github.com/NodusResearch/nodus-research-skill-marketplace/releases/download/alphagenome-v2.0.1",
       "assets": [
         {
           "target": "darwin-arm64",
-          "asset": "alphagenome-2.0.0-darwin-arm64.nodus-plugin",
-          "bytes": 47565,
-          "sha256": "8845b5e07a6776a49ad0d0b41e5cb4becbd1b566f05c5f3feb54cbd60e4426cb"
+          "asset": "alphagenome-2.0.1-darwin-arm64.nodus-plugin",
+          "bytes": 47853,
+          "sha256": "93afad8908f926c2e2a1d55646e34616a2e682463f8e120eee07a3df043c01b5"
         },
         {
           "target": "darwin-x64",
-          "asset": "alphagenome-2.0.0-darwin-x64.nodus-plugin",
-          "bytes": 47595,
-          "sha256": "2e73492c00980c689531651fab434eacc132645bdf0edca97ca19f5f18dd1518"
+          "asset": "alphagenome-2.0.1-darwin-x64.nodus-plugin",
+          "bytes": 47883,
+          "sha256": "710b1f2a9983e161bad58328a293d46f5986aa31572b15145e5e93f82d1c9533"
         },
         {
           "target": "linux-x64",
-          "asset": "alphagenome-2.0.0-linux-x64.nodus-plugin",
-          "bytes": 47765,
-          "sha256": "acedf805235294f5a64d84689e715605e2be04bff0ea1f3093bd971583c5f504"
+          "asset": "alphagenome-2.0.1-linux-x64.nodus-plugin",
+          "bytes": 48053,
+          "sha256": "dc5ec29d5899fb2721f89f277387d40224d276f0e6a6ab6b3d5301419653710a"
         },
         {
           "target": "win32-x64",
-          "asset": "alphagenome-2.0.0-win32-x64.nodus-plugin",
-          "bytes": 47355,
-          "sha256": "e8e3b6ccb297e3980df41959f9b9591ad682d821b84222b211211011ccbda76d"
+          "asset": "alphagenome-2.0.1-win32-x64.nodus-plugin",
+          "bytes": 47643,
+          "sha256": "96ec6050b9f6b4ed0933797592581a47e5e1473763f8887294b02445a30dd43c"
         }
       ]
     }

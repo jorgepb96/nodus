@@ -32,6 +32,10 @@ try {
   await createPackage(fixture, path.join(producer, 'release/linux-unpacked/resources/app.asar'));
   fs.copyFileSync('/usr/bin/true', path.join(producer, 'release/linux-unpacked/nodus'));
   fs.chmodSync(path.join(producer, 'release/linux-unpacked/nodus'), 0o755);
+  const connector = path.join(producer, 'release/linux-unpacked/resources/browser/nodus-research-connector-chrome.zip');
+  fs.mkdirSync(path.dirname(connector));
+  fs.writeFileSync(connector, 'synthetic connector payload');
+  fs.chmodSync(connector, 0o666);
   run('git', ['init', '-q'], producer);
   run('git', ['-c', 'user.name=Release Fixture', '-c', 'user.email=ci@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture'], producer);
   const context = { commit: run('git', ['rev-parse', 'HEAD'], producer).trim(),
@@ -84,6 +88,7 @@ try {
     const app = path.dirname(path.dirname(path.join(extracted, payload)));
     assert.equal(hash(path.join(app, 'nodus')), hash(path.join(producer, 'release/linux-unpacked/nodus')));
     assert.ok(fs.statSync(path.join(app, 'nodus')).mode & 0o111, `${format} installer lost executable permissions`);
+    assert.equal(hash(path.join(app, 'resources/browser/nodus-research-connector-chrome.zip')), hash(connector), `${format} installer lost its connector payload`);
     const update = load(fs.readFileSync(path.join(app, 'resources/app-update.yml'), 'utf8'));
     assert.equal(update.channel, context.channel);
     if (format !== 'AppImage') assert.equal(fs.readFileSync(path.join(app, 'resources/package-type'), 'utf8').trim(), format);

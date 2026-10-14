@@ -30,6 +30,25 @@ run retains signing, notarization and native checks and appends its assets and
 manifest entries without replacing arm64's update pointer. Retry an Intel failure
 using its manual workflow with the original tag and channel.
 
+## Recover the 5.10.0 Linux installers
+
+The first 5.10.0 run built macOS, Windows and the Linux application and passed its
+full CI, but all three Linux format jobs rejected the restored payload. The
+producer recorded the browser connector ZIP with mode `0666`. Default tar
+extraction applied the consumer's umask and changed it to `0644`.
+
+Restore archives with `tar -p` so file and directory permissions match the
+producer's manifest exactly. Archive hashes, complete payload hashes, executable
+permissions, relative symlinks and release provenance still have to match.
+
+To recover the existing tag, dispatch **Stable release** from the branch that
+contains this workflow correction with `tag=v5.10.0`. Only the Linux installer
+runners load `scripts/release-linux-artifact.mjs` from the exact workflow commit.
+The application checkout, prepared payload, lockfile and version still come from
+the immutable tag. The helper is not included in the prepackaged application.
+The existing draft is reused, and all quality, packaging and publication gates
+run again. The `v5.10.0` tag does not need to be moved or replaced.
+
 ## Validate without publishing
 
 The full PR CI includes a small real Linux packaging fixture in the integration

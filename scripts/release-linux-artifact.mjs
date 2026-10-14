@@ -97,7 +97,9 @@ export function restorePreparedApp(root, context) {
   assert.deepEqual(manifest.context, context, 'Linux archive belongs to another build');
   assert.equal(digest(path.join(bundle, 'linux-unpacked.tgz')), manifest.archiveSha256, 'Linux archive hash mismatch');
   fs.mkdirSync(path.join(root, 'release'), { recursive: true });
-  execFileSync('tar', ['-xzf', path.join(bundle, 'linux-unpacked.tgz'), '-C', path.join(root, 'release')]);
+  // Consumer umasks must not alter the producer's recorded permissions.
+  // In 5.10.0 the connector ZIP was 0666, and default extraction made it 0644.
+  execFileSync('tar', ['-xzpf', path.join(bundle, 'linux-unpacked.tgz'), '-C', path.join(root, 'release')]);
   verifyAppManifest(appAt(root), manifest, context);
   return manifest;
 }

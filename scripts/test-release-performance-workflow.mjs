@@ -37,6 +37,23 @@ test('every isolated Linux format receives this run\'s exact prepared app and id
   assert.equal(report.with['if-no-files-found'], 'error');
 });
 
+test('5.10.0 recovery pins only its archive helper to the workflow commit and retains the tagged app', () => {
+  const steps = jobs['linux-format'].steps;
+  assert.equal(steps[0].with.ref, '${{ inputs.tag }}');
+  const checkout = steps.find(step => step.name === 'Checkout v5.10.0 Linux archive recovery verifier');
+  assert.equal(checkout.if, "inputs.tag == 'v5.10.0'");
+  assert.equal(checkout.with.ref, '${{ github.workflow_sha }}');
+  assert.equal(checkout.with['sparse-checkout'], 'scripts/release-linux-artifact.mjs');
+  assert.equal(checkout.with['sparse-checkout-cone-mode'], false);
+  assert.equal(checkout.with['persist-credentials'], false);
+  const apply = steps.findIndex(step => step.name === 'Apply v5.10.0 Linux archive recovery verifier');
+  const restore = steps.findIndex(step => step.run === 'node scripts/release-linux-artifact.mjs restore');
+  assert.equal(steps[apply].if, checkout.if);
+  assert.ok(steps.indexOf(checkout) < apply && apply < restore);
+  assert.ok(steps[apply].run.includes("copyFileSync('.release-tools/scripts/release-linux-artifact.mjs', 'scripts/release-linux-artifact.mjs')"));
+  assert.ok(commands(jobs['linux-format']).includes('--prepackaged release/linux-unpacked'));
+});
+
 test('publication rejects failed, cancelled, skipped or missing platform and Linux assembly gates', () => {
   assert.deepEqual(jobs['upload-linux'].needs, ['prepare-release', 'linux-unpacked', 'linux-format']);
   assert.ok(commands(jobs['upload-linux']).indexOf('release-linux-artifact.mjs collect')

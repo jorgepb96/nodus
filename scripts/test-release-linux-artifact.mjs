@@ -44,6 +44,29 @@ test('real tar transfer preserves the executable, every byte and relative symlin
   }
 }));
 
+test('tar restore retains producer permissions under restrictive consumer umasks', () => temporary(root => {
+  const producer = path.join(root, 'producer'), directory = app(producer);
+  const connector = path.join(directory, 'resources/browser/nodus-research-connector-chrome.zip');
+  mkdirSync(path.dirname(connector));
+  writeFileSync(connector, 'prepared connector archive');
+  // The 5.10.0 producer recorded this ZIP as 0666. GNU tar restored it as
+  // 0644 on all three installer runners, and the exact inventory rejected it.
+  chmodSync(connector, 0o666);
+  chmodSync(path.dirname(connector), 0o775);
+  chmodSync(path.join(directory, 'nodus'), 0o775);
+  const manifest = packPreparedApp(producer, context);
+  const previousMask = process.umask();
+  try {
+    for (const mask of [0o022, 0o077]) for (const format of formats) {
+      const consumer = path.join(root, `${format}-${mask}`);
+      process.umask(mask);
+      cpSync(path.join(producer, '.ci'), path.join(consumer, '.ci'), { recursive: true });
+      assert.deepEqual(restorePreparedApp(consumer, context), manifest);
+      verifyAppManifest(path.join(consumer, 'release/linux-unpacked'), manifest, context);
+    }
+  } finally { process.umask(previousMask); }
+}));
+
 test('another commit, lockfile, platform, architecture or channel cannot reuse the app', () => temporary(root => {
   const directory = app(root), manifest = createAppManifest(directory, context);
   for (const key of ['commit', 'lockHash', 'version', 'tag', 'channel', 'repository', 'platform', 'arch']) {

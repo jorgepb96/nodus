@@ -59,15 +59,10 @@ import { ProsopographyTour } from './views/ProsopographyTour';
 import { WorldbuildingTour } from './views/WorldbuildingTour';
 import { FIRST_VAULT_VERSION } from './views/FirstVaultSetup';
 import { hasPendingWhatsNew, WhatsNewModal } from './components/WhatsNewModal';
-import { PdfPresenterTutorialAnnouncement } from './components/PdfPresenterTutorialAnnouncement';
-import { TutorialVideosUpdateTour } from './components/TutorialVideosGuide';
-import { PlatformHighlightsUpdateTour } from './components/PlatformHighlightsGuide';
-import { ToolkitBetaUpdateTour } from './components/ToolkitBetaGuide';
 import { useUpdateProgress } from './useUpdateProgress';
 import { pendingUpdateVersion, updateInstallBusy } from './updateStatus';
 import { UpdateReadyNotice } from './components/UpdateReadyNotice';
 import { AiModelRequiredModal } from './components/AiModelRequiredModal';
-import { MobileTeaserGuide } from './components/MobileTeaserGuide';
 import { recoveryHealthAdvice, recoveryHealthHeadline } from './recoveryHealth';
 import { NodiMascot } from './components/nodi/NodiMascot';
 import { NodiStyleModal } from './components/NodiStyleModal';
@@ -106,6 +101,7 @@ import nodusLogoTeal from './assets/nodus-logo-teal.svg';
 import nodusLogoOrange from './assets/nodus-logo-orange.svg';
 import nodusLogoViolet from './assets/nodus-logo-violet.svg';
 import nodusLogoCyan from './assets/nodus-logo-cyan.svg';
+import { NodusHeaderLogo } from './components/NodusHeaderLogo';
 import { buildDockIconDataUrl, dockColorForVaultType } from './dockIcon';
 import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, applyThemeMode, applyVaultAccent } from './theme/themeBoot';
 import { APP_THEME_IDS } from '@shared/appThemes';
@@ -245,24 +241,8 @@ export function App() {
   const [whatsNewSettled, setWhatsNewSettled] = useState(() => !hasPendingWhatsNew());
   const [manualWhatsNewOpen, setManualWhatsNewOpen] = useState(false);
   const [aiModelRequiredOpen, setAiModelRequiredOpen] = useState(false);
-  // The mobile app does not exist in this build, so there is no tutorial chapter that
-  // could have covered it: every 3.2.4 user gets the teaser once, new install or not.
-  const [mobileTeaserSettled, setMobileTeaserSettled] = useState(false);
-  // Existing users receive the current MCP/Server/Zotero/Toolkit overview directly
-  // after release notes. Fresh installs already saw the same three chapters in v5.
-  const [platformHighlightsSettled, setPlatformHighlightsSettled] = useState(false);
-  // The 2.4.0 toolkit/model guide queues directly behind release notes. Its own
-  // versioned guard settles immediately for new installs and for users who saw it.
-  const [toolkitBetaTourSettled, setToolkitBetaTourSettled] = useState(false);
-  // The Nodus Presenter video announcement queues immediately after release notes.
-  const [pdfPresenterTutorialSettled, setPdfPresenterTutorialSettled] = useState(false);
-  // Users who completed the essential guide before the video tutorials existed were
-  // never asked "video or text", so the catalogue is announced to them once, here.
-  const [tutorialVideosSettled, setTutorialVideosSettled] = useState(false);
   // Startup progress is non-blocking; later checks stay silent until ready to install.
   const [updateProgress, setUpdateProgress, showStartupProgress] = useUpdateProgress({ checkOnStartup: true });
-  const startupGuidesSettled = whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled
-    && platformHighlightsSettled && toolkitBetaTourSettled && tutorialVideosSettled;
   const [deferredUpdate, setDeferredUpdate] = useState<string | null>(null);
   const readyVersion = pendingUpdateVersion(updateProgress);
   const updateNoticeKey = readyVersion ? `${readyVersion}${updateProgress?.errorCode ?? ''}` : null;
@@ -1501,8 +1481,7 @@ export function App() {
   }, []);
   useEffect(() => {
     if (!isAcademic || !settings?.academicLearningProgress?.invitationsEligible) return;
-    setWhatsNewSettled(true); setPdfPresenterTutorialSettled(true); setMobileTeaserSettled(true);
-    setPlatformHighlightsSettled(true); setToolkitBetaTourSettled(true); setTutorialVideosSettled(true);
+    setWhatsNewSettled(true);
   }, [isAcademic, settings?.academicLearningProgress?.invitationsEligible]);
 
   const startupGate = resolveStartupGate({
@@ -1655,11 +1634,10 @@ export function App() {
           aria-label={navCollapsed ? t('Mostrar el menú lateral') : t('Ocultar el menú lateral (más espacio para el grafo)')}
         >
           <span data-testid="sidebar-header-brand" className="flex items-center justify-center gap-2" style={{ transform: sidebarCompact && IS_MAC ? 'translateY(0.5625rem)' : undefined }}>
-            <img
+            <NodusHeaderLogo
               data-testid="nodus-logo"
               data-vault-logo={isPrimarySources ? 'primary_sources' : isGenealogy ? 'genealogy' : isDatabases ? 'databases' : isEstudio ? 'estudio' : isDocencia ? 'docencia' : isWorldbuilding ? 'worldbuilding' : isTestimonios ? 'testimonios' : isProsopography ? 'prosopography' : 'academic'}
               src={isGenealogy ? nodusLogoGold : isDatabases ? nodusLogoCrimson : isEstudio ? nodusLogoTeal : isDocencia ? nodusLogoOrange : isWorldbuilding ? nodusLogoViolet : isTestimonios ? nodusLogoCyan : nodusLogo}
-              alt=""
               className={sidebarCompact && IS_MAC
                 ? 'h-[18px] w-[18px]'
                 : sidebarCompact || (IS_MAC && sidebarWidth < MACOS_FULL_SIDEBAR_BRAND_MIN_WIDTH)
@@ -2497,48 +2475,10 @@ export function App() {
         />
       )}
 
-      {!settings.academicLearningProgress?.invitationsEligible && whatsNewSettled && !pdfPresenterTutorialSettled && !manualWhatsNewOpen && (
-        <PdfPresenterTutorialAnnouncement
-          language={settings.uiLanguage}
-          onSettled={() => setPdfPresenterTutorialSettled(true)}
-        />
-      )}
-
-      {!settings.academicLearningProgress?.invitationsEligible && whatsNewSettled && pdfPresenterTutorialSettled && !mobileTeaserSettled && !manualWhatsNewOpen && (
-        <MobileTeaserGuide
-          uiLanguage={settings.uiLanguage}
-          onSettled={() => setMobileTeaserSettled(true)}
-        />
-      )}
-
-      {!settings.academicLearningProgress?.invitationsEligible && whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && !platformHighlightsSettled && !manualWhatsNewOpen && (
-        <PlatformHighlightsUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setPlatformHighlightsSettled(true)}
-        />
-      )}
-
-      {!settings.academicLearningProgress?.invitationsEligible && whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && !toolkitBetaTourSettled && !manualWhatsNewOpen && (
-        <ToolkitBetaUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setToolkitBetaTourSettled(true)}
-        />
-      )}
-
-      {!settings.academicLearningProgress?.invitationsEligible && whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && toolkitBetaTourSettled && !tutorialVideosSettled && !manualWhatsNewOpen && (
-        <TutorialVideosUpdateTour
-          uiLanguage={settings.uiLanguage}
-          previousTutorialVersion={settings.basicsTutorialVersion}
-          onSettled={() => setTutorialVideosSettled(true)}
-        />
-      )}
-
       {/* Users who already saw the cinematic tutorial were never offered the choice of
-          Nodi, so it is made here instead — once, after the startup guides. New users
+          Nodi, so it is made here instead — once, after release notes. New users
           pick inside the tutorial and reach this already chosen. */}
-      {startupGuidesSettled && !manualWhatsNewOpen && !isPreviewVault &&
+      {whatsNewSettled && !manualWhatsNewOpen && !isPreviewVault &&
         settings.onboardingComplete &&
         settings.basicsTutorialVersion > 0 &&
         !recoveryStatus?.needsSetup &&
@@ -2547,7 +2487,7 @@ export function App() {
           <NodiStyleModal onChosen={async () => { await reloadSettings(); }} />
         )}
 
-      {!focusReduced && !manualWhatsNewOpen && startupGuidesSettled && <NodiMascot settings={settings} />}
+      {!focusReduced && !manualWhatsNewOpen && whatsNewSettled && <NodiMascot settings={settings} />}
     </div>
     </AcademicLearningContext.Provider></AcademicInterfaceContext.Provider>
   );

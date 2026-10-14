@@ -22,6 +22,7 @@ import {
   type AudioGenerationResult,
 } from '../backgroundJobs';
 import { useAudioPlayer, type PlayerTrack } from './AudioPlayer';
+import { HoverLabelButton, Icon, ModalBackdrop } from './ui';
 import { localizeRuntimeError } from '@shared/uiLanguage';
 import { getActiveLang, t, tx } from '../i18n';
 
@@ -43,6 +44,7 @@ export function AudioPanel({
   entityKind,
   entityId,
   compact,
+  toolbar = false,
   sourceMarkdown,
   selectionText,
   cursorOffset,
@@ -53,6 +55,8 @@ export function AudioPanel({
   entityKind: AudioEntityKind;
   entityId: string;
   compact?: boolean;
+  /** Show a fixed reader action; narration controls open only on click. */
+  toolbar?: boolean;
   sourceMarkdown?: string;
   selectionText?: string;
   cursorOffset?: number;
@@ -72,6 +76,7 @@ export function AudioPanel({
   const [playlist, setPlaylist] = useState<StudyAudioPlaylistItem[]>([]);
   const [dictionaryDraft, setDictionaryDraft] = useState({ written: '', spoken: '' });
   const [showStudyTools, setShowStudyTools] = useState(false);
+  const [open, setOpen] = useState(false);
   const mounted = useRef(true);
 
   const generating = run != null;
@@ -216,7 +221,7 @@ export function AudioPanel({
   const pct = run && run.total > 0 ? Math.round((run.done / run.total) * 100) : 0;
   const segmentText = new Map(segments.map((segment) => [segment.index, segment.text]));
 
-  return (
+  const panel = (
     <div className={`rounded-lg border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900/40 ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
@@ -290,7 +295,7 @@ export function AudioPanel({
         </div>
       )}
 
-      {error && <div className="mt-2 text-xs text-red-400">{error}</div>}
+      {error && <div role="alert" className="mt-2 text-xs text-red-400">{error}</div>}
 
       {anyMissing && !generating && (
         <div className="mt-2 text-[11px] text-neutral-500">
@@ -353,6 +358,44 @@ export function AudioPanel({
       )}
     </div>
   );
+
+  if (!toolbar) return panel;
+
+  return <>
+    <HoverLabelButton
+      icon={generating ? 'sync' : 'audio'}
+      label={generating || hasClips ? t('Audio') : t('Generar audio')}
+      iconOnly
+      spinning={generating}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      data-testid="deep-research-audio-toggle"
+      className={`btn-ghost h-9 min-h-9 border ${generating || hasClips ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
+      onClick={() => {
+        setOpen(true);
+        if (!hasClips && !generating) void generate();
+      }}
+    />
+    {open && <ModalBackdrop onClose={() => setOpen(false)}>
+      <section
+        className="card-modal flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('Audio')}
+        data-testid="deep-research-audio-dialog"
+      >
+        <header className="flex items-center gap-2 border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
+          <Icon name="audio" className="text-indigo-500 dark:text-indigo-300" />
+          <h2 className="text-sm font-semibold">{t('Audio')}</h2>
+          <div className="flex-1" />
+          <button type="button" autoFocus className="btn btn-ghost !p-2" onClick={() => setOpen(false)} aria-label={t('Cerrar')} title={t('Cerrar')}>
+            <Icon name="x" size={15} />
+          </button>
+        </header>
+        <div className="min-h-0 overflow-y-auto p-5">{panel}</div>
+      </section>
+    </ModalBackdrop>}
+  </>;
 }
 
 function formatDuration(seconds: number): string {

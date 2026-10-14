@@ -17,6 +17,7 @@ try {
   CopilotClientCtor = class {} as any;
   RuntimeConnection = { forStdio: () => ({}) } as any;
 }
+import { agentRuntimeStatus, ensureAgentRuntime, onAgentRuntimeChanged } from './agentRuntime';
 import { ProviderRuntimeError } from './providerErrors';
 import type {
   GitHubCopilotSessionUsage,
@@ -80,40 +81,6 @@ function copilotHome(): string {
   return dir;
 }
 
-function unpackedAsarPath(file: string): string {
-  const marker = `${path.sep}app.asar${path.sep}`;
-  return file.includes(marker) ? file.replace(marker, `${path.sep}app.asar.unpacked${path.sep}`) : file;
-}
-
-export function resolveGitHubCopilotBinaryPath(): string {
-  const packageName = (() => {
-    if (process.platform === 'darwin' && process.arch === 'arm64') return '@github/copilot-darwin-arm64';
-    if (process.platform === 'darwin' && process.arch === 'x64') return '@github/copilot-darwin-x64';
-    if (process.platform === 'linux' && process.arch === 'arm64') return '@github/copilot-linux-arm64';
-    if (process.platform === 'linux' && process.arch === 'x64') return '@github/copilot-linux-x64';
-    if (process.platform === 'win32' && process.arch === 'arm64') return '@github/copilot-win32-arm64';
-    if (process.platform === 'win32' && process.arch === 'x64') return '@github/copilot-win32-x64';
-    return null;
-  })();
-  if (!packageName) throw new Error(`GitHub Copilot no es compatible con ${process.platform}/${process.arch}.`);
-
-  const require = createRequire(__filename);
-  let executable: string;
-  try {
-    executable = require.resolve(packageName);
-  } catch {
-    try {
-      const loader = require.resolve('@github/copilot/package.json');
-      executable = path.join(path.dirname(loader), 'node_modules', ...packageName.split('/'), process.platform === 'win32' ? 'copilot.exe' : 'copilot');
-    } catch {
-      throw new Error('No se encontró el runtime oficial de GitHub Copilot incluido con Nodus.');
-    }
-  }
-  executable = unpackedAsarPath(executable);
-  if (!fs.existsSync(executable)) throw new Error('El ejecutable oficial de GitHub Copilot no está disponible en esta instalación.');
-  return executable;
-}
-
 function sanitizedEnv(): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [name, value] of Object.entries(process.env)) {
@@ -131,11 +98,14 @@ function sanitizedEnv(): Record<string, string> {
   return env;
 }
 
-function getClient(): CopilotClient {
+/** The SDK client, downloading the Copilot CLI first if this machine lacks it. */
+async function getClient(): Promise<CopilotClient> {
+  if (client) return client;
+  const executable = await ensureAgentRuntime('copilot');
   if (client) return client;
   const home = copilotHome();
   client = new CopilotClientCtor({
-    connection: RuntimeConnection.forStdio({ path: resolveGitHubCopilotBinaryPath(), env: sanitizedEnv() }),
+    connection: RuntimeConnection.forStdio({ path: executable, env: sanitizedEnv() }),
     mode: 'empty',
     baseDirectory: home,
     workingDirectory: home,
@@ -171,16 +141,28 @@ async function withCopilotRuntime<T>(work: (runtime: CopilotClient) => Promise<T
   clearIdleTimer();
   activeRuntimeRequests += 1;
   try {
-    return await work(getClient());
+    return await work(await getClient());
   } finally {
     activeRuntimeRequests = Math.max(0, activeRuntimeRequests - 1);
     armIdleTimer();
   }
 }
 
+let lastStatus: GitHubCopilotSubscriptionStatus = EMPTY_STATUS;
+
 function emit(status: GitHubCopilotSubscriptionStatus): void {
+  lastStatus = status;
   for (const listener of listeners) listener(status);
 }
+
+// The Copilot CLI is downloaded the first time it is needed (./agentRuntime). Its
+// progress travels with the status, and the account is read again once it is ready.
+onAgentRuntimeChanged((kind) => {
+  if (kind !== 'copilot') return;
+  const runtime = agentRuntimeStatus('copilot');
+  if (runtime.state === 'ready') void refresh();
+  else emit({ ...lastStatus, runtime });
+});
 
 export function onGitHubCopilotSubscriptionStatusChanged(
   listener: (status: GitHubCopilotSubscriptionStatus) => void
@@ -210,6 +192,11 @@ function mapQuota(id: string, raw: any): GitHubCopilotSubscriptionQuotaWindow {
 }
 
 async function readStatus(): Promise<GitHubCopilotSubscriptionStatus> {
+  // Reading the status never downloads the CLI: every visit to Providers reads it.
+  const runtimeState = agentRuntimeStatus('copilot');
+  if (runtimeState.state !== 'ready') {
+    return { ...EMPTY_STATUS, available: true, loginPending: loginProcess !== null, lastSession, runtime: runtimeState };
+  }
   try {
     return await withCopilotRuntime(async (runtime) => {
       await runtime.start();
@@ -222,6 +209,7 @@ async function readStatus(): Promise<GitHubCopilotSubscriptionStatus> {
           statusMessage: auth.statusMessage ?? null,
           lastSession,
           error: loginDiagnostic || null,
+          runtime: runtimeState,
         };
       }
       let quota: GitHubCopilotSubscriptionQuotaWindow[] = [];
@@ -243,6 +231,7 @@ async function readStatus(): Promise<GitHubCopilotSubscriptionStatus> {
         quota,
         lastSession,
         error: null,
+        runtime: runtimeState,
       };
     });
   } catch (error) {
@@ -251,6 +240,7 @@ async function readStatus(): Promise<GitHubCopilotSubscriptionStatus> {
       loginPending: loginProcess !== null,
       lastSession,
       error: error instanceof Error ? error.message : String(error),
+      runtime: agentRuntimeStatus('copilot'),
     };
   }
 }
@@ -265,11 +255,18 @@ export async function getGitHubCopilotSubscriptionStatus(): Promise<GitHubCopilo
   return refresh();
 }
 
+/** Download the Copilot CLI now (the Providers button), then read the account again. */
+export async function installGitHubCopilotSubscriptionRuntime(): Promise<GitHubCopilotSubscriptionStatus> {
+  await ensureAgentRuntime('copilot');
+  return refresh();
+}
+
 export async function startGitHubCopilotSubscriptionLogin(): Promise<GitHubCopilotSubscriptionStatus> {
+  const executable = await ensureAgentRuntime('copilot');
   const current = await readStatus();
   if (current.connected || loginProcess) return current;
   loginDiagnostic = '';
-  const child = spawn(resolveGitHubCopilotBinaryPath(), ['login', '--host', 'https://github.com'], {
+  const child = spawn(executable, ['login', '--host', 'https://github.com'], {
     env: sanitizedEnv(),
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true,

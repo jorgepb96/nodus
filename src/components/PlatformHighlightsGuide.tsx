@@ -1,15 +1,11 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AppLanguage } from '@shared/types';
+import type { ReactNode } from 'react';
 import type { TutorialLanguage } from '@shared/tutorialPreferences';
 import { TOOLKIT_TOOLS } from '../navigation';
 import zoteroLogo from '../assets/brands/zotero.svg';
 import { Icon } from './ui';
 import { t } from '../i18n';
-import { NodiAvatar } from './nodi/NodiAvatar';
 
 export const PLATFORM_HIGHLIGHTS_TUTORIAL_VERSION = 5;
-const SEEN_KEY = 'nodus.platformHighlightsSeen.2026-07';
 
 type PlatformSlideCopy = {
   eyebrow: string;
@@ -668,83 +664,4 @@ export function platformHighlightSlides(language: TutorialLanguage): PlatformHig
     { ...zotero, icon: 'book', nodi: 'discovering', content: <ZoteroPanel language={language} /> },
     { ...toolkit, icon: 'tools', nodi: 'thinking', content: <ToolkitPanel language={language} /> },
   ];
-}
-
-function shouldPresent(previousTutorialVersion: number): boolean {
-  if (previousTutorialVersion <= 0 || previousTutorialVersion >= PLATFORM_HIGHLIGHTS_TUTORIAL_VERSION) return false;
-  try { return localStorage.getItem(SEEN_KEY) !== '1'; } catch { return true; }
-}
-
-function markSeen(): void {
-  try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* storage unavailable: show again next launch */ }
-}
-
-export function PlatformHighlightsUpdateTour({
-  uiLanguage,
-  previousTutorialVersion,
-  onSettled,
-}: {
-  uiLanguage: AppLanguage;
-  previousTutorialVersion: number;
-  onSettled: () => void;
-}) {
-  const [eligible] = useState(() => shouldPresent(previousTutorialVersion));
-  const [index, setIndex] = useState(0);
-  const copy = COPY[uiLanguage];
-  const slides = useMemo(() => platformHighlightSlides(uiLanguage), [uiLanguage]);
-
-  useEffect(() => { if (!eligible) onSettled(); }, [eligible, onSettled]);
-  if (!eligible) return null;
-
-  const slide = slides[index];
-  const last = index === slides.length - 1;
-  const finish = () => {
-    // Deliberately written only after the user completes this runtime tour. Merely
-    // installing or testing the build never pre-marks the announcement as seen.
-    markSeen();
-    onSettled();
-  };
-
-  return <motion.div className="toolkit-guide-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .22 }}>
-    <motion.section
-      className="toolkit-guide-cinema platform-guide-cinema"
-      data-testid="platform-highlights-update-tour"
-      data-guide-step={index}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="platform-guide-title"
-      initial={{ opacity: 0, y: 28, scale: .96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: .46, ease: [0.2, 0.8, 0.2, 1] }}
-    >
-      <header className="toolkit-guide-hero platform-guide-hero">
-        <div className="toolkit-guide-aurora" aria-hidden="true" />
-        <div className="toolkit-guide-hero-copy">
-          <div className="toolkit-guide-kicker"><Icon name="sparkles" size={14} /> {copy.modalBadge}</div>
-          <h2>{copy.modalTitle}</h2>
-          <p>{copy.modalSummary}</p>
-        </div>
-        <div className="toolkit-guide-nodi"><NodiAvatar state={last ? 'celebrating' : slide.nodi} height={172} /></div>
-      </header>
-      <div className="toolkit-guide-progress" aria-label={`${index + 1}/${slides.length}`}>
-        {slides.map((_, itemIndex) => <button key={itemIndex} className={itemIndex <= index ? 'active' : ''} disabled={itemIndex > index} onClick={() => setIndex(itemIndex)} aria-label={`${copy.step} ${itemIndex + 1}`} />)}
-      </div>
-      <div className="toolkit-guide-stage">
-        <AnimatePresence mode="wait">
-          <motion.article key={index} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -22 }} transition={{ duration: .25 }}>
-            <div className="toolkit-guide-eyebrow"><Icon name={slide.icon} size={15} /> {copy.step} {index + 1} {copy.of} {slides.length} · {slide.eyebrow}</div>
-            <h3 id="platform-guide-title">{slide.title}</h3>
-            <p className="toolkit-guide-summary">{slide.summary}</p>
-            <div className="toolkit-guide-content">{slide.content}</div>
-          </motion.article>
-        </AnimatePresence>
-      </div>
-      <footer className="toolkit-guide-footer">
-        <button disabled={index === 0} onClick={() => setIndex((value) => Math.max(0, value - 1))}><Icon name="arrowLeft" size={14} /> {copy.previous}</button>
-        {last
-          ? <button className="primary" data-testid="platform-highlights-tour-complete" onClick={finish}>{copy.finish} <Icon name="check" size={14} /></button>
-          : <button className="primary" onClick={() => setIndex((value) => value + 1)}>{copy.next} <Icon name="chevronRight" size={14} /></button>}
-      </footer>
-    </motion.section>
-  </motion.div>;
 }

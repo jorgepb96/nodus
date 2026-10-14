@@ -8,6 +8,7 @@ const keys = ['full', 'light', 'macos', 'windows', 'research', 'scheme', 'server
 const documentation = file => file === 'README.md' || file === '.github/actions-budget/README.md'
   || /^docs\/.*\.md$/.test(file) || (file.startsWith('site/') && !file.startsWith('site/data/'));
 const policy = file => file === '.github/workflows/ci.yml'
+  || file.startsWith('.github/actions/ci-linux/')
   || /^scripts\/(?:ci-|test-ci-).*\.mjs$/.test(file);
 const dependencies = file => /^package(?:-lock)?\.json$/.test(file) || file === '.npmrc';
 const native = file => dependencies(file) || /^(?:electron|build|runtime|shared)\//.test(file)
@@ -74,7 +75,10 @@ export function changedPaths(base, head, cwd = process.cwd()) {
 export function assertJobResults(selection, jobs) {
   const expected = {
     changes: true,
+    quality: selection.full,
     linux: selection.full,
+    unit: selection.full,
+    e2e: selection.full,
     light: selection.light,
     platform: selection.macos || selection.windows,
     scheme: selection.scheme,

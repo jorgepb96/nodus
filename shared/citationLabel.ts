@@ -11,12 +11,33 @@
 // only works if the reader derives it *exactly* as the writer did, so both sides
 // import these functions instead of keeping their own copy.
 
+import type { PromptLanguage } from './types';
+
 /**
  * How an editor is marked inside a stored byline. Defined here, with the code that
  * reads bylines, and re-exported by the repo that writes them, so the marker can
  * never be spelled two ways.
  */
 export const EDITOR_BYLINE_SUFFIX = ' (ed.)';
+
+/** What a work with neither author nor title is called in each content language. */
+const UNTITLED_WORK: Record<PromptLanguage, string> = {
+  es: 'Obra sin autor',
+  en: 'Untitled work',
+  fr: 'Œuvre sans auteur',
+  de: 'Werk ohne Autor',
+  pt: 'Obra sem autor',
+  'pt-BR': 'Obra sem autor',
+  it: 'Opera senza autore',
+  tr: 'Yazarsız eser',
+  'zh-Hans': '无作者作品',
+  'zh-Hant': '無作者作品',
+  vi: 'Tác phẩm không rõ tác giả',
+  ja: '著者不明の著作',
+  ru: 'Работа без автора',
+  uk: 'Праця без автора',
+  ko: '저자 미상 저작',
+};
 
 /** Trim to `max` characters on a word-safe boundary, with an ellipsis. */
 export function clipLabel(text: string, max: number): string {
@@ -25,7 +46,12 @@ export function clipLabel(text: string, max: number): string {
 }
 
 /** Turn Nodus's stored `Apellido, I.` name into a readable inline citation. */
-export function authorYearLabel(author: string | undefined, year: number | null | undefined, title?: string): string {
+export function authorYearLabel(
+  author: string | undefined,
+  year: number | null | undefined,
+  title?: string,
+  language: PromptLanguage = 'es',
+): string {
   const trimmed = author?.replace(/\s+/g, ' ').trim();
   // A work Zotero credits to editors only is cited under one of them, and the
   // citation says so. Dropping the marker here would put the whole point of the
@@ -39,7 +65,8 @@ export function authorYearLabel(author: string | undefined, year: number | null 
     // title is a real citation for a source whose author the corpus never captured.
     const short = clipLabel((title ?? '').replace(/\s+/g, ' ').trim(), 42);
     if (short) return year ? `${short} (${year})` : short;
-    return year ? `Obra sin autor (${year})` : 'Obra sin autor';
+    const untitled = UNTITLED_WORK[language] ?? UNTITLED_WORK.es;
+    return year ? `${untitled} (${year})` : untitled;
   }
   const comma = raw.indexOf(',');
   const surname = (comma >= 0 ? raw.slice(0, comma) : raw.split(' ').slice(-1).join(' ')).trim() || raw;
@@ -54,10 +81,11 @@ export function authorYearLabel(author: string | undefined, year: number | null 
 
 /** The inline citation for one work. */
 export function sourceLabelFromWork(
-  work: { authors: string[]; year: number | null; title?: string } | undefined
+  work: { authors: string[]; year: number | null; title?: string } | undefined,
+  language: PromptLanguage = 'es',
 ): string {
   if (!work) return '';
-  return authorYearLabel(work.authors[0], work.year, work.title);
+  return authorYearLabel(work.authors[0], work.year, work.title, language);
 }
 
 /** One line of the reference list. */

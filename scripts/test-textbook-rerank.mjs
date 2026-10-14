@@ -21,6 +21,9 @@ const STUBS = {
   './moleculeInspection': 'export const chemistryRunner = () => ({ runner: {}, dispose: async () => {} });',
   './aiClient': 'export const embed = async () => null;',
   './chemistryStock': 'export const chemistryStockDirectory = () => null;',
+  // The monomer library resolves its directory through electron's app, which a bundle run under
+  // plain node cannot load; without this stub the whole file fails before a test runs.
+  './chemistryMonomers': 'export const monomerLibraryDirectory = () => null;',
   // No textbook-scheme index unless a scenario sets one.
   './textbookSchemes': `export const textbookSchemeDirectory = () => globalThis.__textbook?.dir ?? null; export const textbookCitations = (ids) => (globalThis.__textbook?.cite ?? (() => []))(ids); export const textbookTemplateCitations = (templates) => (globalThis.__textbook?.citeTemplates ?? (() => []))(templates);`,
   './localReranker': 'export const rerankerAvailable = () => globalThis.__rr.available; export const rerank = async (q, docs) => globalThis.__rr.scores ? globalThis.__rr.scores(docs) : null;',

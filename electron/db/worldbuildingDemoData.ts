@@ -10,6 +10,7 @@
 // surgically without touching anything the user creates while exploring it.
 
 import { app } from 'electron';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getDb } from './database';
@@ -71,6 +72,55 @@ function demoAsset(fileName: string): Buffer {
   const bytes = fs.readFileSync(path.join(DEMO_ASSET_DIR, fileName));
   ASSET_CACHE.set(fileName, bytes);
   return bytes;
+}
+
+// Every artwork ships twice: `<base>.webp`, the card thumbnail, and `<base>.original.webp`,
+// what a dossier or the map viewer opens (lossy WebP since 5.9.2: the PNG originals were
+// 118 MB of every installer). An existing demo vault may still hold what earlier builds
+// stored instead, which no longer ships, so legacy-originals.json keeps its SHA-256:
+//   pngOriginals — the lossless PNG originals of 5.9.1 and earlier, one per base;
+//   webpCrops    — the small WebP crops the very first demo stored as originals.
+// That is how the repairs below tell a demo-owned row from an image the author put there.
+function demoOriginal(base: string): Buffer {
+  return demoAsset(`${base}.original.webp`);
+}
+
+function demoThumbnail(base: string): Buffer {
+  return demoAsset(`${base}.webp`);
+}
+
+interface LegacyOriginals {
+  pngOriginals: Record<string, string>;
+  webpCrops: Record<string, string[]>;
+}
+
+let legacyOriginals: LegacyOriginals | null = null;
+let legacyCropHashes: Set<string> | null = null;
+
+/** Test seam: the legacy files no longer ship, so a test stands in its own by hash. */
+export function __setLegacyDemoOriginalsForTest(hashes: LegacyOriginals | null): void {
+  legacyOriginals = hashes;
+  legacyCropHashes = null;
+}
+
+function legacy(): LegacyOriginals {
+  legacyOriginals ??= JSON.parse(demoAsset('legacy-originals.json').toString('utf8')) as LegacyOriginals;
+  return legacyOriginals;
+}
+
+const sha256 = (blob: Buffer): string => createHash('sha256').update(blob).digest('hex');
+
+/** Whether `blob` is the original this demo ships for `base`, today's or a former PNG. */
+function isDemoOriginal(blob: Buffer, base: string): boolean {
+  if (blob.equals(demoOriginal(base))) return true;
+  const png = legacy().pngOriginals[base];
+  return Boolean(png) && sha256(blob) === png;
+}
+
+/** Whether `blob` is one of the crops the first demo stored as an original, for any entity. */
+function isLegacyCrop(blob: Buffer): boolean {
+  legacyCropHashes ??= new Set(Object.values(legacy().webpCrops).flat());
+  return legacyCropHashes.has(sha256(blob));
 }
 
 function insert(table: string, row: Record<string, SqlValue>): void {
@@ -379,7 +429,12 @@ function demoImageAsset(entityKind: string, entityId: string, thumbnail = false)
     if (!mapped) throw new Error(`Missing demo image asset for ${entityKind}:${entityId}`);
     fileName = mapped;
   }
-  return thumbnail ? fileName : fileName.replace(/\.webp$/, '.png');
+  return thumbnail ? fileName : fileName.replace(/\.webp$/, '.original.webp');
+}
+
+/** `lore-gate.webp` → `lore-gate`: the base both of an entity's files share. */
+function demoImageBase(entityKind: string, entityId: string): string {
+  return demoImageAsset(entityKind, entityId, true).replace(/\.webp$/, '');
 }
 
 function demoImage(entityKind: string, entityId: string, title: string, order = 0): void {
@@ -392,7 +447,7 @@ function demoImage(entityKind: string, entityId: string, title: string, order = 
     entity_id: entityId,
     kind: group?.kind === 'house' ? 'emblem' : entityKind === 'character' ? 'full_body' : order === 0 ? 'portrait' : 'other',
     label: title,
-    mime_type: 'image/png',
+    mime_type: 'image/webp',
     bytes: bytes.length,
     blob: bytes,
     thumbnail,
@@ -419,10 +474,13 @@ function hasWorldbuildingData(): boolean {
 }
 
 /**
- * Replace the first demo's small contact-sheet crops with full source PNGs.
+ * Bring an existing demo vault's artwork in line with what this build ships.
  *
- * Only legacy WebP rows are touched. Once upgraded, subsequent launches are a no-op and
- * any image the author has replaced with another format remains theirs.
+ * Runs at every launch and touches only demo-owned rows: a row stays demo-owned while its
+ * bytes equal an original the demo ships or shipped (see isDemoOriginal). Rows already
+ * holding today's original are left alone, so a repaired vault is not rewritten again.
+ * The lossless PNG originals an older build stored are kept, with their own MIME type:
+ * only the pairings below are repaired.
  */
 export function upgradeWorldbuildingDemoImageQuality(): boolean {
   if (
@@ -434,50 +492,55 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
   }
   const db = getDb();
   db.transaction(() => {
+    // The first demo stored small contact-sheet crops as WebP "originals". Replace them
+    // with the shipped original. Originals are WebP too now, so the MIME type no longer
+    // tells a crop apart: its hash does, and an image the author chose is never one.
     const images = db
       .prepare(
-        `SELECT image_id, entity_kind, entity_id
+        `SELECT image_id, entity_kind, entity_id, blob
            FROM world_images
           WHERE image_id LIKE ? AND mime_type = 'image/webp'`
       )
-      .all(`${PREFIX}%`) as Array<{ image_id: string; entity_kind: string; entity_id: string }>;
+      .all(`${PREFIX}%`) as Array<{ image_id: string; entity_kind: string; entity_id: string; blob: Buffer }>;
     for (const image of images) {
+      if (!isLegacyCrop(image.blob)) continue;
       const full = demoAsset(demoImageAsset(image.entity_kind, image.entity_id));
       const thumbnail = demoAsset(demoImageAsset(image.entity_kind, image.entity_id, true));
       db.prepare(
         `UPDATE world_images SET
-           mime_type = 'image/png', bytes = ?, blob = ?,
+           mime_type = 'image/webp', bytes = ?, blob = ?,
            thumbnail = ?, thumbnail_mime_type = 'image/webp', updated_at = ?
-         WHERE image_id = ? AND mime_type = 'image/webp'`
-      ).run(full.length, full, thumbnail, IMAGE_AT, image.image_id);
+         WHERE image_id = ? AND mime_type = 'image/webp' AND blob = ?`
+      ).run(full.length, full, thumbnail, IMAGE_AT, image.image_id, image.blob);
     }
 
     const portraits = db
       .prepare(
-        `SELECT person_id FROM person_portraits
+        `SELECT person_id, blob FROM person_portraits
           WHERE person_id LIKE ? AND mime = 'image/webp'`
       )
-      .all(`${PREFIX}char-%`) as Array<{ person_id: string }>;
-    for (const { person_id: personId } of portraits) {
+      .all(`${PREFIX}char-%`) as Array<{ person_id: string; blob: Buffer }>;
+    for (const { person_id: personId, blob } of portraits) {
+      if (!isLegacyCrop(blob)) continue;
       const base = `character-${personId.slice(`${PREFIX}char-`.length)}`;
       db.prepare(
         `UPDATE person_portraits SET
-           blob = ?, mime = 'image/png', thumbnail = ?, thumbnail_mime = 'image/webp',
+           blob = ?, mime = 'image/webp', thumbnail = ?, thumbnail_mime = 'image/webp',
            updated_at = ?
-         WHERE person_id = ? AND mime = 'image/webp'`
-      ).run(demoAsset(`${base}.png`), demoAsset(`${base}.webp`), IMAGE_AT, personId);
+         WHERE person_id = ? AND mime = 'image/webp' AND blob = ?`
+      ).run(demoOriginal(base), demoThumbnail(base), IMAGE_AT, personId, blob);
     }
 
     // The first lossless-image upgrade shipped its PNG originals and WebP card images
     // independently. Several pairs therefore depicted different characters: the grid
     // loaded one asset and the dossier loaded another. Repair only rows whose original
-    // still equals the distributed PNG byte-for-byte. A portrait replaced by the author
-    // is not demo-owned anymore and must never have even its thumbnail rewritten.
+    // is still a shipped demo original. A portrait replaced by the author is not
+    // demo-owned anymore and must never have even its thumbnail rewritten.
     const currentPortraits = db
       .prepare(
         `SELECT person_id, blob, thumbnail
            FROM person_portraits
-          WHERE person_id LIKE ? AND mime = 'image/png'`
+          WHERE person_id LIKE ? AND mime IN ('image/png', 'image/webp')`
       )
       .all(`${PREFIX}char-%`) as Array<{
         person_id: string;
@@ -486,17 +549,13 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
       }>;
     for (const portrait of currentPortraits) {
       const base = `character-${portrait.person_id.slice(`${PREFIX}char-`.length)}`;
-      const shippedOriginal = demoAsset(`${base}.png`);
-      const shippedThumbnail = demoAsset(`${base}.webp`);
-      if (
-        portrait.blob.equals(shippedOriginal)
-        && !portrait.thumbnail?.equals(shippedThumbnail)
-      ) {
+      const shippedThumbnail = demoThumbnail(base);
+      if (isDemoOriginal(portrait.blob, base) && !portrait.thumbnail?.equals(shippedThumbnail)) {
         db.prepare(
           `UPDATE person_portraits
               SET thumbnail = ?, thumbnail_mime = 'image/webp', updated_at = ?
             WHERE person_id = ? AND blob = ?`
-        ).run(shippedThumbnail, MATCHED_THUMBNAIL_AT, portrait.person_id, shippedOriginal);
+        ).run(shippedThumbnail, MATCHED_THUMBNAIL_AT, portrait.person_id, portrait.blob);
       }
     }
 
@@ -507,7 +566,7 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
       .prepare(
         `SELECT image_id, entity_id, blob, thumbnail
            FROM world_images
-          WHERE image_id LIKE ? AND entity_kind = 'character' AND mime_type = 'image/png'`
+          WHERE image_id LIKE ? AND entity_kind = 'character' AND mime_type IN ('image/png', 'image/webp')`
       )
       .all(`${PREFIX}%`) as Array<{
         image_id: string;
@@ -517,14 +576,22 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
     }>;
     for (const image of currentCharacterImages) {
       const base = `character-${image.entity_id.slice(`${PREFIX}char-`.length)}`;
-      const legacyPortrait = demoAsset(`${base}.png`);
-      const expectedOriginal = demoAsset(`${base}-gallery.png`);
-      const expectedThumbnail = demoAsset(`${base}-gallery.webp`);
-      if (!image.blob.equals(legacyPortrait) && !image.blob.equals(expectedOriginal)) continue;
-      if (image.blob.equals(expectedOriginal) && image.thumbnail?.equals(expectedThumbnail)) continue;
+      const gallery = `${base}-gallery`;
+      const expectedThumbnail = demoThumbnail(gallery);
+      if (isDemoOriginal(image.blob, gallery)) {
+        if (image.thumbnail?.equals(expectedThumbnail)) continue;
+        db.prepare(
+          `UPDATE world_images
+              SET thumbnail = ?, thumbnail_mime_type = 'image/webp', updated_at = ?
+            WHERE image_id = ? AND blob = ?`
+        ).run(expectedThumbnail, DISTINCT_CHARACTER_GALLERY_AT, image.image_id, image.blob);
+        continue;
+      }
+      if (!isDemoOriginal(image.blob, base)) continue;
+      const expectedOriginal = demoOriginal(gallery);
       db.prepare(
         `UPDATE world_images
-            SET kind = 'full_body', bytes = ?, blob = ?, thumbnail = ?,
+            SET kind = 'full_body', mime_type = 'image/webp', bytes = ?, blob = ?, thumbnail = ?,
                 thumbnail_mime_type = 'image/webp', updated_at = ?
           WHERE image_id = ? AND blob = ?`
       ).run(
@@ -540,15 +607,13 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
     // Early demo data reused one cultural illustration for every culture, and one
     // intermediate build did the same for faction cards. Reconcile deterministic demo
     // rows with their entity-specific artwork. A row is still demo-owned only while its
-    // bytes equal one of the shipped group assets; imported author artwork is preserved.
-    const demoOwnedGroupBlobs = [
-      ...new Set(GROUPS.map((group) => demoImageAsset('group', group.id))),
-    ].map((fileName) => demoAsset(fileName));
+    // bytes equal one of the shipped group originals; imported author artwork is preserved.
+    const groupBases = [...new Set(GROUPS.map((group) => demoImageBase('group', group.id)))];
     const currentGroupImages = db
       .prepare(
         `SELECT image_id, entity_id, blob, thumbnail
            FROM world_images
-          WHERE image_id LIKE ? AND entity_kind = 'group' AND mime_type = 'image/png'`
+          WHERE image_id LIKE ? AND entity_kind = 'group' AND mime_type IN ('image/png', 'image/webp')`
       )
       .all(`${PREFIX}image-group-%`) as Array<{
         image_id: string;
@@ -558,14 +623,23 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
       }>;
     for (const image of currentGroupImages) {
       if (!GROUPS.some((group) => group.id === image.entity_id)) continue;
-      if (!demoOwnedGroupBlobs.some((blob) => image.blob.equals(blob))) continue;
-      const expectedOriginal = demoAsset(demoImageAsset('group', image.entity_id));
-      const expectedThumbnail = demoAsset(demoImageAsset('group', image.entity_id, true));
-      if (image.blob.equals(expectedOriginal) && image.thumbnail?.equals(expectedThumbnail)) continue;
+      if (!groupBases.some((base) => isDemoOriginal(image.blob, base))) continue;
+      const base = demoImageBase('group', image.entity_id);
+      const expectedThumbnail = demoThumbnail(base);
+      if (isDemoOriginal(image.blob, base)) {
+        if (image.thumbnail?.equals(expectedThumbnail)) continue;
+        db.prepare(
+          `UPDATE world_images
+              SET thumbnail = ?, thumbnail_mime_type = 'image/webp', updated_at = ?
+            WHERE image_id = ? AND blob = ?`
+        ).run(expectedThumbnail, DISTINCT_GROUP_ART_AT, image.image_id, image.blob);
+        continue;
+      }
+      const expectedOriginal = demoOriginal(base);
       db.prepare(
         `UPDATE world_images
-            SET bytes = ?, blob = ?, thumbnail = ?, thumbnail_mime_type = 'image/webp',
-                updated_at = ?
+            SET mime_type = 'image/webp', bytes = ?, blob = ?, thumbnail = ?,
+                thumbnail_mime_type = 'image/webp', updated_at = ?
           WHERE image_id = ? AND blob = ?`
       ).run(
         expectedOriginal.length,
@@ -586,13 +660,16 @@ export function upgradeWorldbuildingDemoImageQuality(): boolean {
       [`${PREFIX}map-image-reference`, `${PREFIX}map-lumina`, 'place-lumina', 760, 504],
     ] as const;
     for (const [imageId, mapId, base, width, height] of mapRows) {
-      const full = demoAsset(`${base}.png`);
-      db.prepare(
-        `UPDATE map_images SET
-           mime_type = 'image/png', width = ?, height = ?, bytes = ?, blob = ?,
-           thumbnail = ?, thumbnail_mime_type = 'image/webp'
-         WHERE image_id = ? AND mime_type = 'image/webp'`
-      ).run(width, height, full.length, full, demoAsset(`${base}.webp`), imageId);
+      const row = db.prepare('SELECT blob FROM map_images WHERE image_id = ?').get(imageId) as { blob: Buffer } | undefined;
+      if (row && isLegacyCrop(row.blob)) {
+        const full = demoOriginal(base);
+        db.prepare(
+          `UPDATE map_images SET
+             mime_type = 'image/webp', width = ?, height = ?, bytes = ?, blob = ?,
+             thumbnail = ?, thumbnail_mime_type = 'image/webp'
+           WHERE image_id = ? AND blob = ?`
+        ).run(width, height, full.length, full, demoThumbnail(base), imageId, row.blob);
+      }
       if (imageId === `${PREFIX}map-image-${mapId.slice(PREFIX.length)}`) {
         db.prepare(
           'UPDATE world_maps SET width_px = ?, height_px = ?, updated_at = ? WHERE map_id = ?'
@@ -656,7 +733,7 @@ export function upgradeWorldbuildingDemoDynasties(): boolean {
           (image_id, entity_kind, entity_id, kind, label, mime_type, bytes, blob,
            thumbnail, thumbnail_mime_type, prompt, provider, model, style, generated,
            sort_order, created_at, updated_at)
-         VALUES (?, 'group', ?, 'emblem', ?, 'image/png', ?, ?, ?, 'image/webp', ?, 'openai',
+         VALUES (?, 'group', ?, 'emblem', ?, 'image/webp', ?, ?, ?, 'image/webp', ?, 'openai',
                  'codex-imagegen', ?, 1, 0, ?, ?)
          ON CONFLICT(image_id) DO UPDATE SET
            kind = 'emblem', label = excluded.label, mime_type = excluded.mime_type,
@@ -1038,10 +1115,10 @@ export function seedWorldbuildingDemoData(): boolean {
         updated_at: AT,
       });
       const portraitBase = `character-${character.id.slice(`${PREFIX}char-`.length)}`;
-      const portrait = demoAsset(`${portraitBase}.png`);
-      const portraitThumbnail = demoAsset(`${portraitBase}.webp`);
+      const portrait = demoOriginal(portraitBase);
+      const portraitThumbnail = demoThumbnail(portraitBase);
       insert('person_portraits', {
-        person_id: character.id, blob: portrait, mime: 'image/png',
+        person_id: character.id, blob: portrait, mime: 'image/webp',
         thumbnail: portraitThumbnail, thumbnail_mime: 'image/webp',
         focus_x: 0.5, focus_y: 0.42, scale: 1, generated: 1, updated_at: AT,
       });
@@ -1254,30 +1331,30 @@ export function seedWorldbuildingDemoData(): boolean {
         sort_order: map.order, created_at: AT, updated_at: AT,
       });
       const mapBase = `map-${map.id.slice(`${PREFIX}map-`.length)}`;
-      const bytes = demoAsset(`${mapBase}.png`);
-      const thumbnail = demoAsset(`${mapBase}.webp`);
+      const bytes = demoOriginal(mapBase);
+      const thumbnail = demoThumbnail(mapBase);
       insert('map_images', {
-        image_id: imageId, map_id: map.id, role: 'base', mime_type: 'image/png',
+        image_id: imageId, map_id: map.id, role: 'base', mime_type: 'image/webp',
         width: 1254, height: 1254, bytes: bytes.length, blob: bytes, thumbnail,
         thumbnail_mime_type: 'image/webp',
         prompt: demoText('Ilustración cartográfica del demo Las Mareas de Ceniza', 'The Ashen Tides cartographic demo artwork'), provider: 'openai', model: 'codex-imagegen',
         style: demoText('atlas de fantasía pintado', 'painted fantasy atlas'), generated: 1, created_at: AT,
       });
     }
-    const previousMap = demoAsset('map-old.png');
-    const previousMapThumbnail = demoAsset('map-old.webp');
+    const previousMap = demoOriginal('map-old');
+    const previousMapThumbnail = demoThumbnail('map-old');
     insert('map_images', {
       image_id: `${PREFIX}map-image-previous`, map_id: `${PREFIX}map-orthea`, role: 'previous',
-      mime_type: 'image/png', width: 1254, height: 1254, bytes: previousMap.length, blob: previousMap,
+      mime_type: 'image/webp', width: 1254, height: 1254, bytes: previousMap.length, blob: previousMap,
       thumbnail: previousMapThumbnail, thumbnail_mime_type: 'image/webp',
       prompt: demoText('Orthea antes del Hundimiento', 'Orthea before the Sinking'), provider: 'openai', model: 'codex-imagegen',
       style: demoText('atlas histórico pintado', 'painted historical atlas'), generated: 1, created_at: PREVIOUS_AT,
     });
-    const referenceMap = demoAsset('place-lumina.png');
-    const referenceMapThumbnail = demoAsset('place-lumina.webp');
+    const referenceMap = demoOriginal('place-lumina');
+    const referenceMapThumbnail = demoThumbnail('place-lumina');
     insert('map_images', {
       image_id: `${PREFIX}map-image-reference`, map_id: `${PREFIX}map-lumina`, role: 'reference',
-      mime_type: 'image/png', width: 760, height: 504, bytes: referenceMap.length, blob: referenceMap,
+      mime_type: 'image/webp', width: 760, height: 504, bytes: referenceMap.length, blob: referenceMap,
       thumbnail: referenceMapThumbnail, thumbnail_mime_type: 'image/webp',
       prompt: demoText('Referencia costera de Lúmina', 'Lumina coastal reference'), provider: 'openai', model: 'codex-imagegen',
       style: demoText('concepto pictórico de entorno', 'painterly environment concept'), generated: 1, created_at: PREVIOUS_AT,

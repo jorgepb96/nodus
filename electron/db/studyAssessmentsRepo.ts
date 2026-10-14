@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import type { AppLanguage } from '@shared/types';
 import type {
   StudyAssessment,
   StudyAssessmentInput,
@@ -220,14 +221,31 @@ export function abandonStudyAttempt(id: string): StudyAttempt {
   getDb().prepare("UPDATE study_attempts SET status='abandoned', updated_at=? WHERE id=? AND status='in_progress'").run(now(), id); return getStudyAttempt(id)!;
 }
 
-export function renderStudyAssessmentMarkdown(assessment: StudyAssessment, includeAnswers = false): string {
-  const lines = [`# ${assessment.title}`, '', assessment.description, '', `Duración: ${assessment.durationMinutes ?? 'sin límite'} min`, ''];
+/** Headings of an exported test, in the interface language of whoever exports it. */
+const ASSESSMENT_EXPORT_LABELS: Record<AppLanguage, { duration: string; noLimit: string; answer: string; source: string }> = {
+  es: { duration: 'Duración', noLimit: 'sin límite', answer: 'Respuesta', source: 'Fuente' },
+  en: { duration: 'Duration', noLimit: 'no limit', answer: 'Answer', source: 'Source' },
+  fr: { duration: 'Durée', noLimit: 'sans limite', answer: 'Réponse', source: 'Source' },
+  de: { duration: 'Dauer', noLimit: 'unbegrenzt', answer: 'Antwort', source: 'Quelle' },
+  pt: { duration: 'Duração', noLimit: 'sem limite', answer: 'Resposta', source: 'Fonte' },
+  'pt-BR': { duration: 'Duração', noLimit: 'sem limite', answer: 'Resposta', source: 'Fonte' },
+  it: { duration: 'Durata', noLimit: 'senza limite', answer: 'Risposta', source: 'Fonte' },
+  tr: { duration: 'Süre', noLimit: 'sınırsız', answer: 'Yanıt', source: 'Kaynak' },
+  'zh-CN': { duration: '时长', noLimit: '不限时', answer: '答案', source: '来源' },
+  'zh-TW': { duration: '時長', noLimit: '不限時', answer: '答案', source: '來源' },
+  ja: { duration: '所要時間', noLimit: '制限なし', answer: '解答', source: '出典' },
+  ko: { duration: '시간', noLimit: '제한 없음', answer: '정답', source: '출처' },
+};
+
+export function renderStudyAssessmentMarkdown(assessment: StudyAssessment, includeAnswers = false, language: AppLanguage = 'es'): string {
+  const labels = ASSESSMENT_EXPORT_LABELS[language] ?? ASSESSMENT_EXPORT_LABELS.en;
+  const lines = [`# ${assessment.title}`, '', assessment.description, '', `${labels.duration}: ${assessment.durationMinutes ?? labels.noLimit} min`, ''];
   assessment.items.forEach((item, index) => {
     lines.push(`## ${index + 1}. ${item.question.prompt} (${item.points} pt)`, '');
     if (item.question.options.length) item.question.options.forEach((option) => lines.push(`- [ ] ${option.text}`));
     else lines.push('________________________________________________________________');
     lines.push('');
-    if (includeAnswers) lines.push(`**Respuesta:** ${item.question.answer.text ?? String(item.question.answer.value ?? '')}`, `**Fuente:** ${item.question.source.title} — ${item.question.source.excerpt}`, '');
+    if (includeAnswers) lines.push(`**${labels.answer}:** ${item.question.answer.text ?? String(item.question.answer.value ?? '')}`, `**${labels.source}:** ${item.question.source.title} — ${item.question.source.excerpt}`, '');
   });
   return lines.join('\n');
 }

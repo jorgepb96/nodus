@@ -84,8 +84,9 @@ npm run test:e2e
 The full end-to-end suite launches the real desktop app and is most reliable on
 macOS, which is also the platform used by the main CI job.
 
-CI compiles the current commit once, runs the complete test inventory across three
-isolated macOS groups, and runs all four real-app E2E checks in parallel. The final
+CI compiles the current commit once on Linux, runs the complete test inventory across six
+isolated Linux groups, and runs all five real-app E2E checks across three parallel groups.
+Lint and TypeScript run alongside the build and remain required. The final
 `test` check verifies complete execution as well as successful capability checks
 on Linux, macOS and Windows. See [CI execution and measurement](docs/ci-performance.md)
 for the inventory reports, cache behavior, and performance validation procedure.
@@ -190,8 +191,11 @@ downgrade or automatic data rollback as a migration strategy.
 ## Pull requests
 
 Every pull request must address an existing issue. Open or find the issue first
-and reference it in the pull request. A pull request without a related issue may
-remain unmerged until one is opened.
+and link it from **Development**, or use `Closes #123` / `Fixes #123` in the PR
+description when targeting the default branch. A plain `#123` mention does not
+create a linked issue. The required **Issue linked** check blocks merging until
+the link exists. Sidebar changes are reconciled hourly; maintainers can run
+**PR checks** manually to refresh the result immediately.
 
 Keep each pull request focused on one coherent change. In the pull request:
 
@@ -204,11 +208,21 @@ Keep each pull request focused on one coherent change. In the pull request:
 - Call out migrations, privacy effects, network access, or compatibility risks.
 - Update documentation and translations when behavior changes.
 
-All required CI checks, including **CLA / signature**, must pass. Every human
-author and coauthor must accept the [Contributor License Agreement](CLA.md)
+All required CI checks, including **Issue linked** and **CLA / signature**, must
+pass. Every human author and coauthor must accept the [Contributor License Agreement](CLA.md)
 before a pull request can be merged. Maintainers may ask for a smaller scope,
 additional tests, or changes needed to preserve the project's privacy and
 evidence standards.
+
+After the checks for the current revision finish, the bot mentions the author
+with the failing checks, links, and short log excerpts where available. It
+updates repeated failures for that revision instead of posting duplicates.
+When every applicable check passes, it mentions the repository owner and author
+once each. This means the PR is ready for maintainer review and merge
+consideration; it does not promise or perform a merge. Drafts receive the issue
+check but no notification comments.
+
+Maintainer setup and operation: [PR checks automation](docs/pr-checks.md).
 
 ## Licensing
 

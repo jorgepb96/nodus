@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { createPlan, discoverTests, validatePlan, validateReports, fileConcurrency, e2eReservationMs, e2eShard, browserFixtures, isAllowedSkip } from './ci-test-shards.mjs';
+import { createPlan, discoverTests, validatePlan, validateReports, shardCount, fileConcurrency, browserFixtures, isAllowedSkip } from './ci-test-shards.mjs';
 import { createBuildManifest, verifyBuildManifest } from './ci-build-artifact.mjs';
 import { createNativeManifest, verifyNativeManifest } from './ci-native-artifact.mjs';
 import { preparedComponentStyles } from './lib/component-test-styles.mjs';
 
-const files = ['scripts/test-a.mjs', 'scripts/test-b.mjs', 'scripts/test-c.mjs', 'scripts/test-new.mjs'];
+const files = ['scripts/test-a.mjs', 'scripts/test-b.mjs', 'scripts/test-c.mjs', 'scripts/test-new.mjs',
+  'scripts/test-e.mjs', 'scripts/test-f.mjs'];
 const commit = 'a'.repeat(40);
 const plan = createPlan(files, commit, { 'scripts/test-a.mjs': 300_000 });
 const clone = value => structuredClone(value);
@@ -36,17 +37,16 @@ test('all discovered files, including ones without duration hints, run exactly o
 });
 
 
-test('the E2E group reserves real-app time without dropping or duplicating tests', () => {
+test('all isolated test runners receive balanced work without reserving separate E2E time', () => {
   const inventory = Array.from({ length: 90 }, (_, index) => `scripts/test-fixture-${index}.mjs`);
   const durations = Object.fromEntries(inventory.map(file => [file, 30_000]));
   const planned = createPlan(inventory, commit, durations);
   validatePlan(planned, inventory, commit);
-  const last = planned.shards.find(shard => shard.index === e2eShard);
-  assert.ok(last.files.length < planned.shards[0].files.length);
-  assert.equal(planned.shards.reduce((sum, shard) => sum + shard.estimatedMs, 0), 90 * 30_000 + fileConcurrency * e2eReservationMs);
+  assert.deepEqual(planned.shards.map(shard => shard.files.length), Array(shardCount).fill(90 / shardCount));
+  assert.equal(planned.shards.reduce((sum, shard) => sum + shard.estimatedMs, 0), 90 * 30_000);
   assert.ok(Math.max(...planned.shards.map(s => s.estimatedMs)) - Math.min(...planned.shards.map(s => s.estimatedMs)) <= 30_000);
-  const small = createPlan(inventory.slice(0, 3), commit);
-  validatePlan(small, inventory.slice(0, 3), commit);
+  const small = createPlan(inventory.slice(0, shardCount), commit);
+  validatePlan(small, inventory.slice(0, shardCount), commit);
   assert.ok(small.shards.every(shard => shard.files.length === 1));
 });
 
@@ -114,15 +114,15 @@ test('real child processes report every file, propagate assertion failures, and 
     fs.mkdirSync(path.join(root, 'scripts'));
     fs.writeFileSync(path.join(root, files[0]), "import test from 'node:test'; test('node:test case', () => {});\n");
     fs.writeFileSync(path.join(root, files[1]), "import assert from 'node:assert/strict'; assert.equal(1, 1);\n");
-    fs.writeFileSync(path.join(root, files[2]), "import test from 'node:test'; test('second case', () => {});\n");
+    for (const file of files.slice(2)) fs.writeFileSync(path.join(root, file), "import test from 'node:test'; test('another case', () => {});\n");
     execFileSync('git', ['init', '-q'], { cwd: root });
     execFileSync('git', ['-c', 'user.name=CI Fixture', '-c', 'user.email=ci@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture'], { cwd: root });
     const planned = execute('plan'); assert.equal(planned.status, 0, planned.stderr);
-    for (const index of [1, 2, 3]) {
+    for (const index of Array.from({ length: shardCount }, (_, i) => i + 1)) {
       const result = execute('run', String(index)); assert.equal(result.status, 0, result.stdout + result.stderr);
     }
     const passed = execute('verify'); assert.equal(passed.status, 0, passed.stderr);
-    assert.match(passed.stdout, /All 3 test files completed exactly once/);
+    assert.match(passed.stdout, /All 6 test files completed exactly once/);
     const storedPlan = JSON.parse(fs.readFileSync(path.join(root, '.ci/plan.json'), 'utf8'));
     const group = storedPlan.shards.find(s => s.files.includes(files[0])).index;
     fs.writeFileSync(path.join(root, files[0]), "import test from 'node:test';test('fails',()=>{throw new Error('injected assertion failure')});\n");
@@ -135,13 +135,54 @@ test('real child processes report every file, propagate assertion failures, and 
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
+test('six isolated runners execute concurrently and their reports merge into the exact commit inventory', { timeout: 30_000 }, async () => {
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-ci-parallel-'));
+  const root = path.join(temporary, 'source');
+  const script = fileURLToPath(new URL('./ci-test-shards.mjs', import.meta.url));
+  const env = { ...process.env }; delete env.NODE_TEST_CONTEXT;
+  try {
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+    const inventory = Array.from({ length: 18 }, (_, i) => `scripts/test-fixture-${i}.mjs`);
+    for (const file of inventory) fs.writeFileSync(path.join(root, file),
+      "import test from 'node:test'; import assert from 'node:assert/strict'; test('isolated runner', () => assert.equal(process.cwd(), process.env.EXPECTED_ROOT));\n");
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['-c', 'user.name=CI Fixture', '-c', 'user.email=ci@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture'], { cwd: root });
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+    const planned = createPlan(inventory, head);
+    fs.mkdirSync(path.join(root, '.ci'));
+    fs.writeFileSync(path.join(root, '.ci/plan.json'), JSON.stringify(planned));
+    const workers = planned.shards.map(shard => {
+      const worker = path.join(temporary, `runner-${shard.index}`);
+      fs.cpSync(root, worker, { recursive: true });
+      return { worker: fs.realpathSync(worker), index: shard.index };
+    });
+    const results = await Promise.all(workers.map(({ worker, index }) => new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [script, 'run', String(index)], { cwd: worker, env: { ...env, EXPECTED_ROOT: worker } });
+      let output = '';
+      child.stdout.on('data', chunk => { output += chunk; });
+      child.stderr.on('data', chunk => { output += chunk; });
+      child.on('error', reject);
+      child.on('close', status => resolve({ status, output }));
+    })));
+    results.forEach(result => assert.equal(result.status, 0, result.output));
+    fs.mkdirSync(path.join(root, '.ci/reports'));
+    for (const { worker, index } of workers) fs.copyFileSync(path.join(worker, `.ci/reports/shard-${index}.json`), path.join(root, `.ci/reports/shard-${index}.json`));
+    const verify = () => spawnSync(process.execPath, [script, 'verify'], { cwd: root, env, encoding: 'utf8', timeout: 10_000 });
+    const complete = verify(); assert.equal(complete.status, 0, complete.stdout + complete.stderr);
+    assert.match(complete.stdout, /All 18 test files completed exactly once/);
+    fs.unlinkSync(path.join(root, '.ci/reports/shard-2.json'));
+    assert.notEqual(verify().status, 0, 'A missing runner report cannot pass');
+  } finally { fs.rmSync(temporary, { recursive: true, force: true }); }
+});
+
 
 test('browser phases serialize processes and retain failures/skips when a later phase passes', { timeout: 30_000 }, () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-ci-phases-'));
   const script = fileURLToPath(new URL('./ci-test-shards.mjs', import.meta.url));
   const env = { ...process.env }; delete env.NODE_TEST_CONTEXT;
   const execute = () => spawnSync(process.execPath, [script, 'run', '1'], { cwd: root, env, encoding: 'utf8', timeout: 10_000 });
-  const names = ['scripts/test-browser-a.mjs', 'scripts/test-browser-b.mjs', 'scripts/test-plain.mjs', 'scripts/test-c.mjs', 'scripts/test-d.mjs'];
+  const names = ['scripts/test-browser-a.mjs', 'scripts/test-browser-b.mjs', 'scripts/test-plain.mjs',
+    'scripts/test-c.mjs', 'scripts/test-d.mjs', 'scripts/test-e.mjs', 'scripts/test-f.mjs', 'scripts/test-g.mjs'];
   const browserSource = "import { chromium } from 'playwright-core'; import test from 'node:test'; import fs from 'node:fs'; import assert from 'node:assert/strict'; import { setTimeout } from 'node:timers/promises'; test('browser fixture', async () => { assert.ok(chromium); const lock = fs.openSync('browser.lock', 'wx'); try { await setTimeout(30); } finally { fs.closeSync(lock); fs.unlinkSync('browser.lock'); } });\n";
   try {
     fs.mkdirSync(path.join(root, 'scripts'));
@@ -151,13 +192,14 @@ test('browser phases serialize processes and retain failures/skips when a later 
     for (const name of names) fs.writeFileSync(path.join(root, name), name.includes('browser') ? browserSource : "import assert from 'node:assert/strict'; assert.equal(1, 1);\n");
     const browsers = browserFixtures(root, names);
     assert.deepEqual(browsers, names.slice(0, 2));
-    const weighted = createPlan(names, commit, Object.fromEntries(names.map(name => [name, 1000])), 3, browsers);
-    assert.equal(weighted.shards.reduce((sum, shard) => sum + shard.estimatedMs, 0), 7000 + fileConcurrency * e2eReservationMs);
+    const weighted = createPlan(names, commit, Object.fromEntries(names.map(name => [name, 1000])), shardCount, browsers);
+    assert.equal(weighted.shards.reduce((sum, shard) => sum + shard.estimatedMs, 0), 10000);
     execFileSync('git', ['init', '-q'], { cwd: root });
     execFileSync('git', ['-c', 'user.name=CI Fixture', '-c', 'user.email=ci@example.invalid', 'commit', '--allow-empty', '-qm', 'fixture'], { cwd: root });
     const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
     const planned = { schemaVersion: 1, commit: head, files: [...names].sort(), shards: [
-      { index: 1, files: names.slice(0, 3) }, { index: 2, files: [names[3]] }, { index: 3, files: [names[4]] },
+      { index: 1, files: names.slice(0, 3) },
+      ...names.slice(3).map((file, index) => ({ index: index + 2, files: [file] })),
     ] };
     fs.mkdirSync(path.join(root, '.ci'));
     fs.writeFileSync(path.join(root, '.ci/plan.json'), JSON.stringify(planned));

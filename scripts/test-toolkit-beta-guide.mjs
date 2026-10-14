@@ -7,23 +7,23 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFile(path.join(root, file), 'utf8');
 
-test('the 2.4.0 update queues a one-off toolkit guide behind release notes', async () => {
-  const [guide, app] = await Promise.all([read('src/components/ToolkitBetaGuide.tsx'), read('src/App.tsx')]);
+test('the 2.4.0 toolkit announcement is archived and no longer participates in startup', async () => {
+  const [guide, app] = await Promise.all([read('archive/startup-announcements/ToolkitBetaGuide.tsx'), read('src/App.tsx')]);
   assert.match(guide, /TOOLKIT_BETA_GUIDE_RELEASE = '2\.4\.0'/);
   assert.match(guide, /TOOLKIT_BETA_GUIDE_TUTORIAL_VERSION = 4/);
   assert.match(guide, /nodus\.toolkitBetaGuideSeen/);
   assert.match(guide, /previousTutorialVersion <= 0/);
   assert.match(guide, /previousTutorialVersion >= TOOLKIT_BETA_GUIDE_TUTORIAL_VERSION/);
-  assert.match(app, /<ToolkitBetaUpdateTour/);
-  assert.match(app, /previousTutorialVersion=\{settings\.basicsTutorialVersion\}/);
-  assert.match(app, /whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && !toolkitBetaTourSettled/);
-  assert.match(app, /whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && platformHighlightsSettled && toolkitBetaTourSettled/);
-  assert.ok(app.indexOf('<WhatsNewModal') < app.indexOf('<ToolkitBetaUpdateTour'));
-  assert.ok(app.indexOf('<ToolkitBetaUpdateTour') < app.indexOf('<NodiStyleModal'));
+  assert.doesNotMatch(app, /ToolkitBetaUpdateTour|toolkitBetaTourSettled/);
+  const sharedGuide = await read('src/components/ToolkitBetaGuide.tsx');
+  assert.doesNotMatch(sharedGuide, /ToolkitBetaUpdateTour|localStorage/);
+  for (const panel of ['IdeaExtractionPanel', 'LocalPerformancePanel', 'SubscriptionAccessPanel']) {
+    assert.match(sharedGuide, new RegExp(`export function ${panel}`));
+  }
 });
 
 test('the guide covers all five tools, extraction choices, performance and subscriptions', async () => {
-  const guide = await read('src/components/ToolkitBetaGuide.tsx');
+  const guide = await read('archive/startup-announcements/ToolkitBetaGuide.tsx');
   const navigation = await read('src/navigation.ts');
   for (const tool of ['Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'Nodus Presenter', 'OCR Workspace']) assert.ok(navigation.includes(tool));
   for (const expected of [

@@ -2,6 +2,7 @@ import { withResearchActivity, researchActivityStep, startResearchActivity } fro
 import type { ResearchActivity } from '@shared/researchActivity';
 import { runConcilium } from './researchConcilium';
 import { conciliumAssessments, type ConciliumResult } from '@shared/researchConcilium';
+import { reducedResearchEffort, researchReasoningProfile } from '@shared/researchReasoning';
 import { prepareResearchAttachments, withResearchAttachmentFallback } from './researchAttachments';
 import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { resolveResearchSourceScope, type ResearchSourceScope } from './researchSourceScope';
@@ -70,6 +71,7 @@ import {
   supportedCitationKeys,
 } from './citationSanitize';
 import { repairLooseCitations } from './deepResearchCore';
+import { citationWords } from '@shared/citationWords';
 import { verifyCitations } from '../citations/verifyCitations';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import {
@@ -415,7 +417,15 @@ async function streamResearchChatTurn(
   delete evidence.council_assessments;
   const sourceContext = council?.assessments ? JSON.stringify(evidence) : user;
   const opts = { corpusContext: !!requestNotebookScope(request) && !attachments.images?.length, system: system + attachments.system, user: user + attachments.text, images: attachments.images, englishImagePrompts: execution.skills.some(skill => skillHasCapability(skill, 'image')), temperature: 0.2, ...generationOptions, signal };
-  const write = () => researchActivityStep('response', 'write', () => withResearchAttachmentFallback(attachments, opts, options => completeTextStream(options, onDelta, request.model, signal)), request.model?.model);
+  // On the retry, ask for one rung less thinking: the first attempt was cut off because the
+  // reasoning consumed the whole output ceiling, and repeating it unchanged reproduces that. The
+  // token budget is deliberately NOT recomputed — the same ceiling with less thinking in front of
+  // it is exactly the room the answer needs.
+  const write = (isRetry = false) => {
+    const less = isRetry ? reducedResearchEffort(opts.researchEffort, researchReasoningProfile(resolveModelRef(request.model), opts.researchModelInfo)) : null;
+    const attempt = less ? { ...opts, researchEffort: less } : opts;
+    return researchActivityStep('response', 'write', () => withResearchAttachmentFallback(attachments, attempt, options => completeTextStream(options, onDelta, request.model, signal)), request.model?.model);
+  };
   // Streamed thinking is provisional; the retry repaints from nothing.
   let answer = await retryOnceWhenCutOff(write, { isCutOff: error => error instanceof AiError && error.code === 'output_truncated', beforeRetry: () => onDelta('', 'replace'), signal });
   answer = await researchActivityStep('response', 'citations', () => finalizeAnswer(answer, local, sourceContext));
@@ -497,9 +507,9 @@ function citationDisplayLabel(kind: string, id: string): string | null {
     case 'passage':
       return passageCiteLabel(id);
     case 'gap':
-      return 'hueco';
+      return citationWords(getSettings().promptLanguage ?? 'es').gap;
     case 'contradiction':
-      return 'contradiccion';
+      return citationWords(getSettings().promptLanguage ?? 'es').contradiction;
     default:
       return null;
   }
@@ -875,7 +885,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       ...(assessments ? { council_assessments: assessments } : {}),
       ...(moleculeDossiers.length ? { estructura_objetivo_verificada: moleculeDossiers } : {}),
       ...(routeEvidence ? { [SYNTHESIS_EVIDENCE_KEY]: routeEvidence } : {}),
-      ...(skills.length ? {} : { contrato_de_salida_obligatorio: buildCitationOutputContract(JSON.stringify(context)) ?? undefined }),
+      ...(skills.length ? {} : { contrato_de_salida_obligatorio: buildCitationOutputContract(JSON.stringify(context), promptLanguage) ?? undefined }),
       application_output_contract: council?.member ? undefined : chatSkillsOutputContract(skills),
     },
     null,
@@ -895,7 +905,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   // A skill (chemistry route/synthesis) is a construction task, not a corpus-grounded literature
   // answer: the citation contract above is already null when a skill is active, so the enforcement
   // flag must match — otherwise the route gets citation retries/refusals it was never told to satisfy.
-  return { system, user: serializeUser(), stats, generationOptions, local, citationRequired: skills.length ? false : (buildCitationOutputContract(JSON.stringify(context)) != null) };
+  return { system, user: serializeUser(), stats, generationOptions, local, citationRequired: skills.length ? false : (buildCitationOutputContract(JSON.stringify(context), promptLanguage) != null) };
 }
 
 /** Canonical Spanish exports retained for Nodi's shared citation contract. */

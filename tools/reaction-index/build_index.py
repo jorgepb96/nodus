@@ -19,8 +19,13 @@ Artifacts (in --out):
   reaction-keys.txt.zst  row -> exact hash, aligned with the faiss index
   reaction-smiles.tsv.zst "<hash>\t<canonical reactants>><canonical products>" (one representative
                          per exact hash, so a looked-up or similar reaction can be drawn)
-  retro-templates.tsv.zst "<count>\t<rdchiral count>\t<retro SMARTS>": the RDChiral templates seen at
-                         least RETRO_MIN_COUNT times, small enough to load per lookup
+  retro-templates.tsv.zst "<count>\t<rdchiral count>\t<retro SMARTS>": the RDChiral
+                         templates seen at least RETRO_MIN_COUNT times, small enough to load per
+                         lookup. The three-column format remains readable by installed plugins.
+  template-radii.tsv.zst "<radius>\t<SMARTS>": radii for the retained retro and forward templates.
+                         Unwindowable templates are rejected, not stored.
+  forward-templates.tsv.zst "<count>\t<rdchiral count>\t<radius>\t<SMARTS>", so the
+                         constraints sit on the reactant side where application enforces them
   molecules.tsv.zst      "<canonical molecule>\t<times a reactant>\t<times a product>\t<reaction hashes>":
                          per molecule (salts and co-products split), how common it is as a starting
                          material and which recorded reactions make it
@@ -34,7 +39,7 @@ brute-force Hamming search is ~6 ms per query at this size.
   manifest.json          source revision, licence, counts, sizes, sha256
 """
 
-import argparse, atexit, contextlib, glob, hashlib, io, json, os, re, sys, time
+import argparse, atexit, contextlib, glob, hashlib, io, json, math, os, re, sys, time
 from collections import Counter, defaultdict
 
 import multiprocessing as mp
@@ -48,6 +53,17 @@ SAMPLE_PER_EXACT = 3
 SAMPLE_KEYS_PER_PRODUCT = 20
 # Retro templates shipped for one-step disconnections: RDChiral-extracted and seen this often.
 RETRO_MIN_COUNT = 5
+# Bump whenever extraction changes what a checkpoint holds or what it means. It is part of the
+# checkpoint name, so new reactions stay incremental while an extractor change re-extracts
+# everything on its own — no --fresh, and no silently reused checkpoint from the old extractor.
+#   1: retro templates only (every index up to and including v5)
+#   2: forward templates alongside, spectator-stripped
+#   3: --extra-mapped can supply a map for a reaction whose source has none
+#   4: an ambiguous map is repaired where that can be done without choosing anything, AND the
+#      template cut from a repaired map must reproduce its own reaction or the reaction is dropped.
+#      (Repair without that validation was measured first and was worse than excluding: see
+#      reaction_audit.repair_duplicate_maps. A metal excuse was measured with it and left out.)
+EXTRACTION_VERSION = 7  # all contributing reactants must be reproduced by a repaired/remapped template
 # Reactions kept per molecule for "recorded ways to make it".
 MOLECULE_SAMPLE_KEYS = 50
 REACTION_SMILES = 2
@@ -163,34 +179,202 @@ def _template(reactants, agents, products, rid):
     return (out or {}).get('reaction_smarts') or None
 
 
+_MAPNO = re.compile(r':(\d+)\]')
+
+
+def _split(reaction):
+    """(reactants, agents, products) of a reaction SMILES with two or three parts."""
+    parts = reaction.split('>')
+    if len(parts) == 3:
+        return parts[0], parts[1], parts[2]
+    if len(parts) == 2:
+        return parts[0], '', parts[1]
+    return None, None, None
+
+
+def _template_centre(mol_l, mol_r):
+    """Indices in `mol_l` of the atoms this template CHANGES, paired by map number with `mol_r`.
+
+    An atom changed if it is unpaired, if its own query differs, if a bond to a mapped neighbour
+    differs, or if it gained/lost an unmapped neighbour (a leaving group)."""
+    lmap = {a.GetAtomMapNum(): a for a in mol_l.GetAtoms() if a.GetAtomMapNum()}
+    rmap = {a.GetAtomMapNum(): a for a in mol_r.GetAtoms() if a.GetAtomMapNum()}
+    bare = lambda sma: _MAPNO.sub(']', sma)
+    centre = set()
+    for num, la in lmap.items():
+        ra = rmap.get(num)
+        if ra is None:
+            centre.add(la.GetIdx())
+            continue
+        if bare(la.GetSmarts()) != bare(ra.GetSmarts()):
+            centre.add(la.GetIdx())
+            continue
+        ln = {nb.GetAtomMapNum(): mol_l.GetBondBetweenAtoms(la.GetIdx(), nb.GetIdx()).GetSmarts()
+              for nb in la.GetNeighbors() if nb.GetAtomMapNum()}
+        rn = {nb.GetAtomMapNum(): mol_r.GetBondBetweenAtoms(ra.GetIdx(), nb.GetIdx()).GetSmarts()
+              for nb in ra.GetNeighbors() if nb.GetAtomMapNum()}
+        # Unmapped neighbours are compared by WHAT they are, not how many: a chloride replaced by
+        # a hydroxyl leaves the count at one on both sides, and counting alone read that as "no
+        # change" and rejected the template as centreless.
+        unmapped = lambda mol, at: sorted(
+            _MAPNO.sub(']', nb.GetSmarts()) + mol.GetBondBetweenAtoms(at.GetIdx(), nb.GetIdx()).GetSmarts()
+            for nb in at.GetNeighbors() if not nb.GetAtomMapNum())
+        if ln != rn or unmapped(mol_l, la) != unmapped(mol_r, ra):
+            centre.add(la.GetIdx())
+    return centre
+
+
+def template_radius(smarts):
+    """(radius, reason): how far this template's matching side reaches from its reaction centre.
+
+    The radius is what lets a query run the template against a WINDOW of the molecule rather than
+    the whole of it, losslessly: a molecule can only offer a shorter path between two matched atoms
+    (a ring closing outside the template), never a longer one, so a window of this radius around the
+    true centre contains every atom of any match.
+
+    None with a reason for a template that cannot be windowed, and must not be stored:
+      'unparsable'            — either side does not parse as SMARTS
+      'no-centre'             — changes nothing at all ([*:1]>>[*:1] and friends, read off book
+                                schemes): matches every molecule and returns it unchanged
+      'unreachable-component' — a component with no centre atom, so part of the pattern is not
+                                reachable from the centre; it needs regions a single window cannot cover
+    Measured 2026-10-10: radius <= 3 covers 98.5% of ORD and 99.6% of textbook templates; 30
+    textbook templates are degenerate and caused 93% of that index's query time."""
+    lhs, _, rhs = smarts.partition('>>')
+    L, R = Chem.MolFromSmarts(lhs), Chem.MolFromSmarts(rhs)
+    if L is None or R is None:
+        return None, 'unparsable'
+    centre = _template_centre(L, R)
+    if not centre:
+        return None, 'no-centre'
+    dist = Chem.GetDistanceMatrix(L)
+    far = 0
+    for i in range(L.GetNumAtoms()):
+        d = min(dist[i][c] for c in centre)
+        if d > 1e5:
+            return None, 'unreachable-component'
+        far = max(far, int(d))
+    return far, 'ok'
+
+
+def _contributing(reactants, products):
+    """The reactant fragments that share a map number with the products.
+
+    A solvent or spectator contributes no mapped atom. Left in, the forward extraction below
+    describes it in full and it becomes a MANDATORY reactant of the template — a forward template
+    that demands literal diethyl ether, which never matches anything. Measured on 200 USPTO
+    reactions: 0 of 22 forward templates were spectator-free without this, 87 of 87 with it."""
+    wanted = set(_MAPNO.findall(products))
+    return '.'.join(f for f in reactants.split('.') if f and (set(_MAPNO.findall(f)) & wanted))
+
+
+def _template_forward(reactants, agents, products, rid):
+    """The same transformation as a FORWARD template: reactants >> products, with the detailed
+    environment on the reactant side.
+
+    extract_from_reaction always describes the side it is handed as `products`, so handing it the
+    reaction backwards yields a template whose constraints sit where forward application enforces
+    them. That is the whole point: a retro template REVERSED carries its author's constraints on
+    the product side, where nothing checks them, and fires where it was never meant to (reversing
+    the methyl-ester-to-acid template turns a tert-butyl carbamate into a carbamic acid)."""
+    lean = _contributing(reactants, products)
+    if not lean:
+        return None
+    return _template(products, agents, lean, f'{rid}-fwd')
+
+
 def _map_audit(reactants, agents, products):
-    """Exclusions for one atom-mapped reaction (reaction_audit, shared with the textbook templates).
+    """(exclusions, reactants, products, repaired) for one atom-mapped reaction (reaction_audit,
+    shared with the textbook templates).
+
     A record carries no prose, so nothing can be declared: a mechanism flag here has no scheme text
     that could explain it, and in a mined record it is more often a mapping or transcription error
     than genuinely unusual chemistry. The template is the atom map, so a flagged map would propose
     that error as a disconnection — this builder therefore treats every mechanism flag as an
     exclusion. Stereocentres from achiral inputs are excused when an agent is itself chiral (a
-    chiral catalyst or ligand), which is the one case the prose would otherwise have declared."""
-    from reaction_audit import audit_reaction, MECHANISM_FLAGS
-    hard, soft, _ = audit_reaction(f'{reactants}>>{products}', '')
-    excluded = set(hard) | (MECHANISM_FLAGS & set(soft))
-    if 'stereo from achiral inputs' in excluded:
-        chiral_agent = any(Chem.FindMolChiralCenters(m, useLegacyImplementation=False)
-                           for m in (Chem.MolFromSmiles(x) for x in agents.split('.') if x) if m is not None)
-        if chiral_agent:
-            excluded.discard('stereo from achiral inputs')
-    return sorted(excluded)
+    chiral catalyst or ligand), which is the one case the prose would otherwise have declared.
+
+    An ambiguous (duplicated) map is REPAIRED where the ambiguity can be removed without choosing
+    anything, and the repaired sides come back so the template is cut from them. `repaired` says so,
+    because a repaired map's template must then be VALIDATED — see _template_reproduces. Measured:
+    repairing alone recovers 43% of duplicate-flagged reactions but their templates are only 0-55%
+    sound against 94% for an untouched map, so the repair cannot be trusted on its own.
+
+    A metal catalyst among the agents is deliberately NOT excused here. Validation cannot help that
+    case: a mis-mapped reaction's template reproduces the mis-mapped reaction perfectly, so the test
+    says nothing about whether the chemistry is real. It stays unproven rather than smuggled in."""
+    from reaction_audit import audit_reaction, repair_duplicate_maps, MECHANISM_FLAGS
+
+    def judge(r, p):
+        hard, soft, _ = audit_reaction(f'{r}>>{p}', '')
+        out = set(hard) | (MECHANISM_FLAGS & set(soft))
+        if 'stereo from achiral inputs' in out:
+            chiral_agent = any(Chem.FindMolChiralCenters(m, useLegacyImplementation=False)
+                               for m in (Chem.MolFromSmiles(x) for x in agents.split('.') if x) if m is not None)
+            if chiral_agent:
+                out.discard('stereo from achiral inputs')
+        return out
+
+    excluded = judge(reactants, products)
+    if 'duplicate atom maps' in excluded:
+        repaired = repair_duplicate_maps(reactants, products)
+        if repaired:
+            r, p, _ = repaired
+            after = judge(r, p)
+            if 'duplicate atom maps' not in after:
+                return sorted(after), r, p, True
+    return sorted(excluded), reactants, products, False
+
+
+def _template_reproduces(retro, reactants, products):
+    """Does this retro template recover all the reaction's contributing reactants?
+
+    The gate on a repaired map. Repairing it makes the audit pass; it does not make the template
+    usable, and measurement showed the difference plainly — every one of 19 templates from a
+    renumbered map failed inside RDChiral, and 41% of those from a de-duplicated map did. So the
+    template is held to the only standard that matters: reproduce the reaction it came from.
+
+    Anything other than a clear success is a failure, exceptions included. A repaired map is a
+    guess that happened to pass a check; the burden is on it."""
+    from rdchiral.main import rdchiralReaction, rdchiralReactants, rdchiralRun
+
+    def bare(smiles):
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None:
+            return None
+        for atom in mol.GetAtoms():
+            atom.SetAtomMapNum(0)
+        return Chem.MolToSmiles(mol)
+
+    # Solvents and spectators do not need to be generated. Every contributing reactant does:
+    # matching just one could validate a correct acid alongside the wrong alcohol, for example.
+    contributing = _contributing(reactants, products)
+    want = Counter(b for b in (bare(x) for x in contributing.split('.')) if b)
+    clean = [b for b in (bare(x) for x in products.split('.')) if b]
+    if not want or not clean:
+        return False
+    try:
+        outcomes = rdchiralRun(rdchiralReaction(retro), rdchiralReactants(max(clean, key=len)))
+    except Exception:
+        return False
+    return any(Counter(b for b in (bare(f) for f in outcome.split('.')) if b) == want
+               for outcome in outcomes)
 
 
 def _template_for(reactants, agents, products, rid, n_atoms, force_fast=False):
     """RDChiral for small/moderate reactions, the fast centre extractor above the threshold.
     `n_atoms` (reactant+product heavy atoms) is computed during the canonicalisation pass so we
     never parse the sides twice. `force_fast` (used by the watchdog retry) bypasses RDChiral.
-    Returns (template_or_None, 'rdchiral'|'fast')."""
+    Returns (retro_or_None, forward_or_None, 'rdchiral'|'fast').
+
+    The forward template is cut only on the RDChiral path. The fast centre extractor's output is
+    already excluded from the runtime retro set (a template is kept only when RDChiral produced it
+    at least once), so a fast forward template would be written and never read."""
     if not force_fast and n_atoms <= _TEMPLATE_THRESHOLD:
-        return _template(reactants, agents, products, rid), 'rdchiral'
+        return (_template(reactants, agents, products, rid),
+                _template_forward(reactants, agents, products, rid), 'rdchiral')
     from template_fast import extract_template
-    return extract_template(reactants, products), 'fast'
+    return extract_template(reactants, products), None, 'fast'
 
 
 # A row group's checkpoint is named by the CONTENT of its file (sha256), not its path: a
@@ -211,7 +395,9 @@ def file_digest(path):
 
 
 def part_name(path, group):
-    return hashlib.sha1(f'{file_digest(path)}::{group}'.encode()).hexdigest()[:24]
+    return hashlib.sha1(f'{file_digest(path)}::{group}::v{EXTRACTION_VERSION}'
+                        f'::t{_TEMPLATE_THRESHOLD}::m{_EXTRA_MAPPED_DIGEST}'
+                        f'::c{_EXTRA_MAP_FLOOR}'.encode()).hexdigest()[:24]
 
 
 def legacy_part_name(path, group):
@@ -275,11 +461,48 @@ def _iter_reactions(path, group):
         yield rid, (_reaction_level_smiles(rxn) or _from_components(rxn))
 
 
-def init_worker(parts_dir, threshold, digests=None, rsmi=None):
-    global _PARTS_DIR, _TEMPLATE_THRESHOLD
+_EXTRA_MAPPED = {}          # content key -> mapped reaction SMILES, from --extra-mapped
+_EXTRA_MAP_FLOOR = 0.0
+_EXTRA_MAPPED_DIGEST = 'none'
+
+
+def configure_mapping(path, floor):
+    """The extraction inputs shared by checkpoint discovery and every worker."""
+    global _EXTRA_MAPPED_DIGEST, _EXTRA_MAP_FLOOR
+    _EXTRA_MAPPED_DIGEST = file_digest(path) if path else 'none'
+    _EXTRA_MAP_FLOOR = floor
+
+
+def _load_extra_mapped(path, floor):
+    """{key: mapped reaction} from map_unmapped.py, for reactions whose source data has no map.
+
+    Loaded per process from the path rather than passed through initargs: the table is tens of MB and
+    initargs would copy it into every worker."""
+    out = {}
+    if not path:
+        return out
+    with open(path) as fh:
+        for line in fh:
+            try:
+                r = json.loads(line)
+                key, mapped = r.get('key'), r.get('mapped')
+                confidence = float(r.get('confidence', 0.0))
+            except (ValueError, TypeError, AttributeError):
+                continue
+            if not math.isfinite(confidence) or confidence < floor:
+                continue
+            if isinstance(key, str) and key and isinstance(mapped, str) and mapped:
+                out[key] = mapped
+    return out
+
+
+def init_worker(parts_dir, threshold, digests=None, rsmi=None, extra_mapped=None, map_floor=0.0):
+    global _PARTS_DIR, _TEMPLATE_THRESHOLD, _EXTRA_MAPPED
     _PARTS_DIR = parts_dir
     _TEMPLATE_THRESHOLD = threshold
     _FILE_DIGESTS.update(digests or {})
+    configure_mapping(extra_mapped, map_floor)
+    _EXTRA_MAPPED = _load_extra_mapped(extra_mapped, map_floor)
     _RSMI_OFFSETS.update(rsmi or {})
     # A worker the watchdog terminates mid-result prints a BrokenPipeError traceback; that is
     # expected, so send worker stderr to /dev/null to keep the run's log readable.
@@ -297,8 +520,9 @@ def process_row_group(args):
     started = time.time()
     exact, templates = Counter(), Counter()
     templates_rdchiral, templates_fast = Counter(), Counter()
+    templates_forward = Counter()
     exact_samples, template_samples = defaultdict(list), defaultdict(list)
-    fast_templates = rdchiral_templates = 0
+    fast_templates = rdchiral_templates = extra_used = 0
     # representative canonical reaction "r>>p" and product key per exact hash, for later fingerprints
     reaction_meta = {}          # key -> [reaction_smiles, product_key]
     products = {}               # product_key -> {n, s, k}
@@ -330,33 +554,132 @@ def process_row_group(args):
             entry['n'] += 1
             if len(entry['k']) < SAMPLE_KEYS_PER_PRODUCT and key not in entry['k']:
                 entry['k'].append(key)
+        # A reaction whose source data carries no map yields no template. When one was supplied
+        # for exactly this reaction (same content key), use it: the audit and the extractor then see
+        # a mapped reaction. The canonical sides above are NOT replaced — only what the template is
+        # cut from — so exact keys, products and citations are unaffected by whether a map exists.
+        supplied = None
+        if not mapped:
+            supplied = _EXTRA_MAPPED.get(key)
+            if supplied:
+                sr, sa, sp = _split(supplied) if '>' in supplied else (None, None, None)
+                if sr and sp:
+                    reactants, agents, products_s, mapped = sr, sa or agents, sp, True
+                    extra_used += 1
         if mapped:
+            repaired = False
+            rescued = False
             try:
-                hard = _map_audit(reactants, agents, products_s)
+                # The sides may come back repaired: a duplicated map number that could be resolved
+                # without choosing anything. As with the supplied maps above, the canonical sides
+                # are NOT replaced — only what the template is cut from — so exact keys, products
+                # and citations are unaffected either way.
+                hard, reactants, products_s, repaired = _map_audit(reactants, agents, products_s)
             except Exception as e:
                 hard = [f'audit error: {type(e).__name__}']
+            # A recorded map that fails the audit is not excused — it is REPLACED, if and only
+            # if an independently produced map for exactly this reaction passes the SAME audit.
+            # `supplied` is already set when the source data had no map at all, so this only fires
+            # for reactions that HAD a map and lost it. The canonical sides are untouched either
+            # way, so exact keys, products and citations do not depend on which map won.
+            if hard and not supplied:
+                alt = _EXTRA_MAPPED.get(key)
+                if alt and '>' in alt:
+                    ar, aa, ap = _split(alt)
+                    if ar and ap:
+                        try:
+                            alt_hard, ar2, ap2, _ = _map_audit(ar, aa or agents, ap)
+                        except Exception as e:
+                            alt_hard = [f'audit error: {type(e).__name__}']
+                        if not alt_hard:
+                            reactants, products_s = ar2, ap2
+                            agents = aa or agents
+                            hard, rescued = [], True
+                            extra_used += 1
+                            audit_flags['remap rescued a rejected map'] += 1
+                        else:
+                            audit_flags['remap also failed the audit'] += 1
             if key not in map_audit or not hard:
                 map_audit[key] = hard
             if hard:
                 audit_flags['excluded'] += 1
                 audit_flags.update(hard)
                 continue
-            t, who = _template_for(reactants, agents, products_s, rid, r_atoms + p_atoms, force_fast)
+            t, t_fwd, who = _template_for(reactants, agents, products_s, rid, r_atoms + p_atoms, force_fast)
             if who == 'fast':
                 fast_templates += 1
             else:
                 rdchiral_templates += 1
+            if repaired or rescued:
+                # A map that did not come from the source data has to earn its template. The fast
+                # extractor's output never reaches the runtime retro set, so there is nothing to
+                # validate on that path and nothing to gain by paying for it.
+                # Rescued maps face the same bar as repaired ones deliberately: on this set the
+                # maps that PASS the audit are the ones the mapper was least sure of (median
+                # confidence 0.287 against 0.498 for those still flagged), so passing the audit
+                # cannot be read as being right. Reproducing its own reaction can.
+                label = 'remap' if rescued else 'repair'
+                if who == 'fast':
+                    audit_flags[f'{label} kept (fast path, not in the retro set)'] += 1
+                elif t and _template_reproduces(t, reactants, products_s):
+                    audit_flags[f'{label} validated'] += 1
+                else:
+                    # LAST CHANCE for a repaired map. The rescue above fires only when the audit
+                    # REJECTED the recorded map, and a successful repair makes the audit pass — so
+                    # a repair that then fails validation has never been offered an independently
+                    # produced map. Try one here, through the SAME audit and the SAME validation,
+                    # before discarding the reaction. Strictly additive: this runs only on the path
+                    # that was about to `continue`, so nothing that already validated can be lost.
+                    saved = False
+                    if repaired and not rescued and not supplied:
+                        alt = _EXTRA_MAPPED.get(key)
+                        if alt and '>' in alt:
+                            ar, aa, ap = _split(alt)
+                            if ar and ap:
+                                try:
+                                    alt_hard, ar2, ap2, _ = _map_audit(ar, aa or agents, ap)
+                                except Exception as e:
+                                    alt_hard = [f'audit error: {type(e).__name__}']
+                                if alt_hard:
+                                    audit_flags['remap after a failed repair also failed the audit'] += 1
+                                else:
+                                    agents2 = aa or agents
+                                    t2, t2_fwd, who2 = _template_for(ar2, agents2, ap2, rid,
+                                                                     r_atoms + p_atoms, force_fast)
+                                    # these count EXTRACTIONS performed, so a second one counts
+                                    if who2 == 'fast':
+                                        fast_templates += 1
+                                    else:
+                                        rdchiral_templates += 1
+                                    if who2 == 'fast':
+                                        audit_flags['remap after a failed repair kept (fast path)'] += 1
+                                        saved = True
+                                    elif t2 and _template_reproduces(t2, ar2, ap2):
+                                        audit_flags['remap after a failed repair VALIDATED'] += 1
+                                        saved = True
+                                    else:
+                                        audit_flags['remap after a failed repair rejected by validation'] += 1
+                                    if saved:
+                                        t, t_fwd, who = t2, t2_fwd, who2
+                                        reactants, products_s, agents = ar2, ap2, agents2
+                                        extra_used += 1
+                    if not saved:
+                        audit_flags[f'{label} rejected by validation'] += 1
+                        continue
             if t:
                 templates[t] += 1
                 (templates_fast if who == 'fast' else templates_rdchiral)[t] += 1
                 if len(template_samples[t]) < SAMPLE_PER_TEMPLATE:
                     template_samples[t].append(rid)
+            if t_fwd:
+                templates_forward[t_fwd] += 1
     payload = {'reactions': n, 'exact': dict(exact), 'templates': dict(templates),
                'templatesRdchiral': dict(templates_rdchiral), 'templatesFast': dict(templates_fast),
+               'templatesForward': dict(templates_forward),
                'exactSamples': dict(exact_samples), 'templateSamples': dict(template_samples),
                'reactionMeta': reaction_meta, 'products': products,
                'fastTemplates': fast_templates, 'rdchiralTemplates': rdchiral_templates,
-               'forcedFast': 1 if force_fast else 0,
+               'forcedFast': 1 if force_fast else 0, 'extraMapped': extra_used,
                'family': source_family(path), 'mapAudit': map_audit, 'auditFlags': dict(audit_flags)}
     tmp = out + '.tmp'
     with open(tmp, 'w') as fh:
@@ -413,11 +736,11 @@ def compute_reaction_fps(items):
 
 
 def list_tasks(root, files, limit, rsmi=()):
-    from ord_schema.datasets import load_dataset
     paths = files or sorted(glob.glob(os.path.join(root, 'data', '*', '*.parquet')))
     tasks = [(path, g) for path in rsmi for g in range(len(rsmi_offsets(path)))]
     for path in paths:
         try:
+            from ord_schema.datasets import load_dataset
             view = load_dataset(path)
             for g in range(view.num_row_groups):
                 tasks.append((path, g))
@@ -460,6 +783,14 @@ def main():
                     help="chemistry-studio plugin directory: audit every recorded reaction with the app's own "
                          'bond-edit gate (skeleton_audit.mjs); without it, citations fall back to the map audit')
     ap.add_argument('--gate-shards', type=int, default=max(1, (os.cpu_count() or 4) - 2))
+    ap.add_argument('--extra-mapped', metavar='JSONL',
+                    help='{key, mapped, confidence} per line from map_unmapped.py: atom maps for '
+                         'reactions whose source data has none, so a template can be cut from them. '
+                         'Keyed by the same content hash this builder uses. NOTE --extra-map-audit '
+                         'is a different thing: it supplies audit verdicts and yields no templates.')
+    ap.add_argument('--map-confidence', type=float, default=0.0,
+                    help='ignore a supplied map below this confidence (default 0: keep all and let '
+                         'the map audit decide, which is what judges whether a map is plausible)')
     ap.add_argument('--extra-map-audit', metavar='JSON',
                     help='{key: [flags]} from re-mapping reactions neither the gate nor their own atom map could '
                          'decide (an ambiguous or missing map): used as the map audit for exactly those')
@@ -471,6 +802,16 @@ def main():
                          "opt-in for a curated build. Map-audit flags always exclude")
     ap.add_argument('--revision', default='93475c46949f9218e1dfb6624096025135db2add')
     args = ap.parse_args()
+    if not math.isfinite(args.map_confidence) or args.map_confidence < 0:
+        ap.error('--map-confidence must be finite and nonnegative')
+
+    # The checkpoint name now carries the template threshold, so this process has to agree with its
+    # workers about what it is. Workers are handed args.template_threshold through init_worker; the
+    # main process only ever had the module default, so a non-default --template-threshold would
+    # make every checkpoint a worker writes invisible to the completeness check below.
+    global _TEMPLATE_THRESHOLD
+    _TEMPLATE_THRESHOLD = args.template_threshold
+    configure_mapping(args.extra_mapped, args.map_confidence)
 
     parts_dir = os.path.join(args.out, 'parts')
     if args.fresh and os.path.isdir(parts_dir):
@@ -551,7 +892,8 @@ def main():
     window = args.workers + 2
 
     def new_pool():
-        return mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS)))
+        return mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS),
+                                            args.extra_mapped, args.map_confidence))
 
     pool = new_pool()
     inflight = {}  # AsyncResult -> [task, submit_time]
@@ -619,11 +961,12 @@ def main():
     else:
         print(f'completeness OK: {len(expected & present)}/{len(expected)} checkpoints', flush=True)
     print('merging checkpoints...', flush=True)
-    fam = defaultdict(lambda: {'exact': Counter(), 'templates': Counter(), 'r': Counter(), 'f': Counter(), 'products': Counter()})
+    fam = defaultdict(lambda: {'exact': Counter(), 'templates': Counter(), 'r': Counter(), 'f': Counter(),
+                               'fwd': Counter(), 'products': Counter()})
     exact_samples, template_samples = {}, {}
     reaction_meta, products = {}, {}
     map_audit, audit_flags = {}, Counter()
-    fast_templates = rdchiral_templates = forced_fast_parts = 0
+    fast_templates = rdchiral_templates = forced_fast_parts = extra_mapped_used = 0
     # Merge exactly this scan's row groups: a checkpoint left by a dataset since removed or
     # retired upstream, or by a file since replaced, is not part of the index.
     stray = present - expected
@@ -644,7 +987,9 @@ def main():
         f['templates'].update(p['templates'])
         f['r'].update(p['templatesRdchiral'])
         f['f'].update(p['templatesFast'])
+        f['fwd'].update(p.get('templatesForward', {}))
         fast_templates += p.get('fastTemplates', 0)
+        extra_mapped_used += p.get('extraMapped', 0)
         rdchiral_templates += p.get('rdchiralTemplates', 0)
         audit_flags.update(p.get('auditFlags', {}))
         for k, flags in p['mapAudit'].items():
@@ -684,6 +1029,7 @@ def main():
 
     exact, templates = combined('exact'), combined('templates')
     templates_r, templates_f = combined('r'), combined('f')
+    templates_forward = combined('fwd')
     for k, n in combined('products').items():
         products[k]['n'] = n
     per_family = ', '.join(f'{name} {sum(c.get("exact", {}).values())}' for name, c in sorted(fam.items()))
@@ -780,10 +1126,35 @@ def main():
                       [f'{k}\t{products[k]["n"]}\t{",".join(products[k]["k"])}' for k in sorted(products)])
     write_zst_blocked(os.path.join(args.out, 'reaction-smiles.tsv.zst'),
                       [f'{k}\t{reaction_meta[k][0]}' for k in sorted(reaction_meta)])
-    retro = sorted((t for t in templates if templates[t] >= RETRO_MIN_COUNT and templates_r.get(t, 0) > 0),
+    # Every stored template carries its own radius, so a query can window the molecule around the
+    # reaction site instead of applying the template to the whole graph. A template with no radius
+    # cannot be windowed and is REJECTED rather than stored: either it changes nothing (and so
+    # matches everything), or it needs regions one window cannot cover.
+    radius, rejected = {}, Counter()
+    for t in set(templates) | set(templates_forward):
+        r, why = template_radius(t)
+        if r is None:
+            rejected[why] += 1
+        else:
+            radius[t] = r
+    retro = sorted((t for t in templates
+                    if templates[t] >= RETRO_MIN_COUNT and templates_r.get(t, 0) > 0 and t in radius),
                    key=lambda t: (-templates[t], t))
     write_zst(os.path.join(args.out, 'retro-templates.tsv.zst'),
               '\n'.join(f'{templates[t]}\t{templates_r.get(t, 0)}\t{t}' for t in retro))
+    print(f'templates rejected as unwindowable: {dict(rejected)}', flush=True)
+    # Forward templates carry an explicit radius; existing retro readers keep their three columns.
+    # Written even when empty, so a new index is distinguishable from one built before it.
+    forward = sorted((t for t in templates_forward
+                      if templates_forward[t] >= RETRO_MIN_COUNT and t in radius),
+                     key=lambda t: (-templates_forward[t], t))
+    write_zst(os.path.join(args.out, 'forward-templates.tsv.zst'),
+              '\n'.join(f'{templates_forward[t]}\t{templates_forward[t]}\t{radius[t]}\t{t}' for t in forward))
+    write_zst(os.path.join(args.out, 'template-radii.tsv.zst'),
+              '\n'.join(f'{radius[t]}\t{t}' for t in sorted(set(retro) | set(forward))))
+    print(f'forward templates: {len(forward)} kept of {len(templates_forward)} distinct '
+          f'(floor {RETRO_MIN_COUNT})', flush=True)
+
     # For review: every recorded reaction left out of the index by the audit, with who decided.
     write_zst(os.path.join(args.out, 'audit-excluded.tsv.zst'), '\n'.join(sorted(excluded_rows)))
     # Kept and cited, with the flags the gate raised (--gate-flags tag): key, decided by, flags.
@@ -819,7 +1190,7 @@ def main():
         return h.hexdigest()
 
     for name in ('exact.tsv.zst', 'templates.tsv.zst', 'products.tsv.zst', 'reaction-smiles.tsv.zst',
-                 'retro-templates.tsv.zst', 'molecules.tsv.zst', 'audit-excluded.tsv.zst', 'audit-flags.tsv.zst', 'exact.tsv.zst.blocks',
+                 'retro-templates.tsv.zst', 'forward-templates.tsv.zst', 'template-radii.tsv.zst', 'molecules.tsv.zst', 'audit-excluded.tsv.zst', 'audit-flags.tsv.zst', 'exact.tsv.zst.blocks',
                  'reaction-smiles.tsv.zst.blocks', 'molecules.tsv.zst.blocks', 'products.tsv.zst.blocks'):
         record(name, os.path.join(args.out, name))
 
@@ -837,7 +1208,8 @@ def main():
         chunk = max(1, len(items) // (args.workers * 4))
         batches = [items[i:i + chunk] for i in range(0, len(items), chunk)]
         t1 = time.time()
-        with mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS))) as pool:
+        with mp.Pool(args.workers, initializer=init_worker, initargs=(parts_dir, args.template_threshold, dict(_FILE_DIGESTS), dict(_RSMI_OFFSETS),
+                                            args.extra_mapped, args.map_confidence)) as pool:
             results = []
             for i, part in enumerate(pool.imap_unordered(compute_reaction_fps, batches)):
                 results.append(part)
@@ -874,6 +1246,17 @@ def main():
         'format': 'nodus.reaction-index',
         'version': 4,
         'templatesColumns': ['count', 'rdchiral', 'fast', 'sampleIds', 'smarts'],
+        'extractionVersion': EXTRACTION_VERSION,
+        'extraMappedUsed': extra_mapped_used,
+        'templateColumns': ['count', 'rdchiral', 'smarts'],
+        'forwardTemplateColumns': ['count', 'rdchiral', 'radius', 'smarts'],
+        'templateRadiiFile': 'template-radii.tsv.zst',
+        'templateRadiiColumns': ['radius', 'smarts'],
+        'extraMappedSha256': None if _EXTRA_MAPPED_DIGEST == 'none' else _EXTRA_MAPPED_DIGEST,
+        'mapConfidence': args.map_confidence,
+        'queryMargin': 2,   # bonds added to a template's radius at query time; see DESIGN-REACTION-STORE.md
+        'templatesRejectedUnwindowable': dict(rejected),
+        'forwardTemplates': len(forward),
         'source': 'open-reaction-database/ord-data',
         'revision': args.revision,
         'licence': 'CC-BY-SA-4.0',

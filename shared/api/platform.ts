@@ -160,6 +160,8 @@ export interface PlatformApi {
   // Managed ChatGPT subscription login through the official Codex App Server.
   // Credentials remain in Codex's OS-keychain-backed store and never cross IPC.
   getChatGptSubscriptionStatus(): Promise<ChatGptSubscriptionStatus>;
+  /** Download the Codex CLI, which installers no longer carry; progress arrives as status. */
+  installChatGptSubscriptionRuntime(): Promise<ChatGptSubscriptionStatus>;
   startChatGptSubscriptionLogin(): Promise<ChatGptSubscriptionLogin>;
   cancelChatGptSubscriptionLogin(loginId: string): Promise<ChatGptSubscriptionStatus>;
   logoutChatGptSubscription(): Promise<ChatGptSubscriptionStatus>;
@@ -167,6 +169,8 @@ export interface PlatformApi {
 
   // GitHub Copilot subscription access through GitHub's official SDK/CLI.
   getGitHubCopilotSubscriptionStatus(): Promise<GitHubCopilotSubscriptionStatus>;
+  /** Download the Copilot CLI, which installers no longer carry; progress arrives as status. */
+  installGitHubCopilotSubscriptionRuntime(): Promise<GitHubCopilotSubscriptionStatus>;
   startGitHubCopilotSubscriptionLogin(): Promise<GitHubCopilotSubscriptionStatus>;
   cancelGitHubCopilotSubscriptionLogin(): Promise<GitHubCopilotSubscriptionStatus>;
   logoutGitHubCopilotSubscription(): Promise<GitHubCopilotSubscriptionStatus>;

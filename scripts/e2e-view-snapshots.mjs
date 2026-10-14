@@ -125,7 +125,15 @@ try {
 
   const openDeepResearch = () => page.locator('[data-tour="nav-deepResearch"]').click();
   const readerDocument = page.locator('[data-testid="deep-research-reader-document"]');
-  const sortSelect = page.locator('select').filter({ hasText: 'Más recientes' });
+  // The gallery sort is a menu, not a select: its trigger carries the current value.
+  const sortMenu = (testId) => ({
+    choose: async (value) => {
+      await page.getByTestId(testId).click();
+      await page.getByTestId(`${testId}-menu`).locator(`[data-value="${value}"]`).click();
+    },
+    value: () => page.getByTestId(testId).getAttribute('data-value'),
+  });
+  const sortSelect = sortMenu('deep-research-sort');
 
   // ── The gallery's own controls ──────────────────────────────────────────────
   await openDeepResearch();
@@ -190,7 +198,7 @@ try {
     await composer.getByRole('button', { name: 'Cerrar' }).click();
     await composer.waitFor({ state: 'detached' });
   }
-  await sortSelect.selectOption('title');
+  await sortSelect.choose('title');
   const galleryGenerationTags = page.getByTestId('deep-research-generation-tags').first();
   assert.match(await galleryGenerationTags.innerText(), /Gemini 3\.1 Flash Lite/);
   assert.match(await galleryGenerationTags.innerText(), /Revisión de la literatura/);
@@ -301,7 +309,7 @@ try {
   await page.locator('[data-tour="nav-ideas"]').click();
   await openDeepResearch();
   await readerDocument.waitFor({ state: 'detached' });
-  assert.equal(await sortSelect.inputValue(), 'title', 'the ordering survives leaving the section');
+  assert.equal(await sortSelect.value(), 'title', 'the ordering survives leaving the section');
   const listActive = await page.evaluate(() => Boolean(document.querySelector('.space-y-2 [data-anchor-id]')));
   assert.ok(listActive, 'and so does the list/grid choice');
   const firstCard = await page.evaluate(() => document.querySelector('[data-anchor-id]')?.textContent?.includes('AAA informe largo'));
@@ -340,8 +348,8 @@ try {
   // included, which is what the reader gets on the next launch. Everything above this
   // line is remembered by that store; only the ordering, the read filter and the
   // grid/list choice are expected to come back from disk.
-  const immersionSort = page.locator('select').filter({ hasText: 'Más recientes' });
-  await immersionSort.selectOption('title');
+  const immersionSort = sortMenu('immersion-sort');
+  await immersionSort.choose('title');
   await page.getByTitle('Vista lista').click();
 
   // A search and an open report, which are a question and a place: neither is a
@@ -357,7 +365,7 @@ try {
 
   await openDeepResearch();
   await readerDocument.waitFor({ state: 'detached' });
-  assert.equal(await sortSelect.inputValue(), 'title', 'the ordering survives the restart');
+  assert.equal(await sortSelect.value(), 'title', 'the ordering survives the restart');
   assert.ok(
     await page.evaluate(() => Boolean(document.querySelector('.space-y-2 [data-anchor-id]'))),
     'and so does the list/grid choice',
@@ -370,7 +378,7 @@ try {
 
   await page.locator('[data-tour="nav-immersion"]').click();
   await page.locator('[data-anchor-id]').first().waitFor({ state: 'visible' });
-  assert.equal(await immersionSort.inputValue(), 'title', 'Inmersión reopens on its own stored ordering');
+  assert.equal(await immersionSort.value(), 'title', 'Inmersión reopens on its own stored ordering');
   assert.ok(
     await page.evaluate(() => Boolean(document.querySelector('.space-y-2 [data-anchor-id]'))),
     'and on its own stored layout',

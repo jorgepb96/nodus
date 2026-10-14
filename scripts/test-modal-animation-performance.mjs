@@ -62,6 +62,6 @@ test('release and update overlays suspend hidden duplicate work', () => {
   assert.match(whatsNew, /showSeenReleaseNotes\) return releaseNotesSince\(null, current\)/);
   assert.match(whatsNew, /releaseNotesSince\(null, current\)\.slice\(0, STARTUP_VERSION_HISTORY_LIMIT\)/);
   // The mascot may carry further gates before these two — Study's reduced-distraction
-  // mode hides it — but the release modal and the settled startup guides must stay.
-  assert.match(app, /\{[^}]*!manualWhatsNewOpen && startupGuidesSettled && <NodiMascot settings=\{settings\} \/>\}/);
+  // mode hides it — but the release modal must still gate the mascot.
+  assert.match(app, /\{[^}]*!manualWhatsNewOpen && whatsNewSettled && <NodiMascot settings=\{settings\} \/>\}/);
 });

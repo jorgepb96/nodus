@@ -294,7 +294,8 @@ export interface DatabaseDeepResearchSnapshot {
   openReportId: string | null;
   search?: string;
   readFilter?: 'all' | 'read' | 'unread';
-  reportFilter?: DatabaseDeepResearchReportType | 'all';
+  /** Report types ticked in the gallery's type filter; empty lets every type through. */
+  reportFilter?: DatabaseDeepResearchReportType[];
   sortKey?: 'recent' | 'oldest' | 'title';
   viewMode?: 'grid' | 'list';
   reading?: ReadingPlace | null;

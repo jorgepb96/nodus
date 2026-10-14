@@ -9,12 +9,8 @@ import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
 import { pipeline } from 'node:stream/promises';
 
-export const shardCount = 3;
+export const shardCount = 6;
 export const fileConcurrency = 2;
-export const e2eShard = 3;
-// Reserve five minutes of real-app work in the last group. At two file
-// processes per runner, this is ten minutes in the placement weight.
-export const e2eReservationMs = 300_000;
 const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
@@ -52,7 +48,9 @@ export function createPlan(files, commit, durations = {}, count = shardCount, br
   const browserSet = new Set(browsers);
   const weight = file => (Number.isFinite(durations[file]) && durations[file] > 0 ? durations[file] : 1000)
     * (browserSet.has(file) ? fileConcurrency : 1);
-  const shards = Array.from({ length: count }, (_, index) => ({ index: index + 1, files: [], estimatedMs: index + 1 === e2eShard ? fileConcurrency * e2eReservationMs : 0 }));
+  // E2E has its own runner. Balance only the complete unit/integration suite;
+  // reserving app time in the last shard would leave that runner underused.
+  const shards = Array.from({ length: count }, (_, index) => ({ index: index + 1, files: [], estimatedMs: 0 }));
   // Longest files first, on the lightest group. Hints only affect placement;
   // unknown/new files always run and actual process durations are reported.
   for (const file of [...files].sort((a, b) => weight(b) - weight(a) || a.localeCompare(b))) {
@@ -70,7 +68,8 @@ export function validatePlan(plan, files, commit) {
   assert.equal(plan.commit, commit, 'Plan belongs to a different commit');
   assert.deepEqual(plan.files, [...files].sort(), 'Test discovery changed');
   assert.equal(plan.shards.length, shardCount, 'Missing shard');
-  assert.deepEqual(plan.shards.map(s => s.index).sort(), [1, 2, 3], 'Duplicate shard index');
+  assert.deepEqual(plan.shards.map(s => s.index).sort((a, b) => a - b),
+    Array.from({ length: shardCount }, (_, index) => index + 1), 'Duplicate shard index');
   const assigned = plan.shards.flatMap(shard => {
     assert.ok(shard.files.length > 0, 'Empty shard');
     return shard.files;

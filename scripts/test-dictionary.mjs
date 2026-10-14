@@ -197,7 +197,7 @@ try {
     else assert.doesNotMatch(fallback, /Evidencia verificable|\[evidencia /i, `${language}: Spanish extractive fallback leaked`);
     const insufficient = ai.__insufficientDictionaryMarkdownForTesting([coverageEvidence[0]], language);
     if (language === "es") assert.match(insufficient, /Evidencia insuficiente/);
-    else assert.doesNotMatch(insufficient, /Evidencia insuficiente|La evidencia seleccionada|No es posible comparar/i, `${language}: Spanish insufficient-evidence output leaked`);
+    else assert.doesNotMatch(insufficient, /Evidencia insuficiente|La evidencia seleccionada|No es posible comparar|disponible\]|\[fuente/i, `${language}: Spanish insufficient-evidence output leaked`);
     const retry = ai.__dictionaryRetryCorrectionForTesting(
       1,
       ["coverage failure"],

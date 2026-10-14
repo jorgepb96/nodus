@@ -137,6 +137,8 @@ var DOCUMENTED_MAX_OUTPUT = {
   // https://developers.openai.com/api/docs/models/gpt-4o
   // The older 2024-05-13 snapshot has a different ceiling; do not match by prefix.
   openai: {
+    // https://developers.openai.com/api/docs/models/gpt-6.1-sol — 128K output, reasoning included.
+    "gpt-6.1-sol": 128e3,
     "gpt-4o": 16384,
     "gpt-4o-2024-08-06": 16384,
     "gpt-4o-2024-11-20": 16384
@@ -145,6 +147,7 @@ var DOCUMENTED_MAX_OUTPUT = {
   // Values this large require a streaming request; a non-streaming call hits the HTTP timeout
   // first. Research Chat streams, so it can use them.
   anthropic: {
+    "claude-fable-5-1": 128e3,
     "claude-opus-5-5": 128e3,
     "claude-opus-5": 128e3,
     "claude-opus-4-8": 128e3,

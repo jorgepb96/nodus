@@ -18,6 +18,7 @@ import { BACKUP_CATEGORIES, defaultOpenBackupOptions } from '@shared/backups';
 import { listVaults, getVault } from '../vaults/vaultRegistry';
 import { LibraryDiskStore } from '../library/libraryStorage';
 import { configuredLibraryRoot } from '../library/libraryPaths';
+import { getSettings } from '../db/settingsRepo';
 import { snapshotVaultInUtility } from './backupUtilityHost';
 import { StreamingZipWriter } from './streamingZip';
 import {
@@ -411,6 +412,7 @@ export async function runOpenBackup(
         appVersion: app.getVersion(),
         jobId,
         previewOnly: outputDir === null,
+        language: getSettings().uiLanguage,
       },
       onProgress,
       controller.signal,
@@ -419,7 +421,7 @@ export async function runOpenBackup(
     const { entries: _entries, ...summary } = built;
     if (!outputDir) return { ...summary, path: null, cancelled: false };
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const stem = `nodus-backup-${backupFileStem(sources.length === 1 ? sources[0].name : 'seleccion')}-${stamp}-${randomUUID().slice(0, 6)}`;
+    const stem = `nodus-backup-${backupFileStem(sources.length === 1 ? sources[0].name : 'selection')}-${stamp}-${randomUUID().slice(0, 6)}`;
     const target = path.join(destination, stem + (options.container === 'zip' ? '.zip' : ''));
     if (options.container === 'zip') {
       const zipPath = path.join(temp, 'package.zip');

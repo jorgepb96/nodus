@@ -1,7 +1,7 @@
 import { currentResearchRequestBudget, researchPromptUpperBound } from './researchRequestBudget';
 import { documentedContextWindow } from '@shared/providerContextWindows';
 import { withJobThinking } from './thinkingEffort';
-import { researchReasoningBody, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
+import { researchReasoningBody, researchReasoningProfile, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
 import { getSettings } from '../db/settingsRepo';
 import { documentVisualPlanningPrompt } from './documentVisualContext';
 import { jobOutputLanguage } from './jobOutputLanguage';
@@ -28,7 +28,7 @@ import {
   isGroqReasoningModel,
 } from './providers';
 import { DEFAULT_EMBEDDING_MODELS, isLocalEndpointAddress, normalizeEmbeddingModel, PROVIDER_LABELS } from '@shared/providers';
-import type { AiProvider, CodexReasoningEffort, EmbeddingProvider, LocalProvider, ModelRef, PromptLanguage, ReasoningEffort } from '@shared/types';
+import type { AiProvider, CodexReasoningEffort, EmbeddingProvider, LocalProvider, ModelInfo, ModelRef, PromptLanguage, ReasoningEffort } from '@shared/types';
 import { vaultTypePromptPack } from '@shared/vaultTypes';
 import { codexReasoningFor } from '@shared/codexReasoning';
 import { anthropicVisionContent, openAiVisionContent, type VisionImagePart } from '@shared/imageAnalysis';
@@ -421,6 +421,53 @@ function runsOnDevice(provider: AiProvider): boolean {
 
 export function completionTimeoutMs(model: ModelRef): number {
   return runsOnDevice(model.provider) ? ON_DEVICE_COMPLETION_TIMEOUT_MS : CLOUD_COMPLETION_TIMEOUT_MS;
+}
+
+/**
+ * How long a provider may send NOTHING before a streamed answer is abandoned. Long, because it
+ * has to cover a thinking phase the provider does not narrate.
+ *
+ * Every chunk resets the deadline, so a provider that streams its reasoning — DeepSeek, Claude —
+ * never approaches it however long it thinks, and CLOUD_COMPLETION_TIMEOUT_MS is the right
+ * allowance for the gap between two chunks. OpenAI's reasoning models stream nothing at all until
+ * the answer begins, so for them that same number is a cap on THINKING, which is a different and
+ * much smaller thing than it looks.
+ *
+ * Measured 2026-10-12: gpt-6.1-sol with reasoning high, on four hard synthesis targets, streamed
+ * 0 characters and was cut off at 180,003 ms on every one — our own deadline, surfaced to the
+ * user as "Timed out waiting for the AI provider. Try a faster model or a smaller fragment."
+ * Nothing was wrong with the provider and a faster model was not the remedy.
+ *
+ * Scoped to requests with effective reasoning, including a reasoning model's native default.
+ * Non-reasoning OpenAI models retain the three-minute allowance. STREAM_TOTAL_MS
+ * bounds the request either way.
+ */
+const HIDDEN_REASONING_STREAM_IDLE_MS = 15 * 60_000;
+
+/** Whether this provider withholds its reasoning from the stream, so silence means "thinking". */
+function hidesReasoningStream(model: ModelRef): boolean {
+  return model.provider === 'openai';
+}
+
+export function streamIdleTimeoutMs(model: ModelRef, body: { reasoning_effort?: unknown } = {}, info?: ModelInfo): number {
+  if (runsOnDevice(model.provider)) return ON_DEVICE_COMPLETION_TIMEOUT_MS;
+  // Inspect the body after Research options and thinking compatibility have been applied.
+  // Research deliberately sets the portable `reasoning` to off; its native effort is separate.
+  // An omitted effort can leave mandatory thinking enabled; optional thinking may default to none.
+  const effort = body.reasoning_effort;
+  const profile = researchReasoningProfile(model, info);
+  const defaultEffort = info?.defaultReasoningEffort;
+  const canThink = profile.levels.some(level => level !== 'none' && level !== 'off')
+    || info?.reasoning === true || info?.reasoningMandatory === true
+    || (defaultEffort !== undefined && defaultEffort !== 'none');
+  // Supporting thinking is not the same as enabling it by default (GPT-5.1/5.4 mini).
+  // Prefer a published default; otherwise widen omitted effort only for mandatory thinking.
+  const defaultThinking = defaultEffort !== undefined ? defaultEffort !== 'none'
+    : info?.reasoningMandatory ?? (canThink && !profile.levels.includes('none') && !profile.levels.includes('off'));
+  const thinking = canThink && (effort === undefined ? defaultThinking : effort !== 'none' && effort !== 'off');
+  return thinking && hidesReasoningStream(model)
+    ? Math.max(HIDDEN_REASONING_STREAM_IDLE_MS, CLOUD_COMPLETION_TIMEOUT_MS)
+    : CLOUD_COMPLETION_TIMEOUT_MS;
 }
 
 /** A research turn's own short JSON calls (its plan, each supervisor decision): a few hundred
@@ -2167,15 +2214,7 @@ async function rawCompleteStreamTransport(
     : compatLocalPlan?.outputTokens ?? requestedMax;
   const freeTier = isProviderFreeTier(model.provider);
   const maxTokens = freeTier ? freeTierBudget(model, opts, localMax) : localMax;
-  const streamTimeoutMs = opts.timeoutMs ?? completionTimeoutMs(model);
   const OpenAI = (await import('openai')).default;
-  const client = new OpenAI({
-    apiKey: key,
-    baseURL: baseURL ?? undefined,
-    timeout: streamTimeoutMs,
-    maxRetries: 0,
-    defaultHeaders: openAiClientHeaders(model),
-  });
   const baseBody = {
     model: model.model,
     ...requestSamplingBody(model, opts, reasoning),
@@ -2233,17 +2272,25 @@ async function rawCompleteStreamTransport(
     }
   };
   // Idle, not total: a reasoning stream that keeps sending chunks is working, however long it
-  // thinks. STREAM_TOTAL_MS still bounds a provider that never finishes.
-  const executeStream = (body: any) => withIdleTransportDeadline(
-    streamTimeoutMs,
-    Math.max(streamTimeoutMs, STREAM_TOTAL_MS),
-    signal ?? opts.signal,
-    (transportSignal, touch) => model.provider === 'nodus'
-      ? withNodusLocalServerLease(model.model, 'chat', (apiUrl) => consumeStream(new OpenAI({
-          apiKey: key, baseURL: apiUrl, timeout: streamTimeoutMs, maxRetries: 0,
-        }), body, transportSignal, touch))
-      : consumeStream(client, body, transportSignal, touch),
-  );
+  // thinks. STREAM_TOTAL_MS still bounds a provider that never finishes. For a provider that
+  // sends nothing while it reasons, streamTimeoutMs is already widened to cover that silence.
+  const executeStream = (body: any) => {
+    const streamTimeoutMs = opts.timeoutMs ?? streamIdleTimeoutMs(model, body, opts.researchModelInfo);
+    const client = new OpenAI({
+      apiKey: key, baseURL: baseURL ?? undefined, timeout: streamTimeoutMs,
+      maxRetries: 0, defaultHeaders: openAiClientHeaders(model),
+    });
+    return withIdleTransportDeadline(
+      streamTimeoutMs,
+      Math.max(streamTimeoutMs, STREAM_TOTAL_MS),
+      signal ?? opts.signal,
+      (transportSignal, touch) => model.provider === 'nodus'
+        ? withNodusLocalServerLease(model.model, 'chat', (apiUrl) => consumeStream(new OpenAI({
+            apiKey: key, baseURL: apiUrl, timeout: streamTimeoutMs, maxRetries: 0,
+          }), body, transportSignal, touch))
+        : consumeStream(client, body, transportSignal, touch),
+    );
+  };
   /** One replay, dispatched through the same retry/scheduler seam as the first attempt. */
   const replayStream = (body: Record<string, unknown>) => withThinkingCompatibility(model, { ...baseBody, ...body },
     request => withProviderRetries(freeTier, () => scheduleProviderRequest(
@@ -2297,6 +2344,10 @@ async function rawCompleteStreamTransport(
     throw new AiError('El modelo se negó a responder a esta solicitud.', false);
   }
   if (/^(length|max_tokens|max_output_tokens)$/i.test(finishReason ?? '')) {
+    // Reported, not retried here: retryOnceWhenCutOff owns the one retry this deserves, at the
+    // research layer where the effort can be lowered (see cutOffRetry.ts). A second retry inside
+    // the transport would nest under it and cost four calls on a request that already ran for
+    // minutes.
     throw new AiError(truncatedOutputMessage(model, maxTokens), false, false, 'output_truncated');
   }
   if (!answer.trim()) {

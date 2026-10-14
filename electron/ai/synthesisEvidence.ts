@@ -2,6 +2,7 @@ import { eachBounded } from '../util/async';
 import { dumpToolInput } from './routeInputDump';
 import type { ModelRef } from '@shared/types';
 import { findRequestedTarget } from '@shared/moleculeInspection';
+import type { TargetDecomposition } from '@shared/synthesisEvidence';
 import {
   candidateRoutes,
   compoundAvailability,
@@ -29,6 +30,7 @@ import { getDb } from '../db/database';
 import { findSimilarPassagesPaged, lexicalPassageSearch, type SimilarPassage } from '../db/passagesRepo';
 import { reactionIndexService } from '../reactionIndex';
 import { chemistryStockDirectory } from './chemistryStock';
+import { monomerLibraryDirectory } from './chemistryMonomers';
 import { textbookCitations, textbookSchemeDirectory, textbookTemplateCitations } from './textbookSchemes';
 import { formatTemplateCitation, formatTextbookCitation, textbookPreparations, type TextbookPreparation } from '@shared/textbookSchemes';
 import { rerank, rerankerAvailable } from './localReranker';
@@ -38,6 +40,7 @@ import type { ChemistryEvidenceScope } from './chemistryEvidenceScope';
 
 const CHEMISTRY_CAPABILITY = 'nodus:chemistry';
 const DISCONNECT_TOOL = 'propose-disconnections';
+const DECOMPOSE_TOOL = 'decompose-target';
 const ROUTE_SEARCH_TOOL = 'search-routes';
 const STOCK_TOOL = 'check-stock';
 /** The route search's time budget: it returns the complete routes it has found by then. */
@@ -124,6 +127,68 @@ export async function invokeDisconnections(runner: Runner, targets: string[], st
   return artifact ? normalizeDisconnections(artifact.data, limit) : [];
 }
 
+/** The package's decomposition tool, when it has one (older packages do not). */
+function decomposeProvider() {
+  const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
+  return provider?.tools.some((tool) => tool.id === DECOMPOSE_TOOL) ? provider : null;
+}
+
+/** Below this many atoms the target is searched whole, as it always was.
+ *
+ *  What is measured is the far end: at 270-290 atoms a whole-target pass takes 180-275 s and so is
+ *  truncated by the tool's own 230 s budget, returning whatever it reached. Between 150 and 270 the
+ *  pass has not been timed, so this threshold is a choice rather than a measurement — a low one,
+ *  because the real gate is the `linkBonds` test below. A molecule that was not assembled from
+ *  units has nothing to cut and is searched whole whatever its size. */
+const DECOMPOSE_ABOVE_ATOMS = 150;
+
+/** The units a target is built from. Null when the package has no such tool; [] when it has one and
+ *  nothing could be cut. The unit library is the user's local data and may be absent, in which case
+ *  the fragments come back unnamed, which is still what a retro search needs. */
+export async function invokeDecomposition(runner: Runner, targets: string[], options: EvidenceOptions = {}): Promise<TargetDecomposition[] | null> {
+  options.signal?.throwIfAborted();
+  const provider = decomposeProvider();
+  if (!provider || !targets.length) return null;
+  const monomerDir = monomerLibraryDirectory();
+  const input = { targets: targets.slice(0, 8), ...(monomerDir ? { monomerDir } : {}) };
+  dumpToolInput(DECOMPOSE_TOOL, input);
+  const result = await runner.invoke({ provider, toolId: DECOMPOSE_TOOL, input });
+  const artifact = (result.artifacts ?? []).find((entry) => entry.artifactType === 'target-decomposition');
+  const data = artifact?.data as { decompositions?: TargetDecomposition[] } | undefined;
+  return Array.isArray(data?.decompositions) ? data.decompositions : [];
+}
+
+/** The molecules to run the retro search on for this target: the units when the target is too big
+ *  to search whole, the target itself otherwise.
+ *
+ *  This is the decomposition's whole point. Asking what makes a 280-atom molecule costs minutes and
+ *  gets truncated; asking what makes each of its 20-odd units costs seconds each, and the units are
+ *  where the answer is — they are building blocks, and the bonds between them are the assembly. */
+async function retroTargets(runner: Runner, target: string, options: EvidenceOptions): Promise<{ molecules: string[]; decomposition?: TargetDecomposition }> {
+  let found: TargetDecomposition[] | null = null;
+  try {
+    found = await invokeDecomposition(runner, [target], options);
+  } catch (error) {
+    if (options.signal?.aborted) throw error;
+    console.warn('[synthesisEvidence] decomposition unavailable:', error instanceof Error ? error.message : String(error));
+    return { molecules: [target] };
+  }
+  const one = found?.[0];
+  if (!one || one.input !== target || !Number.isSafeInteger(one.atoms) || !Number.isSafeInteger(one.linkBonds)
+    || !Number.isFinite(one.covered) || one.covered < 0 || one.covered > 1
+    || one.atoms < DECOMPOSE_ABOVE_ATOMS || one.linkBonds < 2
+    || !Array.isArray(one.units) || !Array.isArray(one.unidentified)) return { molecules: [target] };
+  const units = [...one.units, ...one.unidentified]
+    .map((unit) => unit?.capped);
+  // Replacing the whole target requires a searchable molecule for every cut fragment.
+  // An incomplete/older decomposition must not silently remove the missing fragment's evidence.
+  if (units.some(unit => typeof unit !== 'string' || !unit.trim())) return { molecules: [target] };
+  const capped = units as string[];
+  const molecules = [...new Set(capped)];
+  if (!molecules.length) return { molecules: [target] };
+  return { molecules, decomposition: one };
+}
+
 /** Python processes the evidence gather may run at once. Each disconnection call is one process
  *  working through its molecules ONE AFTER ANOTHER on one core; one call per molecule spreads them
  *  across cores. Bounded, because each process holds its own template screen and RDKit. */
@@ -133,7 +198,7 @@ const DISCONNECTION_PROCESSES = 4;
  *  The same proposals per molecule — each target is searched independently either way — in a
  *  fraction of the wall time when there are several. */
 export async function invokeDisconnectionsEach(runner: Runner, targets: string[], starting: string[], limit: number, options: EvidenceOptions): Promise<TargetDisconnections[]> {
-  const parts = await eachBounded(targets.slice(0, 16), DISCONNECTION_PROCESSES, (molecule) => invokeDisconnections(runner, [molecule], starting, limit, options));
+  const parts = await eachBounded(targets, DISCONNECTION_PROCESSES, (molecule) => invokeDisconnections(runner, [molecule], starting, limit, options));
   options.signal?.throwIfAborted();
   return parts.flatMap((part) => part ?? []);
 }
@@ -148,7 +213,18 @@ async function ordDisconnections(target: string, starting: string[], options: Ev
   const { runner, dispose } = chemistryRunner(options);
   const briefs: TargetDisconnections[] = [];
   try {
-    let level = (await invokeDisconnections(runner, [target], starting, PROPOSALS_PER_TARGET, options)) ?? [];
+    const indexDir = await reactionIndexService().localDirectory();
+    options.signal?.throwIfAborted();
+    if (!indexDir) return [];
+    const { molecules, decomposition } = await retroTargets(runner, target, options);
+    if (decomposition) {
+      console.info(`[synthesisEvidence] ${decomposition.atoms} atoms cut into ${molecules.length} unit(s) `
+        + `at ${decomposition.linkBonds} bond(s), ${Math.round(decomposition.covered * 100)}% named; `
+        + 'searching the units rather than the whole target');
+    }
+    let level = molecules.length === 1
+      ? (await invokeDisconnections(runner, molecules, starting, PROPOSALS_PER_TARGET, options)) ?? []
+      : await invokeDisconnectionsEach(runner, molecules, starting, PROPOSALS_PER_TARGET, options);
     briefs.push(...level);
     for (let depth = 2; depth <= (starting.length ? 3 : 2) && level.length; depth += 1) {
       options.signal?.throwIfAborted();

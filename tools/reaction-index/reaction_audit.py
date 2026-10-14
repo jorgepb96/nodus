@@ -15,6 +15,210 @@ ASYMMETRIC = re.compile(r'(?i)asymmetric|enantio|chiral|\((?:R|S|R,R|S,S)\)|\b(?
                         r'auxiliar|enzyme|lipase|proline|Corey|Noyori|Jacobsen|Shi|Ru-BINAP|Rh-DIPAMP|ee\b)')
 
 
+# Species whose presence among the agents activates a bond the edits would otherwise call
+# unactivated: a transition metal catalyst, or a radical initiator. Measured on the USPTO files: 22
+# of 156 unactivated C–C/C–X exclusions have one of these in the reaction's own agents field, and
+# the DECLARED escape hatch below can never see it because a mined record carries no prose.
+ACTIVATING_METALS = frozenset({'Pd', 'Ni', 'Cu', 'Ru', 'Rh', 'Ir', 'Pt', 'Fe', 'Co', 'Mn', 'Cr',
+                               'Mo', 'W', 'Ti', 'Zr', 'Au', 'Ag', 'Sm', 'Ce', 'Yb', 'Sc', 'In'})
+# The symbol alone conflates a catalyst with a stoichiometric metal OXIDANT, and the oxidation state
+# separates them. Measured over 5,559 USPTO reactions carrying agents: Mn appears 24 times and 17 of
+# those are manganese dioxide, while Cr(VI) is chromate or dichromate. Neither activates a carbon
+# towards a coupling — they take electrons away. A metal at or above the state here is therefore not
+# treated as activating.
+#
+# Iron(III) is deliberately NOT in this table: FeCl3 is a Lewis acid and does activate. Palladate
+# and cuprate anions (Pd(-4), Pd(-1), Cu(-1) all occur in the data) are catalysts and stay.
+OXIDISING_ABOVE = {'Mn': 4, 'Cr': 5, 'Os': 6, 'Re': 6, 'V': 5, 'W': 6, 'Mo': 6}
+
+# Atoms clearly more electronegative than any transition metal, so a bond to one of them raises the
+# metal's oxidation state by the bond order.
+_ELECTRONEGATIVE = frozenset({'O', 'N', 'F', 'Cl', 'Br', 'I', 'S', 'Se'})
+
+
+def oxidation_state(atom):
+    """An estimate of a metal atom's oxidation state, which is NOT its formal charge.
+
+    Manganese dioxide is written `O=[Mn]=O` and carries formal charge ZERO; the +4 is in its bonds
+    to oxygen. Reading the formal charge alone called it a catalyst. Chromate is the same story, and
+    permanganate worse. So the state is the formal charge PLUS the bond orders to atoms more
+    electronegative than the metal, which is the standard assignment and gets MnO2 to +4, chromate
+    to +6 and permanganate to +7 while leaving PdCl2 at +2."""
+    state = atom.GetFormalCharge()
+    for bond in atom.GetBonds():
+        other = bond.GetOtherAtom(atom)
+        if other.GetSymbol() in _ELECTRONEGATIVE:
+            state += int(round(bond.GetBondTypeAsDouble()))
+    return state
+
+
+def agent_activates(agents):
+    """Whether the agents hold a transition metal, which activates a coupling the maps would
+    otherwise read as a bond formed at an unactivated carbon.
+
+    NOT USED BY THE BUILDER, and unproven rather than rejected: 22 of 156 unactivated C–C/C–X
+    exclusions have a metal in the agents, but in a 3,546-reaction sample only 3 reactions were
+    recovered by excusing them, and all 3 yielded no template at all. Too few to judge either way,
+    and it rode along with a repair that failed, so it was reverted with it rather than shipped on
+    its own evidence.
+
+    Deliberately narrow: only the metals, and only for the two `unactivated` flags. It is not proof
+    the bond formation is real — it is the reason the flag is not EVIDENCE that it is not."""
+    from rdkit import Chem
+
+    for part in (agents or '').split('.'):
+        if not part:
+            continue
+        mol = Chem.MolFromSmiles(part)
+        if mol is None:
+            # Measured at 0 of 5,559 reactions with agents, so this is not a silent hole in
+            # practice; it stays a `continue` rather than a guess at what the text meant.
+            continue
+        for atom in mol.GetAtoms():
+            symbol = atom.GetSymbol()
+            if symbol not in ACTIVATING_METALS:
+                continue
+            ceiling = OXIDISING_ABOVE.get(symbol)
+            if ceiling is not None and oxidation_state(atom) >= ceiling:
+                continue        # an oxidant in a high oxidation state, not an activator
+            return True
+    return False
+
+
+def _duplicates(smiles):
+    """(mol, {map number: [atom indices]}) for the numbers used more than once, or (None, {})."""
+    from rdkit import Chem
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None, {}
+    seen = {}
+    for atom in mol.GetAtoms():
+        if atom.GetAtomMapNum():
+            seen.setdefault(atom.GetAtomMapNum(), []).append(atom.GetIdx())
+    return mol, {n: idxs for n, idxs in seen.items() if len(idxs) > 1}
+
+
+def _drop_repeats(smiles):
+    """The side with repeated IDENTICAL components removed, and whether any were.
+
+    Sound: two copies of one molecule carrying the same numbers say the same thing, so keeping one
+    resolves the ambiguity without choosing anything."""
+    from rdkit import Chem
+
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return smiles, False
+    pieces = Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=False)
+    kept, bodies, dropped = [], set(), False
+    for piece in pieces:
+        bare = Chem.Mol(piece)
+        for atom in bare.GetAtoms():
+            atom.SetAtomMapNum(0)
+        try:
+            key = Chem.MolToSmiles(bare)
+        except Exception:
+            kept.append(piece)
+            continue
+        if key in bodies:
+            dropped = True
+            continue
+        bodies.add(key)
+        kept.append(piece)
+    if not dropped:
+        return smiles, False
+    try:
+        return '.'.join(Chem.MolToSmiles(p) for p in kept), True
+    except Exception:
+        return smiles, False
+
+
+def _renumber_equivalent(smiles):
+    """The side with each symmetry-equivalent duplicate given its own number, or None.
+
+    Sound where it applies and nowhere else: two atoms that are interchangeable by an automorphism
+    yield the same template under either assignment, so breaking the tie invents nothing. Two
+    DISTINGUISHABLE atoms claiming one product atom cannot be settled by renumbering — picking one
+    would invent the answer — so this returns None and the reaction stays excluded."""
+    from rdkit import Chem
+
+    mol, dupes = _duplicates(smiles)
+    if mol is None:
+        return None
+    if not dupes:
+        return smiles
+    bare = Chem.Mol(mol)
+    for atom in bare.GetAtoms():
+        atom.SetAtomMapNum(0)
+    try:
+        rank = list(Chem.CanonicalRankAtoms(bare, breakTies=False))
+    except Exception:
+        return None
+    component = {i: k for k, g in enumerate(Chem.GetMolFrags(mol)) for i in g}
+    for idxs in dupes.values():
+        # same symmetry class AND same component: equal ranks across two copies of a molecule mean
+        # the repeat should have been dropped, not renumbered
+        if len({rank[i] for i in idxs}) != 1 or len({component[i] for i in idxs}) != 1:
+            return None
+    nxt = max(n for n in dupes) + 1
+    used = {a.GetAtomMapNum() for a in mol.GetAtoms() if a.GetAtomMapNum()}
+    nxt = max(nxt, max(used) + 1)
+    for idxs in dupes.values():
+        for idx in idxs[1:]:
+            mol.GetAtomWithIdx(idx).SetAtomMapNum(nxt)
+            nxt += 1
+    try:
+        return Chem.MolToSmiles(mol)
+    except Exception:
+        return None
+
+
+def repair_duplicate_maps(reactants, products):
+    """(reactants, products, what was done) for a map flagged `duplicate atom maps`, or None.
+
+    MEASURED AND REJECTED (2026-10-10). NOT USED BY THE BUILDER. Kept because the measurement is
+    worth more than the code, and because the idea is an obvious one to have again.
+
+    It does what it says: of 355 duplicate-flagged USPTO reactions, 13.8% pass the audit after a
+    repeated component is dropped and a further 29.0% after symmetry-equivalent duplicates are
+    renumbered. Passing the audit turned out to be the wrong test. Extracting the template from the
+    repaired map and running it back on its own product:
+
+      reactions clean all along     94.4% of their templates propose a real reactant
+      dropped a repeated component  54.5%
+      renumbered equivalents         0.0%  — every one of 19 failed inside rdchiral
+
+    Renumbering gives a reactant atom a number the product side does not carry. The audit does not
+    object, because it only checks that PRODUCT atoms are mapped, but the extractor needs the
+    correspondence and the template it produces is malformed. So this satisfies the check without
+    satisfying the extractor, which is the failure it was written to avoid.
+
+    Dropping a repeat is better but still half as sound as an untouched map. If it is ever revived
+    it needs the template itself validated — extract, run it on its own product, keep it only if it
+    proposes a real reactant — rather than the map trusted because a check went quiet.
+
+    Refuses outright when BOTH sides carry duplicates: renumbering each side independently pairs new
+    numbers that need not correspond. 8 of the 355 are in that case."""
+    _, r_dupes = _duplicates(reactants)
+    _, p_dupes = _duplicates(products)
+    if r_dupes and p_dupes:
+        return None
+    r, dropped_r = _drop_repeats(reactants)
+    p, dropped_p = _drop_repeats(products)
+    _, r_left = _duplicates(r)
+    _, p_left = _duplicates(p)
+    if not r_left and not p_left:
+        return (r, p, 'dropped a repeated component') if (dropped_r or dropped_p) else None
+    r2 = _renumber_equivalent(r) if r_left else r
+    p2 = _renumber_equivalent(p) if p_left else p
+    if r2 is None or p2 is None:
+        return None
+    what = 'renumbered symmetry-equivalent duplicates'
+    if dropped_r or dropped_p:
+        what = 'dropped a repeated component, ' + what
+    return r2, p2, what
+
+
 # Suspicions about the chemistry rather than the mapping. A caller that wants them to exclude a
 # reaction intersects them with the soft flags; scheme-scan does so under --strict, and the
 # reaction-index builder always does (see _map_audit).

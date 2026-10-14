@@ -6,11 +6,13 @@ import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -70,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -93,6 +96,7 @@ export const ZH_CN: Record<string, string> = {
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-CN'],
   ...CALENDAR_SYNC_TRANSLATIONS["zh-CN"],
+  ...AGENT_RUNTIME_TRANSLATIONS["zh-CN"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["zh-CN"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "浏览网页并保存研究资料。",
@@ -130,6 +134,7 @@ export const ZH_CN: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS['zh-CN'],
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS['zh-CN'],
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS['zh-CN'],
+  ...GALLERY_FILTER_TRANSLATIONS['zh-CN'],
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS['zh-CN'],
   ...STALE_MODEL_TRANSLATIONS['zh-CN'],
   ...SCHEME_DECLUTTER_TRANSLATIONS['zh-CN'],
@@ -167,6 +172,7 @@ export const ZH_CN: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["zh-CN"],
   ...STUDY_FOCUS_TRANSLATIONS["zh-CN"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["zh-CN"],
+  ...BOOKMARK_SORT_TRANSLATIONS["zh-CN"],
   ...SCRIPTOR_AI_TRANSLATIONS["zh-CN"],
   ...STUDY_IMPROVE_TRANSLATIONS['zh-CN'],
   ...WORKSPACE_TRANSLATIONS['zh-CN'],

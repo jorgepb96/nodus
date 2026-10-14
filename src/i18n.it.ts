@@ -6,11 +6,13 @@ import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -70,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -87,6 +90,7 @@ export const IT: Record<string, string> = {
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.it,
   ...CALENDAR_SYNC_TRANSLATIONS["it"],
+  ...AGENT_RUNTIME_TRANSLATIONS["it"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["it"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Naviga sul web e salva fonti per la tua ricerca.",
@@ -132,6 +136,7 @@ export const IT: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.it,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.it,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.it,
+  ...GALLERY_FILTER_TRANSLATIONS.it,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.it,
   ...STALE_MODEL_TRANSLATIONS.it,
   ...SCHEME_DECLUTTER_TRANSLATIONS.it,
@@ -169,6 +174,7 @@ export const IT: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["it"],
   ...STUDY_FOCUS_TRANSLATIONS["it"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["it"],
+  ...BOOKMARK_SORT_TRANSLATIONS["it"],
   ...SCRIPTOR_AI_TRANSLATIONS["it"],
   ...STUDY_IMPROVE_TRANSLATIONS.it,
   ...WORKSPACE_TRANSLATIONS.it,
@@ -3341,7 +3347,7 @@ export const IT: Record<string, string> = {
   "Obras del autor": "Opere dell'autore",
   "sin DOI": "nessun DOI",
   "sin tipo": "nessun tipo",
-  "Tipo": "Digitare",
+  "Tipo": "Tipo",
   "Ver obras de este autor": "Visualizza le opere di questo autore",
   "Ver todas las ideas de esta obra": "Visualizza tutte le idee di questo lavoro",
   "Zotero key": "Chiave Zotero",

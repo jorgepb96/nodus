@@ -1,7 +1,7 @@
 import { clearBackgroundJob, cancelAudioGeneration, type AudioGenerationRequest } from '../backgroundJobs';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { QueueActivity } from '../queueActivity';
-import { DICTIONARY_FINISHED, DOCUMENT_LIVE, backgroundFailure, ocrVersion, researchVersion } from '../queueActivity';
+import { DICTIONARY_FINISHED, DOCUMENT_LIVE, backgroundFailure, ocrVersion, researchVersion, runtimeVersion } from '../queueActivity';
 import { deepResearchProgressPercent } from '@shared/deepResearchProgress';
 import { PreparationQueueBar } from './PreparationQueueBar';
 import { progressDetail } from './DeepResearchQueueStrip';
@@ -56,6 +56,20 @@ export function AdditionalQueueTasks({ activity }: { activity: QueueActivity }) 
     return () => { cancelled = true; };
   }, [dictionaryIds]);
   return <>
+    {/* The Codex and Copilot CLIs download at first use, also when a task is what asked. */}
+    {activity.runtimes.map((task) => <Task key={task.kind} testId={`agent-runtime-${task.kind}`}
+      title={`${t('Motor oficial')} · ${task.kind === 'codex' ? 'Codex' : 'GitHub Copilot'}`}
+      detail={task.state === 'installing'
+        ? `${t('Descargando el motor oficial…')}${task.totalBytes ? '' : ` ${(task.receivedBytes / 1048576).toFixed(0)} MB`}`
+        : t('La descarga del motor oficial ha fallado.')}
+      percent={task.state === 'installing' && task.totalBytes ? task.receivedBytes / task.totalBytes * 100 : null}>
+      {task.state === 'failed' && <>
+        <Action label={t('Reintentar')} run={() => task.kind === 'codex'
+          ? window.nodus.installChatGptSubscriptionRuntime()
+          : window.nodus.installGitHubCopilotSubscriptionRuntime()} />
+        <Action label={t('Ocultar')} run={() => activity.dismiss(`agent-runtime:${task.kind}`, runtimeVersion(task))} />
+      </>}
+    </Task>)}
     {/* Indexing is one entry, like Idea extraction: one bar, one set of controls. */}
     <PreparationQueueBar activity={activity} />
     {activity.extraction.slice(0, limit).map((job) => {

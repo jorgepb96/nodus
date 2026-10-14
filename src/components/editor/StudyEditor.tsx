@@ -8,6 +8,7 @@ import { EditorialActionBar, EditorialActionMenu, type EditorialAction } from '.
 import { readWorkspacePreferences } from '../../app/workspacePreferences';
 import { patchViewSnapshot } from '../../app/viewSnapshots';
 import { EditorialHeader, EditorialTitle, EditorialInspector } from '../workspace/EditorialChrome';
+import { WorkspaceTabStrip } from '../library/LibraryWorkspaceTabs';
 import { useEditorialFocus } from '../workspace/editorialFocus';
 import '../workspace/editorialWorkspace.css';
 import { useStudyFocusReduced } from '../focus/StudyFocusContext';
@@ -270,7 +271,6 @@ export function StudyEditor({
   const dictationRef = useRef<StudyDictationHandle>(null);
   useEffect(() => { setShowDictation(false); setDictationActive(false); }, [active?.id]);
   const [showAudio, setShowAudio] = useState(false);
-  const [editingTitle, setEditingTitle] = useState(false);
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [tableRows, setTableRows] = useState(3);
@@ -386,7 +386,6 @@ export function StudyEditor({
     setNativeDocument(null); nativeRef.current = null; hydratedIdRef.current = ''; setSaveError(''); setRecoveredDraft(false);
     baselineRef.current = JSON.stringify({ title: active.title, content: active.contentMarkdown, style: DEFAULT_STUDY_DOC_STYLE, language: 'es-ES', dictionary: [] });
     setSaveState('saved');
-    setEditingTitle(false);
     setSelectedVersion(null);
     setHistoryState({ canUndo: false, canRedo: false });
     setEditorRevision((value) => value + 1);
@@ -1024,32 +1023,28 @@ export function StudyEditor({
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
 {nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
-        {headerContent}
       {showTabs ? (
-        <div className="study-editor-tabs flex min-h-10 items-end gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-2 pt-1 dark:border-neutral-800 dark:bg-neutral-950">
-          {documents.map((document) => (
-            <div key={document.id} role="tab" tabIndex={0} aria-selected={document.id === active.id} onClick={() => void activateDocument(document.id)}
-              onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) void activateDocument(document.id); }}
-              className={`group flex max-w-64 items-center gap-1.5 rounded-t-lg border border-b-0 px-2.5 py-2 text-xs ${document.id === active.id ? 'border-stone-300 bg-white text-stone-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200' : 'border-transparent text-stone-500 hover:text-stone-800 dark:text-neutral-600 dark:hover:text-neutral-300'}`}>
-              <Icon name={documentIcon} size={12} />
-              {document.id === active.id && editingTitle ? (
-                <input autoFocus aria-label={t('Título del apunte')} disabled={locked} className="min-w-24 max-w-44 bg-transparent font-semibold outline-none ring-0" value={title}
-                  onClick={(event) => event.stopPropagation()} onChange={(event) => setTitle(event.target.value)}
-                  onBlur={() => setEditingTitle(false)} onKeyDown={(event) => {
-                    if (event.key === 'Enter') { event.preventDefault(); setEditingTitle(false); void save('manual'); }
-                    if (event.key === 'Escape') { event.preventDefault(); setTitle(active.title); setEditingTitle(false); }
-                  }} />
-              ) : <span className="min-w-0 flex-1 truncate">{document.id === active.id ? title : document.title}</span>}
-              {document.id === active.id && !editingTitle && <button type="button" title={t('Renombrar apunte')} aria-label={t('Renombrar apunte')}
-                onClick={(event) => { event.stopPropagation(); setEditingTitle(true); }} className="rounded p-0.5 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-200"><Icon name="edit" size={11} /></button>}
-              <button type="button" title={t('Cerrar apunte')} aria-label={t('Cerrar apunte')}
-                onClick={(event) => { event.stopPropagation(); requestClose(document.id); }} className="rounded p-0.5 text-neutral-700 group-hover:text-neutral-400 hover:bg-neutral-800 hover:!text-red-300"><Icon name="x" size={11} /></button>
-            </div>
-          ))}
-        </div>
+        <WorkspaceTabStrip
+          className="study-editor-tabs"
+          showHome={false}
+          homeLabel={t('Apuntes')}
+          homeIcon={documentIcon}
+          homeTestId="study-editor-tab-home"
+          tabTestId={(tab) => `study-editor-tab-${tab.key}`}
+          closeTestId={(tab) => `study-editor-close-${tab.key}`}
+          tabs={documents.map((document) => ({ key: document.id, title: document.id === active.id ? title : document.title, icon: documentIcon }))}
+          activeKey={active.id}
+          onActivateHome={() => undefined}
+          onActivateTab={(id) => { void activateDocument(id); }}
+          onCloseTab={requestClose}
+          onRenameTab={locked ? undefined : () => {
+            const input = document.querySelector<HTMLTextAreaElement>('[data-testid="editor-title"]');
+            input?.focus();
+            input?.select();
+          }}
+        />
       ) : null}
-</>} onPreserveSelection={preserveSelection} options={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} onPreserveSelection={preserveSelection} options={<>
         <EditorialActionMenu actions={actions} pins={pinnedActionIds} onPinsChange={setPinnedActionIds} beforeAction={restoreSelection} />
         <div className="study-insert-toolbar" data-testid="study-insert-toolbar">
           <label htmlFor="study-heading-level">{t('Nivel de título')}</label>
@@ -1280,7 +1275,7 @@ export function StudyEditor({
             )}
           </EditorialInspector>
         )}
-        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
+        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
       </div>
       {raw && selectionImprove && !locked && createPortal(<button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }} style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>, document.body)}
       {synonymPanel && createPortal(

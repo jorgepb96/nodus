@@ -39,6 +39,7 @@ import {
 } from "@shared/databaseDeepResearch";
 import type { DatabaseDeepResearchSnapshot } from "../app/viewSnapshots";
 import { Icon } from "../components/ui";
+import { GalleryFilterMenu, GalleryFilterReset, GallerySortMenu, passesFilter, readFilterFromStates, readStatesFromFilter, type GalleryFilterOption, type ReadState } from "../components/GalleryFilters";
 import { SectionHeader, SectionToolbar } from "../components/SectionHeader";
 import { DeepResearchQueueStrip, type QueueStripItem } from "../components/DeepResearchQueueStrip";
 import { FindInPage } from "../components/FindInPage";
@@ -661,9 +662,9 @@ export function DatabaseDeepResearchView({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [jobs, setJobs] = useState<DatabaseDeepResearchJob[]>([]);
   const [reports, setReports] = useState<ReaderReport[]>([]);
-  const [reportFilter, setReportFilter] = useState<DatabaseDeepResearchReportType | "all">(snapshot?.reportFilter ?? "all");
+  const [reportFilter, setReportFilter] = useState<DatabaseDeepResearchReportType[]>(() => Array.isArray(snapshot?.reportFilter) ? snapshot.reportFilter : []);
   const [reportSearch, setReportSearch] = useState(snapshot?.search ?? "");
-  const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">(snapshot?.readFilter ?? "all");
+  const [readStates, setReadStates] = useState<ReadState[]>(() => readStatesFromFilter(snapshot?.readFilter));
   const [sortKey, setSortKey] = useState<"recent" | "oldest" | "title">(snapshot?.sortKey ?? "recent");
   const [viewMode, setViewMode] = useState<"grid" | "list">(snapshot?.viewMode ?? "grid");
   const [selecting, setSelecting] = useState(false);
@@ -729,8 +730,8 @@ export function DatabaseDeepResearchView({
       const needle = reportSearch.trim().toLocaleLowerCase();
       const filtered = reports.filter((report) => {
         const matchesSearch = !needle || [report.title, report.summary].some((value) => value.toLocaleLowerCase().includes(needle));
-        const matchesType = reportFilter === "all" || report.reportType === reportFilter;
-        const matchesRead = readFilter === "all" || (readFilter === "read" ? !!report.readAt : !report.readAt);
+        const matchesType = passesFilter(reportFilter, report.reportType);
+        const matchesRead = passesFilter(readStates, report.readAt ? "read" : "unread");
         return matchesSearch && matchesType && matchesRead;
       });
       return filtered.sort((a, b) => sortKey === "title"
@@ -739,8 +740,31 @@ export function DatabaseDeepResearchView({
           ? a.createdAt.localeCompare(b.createdAt)
           : b.createdAt.localeCompare(a.createdAt));
     },
-    [reportFilter, reportSearch, readFilter, reports, sortKey],
+    [reportFilter, reportSearch, readStates, reports, sortKey],
   );
+  // Counted over every report, so a number does not vanish when another filter is on.
+  // Only the types the gallery actually holds are offered (plus any still ticked).
+  const filterOptions = useMemo(() => {
+    const read = new Map<ReadState, number>();
+    const types = new Map<string, number>();
+    for (const report of reports) {
+      const state: ReadState = report.readAt ? "read" : "unread";
+      read.set(state, (read.get(state) ?? 0) + 1);
+      types.set(report.reportType, (types.get(report.reportType) ?? 0) + 1);
+    }
+    const readOptions: GalleryFilterOption<ReadState>[] = [
+      { value: "unread", label: t("No leídos"), count: read.get("unread") ?? 0 },
+      { value: "read", label: t("Leídos"), count: read.get("read") ?? 0 },
+    ];
+    const typeOptions: GalleryFilterOption<DatabaseDeepResearchReportType>[] = DATABASE_REPORT_TYPES
+      .filter((item) => types.has(item.id) || reportFilter.includes(item.id))
+      .map((item) => ({ value: item.id, label: t(item.label), count: types.get(item.id) ?? 0 }));
+    return { read: readOptions, type: typeOptions };
+  }, [reports, reportFilter]);
+  const activeFilterCount = readStates.length + reportFilter.length;
+  const changeReadStates = (next: ReadState[]) => { setReadStates(next); onSnapshotChange?.({ readFilter: readFilterFromStates(next) }); };
+  const changeReportFilter = (next: DatabaseDeepResearchReportType[]) => { setReportFilter(next); onSnapshotChange?.({ reportFilter: next }); };
+  const changeSortKey = (next: "recent" | "oldest" | "title") => { setSortKey(next); onSnapshotChange?.({ sortKey: next }); };
 
   const load = useCallback(async () => {
     const list = await window.nodus.listDatabases();
@@ -1112,9 +1136,10 @@ export function DatabaseDeepResearchView({
       {queueActive.length > 0 || queueFailed.length > 0 ? <DeepResearchQueueStrip active={queueActive} failed={queueFailed} running={queueActive.some((item) => item.status === "running")} onRemove={(item) => void cancelJob(item.id)} onClearFinished={() => void clearFinishedJobs()} /> : null}
       <SectionToolbar testId="database-deep-research-toolbar">
         <div className="relative min-w-56 flex-1"><Icon name="search" size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" /><input className="input input-with-leading-icon h-9 w-full" value={reportSearch} onChange={(event) => { setReportSearch(event.target.value); onSnapshotChange?.({ search: event.target.value }); }} placeholder={t("Buscar entre tus informes…")} aria-label={t("Buscar entre tus informes")} /></div>
-        <select className="input h-9 w-auto min-w-28" value={readFilter} onChange={(event) => { const value = event.target.value as "all" | "read" | "unread"; setReadFilter(value); onSnapshotChange?.({ readFilter: value }); }} aria-label={t("Filtrar por lectura")}><option value="all">{t("Todos")}</option><option value="unread">{t("No leídos")}</option><option value="read">{t("Leídos")}</option></select>
-        <select className="input h-9 w-auto min-w-36" value={reportFilter} onChange={(event) => { const value = event.target.value as DatabaseDeepResearchReportType | "all"; setReportFilter(value); onSnapshotChange?.({ reportFilter: value }); }} aria-label={t("Filtrar por tipo")}><option value="all">{t("Todos los tipos")}</option>{DATABASE_REPORT_TYPES.map((item) => <option key={item.id} value={item.id}>{t(item.label)}</option>)}</select>
-        <select className="input h-9 w-auto min-w-32" value={sortKey} onChange={(event) => { const value = event.target.value as "recent" | "oldest" | "title"; setSortKey(value); onSnapshotChange?.({ sortKey: value }); }} aria-label={t("Ordenar")}><option value="recent">{t("Más recientes")}</option><option value="oldest">{t("Más antiguos")}</option><option value="title">{t("Título")}</option></select>
+        <GalleryFilterMenu label={t("Estado")} icon="eye" options={filterOptions.read} selected={readStates} onChange={changeReadStates} testId="database-deep-research-read-filter" />
+        <GalleryFilterMenu label={t("Tipo")} icon="layers" options={filterOptions.type} selected={reportFilter} onChange={changeReportFilter} testId="database-deep-research-type-filter" />
+        <GalleryFilterReset count={activeFilterCount} onClear={() => { changeReadStates([]); changeReportFilter([]); }} />
+        <GallerySortMenu options={[{ value: "recent", label: t("Más recientes") }, { value: "oldest", label: t("Más antiguos") }, { value: "title", label: t("Por título (A–Z)") }]} value={sortKey} onChange={changeSortKey} testId="database-deep-research-sort" />
         <button className={`btn btn-ghost h-9 min-h-9 border ${selecting ? "border-indigo-500 text-indigo-300" : "border-neutral-700"}`} onClick={() => { setSelecting((value) => !value); setSelectedReports(new Set()); }}>{selecting ? t("Cancelar selección") : t("Seleccionar")}</button>
         <button className="btn btn-ghost h-9 min-h-9 border border-neutral-700" onClick={() => setViewMode((value) => { const next = value === "grid" ? "list" : "grid"; onSnapshotChange?.({ viewMode: next }); return next; })} aria-label={viewMode === "grid" ? t("Vista de lista") : t("Vista de cuadrícula")}><Icon name={viewMode === "grid" ? "list" : "grid"} size={14} /></button>
         {selecting && <><button className="btn btn-ghost h-9 min-h-9" onClick={() => setSelectedReports(allSelected ? new Set() : new Set(visibleReports.map((report) => report.id)))}>{allSelected ? t("Quitar selección") : t("Seleccionar todos")}</button><button className="btn btn-ghost h-9 min-h-9 text-rose-500" disabled={!selectedReports.size} onClick={() => void Promise.all([...selectedReports].map((id) => deleteReport(id))).then(() => { setSelectedReports(new Set()); setSelecting(false); })}>{t("Eliminar")}</button></>}
@@ -1124,7 +1149,7 @@ export function DatabaseDeepResearchView({
           {selecting && <input type="checkbox" className="absolute right-3 top-3" checked={selectedReports.has(report.id)} onChange={() => setSelectedReports((current) => { const next = new Set(current); if (next.has(report.id)) next.delete(report.id); else next.add(report.id); return next; })} aria-label={tx("Seleccionar {title}", { title: report.title })} />}
           <button className="w-full text-left" onClick={() => selecting ? setSelectedReports((current) => { const next = new Set(current); if (next.has(report.id)) next.delete(report.id); else next.add(report.id); return next; }) : void openReport(report)}><div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-950/50 text-indigo-300"><Icon name={REPORT_TYPE_ICONS[report.reportType]} size={16} /></span><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h2 className={`truncate text-sm ${report.readAt ? "font-normal text-neutral-500" : "font-semibold"}`}>{report.title}</h2>{report.readAt && <span className="shrink-0 text-[10px] text-emerald-500">{t("Leído")}</span>}</div><div className="mt-1 flex flex-wrap gap-1.5"><span className="rounded-full bg-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400">{t(DATABASE_REPORT_TYPES.find((item) => item.id === report.reportType)?.label ?? "Investigación general")}</span>{report.qualityStatus === "partial" && <span className="rounded-full bg-violet-950/50 px-2 py-0.5 text-[10px] text-violet-300">{t("Parcial")}</span>}</div><p className="mt-2 line-clamp-3 text-xs leading-5 text-neutral-500">{report.summary}</p><p className="mt-3 text-[10px] text-neutral-500">{formatDate(report.createdAt)}</p></div></div></button>
           {!selecting && <div className="mt-3 flex items-center justify-end gap-1 border-t border-neutral-800 pt-2"><button className="btn btn-ghost h-7 min-h-7 px-2 text-[11px]" onClick={() => void toggleReportRead(report)}>{report.readAt ? t("No leído") : t("Marcar leído")}</button><button className="btn btn-ghost h-7 min-h-7 px-2 text-[11px] text-rose-500" onClick={() => void deleteReport(report.id)}>{t("Eliminar")}</button></div>}
-        </article>) : <div className="col-span-full grid min-h-64 place-items-center rounded-2xl border border-dashed border-neutral-800 text-center text-sm text-neutral-500"><div><Icon name="fileText" size={28} className="mx-auto mb-2 opacity-50" />{reportSearch || readFilter !== "all" || reportFilter !== "all" ? t("Ningún informe coincide con los filtros.") : t("Aún no hay informes. Crea el primero y quedará aquí listo para leerse.")}</div></div>}
+        </article>) : <div className="col-span-full grid min-h-64 place-items-center rounded-2xl border border-dashed border-neutral-800 text-center text-sm text-neutral-500"><div><Icon name="fileText" size={28} className="mx-auto mb-2 opacity-50" />{reportSearch || activeFilterCount > 0 ? t("Ningún informe coincide con los filtros.") : t("Aún no hay informes. Crea el primero y quedará aquí listo para leerse.")}</div></div>}
       </div></main>
       {composerOpen && <div className="fixed inset-0 z-30 grid place-items-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="database-deep-research-composer-title"><div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-neutral-800 bg-neutral-950 p-5 shadow-2xl" data-testid="database-deep-research-composer"><header className="mb-4 flex items-start justify-between gap-4"><div><h2 id="database-deep-research-composer-title" className="text-base font-semibold">{t("Nuevo informe")}</h2><p className="mt-1 text-xs text-neutral-500">{t("Define el objetivo; las opciones avanzadas son opcionales.")}</p></div><button className="btn btn-ghost h-8 min-h-8" onClick={() => setComposerOpen(false)} aria-label={t("Cerrar")}><Icon name="x" size={14} /></button></header><textarea data-testid="database-deep-research-objective" className="input min-h-28 w-full resize-y py-3" value={objective} onChange={(event) => setObjective(event.target.value)} placeholder={t("¿Qué quieres descubrir, comparar o explicar con estas bases de datos?")} />
         <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs text-neutral-500">{t("Tipo de informe")}<select className={`${inputClass} mt-1 h-10`} value={autoReportType ? "auto" : reportType} onChange={(event) => { if (event.target.value === "auto") { setAutoReportType(true); setReportType("general"); } else { setAutoReportType(false); setReportType(event.target.value as DatabaseDeepResearchReportType); } }}><option value="auto">{t("Automático")}</option>{DATABASE_REPORT_TYPES.map((item) => <option key={item.id} value={item.id}>{t(item.label)}</option>)}</select></label><label className="text-xs text-neutral-500">{t("Idioma del informe")}<select data-testid="database-deep-research-language" className={`${inputClass} mt-1 h-10`} value={reportLanguage} onChange={(event) => setReportLanguage(event.target.value as PromptLanguage)}>{REPORT_LANGUAGE_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label><label className="text-xs text-neutral-500">{t("Modelo")}<ModelPicker settings={settings} value={model} onChange={setModel} className="mt-1 h-10 w-full" ariaLabel={t("Modelo")} menu /></label><ResearchEffortControl variant="field" label className="mt-1 h-10 w-full text-sm" testId="database-deep-research-thinking" model={model} value={thinkingEffort} onChange={setThinkingEffort} disabled={!model} /><label className="text-xs text-neutral-500">{t("Profundidad")}<select className={`${inputClass} mt-1 h-10`} value={depth} onChange={(event) => setDepth(event.target.value as DatabaseResearchDepth)}>{DEPTHS.map((item) => <option key={item.id} value={item.id}>{t(item.label)}</option>)}</select></label><DeepResearchSectionLengthField value={sectionLength} onChange={setSectionLength} onValidityChange={setSectionLengthValid} className="block min-w-0 text-xs text-neutral-500" labelClassName="block text-xs text-neutral-500" selectClassName={`${inputClass} mt-1 h-10 w-full`} testIdPrefix="database-deep-research-section-length" /></div>

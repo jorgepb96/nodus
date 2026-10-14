@@ -43,6 +43,8 @@ import { useListPlacement } from '../listPlacement';
 import { Badge, Icon, RestoringPane, TypeDot } from '../components/ui';
 import { WorkspaceTabStrip } from '../components/library/LibraryWorkspaceTabs';
 import { SectionHeader } from '../components/SectionHeader';
+import { GalleryFilterMenu, GalleryFilterReset, GallerySortMenu, passesFilter, type GalleryFilterOption } from '../components/GalleryFilters';
+import { PROMPT_LANGUAGE_OPTIONS } from '@shared/promptLanguageOptions';
 import { ModelPicker } from '../components/ModelPicker';
 import { Markdown, type MarkdownCitation } from '../components/Markdown';
 import { StudyMarkdown, StudyMarkdownInline } from '../components/StudyMarkdown';
@@ -596,6 +598,8 @@ function ImmersionHome({
   // Restored as initial values only, never as a reactive prop.
   const [search, setSearch] = useState(() => snapshot?.search ?? '');
   const [sortKey, setSortKey] = useState<ImmersionSortKey>(() => snapshot?.sortKey ?? 'recent');
+  const [progressFilter, setProgressFilter] = useState<ImmersionProgressState[]>([]);
+  const [languageFilter, setLanguageFilter] = useState<Array<'es' | 'en'>>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => snapshot?.viewMode ?? 'grid');
   const [anchorId, setAnchorId] = useState<string | null>(() => snapshot?.placement?.anchorId ?? null);
   const [selecting, setSelecting] = useState(false);
@@ -619,17 +623,49 @@ function ImmersionHome({
     }
     setAnchorId(null);
     report.current?.({ placement: null });
-  }, [search, sortKey]);
+  }, [search, sortKey, progressFilter, languageFilter]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = q ? sessions.filter((s) => (s.title ?? '').toLowerCase().includes(q)) : sessions;
+    const filtered = sessions.filter((s) =>
+      (!q || (s.title ?? '').toLowerCase().includes(q))
+      && passesFilter(progressFilter, immersionProgressState(s))
+      && passesFilter(languageFilter, s.language));
     const sorted = [...filtered];
     if (sortKey === 'title') sorted.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
     else if (sortKey === 'oldest') sorted.sort((a, b) => (a.updatedAt ?? '').localeCompare(b.updatedAt ?? ''));
     else sorted.sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
     return sorted;
-  }, [sessions, search, sortKey]);
+  }, [sessions, search, sortKey, progressFilter, languageFilter]);
+
+  // Counted over every session, so a number does not vanish when another filter is on.
+  // The language menu only appears once the gallery holds both languages.
+  const filterOptions = useMemo(() => {
+    const progress = new Map<ImmersionProgressState, number>();
+    const languages = new Map<string, number>();
+    for (const s of sessions) {
+      const state = immersionProgressState(s);
+      progress.set(state, (progress.get(state) ?? 0) + 1);
+      languages.set(s.language, (languages.get(s.language) ?? 0) + 1);
+    }
+    const progressOptions: GalleryFilterOption<ImmersionProgressState>[] = [
+      { value: 'new', label: t('Sin empezar'), count: progress.get('new') ?? 0 },
+      { value: 'active', label: t('En curso'), count: progress.get('active') ?? 0 },
+      { value: 'finished', label: t('Terminadas'), count: progress.get('finished') ?? 0 },
+    ];
+    const languageOptions: GalleryFilterOption<'es' | 'en'>[] = PROMPT_LANGUAGE_OPTIONS
+      .filter((option): option is typeof option & { id: 'es' | 'en' } =>
+        (option.id === 'es' || option.id === 'en')
+        && (languages.has(option.id) || languageFilter.includes(option.id)))
+      .map((option) => ({ value: option.id, label: option.label, count: languages.get(option.id) ?? 0 }));
+    return { progress: progressOptions, language: languageOptions };
+  }, [sessions, languageFilter]);
+
+  const activeFilterCount = progressFilter.length + languageFilter.length;
+  const clearFilters = () => {
+    setProgressFilter([]);
+    setLanguageFilter([]);
+  };
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -690,11 +726,35 @@ function ImmersionHome({
             placeholder={t('Buscar entre tus inmersiones…')}
           />
         </div>
-        <select className="input !py-1.5 text-xs" value={sortKey} onChange={(e) => setSortKey(e.target.value as ImmersionSortKey)}>
-          <option value="recent">{t('Más recientes')}</option>
-          <option value="oldest">{t('Más antiguos')}</option>
-          <option value="title">{t('Por título (A–Z)')}</option>
-        </select>
+        <GalleryFilterMenu
+          label={t('Progreso')}
+          icon="target"
+          options={filterOptions.progress}
+          selected={progressFilter}
+          onChange={setProgressFilter}
+          testId="immersion-progress-filter"
+        />
+        {(filterOptions.language.length > 1 || languageFilter.length > 0) && (
+          <GalleryFilterMenu
+            label={t('Idioma')}
+            icon="languages"
+            options={filterOptions.language}
+            selected={languageFilter}
+            onChange={setLanguageFilter}
+            testId="immersion-language-filter"
+          />
+        )}
+        <GalleryFilterReset count={activeFilterCount} onClear={clearFilters} />
+        <GallerySortMenu
+          options={[
+            { value: 'recent', label: t('Más recientes') },
+            { value: 'oldest', label: t('Más antiguos') },
+            { value: 'title', label: t('Por título (A–Z)') },
+          ]}
+          value={sortKey}
+          onChange={setSortKey}
+          testId="immersion-sort"
+        />
         <div className="flex overflow-hidden rounded-lg border border-neutral-700">
           <button
             className={`px-2.5 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-indigo-900/40 text-indigo-200' : 'text-neutral-400 hover:bg-neutral-900'}`}
@@ -745,11 +805,13 @@ function ImmersionHome({
             <div className="max-w-md text-sm text-neutral-500">
               {loadingSessions
                 ? t('Cargando inmersiones…')
-                : search.trim()
+                : activeFilterCount > 0
+                  ? t('No hay elementos con estos filtros.')
+                  : search.trim()
                   ? t('Ninguna inmersión coincide con tu búsqueda.')
                   : t('Aún no hay inmersiones. Crea la primera y quedará aquí, con su progreso, lista para retomarla.')}
             </div>
-            {!search.trim() && !loadingSessions && (
+            {!search.trim() && activeFilterCount === 0 && !loadingSessions && (
               <button className="btn btn-primary gap-1.5" onClick={onNew}>
                 <Icon name="plus" /> {t('Nueva inmersión')}
               </button>
@@ -1122,6 +1184,14 @@ export function ImmersionComposerModal({
       </section>
     </div>
   );
+}
+
+/** Where a session stands, as the gallery's progress filter groups it. */
+type ImmersionProgressState = 'new' | 'active' | 'finished';
+
+function immersionProgressState(s: ImmersionSessionSummary): ImmersionProgressState {
+  if (s.finished) return 'finished';
+  return s.progressPct > 0 ? 'active' : 'new';
 }
 
 function ProgressRing({ pct, finished, size = 48 }: { pct: number; finished: boolean; size?: number }) {

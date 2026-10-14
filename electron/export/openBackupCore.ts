@@ -28,6 +28,8 @@ import {
   recordTitle,
 } from './backupsRegistry';
 import { LibraryDiskStore } from '../library/libraryStorage';
+import { openBackupLabels, type OpenBackupLabels } from './openBackupLabels';
+import type { AppLanguage } from '@shared/types';
 
 type Row = Record<string, unknown>;
 export interface BackupSource {
@@ -44,6 +46,8 @@ export interface OpenBackupBuildInput {
   appVersion: string;
   jobId: string;
   previewOnly?: boolean;
+  /** Interface language of whoever exports: names the README, headings and omissions. */
+  language?: AppLanguage;
 }
 interface Table {
   name: string;
@@ -232,6 +236,7 @@ function enforcePolicies(
   omissions: string[],
   options: OpenBackupOptions,
   previewOnly: boolean,
+  L: OpenBackupLabels,
 ): boolean {
   let required = false;
   const by = new Map(tables.map((t) => [t.name, t]));
@@ -257,7 +262,7 @@ function enforcePolicies(
       !(decision.decision === 'confirm' && options.authorizePreservation)
     ) {
       blocked.add(text(row.item_id));
-      if (inScope) omissions.push(`Archivo ${text(row.item_id)}: ${decision.reason}`);
+      if (inScope) omissions.push(L.fileOmitted(text(row.item_id), decision.reason));
     }
   }
   const blockedNotes = new Set<string>();
@@ -278,7 +283,7 @@ function enforcePolicies(
       !(decision.decision === 'confirm' && options.authorizePreservation)
     ) {
       blockedNotes.add(text(row.note_id));
-      if (inScope) omissions.push(`Nota ${text(row.note_id)}: restricciones de exportación`);
+      if (inScope) omissions.push(L.noteRestricted(text(row.note_id)));
     }
   }
   for (const table of tables)
@@ -322,11 +327,11 @@ function enforcePolicies(
       if (!previewOnly)
         throw new Error('Confirma la exportación del paquete de preservación de testimonios.');
       withdrawn.add(text(row.id));
-      omissions.push(`Entrevista ${text(row.id)}: confirmación de preservación pendiente`);
+      omissions.push(L.interviewPending(text(row.id)));
     }
     if (!access.allowed) {
       withdrawn.add(text(row.id));
-      omissions.push(`Entrevista ${text(row.id)}: agreement_withdrawn`);
+      omissions.push(L.interviewWithdrawn(text(row.id)));
     }
   }
   for (const table of tables)
@@ -340,7 +345,7 @@ function enforcePolicies(
       table.rows = table.rows.filter((row) => !blocked.has(text(row.nodus_id)));
   return required;
 }
-function filterBackupAcl(db: Database.Database, tables: Table[], omissions: string[]): void {
+function filterBackupAcl(db: Database.Database, tables: Table[], omissions: string[], L: OpenBackupLabels): void {
   if (!tables.some((t) => t.name === 'acl_entries')) return;
   const may = createAclReadPolicy(db);
   const by = new Map(tables.map((t) => [t.name, t]));
@@ -355,7 +360,7 @@ function filterBackupAcl(db: Database.Database, tables: Table[], omissions: stri
     if (!records) continue;
     records.rows = records.rows.filter((row) => {
       if (may(type, text(row.id)).canView) return true;
-      omissions.push(`${table}/${text(row.id)}: sin permiso de lectura`);
+      omissions.push(L.noReadPermission(`${table}/${text(row.id)}`));
       if (table === 'pages' && row.note_id) deniedNotes.add(row.note_id);
       return false;
     });
@@ -370,6 +375,7 @@ export function selectBackupTables(
   omissions: string[],
   previewOnly = false,
   confirmation = { required: false },
+  L: OpenBackupLabels = openBackupLabels('es'),
 ): Table[] {
   const by = new Map(tables.map((t) => [t.name, t]));
   const originalIdeas = [...(by.get('ideas')?.rows ?? [])];
@@ -381,7 +387,7 @@ export function selectBackupTables(
       const keys = new Set(selected);
       const existing = new Set(t.rows.map((r) => backupRecordKey(r, t.pk)));
       for (const key of keys)
-        if (!existing.has(key)) omissions.push(`${sourceId}/${t.name}: elemento ausente ${key}`);
+        if (!existing.has(key)) omissions.push(L.missingItem(`${sourceId}/${t.name}`, key));
       t.rows = t.rows.filter((r) => keys.has(backupRecordKey(r, t.pk)));
     }
   }
@@ -420,7 +426,7 @@ export function selectBackupTables(
     if (by.has('authors'))
       by.get('authors')!.rows = by.get('authors')!.rows.filter((r) => authorIds.has(r.author_id));
   }
-  confirmation.required = enforcePolicies(tables, omissions, o, previewOnly);
+  confirmation.required = enforcePolicies(tables, omissions, o, previewOnly, L);
   // Filter child rows using declared FKs and legacy Nodus references.
   const legacy: Record<string, Array<[string, string, string]>> = {
     note_versions: [['note_id', 'notes', 'id']],
@@ -699,6 +705,7 @@ function portableMarkdownLinks(
   links: Map<string, string>,
   omissions: string[],
   vaultId: string,
+  L: OpenBackupLabels,
 ): string {
   if (!/nodus(?:-blob)?:\/\//.test(source)) return source;
   const edits: Array<{ start: number; end: number; replacement: string }> = [];
@@ -740,7 +747,7 @@ function portableMarkdownLinks(
           ),
         });
       } else {
-        const warning = `Referencia externa a la selección: ${ids[0] ?? node.url}`;
+        const warning = L.externalReference(ids[0] ?? node.url);
         if (!omissions.includes(warning)) omissions.push(warning);
         const label =
           boundary >= 0
@@ -763,6 +770,7 @@ export async function buildOpenBackup(
   signal?: AbortSignal,
 ): Promise<OpenBackupPreview & { entries: OutputFile[] }> {
   const { options: o, sources, directory } = input;
+  const L = openBackupLabels(input.language);
   const entries: OutputFile[] = [];
   const writtenPaths = new Set<string>();
   const omissions: string[] = [];
@@ -783,7 +791,7 @@ export async function buildOpenBackup(
     const bytes = Buffer.isBuffer(data)
       ? data
       : Buffer.from(
-          name.endsWith('.md') ? portableMarkdownLinks(data, name, links, omissions, currentVaultId) : data,
+          name.endsWith('.md') ? portableMarkdownLinks(data, name, links, omissions, currentVaultId, L) : data,
         );
     if (!input.previewOnly) await fs.promises.writeFile(target, bytes, { flag: 'wx', mode: 0o600 });
     entries.push({ path: name, bytes: bytes.length, sha256: hash(bytes) });
@@ -842,8 +850,8 @@ export async function buildOpenBackup(
     try {
       const confirmation = { required: false };
       const loaded = readBackupTables(db);
-      filterBackupAcl(db, loaded, omissions);
-      tables = selectBackupTables(loaded, source.id, o, omissions, input.previewOnly === true, confirmation);
+      filterBackupAcl(db, loaded, omissions, L);
+      tables = selectBackupTables(loaded, source.id, o, omissions, input.previewOnly === true, confirmation, L);
       requiresConfirmation ||= confirmation.required;
     } finally {
       db.close();
@@ -980,9 +988,7 @@ export async function buildOpenBackup(
       if (o.includeAttachments && table.name === 'archive_item_files')
         for (const row of table.rows)
           if (!row.content_blob && (row.external_path || Number(row.byte_size) > 0))
-            omissions.push(
-              `Archivo ${text(row.file_id)}: contenido ausente; referencia ${text(row.external_path)}`,
-            );
+            omissions.push(L.fileContentMissing(text(row.file_id), text(row.external_path)));
       records += table.rows.length;
       if (!table.rows.length) continue;
       if (o.formats.includes('json'))
@@ -1140,10 +1146,10 @@ export async function buildOpenBackup(
         for (const link of rows('work_authors').filter((r) => r.nodus_id === work.nodus_id))
           represented.authors.add(text(link.author_id));
         const out = [
-          `- **Título:** ${mdLabel(work.title)}`,
-          `- **Autores:** ${array(work.authors_json).map(mdLabel).join('; ')}`,
+          `- **${L.title}:** ${mdLabel(work.title)}`,
+          `- **${L.authors}:** ${array(work.authors_json).map(mdLabel).join('; ')}`,
         ];
-        if (work.year != null) out.push(`- **Año:** ${mdLabel(work.year)}`);
+        if (work.year != null) out.push(`- **${L.year}:** ${mdLabel(work.year)}`);
         if (work.doi) out.push(`- **DOI:** ${mdLabel(work.doi)}`);
         if (work.zotero_key) {
           const key = text(work.zotero_key);
@@ -1162,16 +1168,16 @@ export async function buildOpenBackup(
           const st = by.get('work_summaries')!;
           const target = `${base}/markdown/summaries/${recordStem(s, st)}.md`;
           return [
-            `${'#'.repeat(depth)} Resumen`,
+            `${'#'.repeat(depth)} ${L.summary}`,
             '',
-            `[Leer resumen](${relativeBackupUrl(path.posix.relative(path.posix.dirname(currentFile), target))})`,
+            `[${L.readSummary}](${relativeBackupUrl(path.posix.relative(path.posix.dirname(currentFile), target))})`,
             '',
           ];
         }
         return [
-          `${'#'.repeat(depth)} Resumen`,
+          `${'#'.repeat(depth)} ${L.summary}`,
           '',
-          '_Resumen generado para orientación; consultar la fuente para citar._',
+          `_${L.summaryNote}_`,
           '',
           headingContent(text(s.summary), depth + 1),
           '',
@@ -1188,14 +1194,14 @@ export async function buildOpenBackup(
           '',
           headingContent(text(idea.statement), depth + 1),
           '',
-          `Tipo: ${mdLabel(idea.type)} · ID: ${mdLabel(idea.global_id)}`,
+          `${L.type}: ${mdLabel(idea.type)} · ID: ${mdLabel(idea.global_id)}`,
           '',
         ];
         if (occ && (occ.role != null || occ.confidence != null))
           out.push(
             [
-              occ.role != null ? `Rol: ${mdLabel(occ.role)}` : null,
-              occ.confidence != null ? `Confianza: ${mdLabel(occ.confidence)}` : null,
+              occ.role != null ? `${L.role}: ${mdLabel(occ.role)}` : null,
+              occ.confidence != null ? `${L.confidence}: ${mdLabel(occ.confidence)}` : null,
             ]
               .filter(Boolean)
               .join(' · '),
@@ -1203,7 +1209,7 @@ export async function buildOpenBackup(
           );
         if (occ?.development)
           out.push(
-            `${'#'.repeat(depth + 1)} Desarrollo en esta obra`,
+            `${'#'.repeat(depth + 1)} ${L.developmentInWork}`,
             '',
             headingContent(text(occ.development), depth + 2),
             '',
@@ -1212,19 +1218,19 @@ export async function buildOpenBackup(
           .filter((r) => r.global_id === idea.global_id)
           .map((r) => rows('themes').find((t) => t.theme_id === r.theme_id)?.label)
           .filter(Boolean);
-        if (themes.length) out.push(`Temas: ${themes.map(mdLabel).join('; ')}`, '');
+        if (themes.length) out.push(`${L.themes}: ${themes.map(mdLabel).join('; ')}`, '');
         for (const e of rows('evidence').filter(
           (r) => r.global_id === idea.global_id && r.nodus_id === work.nodus_id,
         )) {
           represented.evidence.add(text(e.id));
           out.push(
-            `${'#'.repeat(depth + 1)} ${e.kind === 'paraphrase' ? 'Paráfrasis' : 'Evidencia'}`,
+            `${'#'.repeat(depth + 1)} ${e.kind === 'paraphrase' ? L.paraphrase : L.evidence}`,
             '',
             ...text(e.quote)
               .split('\n')
               .map((l) => `> ${mdLabel(l)}`),
             '',
-            `Fuente: ${mdLabel(work.title)}${e.location ? ' · ' + mdLabel(e.location) : ''}${e.page_number ? ' · p. ' + mdLabel(e.page_number) : ''}`,
+            `${L.source}: ${mdLabel(work.title)}${e.location ? ' · ' + mdLabel(e.location) : ''}${e.page_number ? ' · p. ' + mdLabel(e.page_number) : ''}`,
             '',
           );
         }
@@ -1255,15 +1261,15 @@ export async function buildOpenBackup(
             out.push(
               headingContent(text(root.statement), 2),
               '',
-              `Tipo: ${mdLabel(root.type)} · ID: ${mdLabel(root.global_id)}`,
+              `${L.type}: ${mdLabel(root.type)} · ID: ${mdLabel(root.global_id)}`,
               '',
             );
             const themes = rows('idea_theme_links')
               .filter((r) => r.global_id === root.global_id)
               .map((r) => rows('themes').find((t) => t.theme_id === r.theme_id)?.label)
               .filter(Boolean);
-            if (themes.length) out.push('## Temas', '', ...themes.map((t) => `- ${mdLabel(t)}`), '');
-            out.push('## Autores y obras', '');
+            if (themes.length) out.push(`## ${L.themes}`, '', ...themes.map((t) => `- ${mdLabel(t)}`), '');
+            out.push(`## ${L.authorsAndWorks}`, '');
             for (const occ of rows('idea_occurrences').filter((r) => r.global_id === root.global_id)) {
               const work = rows('works').find((r) => r.nodus_id === occ.nodus_id);
               if (!work) continue;
@@ -1282,13 +1288,13 @@ export async function buildOpenBackup(
               represented.authors.add(text(root.author_id));
               out.push(
                 `ID: ${mdLabel(root.author_id)}`,
-                root.affiliation ? `Afiliación: ${mdLabel(root.affiliation)}` : '',
+                root.affiliation ? `${L.affiliation}: ${mdLabel(root.affiliation)}` : '',
                 '',
               );
               const s = rows('author_dossier_synthesis').find((r) => r.author_id === root.author_id);
               if (s)
                 out.push(
-                  '## Síntesis del autor',
+                  `## ${L.authorSynthesis}`,
                   '',
                   headingContent(text(s.thesis), 3),
                   '',
@@ -1315,7 +1321,7 @@ export async function buildOpenBackup(
               );
               if (o.includeIdeas && occIds.size)
                 out.push(
-                  `${'#'.repeat(depth)} Ideas`,
+                  `${'#'.repeat(depth)} ${L.ideas}`,
                   '',
                   ...rows('ideas')
                     .filter((r) => occIds.has(r.global_id))
@@ -1329,7 +1335,7 @@ export async function buildOpenBackup(
             );
             if (edges.length)
               out.push(
-                '## Relaciones',
+                `## ${L.relations}`,
                 '',
                 ...edges.map((e) => {
                   const otherId = text(e.from_id === root.global_id ? e.to_id : e.from_id);
@@ -1349,11 +1355,11 @@ export async function buildOpenBackup(
           await write(
             `${base}/markdown/summaries/${recordStem(s, st)}.md`,
             [
-              `# Resumen: ${mdLabel(work?.title ?? s.nodus_id)}`,
+              `# ${L.summary}: ${mdLabel(work?.title ?? s.nodus_id)}`,
               '',
               ...(work ? bibliography(work) : []),
               '',
-              '_Resumen generado para orientación; consultar la fuente para citar._',
+              `_${L.summaryNote}_`,
               '',
               headingContent(text(s.summary), 2),
               '',
@@ -1448,12 +1454,12 @@ export async function buildOpenBackup(
   if (input.libraryRoot && (o.categories.includes('research') || o.includeGlobalLibrary)) {
     const store = new LibraryDiskStore(input.libraryRoot, 'open-backup-readonly');
     const { records: libraryItems, invalid } = store.scanMaterializedItems();
-    if (invalid) omissions.push(`Biblioteca: ${invalid} registros no válidos`);
+    if (invalid) omissions.push(L.libraryInvalid(invalid));
     const librarySelection = o.selections['global:library_items'];
     if (librarySelection)
       for (const key of librarySelection)
         if (!libraryItems.some((item) => JSON.stringify([item.id]) === key))
-          omissions.push(`Biblioteca global: elemento ausente ${key}`);
+          omissions.push(L.globalLibraryMissing(key));
     for (const item of libraryItems) {
       check();
       if (librarySelection && !librarySelection.includes(JSON.stringify([item.id]))) continue;
@@ -1506,7 +1512,7 @@ export async function buildOpenBackup(
             check();
             if (entry.name === 'metadata.json') continue;
             if (entry.isSymbolicLink()) {
-              omissions.push(`Biblioteca ${item.id}: enlace simbólico omitido ${entry.name}`);
+              omissions.push(L.librarySymlink(item.id, entry.name));
               continue;
             }
             if (!o.includeHistory && /^(orphanedAnnotations|history)/i.test(entry.name)) continue;
@@ -1528,10 +1534,10 @@ export async function buildOpenBackup(
               !excludedLibraryFiles.has(expected.replace(/\\/g, '/')) &&
               !libraryFiles.includes(expected.replace(/\\/g, '/'))
             )
-              omissions.push(`Biblioteca ${item.id}: archivo ausente ${expected}`);
+              omissions.push(L.libraryFileMissing(item.id, expected));
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code === 'ENOENT')
-            omissions.push(`Biblioteca ${item.id}: archivos ausentes`);
+            omissions.push(L.libraryFilesMissing(item.id));
           else throw error;
         }
       }
@@ -1545,7 +1551,7 @@ export async function buildOpenBackup(
             '',
             ...(libraryFiles.length
               ? [
-                  '## Archivos',
+                  `## ${L.files}`,
                   '',
                   ...libraryFiles.map(
                     (file) => `- [${mdLabel(file)}](${relativeBackupUrl('files/' + file)})`,
@@ -1562,20 +1568,20 @@ export async function buildOpenBackup(
   const index = [
     '# Nodus · Backups',
     '',
-    `Versión: ${input.appVersion}`,
-    `Elementos: ${records}`,
+    `${L.version}: ${input.appVersion}`,
+    `${L.items}: ${records}`,
     '',
-    '## Contenido',
+    `## ${L.contents}`,
     '',
     ...entries
       .filter((e) => /\.(md|csv|json)$/.test(e.path))
       .map((e) => `- [${mdLabel(e.path)}](${relativeBackupUrl(e.path)})`),
     '',
-    '## Omisiones',
+    `## ${L.omissions}`,
     '',
-    ...(omissions.length ? omissions.map((m) => `- ${mdLabel(m)}`) : ['Ninguna.']),
+    ...(omissions.length ? omissions.map((m) => `- ${mdLabel(m)}`) : [L.none]),
     '',
-    'Markdown, CSV y JSON permiten reutilizar el contenido. Para restaurar Nodus utiliza una copia .nodus.',
+    L.reuseNote,
     '',
   ];
   await write('README.md', index.join('\n'));

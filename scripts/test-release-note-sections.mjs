@@ -17,18 +17,19 @@ test('the modal covers every language available in the interface', async () => {
   assert.ok(declaration, 'the interface language union exists');
   const supported = [...declaration[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
   assert.deepEqual(languages, supported);
-  assert.match(current.highlights[0].en, /^Backups, in Tools/);
-  assert.ok(current.highlights.slice(1, 4).every(highlight => /Nodus Scriptor/.test(highlight.en)), 'dictation, AI review and image creation are new Scriptor features');
-  assert.equal(current.highlights.filter(highlight => /dictation/i.test(highlight.en) && highlight.category === 'new').length, 1, 'each new feature appears once with its final behavior');
+  assert.match(current.highlights[0].en, /Simple, Intermediate, Advanced and Custom/);
+  assert.match(current.highlights[1].en, /12 resumable lessons in the real workspace/);
+  assert.match(current.highlights[2].en, /Bookmarks is the default home page/);
+  assert.equal(current.highlights.filter(highlight => highlight.category === 'new' && /interface profiles/.test(highlight.en)).length, 1, 'each new feature appears once with its final behavior');
 });
 
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.9.1');
-  assert.equal(current.highlights.length, 14);
-  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','new','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['toolkit','toolkit','toolkit','toolkit','academic','academic','toolkit','general','general','general','general','ai','plugin','library']);
+  assert.equal(current.version, '5.10.0');
+  assert.equal(current.highlights.length, 18);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','enhancement','enhancement','enhancement','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix','fix','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['academic','academic','browser','general','general','general','general','ai','ai','academic','languages','languages','ai','ai','server','toolkit','academic','general']);
   for (const lang of languages) for (const highlight of current.highlights) {
     assert.ok(highlight[lang].length > 30, `${lang}: complete note`);
     if (lang !== 'en') assert.notEqual(highlight[lang], highlight.en, `${lang}: native translation`);
@@ -37,8 +38,9 @@ test('the current release covers the final changes in twelve languages and three
 });
 
 test('5.9.1 reuses every 5.9.0 modal highlight and translation exactly', () => {
+  const patch = RELEASE_NOTES.find(note => note.version === '5.9.1');
   const previous = RELEASE_NOTES.find(note => note.version === '5.9.0');
-  assert.deepEqual(current.highlights, previous.highlights);
+  assert.deepEqual(patch.highlights, previous.highlights);
 });
 
 test('only v5 and future releases use the three translated sections, including empty sections', () => {
@@ -59,7 +61,7 @@ test('only v5 and future releases use the three translated sections, including e
       for (const section of sections) assert.ok(section.highlights.every(h => h.category === section.category));
     }
   }
-  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [current.highlights[8]] };
+  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [current.highlights[10]] };
   assert.deepEqual(releaseNoteSections(fixesOnly).map(s => s.highlights.length), [0,0,1]);
   assert.equal(releaseNoteMarkdown(fixesOnly).split(RELEASE_EMPTY_SECTION.en).length - 1, 2);
   assert.throws(() => releaseNoteSections({ ...fixesOnly, highlights: [{ ...current.highlights[0], category: undefined }] }), /uncategorized/);
@@ -78,7 +80,7 @@ test('scope ordering stays inside each section, with stable ties', () => {
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) =>
-    `## ${title}\n\n` + current.highlights.slice([0,4,8][i], [4,8,14][i]).map(h => `- ${h.en}`).join('\n\n')
+    `## ${title}\n\n` + current.highlights.slice([0,3,10][i], [3,10,18][i]).map(h => `- ${h.en}`).join('\n\n')
   ).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);
   await assert.rejects(generateReleaseNotes('v99.0.0'), /does not match/);

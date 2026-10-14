@@ -23,18 +23,19 @@ Document corrections to previously released behaviour under Fixes.
 Generate the complete English release description:
 
 ```sh
-npm run release:notes -- v5.9.0 /tmp/nodus-release-notes.md
+npm run release:notes -- v5.10.0 /tmp/nodus-release-notes.md
 ```
 
 The tag must match `package.json`. Missing modal notes, missing translations,
 missing categories, or inconsistent release dates stop generation. To check a
 saved description, add `--check` after the output path.
 
-The shared stable/beta workflow generates the body from the checked-out tag
-before creating or reusing the draft, and regenerates it immediately before
-publication. Both final publication commands require that body with
-`--notes-file`. No manually authored GitHub body is needed. Manual publication
-outside this workflow must also use the generated file.
+The shared stable/beta workflow generates the body once from the checked-out tag
+before creating or reusing the draft. It transfers that file by immutable
+artifact ID and verifies its SHA-256 before publication. Both final publication
+commands require that body with `--notes-file`. No manually authored GitHub body
+is needed. Manual publication outside this workflow must also use the generated
+file.
 
 Validate with `node --test scripts/test-release-note-sections.mjs` and
 `node scripts/test-release-notes.mjs`. The visual check uses the real modal via

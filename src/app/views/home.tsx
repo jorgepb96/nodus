@@ -1,3 +1,5 @@
+import { academicNavigation } from '../../academicInterfaceProfiles';
+import { Icon } from '../../components/ui';
 import { ManualIndexStatus } from '../../components/ManualIndexStatus';
 import { t } from '../../i18n';
 // «Inicio» is one section of the sidebar and nine different screens.
@@ -24,6 +26,11 @@ export const renderHome: ViewRenderer = (ctx) => {
     setActiveDatabaseId, createDatabase, importCsv, importNotion,
   } = ctx;
   const showDemoOffer = hasData === false && !settings.demoMode;
+  if (ctx.isAcademic && settings.academicInterfaceProfile === 'intermediate') return <div className="h-full overflow-auto p-6" data-testid="academic-intermediate-home">
+    <h1 className="text-xl font-semibold mb-4">{t('Inicio')}</h1>
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">{academicNavigation(settings).filter(item => item.id !== 'home' && item.id !== 'settings').map(item => <button key={item.id} className="card p-5 text-left flex items-center gap-3 hover:border-indigo-400" onClick={() => setView(item.id as import('../../navigation').View)}><Icon name={item.icon} /><span>{t(item.label)}</span></button>)}</div>
+  </div>;
+
 
   if (ctx.isGenealogy) {
     return (

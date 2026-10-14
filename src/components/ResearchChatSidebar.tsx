@@ -4,6 +4,7 @@ import type { ChatConversationSummary, ResearchChatProject } from '@shared/types
 import type { ChatHistoryNotebookEntry } from '../views/researchChatAdapter';
 import { VirtualList } from './VirtualList';
 import { ConfirmModal } from './ConfirmModal';
+import { ChatOrganizationHelp } from './ChatOrganizationHelp';
 import { Icon } from './ui';
 import { useDismissableLayer } from '../hooks';
 import { t, tx } from '../i18n';
@@ -109,6 +110,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
   const [styling, setStyling] = useState<{ kind: 'project' | 'notebook'; id: string } | null>(null);
   const [deletingProject, setDeletingProject] = useState<ResearchChatProject | null>(null);
   const [deletingNotebook, setDeletingNotebook] = useState<ChatHistoryNotebookEntry | null>(null);
+  const [organizationHelpOpen, setOrganizationHelpOpen] = useState(false);
   const courses = props.notebookKind === 'course';
   const labels = notebookLabels(courses);
   const locksMoves = props.notebookLocksMoves ?? true;
@@ -205,6 +207,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
           <button type="button" className="research-chat-history-tool" data-testid="research-new-conversation" onClick={props.onNewConversation} disabled={sending} aria-label={t('Nueva conversación')} title={t('Nueva conversación')}><Icon name="plus" size={16} /></button>
           {notebooksOn && props.onNewNotebook && <button type="button" className="research-chat-history-tool" data-testid="research-new-notebook" onClick={props.onNewNotebook} aria-label={t('Nuevo cuaderno')} title={t('Nuevo cuaderno')}><Icon name="notebook" size={16} /></button>}
           {supportsProjects && <button type="button" className="research-chat-history-tool" data-testid="research-new-project" onClick={newProject} aria-label={t('Nuevo proyecto')} title={t('Nuevo proyecto')}><Icon name="folderPlus" size={16} /></button>}
+          {supportsProjects && notebooksOn && !courses && <button type="button" className="research-chat-history-tool ml-auto" data-testid="chat-organization-help-trigger" onClick={() => setOrganizationHelpOpen(true)} aria-label={t('Cuadernos y proyectos')} title={t('Cuadernos y proyectos')} aria-haspopup="dialog"><Icon name="help" size={16} /></button>}
         </div>
         <label className="research-chat-search">
           <Icon name="search" size={14} aria-hidden="true" />
@@ -347,6 +350,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
         onCancel={() => setDeletingNotebook(null)}
       />}
       {folderUi.overlays}
+      {organizationHelpOpen && <ChatOrganizationHelp collections={props.notebookCollections !== false} locksMoves={locksMoves} onClose={() => setOrganizationHelpOpen(false)} />}
       {deletingProject && <ConfirmModal
         title={t('Eliminar proyecto')}
         message={tx('Se eliminará «{name}». Sus chats no se borran: vuelven al historial general.', { name: deletingProject.name })}

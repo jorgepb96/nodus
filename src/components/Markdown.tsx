@@ -1,7 +1,7 @@
 import { DocumentFigure, useDocumentFigures } from './DocumentFigures';
 import { documentBlocks } from '@shared/documentSkills';
 import { ChatVisual } from './ChatVisual';
-import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Children, memo, useEffect, useRef, useState, type ReactNode } from 'react';
 import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -15,6 +15,11 @@ import { t } from '../i18n';
 import { VERIFY_DEBOUNCE_MS, decodeCitationId, planCitationVerification } from '../citationVerification';
 import { parsePrimarySourceExcerptDeepLink } from '@shared/primarySourceDeepLink';
 import { rehypeGroupParenthesizedCitations } from '../markdownCitationGroups';
+
+function citationChildren(children: ReactNode): ReactNode {
+  const parts = Children.toArray(children);
+  return parts.every(part => typeof part === 'string') && /^fuente$/i.test(parts.join('').trim()) ? t('Fuente') : children;
+}
 
 const nodusUrlTransform = (value: string) => {
   if (value.startsWith('nodus://')) return value;
@@ -230,7 +235,7 @@ function MarkdownComponent({
                   ...(target === 'section' && value ? { sectionId: value } : {}),
                   ...(target === 'page' && value && Number.isFinite(Number(value)) ? { page: Number(value) } : {}),
                 })}
-              >{children}</button>;
+                >{citationChildren(children)}</button>;
             }
             const studyMaterial = href?.match(/^nodus:\/\/study\/material\/([^?]+)(?:\?(.*))?$/);
             if (studyMaterial && onStudyMaterial) {
@@ -432,6 +437,7 @@ function CitationLink({
         type="button"
         className="citation-link"
         data-citation-kind={citation.kind}
+        data-citation-id={citation.id}
         data-web-source={citation.kind === 'passage' && citation.id.startsWith('web:') ? 'true' : undefined}
         data-verified={unverified ? 'false' : undefined}
         title={
@@ -445,7 +451,7 @@ function CitationLink({
           onCitation(citation);
         }}
       >
-        {children}
+        {citationChildren(children)}
         {unverified && (
           <span aria-hidden className="citation-warn">
             ⚠

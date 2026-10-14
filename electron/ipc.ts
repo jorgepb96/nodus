@@ -170,7 +170,7 @@ import {
 } from './ai/passageEmbeddingPipeline';
 import { isSemanticBridgeRunning } from './ai/semanticBridges';
 import { cancelDeepResearchJobsForOtherVaults, isDeepResearchLaneBusy } from './ai/deepResearchQueue';
-import { closeDb, getDb } from './db/database';
+import { closeDb, getDb, withVaultDatabase } from './db/database';
 import {
   createVault,
   createVaultFromDatabaseFile,
@@ -184,7 +184,7 @@ import {
   setVaultType,
 } from './vaults/vaultRegistry';
 import { reuseVaultAnalysisForWorks } from './vaults/vaultAnalysisImport';
-import { initializeVaultModelSelection, validateVaultModelSelection } from './vaults/vaultCreationSettings';
+import { initializeVaultInterfaceProfile, initializeVaultModelSelection, validateVaultModelSelection } from './vaults/vaultCreationSettings';
 import { setPersistentDockIcon } from './dockIcon';
 import { closeCrossVaultConnections } from './db/crossVault';
 import { assertNotBrowserIpcSender } from './ipc/trust';
@@ -777,12 +777,26 @@ export function registerIpc(
     endMascotWindowDrag();
   });
   h('vaults:list', async () => listVaults().map(withVaultKeyProviders));
+  h('learning:update', async (_event, vaultId, input) => {
+    const target=getVault(vaultId);
+    if(!target || target.type!=='academic')throw new Error('Invalid learning scope.');
+    const patch: Partial<AppSettings> = {};
+    if (Object.prototype.hasOwnProperty.call(input ?? {}, 'academicLearningProgress')) patch.academicLearningProgress = input.academicLearningProgress;
+    if (Object.prototype.hasOwnProperty.call(input ?? {}, 'academicPracticeSession')) {
+      if (input.academicPracticeSession && input.academicPracticeSession.vaultId !== vaultId) throw new Error('Invalid learning scope.');
+      patch.academicPracticeSession = input.academicPracticeSession;
+    }
+    const next = await withVaultDatabase(vaultId,()=>updateSettings(patch));
+    getWindow()?.webContents.send('settings:changed');
+    return getActiveVault().id===vaultId ? next : null;
+  });
   h('vaults:getActive', async () => withVaultKeyProviders(getActiveVault()));
   h('vaults:create', async (_e, input: CreateVaultInput) => {
     const modelSelection = validateVaultModelSelection(input);
     const vault = createVault(input.name, input.type);
     try {
       if (modelSelection) initializeVaultModelSelection(vault.path, modelSelection);
+      if (vault.type === 'academic') initializeVaultInterfaceProfile(vault.path);
     } catch (cause) {
       deleteVault(vault.id, true);
       throw cause;

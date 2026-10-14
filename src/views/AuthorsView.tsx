@@ -1,3 +1,4 @@
+import { useLearningArtifact } from '../learning/useLearningArtifact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type {
@@ -541,6 +542,7 @@ function AuthorDetailTab({ author, vaultId, model, onOpenAuthor, onOpenGraph, on
   const [savingSaved, setSavingSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useLearningArtifact('authors', dossier?.author.author_id, dossier?.ideas.map(i=>({kind:'idea' as const,id:i.global_id})) ?? []);
   const reload = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);

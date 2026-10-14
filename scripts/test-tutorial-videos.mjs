@@ -328,7 +328,7 @@ test('the videos are announced once to installs that predate them', async () => 
 
   // Completing the cinematic guide answers the same question, so it settles the
   // announcement too — a fresh install must never be told about a choice it just made.
-  assert.match(await read('src/app/StartupGate.tsx'), /markTutorialVideosAnnouncementSeen\(\);\s*\n\s*await window\.nodus\.updateSettings\(\{ basicsTutorialVersion: BASICS_TUTORIAL_VERSION \}\)/);
+  assert.match(await read('src/app/StartupGate.tsx'), /markTutorialVideosAnnouncementSeen\(\);\s*\n\s*await window\.nodus\.updateSettings\(\{ basicsTutorialVersion: BASICS_TUTORIAL_VERSION/);
   // It queues behind the other one-time tours and ahead of the Nodi choice, so two
   // modals never fight for the foreground.
   const order = ['<WhatsNewModal', '<PlatformHighlightsUpdateTour', '<ToolkitBetaUpdateTour', '<TutorialVideosUpdateTour', '<NodiStyleModal'].map((tag) => app.indexOf(tag));
@@ -386,7 +386,9 @@ test('a vault tour with a video offers three ways in', async () => {
   assert.match(engine, /className=\{`w-full \$\{video \?/);
   // Escape must reach the player, not dismiss the tour behind it.
   assert.match(engine, /if \(watchingVideo\) return;/);
-  assert.match(tour, /vaultType="academic"/);
+  assert.match(tour, /openAcademicLearning\('first-answer'\)/);
+  const learning = await read('src/learning/AcademicLearningSurface.tsx');
+  assert.match(learning,/learning-start-guide/); assert.match(learning,/AcademicLearningSpotlight/); assert.match(learning,/learning-skip/);
   // Every dedicated vault tour declares its type, so each gains the option the day its
   // own video is published — without a release and without touching the engine.
   for (const [file, type] of [

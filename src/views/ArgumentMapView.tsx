@@ -1,3 +1,4 @@
+import { useLearningArtifact } from '../learning/useLearningArtifact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AppSettings, ArgumentBlock, ArgumentMap, ArgumentRouteSuggestion, EdgeDetail, EdgeType, IdeaDetail, IdeaPickerItem, IdeaType } from '@shared/types';
@@ -516,6 +517,7 @@ function ArgumentMapTab({ tab, active }: { tab: ArgumentMapTabState; active: boo
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const revealTimerRef = useRef<number | null>(null);
   const [ideaDetail, setIdeaDetail] = useState<IdeaDetail | null>(null);
+  useLearningArtifact('argument-map',ideaDetail?.idea.global_id,ideaDetail?[{kind:'idea',id:ideaDetail.idea.global_id}]:[]);
   const [edgeDetail, setEdgeDetail] = useState<EdgeDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<DetailLoading | null>(null);
   const detailSeqRef = useRef(0);

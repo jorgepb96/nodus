@@ -49,6 +49,9 @@ interface Props {
    */
   labelPolicy?: "cull" | "all";
   onLayoutProgress?(progress: number): void;
+  /** Observed after a successful GPU draw, for guided checks of actually visible nodes. */
+  onPaintedNodes?(ids:string[]):void;
+  onRenderError?():void;
 }
 /** Zoom range and step. A 25% step is imperceptible on a canvas this size. */
 const MIN_ZOOM = 0.02;
@@ -103,6 +106,8 @@ export function StellarCanvas(props: Props) {
   const [size, setSize] = useState({ w: 1000, h: 700, footer: 150 }),
     [error, setError] = useState(""),
     [generation, setGeneration] = useState(0);
+  const liveSize=useRef(size);liveSize.current=size;
+  const renderFailed=useRef(false);
   const palette = useRef<CanvasPalette>({
     star: fallbackColor("#a4bbfa"),
     context: fallbackColor("#a6a8d1"),
@@ -177,15 +182,17 @@ export function StellarCanvas(props: Props) {
       live.current.onPositions(Object.fromEntries(Object.entries(merged).filter(([id]) => ids.has(id))) as Record<string, StellarPosition>);
       live.current.onLayoutProgress?.(data.mode === "force" ? data.progress : 1);
     };
-    w.onerror = () =>
-      setError(
+    w.onerror = () => {
+      renderFailed.current=true;
+      live.current.onRenderError?.(); setError(
         t("No se pudo calcular la distribución. Vuelve a abrir el canvas."),
       );
+    };
     return () => {
       seq.current++;
       w.terminate();
     };
-  }, []);
+  }, [generation]);
   useEffect(() => {
     // Only a new request invalidates the running one. A force pass streams many frames,
     // and bumping the sequence on every render would discard all but the first of them —
@@ -202,7 +209,7 @@ export function StellarCanvas(props: Props) {
       edges: props.data.edges,
       positions: props.positions,
     });
-  }, [props.data, props.positions, props.layout]);
+  }, [props.data, props.positions, props.layout, generation]);
   useEffect(() => {
     const api: StellarCanvasApi = {
       fitContext() {
@@ -293,7 +300,8 @@ export function StellarCanvas(props: Props) {
       gpu = new StellarGPU(el);
     } catch (e) {
       themeObserver.disconnect();
-      setError(String(e));
+      renderFailed.current=true;
+      live.current.onRenderError?.(); setError(String(e));
       return;
     }
     let raf = 0, until = 0, revealAt = 0;
@@ -469,6 +477,11 @@ export function StellarCanvas(props: Props) {
         vertex(stars, s, [1, 1, 1], alpha, featured ? 14 : 12 * Math.max(0.5, p.camera.zoom));
       }
       gpu.draw(el.width, el.height, lines, stars, p.camera.zoom < 0.3 && !active);
+      if(p.onPaintedNodes&&!renderFailed.current)p.onPaintedNodes(p.data.nodes.filter(node=>{
+        const position=p.positions[node.id];if(!position)return false;
+        const x=(position.x-p.camera.x)*p.camera.zoom+w/2,y=(position.y-p.camera.y)*p.camera.zoom+h/2;
+        return Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=w&&y>=0&&y<=h-(liveSize.current.footer||0);
+      }).map(node=>node.id));
       if (performance.now() < until && !reduce.matches)
         raf = requestAnimationFrame(render);
     };
@@ -486,7 +499,8 @@ export function StellarCanvas(props: Props) {
     const lost = (e: Event) => {
       e.preventDefault();
       stopCamera();
-      setError(
+      renderFailed.current=true;
+      live.current.onRenderError?.(); setError(
         t("Se ha interrumpido la aceleración gráfica. Recupera el canvas para continuar."),
       );
     };
@@ -843,6 +857,7 @@ export function StellarCanvas(props: Props) {
           <button
             onClick={() => {
               setError("");
+              renderFailed.current=false;
               setGeneration((g) => g + 1);
             }}
           >

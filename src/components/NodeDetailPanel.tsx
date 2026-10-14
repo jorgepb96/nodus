@@ -1,3 +1,4 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
 import { useEffect, useState } from 'react';
 import type { EdgeDetail, IdeaDetail, IdeaType, WorkMeta, WorkSummary, WorkView } from '@shared/types';
 import { EDGE_LABELS, NODE_LABELS, Badge, Icon } from './ui';
@@ -326,6 +327,7 @@ export function EvidenceLocationLink({
   suffix?: string;
   onOpen?: (sourceRef: string, location: string | null) => void;
 }) {
+  const learning = useAcademicLearning();
   const page = pageNumber ?? parsePageNumber(location);
   if ((!window.nodus && !onOpen) || (page === null && !sourceRef && !onOpen)) {
     return <span className="text-neutral-500 not-italic">{(location ?? '') + suffix}</span>;
@@ -335,9 +337,11 @@ export function EvidenceLocationLink({
       <button
         className="inline-flex items-center gap-0.5 text-indigo-400 hover:text-indigo-300"
         title={t('Abrir fuente')}
-        onClick={() => onOpen
-          ? onOpen(sourceRef ?? nodusId, location)
-          : void openEvidenceAtPage(nodusId, { location, sourceRef, pageNumber: page })}
+        onClick={async () => {
+          if(onOpen) { onOpen(sourceRef ?? nodusId, location); return; }
+          const result=await openEvidenceAtPage(nodusId,{location,sourceRef,pageNumber:page});
+          if((result.ok||result.mode==='local')&&learning.session?.artifactId)learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`work:${nodusId}`],valid:true});
+        }}
       >
         <Icon name="external" size={11} /> {location || t('Abrir fuente')}
       </button>

@@ -1,6 +1,5 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
 import type { View } from '../navigation';
-import { t } from '../i18n';
+import { TourOverlay } from './tourEngine';
 
 export interface AdvancedTourStep {
   /** A `data-tour="…"` value to spotlight. Omit for a centered, target-less step. */
@@ -20,7 +19,7 @@ export interface AdvancedTourStep {
  * → plan, converse, and write. It deliberately avoids repeating the basics and
  * is opt-in: launched from Settings, never auto-shown.
  *
- * Most stops are view-navigated, centered cards because the workflow is about
+ * The shared guide points at live view controls while the workflow explains
  * *when* to reach for each view, not about hunting a single button.
  */
 const STEPS: AdvancedTourStep[] = [
@@ -120,161 +119,6 @@ const STEPS: AdvancedTourStep[] = [
   },
 ];
 
-interface Rect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
 export function AdvancedTour({ onClose, onNavigate }: { onClose: () => void; onNavigate: (v: View) => void }) {
-  const [i, setI] = useState(0);
-  const [rect, setRect] = useState<Rect | null>(null);
-  const step = STEPS[i];
-  const isFirst = i === 0;
-  const isLast = i === STEPS.length - 1;
-
-  // Switch view first so the target element exists when we measure.
-  useEffect(() => {
-    if (step.view) onNavigate(step.view);
-  }, [i, step.view, onNavigate]);
-
-  useLayoutEffect(() => {
-    let raf = 0;
-    const measure = () => {
-      if (!step.target) {
-        setRect(null);
-        return;
-      }
-      const el = document.querySelector<HTMLElement>(`[data-tour="${step.target}"]`);
-      if (!el) {
-        setRect(null);
-        return;
-      }
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) {
-        setRect(null); // present but not laid out → center
-        return;
-      }
-      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    };
-    // Wait a frame for the (possibly just-switched) view to render.
-    raf = requestAnimationFrame(() => requestAnimationFrame(measure));
-    window.addEventListener('resize', measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', measure);
-    };
-  }, [i, step.target]);
-
-  // Keyboard: Esc to skip, arrows/Enter to navigate.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight' || e.key === 'Enter') setI((n) => Math.min(STEPS.length - 1, n + 1));
-      else if (e.key === 'ArrowLeft') setI((n) => Math.max(0, n - 1));
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const pad = 6;
-  const spotlight: Rect | null = rect
-    ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
-    : null;
-
-  // Tooltip placement: below the target if there's room, else above; centered otherwise.
-  const TT_W = 380;
-  let ttStyle: React.CSSProperties;
-  if (spotlight) {
-    const below = spotlight.top + spotlight.height + 12;
-    const placeBelow = below + 200 < window.innerHeight;
-    const top = placeBelow ? below : Math.max(12, spotlight.top - 12 - 200);
-    let left = spotlight.left + spotlight.width / 2 - TT_W / 2;
-    left = Math.max(12, Math.min(left, window.innerWidth - TT_W - 12));
-    ttStyle = { position: 'fixed', top, left, width: TT_W };
-  } else {
-    ttStyle = {
-      position: 'fixed',
-      top: '50%',
-      left: '50%',
-      width: TT_W,
-      transform: 'translate(-50%, -50%)',
-    };
-  }
-
-  return (
-    <div className="fixed inset-0 z-[100]">
-      {/* Dim layer with a spotlight hole over the target (via a huge box-shadow). */}
-      {spotlight ? (
-        <div
-          className="fixed rounded-lg transition-all duration-200 pointer-events-none"
-          style={{
-            top: spotlight.top,
-            left: spotlight.left,
-            width: spotlight.width,
-            height: spotlight.height,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.66)',
-            outline: '2px solid #34d399',
-          }}
-        />
-      ) : (
-        <div className="fixed inset-0 bg-black/70" />
-      )}
-
-      {/* Tooltip card */}
-      <div
-        style={ttStyle}
-        className="card bg-neutral-900 border border-neutral-700 p-4 shadow-2xl text-sm"
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] uppercase tracking-wide text-emerald-400">
-            {t('Tutorial avanzado')} · {i + 1}/{STEPS.length}
-          </div>
-          <button className="text-neutral-500 hover:text-white text-xs" onClick={onClose}>
-            {t('Salir')} ✕
-          </button>
-        </div>
-        <div className="text-[11px] uppercase tracking-wide text-neutral-500 mb-0.5">{t(step.stage)}</div>
-        <h3 className="font-semibold text-base mb-1">{t(step.title)}</h3>
-        <p className="text-neutral-300 leading-relaxed">{t(step.body)}</p>
-
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex gap-1">
-            {STEPS.map((_, n) => (
-              <span
-                key={n}
-                className={`h-1.5 rounded-full transition-all ${n === i ? 'w-4 bg-emerald-500' : 'w-1.5 bg-neutral-700'}`}
-              />
-            ))}
-          </div>
-          <div className="flex gap-2">
-            {!isFirst && (
-              <button className="btn btn-ghost" onClick={() => setI((n) => Math.max(0, n - 1))}>
-                {t('Atrás')}
-              </button>
-            )}
-            {isFirst ? (
-              <>
-                <button className="btn btn-ghost" onClick={onClose}>
-                  {t('Ahora no')}
-                </button>
-                <button className="btn btn-primary" onClick={() => setI(1)}>
-                  {t('Empezar el recorrido')}
-                </button>
-              </>
-            ) : isLast ? (
-              <button className="btn btn-primary" onClick={onClose}>
-                {t('Terminar')}
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={() => setI((n) => n + 1)}>
-                {t('Siguiente')}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <TourOverlay steps={STEPS} label="Tutorial avanzado" showUnavailableVideo={false} onClose={onClose} onNavigate={view => onNavigate(view as View)} />;
 }

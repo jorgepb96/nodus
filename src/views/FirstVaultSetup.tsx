@@ -1,3 +1,5 @@
+import { learningText } from '@shared/academicLearningCopy';
+import { getActiveLang } from '../i18n';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import type { VaultSummary, VaultType } from '@shared/types';
@@ -70,7 +72,7 @@ export function FirstVaultSetup({
       await window.nodus.setVaultType(vault.id, type);
       // Written last: if either call above fails the screen stays up and can be retried,
       // rather than being marked answered with the vault left half-configured.
-      await window.nodus.updateSettings({ firstVaultVersion: FIRST_VAULT_VERSION });
+      await window.nodus.updateSettings({ firstVaultVersion: FIRST_VAULT_VERSION, ...(type === 'academic' ? { academicInterfaceProfile: 'simple' as const } : { basicsTutorialVersion:0 }) });
       await onComplete();
     } catch (cause) {
       setError(errorText(cause));
@@ -125,7 +127,7 @@ export function FirstVaultSetup({
             <div className="first-vault-footer">
               <p className="flex min-w-0 flex-1 items-start gap-2 text-left text-xs leading-5 text-neutral-500" data-testid="first-vault-next-step">
                 <Icon name="info" size={14} className="mt-0.5 shrink-0" />
-                <span>{t('Después el asistente te ayudará a elegir su modelo de IA y su modelo de embeddings. Puedes cambiar el nombre en cualquier momento desde el selector de bóvedas.')}</span>
+                <span>{type==='academic'?learningText('intro',getActiveLang()):t('Después el asistente te ayudará a elegir su modelo de IA y su modelo de embeddings. Puedes cambiar el nombre en cualquier momento desde el selector de bóvedas.')}</span>
               </p>
               <button className="btn btn-primary gap-1.5" data-testid="first-vault-create" onClick={() => void submit()} disabled={busy}>
                 <Icon name={busy ? 'sync' : 'check'} className={busy ? 'animate-spin' : ''} />

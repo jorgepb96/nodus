@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 import { uiText, type UiTranslations } from '@shared/uiLanguage';
 import { showImportOpenDialog } from '../privacy';
 import { getSettings } from '../db/settingsRepo';
+import { academicLearningSample } from '@shared/academicLearningSample';
+import os from 'node:os';
 import {
   getGlobalLibraryStatus,
   listGlobalLibraryItemsResponsive,
@@ -186,6 +188,17 @@ export function registerLibraryIpc({ h }: IpcContext): void {
       throw new Error('La lista de archivos arrastrados no es válida.');
     }
     return importGlobalLibraryFilesIntoVault(filePaths, vaultId);
+  });
+  h('library:importAcademicLearningSample', async (_event, vaultId) => {
+    if (typeof vaultId !== 'string' || vaultId.length > 256) throw new Error('Invalid vault.');
+    const sample = academicLearningSample(getSettings().uiLanguage);
+    const folder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'nodus-learning-'));
+    try {
+      const file = path.join(folder, `${sample.title.replace(/[\\/:*?"<>|]/g, '-')}.txt`);
+      await fs.promises.writeFile(file, sample.text, 'utf8');
+      // Ordinary import owns identifiers, duplicate handling, consent and preparation policy.
+      return await importGlobalLibraryFilesIntoVault([file], vaultId);
+    } finally { await fs.promises.rm(folder, { recursive: true, force: true }); }
   });
   h('library:importBibliography', async (event, collectionId) => {
     const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;

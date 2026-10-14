@@ -2048,7 +2048,7 @@ export function GlobalLibraryView({
   // flag is written as soon as it is presented — not when it is dismissed — so a
   // closed window or a switched vault does not queue the same greeting again. The
   // header's «?» reopens it afterwards, and that route ignores the flag entirely.
-  const [tutorialOpen, setTutorialOpen] = useState(() => settings.academicMode !== 'manual' && !libraryTutorialSeen());
+  const [tutorialOpen, setTutorialOpen] = useState(() => vaultType !== 'academic' && settings.academicMode !== 'manual' && !libraryTutorialSeen());
   const [tutorialTab, setTutorialTab] = useState<LibraryTutorialTab>('analysis');
   // The flag records that the guide WAS presented, not that it was dismissed, so it
   // is written on the visit that opened it: closing the window cannot queue it again.

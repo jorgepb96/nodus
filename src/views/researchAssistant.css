@@ -185,6 +185,16 @@
 
 /* Embedded chat changes only its frame and the optional side panels. */
 .research-chat-history[hidden] { display: none; }
+.research-history-help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.research-history-help-card { padding: 14px; border: 1px solid var(--prompt-line); border-radius: 12px; color: var(--prompt-text); }
+.research-history-help-card h3 { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.research-history-help-card h3 svg { flex-shrink: 0; color: var(--vault-accent); }
+.research-history-help-card p { margin-top: 10px; font-size: 12px; line-height: 1.6; }
+.research-history-help-card .research-history-help-use { color: var(--prompt-muted); }
+.research-history-help-choice { color: var(--prompt-ink); font-size: 12px; line-height: 1.6; }
+.research-history-help-notes { color: var(--prompt-muted); font-size: 11px; line-height: 1.6; }
+.research-history-help-notes p + p { margin-top: 4px; }
+@media (max-width: 560px) { .research-history-help-grid { grid-template-columns: 1fr; } }
 /* The top of the history: icon actions, then the notebook the chat reads from. */
 .research-chat-history-tools { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--research-border, #262626); }
 .research-chat-history-tool { display: inline-grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; border: 1px solid transparent; color: #a3a3a3; }

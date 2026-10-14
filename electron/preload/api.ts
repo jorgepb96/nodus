@@ -103,6 +103,7 @@ export const nodusApi: NodusApi = {
   ...testimoniesApi,
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (patch) => ipcRenderer.invoke('settings:update', patch),
+  updateAcademicLearning: (vaultId, patch) => ipcRenderer.invoke('learning:update', vaultId, patch),
   getAiConcurrencySnapshot: () => ipcRenderer.invoke('ai:concurrency:get'),
   onAiConcurrencySnapshot: (cb) => {
     const listener = (_e: unknown, snapshot: Parameters<typeof cb>[0]) => cb(snapshot);

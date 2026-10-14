@@ -1,3 +1,4 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
 import {
   useCallback,
   useId,
@@ -284,6 +285,8 @@ function StellarGraphTab({
     [font, setFont] = useState(14),
     [follow, setFollow] = useState(true),
     [reload, setReload] = useState(0);
+  const learning = useAcademicLearning();
+  const [paintedNodes,setPaintedNodes]=useState<string>('[]');
   const selectionEpoch = useRef(0);
   const titleCallback = useRef(onTitleChange);
   titleCallback.current = onTitleChange;
@@ -507,6 +510,15 @@ function StellarGraphTab({
     setEdge(null);
     setDetailLoading(null);
   };
+  useEffect(()=>{
+    const session=learning.session;
+    if(!active || loading || session?.lessonId!=='first-idea' || session.step!==4 || !session.ideaId || !JSON.parse(paintedNodes).includes(session.ideaId))return;
+    // The explicit graph jump has loaded an actual visible node, rather than merely
+    // changing the section. Wait for its canvas frame before acknowledging it.
+    const frame=requestAnimationFrame(()=>learning.emit({kind:'graph',ideaId:session.ideaId,documentId:session.documentId,valid:true}));
+    return()=>cancelAnimationFrame(frame);
+  },[active,loading,paintedNodes,learning.emit,learning.session?.step,learning.session?.ideaId]);
+
   const openNode = useCallback(
     (id: string) => {
       if (!engine) return;
@@ -537,6 +549,9 @@ function StellarGraphTab({
         .then((d) => {
           if (seq === detailSeq.current) {
             setIdea(d);
+            if (d) {
+              if(d.evidence.some(e=>e.quote.trim()) && learning.session?.artifactId)learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`idea:${d.idea.global_id}`],valid:true});
+            }
             setDetailLoading(null);
           }
         })
@@ -547,7 +562,7 @@ function StellarGraphTab({
           }
         });
     },
-    [engine, source, onOpenIdea, themeId],
+    [engine, source, onOpenIdea, themeId, learning.emit],
   );
   const openEdge = (id: string) => {
     selectionEpoch.current++;
@@ -697,6 +712,8 @@ function StellarGraphTab({
           {active && <StellarCanvas
             layout={themeId && view.nodes.length > FORCE_LAYOUT_FROM ? "force" : "spiral"}
             onLayoutProgress={setLayoutProgress}
+            onPaintedNodes={learning.session?.lessonId==='first-idea'&&learning.session.step===4?ids=>{const value=JSON.stringify(ids);setPaintedNodes(previous=>previous===value?previous:value);}:undefined}
+            onRenderError={()=>{setPaintedNodes('[]');if(learning.session?.lessonId==='first-idea'&&learning.session.step===4)learning.emit({kind:'recovery',recovery:'graph'});}}
             data={view}
             context={corpusContext.layer}
             onContextNode={node => {

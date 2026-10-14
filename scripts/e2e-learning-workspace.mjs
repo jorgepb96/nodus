@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {createRequire} from 'node:module';
-import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {access,mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {_electron as electron,chromium} from 'playwright-core';
@@ -62,7 +62,10 @@ try{
  // All new workspace controls fit in the supported languages and both themes.
  for(const theme of ['light','dark'])for(const language of ['es','en','fr','de','pt','pt-BR','it','tr','zh-CN','zh-TW','ja','ko']){await page.evaluate(({theme,language})=>window.nodus.updateSettings({theme,uiLanguage:language}),{theme,language});await wait(80);assert.equal(await page.getByTestId('learning-workspace-bar').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true,language+'/'+theme);await page.screenshot({path:path.join(shots,`workspace-${language}-${theme}.png`)});}
  await page.evaluate(()=>window.nodus.updateSettings({uiLanguage:'es',theme:'light'}));await page.getByTestId('learning-workspace-discard').click();await page.getByTestId('learning-workspace-discard-dialog').waitFor();await page.screenshot({path:path.join(shots,'delete-practice.png')});await page.getByTestId('learning-workspace-discard-confirm').click();await connection.close();connection=null;
- for(let i=0;i<100;i++){try{await readFile(path.join(privateProfile,'nodus.sqlite'));await wait(100);}catch{break;}}
+ // Recursive deletion removes individual stores before the parent profile directory.
+ // Wait for the complete discard before checking that every isolated store is gone.
+ for(let i=0;i<300;i++){try{await access(privateProfile);await wait(100);}catch(error){if(error.code==='ENOENT')break;throw error;}}
+ await assert.rejects(access(privateProfile),{code:'ENOENT'});
  await assert.rejects(readFile(path.join(privateProfile,'nodus.sqlite')));await assert.rejects(readFile(path.join(privateProfile,'library/catalog.sqlite')));await assert.rejects(readFile(path.join(privateProfile,'learning-entry.json')));assert.deepEqual(await snapshot(parent),original);
  const after=await parent.evaluate(()=>window.nodus.getSettings());assert.equal(after.academicLearningProgress.lessons['first-answer'].practiceCompleted,true);assert.equal(after.academicLearningProgress.lessons['first-idea'].practiceCompleted,true);assert.deepEqual(after.chatModel,prefs.chatModel);assert.equal(after.autoBackupFolder,prefs.autoBackupFolder);assert.equal(after.academicInterfaceProfile,prefs.academicInterfaceProfile);
  await parent.screenshot({path:path.join(shots,'original-vault-restored.png')});await writeFile(path.join(shots,'report.json'),JSON.stringify({passed:true,original,embeddings,generations,removed:privateProfile},null,2));console.log('Verified: continued lessons, all isolated files removed, original content/configuration and learning progress preserved.');

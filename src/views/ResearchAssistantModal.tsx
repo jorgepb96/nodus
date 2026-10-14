@@ -57,7 +57,7 @@ import type { AssistantNavigationTarget } from '../navigation';
 import { t, tx } from '../i18n';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
-import { researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
+import { localizeResearchCitationLabels, researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
 import './researchAssistant.css';
 
 const DEFAULT_SELECTION: ResearchContextSelection = {
@@ -121,6 +121,13 @@ const STREAM_PAINT_MS = 50;
  *  object; the others keep their identity and are skipped here. */
 const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, streaming }: { render: (message: UiMessage, streaming: boolean) => ReactNode; message: UiMessage; streaming: boolean }) {
   return <>{render(message, streaming)}</>;
+});
+
+// Scrolling and opening chat controls must not replace completed citation buttons.
+// Keep the callback stable so Markdown retains its DOM and the guide's anchor.
+const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language}:{content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
+  const cite=useCallback((citation:MarkdownCitation)=>onCitation(citation,{conversationId,messageId}),[onCitation,conversationId,messageId]);
+  return <ChatMarkdown key={language} content={content} streaming={streaming} onCitation={cite}/>;
 });
 
 export function ResearchAssistantModal({
@@ -1160,7 +1167,7 @@ export function ResearchAssistantModal({
                               const fallbackTitle = messages.find((candidate) => candidate.role === 'user' && candidate.content.trim())?.content.trim().slice(0, 80);
                               const conversationTitle = summary?.title || contextTitle || fallbackTitle || t('Research chat');
                               setNoteTarget({
-                                content: message.content,
+                                content: isAcademic ? localizeResearchCitationLabels(message.content,t('Fuente')) : message.content,
                                 title: deriveNoteTitle(message.content, conversationTitle),
                                 source: researchNoteSource({
                                   surface: attachmentSurface,
@@ -1205,7 +1212,7 @@ export function ResearchAssistantModal({
                       {message.role === 'assistant' && !message.error ? (
                         message.content ? (
                           <div className={message.id === streamingId ? 'stream-body' : undefined}>
-                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ChatMarkdown content={message.content} onCitation={c => handleCitation(c, {conversationId: activeId ?? undefined, messageId: message.id})} streaming={message.id === streamingId && message.id !== repaintedId} />}
+                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ResearchMessageBody language={settings.uiLanguage ?? 'es'} content={message.content} conversationId={activeId ?? undefined} messageId={message.id} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
                             {message.id === streamingId && <span aria-hidden className="stream-caret" />}
                           </div>
                         ) : message.id === streamingId ? (

@@ -34,7 +34,7 @@ export function academicGuideStep(session:AcademicPracticeSession,view:View,hasS
    'argument-map':{body:'guideArgument',targets:['[data-testid^="argument-route-"]','[data-testid="argument-routes-search"]']},
    dictionary:{body:'guideDictionary',targets:['[data-testid="dictionary-concept-name-0"]','[data-testid="dictionary-new"]']},
   };({body,targets}=chapters[session.lessonId]);
- }else targets=session.lessonId==='scriptor'?['[data-testid="workspace-view"] .bn-editor',...evidence]:session.lessonId==='authors'?[...evidence,'[data-testid="author-ideas"] button']:session.lessonId==='argument-map'?[...evidence,'.argument-node.is-root .argument-node-content']:evidence;
+ }else targets=session.lessonId==='scriptor'?['[data-testid="workspace-view"] .bn-editor',...evidence]:session.lessonId==='authors'?[...evidence,'[data-testid="author-ideas"] button']:session.lessonId==='argument-map'?[...evidence,'.argument-node.is-root .argument-node-content']:session.lessonId==='dictionary'?[...evidence,'[data-testid="dictionary-detail-tab-overview"]']:evidence;
  const wrongView=session.lessonId!=='interface'&&view!==destination;
  // Actual view controls stay reachable through the guide even when a Custom sidebar hides them.
  return {destination,body,targets:wrongView?[nav(destination)]:targets,wrongView};

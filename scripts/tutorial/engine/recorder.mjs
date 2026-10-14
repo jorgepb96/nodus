@@ -102,10 +102,13 @@ export async function record(deck) {
 
   // ── the profile ──────────────────────────────────────────────────────────
   // Always a throwaway copy. The installed Nodus is never touched.
-  const userData = await mkdtemp(path.join(os.tmpdir(), `nodus-${deck.name}-`));
-  if (deck.masterProfile) {
+  // A continuation can reopen an owned recording profile. Keeping its source
+  // paths and timestamps also keeps previously issued citation revisions valid.
+  if(deck.existingProfile&&(!path.resolve(deck.existingProfile).startsWith(path.resolve(os.tmpdir())+path.sep)||!path.basename(deck.existingProfile).startsWith('nodus-learning-')))throw new Error('Continuation requires an owned temporary learning profile');
+  const userData = deck.existingProfile ?? await mkdtemp(path.join(os.tmpdir(), `nodus-${deck.name}-`));
+  if (deck.masterProfile&&!deck.existingProfile) {
     await rm(userData, { recursive: true, force: true });
-    await cp(deck.masterProfile, userData, { recursive: true });
+    await cp(deck.masterProfile, userData, { recursive: true, preserveTimestamps:true });
     // vaults.json stores an ABSOLUTE path to the vault database, so copying the
     // profile alone leaves every run reading and writing the SAME vault — the
     // isolation is an illusion and state leaks between takes. Copy the vault too
@@ -422,7 +425,7 @@ export async function record(deck) {
     if (warnings.length) console.log(`${tag} review the warnings before assembling — a take with warnings usually shows them on screen`);
   } finally {
     await app.close().catch(() => {});
-    if (process.argv.includes('--keep-profile')) {
+    if (deck.existingProfile||process.argv.includes('--keep-profile')) {
       console.log(`${tag} profile kept at ${userData}`);
     } else {
       await rm(userData, { recursive: true, force: true }).catch(() => {});

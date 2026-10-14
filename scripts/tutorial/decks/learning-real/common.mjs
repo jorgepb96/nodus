@@ -12,7 +12,7 @@ export const SETTINGS={firstVaultVersion:9999,theme:'light',mascotEnabled:false,
 export async function setup(ctx,{paid=false,master=false}={}) {
  const {page,app,repoRoot,userData}=ctx;
  const storage=path.join(userData,'video-storage');await mkdir(storage,{recursive:true});
- if(master){const prefs=JSON.parse(await readFile(path.join(userData,'app-prefs.json'),'utf8').catch(()=>'{ }'));if(prefs.autoBackupFolder&&existsSync(prefs.autoBackupFolder))await cp(prefs.autoBackupFolder,storage,{recursive:true});}
+ if(master){const prefs=JSON.parse(await readFile(path.join(userData,'app-prefs.json'),'utf8').catch(()=>'{ }'));if(prefs.autoBackupFolder&&existsSync(prefs.autoBackupFolder))await cp(prefs.autoBackupFolder,storage,{recursive:true,preserveTimestamps:true});}
  await page.evaluate(folder=>window.nodus.updateSettings({autoBackupEnabled:false,autoBackupFolder:folder,uiLanguage:'en',promptLanguage:'en'}),storage);
  if(paid){
   const key=(await readFile(path.join(os.homedir(),'.config/nodus/openrouter.key'),'utf8')).trim();
@@ -60,7 +60,23 @@ export function helpers(ctx){
  const pickModel=async(role,id)=>{await click(`[data-testid="${role}-trigger"]`);await page.getByTestId(`${role}-search`).fill(id);const option=page.getByRole('option').filter({hasText:'OpenRouter'}).filter({hasText:id.split('/').at(-1)}).first();await option.waitFor();await option.click();await settle(300);};
  const source=async()=>{const rows=await page.evaluate(()=>window.nodus.getResearchCorpusSources());return rows.documents.find(d=>d.workId&&!d.noteId&&!d.conversationAttachment);};
  const selectSource=async()=>{const d=await source();if(!d)throw new Error('Paper not imported');await page.getByTestId(`vault-library-item-${d.workId}`).locator('input[type=checkbox]').check();await settle(500);return d;};
- const citation=async()=>{await page.locator('.research-composer-stop').waitFor({state:'hidden',timeout:300000});const session=(await state()).academicPracticeSession;const root=session?.messageId?page.locator(`[data-message-id="${session.messageId}"]`):page.locator('main');const ref=root.locator('button.citation-link:not([data-verified="false"])').first();await ref.waitFor();await ref.evaluate(button=>button.scrollIntoView({block:'nearest'}));const r=await ref.boundingBox();if(r)await page.evaluate(r=>window.__tutorialCursor?.moveTo(r.x+r.width/2,r.y+r.height/2),r);await ref.evaluate(button=>button.click());await page.getByTestId('source-citation-modal').waitFor();await settle(500);};
+ const citation=async()=>{
+  await page.locator('.research-composer-stop').waitFor({state:'hidden',timeout:300000});
+  const session=(await state()).academicPracticeSession;
+  const root=session?.messageId?page.locator(`[data-message-id="${session.messageId}"]`):page.locator('main');
+  for(let attempt=0;attempt<6;attempt++){
+   if(await page.getByTestId('source-citation-modal').isVisible().catch(()=>false))return;
+   const ref=root.locator('button.citation-link:not([data-verified="false"])').first();await ref.waitFor();
+   try{
+    await ref.scrollIntoViewIfNeeded({timeout:1500});await settle(250);
+    const r=await ref.boundingBox();if(!r)continue;
+    await page.evaluate(r=>window.__tutorialCursor?.moveTo(r.x+r.width/2,r.y+r.height/2),r);
+    await ref.click({timeout:1800});
+   }catch(error){if(attempt===5)throw error;await settle(500);continue;}
+   try{await page.getByTestId('source-citation-modal').waitFor({timeout:2500});await settle(400);return;}catch{await settle(300);}
+  }
+  throw new Error('The citation did not open its evidence workspace');
+ };
  const save=async(label)=>{await page.screenshot({path:path.join(repoRoot,`artifacts/academic-learning/video/${label}.png`)});const s=await state();await writeFile(path.join(repoRoot,`artifacts/academic-learning/video/${label}.json`),JSON.stringify({session:s.academicPracticeSession,progress:s.academicLearningProgress},null,2));const usage=await app.evaluate(async()=>{await Promise.all(globalThis.__videoPending??[]);return globalThis.__videoUsage??[];});await writeFile(path.join(userData,'video-usage.json'),JSON.stringify(usage,null,2));};
  return {click,state,wait,open,pause,profile,pickModel,source,selectSource,citation,save,closeSource,
   importPaper:async()=>{await ctx.highlight('[data-testid="library-vault-add-files"]');await page.locator('[data-testid="library-vault-file-drop-surface"] input[type=file]').setInputFiles(path.join(repoRoot,'.tutorial-out/academic-learning/source',paperName));await page.getByTestId('library-vault-file-drop-surface').waitFor();for(let i=0;i<40;i++){if(await source())break;await settle(500);}const d=await source();if(!d)throw new Error('Normal paper import failed');await page.evaluate(async id=>window.nodus.updateGlobalLibraryItemMetadata(id,{title:'Ten simple rules for reading a scientific paper',doi:'10.1371/journal.pcbi.1008032',date:'2020-07-30',language:'en',creators:[{creatorType:'author',firstName:'Maureen A.',lastName:'Carey'},{creatorType:'author',firstName:'Kevin L.',lastName:'Steiner'},{creatorType:'author',firstName:'William A.',lastName:'Petri Jr.'}]}),d.libraryItemId);await page.evaluate(async id=>{const vault=await window.nodus.getActiveVault();await window.nodus.linkGlobalLibraryItemsToVault([id],vault.id);},d.libraryItemId);await settle(1000);},

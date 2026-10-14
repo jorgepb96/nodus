@@ -115,7 +115,7 @@ export function installCursor() {
       const track=()=>{
         if(!element.isConnected){spot.remove();return;}
         const raw=element.getBoundingClientRect();
-        let left=Math.max(0,raw.left),top=Math.max(44,raw.top),right=Math.min(innerWidth,raw.right),bottom=Math.min(innerHeight,raw.bottom);
+        let left=Math.max(0,raw.left),top=Math.max(0,raw.top),right=Math.min(innerWidth,raw.right),bottom=Math.min(innerHeight,raw.bottom);
         for(let p=element.parentElement;p&&p!==document.body;p=p.parentElement){const s=getComputedStyle(p),b=p.getBoundingClientRect();if(/hidden|clip|auto|scroll/.test(s.overflowX)){left=Math.max(left,b.left);right=Math.min(right,b.right);}if(/hidden|clip|auto|scroll/.test(s.overflowY)){top=Math.max(top,b.top);bottom=Math.min(bottom,b.bottom);}}
         const r={x:left,y:top,width:right-left,height:bottom-top,bottom},key=[r.x,r.y,r.width,r.height].map(n=>Math.round(n*2)/2).join(',');
         if(last!==key){stableAt=performance.now();last=key;spot.classList.remove('on');}

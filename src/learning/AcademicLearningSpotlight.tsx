@@ -43,7 +43,7 @@ export function AcademicLearningSpotlight({targets,stepKey,children,onPause,labe
    for(const el of layer.current?.querySelectorAll<HTMLElement|SVGElement>('.learning-control-highlight,.learning-guide-arrow')??[])el.style.visibility=changed?'hidden':'';
    if(dirty||performance.now()-lastControls>=150){
     lastControls=performance.now();dirty=false;
-    const available=[...(modal??document).querySelectorAll<HTMLElement>('button,input:not([type="hidden"]),textarea,select,[contenteditable="true"],[role="button"],[role="tab"],.research-composer-shell,[data-message-id]')].filter(el=>!el.closest('[data-learning-guide]')).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];});
+    const available=[...(modal??document).querySelectorAll<HTMLElement>('button,input:not([type="hidden"]),textarea,select,[contenteditable="true"],[role="button"],[role="tab"],.research-composer-shell,[data-message-id],[data-learning-protected]')].filter(el=>!el.closest('[data-learning-guide]')).flatMap(el=>{const r=visibleGuideRect(el);return r?[r]:[];});
     setControls(old=>JSON.stringify(old)===JSON.stringify(available)?old:available);
    }
    setViewport(old=>old.width===window.innerWidth&&old.height===window.innerHeight?old:{width:window.innerWidth,height:window.innerHeight});
@@ -58,7 +58,7 @@ export function AcademicLearningSpotlight({targets,stepKey,children,onPause,labe
   const element=layer.current;if(!element)return;
   const accent=document.querySelector<HTMLElement>('[data-testid="app-shell"]')?.style.getPropertyValue('--vault-accent');if(accent)element.style.setProperty('--vault-accent',accent);
   element.setAttribute('popover','manual');element.showPopover();
-  if(document.activeElement===document.body)card.current?.focus({preventScroll:true});
+  if(document.activeElement===document.body&&anchor?.matches('button,input,textarea,select'))anchor.focus({preventScroll:true});
   const resize=new ResizeObserver(()=>{const element=card.current;if(element){const height=Math.max(element.getBoundingClientRect().height,element.scrollHeight+2);setSize(old=>old.height===height?old:{width:318,height});}});if(card.current)resize.observe(card.current);
   return()=>{resize.disconnect();if(element.matches(':popover-open'))element.hidePopover();};
  },[anchor?.closest('dialog[open],[aria-modal="true"]')]);

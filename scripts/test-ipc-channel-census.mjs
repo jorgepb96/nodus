@@ -8,7 +8,9 @@ import { ipcCensus, mobileOperationCensus } from './ipc-channel-census.mjs';
 const registrySource = fs.readFileSync(new URL('../shared/mobileOperations.ts', import.meta.url), 'utf8');
 const dispatcherSource = fs.readFileSync(new URL('../electron/desktopBridge/operations.ts', import.meta.url), 'utf8');
 const exportsSource = fs.readFileSync(new URL('../electron/desktopBridge/exports.ts', import.meta.url), 'utf8');
-const input = { registrySource, dispatcherSource, exportsSource };
+const databaseActionSource = fs.readFileSync(new URL('../electron/desktopBridge/databaseActionsOperation.ts', import.meta.url), 'utf8');
+const moduleSources = { 'electron/desktopBridge/databaseActionsOperation.ts': databaseActionSource };
+const input = { registrySource, dispatcherSource, exportsSource, moduleSources };
 const parse = (source) => ts.createSourceFile('fixture.ts', source, ts.ScriptTarget.Latest, true);
 const handled = new Set(ipcCensus().handled.map(entry => entry.channel));
 const orphan = census => census.invoked.filter(entry => !handled.has(entry.channel));
@@ -21,9 +23,9 @@ function withoutDirectBranch(method) {
   return dispatcherSource.slice(0, branch.getStart(source)) + dispatcherSource.slice(branch.end);
 }
 
-test('real HTTP dispatcher covers its 20 direct methods without inventing IPC handlers', () => {
+test('real HTTP dispatcher covers its 38 direct methods without inventing IPC handlers', () => {
   const census = mobileOperationCensus(input);
-  assert.equal(census.directMethods.size, 20);
+  assert.equal(census.directMethods.size, 38); // 27 literal routes + 7 DB Set routes + 4 export Set routes.
   for (const method of census.directMethods) {
     assert(census.entries.some(entry => entry.method === method));
     assert(!census.invoked.some(entry => entry.method === method));
@@ -43,6 +45,70 @@ test('literal includes(method) is a direct selector, and removing its branch exp
     assert(!census.directMethods.has(method));
     assert(orphan(census).some(entry => entry.method === method));
   }
+});
+
+test('removing the live visual job branch exposes all three real operations', () => {
+  const census = mobileOperationCensus({ ...input, dispatcherSource: withoutDirectBranch('enrichDocumentVisuals') });
+  for (const method of ['enrichDocumentVisuals', 'undoDocumentVisuals', 'removeDocumentFigure']) {
+    assert(!census.directMethods.has(method));
+    assert(orphan(census).some(entry => entry.method === method));
+  }
+});
+
+test('removing the actual imported Set dispatcher exposes every database route as orphan IPC', () => {
+  const source = parse(dispatcherSource);
+  const execute = source.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'executeMobileOperation');
+  const branch = execute.body.statements.find(node => ts.isIfStatement(node) && ts.isCallExpression(node.expression) && ts.isPropertyAccessExpression(node.expression.expression) && node.expression.expression.name.text === 'has');
+  assert(branch, 'Production Set-selected dispatcher must exist');
+  const database = parse(databaseActionSource);
+  const exportedSet = database.statements.flatMap(node => ts.isVariableStatement(node) ? [...node.declarationList.declarations] : [])
+    .find(node => node.name.getText(database) === branch.expression.expression.expression.getText(source));
+  assert(exportedSet && ts.isNewExpression(exportedSet.initializer));
+  const methods = exportedSet.initializer.arguments[0].elements.map(node => { assert(ts.isStringLiteral(node)); return node.text; });
+  assert.equal(methods.length, 7, 'Inventory must retain the complete real database-action vocabulary');
+  const census = mobileOperationCensus({ ...input, dispatcherSource: dispatcherSource.slice(0, branch.getStart(source)) + dispatcherSource.slice(branch.end) });
+  for (const method of methods) {
+    assert(!census.directMethods.has(method));
+    assert(orphan(census).some(entry => entry.method === method), `Removed Set route ${method} must remain orphaned`);
+  }
+});
+
+test('an exported vocabulary alone is not evidence of a direct export dispatcher', () => {
+  const source = parse(dispatcherSource);
+  const execute = source.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'executeMobileOperation');
+  const branch = execute.body.statements.find(node => ts.isIfStatement(node) && node.expression.getText(source).includes('MOBILE_EXPORT_METHODS.has(method)'));
+  assert(branch);
+  const census = mobileOperationCensus({ ...input, dispatcherSource: dispatcherSource.slice(0, branch.getStart(source)) + dispatcherSource.slice(branch.end) });
+  assert.equal(census.directExports.size, 4);
+  for (const method of census.directExports) {
+    assert(!census.directMethods.has(method));
+    assert(census.invoked.some(entry => entry.method === method), 'A removed direct route must be checked against actual IPC wiring instead');
+  }
+});
+
+test('named import aliases follow the same actual exported Set initializer', () => {
+  const renamed = dispatcherSource.replace('import {MOBILE_DATABASE_ACTION_METHODS,', 'import {MOBILE_DATABASE_ACTION_METHODS as databaseRoutes,')
+    .replace('MOBILE_DATABASE_ACTION_METHODS.has(method)', 'databaseRoutes.has(method)');
+  const original = mobileOperationCensus(input), aliased = mobileOperationCensus({ ...input, dispatcherSource: renamed });
+  assert.deepEqual([...aliased.directMethods].sort(), [...original.directMethods].sort());
+  assert.deepEqual(orphan(aliased), []);
+});
+
+test('Set selectors fail closed for dynamic, mutable, unknown and missing imported vocabularies', () => {
+  const registrySource = "export const MOBILE_OPERATIONS={one:['census:one','corpus'],two:['census:two','corpus']} as const;";
+  const exportsSource = 'export const MOBILE_EXPORT_METHODS=new Set([]);';
+  const dispatcher = initializer => `${initializer}
+export function executeMobileOperation(method:string){if(routes.has(method))return 1;const handler=handlers.get(channel);return handler();}`;
+  const valid = mobileOperationCensus({registrySource,exportsSource,dispatcherSource:dispatcher("const routes=new Set(['one','two']);")});
+  assert.deepEqual([...valid.directMethods], ['one','two']);
+  for (const initializer of ["const routes=new Set(dynamic);", "let routes=new Set(['one']);", "const routes=new Set(['one']);routes.add('two');", "const routes=new Set(['one']);routes.delete('one');", "const routes=new Set(['one']);routes.clear();"]) {
+    assert.throws(()=>mobileOperationCensus({registrySource,exportsSource,dispatcherSource:dispatcher(initializer)}), /literal|mutated/);
+  }
+  assert.throws(()=>mobileOperationCensus({registrySource,exportsSource,dispatcherSource:dispatcher("const routes=new Set(['invented']);")}), /Unknown MOBILE_OPERATIONS method.*invented/);
+  assert.throws(()=>mobileOperationCensus({...input,moduleSources:{}}), /Missing direct mobile Set selector source/);
+  const negated = mobileOperationCensus({registrySource,exportsSource,dispatcherSource:dispatcher("const routes=new Set(['one','two']);").replace('if(routes.has(method))','if(!routes.has(method))')});
+  assert.equal(negated.directMethods.size,0);
+  assert.deepEqual(negated.invoked.map(entry=>entry.method),['one','two']);
 });
 
 test('an invented dispatcher method is rejected rather than treated as a routing exception', () => {

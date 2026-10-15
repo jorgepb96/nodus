@@ -74,14 +74,61 @@ function literalArray(node, label) {
   return node.elements.map(value => value.text);
 }
 
+// Resolve the actual const Set initializer through named relative imports. This
+// reads TypeScript only: importing a dispatcher helper must never execute its DB,
+// provider, or credential dependencies merely to inventory its route vocabulary.
+function literalSetResolver(dispatcher, moduleSources, knownSources = []) {
+  const parsed = new Map([dispatcher, ...knownSources].map(source => [source.fileName, source]));
+  function resolve(name, source, chain = [], imported = false) {
+    const key = `${source.fileName}:${name}`;
+    if (chain.includes(key)) throw new Error(`Cyclic direct mobile Set selector: ${key}`);
+    chain = [...chain, key];
+    for (const statement of source.statements) {
+      if (ts.isVariableStatement(statement)) {
+        const binding = statement.declarationList.declarations.find(node => ts.isIdentifier(node.name) && node.name.text === name);
+        if (!binding) continue;
+        if (!(statement.declarationList.flags & ts.NodeFlags.Const) || !binding.initializer ||
+            imported && !statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) throw new Error(`Direct mobile Set selector must be an exported const literal Set: ${key}`);
+        const value = unwrap(binding.initializer);
+        if (!ts.isNewExpression(value) || !ts.isIdentifier(value.expression) || value.expression.text !== 'Set' || value.arguments?.length !== 1) throw new Error(`Direct mobile Set selector must remain a literal Set: ${key}`);
+        let mutated = false;
+        function visit(node) {
+          if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && ts.isIdentifier(node.expression.expression) && node.expression.expression.text === name && ['add', 'delete', 'clear'].includes(node.expression.name.text)) mutated = true;
+          ts.forEachChild(node, visit);
+        }
+        visit(source);
+        if (mutated) throw new Error(`Direct mobile Set selector is mutated: ${key}`);
+        return literalArray(value.arguments[0], 'Direct mobile Set selector');
+      }
+      if (!ts.isImportDeclaration(statement) || !statement.importClause || statement.importClause.isTypeOnly || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+      const bindings = statement.importClause.namedBindings;
+      const binding = bindings && ts.isNamedImports(bindings) ? bindings.elements.find(node => !node.isTypeOnly && node.name.text === name) : undefined;
+      if (!binding) continue;
+      const specifier = statement.moduleSpecifier.text;
+      if (!specifier.startsWith('.')) throw new Error(`Direct mobile Set selector needs a relative source import: ${key}`);
+      let file = path.posix.normalize(path.posix.join(path.posix.dirname(source.fileName), specifier));
+      if (!file.endsWith('.ts')) file += '.ts';
+      if (file.startsWith('../') || path.posix.isAbsolute(file)) throw new Error(`Direct mobile Set selector escapes repository sources: ${key}`);
+      if (!parsed.has(file)) {
+        const code = moduleSources === undefined ? readFileSync(path.join(repoRoot, file), 'utf8') : moduleSources[file];
+        if (typeof code !== 'string') throw new Error(`Missing direct mobile Set selector source: ${file}`);
+        parsed.set(file, parseTypeScript(file, code));
+      }
+      return resolve(binding.propertyName?.text ?? binding.name.text, parsed.get(file), chain, true);
+    }
+    throw new Error(`Missing direct mobile Set selector: ${key}`);
+  }
+  return name => resolve(name, dispatcher);
+}
+
 // Only a positive selector of the dispatcher's method parameter names a route.
 // Nested callbacks, comments, validation-only branches and post-IPC transforms
 // must not create an apparent direct HTTP implementation.
-function selectedMethods(expression) {
+function selectedMethods(expression, resolveSet) {
   expression = unwrap(expression);
   if (ts.isBinaryExpression(expression)) {
     if ([ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken].includes(expression.operatorToken.kind)) {
-      return [...selectedMethods(expression.left), ...selectedMethods(expression.right)];
+      return [...selectedMethods(expression.left, resolveSet), ...selectedMethods(expression.right, resolveSet)];
     }
     if (expression.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
       for (const [parameter, value] of [[expression.left, expression.right], [expression.right, expression.left]]) {
@@ -93,6 +140,13 @@ function selectedMethods(expression) {
       expression.expression.name.text === 'includes' && expression.arguments.length === 1 &&
       ts.isIdentifier(unwrap(expression.arguments[0])) && unwrap(expression.arguments[0]).text === 'method') {
     return literalArray(expression.expression.expression, 'Direct mobile selector');
+  }
+  if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression) &&
+      expression.expression.name.text === 'has' && expression.arguments.length === 1 &&
+      ts.isIdentifier(unwrap(expression.arguments[0])) && unwrap(expression.arguments[0]).text === 'method') {
+    const receiver = unwrap(expression.expression.expression);
+    if (!ts.isIdentifier(receiver)) throw new Error('Direct mobile Set selector must name a const literal Set.');
+    return resolveSet(receiver.text);
   }
   return [];
 }
@@ -107,7 +161,7 @@ function returnsDirectly(statement) {
 /** Source-injected so regressions can remove real branches without editing the
  * production dispatcher. A mobile entry still requires either a direct route or
  * its actual IPC handler; a label alone is never a routing exception. */
-export function mobileOperationCensus({ registrySource, dispatcherSource, exportsSource }) {
+export function mobileOperationCensus({ registrySource, dispatcherSource, exportsSource, moduleSources }) {
   const registry = declaration(parseTypeScript('shared/mobileOperations.ts', registrySource), 'MOBILE_OPERATIONS');
   if (!ts.isObjectLiteralExpression(registry)) throw new Error('MOBILE_OPERATIONS must remain a literal object.');
   const entries = registry.properties.map(property => {
@@ -118,7 +172,8 @@ export function mobileOperationCensus({ registrySource, dispatcherSource, export
   });
   const names = new Set(entries.map(entry => entry.method));
   if (!entries.length || names.size !== entries.length) throw new Error('The typed mobile operation census is incomplete.');
-  const exportSet = declaration(parseTypeScript('electron/desktopBridge/exports.ts', exportsSource), 'MOBILE_EXPORT_METHODS');
+  const exportsFile = parseTypeScript('electron/desktopBridge/exports.ts', exportsSource);
+  const exportSet = declaration(exportsFile, 'MOBILE_EXPORT_METHODS');
   if (!ts.isNewExpression(exportSet) || !ts.isIdentifier(exportSet.expression) || exportSet.expression.text !== 'Set' || exportSet.arguments?.length !== 1) throw new Error('The direct mobile export vocabulary must remain a literal Set.');
   const directExports = new Set(literalArray(exportSet.arguments[0], 'Direct mobile exports'));
   const dispatcher = parseTypeScript('electron/desktopBridge/operations.ts', dispatcherSource);
@@ -131,16 +186,17 @@ export function mobileOperationCensus({ registrySource, dispatcherSource, export
     node.initializer.expression.expression.text === 'handlers' && node.initializer.expression.name.text === 'get' &&
     node.initializer.arguments.length === 1 && ts.isIdentifier(node.initializer.arguments[0]) && node.initializer.arguments[0].text === 'channel'));
   if (fallback < 0) throw new Error('Cannot identify the IPC fallback boundary in the mobile dispatcher.');
+  for (const method of directExports) if (!names.has(method)) throw new Error(`Unknown MOBILE_OPERATIONS export: ${method}`);
   const directMethods = new Set();
+  const resolveSet = literalSetResolver(dispatcher, moduleSources, [exportsFile]);
   for (const statement of statements.slice(0, fallback)) {
     if (!ts.isIfStatement(statement)) continue;
-    const selected = selectedMethods(statement.expression);
+    const selected = selectedMethods(statement.expression, resolveSet);
     for (const method of selected) if (!names.has(method)) throw new Error(`Unknown MOBILE_OPERATIONS method in HTTP dispatcher: ${method}`);
     if (returnsDirectly(statement.thenStatement)) for (const method of selected) directMethods.add(method);
   }
-  for (const method of directExports) if (!names.has(method)) throw new Error(`Unknown MOBILE_OPERATIONS export: ${method}`);
   return { entries, directMethods, directExports,
-    invoked: entries.filter(entry => !directExports.has(entry.method) && !directMethods.has(entry.method)) };
+    invoked: entries.filter(entry => !directMethods.has(entry.method)) };
 }
 
 let cached = null;

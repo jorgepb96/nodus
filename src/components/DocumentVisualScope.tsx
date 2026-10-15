@@ -34,7 +34,7 @@ function DiscardReasons({ discarded }: { discarded: readonly DocumentVisualDisca
   </ul>;
 }
 
-export function DocumentVisualActions() {
+export function DocumentVisualActions({allowGenerate=true}:{allowGenerate?:boolean}={}) {
   const context = useContext(Context), config = useDocumentSkills();
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [settings, setSettings] = useState<AppSettings | null>(null), [model, setModel] = useState<ModelRef | null>(null);
@@ -76,10 +76,10 @@ export function DocumentVisualActions() {
     finally { setBusy(false); }
   };
   return <div className="document-visual-actions" data-reader-ignore="true">
-    <button type="button" className={actionClass} aria-label={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} title={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} disabled={running} onClick={() => { if (manifest) config.setPolicy(manifest.policy); setOpen(true); }}><Icon name={running ? 'sync' : 'sparkles'} size={16} className={running ? 'animate-spin' : ''} /></button>
-    {running && <button type="button" className={actionClass} aria-label={t('Cancelar')} title={t('Cancelar')} onClick={() => void window.nodus.cancelDocumentVisuals(target).catch(cause=>setError(cause instanceof Error?cause.message:String(cause)))}><Icon name="stop" size={16} /></button>}
+    {allowGenerate&&<button type="button" className={actionClass} aria-label={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} title={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} disabled={running} onClick={() => { if (manifest) config.setPolicy(manifest.policy); setOpen(true); }}><Icon name={running ? 'sync' : 'sparkles'} size={16} className={running ? 'animate-spin' : ''} /></button>}
+    {running && context.canCancel!==false && <button type="button" className={actionClass} aria-label={t('Cancelar')} title={t('Cancelar')} onClick={() => void window.nodus.cancelDocumentVisuals(target).catch(cause=>setError(cause instanceof Error?cause.message:String(cause)))}><Icon name="stop" size={16} /></button>}
     {manifest && !running && context?.canUndo!==false && <button type="button" className={actionClass} aria-label={t('Deshacer enriquecimiento')} title={t('Deshacer enriquecimiento')} onClick={() => void window.nodus.undoDocumentVisuals(target).then(refresh).catch(cause=>setError(cause instanceof Error?cause.message:String(cause)))}><Icon name="undo" size={16} /></button>}
-    {incomplete && !running && <button type="button" className={actionClass} aria-label={t('Reintentar')} title={t('Reintentar')} onClick={() => void run(true)}><Icon name="sync" size={16} /></button>}
+    {allowGenerate && incomplete && !running && <button type="button" className={actionClass} aria-label={t('Reintentar')} title={t('Reintentar')} onClick={() => void run(true)}><Icon name="sync" size={16} /></button>}
     {statusMessage && <>
       <button type="button" className={`${actionClass}${error || incomplete ? ' text-amber-600 dark:text-amber-400' : ''}`} aria-label={statusMessage} title={statusMessage} aria-haspopup="dialog" aria-controls={statusId} onClick={() => statusDialog.current?.showModal()}><Icon name={error || incomplete ? 'alert' : 'info'} size={16} /></button>
       <dialog ref={statusDialog} id={statusId} className="document-visual-status-dialog" aria-labelledby={`${statusId}-title`}>

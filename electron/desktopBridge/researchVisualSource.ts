@@ -1,3 +1,4 @@
+import {canonicalJson} from '../../shared/canonicalJson';
 import type {DocumentVisualCapture} from '../../shared/mobileDocumentVisuals';
 import {createHash} from 'node:crypto';
 import {getDb} from '../db/database';
@@ -9,6 +10,7 @@ import {researchVisualFields} from '../../shared/documentVisualContent';
 
 const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 interface CapturedAsset {id:string;figureId:string;owner:string;mimeType:string;byteCount:number;sha256:string}
+function hasAttachment(nodes:unknown,id:string):boolean{return Array.isArray(nodes)&&nodes.some(node=>node&&typeof node==='object'&&((node as {attachmentId?:unknown}).attachmentId===id||hasAttachment((node as {children?:unknown}).children,id)));}
 /** An explicit source for figure editing, never a prose generation or publication. */
 export function getMobileDeepResearchVisualSource(raw:unknown){
  const input=raw as {reportId?:string};if(!input||typeof input.reportId!=='string'||!uuid.test(input.reportId))throw new Error('invalid_research_visual_source');
@@ -35,13 +37,29 @@ export function getMobileDeepResearchVisualSource(raw:unknown){
 /** Re-resolve the actual source for every bounded read: removed/replaced figures
  * cannot continue to disclose files under a stale source proof. */
 export function readMobileDeepResearchVisualAsset(raw:unknown){
- const input=raw as {reportId:string;captureHash:string;assetId:string;owner:string;offset:number;count:number};
- if(!input||!Number.isSafeInteger(input.offset)||input.offset<0||!Number.isSafeInteger(input.count)||input.count<1||input.count>524288)throw new Error('invalid_research_visual_asset_read');
- const source=getMobileDeepResearchVisualSource({reportId:input.reportId});if(source.captureHash!==input.captureHash)throw new Error('research_visual_source_revision_conflict');
- const asset=source.capture.assets.find(item=>item.id===input.assetId&&item.owner===input.owner);if(!asset||input.offset>asset.byteCount)throw new Error('research_visual_asset_not_captured');
+ const input=raw as {reportId:string;captureHash?:string;expected?:{contentHash:string;revision:string|null;manifestHash:string};assetId:string;owner:string;offset:number;count:number};
+ if(!input||!uuid.test(input.reportId)||!uuid.test(input.assetId)||!/^([a-f0-9]{64})$/.test(input.owner)||!Number.isSafeInteger(input.offset)||input.offset<0||!Number.isSafeInteger(input.count)||input.count<1||input.count>524288)throw new Error('invalid_research_visual_asset_read');
+ const saved=getWritingWorkshopDraft(input.reportId),manifest=readDocumentVisuals(getActiveVault().id,{kind:'deep-research',id:input.reportId});
+ if(!saved||saved.draft.brief.kind!=='deep_research')throw new Error('research_visual_document_missing');
+ const contentHash=createHash('sha256').update(JSON.stringify(researchVisualFields(saved.draft))).digest('hex');
+ let asset:CapturedAsset|undefined;
+ if(input.expected){
+  const expected={contentHash,revision:manifest?.revision??null,manifestHash:createHash('sha256').update(canonicalJson(manifest)).digest('hex')};
+  if(canonicalJson(expected)!==canonicalJson(input.expected))throw new Error('research_visual_source_revision_conflict');
+  const figure=manifest?.figures.find(item=>item.owner===input.owner&&(item.poster===`nodus-image://chat/${input.owner}/${input.assetId}`||hasAttachment(item.view?.nodes,input.assetId)));
+  if(!figure)throw new Error('research_visual_asset_not_captured');
+  const image=getChatImage(`${input.owner}/${input.assetId}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${input.owner}/${input.assetId}`),bytes=image?.blob??file?.blob,mimeType=image?.mime??file?.mimeType;
+  if(!bytes||!mimeType||!['image/png','image/jpeg','image/webp'].includes(mimeType)||bytes.length>8*1024*1024)throw new Error('research_visual_asset_unavailable');
+  asset={id:input.assetId,figureId:figure.id,owner:input.owner,mimeType,byteCount:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+ }else{
+  const capture=input.captureHash?capturedResearchVisualProof(input.reportId,input.captureHash):null;
+  if(!capture||capture.contentHash!==contentHash||canonicalJson(manifest)!==canonicalJson(capture.manifest))throw new Error('research_visual_source_revision_conflict');
+  asset=capture.assets.find(item=>item.id===input.assetId&&item.owner===input.owner);
+ }
+ if(!asset||input.offset>asset.byteCount)throw new Error('research_visual_asset_not_captured');
  const image=getChatImage(`${asset.owner}/${asset.id}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${asset.owner}/${asset.id}`),bytes=image?.blob??file?.blob;
  if(!bytes||bytes.length!==asset.byteCount||createHash('sha256').update(bytes).digest('hex')!==asset.sha256)throw new Error('research_visual_asset_changed');
- return {version:1,assetId:asset.id,offset:input.offset,byteCount:asset.byteCount,base64:bytes.subarray(input.offset,Math.min(input.offset+input.count,bytes.length)).toString('base64')};
+ return {version:1,assetId:asset.id,offset:input.offset,byteCount:asset.byteCount,mimeType:asset.mimeType,sha256:asset.sha256,base64:bytes.subarray(input.offset,Math.min(input.offset+input.count,bytes.length)).toString('base64')};
 }
 
 /** Only captures actually made from this owning vault can authorize legacy

@@ -41,6 +41,7 @@ export function getDocumentVisuals(target: DocumentVisualTarget): DocumentVisual
 }
 const notify = (target: DocumentVisualTarget) => BrowserWindow.getAllWindows().forEach(win => { if (!win.isDestroyed()) win.webContents.send('documentVisuals:changed', target); });
 
+export function isDocumentVisualRunning(target: DocumentVisualTarget): boolean { return running.has(keyFor(target)); }
 export function cancelDocumentVisuals(target: DocumentVisualTarget): void { running.get(keyFor(target))?.abort(); }
 export function undoVisualEnrichment(target: DocumentVisualTarget): DocumentVisualManifest | null {
   if (running.has(keyFor(target))) throw new Error('Cancel the current visual task first.');
@@ -60,7 +61,11 @@ export async function prepareDocumentVisualHints(policy: DocumentSkillPolicy | u
   return preparePortableDocumentVisualHints({ catalog: listDocumentSkills, completeJson, flushPersist: async () => {} }, policy, objective, model, signal);
 }
 
-export async function enrichDocumentVisuals(target: DocumentVisualTarget, policy: DocumentSkillPolicy, request: DocumentVisualEnrichOptions & { hints?: string[]; signal?: AbortSignal } = {}): Promise<DocumentVisualManifest> {
+/** Trusted invocation-local journaling; never accepted from IPC request data. */
+export interface DocumentVisualRuntime {
+  completion?: <T>(kind:'text'|'json'|'resources', input: {options:Omit<import('./aiClient').CallOpts,'signal'>;model?:ModelRef|null}, invoke:()=>Promise<T>)=>Promise<T>;
+}
+export async function enrichDocumentVisuals(target: DocumentVisualTarget, policy: DocumentSkillPolicy, request: DocumentVisualEnrichOptions & { hints?: string[]; signal?: AbortSignal } = {}, runtime:DocumentVisualRuntime = {}): Promise<DocumentVisualManifest> {
   const key = keyFor(target);
   if (running.has(key)) throw new Error('This document already has a visual task.');
   const input = visualDocumentInput(target), vaultId = getActiveVault().id;
@@ -88,7 +93,16 @@ export async function enrichDocumentVisuals(target: DocumentVisualTarget, policy
       },
       persist: writeDocumentVisuals, flushPersist: async () => {},
       retainPrevious: () => retainPreviousVisuals(vaultId, target), notify,
-      completeJson, completeText, executeResources: executeSkillResources, snapshot: snapshotDocumentFigure,
+      completeJson: (options, guard, chosen) => {
+        const {signal: _signal, ...safe} = options;
+        return runtime.completion ? runtime.completion('json',{options:safe,model:chosen},()=>completeJson(options,guard,chosen)) : completeJson(options,guard,chosen);
+      },
+      completeText: (options, chosen) => {
+        const {signal: _signal, ...safe} = options;
+        return runtime.completion ? runtime.completion('text',{options:safe,model:chosen},()=>completeText(options,chosen)) : completeText(options,chosen);
+      }, executeResources: (answer,execution,signal) => runtime.completion
+        ? runtime.completion('resources',{options:{system:'Canonical document resource execution',user:JSON.stringify({answer,owner:execution.owner,version:execution.version,question:execution.question,locale:execution.locale}),maxTokens:0},model},()=>executeSkillResources(answer,execution,signal))
+        : executeSkillResources(answer,execution,signal), snapshot: snapshotDocumentFigure,
       owner: chatAssetOwner, assetVersion: chatAssetVersion,
       clock: () => new Date().toISOString(), id: randomUUID,
       logPipelineInfo, logPipelineWarning, logPipelineFailure,

@@ -9,7 +9,7 @@ import './documentFigures.css';
 
 // Read-only figure rendering is shared with chat. Document mutation callbacks are
 // supplied only by the document controller, keeping them out of Nodi's preload.
-export const DocumentFigureContext = createContext<{ manifest: DocumentVisualManifest | null; target: DocumentVisualTarget; refresh: () => void; canUndo?: boolean; openSource?: (source:string)=>void; removeFigure?: (id: string) => void; downloadOriginal?: (figure: Figure, node: ViewNode) => void; downloadPoster?: (figure: Figure) => void } | null>(null);
+export const DocumentFigureContext = createContext<{ manifest: DocumentVisualManifest | null; target: DocumentVisualTarget; refresh: () => void; canUndo?: boolean; canCancel?: boolean; openSource?: (source:string)=>void; removeFigure?: (id: string) => void; downloadOriginal?: (figure: Figure, node: ViewNode) => void; downloadPoster?: (figure: Figure) => void } | null>(null);
 export function useDocumentFigures(content: string) {
   const context = useContext(DocumentFigureContext);
   const manifest = context?.manifest;

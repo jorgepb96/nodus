@@ -1,3 +1,4 @@
+import {runLiveDocumentVisuals,type LiveVisualMethod} from './liveDocumentVisuals';
 import {mobileStudyKnowledgeSource} from './mobileStudyKnowledge';
 import {getMobileDeepResearchVisualSource,readMobileDeepResearchVisualAsset} from './researchVisualSource';
 import {saveMobileDeepResearchVisuals} from './researchVisualEdits';
@@ -55,6 +56,12 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(['enrichDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method)) {
+    if(args.length!==1||!bridgeJobId||!jobIdentity)throw new Error('job_required');
+    if(!args[0]||typeof args[0]!=='object'||(args[0] as {requestId?:unknown}).requestId!==jobIdentity.idempotencyKey)throw new Error('live_visual_request_identity_conflict');
+    const result=await withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>runLiveDocumentVisuals(method as LiveVisualMethod,args[0],jobIdentity.deviceGrant,domains,progress=>events?.('mobile:documentVisuals:progress',progress),signal),domains)));
+    invalidateLiveCorpus(vaultId);return result;
+  }
   if(MOBILE_DATABASE_ACTION_METHODS.has(method)) {
     if(method!=='getMobileDatabaseActionSource'&&!bridgeJobId)throw new Error('job_required');
     return executeMobileDatabaseAction(vaultId,domains,method,args,jobIdentity,signal,phase=>events?.('mobile:databaseAction:progress',{phase}));

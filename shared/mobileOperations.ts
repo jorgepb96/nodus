@@ -41,6 +41,9 @@ export const MOBILE_OPERATIONS = {
   duplicateMobileStudyDocument: ['study:mobile:duplicate', 'writing'], trashMobileStudyDocument: ['study:mobile:trash', 'writing'],
   listImageModels: ['ai:listImageModels', 'corpus'],
   getAppInfo: ['app:info', 'corpus'],
+  enrichDocumentVisuals: ['mobile:documentVisuals:enrich', 'research-generation'],
+  undoDocumentVisuals: ['mobile:documentVisuals:undo', 'writing'],
+  removeDocumentFigure: ['mobile:documentVisuals:remove', 'writing'],
   getDocumentVisuals: ['documentVisuals:get', 'corpus'],
   getSettings: ['settings:get', 'corpus'],
   listAudioClips: ['audio:listClips', 'corpus'],
@@ -109,7 +112,7 @@ export const MOBILE_OPERATIONS = {
   getMobileDeepResearchSource: ['research:deep:mobile:source', 'corpus'],
   saveMobileDeepResearchReport: ['research:deep:mobile:save', 'writing'],
   getMobileDeepResearchVisualSource: ['research:deep:mobile:visuals:source', 'writing'],
-  readMobileDeepResearchVisualAsset: ['research:deep:mobile:visuals:asset', 'writing'],
+  readMobileDeepResearchVisualAsset: ['research:deep:mobile:visuals:asset', 'corpus'],
   saveMobileDeepResearchVisuals: ['research:deep:mobile:visuals', 'writing'],
   listDeepResearchJobs: ['research:deep:queue:list', 'corpus'], enqueueDeepResearchJob: ['research:deep:queue:enqueue-mobile', 'research-generation'],
   clearFinishedDeepResearchJobs: ['research:deep:queue:clear-mobile', 'research-generation'],
@@ -207,7 +210,7 @@ export const MOBILE_OPERATIONS = {
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'generateMobileDatabaseText','generateMobileDatabaseImage','saveMobileDatabaseGeneratedCell','runMobileDatabaseButton','recoverMobileDatabaseAction','saveMobileDatabaseButtonResult',
-  'runMobileSpaceAction',
+  'runMobileSpaceAction', 'enrichDocumentVisuals', 'undoDocumentVisuals', 'removeDocumentFigure',
   'saveMobileAcademicResult',
   'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',

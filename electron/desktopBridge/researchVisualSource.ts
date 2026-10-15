@@ -1,4 +1,6 @@
+import type {DocumentVisualCapture} from '../../shared/mobileDocumentVisuals';
 import {createHash} from 'node:crypto';
+import {getDb} from '../db/database';
 import {getActiveVault} from '../vaults/vaultRegistry';
 import {getWritingWorkshopDraft} from '../db/writingDraftsRepo';
 import {readDocumentVisuals} from '../capabilities/documentStore';
@@ -26,7 +28,8 @@ export function getMobileDeepResearchVisualSource(raw:unknown){
  }
  const contentHash=createHash('sha256').update(JSON.stringify(researchVisualFields(saved.draft))).digest('hex');
  if(manifest&&manifest.contentHash!==contentHash)throw new Error('research_visual_source_content_conflict');
- const capture={version:1,vaultId,target,contentHash,manifest,assets},captureCanonical=JSON.stringify(capture),captureHash=createHash('sha256').update(captureCanonical).digest('hex');
+ const capture:DocumentVisualCapture={version:1,vaultId,target,contentHash,manifest,assets},captureCanonical=JSON.stringify(capture),captureHash=createHash('sha256').update(captureCanonical).digest('hex');
+ const db=getDb();db.exec('CREATE TABLE IF NOT EXISTS mobile_research_visual_captures(report_id TEXT NOT NULL,capture_hash TEXT NOT NULL,capture_json TEXT NOT NULL,PRIMARY KEY(report_id,capture_hash))');db.prepare('INSERT OR IGNORE INTO mobile_research_visual_captures VALUES(?,?,?)').run(input.reportId,captureHash,captureCanonical);
  return {version:1,vaultId,target,draft:saved.draft,contentHash,expectedRevision:manifest?.revision??null,origin:'desktop-capture',capture,captureCanonical,captureHash};
 }
 /** Re-resolve the actual source for every bounded read: removed/replaced figures
@@ -39,4 +42,13 @@ export function readMobileDeepResearchVisualAsset(raw:unknown){
  const image=getChatImage(`${asset.owner}/${asset.id}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${asset.owner}/${asset.id}`),bytes=image?.blob??file?.blob;
  if(!bytes||bytes.length!==asset.byteCount||createHash('sha256').update(bytes).digest('hex')!==asset.sha256)throw new Error('research_visual_asset_changed');
  return {version:1,assetId:asset.id,offset:input.offset,byteCount:asset.byteCount,base64:bytes.subarray(input.offset,Math.min(input.offset+input.count,bytes.length)).toString('base64')};
+}
+
+/** Only captures actually made from this owning vault can authorize legacy
+ * assets after later visual revisions. No caller-supplied proof is trusted. */
+export function capturedResearchVisualProof(reportId:string,captureHash:string){
+ getDb().exec('CREATE TABLE IF NOT EXISTS mobile_research_visual_captures(report_id TEXT NOT NULL,capture_hash TEXT NOT NULL,capture_json TEXT NOT NULL,PRIMARY KEY(report_id,capture_hash))');
+ const row=getDb().prepare('SELECT capture_json FROM mobile_research_visual_captures WHERE report_id=? AND capture_hash=?').get(reportId,captureHash) as {capture_json:string}|undefined;
+ if(!row)return null;const value=JSON.parse(row.capture_json) as ReturnType<typeof getMobileDeepResearchVisualSource>['capture'];
+ return value.vaultId===getActiveVault().id?value:null;
 }

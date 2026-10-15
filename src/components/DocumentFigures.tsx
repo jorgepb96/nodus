@@ -9,7 +9,7 @@ import './documentFigures.css';
 
 // Read-only figure rendering is shared with chat. Document mutation callbacks are
 // supplied only by the document controller, keeping them out of Nodi's preload.
-export const DocumentFigureContext = createContext<{ manifest: DocumentVisualManifest | null; target: DocumentVisualTarget; refresh: () => void; removeFigure?: (id: string) => void; downloadOriginal?: (figure: Figure, node: ViewNode) => void; downloadPoster?: (figure: Figure) => void } | null>(null);
+export const DocumentFigureContext = createContext<{ manifest: DocumentVisualManifest | null; target: DocumentVisualTarget; refresh: () => void; canUndo?: boolean; openSource?: (source:string)=>void; removeFigure?: (id: string) => void; downloadOriginal?: (figure: Figure, node: ViewNode) => void; downloadPoster?: (figure: Figure) => void } | null>(null);
 export function useDocumentFigures(content: string) {
   const context = useContext(DocumentFigureContext);
   const manifest = context?.manifest;
@@ -47,7 +47,7 @@ export function DocumentFigure({ figure, number, onSource }: { figure: Figure; n
     <button type="button" className="document-figure-preview" onClick={() => setExpanded(!expanded)} aria-label={t('Ampliar imagen')} aria-expanded={expanded}>
       <img src={figure.poster} alt={figure.caption} />
     </button>
-    <figcaption><strong>{t('Figura')} {number}.</strong>{figure.caption}{figure.sources.map((source, index) => <a key={source} href={source} onClick={event => { event.preventDefault(); onSource?.(source); }}> [{index + 1}]</a>)}</figcaption>
+    <figcaption><strong>{t('Figura')} {number}.</strong>{figure.caption}{figure.sources.map((source, index) => <a key={source} href={source} onClick={event => { event.preventDefault(); (onSource??context?.openSource)?.(source); }}> [{index + 1}]</a>)}</figcaption>
     {expanded && figure.view && <div className="document-figure-detail"><CapabilityView view={figure.view} owner={figure.owner} presentation="document" /></div>}
     {expanded && <div className="document-figure-actions"><button type="button" onClick={() => { if(context?.downloadPoster){context.downloadPoster(figure);return;} const link = document.createElement('a'); link.href = figure.poster!; link.download = `figure-${number}.png`; link.click(); }}>{t('Descargar')} PNG</button>{originals.map((node,index) => <button key={index} type="button" onClick={() => download(node)}>{t('Descargar')} {node.kind === 'svg' ? 'SVG' : 'name' in node ? node.name : ''}</button>)}{context?.removeFigure && <button type="button" onClick={() => context.removeFigure?.(figure.id)}>{t('Retirar figura')}</button>}</div>}
   </figure>;

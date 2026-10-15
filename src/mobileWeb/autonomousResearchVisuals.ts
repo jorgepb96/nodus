@@ -8,7 +8,7 @@ import type {ImageProvider,ModelRef,WritingWorkshopDraft} from '@shared/types';
 import {structuredPrompt} from './structuredPrompt';
 import {autonomousDocumentResources,type DocumentResourceAsset} from './autonomousDocumentResources';
 type Call=(method:string,...args:any[])=>Promise<any>;
-type Receipt={id:string;vaultId:string;parentRecordId:string;generationId:string;figureId:string;owner:string;ownerRevision:string;targetId:string;figureKey:string;mimeType:string;byteCount:number;sha256:string};
+type Receipt={id:string;vaultId:string;parentRecordId:string;generationId:string;figureId:string;owner:string;ownerRevision:string;targetId:string;figureKey:string;mimeType:string;byteCount:number;sha256:string;captureHash?:string;derivation?:string};
 export type MobileResearchVisuals=MobileDeepResearchVisuals;
 const visualReport=(checkpoint:MobileDeepResearchCheckpoint)=>checkpoint.report as MobileDeepResearchReport&{mobileVisuals?:MobileResearchVisuals};
 export async function autonomousDocumentSkillCatalog(call:Call):Promise<DocumentSkillOption[]>{
@@ -36,7 +36,7 @@ export async function prepareAutonomousResearchVisuals(call:Call,checkpoint:Mobi
  checkpoint.calls['local:visual-planning']={input:JSON.stringify(checkpoint.request.documentSkills),output:{hints,text:documentVisualPlanningText(documentSkillCatalog(options,checkpoint.request.documentSkills),hints)}};await persist();
 }
 export interface AutonomousVisualExecution {
- generationId:string;entityKey:string;targetId:string;vaultId:string;parentKind:'deepResearch'|'documentVisuals';
+ generationId:string;entityKey:string;targetId:string;vaultId:string;retry?:boolean;parentKind:'deepResearch'|'documentVisuals';
  draft:WritingWorkshopDraft;policy:NonNullable<MobileDeepResearchCheckpoint['request']['documentSkills']>;
  model:ModelRef;thinkingEffort?:MobileDeepResearchCheckpoint['request']['thinkingEffort'];language?:string;journal:DurableMobileCompletionJournal;
  imageModel?:ModelRef;setImageModel:(model:ModelRef)=>void;
@@ -58,7 +58,7 @@ export async function runAutonomousDocumentVisuals(call:Call,execution:Autonomou
  const input={title:execution.draft.title,language:execution.draft.brief.language??execution.language??'en',model,fields:researchVisualFields(execution.draft)},contentHash=sha256Snapshot(input.fields),assets=visuals?.assets??[],adapters=new Map<string,ReturnType<typeof autonomousDocumentResources>>(),rawByHash=new Map<string,string>();
  const complete=visualCompletions(call,journal,execution.generationId,model,execution.thinkingEffort,persist,controller);
  const figureFor=(owner:string)=>{const figure=visuals?.manifest.figures.find(item=>item.owner===owner);if(!figure)throw new Error('document_figure_owner_missing');return figure;};
- const remember=(receipt:Receipt)=>{const value={id:receipt.id.toLowerCase(),owner:receipt.owner,ownerRevision:receipt.ownerRevision,generationId:receipt.targetId,figureId:receipt.figureKey,mimeType:receipt.mimeType,byteCount:receipt.byteCount,sha256:receipt.sha256};if(!assets.some(asset=>asset.id===value.id))assets.push(value);};
+ const remember=(receipt:Receipt)=>{const value={id:receipt.id.toLowerCase(),owner:receipt.owner,ownerRevision:receipt.ownerRevision,generationId:receipt.targetId,figureId:receipt.figureKey,mimeType:receipt.mimeType,byteCount:receipt.byteCount,sha256:receipt.sha256,...(receipt.captureHash?{captureHash:receipt.captureHash}:{}),...(receipt.derivation?{derivation:receipt.derivation}:{})};if(!assets.some(asset=>asset.id===value.id))assets.push(value);};
  const store=async(owner:string,base64:string,mimeType:string,kind:'image'|'file',name:string,metadata:Record<string,string>)=>{
   const figure=figureFor(owner),digest=sha256Snapshot(base64),value=await call('documentFigureStoreAsset',{...scope,figureId:figure.id,owner,base64,mimeType,kind,name,metadata,sourceCompletionRecordId:rawByHash.get(digest)});if(!value?.receipt)throw new Error('invalid_document_figure_asset_receipt');remember(value.receipt);journal.calls[`local:asset:${value.attachmentId}`]={input:JSON.stringify({owner,kind,name,metadata}),output:{receipt:value.receipt,source:value.source}};await persist();return value;
  };
@@ -74,10 +74,10 @@ export async function runAutonomousDocumentVisuals(call:Call,execution:Autonomou
  };
  const host:PortableDocumentVisualHost<{id:string},null>={...complete,input,vaultId,model,catalog:()=>options,previous:previous??null,usage:structuredClone(previous?.usage??{}),registryPins:()=>({registry:{providers:new Map(),fences:new Map(),chatOrder:[],problems:[],revision:1},pins:null}),contentHash:sha256Snapshot,current:()=>!controller.signal.aborted&&sha256Snapshot(researchVisualFields(execution.draft))===contentHash,persist:manifest=>{visuals={manifest,assets};execution.setVisuals(visuals);},flushPersist:persist,retainPrevious:()=>{},notify:()=>{},owner:(surface,conversation,vault)=>sha256Snapshot([surface,vault,conversation]),assetVersion:()=>0,clock:()=>new Date().toISOString(),id:()=>crypto.randomUUID(),logPipelineInfo:()=>{},logPipelineWarning:()=>{},logPipelineFailure:()=>{},
   executeResources:async(answer,execution,signal)=>{try{return await (await adapter(execution.owner,execution.version)).executeResources(answer,execution,signal);}catch(error){adapters.delete(execution.owner);throw error;}},
-  snapshot:async(view,owner)=>{try{const resource=await adapter(owner,0),png=await call('documentFigureSnapshot',{view,owner,assets:resource.assets()});if(typeof png!=='string'||!png.startsWith('data:image/png;base64,'))throw new Error('invalid_document_figure_snapshot');return (await store(owner,png.slice('data:image/png;base64,'.length),'image/png','image','figure.png',{})).source;}finally{adapters.delete(owner);}}
+  snapshot:async(view,owner)=>{try{const figure=figureFor(owner);if(execution.parentKind==='documentVisuals'&&!figure.ownerRevision){const value=await call('documentFigureDerivedPoster',{...scope,figureId:figure.id,owner,view});remember(value.receipt);journal.calls[`local:asset:${value.attachmentId}`]={input:JSON.stringify({owner,kind:'image',name:'figure.png',metadata:{}}),output:{receipt:value.receipt,source:value.source}};await persist();return value.source;}const resource=await adapter(owner,0),png=await call('documentFigureSnapshot',{view,owner,assets:resource.assets()});if(typeof png!=='string'||!png.startsWith('data:image/png;base64,'))throw new Error('invalid_document_figure_snapshot');return (await store(owner,png.slice('data:image/png;base64,'.length),'image/png','image','figure.png',{})).source;}finally{adapters.delete(owner);}}
  };
  const planning=journal.calls['local:visual-planning']?.output as {hints?:string[]}|undefined;
- await enrichPortableDocumentVisuals({kind:'deep-research',id:execution.targetId},policy,host,{model,hints:planning?.hints,retry:!!previous,signal:controller.signal});controller.signal.throwIfAborted();await persist();
+ await enrichPortableDocumentVisuals({kind:'deep-research',id:execution.targetId},policy,host,{model,hints:planning?.hints,retry:execution.retry??!!previous,signal:controller.signal});controller.signal.throwIfAborted();await persist();
 }
 
 export async function publishAutonomousResearchVisualAssets(call:Call,checkpoint:MobileDeepResearchCheckpoint,persist:()=>Promise<void>){

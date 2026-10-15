@@ -16,6 +16,7 @@ export interface MobileDocumentVisualSource {
  capture:DocumentVisualCapture;captureCanonical:string;captureHash:string;
  /** A genuine initial report publication, never an invented receipt. */
  publicationDependency?:{recordId:string;generationId:string};
+ originalReceipts?:unknown[];
 }
 export interface MobileDocumentVisualCheckpoint extends DurableMobileCompletionJournal {
  version:1;kind:'documentVisuals';id:string;entityKey:string;target:MobileDocumentVisualSource['target'];
@@ -24,15 +25,16 @@ export interface MobileDocumentVisualCheckpoint extends DurableMobileCompletionJ
  manifest:DocumentVisualManifest|null;assets:MobileDeepResearchVisuals['assets'];
  policy:DocumentSkillPolicy;model?:ModelRef;imageModel?:ModelRef;
  previous?:{manifest:DocumentVisualManifest|null;assets:MobileDeepResearchVisuals['assets']};
- commands:Array<{id:string;expectedRevision:string|null;visuals:MobileDeepResearchVisuals;state:'pending'|'available'|'blocked';error?:string}>;
+ commands:Array<{id:string;expectedRevision:string|null;visuals:MobileDeepResearchVisuals|null;state:'pending'|'available'|'blocked';error?:string}>;
  recoveryReviewRequired?:boolean;error?:string;
 }
 const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i,hash=/^[a-f0-9]{64}$/;
+export const documentVisualCaptureHash=(canonical:string)=>bytesToHex(sha256(new TextEncoder().encode(canonical)));
 /** Trust only the exact captured source. The duplicate canonical string is small
  * metadata and binds bytes identically across JS and Swift encoders. */
 export function validateMobileDocumentVisualSource(raw:unknown,vaultId:string,reportId:string):MobileDocumentVisualSource {
  const source=raw as MobileDocumentVisualSource;
- if(!source||source.version!==1||source.vaultId!==vaultId||source.target?.kind!=='deep-research'||source.target.id!==reportId||!uuid.test(reportId)||!source.draft||source.draft.brief?.kind!=='deep_research'||!hash.test(source.contentHash)||!['desktop-capture','authored-mobile'].includes(source.origin)||typeof source.captureCanonical!=='string'||!hash.test(source.captureHash)||bytesToHex(sha256(new TextEncoder().encode(source.captureCanonical)))!==source.captureHash)throw new Error('invalid_document_visual_source');
+ if(!source||source.version!==1||source.vaultId!==vaultId||source.target?.kind!=='deep-research'||source.target.id!==reportId||!uuid.test(reportId)||!source.draft||source.draft.brief?.kind!=='deep_research'||!hash.test(source.contentHash)||!['desktop-capture','authored-mobile'].includes(source.origin)||typeof source.captureCanonical!=='string'||!hash.test(source.captureHash)||documentVisualCaptureHash(source.captureCanonical)!==source.captureHash)throw new Error('invalid_document_visual_source');
  const capture=JSON.parse(source.captureCanonical) as DocumentVisualCapture;
  if(bytesToHex(sha256(new TextEncoder().encode(JSON.stringify(researchVisualFields(source.draft)))))!==source.contentHash)throw new Error('document_visual_source_content_conflict');
  if(canonicalJson(capture)!==canonicalJson(source.capture)||capture.version!==1||capture.vaultId!==vaultId||capture.target.kind!=='deep-research'||capture.target.id!==reportId||capture.contentHash!==source.contentHash||!Array.isArray(capture.assets)||source.expectedRevision!==(capture.manifest?.revision??null))throw new Error('invalid_document_visual_capture');

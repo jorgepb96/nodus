@@ -1,3 +1,9 @@
+import {MobileDocumentVisualEditor} from './MobileDocumentVisualEditor';
+import {AutonomousDocumentVisuals} from './autonomousDocumentVisuals';
+import {seedWorkspaceNote} from './workspaceNotes';
+import {studyKnowledgeCopies} from './studyKnowledgeCopy';
+import {MobileStudyIdeas} from './MobileStudyIdeas';
+import {seedStudyKnowledgeNote} from './studyKnowledgeNotes';
 import {autonomousDocumentSkillCatalog} from './autonomousResearchVisuals';
 import {previewMobileCompleteGuide,type MobileCompleteGuideActions} from '@shared/mobileCompleteGuide';
 import {mergeMobileDeepResearchReports} from '@shared/mobileDeepResearchCatalogue';
@@ -59,7 +65,7 @@ import {MobilePageDocument} from './MobilePageDocument';
 import {pageBlocksToMarkdown} from '@shared/pages';
 import {blockNoteToMarkdown} from '@shared/blockNoteDocument';
 
-type Configuration = { initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; surface: 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
+type Configuration = { initialResearchVisualReportId?:string; initialStudyDocumentId?:string; documentDraftScope?:string; initialDatabasePresentation?:MobileDatabasePresentationTarget; initialArgumentSeed?:string; initialArgumentMap?:Awaited<ReturnType<Window['nodus']['buildArgumentMap']>>; pageDownloadedOnly?:boolean; initialPageId?:string; initialDatabaseReportId?:string; device?: 'phone' | 'tablet'; vaultId?:string; surface: 'studyIdeas' | 'databasePresentation' | 'page' | 'graph' | 'dictionary' | 'workspace' | 'studyDocument' | 'argument' | 'deepResearch' | 'databaseResearch' | 'immersion' | 'chat'; live: boolean; executionMode: 'live' | 'autonomous'; theme: string; accent: string; textScale: number; vaultType: string; language: AppSettings['uiLanguage'] };
 const native = window as unknown as {
   nodusMobileConfig: Configuration;
   webkit: { messageHandlers: { nodus: { postMessage(value: unknown): void } } };
@@ -92,6 +98,24 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  if(method==='createNote'){if(args.length!==1)throw new Error('Nota no válida.');return native.nodusMobileCall(method,seedWorkspaceNote(args[0]));}
+  if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId)return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
+  if(method==='getSettings'&&native.nodusMobileConfig.executionMode==='autonomous'&&(native.nodusMobileConfig.initialResearchVisualReportId||(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType))))))return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
+  if(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)))&&native.nodusMobileConfig.executionMode==='autonomous'&&['getStudyWorkspace','listStudyIdeas','getStudyIdeaDetail','getStudyKnowledgeGraph'].includes(method)) {
+    const copy=studyKnowledgeCopies(await native.nodusMobileCall('studyKnowledgeCopy','load'),native.nodusMobileConfig.vaultId??'');
+    if(method==='getStudyWorkspace')return copy.workspace;
+    if(method==='listStudyIdeas')return copy.list(String(args[0]),args[1] as string|undefined);
+    if(method==='getStudyIdeaDetail')return copy.detail(String(args[0]));
+    return copy.graph(String(args[0]));
+  }
+  if(method==='createStudyDocument'&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)))) {
+    window.dispatchEvent(new Event('nodus:mobile-study-note-saving'));
+    let result;
+    try {result=await native.nodusMobileCall(method,seedStudyKnowledgeNote(args[0]));}
+    catch(error){window.dispatchEvent(new CustomEvent('nodus:mobile-study-note-error',{detail:String(error)}));throw error;}
+    window.dispatchEvent(new CustomEvent('nodus:mobile-study-note-saved',{detail:result}));return result;
+  }
+
   const databaseAction=databasePresentationAction(method);
   if(databaseAction){
     if(args.length!==1||!args[0]||typeof args[0]!=='object'||Array.isArray(args[0]))throw new Error('Consulta de base de datos no válida.');
@@ -224,6 +248,7 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
   }
 };
 const subscriptions = native.nodusMobileSubscriptions;
+const documentVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId?new AutonomousDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,native.nodusMobileConfig.vaultId??'',()=>{const target=documentVisualEditor?.checkpoint?.target;if(target)for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener(target);}):null;
 const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();
 const streamMethods = new Set(['generateImmersionSession', ...MOBILE_CHAT_STREAM_METHODS, 'improveStudyText']);
 const streamEvents: Record<string, string> = {
@@ -285,6 +310,14 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
   if (method.startsWith('on')) return (listener: (...args: unknown[]) => void) => {
     const bucket = subscriptions.get(method) ?? new Set(); bucket.add(listener); subscriptions.set(method, bucket);
     return () => bucket.delete(listener);
+  };
+  if(documentVisualEditor&&['getDocumentVisuals','enrichDocumentVisuals','cancelDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))return async(target:{kind:string;id:string},...args:any[])=>{
+    if(target.kind!=='deep-research'||target.id!==documentVisualEditor.checkpoint?.target.id)throw new Error('document_visual_target_conflict');
+    if(method==='getDocumentVisuals')return documentVisualEditor.checkpoint?.manifest??null;
+    if(method==='enrichDocumentVisuals')return documentVisualEditor.enrich(args[0],args[1]);
+    if(method==='cancelDocumentVisuals'){documentVisualEditor.cancel();return null;}
+    if(method==='undoDocumentVisuals')return documentVisualEditor.undo();
+    return documentVisualEditor.remove(args[0]);
   };
   if(method==='listDocumentSkills'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>autonomousDocumentSkillCatalog(call);
   if(method==='enqueueDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous') return (request:Parameters<typeof enqueueAutonomousDeepResearch>[1])=>enqueueAutonomousDeepResearch(call,request,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);for(const listener of subscriptions.get('onWritingDraftsChanged')??[])listener(null);});
@@ -449,13 +482,13 @@ function App() {
     {error && <SurfaceIssue issue={error} />}
     {jobError && <SurfaceIssue issue={jobError} title={t('Estado de los trabajos')} />}
     <div className="mobile-surface-content">
-    {config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
+    {documentVisualEditor ? <MobileDocumentVisualEditor controller={documentVisualEditor} call={call} canGenerate={config.executionMode==='autonomous'}/> : config.surface === 'studyIdeas' ? <MobileStudyIdeas paired={config.live} onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)} vaultId={config.vaultId??null} settings={settings??offlineReadSettings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}} download={(subjectId,days)=>native.nodusMobileCall('studyKnowledgeCopy','download',{subjectId,days})} autonomous={config.executionMode==='autonomous'} navigate={navigate}/> : config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
       ? !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
         : <StudyGraphView mobile settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}
             onFullscreenChange={enabled=>call('surfaceFullscreen',enabled)}
             onOpenMaterial={id=>navigate('studyMaterial',id)} onOpenDocument={id=>navigate('studyDocument',id)}
             onOpenEvidence={(kind,id,location,quote)=>navigate(kind==='material'?'studyMaterial':'studyDocument',id,location,quote)}/>
-      : config.surface === 'graph' ? <StellarWorkspace source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
+      : config.surface === 'graph' ? <StellarWorkspace allowNoteCopy source={source} title="Grafo" onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} onOpenIdea={id => navigate('idea', id)} openEvidence={(id) => navigate('work', id)}/>
       : config.surface==='argument'&&config.initialArgumentMap ? <ArgumentMapView settings={settings??offlineReadSettings} mobile initialMap={config.initialArgumentMap}/>
       : config.surface==='databasePresentation'&&config.initialDatabasePresentation?<MobileDatabasePresentation target={config.initialDatabasePresentation} call={native.nodusMobileCall} downloadedOnly={Boolean(config.pageDownloadedOnly)} phone={config.device==='phone'} onOpen={id=>navigate('databaseRow',id)}/>
       : !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>

@@ -121,7 +121,7 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
 }
 
 export interface MobileDeepResearchCover {model:ModelRef;style:import('./types').DecorativeImageStyle;context:string;prompt:string;bytes:string;mime:string}
-export interface MobileDeepResearchVisuals {manifest:DocumentVisualManifest;assets:Array<{id:string;owner:string;ownerRevision:string;generationId:string;figureId:string;mimeType:string;byteCount:number;sha256:string}>}
+export interface MobileDeepResearchVisuals {manifest:DocumentVisualManifest;assets:Array<{id:string;owner:string;ownerRevision:string;generationId:string;figureId:string;mimeType:string;byteCount:number;sha256:string;captureHash?:string;derivation?:string}>}
 export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover;mobileVisuals?:MobileDeepResearchVisuals};
 
 export function mobileDeepResearchCoverMetadata(cover:MobileDeepResearchCover,id:string,createdAt:string):import('./types').DecorativeImage {

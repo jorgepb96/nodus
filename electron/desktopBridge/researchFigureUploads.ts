@@ -1,3 +1,5 @@
+import {capturedResearchVisualProof} from './researchVisualSource';
+import {readDocumentVisuals} from '../capabilities/documentStore';
 import {app} from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -13,10 +15,16 @@ export class ResearchFigureUploadError extends Error {constructor(readonly statu
 function fail(code:string,status=409):never{throw new ResearchFigureUploadError(status,code);}
 const hash=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 const uuid=(value:unknown):string=>typeof value==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value)?value:fail('invalid_research_figure_identity',400);
-export interface ResearchFigureUploadManifest {version:1;id:string;vaultId:string;generationId:string;figureId:string;ownerRevision:string;owner:string;mimeType:string;byteCount:number;sha256:string;metadata:Record<string,string>}
+export interface ResearchFigureUploadManifest {version:1;id:string;vaultId:string;generationId:string;figureId:string;ownerRevision:string;owner:string;mimeType:string;byteCount:number;sha256:string;metadata:Record<string,string>;captureHash?:string;derivation?:string}
 function validate(raw:unknown,vaultId:string,id:string):ResearchFigureUploadManifest {
  const value=raw as ResearchFigureUploadManifest;if(!value||value.version!==1||value.id!==id||value.vaultId!==vaultId||!Number.isSafeInteger(value.byteCount)||value.byteCount<1||value.byteCount>8*1024*1024||!['image/png','image/jpeg','image/webp'].includes(value.mimeType)||!/^([a-f0-9]{64})$/.test(value.sha256)||!value.metadata||Array.isArray(value.metadata)||Object.entries(value.metadata).some(([k,v])=>k.length>100||typeof v!=='string'||v.length>10000))fail('invalid_research_figure_manifest',400);
- uuid(value.id);uuid(value.generationId);uuid(value.figureId);uuid(value.ownerRevision);
+ uuid(value.id);uuid(value.generationId);uuid(value.figureId);
+ if(value.derivation==='captured-view-poster-v1'){
+  const capture=typeof value.captureHash==='string'?capturedResearchVisualProof(value.generationId,value.captureHash):null,original=capture?.manifest?.figures.find(figure=>figure.id===value.figureId&&figure.owner===value.owner&&!figure.ownerRevision),current=readDocumentVisuals(vaultId,{kind:'deep-research',id:value.generationId})?.figures.find(figure=>figure.id===value.figureId&&figure.owner===value.owner);
+  if(value.ownerRevision!==''||value.mimeType!=='image/png'||!original?.view||!current?.view||canonicalJson(original.view)!==canonicalJson(current.view))fail('research_figure_capture_proof_conflict');
+  return value;
+ }
+ uuid(value.ownerRevision);
  if(value.owner!==chatAssetOwner('document-figure',`deep-research:${value.generationId}:${value.ownerRevision}:${value.figureId}`,vaultId))fail('research_figure_owner_conflict');
  return value;
 }

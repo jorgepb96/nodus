@@ -88,7 +88,7 @@ function Document({input}:{input:Input}){
   useLayoutEffect(()=>{
     root=ref.current;if(!root)return;legacyMigrated=false;searchAim=0;bookmarkAim=0;
     const host=root,controller=new AbortController(),resources=new ReaderResourceQueue(4);
-    window.nodus={readCapabilityMedia:async(source:string)=>{const value=await resources.run(()=>call('image',source,controller.signal),controller.signal),bytes=Uint8Array.from(atob(value.data),c=>c.charCodeAt(0));return {bytes,mimeType:value.mime,info:validateMediaAsset(bytes,value.mime)};},downloadCapabilityFile:async(source:string)=>{send('openImage',{source,title:'Figura'});}} as unknown as typeof window.nodus;
+    window.nodus={openExternal:async(source:string)=>{send('open',source);},readCapabilityMedia:async(source:string)=>{const value=await resources.run(()=>call('image',source,controller.signal),controller.signal),bytes=Uint8Array.from(atob(value.data),c=>c.charCodeAt(0));return {bytes,mimeType:value.mime,info:validateMediaAsset(bytes,value.mime)};},downloadCapabilityFile:async(source:string)=>{send('openImage',{source,title:'Figura'});}} as unknown as typeof window.nodus;
     root.querySelectorAll('.katex-mathml').forEach(node=>node.setAttribute('data-reader-ignore','true'));
     root.querySelectorAll('table').forEach(table=>{const heads=Array.from(table.querySelectorAll('thead th'));if(heads.length>3)table.dataset.mobileColumns=String(heads.length);table.querySelectorAll('tbody tr').forEach(row=>row.querySelectorAll('td').forEach((cell,index)=>cell.setAttribute('data-column-label',heads[index]?.textContent??String(index+1))));});
     const adaptFormulae=formulaExpansionControls(root,value=>send('formula',value));adaptFormulae();
@@ -112,6 +112,7 @@ function Document({input}:{input:Input}){
       }).finally(()=>{loading=false;});};image.addEventListener('nodus-load',load);if(imageObserver)imageObserver.observe(image);else load();
     });
     const clicked=(event:MouseEvent)=>{
+      if(event.defaultPrevented)return;
       if((event.target as HTMLElement).closest('button,img'))return;
       const node=(event.target as HTMLElement).closest('a');
       if(node){const href=node.getAttribute('href');if(!href)return;event.preventDefault();if(href.startsWith('#')){const target=document.getElementById(decodeURIComponent(href.slice(1)));if(target)send('scroll',target.getBoundingClientRect().toJSON());}else send('open',href);return;}

@@ -91,7 +91,7 @@ try{
     console.log(JSON.stringify({settingsCaptured:true}));
    }else if(input.action==='stop'){await close();console.log(JSON.stringify({desktopStopped:true}));}
    else if(input.action==='start'){assert(!app);await launch();}
-   else if(input.action==='quit'){break;}
+   else if(input.action==='quit'){rl.close();break;}
    else throw new Error('unsupported_test_command');
   }catch(error){console.error(JSON.stringify({commandFailed:true,error:error.message}));}
  }

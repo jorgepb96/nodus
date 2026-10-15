@@ -60,7 +60,9 @@ test('language lookup falls back to Spanish and preserves all dynamic values', (
 });
 
 test('the Electron Study engine wires the requested language pack into every phase', async () => {
-  const source = await readFile(path.join(root, 'electron/ai/studyDeepResearch.ts'), 'utf8');
+  const source = await readFile(path.join(root, 'shared/portableStudyDeepResearch.ts'), 'utf8');
+  const binding=await readFile(path.join(root,'electron/ai/studyDeepResearch.ts'),'utf8');
+  assert.match(binding,/portableStudyDeepResearch\(\{completeJson,completeText,retrieveStudyAssistantEntries,listStudyIdeasForSources\}\)/);
   assert.match(source, /from ['"]@shared\/studyDeepResearchPromptPacks['"]/);
   assert.match(source, /studyDeepResearchRulesPromptPack\(language\)/);
   assert.match(source, /\.\.\.copy\.plannerRules/);

@@ -1,3 +1,4 @@
+import {prepareDeepResearchVariantRequest} from '@shared/prepareDeepResearchVariantRequest';
 import {hasMobileCompletionReplay} from './mobileCompletionReplay';
 import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
 import { withJobThinkingEffort } from './thinkingEffort';
@@ -392,21 +393,8 @@ export async function generateDeepResearchPlanPreview(request: DeepResearchReque
   };
 }
 
-async function requestWithCoverageQuestions(
-  request: DeepResearchRequest,
-  model: ModelRef | null,
-  signal?: AbortSignal,
-): Promise<DeepResearchRequest> {
-  signal?.throwIfAborted();
-  if (request.coverageQuestions?.length) {
-    return { ...request, coverageQuestions: request.coverageQuestions.slice(0, MAX_COVERAGE_QUESTIONS) };
-  }
-  const coverageQuestions = await aiDecomposeObjective(request.objective, request.language, model);
-  signal?.throwIfAborted();
-  return {
-    ...request,
-    coverageQuestions,
-  };
+async function requestWithCoverageQuestions(request:DeepResearchRequest,model:ModelRef|null,signal?:AbortSignal):Promise<DeepResearchRequest> {
+  return prepareDeepResearchVariantRequest(request,model,aiDecomposeObjective,signal);
 }
 
 /** Pure characterization seam used by CI to lock old/undefined requests to General. */

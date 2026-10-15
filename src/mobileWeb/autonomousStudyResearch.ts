@@ -1,3 +1,5 @@
+import {prepareDeepResearchVariantRequest} from '@shared/prepareDeepResearchVariantRequest';
+import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
 import {portableStudyDeepResearch,type PortableStudyDeepResearchHost} from '@shared/portableStudyDeepResearch';
 import {captureMobileStudyResearchSources,studyResearchKnowledge,type MobileStudyResearchSource} from '@shared/mobileStudyResearch';
 import {durableDeepResearchCall,type MobileDeepResearchCheckpoint} from '@shared/mobileDeepResearch';
@@ -19,7 +21,8 @@ export async function autonomousStudyResearch(call:Call,checkpoint:MobileDeepRes
  const text:PortableStudyDeepResearchHost['completeText']=(opts,chosen)=>complete(opts,chosen,'text');
  const json:PortableStudyDeepResearchHost['completeJson']=async(opts,guard,chosen)=>{let failure:unknown;for(let attempt=0;attempt<(opts.noRetry?1:3);attempt++){const raw=await complete(opts,chosen,'json',attempt);try{const value=JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,''));if(guard(value))return value;throw new Error('invalid_study_model_response');}catch(error){failure=error;}}throw failure;};
  const engine=portableStudyDeepResearch({completeText:text,completeJson:json,retrieveStudyAssistantEntries:async(query,options,keys=[],limit=18)=>{signal.throwIfAborted();const candidates=studyChatCandidates(copied.entries,options,keys);return orderStudyChatEntries(query,candidates,options,keys,null,limit);},listStudyIdeasForSources:keys=>studyResearchKnowledge(copied,keys)});
- const report=await engine.generateStudyDeepResearchReport(request,model,notify,signal);signal.throwIfAborted();
+ const routed=request.deepResearchVersion==='v2'?await prepareDeepResearchVariantRequest(request,model,portableDeepResearchAI({documentaryEvidence:false,completeText:text,completeJson:json}).aiDecomposeObjective,signal):request;
+ const report=await engine.generateStudyDeepResearchReport(routed,model,notify,signal);signal.throwIfAborted();
  Object.assign(report.meta,{mobileRetrieval:{mode:'lexical',sourceScope:copied.context.sourceScope,preparedSourcesOnly:true}});
  report.draft.generationModel=model;return report;
 }

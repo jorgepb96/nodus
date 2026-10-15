@@ -64,7 +64,10 @@ test('Spanish genealogy contract remains complete and shared narrative rules sta
 });
 
 test('genealogy module is wired to the explicit prompt language and pack stages', () => {
-  const source = fs.readFileSync(path.join(root, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  const desktop = fs.readFileSync(path.join(root, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  assert.match(desktop,/const genealogyEngine=portableGenealogyDeepResearch\(/);
+  assert.match(desktop,/orchestrateGenealogyDeepResearch\(\.\.\.args\)/);
+  const source = desktop+'\n'+fs.readFileSync(path.join(root,'shared/portableGenealogyDeepResearch.ts'),'utf8');
   assert.match(source, /genealogyDeepResearchPromptPack/);
   assert.match(source, /genealogyDeepResearchRuntimeCopy/);
   assert.match(source, /normalizePromptLanguage\(request\.language \?\? getSettings\(\)\.promptLanguage \?\? 'es'\)/);

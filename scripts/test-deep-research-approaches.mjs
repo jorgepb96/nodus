@@ -180,7 +180,9 @@ test('UI, gallery, reader, queue and MCP carry the approach metadata', async () 
 });
 
 test('Teaching keeps the teacher outline and focus after approach rules', async () => {
-  const source = await readFile(path.join(repoRoot, 'electron/ai/studyDeepResearch.ts'), 'utf8');
+  const desktop = await readFile(path.join(repoRoot, 'electron/ai/studyDeepResearch.ts'), 'utf8');
+  assert.match(desktop,/portableStudyDeepResearch\(/);
+  const source=desktop+'\n'+await readFile(path.join(repoRoot,'shared/portableStudyDeepResearch.ts'),'utf8');
   assert.match(source, /\.\.\.\(approachContext\?\.rules\.planner \?\? \[\]\),[\s\S]*\.\.\.\(requestedOutline\.length \? \[FIXED_OUTLINE_RULE\]/);
   assert.match(source, /\.\.\.\(approachContext\?\.rules\.writer \?\? \[\]\),[\s\S]*\.\.\.\(section\.focus \? \[SECTION_FOCUS_RULE\]/);
   assert.match(source, /resolveStudySections\(\{[\s\S]*outline: request\.outline/);
@@ -188,7 +190,9 @@ test('Teaching keeps the teacher outline and focus after approach rules', async 
 });
 
 test('Genealogy keeps its evidence-first and unproven-kinship rules', async () => {
-  const source = await readFile(path.join(repoRoot, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  const desktop = await readFile(path.join(repoRoot, 'electron/ai/genealogyDeepResearch.ts'), 'utf8');
+  assert.match(desktop,/const genealogyEngine=portableGenealogyDeepResearch\(/);
+  const source=desktop+'\n'+await readFile(path.join(repoRoot,'shared/portableGenealogyDeepResearch.ts'),'utf8');
   const promptPacks = await readFile(path.join(repoRoot, 'shared/genealogyDeepResearchPromptPacks.ts'), 'utf8');
   assert.match(source, /genealogyDeepResearchPromptPack/);
   assert.match(promptPacks, /Sigue el estándar de prueba genealógico/);

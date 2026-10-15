@@ -1561,12 +1561,16 @@ try {
       'shared/genealogyDeepResearchPromptPacks.ts',
     ].map((file) => readFile(path.join(repoRoot, file), 'utf8')));
     const portableWriter = await readFile(path.join(repoRoot, 'shared/portableDeepResearchAI.ts'), 'utf8');
+    const genealogyWriter=await readFile(path.join(repoRoot,'shared/portableGenealogyDeepResearch.ts'),'utf8');
+    const studyWriter=await readFile(path.join(repoRoot,'shared/portableStudyDeepResearch.ts'),'utf8');
+    assert.match(sources[1],/const genealogyEngine=portableGenealogyDeepResearch\(/);
+    assert.match(sources[3],/portableStudyDeepResearch\(/);
     assert.match(sources[0], /import\s*\{portableDeepResearchAI\}\s*from '@shared\/portableDeepResearchAI'/, 'the Desktop writer imports the canonical portable stages');
     assert.match(sources[0], /const canonicalAcademicAI = portableDeepResearchAI\(/, 'the Desktop writer constructs the canonical stages');
     assert.match(sources[0], /aiWriteSection[^\n]*= canonicalAcademicAI/, 'the Desktop writer actually delegates section writing');
-    assert.ok([portableWriter, ...sources.slice(1)].every((source) => source.includes('deepResearchNarrativeRules')), 'all effective Deep Research writers share the locale-aware prose contract');
+    assert.ok([portableWriter,genealogyWriter,studyWriter,sources[2]].every((source) => source.includes('deepResearchNarrativeRules')), 'all effective Deep Research writers share the locale-aware prose contract');
     assert.match(portableWriter, /deepResearchWritingPromptPack\(input\.language,/, 'the canonical general writer resolves its native prompt pack');
-    assert.match(sources[1], /genealogyDeepResearchPromptPack/, 'the genealogy writer resolves its native prompt pack');
+    assert.match(genealogyWriter, /genealogyDeepResearchPromptPack/, 'the genealogy writer resolves its native prompt pack');
     assert.match(writingPromptPacks, /valor marginal sea cero/, 'the Spanish general writer stops when evidence adds no new value');
     assert.match(genealogyPromptPacks, /valor probatorio marginal/, 'the Spanish genealogy writer uses the same evidence-driven stopping rule');
     assert.match(DEEP_RESEARCH_NARRATIVE_RULES.join('\n'), /evidencia de un solo lado/iu, 'every writer rejects unilateral agreement and contradiction claims');

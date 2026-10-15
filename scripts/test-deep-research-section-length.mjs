@@ -329,7 +329,9 @@ test('the study, teaching and genealogy writers all receive localized length gui
   const desktop = readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
   assert.match(desktop, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/u);
   assert.match(desktop, /aiWriteSection[^}]*\} = canonicalAcademicAI/u);
-  for (const file of ['electron/ai/studyDeepResearch.ts', 'electron/ai/genealogyDeepResearch.ts', 'shared/portableDeepResearchAI.ts']) {
+  assert.match(readFileSync(path.join(root,'electron/ai/studyDeepResearch.ts'),'utf8'),/portableStudyDeepResearch\(/u);
+  assert.match(readFileSync(path.join(root,'electron/ai/genealogyDeepResearch.ts'),'utf8'),/const genealogyEngine=portableGenealogyDeepResearch\(/u);
+  for (const file of ['shared/portableStudyDeepResearch.ts', 'shared/portableGenealogyDeepResearch.ts', 'shared/portableDeepResearchAI.ts']) {
     const source = readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /deepResearchLengthPromptPack\(/u, `${file}: no localized length pack`);
     assert.match(source, /lengthPack\.section\(/u, `${file}: the section writer gets no length steer`);
@@ -385,7 +387,7 @@ test('the shared control is the single source of truth for every Deep Research s
   ];
   for (const file of surfaces) {
     assert.match(
-      reads(file),
+      file==='electron/ai/genealogyDeepResearch.ts'?reads(file)+'\n'+reads('shared/portableGenealogyDeepResearch.ts'):file==='electron/ai/studyDeepResearch.ts'?reads(file)+'\n'+reads('shared/portableStudyDeepResearch.ts'):reads(file),
       /deepResearchSectionLength|deepResearchLengthPromptPacks|DeepResearchSectionLengthField|sectionLength/u,
       `${file} does not carry the section-length control`,
     );

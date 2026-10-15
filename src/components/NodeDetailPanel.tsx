@@ -461,6 +461,7 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
   const [summaryError,setSummaryError]=useState('');
   const [summaryAttempt,setSummaryAttempt]=useState(0);
   const work = occurrence.work;
+  const mobileHost = ['phone','tablet'].includes((window as unknown as {nodusMobileConfig?:{device?:string}}).nodusMobileConfig?.device ?? '');
   const author = work.authors[0] ?? t('Autor desconocido');
   const year = work.year ?? t('s.f.');
 
@@ -494,7 +495,7 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
           >
             <Icon name="info" size={14} />
           </button>
-          {!readOnly && <button
+          {!readOnly && !mobileHost && <button
             className="inline-flex items-center gap-1 text-indigo-400 text-xs p-1 hover:text-indigo-300"
             title={t('Abrir en Zotero')}
             onClick={() => window.nodus.openInZotero(work.zotero_key)}

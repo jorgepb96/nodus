@@ -423,9 +423,7 @@ export async function orchestrateImmersion(
   const plan: ImmersionPlan = {
     topic: request.topic,
     title: curriculum.title || request.topic,
-    // ImmersionPlan's persisted shared contract predates the extended prompt
-    // language union; retain the wire shape while storing the runtime value.
-    language: language as ImmersionPlan['language'],
+    language,
     minutes: request.minutes,
     generatedAt: new Date().toISOString(),
     model: request.model ?? null,

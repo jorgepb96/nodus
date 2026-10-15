@@ -1,6 +1,8 @@
+import {mobileCompletionReply,memoizedMobileSourceEmbedding,hasMobileCompletionReplay} from './mobileCompletionReplay';
 import { currentResearchRequestBudget, researchPromptUpperBound } from './researchRequestBudget';
 import { documentedContextWindow } from '@shared/providerContextWindows';
 import { withJobThinking } from './thinkingEffort';
+import { generationSignal } from './generationSignal';
 import { researchReasoningBody, researchReasoningProfile, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
 import { getSettings } from '../db/settingsRepo';
 import { documentVisualPlanningPrompt } from './documentVisualContext';
@@ -894,6 +896,7 @@ export async function localModelContextWindow(model: ModelRef): Promise<number |
 /** No catalogue/network discovery is started by retrieval. Unknown windows use
  * a conservative operating cap, not a claim about the provider's model capacity. */
 export async function researchModelContextWindow(model: ModelRef): Promise<{ tokens: number; known: boolean }> {
+  if (hasMobileCompletionReplay()) { const documented = documentedContextWindow(model.provider, model.model); return documented ? {tokens: documented, known: true} : {tokens: 32768, known: false}; }
   const local = await localModelContextWindow(model);
   if (local) return { tokens: local, known: true };
   const advertised = cachedModelContextWindow(model.provider, model.model);
@@ -1284,7 +1287,9 @@ async function rawComplete(
   codexReasoning?: CodexReasoningEffort | null
 ): Promise<string> {
   // A Deep Research or Immersion job carries the thinking level chosen in its form.
-  return rawCompleteTransport(model, withJobThinking(model, opts), jsonMode, reasoning, codexReasoning);
+  const signal = generationSignal(opts.signal);
+  signal?.throwIfAborted();
+  return rawCompleteTransport(model, withJobThinking(model, { ...opts, signal }), jsonMode, reasoning, codexReasoning);
 }
 
 async function rawCompleteTransport(
@@ -1299,6 +1304,8 @@ async function rawCompleteTransport(
   // The public entry points map the opaque codes back after parsing/repair.
   opts = anonymizeCallOpts({ ...opts, system: excludeInvisibleArtifacts(opts.system), user: excludeInvisibleArtifacts(opts.user) }).sent;
   await assertCorpusRequestFits(model, opts);
+  const mobileReply = mobileCompletionReply(model, opts, jsonMode, reasoning);
+  if (mobileReply !== undefined) return mobileReply;
 
   if (model.provider === 'codex') {
     try {
@@ -1980,7 +1987,9 @@ async function rawCompleteStream(
   signal?: AbortSignal,
   codexReasoning?: CodexReasoningEffort | null
 ): Promise<string> {
-  return rawCompleteStreamTransport(model, withJobThinking(model, opts), onDelta, reasoning, signal, codexReasoning);
+  const effectiveSignal = generationSignal(signal);
+  effectiveSignal?.throwIfAborted();
+  return rawCompleteStreamTransport(model, withJobThinking(model, opts), onDelta, reasoning, effectiveSignal, codexReasoning);
 }
 
 async function rawCompleteStreamTransport(
@@ -2525,11 +2534,13 @@ export async function embed(text: string, signal?: AbortSignal, options: Embeddi
   signal?.throwIfAborted();
   const config = options.config ?? effectiveEmbeddingConfig();
   options = { ...options, config };
+  return memoizedMobileSourceEmbedding([config,text.slice(0,8000)],async()=>{
   const { provider, modelId } = config;
   const key = resolveProviderKey(provider);
   if (!key) return null;
   const vectors = await requestEmbeddings(provider, key, modelId, text.slice(0, 8000), signal, options);
   return vectors[0] ?? null;
+  });
 }
 
 function embeddingBatchSize(provider: EmbeddingProvider, modelId: string): number {

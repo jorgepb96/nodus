@@ -6,6 +6,7 @@ import { getIdeaSummary } from '../db/ideasRepo';
 import { getSettings } from '../db/settingsRepo';
 import { completeJson } from './aiClient';
 import { argumentMapPrompt } from '@shared/graphPromptPacks';
+import {finishArgumentGeneration,isArgumentGenerationResponse,type ArgumentGenerationSource} from '@shared/argumentGeneration';
 
 // The argument map is built from the LOCAL subgraph around the seed idea (BFS
 // over real idea↔idea edges), so the model can only reference ideas that
@@ -22,8 +23,6 @@ const AI_MAX_EDGES = 160;
 const STRUCTURAL_MAX_IDEAS = 400;
 const STRUCTURAL_MAX_EDGES = 1200;
 const STATEMENT_CLIP = 220;
-const MAX_BLOCKS = 90;
-const MAX_TREE_DEPTH = 4;
 
 const EDGE_TYPE_LABELS: Record<string, string> = {
   extends: 'extiende',
@@ -126,21 +125,6 @@ function structuralOverview(language: PromptLanguage, degree: number, debates: n
     ko: `자동 둘러보기: 중심 아이디어는 ${degree}개의 연결을 맺고 있습니다${debatePart}. 지도는 가장 강한 ${branches}개의 분기를 펼치고 실제 연결을 따라 각각을 추적합니다.`,
   } as Record<PromptLanguage, string>)[language];
 }
-
-const VALID_RELATIONS = new Set<string>([
-  'extends',
-  'variant_of',
-  'refines',
-  'contradicts',
-  'applies_to',
-  'shares_method',
-  'precondition_of',
-  'measures_same',
-  'supports',
-  'refutes',
-  'related',
-  'framing',
-]);
 
 interface IdeaRow {
   global_id: string;
@@ -276,113 +260,16 @@ function buildLocalSubgraph(seedId: string, maxIdeas = AI_MAX_IDEAS, maxEdges = 
   return { ideas, edges, ideaById, truncated, graphDegree, graphDebate };
 }
 
-interface RawBlock {
-  ideaId?: string;
-  label?: string;
-  summary?: string;
-  relation?: string;
-  children?: RawBlock[];
-}
-
-interface RawResult {
-  overview?: string;
-  root?: RawBlock;
-}
-
-function isRawResult(v: unknown): v is RawResult {
-  return typeof v === 'object' && v !== null && typeof (v as RawResult).root === 'object';
-}
-
-/** Recursively sanitize + ground the model's tree in real idea data. */
-function sanitizeBlock(
-  raw: RawBlock,
-  ideaById: Map<string, IdeaRow>,
-  seedId: string,
-  isRoot: boolean,
-  seenIdeaIds: Set<string>,
-  depth: number,
-  blockCount: { n: number }
-): ArgumentBlock | null {
-  if (blockCount.n >= MAX_BLOCKS) return null;
-  const ideaId = typeof raw.ideaId === 'string' ? raw.ideaId : null;
-
-  // Root must be the seed; non-root blocks must reference a real idea.
-  if (isRoot) {
-    if (ideaId !== seedId) return null;
-  } else if (!ideaId || !ideaById.has(ideaId) || seenIdeaIds.has(ideaId)) {
-    return null;
-  }
-  seenIdeaIds.add(ideaId!);
-  blockCount.n++;
-
-  const idea = ideaById.get(ideaId!)!;
-  const relationRaw = typeof raw.relation === 'string' ? raw.relation : 'related';
-  const relation = (isRoot ? 'root' : VALID_RELATIONS.has(relationRaw) ? relationRaw : 'related') as ArgumentBlock['relation'];
-
-  const children: ArgumentBlock[] = [];
-  if (depth < MAX_TREE_DEPTH && Array.isArray(raw.children)) {
-    for (const childRaw of raw.children) {
-      if (blockCount.n >= MAX_BLOCKS) break;
-      const child = sanitizeBlock(childRaw, ideaById, seedId, false, seenIdeaIds, depth + 1, blockCount);
-      if (child) children.push(child);
-    }
-  }
-
-  return {
-    id: uuid(),
-    ideaId,
-    label: clip(typeof raw.label === 'string' && raw.label.trim() ? raw.label : idea.label, 160),
-    statement: idea.statement,
-    type: idea.type,
-    summary: clip(typeof raw.summary === 'string' ? raw.summary : '', 200),
-    relation,
-    children,
-  };
-}
-
 function countIdeas(block: ArgumentBlock, set = new Set<string>()): Set<string> {
   if (block.ideaId) set.add(block.ideaId);
   for (const c of block.children) countIdeas(c, set);
   return set;
 }
 
-export async function buildArgumentMap(request: ArgumentMapRequest, model?: ModelRef | null): Promise<ArgumentMap> {
-  const language: PromptLanguage = request.language ?? getSettings().promptLanguage ?? 'es';
-  // Automatic mode: build the tree structurally from the real graph edges,
-  // no model needed. Falls through to the AI path otherwise.
-  if (request.mode === 'auto') {
-    return buildStructuralArgumentMap(request.seedIdeaId, language);
-  }
-
-  const { seedIdeaId } = request;
-  const seed = getIdeaSummary(seedIdeaId);
-  if (!seed) throw new Error('La idea indicada no existe en el grafo.');
-
-  const { ideas, edges, ideaById, truncated } = buildLocalSubgraph(seedIdeaId);
-
-  // No connections: return a single-block map so the UI still renders something.
-  if (edges.length === 0 || ideas.length <= 1) {
-    const root: ArgumentBlock = {
-      id: uuid(),
-      ideaId: seed.global_id,
-      label: seed.label,
-      statement: seed.statement,
-      type: seed.type,
-      summary: NO_CONNECTION_COPY[language].summary,
-      relation: 'root',
-      children: [],
-    };
-    return {
-      seedIdeaId: seed.global_id,
-      seedLabel: seed.label,
-      overview: NO_CONNECTION_COPY[language].overview,
-      root,
-      generatedAt: new Date().toISOString(),
-      truncated: false,
-      ideaCount: 1,
-    };
-  }
-
+export function prepareArgumentMapGeneration(request:ArgumentMapRequest):ArgumentGenerationSource {
+  const language=request.language??getSettings().promptLanguage??'es',seedIdeaId=request.seedIdeaId;
+  const seed=getIdeaSummary(seedIdeaId);if(!seed)throw new Error('La idea indicada no existe en el grafo.');
+  const {ideas,edges,truncated}=buildLocalSubgraph(seedIdeaId);
   const ideasPayload = ideas.map((i) => ({
     id: i.global_id,
     type: i.type,
@@ -405,45 +292,16 @@ export async function buildArgumentMap(request: ArgumentMapRequest, model?: Mode
     conexiones: connectionsPayload,
   });
 
-  const result = await completeJson<RawResult>(
-    { system: argumentMapPrompt(language), user, temperature: 0.2, maxTokens: 8000 },
-    isRawResult,
-    model
-  );
+  return {seedIdeaId,seed:{global_id:seed.global_id,label:seed.label,statement:seed.statement,type:seed.type},ideas,truncated,noMaterial:edges.length===0||ideas.length<=1,
+    noConnections:NO_CONNECTION_COPY[language],prompt:{system:argumentMapPrompt(language),user,temperature:0.2,maxTokens:8000}};
+}
 
-  const blockCount = { n: 0 };
-  const root = sanitizeBlock(result.root ?? {}, ideaById, seed.global_id, true, new Set(), 0, blockCount);
-  if (!root) {
-    // Fallback: a single root block if the model output was unusable.
-    return {
-      seedIdeaId: seed.global_id,
-      seedLabel: seed.label,
-      overview: result.overview ? clip(result.overview, 600) : '',
-      root: {
-        id: uuid(),
-        ideaId: seed.global_id,
-        label: seed.label,
-        statement: seed.statement,
-        type: seed.type,
-        summary: '',
-        relation: 'root',
-        children: [],
-      },
-      generatedAt: new Date().toISOString(),
-      truncated,
-      ideaCount: 1,
-    };
-  }
-
-  return {
-    seedIdeaId: seed.global_id,
-    seedLabel: seed.label,
-    overview: clip(result.overview ?? '', 600),
-    root,
-    generatedAt: new Date().toISOString(),
-    truncated,
-    ideaCount: countIdeas(root).size,
-  };
+export async function buildArgumentMap(request:ArgumentMapRequest,model?:ModelRef|null):Promise<ArgumentMap>{
+  const language=request.language??getSettings().promptLanguage??'es';
+  if(request.mode==='auto')return buildStructuralArgumentMap(request.seedIdeaId,language);
+  const source=prepareArgumentMapGeneration(request);
+  const result=source.noMaterial?null:await completeJson(source.prompt,isArgumentGenerationResponse,model);
+  return finishArgumentGeneration(source,result);
 }
 
 // ── Automatic mode: structural discovery + tree (no AI) ───────────────────────

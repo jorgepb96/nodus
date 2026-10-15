@@ -2534,3 +2534,24 @@ Object.assign(DICTIONARY_TRANSLATIONS['zh-TW'] as DictionaryTable, {
   "Realiza una lectura crítica del concepto: supuestos, tensiones internas, ambigüedades, críticas, límites y cuestiones abiertas señaladas por los autores o visibles en la evidencia.":
     "對該概念進行批判性閱讀：作者指出或證據中可見的假設、內部張力、歧義、批評、界限和開放性問題。",
 });
+
+const entryOptionsTranslations = {
+  en: ["Entry options", "Entry synthesis model"],
+  fr: ["Options de l’entrée", "Modèle de synthèse de l’entrée"],
+  de: ["Eintragsoptionen", "Synthesemodell des Eintrags"],
+  pt: ["Opções da entrada", "Modelo de síntese da entrada"],
+  "pt-BR": ["Opções da entrada", "Modelo de síntese da entrada"],
+  it: ["Opzioni della voce", "Modello di sintesi della voce"],
+  tr: ["Girdi seçenekleri", "Girdi sentez modeli"],
+  "zh-CN": ["条目选项", "条目综合模型"],
+  "zh-TW": ["條目選項", "條目綜合模型"],
+  ko: ["항목 옵션", "항목 종합 모델"],
+  ja: ["エントリのオプション", "エントリの統合モデル"],
+} as const;
+for (const language of Object.keys(entryOptionsTranslations) as Array<keyof typeof entryOptionsTranslations>) {
+  const [options, model] = entryOptionsTranslations[language];
+  Object.assign(DICTIONARY_TRANSLATIONS[language], {
+    "Opciones de la entrada": options,
+    "Modelo de síntesis de la entrada": model,
+  });
+}

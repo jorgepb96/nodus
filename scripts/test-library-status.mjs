@@ -312,11 +312,12 @@ test('the Library repairs what is missing across the whole selection', async () 
 });
 
 test('documentary indexing is limited to Deep Research and explicit reader actions', async () => {
-  const [policy, queue, immersion, deepResearch, modal, profile, extractor] = await Promise.all([
+  const [policy, queue, immersion, deepResearch, academicCore, modal, profile, extractor] = await Promise.all([
     readFile(path.join(root, 'shared/documentIndexPolicy.ts'), 'utf8'),
     readFile(path.join(root, 'electron/pipeline/documentIndexQueue.ts'), 'utf8'),
     readFile(path.join(root, 'electron/ai/immersion.ts'), 'utf8'),
     readFile(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8'),
+    readFile(path.join(root, 'shared/portableAcademicDeepResearch.ts'), 'utf8'),
     readFile(path.join(root, 'src/views/WorkStatusModal.tsx'), 'utf8'),
     readFile(path.join(root, 'electron/ai/documentProfile.ts'), 'utf8'),
     readFile(path.join(root, 'electron/extraction/textExtractor.ts'), 'utf8'),
@@ -325,7 +326,10 @@ test('documentary indexing is limited to Deep Research and explicit reader actio
   assert.match(policy, /DOCUMENT_INDEX_MANAGER_VISIBLE = false/);
   assert.match(queue, /DOCUMENT_INDEX_CONTINUOUS_AVAILABLE && settings\.documentIndexingEnabled/);
   assert.doesNotMatch(immersion, /prepareRelevantDocumentProfiles/, 'Immersion may reuse profiles but never creates them');
-  assert.match(deepResearch, /prepareRelevantDocumentProfiles\([\s\S]{0,180}'deep-research'/);
+  assert.match(deepResearch, /portableAcademicDeepResearch\(\{[^}]*prepareRelevantDocumentProfiles/,
+    'Desktop binds its canonical document preparation implementation into the portable academic engine');
+  assert.equal([...academicCore.matchAll(/preparePlanEvidence: \(input\) => prepareRelevantDocumentProfiles\([\s\S]{0,180}'deep-research'/g)].length, 2,
+    'both academic engines prepare evidence only under the explicit Deep Research policy');
   assert.match(modal, /enqueueDocumentProfile\(work\.nodus_id\)/);
   assert.match(profile, /work\.zotero_key\.startsWith\('nodus-library:'\)[\s\S]{0,120}\? null[\s\S]{0,80}getItem/,
     'Nodus-owned Library works bypass the Zotero metadata request');

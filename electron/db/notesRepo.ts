@@ -147,8 +147,12 @@ export function getNoteFolder(id: string): NoteFolder | null {
 }
 
 export function createNoteFolder(input: CreateNoteFolderInput): NoteFolder {
+  return createNoteFolderWithIdentity(input, uuid());
+}
+
+export function createNoteFolderWithIdentity(input: CreateNoteFolderInput, id: string): NoteFolder {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id)) throw new Error('Invalid folder identity');
   const now = new Date().toISOString();
-  const id = uuid();
   const parentId = input.parentId ?? null;
   if (parentId && !getNoteFolder(parentId)) throw new Error('La carpeta destino no existe');
   const name = input.name.trim() || 'Carpeta sin título';
@@ -241,8 +245,13 @@ export function getNote(id: string): Note | null {
 }
 
 export function createNote(input: CreateNoteInput): Note {
+  return createNoteWithIdentity(input, uuid());
+}
+
+/** Internal companion creation keeps its UUID when an acknowledgement is lost. */
+export function createNoteWithIdentity(input: CreateNoteInput, id: string): Note {
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id)) throw new Error('Invalid note identity');
   const now = new Date().toISOString();
-  const id = uuid();
   const folderId = input.folderId ?? null;
   if (folderId && !getNoteFolder(folderId)) throw new Error('La carpeta destino no existe');
   const title = input.title.trim() || 'Nota sin título';

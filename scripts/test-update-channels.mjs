@@ -29,7 +29,7 @@ test.after(() => rm(outDir, { recursive: true, force: true }));
 test('stable is the default preference and the beta choice is app-wide', async () => {
   const [types, defaults, prefs] = await Promise.all([
     read('shared/types.ts'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
   ]);
   assert.match(types, /betaUpdates: boolean/);

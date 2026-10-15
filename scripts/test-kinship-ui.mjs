@@ -13,7 +13,7 @@ const [editor, picker, social, tree, dossier, dossierLayout, people, settings, s
   readFile(path.join(root, 'src/components/PersonDossier.tsx'), 'utf8'),
   readFile(path.join(root, 'src/components/personDossierLayout.ts'), 'utf8'),
   readFile(path.join(root, 'src/views/PersonasView.tsx'), 'utf8'),
-  readFile(path.join(root, 'electron/db/settingsRepo.ts'), 'utf8'),
+  readFile(path.join(root, 'shared/defaultAppSettings.ts'), 'utf8'),
   readFile(path.join(root, 'src/index.css'), 'utf8'),
   readFile(path.join(root, 'shared/treeKinship.ts'), 'utf8'),
   readFile(path.join(root, 'src/views/RelationsView.tsx'), 'utf8'),

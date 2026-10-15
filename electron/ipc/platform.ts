@@ -40,6 +40,7 @@ import { deleteNodusLocalImageModel, downloadNodusLocalImageModel, getNodusLocal
 import { TRANSLATION_LANGUAGES } from '@shared/types';
 import { listLocalAiDiagnostics } from '../ai/localRequestPlanner';
 import { translateMarkdown, titleFromMarkdown } from '../ai/translate';
+import {mobileTranslationContext, mobileTranslationOfflineSource, beginMobileTranslation, saveMobileTranslation, failMobileTranslation} from '../ai/mobileTranslation';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -178,8 +179,8 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     return powerStatus();
   });
   h('desktopBridge:status', async () => desktopBridgeStatus());
-  h('desktopBridge:offer', async (_e, vaultIds: string[], domains: DesktopBridgeDomain[]) =>
-    createDesktopBridgeOffer(vaultIds, domains));
+  h('desktopBridge:offer', async (_e, vaultIds: string[], domains: DesktopBridgeDomain[], renewalPairingId?: string, transport?: 'direct' | 'automatic', options?: {wholeWorkspace?:boolean}) =>
+    createDesktopBridgeOffer(vaultIds, domains, renewalPairingId, transport, options));
   h('desktopBridge:revoke', async (_e, id: string) => {
     revokeDesktopBridgePairing(id);
     return desktopBridgeStatus();
@@ -403,6 +404,11 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
     translationsRepo.listContentTranslations(entityKind, entityId)
   );
   h('translations:get', async (_e, id: string) => translationsRepo.getContentTranslation(id));
+  h('translations:mobile:context', async (_e, request: GenerateTranslationRequest) => mobileTranslationContext(request));
+  h('translations:mobile:offlineSource', async (_e, target) => mobileTranslationOfflineSource(target));
+  h('translations:mobile:begin', async (_e, request: GenerateTranslationRequest) => beginMobileTranslation(request));
+  h('translations:mobile:save', async (_e, input) => saveMobileTranslation(input));
+  h('translations:mobile:fail', async (_e, request: GenerateTranslationRequest, issue: string) => failMobileTranslation(request, issue));
   h('translations:generate', async (_e, request: GenerateTranslationRequest) => {
     const language = TRANSLATION_LANGUAGES.find((l) => l.code === request.language);
     if (!language) throw new Error(`Idioma de traducción no soportado: ${request.language}`);

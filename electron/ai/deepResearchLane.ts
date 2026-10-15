@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import { nodiText } from '@shared/nodiNotifications';
-import { openDbPath } from '../db/database';
+import { openDbPath, scopedDbPath, withVaultDatabase, withoutDatabaseContext } from '../db/database';
+import { withMobileOperation, withDesktopOperation } from '../desktopBridge/executionBoundary';
 import { saveWritingWorkshopDraft } from '../db/writingDraftsRepo';
 import { deleteCompleteGuideRun, saveCompleteGuideArtifacts } from '../db/completeGuideRepo';
 import { seedCompleteGuideFigures } from './completeGuide/figures';
 import { applyDecorativeImageOption } from './decorativeImages';
 import { localizedForUi } from '../ipc/context';
 import { addNotification } from '../notifications';
-import { getActiveVault, listVaults } from '../vaults/vaultRegistry';
+import { getActiveVault, listVaults, withOwningVault, withoutOwningVault } from '../vaults/vaultRegistry';
 import { generateDeepResearchReport } from './deepResearch';
 import {
   configureDeepResearchQueue,
@@ -34,7 +35,7 @@ import {
  */
 function servingVault(): DeepResearchQueueVault {
   const registryActive = getActiveVault();
-  const open = openDbPath();
+  const open = scopedDbPath() ?? openDbPath();
   if (!open) return { id: registryActive.id, name: registryActive.name };
   const match = listVaults().find((vault) => path.resolve(vault.path) === path.resolve(open));
   return match ? { id: match.id, name: match.name } : { id: registryActive.id, name: registryActive.name };
@@ -99,6 +100,9 @@ export function ensureDeepResearchLane(): void {
   if (configured) return;
   configured = true;
   configureDeepResearchQueue({
+    runDesktop: work => withDesktopOperation(() => withoutDatabaseContext(() => withoutOwningVault(work))),
+    executionVault: servingVault,
+    runMobile: (vault, work) => withoutDatabaseContext(() => withOwningVault(vault.id, () => withVaultDatabase(vault.id, () => withMobileOperation(work)))),
     generate: (request, onProgress, signal) => generateDeepResearchReport(request, onProgress, signal),
     saveDraft: ({ report, request, title }) => {
       const saved = saveWritingWorkshopDraft({
@@ -134,7 +138,7 @@ export function ensureDeepResearchLane(): void {
       return saved.id;
     },
     enrichSaved: (id, report, request, signal) => enrichDocumentVisuals({ kind: 'deep-research', id }, request.documentSkills!, { hints: report.draft.documentVisualHints, model: report.draft.generationModel, signal }),
-    activeVault: servingVault,
+    activeVault: () => withoutDatabaseContext(() => withoutOwningVault(servingVault)),
     load: loadDurableQueue,
     persist: persistDurableQueue,
     onChange: (all) => broadcast('research:deep:queue', all),

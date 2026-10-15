@@ -48,7 +48,7 @@ assert.ok(hook.includes('settings[key] ?? (fallbackKey ? settings[fallbackKey] :
 
 const studyModelKeys = ['improveModel', 'questionGenModel', 'gradingModel', 'flashcardModel', 'transcriptionModel'];
 const settingsTypes = await source('shared/types.ts');
-const settingsRepo = await source('electron/db/settingsRepo.ts');
+const defaults = await source('shared/defaultAppSettings.ts');
 const appPrefs = await source('electron/db/appPrefs.ts');
 for (const key of ['synthesisModel', 'sttProvider', 'audioProvider']) {
   assert.ok(appPrefs.includes(`  '${key}',`), `${key} must be shared as a common capability setting`);
@@ -58,18 +58,18 @@ for (const key of ['modelSettingsMode', 'modelSettingsVersion', 'embeddingProvid
 }
 for (const key of studyModelKeys) {
   assert.ok(settingsTypes.includes(`${key}: ModelRef | null`), `${key} must be typed independently`);
-  assert.ok(settingsRepo.includes(`${key}: null`), `${key} must have a backwards-compatible default`);
+  assert.ok(defaults.includes(`${key}: null`), `${key} must have a backwards-compatible default`);
   if (key === 'transcriptionModel') assert.ok(appPrefs.includes(`  '${key}',`), `${key} is an app-wide transcription capability`);
   else assert.ok(!appPrefs.includes(`  '${key}',`), `${key} must remain specific to the active vault`);
   assert.ok(hook.includes(`'${key}'`), `${key} must be accepted by the feature-model hook`);
 }
 for (const key of ['nodiModel']) {
   assert.ok(settingsTypes.includes(`${key}: ModelRef | null`), `${key} must be typed independently`);
-  assert.ok(settingsRepo.includes(`${key}: null`), `${key} must have a backwards-compatible default`);
+  assert.ok(defaults.includes(`${key}: null`), `${key} must have a backwards-compatible default`);
   assert.ok(appPrefs.includes(`'${key}'`), `${key} must follow shared model preferences across vaults`);
 }
 assert.ok(settingsTypes.includes('sttProvider: StudySttProvider'), 'STT backend must be explicit');
-assert.ok(settingsRepo.includes("sttProvider: 'transformers'"), 'STT must default to local ONNX processing');
+assert.ok(defaults.includes("sttProvider: 'transformers'"), 'STT must default to local ONNX processing');
 for (const key of ['sttTransformersModel', 'sttWhisperCppModel', 'sttWhisperCppExecutable']) {
   assert.ok(settingsTypes.includes(`${key}: string`), `${key} must be persisted in settings`);
   assert.ok(appPrefs.includes(`'${key}'`), `${key} must follow app-wide STT preferences`);
@@ -140,6 +140,7 @@ assert.ok((workStatus.match(/El paso falló sin dejar un motivo\./g) ?? []).leng
 const allowedLegacyFiles = new Set([
   'shared/types.ts',
   'electron/db/settingsRepo.ts',
+  'shared/defaultAppSettings.ts',
   'electron/export/exportImport.ts',
   // The Word/LibreOffice bridge keeps this response field as a compatibility wire
   // contract, but derives it from the independent flow models rather than settings.defaultModel.

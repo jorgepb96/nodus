@@ -1311,6 +1311,8 @@ export interface Idea {
   statement: string;
   embedding?: number[] | null;
   created_at: string;
+  /** A mobile-authored text copy has no downloaded canonical neighbourhood. */
+  mobileSourceScope?: 'authoredText';
 }
 
 export interface IdeaOccurrence {
@@ -4772,6 +4774,9 @@ export interface LocalServerStatus {
 }
 
 export type DesktopBridgeDomain =
+  | 'corpus'
+  | 'writing'
+  | 'research-generation'
   | 'testimonies'
   | 'teaching-roster'
   | 'teaching-grades'
@@ -4784,11 +4789,13 @@ export interface DesktopBridgePairingSummary {
   deviceId: string;
   deviceName: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   createdAt: string;
   expiresAt: string | null;
   revokedAt: string | null;
   lastSeenAt: string | null;
+  renewedAt?: string;
 }
 
 export interface DesktopBridgeStatus {
@@ -4797,17 +4804,22 @@ export interface DesktopBridgeStatus {
   origins: string[];
   certificateFingerprint: string | null;
   pairings: DesktopBridgePairingSummary[];
+  relay?: { state: string; origin?: string };
   error: string | null;
 }
 
 export interface DesktopBridgeOffer {
+  renewalPairingId?: string;
   id: string;
   code: string;
   origins: string[];
   certificateFingerprint: string;
   vaultIds: string[];
+  wholeWorkspace?: boolean;
   domains: DesktopBridgeDomain[];
   expiresAt: string;
+  pairingURL: string;
+  qrURL?: string;
 }
 
 /** Which sleep defences are currently held, and whether the platform can hold them. */
@@ -6239,6 +6251,8 @@ export interface ArgumentRouteSuggestion {
 
 /** One persisted chat message. `stats`/`selectionKey`/`error` mirror the in-memory UI message. */
 export interface ChatMessageRecord {
+  /** Original authorship time, retained when the conversation is saved again. */
+  createdAt?: string;
   concilium?: import('./researchConcilium').ConciliumResult;
   attachments?: import('./researchAttachments').ResearchAttachment[];
   id: string;
@@ -6373,6 +6387,8 @@ export interface NoteSource {
   /** Free-form references back to the originating object (idea id, draft title…). */
   ref?: string | null;
   note?: string | null;
+  /** Companion-authored ideas remain consultable in an Auto academic vault. */
+  authoredOn?: 'mobile';
   /** Structured origin for answers captured from any Research chat surface. */
   researchChat?: NoteResearchChatSource | null;
 }
@@ -7370,6 +7386,8 @@ export interface SupportAuditEntry {
 }
 
 export interface WritingWorkshopDraft {
+  /** A device publication receipt is distinct from generated citations or quality checks. */
+  mobileGenerationReceipt?: {requestId: string; inputHash: string; sourceScope: 'linked_corpus' | 'device_downloads'};
   claimLedger?: import('./researchClaimAudit').ResearchClaimRecord[];
   researchTraversal?: import('./researchCorpus').ResearchTraversal;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
@@ -7672,7 +7690,7 @@ export interface DeepResearchProgress {
 export type DeepResearchJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 /** Who asked for a queued report: the Nodus window, or an MCP client. */
-export type DeepResearchJobOrigin = 'app' | 'mcp';
+export type DeepResearchJobOrigin = 'app' | 'mcp' | 'mobile';
 
 /**
  * One report in the single generation lane (electron/ai/deepResearchQueue.ts), as seen
@@ -7682,6 +7700,8 @@ export type DeepResearchJobOrigin = 'app' | 'mcp';
 export interface DeepResearchJobRecord {
   id: string;
   origin: DeepResearchJobOrigin;
+  /** Trusted private Bridge job identity; links its durable request to this lane. */
+  bridgeJobId?: string;
   vaultId: string;
   vaultName: string;
   objective: string;
@@ -8201,6 +8221,7 @@ export interface StudySession {
 
 export interface ImmersionScopeRequest {
   topic: string;
+  language?: PromptLanguage;
   /** Chosen time budget, so the station estimate matches the depth tier. */
   minutes?: number;
 }
@@ -8257,7 +8278,7 @@ export interface ImmersionScope {
 export interface ImmersionRequest {
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
   topic: string;
-  language?: 'es' | 'en';
+  language?: PromptLanguage;
   /** Total time budget for the whole immersion, in minutes. */
   minutes: number;
   /** Whether stations and the final exam carry retrieval questions (always skippable). */
@@ -8393,7 +8414,7 @@ export interface ImmersionPlan {
   documentVisualHints?: string[];
   topic: string;
   title: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   generatedAt: string;
   model: ModelRef | null;
@@ -8442,7 +8463,7 @@ export interface ImmersionProgress {
 export interface ImmersionSession {
   id: string;
   topic: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   model: ModelRef | null;
   plan: ImmersionPlan;
@@ -8456,7 +8477,7 @@ export interface ImmersionSessionSummary {
   id: string;
   topic: string;
   title: string;
-  language: 'es' | 'en';
+  language: PromptLanguage;
   minutes: number;
   stats: ImmersionPlanStats;
   progressPct: number;

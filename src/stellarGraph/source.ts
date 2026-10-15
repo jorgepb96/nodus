@@ -16,6 +16,8 @@ export interface StellarGraphSource {
   edge?(id: string): Promise<EdgeDetail | null>;
   restore?(): Promise<StellarSession | null>;
   save?(state: StellarSession): Promise<void>;
+  /** Drop derived data after the linked corpus changes, keeping the source identity. */
+  invalidate?(): void;
 }
 export function cleanGraph(data: GraphData): GraphData {
   const nodes = data.nodes.filter(
@@ -34,10 +36,19 @@ export function memorySource(
   get: () => Promise<GraphData>,
 ): StellarGraphSource {
   let cached: Promise<GraphData> | undefined;
+  const graphData = () => {
+    if (!cached) {
+      const pending = get().then(cleanGraph);
+      cached = pending;
+      void pending.catch(() => { if (cached === pending) cached = undefined; });
+    }
+    return cached;
+  };
   return {
     key,
+    invalidate() { cached = undefined; },
     async page(req) {
-      const graph = await (cached ??= get().then(cleanGraph));
+      const graph = await graphData();
       let ns = graph.nodes,
         es = graph.edges;
       if (req.kind === "search") {
@@ -88,7 +99,7 @@ export function memorySource(
       };
     },
     async themes() {
-      const graph = await (cached ??= get().then(cleanGraph));
+      const graph = await graphData();
       const counts = new Map<string, number>();
       const works = new Map<string, Set<string>>();
       for (const node of graph.nodes)
@@ -166,5 +177,6 @@ export function workScopedSource(source: StellarGraphSource, workId: string): St
     } while (cursor !== null);
     return { nodes: [...nodes.values()], edges: [...edges.values()] };
   });
-  return { ...source, ...scoped, themes: undefined };
+  return { ...source, ...scoped, themes: undefined,
+    invalidate() { source.invalidate?.(); scoped.invalidate?.(); } };
 }

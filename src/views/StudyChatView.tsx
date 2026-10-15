@@ -47,8 +47,8 @@ const COPY: Record<StudyChatVariant, {
 };
 
 export function StudyChatView({ settings, onOpenDocument, onOpenMaterial, onOpenRecording, initialPrompt, conversationTarget, onOpenSavedNote, variant = 'study' }: {
-  settings: AppSettings; onOpenDocument: (id: string) => void; onOpenMaterial: (id: string, location?: StudySearchLocation | null) => void;
-  onOpenRecording: (id: string, timestamp?: number | null) => void; initialPrompt?: string | null; conversationTarget?: ResearchConversationNavigationTarget | null; onOpenSavedNote?: (id: string) => void; variant?: StudyChatVariant;
+  settings: AppSettings; onOpenDocument: (id: string, location?: StudySearchLocation) => void; onOpenMaterial: (id: string, location?: StudySearchLocation | null) => void;
+  onOpenRecording: (id: string, timestamp?: number | null, location?: StudySearchLocation) => void; initialPrompt?: string | null; conversationTarget?: ResearchConversationNavigationTarget | null; onOpenSavedNote?: (id: string) => void; variant?: StudyChatVariant;
 }) {
   const copy = COPY[variant];
   const [selection, setSelection] = useState<StudyAssistantSelection>(() => ({ ...DEFAULT_STUDY_ASSISTANT_SELECTION, sourceKeys: [] }));
@@ -65,9 +65,9 @@ export function StudyChatView({ settings, onOpenDocument, onOpenMaterial, onOpen
   // makes the click land on the quoted passage instead of the first page of the
   // material.
   const openCitation = (citation: StudyAssistantCitation) => {
-    if (citation.kind === 'document' && citation.location.documentId) onOpenDocument(citation.location.documentId);
+    if (citation.kind === 'document' && citation.location.documentId) onOpenDocument(citation.location.documentId,citation.location);
     else if (citation.kind === 'material' && citation.location.materialId) onOpenMaterial(citation.location.materialId, citation.location);
-    else if (citation.kind === 'transcript' && citation.location.recordingId) onOpenRecording(citation.location.recordingId, citation.location.timestampSeconds);
+    else if (citation.kind === 'transcript' && citation.location.recordingId) onOpenRecording(citation.location.recordingId, citation.location.timestampSeconds,citation.location);
   };
   const toNative = (message: ResearchUiMessage) => ({ ...message.study, id: message.id, role: message.role, content: message.content, createdAt: message.study?.createdAt ?? new Date().toISOString(), error: message.error, interrupted: message.interrupted, attachments: message.attachments, selectionKey: message.selectionKey });
   const adapter: ResearchChatAdapter = {

@@ -30,6 +30,7 @@ import {
   deleteAudioClipsForEntity,
   insertAudioClip,
   listAudioClips,
+  getAudioClip,
 } from '../db/audioClipsRepo';
 
 // ── Segmentation ─────────────────────────────────────────────────────────────
@@ -242,6 +243,11 @@ export function audioClipPath(id: string): string | null {
   const study = readStudyAudioStore().clips.find((clip) => clip.id === id);
   const row = study ? { file_name: study.fileName } : getDb().prepare('SELECT file_name FROM audio_clips WHERE id = ?').get(id) as { file_name: string } | undefined;
   if (!row) return null; const full = audioFilePath(row.file_name); return fs.existsSync(full) ? full : null;
+}
+
+/** Resolve only a clip registered in the currently owned vault. */
+export function registeredAudioClip(id: string): AudioClip | null {
+  return readStudyAudioStore().clips.find(clip => clip.id === id) ?? getAudioClip(id);
 }
 
 export function listStudyAudioBookmarks(kind: AudioEntityKind, id: string): StudyAudioBookmark[] {

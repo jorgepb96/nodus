@@ -172,7 +172,9 @@ test('no label inside the queue panel is left as a bare literal', () => {
   assert.match(read('src/components/ZoteroImportProgressBar.tsx'), /\{t\('Zotero'\)\}/);
   assert.doesNotMatch(read('src/components/ZoteroImportProgressBar.tsx'), /text-amber-500">Zotero</);
   assert.match(read('src/components/NotificationsPanel.tsx'), /\{t\('Nodus Radar'\)\}/);
-  assert.match(read('src/components/DeepResearchQueueStrip.tsx'), /\{t\('MCP'\)\}/);
+  const strip = read('src/components/DeepResearchQueueStrip.tsx');
+  assert.match(strip, /origin === 'mobile' \? t\('Móvil'\) : t\('MCP'\)/);
+  assert.match(strip, /item\.origin !== 'app' && <OriginBadge origin=\{item\.origin\}/);
   const tasks = read('src/components/AdditionalQueueTasks.tsx');
   assert.match(tasks, /t\('Nodus Convert'\)/);
   assert.match(tasks, /t\('Nodus Translate'\)/);

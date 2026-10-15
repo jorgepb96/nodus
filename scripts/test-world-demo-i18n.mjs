@@ -139,7 +139,13 @@ test('all Worldbuilding AI entry points use a native operation prompt in the sel
   ]) {
     const source = await readFile(path.join(repoRoot, relative), 'utf8');
     assert.match(source, /world(?:OperationSystemPrompt|CharacterInterviewPrompt)\(/, `${relative} misses the native prompt contract`);
-    assert.match(source, /settings\.promptLanguage/, `${relative} ignores the selected prompt language`);
+    if (relative === 'electron/ai/worldProseReview.ts') {
+      assert.match(source, /requestedLanguage\?:PromptLanguage/);
+      assert.match(source, /const language = requestedLanguage \?\? getSettings\(\)\.promptLanguage \?\? 'es'/, 'portable capture uses its explicit language or the configured fallback');
+      assert.match(source, /worldOperationSystemPrompt\('proseReview', language\)/);
+    } else {
+      assert.match(source, /settings\.promptLanguage/, `${relative} ignores the selected prompt language`);
+    }
   }
   const helper = await readFile(path.join(repoRoot, 'shared/worldOperationPrompts.ts'), 'utf8');
   // Prompt packs are keyed by PromptLanguage, a wider union than the interface: the

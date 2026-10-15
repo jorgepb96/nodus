@@ -6,7 +6,7 @@ import os from 'node:os';import path from 'node:path';
 const tmp=await mkdtemp(path.join(os.tmpdir(),'stellar-tests-'));
 await build({entryPoints:['src/stellarGraph/context.ts','src/stellarGraph/exploration.ts','src/stellarGraph/source.ts','src/stellarGraph/layout.ts','src/stellarGraph/themes.ts','src/stellarGraph/forceLayout.ts'],outdir:tmp,bundle:true,platform:'node',format:'esm',outExtension:{'.js':'.mjs'}});
 const {Exploration}=await import(path.join(tmp,'exploration.mjs'));
-const {memorySource}=await import(path.join(tmp,'source.mjs'));
+const {memorySource,workScopedSource}=await import(path.join(tmp,'source.mjs'));
 const {placeNodes,isLegacyLinearLayout}=await import(path.join(tmp,'layout.mjs'));
 const {capRelations,sortThemes,neighbourhood,themeConstellation,THEME_SQUASH}=await import(path.join(tmp,'themes.mjs'));
 const {forceLayout}=await import(path.join(tmp,'forceLayout.mjs'));
@@ -14,6 +14,29 @@ const node=id=>({id,label:id,type:'claim',workCount:1,workIds:id==='outside'?['w
 const edge=(id,source,target)=>({id,source,target,type:'supports',basis:'explicit',confidence:.8});
 const graph={nodes:['a','b','c','d','isolated','outside'].map(node),edges:[edge('1','a','b'),edge('2','a','c'),edge('3','b','d'),edge('4','c','d'),edge('5','d','a'),edge('6','outside','d'),{...edge('7','a','b'),type:'contains'}]};
 const source=()=>memorySource('test',async()=>graph);
+test('a reconnected corpus refreshes a work graph without changing its saved exploration',async()=>{
+ let current={nodes:[{...node('a'),themes:['Before']},node('b')],edges:[edge('ab','a','b')]},reads=0;
+ const base=memorySource('companion',async()=>{reads++;return current;});
+ const scoped=workScopedSource(base,'w1');
+ const exploration=new Exploration(scoped);await exploration.add('a',25);
+ const saved={version:1,seeds:[...exploration.seeds],pinnedNodes:[...exploration.baselineNodes],history:[...exploration.history],cursor:exploration.cursor,activeSeed:exploration.activeSeed,camera:{x:90,y:120,zoom:1.1},positions:{a:{x:4,y:8}}};
+ assert.equal(reads,1);assert.equal((await base.themes())[0].label,'Before');
+ current={nodes:[{...node('a'),label:'Edited on Mac',themes:['After']},node('c')],edges:[edge('ac','a','c')]};
+ scoped.invalidate();
+ const restored=new Exploration(scoped);await restored.restore(saved);
+ assert.equal(restored.nodes.get('a').label,'Edited on Mac');
+ assert.deepEqual(restored.seeds,['a']);assert.ok(!restored.edges.has('ab'));
+ assert.deepEqual(saved.camera,{x:90,y:120,zoom:1.1});
+ assert.equal((await base.themes())[0].label,'After');
+ await restored.add('a',25);assert.ok(restored.visible().nodes.some(n=>n.id==='c'));
+ assert.equal(reads,2,'themes and all paginated work queries share the fresh corpus');
+});
+test('a temporary graph transport failure can be retried without a remount',async()=>{
+ let attempts=0;const source=memorySource('retry',async()=>{if(++attempts===1)throw new Error('offline');return graph;});
+ await assert.rejects(source.page({kind:'search'}),/offline/);
+ assert.equal((await source.page({kind:'search'})).total,graph.nodes.length);
+ assert.equal(attempts,2);
+});
 test('unique breadth-first relations, cycles, incoming edges, and rewind',async()=>{const e=new Exploration(source());e.ingest({nodes:[node('a')],edges:[]});e.start('a');const order=[];for(let x=await e.next();x;x=await e.next())order.push(x.id);assert.deepEqual(order,['1','2','5','7','3','4','6']);assert.equal(e.visible().nodes.length,5);e.previous();assert.equal(e.visible().nodes.length,4);assert.equal((await e.next()).id,'6');assert.equal(e.visible().nodes.length,5);});
 test('work baseline includes isolated ideas and only internal links, reroot keeps baseline',async()=>{const e=new Exploration(source());await e.baseline('w1');assert.equal(e.visible().nodes.length,5);assert.equal(e.visible().edges.length,6);e.start('a');assert.equal((await e.next()).id,'6');e.previous();assert.equal(e.visible().nodes.length,5);assert.equal(e.visible().edges.length,6);});
 test('multiple seeds retain history; restoring revalidates deletions',async()=>{const e=new Exploration(source());e.ingest({nodes:[node('a')],edges:[]});e.start('a');await e.next();e.start('b');await e.next();assert.equal(e.history.length,2);const restored=new Exploration(source());await restored.restore({version:1,seeds:e.seeds,activeSeed:'b',history:[...e.history,'deleted'],cursor:3});assert.deepEqual(restored.history,e.history);assert.equal(restored.cursor,2);});

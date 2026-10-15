@@ -98,6 +98,8 @@ interface WorkshopSemanticRanking {
 export type WorkshopRetrievalMode = 'hierarchical' | 'idea_first' | 'legacy';
 
 interface WorkshopSnapshotOptions {
+  /** A device-owned provider may read the stored corpus without invoking a Mac provider. */
+  lexicalOnly?: boolean;
   /**
    * `idea_first` deliberately recreates the pre-document retrieval boundary for
    * Deep Research planning: idea/work vectors may rank the graph, but document
@@ -186,7 +188,9 @@ export async function buildWritingWorkshopSnapshot(
     : `${brief.objective} ${kindLabel(brief.kind)}`;
   const tokens = tokenize(lexicalQuery);
   const retrievalMode = options.retrievalMode ?? 'hierarchical';
-  const semantic = await buildSemanticRanking([brief.objective, ...extraProbes], retrievalMode);
+  const semantic: WorkshopSemanticRanking = options.lexicalOnly
+    ? { active: false, ideaScores: new Map(), workScores: new Map(), passages: [] }
+    : await buildSemanticRanking([brief.objective, ...extraProbes], retrievalMode);
   const ideas = rankedIdeas(tokens, semantic);
   const themes = rankedThemes(tokens, semantic);
   const gaps = rankedGaps(tokens, brief.kind, semantic);
@@ -1118,8 +1122,8 @@ function normalizeSelection(selection: WritingWorkshopSelection, fallback: Writi
   };
 }
 
-async function buildSelectedContext(brief: WritingWorkshopBrief, selection: WritingWorkshopSelection, contextRule = writingWorkshopPromptPack('es').contextRule): Promise<WorkshopContext> {
-  const passages = await selectedPassagesForDraft(brief.objective, selection);
+async function buildSelectedContext(brief: WritingWorkshopBrief, selection: WritingWorkshopSelection, contextRule = writingWorkshopPromptPack('es').contextRule, selectedOnly = false): Promise<WorkshopContext> {
+  const passages = selectedOnly ? selectedPassages(selection.passageIds) : await selectedPassagesForDraft(brief.objective, selection);
   const context = {
     brief: {
       tipo: kindLabel(brief.kind),
@@ -1138,7 +1142,7 @@ async function buildSelectedContext(brief: WritingWorkshopBrief, selection: Writ
     regla: contextRule,
   };
   const raw = JSON.stringify(context);
-  const truncated = raw.length > MAX_CONTEXT_CHARS;
+  const truncated = !selectedOnly && raw.length > MAX_CONTEXT_CHARS;
   const payload = truncated ? trimContext(context) : context;
   const contextChars = JSON.stringify(payload).length;
   return {
@@ -1155,6 +1159,27 @@ async function buildSelectedContext(brief: WritingWorkshopBrief, selection: Writ
       truncated,
     },
   };
+}
+
+/** Portable preparation shares Desktop's selected-source projection without
+ * running snapshot recommendations or semantic retrieval on the Mac. */
+export async function selectedWritingWorkshopMaterial(selection: WritingWorkshopSelection, language: import('@shared/types').PromptLanguage) {
+  citationLabelCache.clear();
+  const prompt = writingWorkshopPromptPack(language);
+  const context = await buildSelectedContext({kind: 'literature_review', objective: ''}, selection, prompt.contextRule, true);
+  const {brief: _brief, regla: _rule, ...material} = context.payload;
+  return material;
+}
+
+/** Publication validates device prose with the same citation policy as Desktop.
+ * It does not invoke the provider or repeat generation. */
+export function finishMobileWritingWorkshop(raw: string, brief: WritingWorkshopBrief, selection: WritingWorkshopSelection,
+  payload: Record<string, unknown>, stats: WritingWorkshopDraft['stats'], language: import('@shared/types').PromptLanguage): WritingWorkshopDraft {
+  const envelope = raw.trim().match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i);
+  const value: unknown = JSON.parse(envelope ? envelope[1] : raw);
+  if (!isAiWorkshopResult(value)) throw new Error('invalid_workshop_generation_result');
+  citationLabelCache.clear();
+  return sanitizeDraft(value, brief, selection, {payload, stats}, writingWorkshopPromptPack(language).fallback);
 }
 
 function selectedIdeas(ids: string[]) {

@@ -99,9 +99,14 @@ test('the scan queue, the text extractor and the figure analysis all report', ()
     assert.ok(extractor.includes(reason), `the extractor must record ${reason}`);
   }
 
-  const visuals = read('electron/ai/documentVisuals.ts');
-  assert.match(visuals, /logPipelineFailure\(\{\s*error,\s*code: 'extract_failed',\s*subject: 'subjectFigureAnalysis',/,
+  const adapter = read('electron/ai/documentVisuals.ts');
+  assert.match(adapter, /return await enrichPortableDocumentVisuals\(target, policy, \{[\s\S]*?logPipelineInfo, logPipelineWarning, logPipelineFailure,/,
+    'the Desktop adapter must wire the real pipeline log into the canonical visual loop');
+  const visuals = read('shared/portableDocumentVisuals.ts');
+  assert.match(visuals, /host\.logPipelineFailure\(\{\s*error,\s*code: 'extract_failed',\s*subject: 'subjectFigureAnalysis',/,
     'a figure that fails must say which brief and which document');
+  assert.match(visuals, /documentTitle: figure\.caption \?\? null, jobId: figure\.id,[\s\S]*?detail: figure\.brief,/,
+    'the canonical figure failure must retain its document, figure identity and brief');
 });
 
 test('uncaught failures are recorded too, and the log is wired into the app’s lifecycle', () => {

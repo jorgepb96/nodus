@@ -8,10 +8,11 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const read = (file) => readFile(path.join(repoRoot, file), 'utf8');
 
 test('cleanup is opt-in, app-wide and has a conservative default horizon', async () => {
-  const [types, defaults, prefs] = await Promise.all([
+  const [types, defaults, prefs, repository] = await Promise.all([
     read('shared/types.ts'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
+    read('electron/db/settingsRepo.ts'),
   ]);
   assert.match(types, /backupCleanupEnabled: boolean/);
   assert.match(types, /backupRetentionUnit: BackupRetentionUnit/);
@@ -19,8 +20,8 @@ test('cleanup is opt-in, app-wide and has a conservative default horizon', async
   assert.match(defaults, /backupCleanupEnabled: false/);
   assert.match(defaults, /backupRetentionValue: 3/);
   assert.match(defaults, /backupRetentionUnit: 'months'/);
-  assert.match(defaults, /typeof merged\.backupCleanupEnabled !== 'boolean'/, 'corrupted persisted opt-in fails closed');
-  assert.match(defaults, /!Number\.isInteger\(merged\.backupRetentionValue\)/, 'corrupted persisted retention is repaired');
+  assert.match(repository, /typeof merged\.backupCleanupEnabled !== 'boolean'/, 'corrupted persisted opt-in fails closed');
+  assert.match(repository, /!Number\.isInteger\(merged\.backupRetentionValue\)/, 'corrupted persisted retention is repaired');
   for (const key of ['backupCleanupEnabled', 'backupRetentionValue', 'backupRetentionUnit', 'lastBackupCleanupAt', 'lastBackupCleanupStatus']) {
     assert.match(prefs, new RegExp(`'${key}'`), `${key} is shared across vaults`);
   }

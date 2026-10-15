@@ -1,4 +1,7 @@
+import {mobileDeepResearchCorpusRevision} from '../desktopBridge/mobileResearchRevision';
+import {listStudyIdeasForSources} from '../db/studyKnowledgeRepo';
 import crypto from 'node:crypto';
+import {isMobileOperation,mobileDomainAllowed,assertDesktopPreparation,withMobileOperation} from '../desktopBridge/executionBoundary';
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
@@ -10,13 +13,21 @@ import type {
   StudySearchProgress,
   StudySearchResponse,
 } from '@shared/studySearch';
-import { normalizeStudySearchText, rankStudySearchEntries, suggestStudySearchCorrections } from '@shared/studySearch';
+import { rankStudySearchEntries, suggestStudySearchCorrections } from '@shared/studySearch';
 import type { StudyAssistantSourceOption } from '@shared/studyAssistant';
 import { studyAssistantSourceKey } from '@shared/studyAssistant';
+import {studyChatCandidates,orderStudyChatEntries,assistantFragmentKey} from '@shared/studyChatRetrieval';
 import { parseStudyMaterialMarkers } from '@shared/studyMaterials';
 import { getDb } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
-import { activeVaultDir } from '../vaults/vaultRegistry';
+import { activeVaultDir,getActiveVault } from '../vaults/vaultRegistry';
+import {MOBILE_STUDY_CHAT_MAX_BYTES,normalizeMobileStudyChatSelection,studyChatSelectionOptions,studyChatPackPayload,type MobileStudyChatSourcePack} from '@shared/mobileStudyChat';
+import {sha256Snapshot} from '@shared/databaseResearchEngine';
+import {signStudyChatEntry} from '../desktopBridge/studyChatEvidence';
+import {getStudyQuestion,listStudyQuestionVersions} from '../db/studyQuestionsRepo';
+import {getStudyAssessment,getStudyAttempt,listStudyAttempts} from '../db/studyAssessmentsRepo';
+import {getStoredStudyRubric} from '../db/studyGradingRepo';
+import {validateMobileStudyChatOriginal,type MobileStudyChatOriginal} from '@shared/mobileStudyChat';
 import { embed, embedMany } from './aiClient';
 
 type Row = Record<string, unknown>;
@@ -56,6 +67,7 @@ function parseJson<T>(value: unknown, fallback: T): T { try { return value ? JSO
 function readStore(): StudySearchStore {
   try {
     const parsed = JSON.parse(fs.readFileSync(indexPath(), 'utf8')) as Partial<StudySearchStore>;
+    if(isMobileOperation()&&(!parsed||!Array.isArray(parsed.entries)))throw new Error('study_search_index_invalid');
     return {
       ...EMPTY_STORE, ...parsed, version: 1,
       entries: Array.isArray(parsed.entries) ? parsed.entries : [],
@@ -63,7 +75,10 @@ function readStore(): StudySearchStore {
       savedSearches: Array.isArray(parsed.savedSearches) ? parsed.savedSearches : [],
       history: Array.isArray(parsed.history) ? parsed.history : [],
     };
-  } catch { return { ...EMPTY_STORE, entries: [], excludedSourceIds: [], savedSearches: [], history: [] }; }
+  } catch(error) {
+    if(isMobileOperation() && !(error && typeof error==='object' && 'code' in error && error.code==='ENOENT'))throw new Error('study_search_index_unreadable',{cause:error});
+    return { ...EMPTY_STORE, entries: [], excludedSourceIds: [], savedSearches: [], history: [] };
+  }
 }
 
 function writeStore(store: StudySearchStore): void {
@@ -319,25 +334,6 @@ export function listStudyAssistantSourceOptions(): StudyAssistantSourceOption[] 
   return [...grouped.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.title.localeCompare(b.title));
 }
 
-/** The same passage can be indexed under several placements. Keep page/location
- * in the identity so repeated text on different pages remains distinct evidence. */
-function assistantFragmentKey(entry: StudySearchIndexEntry): string {
-  return JSON.stringify([entry.kind, entry.sourceId, entry.location, entry.contentHash]);
-}
-
-function matchesAssistantRetrievalOptions(entry: StudySearchIndexEntry, options: StudySearchOptions): boolean {
-  if (options.kinds?.length && !options.kinds.includes(entry.kind)) return false;
-  if (options.courseId && entry.scope.courseId !== options.courseId) return false;
-  if (options.subjectId && entry.scope.subjectId !== options.subjectId) return false;
-  if (options.folderId && entry.scope.folderId !== options.folderId) return false;
-  if (options.topicId && entry.scope.topicId !== options.topicId) return false;
-  if (options.sourceId && entry.sourceId !== options.sourceId) return false;
-  if (options.tags?.length && !options.tags.every((tag) => entry.tags.some((entryTag) => normalizeStudySearchText(entryTag) === normalizeStudySearchText(tag)))) return false;
-  if (options.dateFrom && entry.updatedAt < options.dateFrom) return false;
-  if (options.dateTo && entry.updatedAt > `${options.dateTo}T23:59:59.999Z`) return false;
-  return true;
-}
-
 /** Hybrid retrieval without polluting the user's search history. Manual source
  * selection is strict: only selected source keys can enter the returned context. */
 export async function retrieveStudyAssistantEntries(
@@ -347,46 +343,91 @@ export async function retrieveStudyAssistantEntries(
   limit = 18,
 ): Promise<StudySearchIndexEntry[]> {
   const store = ensureLexicalIndex();
-  const selected = new Set(sourceKeys);
-  const seenFragments = new Set<string>();
-  const candidates = store.entries.filter((entry) => !entry.excluded
-    && (!selected.size || selected.has(studyAssistantSourceKey(entry.kind, entry.sourceId)))
-    && matchesAssistantRetrievalOptions(entry, options)).filter((entry) => {
-      const key = assistantFragmentKey(entry);
-      if (seenFragments.has(key)) return false;
-      seenFragments.add(key); return true;
-    });
+  const candidates = studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),options,sourceKeys);
   const hasVectors = candidates.some((entry) => entry.embedding?.length);
   const queryVector = hasVectors ? await embed(query).catch(() => null) : null;
-  const ranked = rankStudySearchEntries(query, candidates, { ...options, limit: Math.max(limit * 3, 60) }, queryVector);
-  const byId = new Map(candidates.map((entry) => [entry.indexId, entry]));
-  const ordered = ranked.map((result) => byId.get(result.indexId)).filter((entry): entry is StudySearchIndexEntry => Boolean(entry));
-  // Manual selection means "use these sources", even when the wording of the
-  // question has no literal overlap. The same fallback is necessary for automatic
-  // scopes when embeddings are unavailable: otherwise a Spanish question against
-  // an English vault (or any other cross-language pair) always returns zero context.
-  if ((selected.size || !queryVector) && ordered.length < limit) {
-    const rankedIds = new Set(ordered.map((entry) => entry.indexId));
-    const fallbackCandidates = candidates
-      .filter((entry) => !rankedIds.has(entry.indexId))
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    // Prefer breadth before adding a second fragment from the same source. This
-    // gives the model useful coverage of a library rather than twenty adjacent
-    // chunks from whichever document was edited most recently.
-    const seenSources = new Set(ordered.map((entry) => studyAssistantSourceKey(entry.kind, entry.sourceId)));
-    const diverse: StudySearchIndexEntry[] = [];
-    const repeated: StudySearchIndexEntry[] = [];
-    for (const entry of fallbackCandidates) {
-      const sourceKey = studyAssistantSourceKey(entry.kind, entry.sourceId);
-      if (seenSources.has(sourceKey)) repeated.push(entry);
-      else { seenSources.add(sourceKey); diverse.push(entry); }
+  return orderStudyChatEntries(query,candidates,options,sourceKeys,queryVector,limit);
+}
+
+/** Source-only research preparation over the existing index. No model, index
+ * refresh or extraction is permitted: the same lexical fallback used by Desktop
+ * selects a bounded candidate pool, then complete chosen source fragments travel. */
+export function getMobileStudyResearchSourcePack(objective:string):MobileStudyChatSourcePack {
+  return withMobileOperation(()=>{
+    const store=ensureLexicalIndex();
+    const candidates=studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),{kinds:['material','document','transcript']},[]);
+    const selected=orderStudyChatEntries(objective,candidates,{},[],null,48);
+    const sourceKeys=[...new Set(selected.map(entry=>`${entry.kind}:${entry.sourceId}`))];
+    if(!sourceKeys.length)throw new Error('study_research_sources_unavailable');
+    return getMobileStudyChatSourcePack({scope:'manual',sourceKeys});
+  });
+}
+
+/** Exports only already-indexed, complete selected fragments. This query must
+ * never refresh/extract/index or make a Mac embedding/provider call. */
+export function getMobileStudyChatSourcePack(raw:unknown):MobileStudyChatSourcePack {
+  return withMobileOperation(()=>{
+    const vault=getActiveVault();if(!['estudio','docencia'].includes(vault.type))throw new Error('study_chat_vault_required');
+    const selection=normalizeMobileStudyChatSelection(raw),store=ensureLexicalIndex();
+    const entries=selection.scope==='manual'&&!selection.sourceKeys.length?[]:studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),studyChatSelectionOptions(selection),selection.scope==='manual'?selection.sourceKeys:[]).map(entry=>({...entry,embedding:null}));
+    if(selection.scope==='manual'&&selection.sourceKeys.some(key=>!entries.some(entry=>studyAssistantSourceKey(entry.kind,entry.sourceId)===key)))throw new Error('study_chat_source_unavailable');
+    const originals=getDb().transaction(()=>{
+      const selected:Record<string,MobileStudyChatOriginal>={};
+      for(const entry of entries) {
+        const key=studyAssistantSourceKey(entry.kind,entry.sourceId);
+        if(selected[key]||!['question','exam'].includes(entry.kind))continue;
+        const source=readMobileStudyChatOriginal(entry.kind,entry.sourceId);if(source)selected[key]=source;
+      }
+      return selected;
+    })();
+    const pack:MobileStudyChatSourcePack={version:1,vaultId:vault.id,capturedAt:new Date().toISOString(),selection,entries,proofs:Object.fromEntries(entries.map(entry=>[entry.indexId,signStudyChatEntry(entry)])),originals,id:''};
+    const sourceKeys=[...new Set(entries.filter(entry=>['material','document'].includes(entry.kind)).map(entry=>`${entry.kind}:${entry.sourceId}`))];
+    if(sourceKeys.length<=100){
+    const ideas=new Map<string,ReturnType<typeof listStudyIdeasForSources>['ideas'][number]>(),ideaSources:Record<string,string[]>={};
+    for(const key of sourceKeys)for(const idea of listStudyIdeasForSources([key]).ideas){ideas.set(idea.id,idea);(ideaSources[idea.id]??=[]).push(key);}
+    const ids=[...ideas.keys()];
+    const edges:Array<Record<string,unknown>>=[];
+    let bytes=Buffer.byteLength(JSON.stringify({pack,ideas:[...ideas.values()],ideaSources}))+4096,oversized=bytes>MOBILE_STUDY_CHAT_MAX_BYTES;
+    if(ids.length&&!oversized)for(const raw of getDb().prepare(`SELECT * FROM study_idea_edges WHERE from_id IN (${ids.map(()=>'?').join(',')}) AND to_id IN (${ids.map(()=>'?').join(',')}) ORDER BY confidence DESC`).iterate(...ids,...ids)){
+      const row=raw as Record<string,unknown>;bytes+=Buffer.byteLength(JSON.stringify(row))+2;
+      if(bytes>MOBILE_STUDY_CHAT_MAX_BYTES){oversized=true;break;}edges.push(row);
     }
-    ordered.push(...diverse, ...repeated);
+    if(oversized)pack.researchUnavailable='context_too_large';
+    else pack.research={context:{version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(),sourceScope:'linked_corpus',preparedSourcesOnly:true},knowledge:{ideas:[...ideas.values()],connections:edges.map(row=>({id:String(row.id),subjectId:String(row.subject_id),fromId:String(row.from_id),toId:String(row.to_id),type:String(row.type) as ReturnType<typeof listStudyIdeasForSources>['connections'][number]['type'],basis:String(row.basis??''),confidence:Number(row.confidence??0)}))},ideaSources};
+    }else pack.researchUnavailable='too_many_sources';
+    pack.id=sha256Snapshot(studyChatPackPayload(pack));
+    if(Buffer.byteLength(JSON.stringify(pack),'utf8')>MOBILE_STUDY_CHAT_MAX_BYTES)throw new Error('El contexto de estudio supera 16 MB. Elige fuentes concretas para llevar.');
+    return pack;
+  });
+}
+function readMobileStudyChatOriginal(kind:string,id:string):MobileStudyChatOriginal|null {
+  if(kind==='question') {
+    const data=getStudyQuestion(id);if(!data||data.archivedAt)return null;
+    const attemptIds=getDb().prepare('SELECT DISTINCT a.id FROM study_attempts a JOIN study_attempt_answers r ON r.attempt_id=a.id WHERE r.question_id=? ORDER BY a.started_at DESC').all(id) as Array<{id:string}>;
+    const attempts=attemptIds.flatMap(({id:attemptId})=>{const attempt=getStudyAttempt(attemptId);if(!attempt)return [];const {assessment:_assessment,...record}=attempt;return [{...record,answers:record.answers.filter(answer=>answer.questionId===id)}];});
+    const source:MobileStudyChatOriginal={kind,sourceId:id,data,related:{versions:listStudyQuestionVersions(id),attempts}};validateMobileStudyChatOriginal(source);return source;
   }
-  return ordered.slice(0, limit);
+  if(kind==='exam') {
+    const data=getStudyAssessment(id);if(!data||data.archivedAt||data.kind!=='exam')return null;
+    const attempts=listStudyAttempts(id).map(({assessment:_assessment,...record})=>record);
+    const source:MobileStudyChatOriginal={kind,sourceId:id,data,related:{attempts,rubric:data.rubricId?getStoredStudyRubric(data.rubricId):null}};validateMobileStudyChatOriginal(source);return source;
+  }
+  return null;
+}
+export function getMobileStudyChatOriginal(raw:unknown) {
+  return withMobileOperation(()=>{
+    if(!['estudio','docencia'].includes(getActiveVault().type)||!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('invalid_study_chat_original_request');
+    const request=raw as Record<string,unknown>;
+    if(Object.keys(request).some(key=>!['kind','sourceId'].includes(key))||!['question','exam'].includes(String(request.kind))||typeof request.sourceId!=='string'||!request.sourceId||request.sourceId.length>256)throw new Error('invalid_study_chat_original_request');
+    const source=getDb().transaction(()=>readMobileStudyChatOriginal(String(request.kind),String(request.sourceId)))();
+    if(!source)throw new Error('study_chat_original_unavailable');
+    if(Buffer.byteLength(JSON.stringify(source),'utf8')>MOBILE_STUDY_CHAT_MAX_BYTES)throw new Error('study_chat_original_too_large');
+    return source;
+  });
 }
 
 export async function rebuildStudySearchIndex(): Promise<StudySearchProgress> {
+  assertDesktopPreparation();
   if (runtime.state === 'indexing' || runtime.state === 'paused') return progress();
   runtime.state = 'indexing'; runtime.error = null; runtime.paused = false; runtime.stopRequested = false; runtime.processedEntries = 0; runtime.currentTitle = null;
   const old = readStore(); const config = modelConfig();
@@ -422,6 +463,7 @@ let refreshTask: Promise<void> | null = null;
 /** Incremental, de-duplicated refresh used after source changes. Existing vectors
  * are retained by content hash and only new or changed fragments are embedded. */
 export function queueStudySearchIndexRefresh(): void {
+  if (isMobileOperation()) return;
   queuedRefresh = true;
   if (refreshTask) return;
   refreshTask = (async () => {
@@ -434,6 +476,10 @@ export function queueStudySearchIndexRefresh(): void {
 
 function ensureLexicalIndex(): StudySearchStore {
   const store = readStore();
+  if (isMobileOperation()) {
+    if (!store.entries.length) throw new Error('desktop_preparation_required');
+    return store;
+  }
   const config = modelConfig();
   const collected = collectStudySearchEntries();
   const oldByHash = new Map(store.entries.map((entry) => [entry.contentHash, entry]));

@@ -323,4 +323,3 @@ test('the packed app carries the download manifest for its platform and none of 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
-

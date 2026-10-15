@@ -1,0 +1,136 @@
+import {validateMediaAsset} from '../../packages/capability-api/src/media';
+import {DocumentFigureContext} from '../components/DocumentFigures';
+import type {DocumentVisualManifest} from '@shared/documentSkills';
+import '../index.css';
+import './proseRead.css';
+import {useLayoutEffect,useRef,type CSSProperties} from 'react';
+import {createRoot} from 'react-dom/client';
+import {Markdown} from '../components/Markdown';
+import {anchorFromRange,findAnchoredText,invalidateReaderTextIndex,rangeFromOffsets,readerTextIndex,type ReaderAnchor} from '../components/ReaderSelectionActions';
+import {setActiveLang} from '../i18n';
+import type {AppSettings} from '@shared/types';
+import {ReaderResourceQueue} from './readerResourceQueue';
+import {proseSelectionPayload} from './proseSelectionBridge';
+import {formulaExpansionControls} from './proseFormulaExpansion';
+
+interface Annotation extends ReaderAnchor {id:string;kind:'highlight'|'comment'|'bookmark';color:string|null}
+interface Input {figureContext?:{manifest:DocumentVisualManifest};source:string;language:AppSettings['uiLanguage'];dark:boolean;accent:string;fontSize:number;justify:boolean;annotations:Annotation[];highlighter:string|null;search:Array<{location:number;length:number}>;activeSearch:{location:number;length:number}|null;searchAim:number;bookmarkAim:number;legacyBookmark?:{selectedText:string;startOffset:number;endOffset:number;prefix:string;suffix:string}|null}
+const native=window as unknown as {webkit:{messageHandlers:{proseRead:{postMessage(value:unknown):void}}};nodusProseRender(input:Input):void;nodusProseUpdate(input:Input):void;nodusProseReply(id:string,result:unknown,error:string|null):void;nodusProseClear():void;nodusProseRefreshSelection():boolean};
+let sequence=0,current:Input,root:HTMLElement|null=null,searchAim=0,bookmarkAim=0,legacyMigrated=false;
+const pending=new Map<string,{resolve:(value:any)=>void;reject:(error:Error)=>void}>();
+function send(method:string,value:unknown=null){native.webkit.messageHandlers.proseRead.postMessage({method,value});}
+function call(method:string,value:unknown,signal:AbortSignal){return new Promise<any>((resolve,reject)=>{
+  if(signal.aborted){reject(signal.reason??new DOMException('Lectura cancelada','AbortError'));return;}
+  const id=String(++sequence);
+  const cleanup=()=>{clearTimeout(timer);signal.removeEventListener('abort',abort);pending.delete(id);};
+  const abort=()=>{cleanup();send('cancelImage',id);reject(signal.reason??new DOMException('Lectura cancelada','AbortError'));};
+  const timer=setTimeout(()=>{cleanup();send('cancelImage',id);reject(new Error('La imagen no ha respondido.'));},30000);
+  pending.set(id,{resolve:value=>{cleanup();resolve(value);},reject:error=>{cleanup();reject(error);}});
+  signal.addEventListener('abort',abort,{once:true});native.webkit.messageHandlers.proseRead.postMessage({id,method,value});
+});}
+native.nodusProseReply=(id,result,error)=>{const item=pending.get(id);if(!item)return;pending.delete(id);if(error)item.reject(new Error(error));else item.resolve(result);};
+const colors:Record<string,string>={yellow:'#fde68a',rose:'#fecdd3',blue:'#bfdbfe',mint:'#bbf7d0',lavender:'#ddd6fe',peach:'#fed7aa'};
+function rect(range:Range){const value=range.getBoundingClientRect();return {x:value.x,y:value.y,width:value.width,height:value.height};}
+function resolve(anchor:ReaderAnchor){if(!root)return null;const direct=rangeFromOffsets(root,anchor.startOffset,anchor.endOffset);return direct?.toString()===anchor.selectedText?direct:findAnchoredText(root,anchor);}
+function paint(){
+  if(!root||!current)return;
+  const css=CSS as unknown as {highlights?:Map<string,unknown>},Highlight=(window as any).Highlight;
+  if(css.highlights&&Highlight){
+    for(const [color,hex] of Object.entries(colors)){
+      const ranges=current.annotations.filter(item=>item.kind==='highlight'&&item.color===color).map(resolve).filter((value):value is Range=>!!value);
+      css.highlights.set('prose-'+color,new Highlight(...ranges));document.documentElement.style.setProperty('--prose-'+color,hex);
+    }
+    const marks=current.annotations.filter(item=>item.kind!=='highlight').map(resolve).filter((value):value is Range=>!!value);css.highlights.set('prose-marks',new Highlight(...marks));
+    const found=current.search.map(item=>rangeFromOffsets(root!,item.location,item.location+item.length)).filter((value):value is Range=>!!value);css.highlights.set('prose-search',new Highlight(...found));
+    const active=current.activeSearch?rangeFromOffsets(root,current.activeSearch.location,current.activeSearch.location+current.activeSearch.length):null;css.highlights.set('prose-active',new Highlight(...(active?[active]:[])));
+    if(active&&current.searchAim!==searchAim){searchAim=current.searchAim;send('scroll',rect(active));}
+  }
+  if(current.bookmarkAim!==bookmarkAim){bookmarkAim=current.bookmarkAim;const mark=current.annotations.find(item=>item.kind==='bookmark'),range=mark&&resolve(mark);if(range)send('scroll',rect(range));}
+  if(!legacyMigrated&&current.legacyBookmark){const range=resolve(current.legacyBookmark);if(range){legacyMigrated=true;send('migrateBookmark',anchorFromRange(root,range,range.toString()));}}
+  root.querySelectorAll('[data-prose-marker]').forEach(node=>node.remove());
+  for(const item of current.annotations.filter(item=>item.kind!=='highlight')){
+    const range=resolve(item);if(!range)continue;
+    const position=range.getBoundingClientRect(),offset=root.getBoundingClientRect(),button=document.createElement('button');
+    button.dataset.proseMarker=item.id;button.dataset.readerIgnore='true';button.innerHTML=item.kind==='comment'?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11a8 8 0 0 1-8 8H5l-3 3V5a3 3 0 0 1 3-3h8a8 8 0 0 1 8 9Z"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12v19l-6-4-6 4Z"/></svg>';button.setAttribute('aria-label',item.kind==='comment'?'Abrir comentario':'Marcador de lectura');button.style.top=Math.max(0,position.top-offset.top)+'px';button.addEventListener('click',()=>send('annotation',item.id));root.append(button);
+  }
+}
+let heightFrame=0;
+function measure(){cancelAnimationFrame(heightFrame);heightFrame=requestAnimationFrame(()=>{if(root)send('height',Math.ceil(root.getBoundingClientRect().height));});}
+let selectionTimer:ReturnType<typeof setTimeout>|undefined;
+function publishSelection(){
+  const payload=proseSelectionPayload(root,getSelection(),anchorFromRange);
+  send('selection',payload);return payload!==null;
+}
+// WebKit's edit-menu delegate can arrive after the selection debounce. Recheck
+// immediately rather than let a second native Copy/Translate menu coexist.
+native.nodusProseRefreshSelection=()=>{
+  clearTimeout(selectionTimer);
+  const payload=proseSelectionPayload(root,getSelection(),anchorFromRange);
+  if(!payload)return false;
+  send('selection',payload);return true;
+};
+document.addEventListener('selectionchange',()=>{clearTimeout(selectionTimer);selectionTimer=setTimeout(publishSelection,220);});
+native.nodusProseClear=()=>getSelection()?.removeAllRanges();
+const link=(host:string,id:string,query?:Record<string,number|null|undefined>)=>{const url=new URL(`nodus://${host}/${encodeURIComponent(id)}`);for(const [key,value] of Object.entries(query??{}))if(value!=null)url.searchParams.set(key,String(value));send('open',url.href);};
+
+/** Only standalone image tags are converted; arbitrary HTML never executes. */
+function imageMarkdown(source:string){let fence:string|null=null;return source.split('\n').map(line=>{
+  const match=/^\s*(`{3,}|~{3,})/.exec(line);if(match){if(fence&&match[1][0]===fence[0]&&match[1].length>=fence.length)fence=null;else if(!fence)fence=match[1];return line;}if(fence||/^ {4}|^\t/.test(line))return line;
+  return line.replace(/<img\b([^<>]*)\/?\s*>/gi,(_tag,attributes:string)=>{
+    const attr=(name:string)=>new RegExp('(?:^|\\s)'+name+'\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s"\'=<>`]+))','i').exec(attributes);
+    const src=attr('src'),alt=attr('alt');if(!src)return '';
+    const decode=(text:string)=>text.replace(/&(?:amp|quot|apos|lt|gt);/g,entity=>({'&amp;':'&','&quot;':'"','&apos;':"'",'&lt;':'<','&gt;':'>'}[entity]!));
+    const target=decode(src[1]??src[2]??src[3]??'');if(/[<>\n\r]/.test(target))return '';return '!['+decode(alt?.[1]??alt?.[2]??alt?.[3]??'').replace(/[\\[\]]/g,'\\$&')+'](<'+target+'>)';
+  });
+}).join('\n');}
+function Document({input}:{input:Input}){
+  const ref=useRef<HTMLDivElement>(null);
+  useLayoutEffect(()=>{
+    root=ref.current;if(!root)return;legacyMigrated=false;searchAim=0;bookmarkAim=0;
+    const host=root,controller=new AbortController(),resources=new ReaderResourceQueue(4);
+    window.nodus={openExternal:async(source:string)=>{send('open',source);},readCapabilityMedia:async(source:string)=>{const value=await resources.run(()=>call('image',source,controller.signal),controller.signal),bytes=Uint8Array.from(atob(value.data),c=>c.charCodeAt(0));return {bytes,mimeType:value.mime,info:validateMediaAsset(bytes,value.mime)};},downloadCapabilityFile:async(source:string)=>{send('openImage',{source,title:'Figura'});}} as unknown as typeof window.nodus;
+    root.querySelectorAll('.katex-mathml').forEach(node=>node.setAttribute('data-reader-ignore','true'));
+    root.querySelectorAll('table').forEach(table=>{const heads=Array.from(table.querySelectorAll('thead th'));if(heads.length>3)table.dataset.mobileColumns=String(heads.length);table.querySelectorAll('tbody tr').forEach(row=>row.querySelectorAll('td').forEach((cell,index)=>cell.setAttribute('data-column-label',heads[index]?.textContent??String(index+1))));});
+    const adaptFormulae=formulaExpansionControls(root,value=>send('formula',value));adaptFormulae();
+    invalidateReaderTextIndex(root);send('text',readerTextIndex(root).content);paint();measure();
+    let figureTimer:ReturnType<typeof setTimeout>|undefined;
+    const reportFigureAnchors=()=>{clearTimeout(figureTimer);if(input.figureContext)figureTimer=setTimeout(()=>{if(!controller.signal.aborted){const expected=input.figureContext!.manifest.figures.filter(figure=>figure.state==='ready'&&figure.poster).length;send('figureAnchors',{expected,matched:host.querySelectorAll('[data-figure-id]').length});}},50);};
+    const resize=new ResizeObserver(()=>{adaptFormulae();measure();reportFigureAnchors();});resize.observe(root);
+    const figureChanges=new MutationObserver(reportFigureAnchors);figureChanges.observe(host,{childList:true,subtree:true});
+    const visibleImages=new WeakSet<HTMLImageElement>();
+    const imageObserver=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{for(const entry of entries){const image=entry.target as HTMLImageElement;if(entry.isIntersecting){visibleImages.add(image);image.dispatchEvent(new Event('nodus-load'));}else{visibleImages.delete(image);image.removeAttribute('src');}}},{rootMargin:'400px'});
+    host.querySelectorAll('img').forEach(image=>{
+      const source=image.getAttribute('src');if(!source)return;image.removeAttribute('src');image.dataset.proseSource=source;
+      const valid=()=>!controller.signal.aborted&&image.isConnected&&host.contains(image)&&image.dataset.proseSource===source;
+      const open=()=>{if(valid())send('openImage',{source,title:image.alt});};
+      image.onclick=open;image.setAttribute('tabindex','0');image.setAttribute('role','button');image.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}};
+      let loading=false;const load=()=>{if(loading||image.hasAttribute('src'))return;loading=true;void resources.run(()=>call('image',source,controller.signal),controller.signal).then(value=>{
+        if(!valid()||imageObserver&&!visibleImages.has(image))return;image.src=`data:${value.mime};base64,${value.data}`;measure();
+      }).catch(error=>{
+        if(!valid())return;const label=document.createElement('button');label.dataset.readerIgnore='true';label.className='prose-image-error';
+        label.textContent=`${image.alt||'Imagen'}: ${error.message}. Reintentar`;label.onclick=()=>{label.remove();if(valid())load();};image.after(label);measure();
+      }).finally(()=>{loading=false;});};image.addEventListener('nodus-load',load);if(imageObserver)imageObserver.observe(image);else load();
+    });
+    const clicked=(event:MouseEvent)=>{
+      if(event.defaultPrevented)return;
+      if((event.target as HTMLElement).closest('button,img'))return;
+      const node=(event.target as HTMLElement).closest('a');
+      if(node){const href=node.getAttribute('href');if(!href)return;event.preventDefault();if(href.startsWith('#')){const target=document.getElementById(decodeURIComponent(href.slice(1)));if(target)send('scroll',target.getBoundingClientRect().toJSON());}else send('open',href);return;}
+      if(!getSelection()?.isCollapsed)return;
+      const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(!caret)return;
+      for(const item of current.annotations.filter(item=>item.kind==='highlight')){const range=resolve(item);if(range?.isPointInRange(caret.startContainer,caret.startOffset)){send('highlight',{id:item.id,rect:rect(range)});return;}}
+    };host.addEventListener('click',clicked);
+    reportFigureAnchors();
+    return()=>{controller.abort();clearTimeout(figureTimer);figureChanges.disconnect();imageObserver?.disconnect();resize.disconnect();host.removeEventListener('click',clicked);if(root===host)root=null;};
+  },[input.source,input.figureContext?.manifest.revision]);
+  return <div ref={ref} className="prose-document" style={{fontSize:input.fontSize+'px',textAlign:input.justify?'justify':'start'} as CSSProperties}><DocumentFigureContext.Provider value={input.figureContext?{manifest:input.figureContext.manifest,target:input.figureContext.manifest.target,refresh:()=>{},downloadPoster:figure=>send('openImage',{source:figure.poster,title:figure.caption}),downloadOriginal:(figure,node)=>{if(node.kind==='svg')send('figureSvg',{figureId:figure.id,svg:node.svg});else if('attachmentId' in node)send('openImage',{source:`nodus-capability://chat/${figure.owner}/${node.attachmentId}`,title:figure.caption});}}:null}><Markdown content={imageMarkdown(input.source)} verify={false} allowDataImages localReaderImages
+    onCitation={ref=>link(ref.kind,ref.id)} onWorldEntry={(kind,id)=>link('world/'+kind,id)}
+    onStudyEvidence={id=>link('study/evidence',id)} onStudyDocument={(id,where)=>link('study/doc',id,{from:where?.from})}
+    onStudyMaterial={(id,where)=>link('study/material',id,{page:where?.pageNumber,slide:where?.slideNumber})}
+    onStudyRecording={(id,time)=>link('study/recording',id,{t:time})}/></DocumentFigureContext.Provider></div>;
+}
+const renderer=createRoot(document.getElementById('root')!);
+function configure(input:Input){current=input;document.documentElement.classList.toggle('dark',input.dark);document.documentElement.style.setProperty('--prose-accent',input.accent);setActiveLang(input.language);}
+native.nodusProseRender=input=>{configure(input);renderer.render(<Document input={input}/>);};
+native.nodusProseUpdate=input=>{configure(input);renderer.render(<Document input={input}/>);requestAnimationFrame(()=>{paint();measure();});};
+window.addEventListener('error',event=>send('issue',event.message));window.addEventListener('unhandledrejection',event=>send('issue',String(event.reason?.message??event.reason)));

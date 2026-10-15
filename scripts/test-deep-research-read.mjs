@@ -139,6 +139,36 @@ try {
     'the gallery summary carries the generation-time approach'
   );
 
+  // A malformed stored row cannot become an empty successful consultation.
+  const intact = repo.listWritingWorkshopDrafts({ requireComplete: true });
+  assert.equal(intact.length, 1);
+  const rowBeforeCorruption = db.prepare('SELECT * FROM writing_saved_drafts WHERE id = ?').get(persisted.id);
+  db.prepare('UPDATE writing_saved_drafts SET draft_json = ? WHERE id = ?').run('{broken', persisted.id);
+  assert.throws(() => repo.listWritingWorkshopDrafts({ requireComplete: true }), /formato inválido/);
+  assert.throws(() => repo.listWritingWorkshopDraftSummaries({ kind: 'deep_research', limit: 10, offset: 0 }), /formato inválido/);
+  assert.throws(() => repo.countWritingWorkshopDrafts('deep_research'), /formato inválido/);
+  assert.throws(() => repo.getWritingWorkshopDraft(persisted.id), /formato inválido/);
+  assert.equal(repo.listWritingWorkshopDrafts().length, 0, 'legacy internal subset behavior remains compatible');
+  assert.equal(db.prepare('SELECT draft_json FROM writing_saved_drafts WHERE id = ?').get(persisted.id).draft_json, '{broken', 'failed consultation preserves the damaged record');
+  const second = repo.saveWritingWorkshopDraft({ draft: provenanceDraft, title: 'Intact second report', model: provenanceModel });
+  assert.throws(() => repo.listWritingWorkshopDrafts({ requireComplete: true }), /formato inválido/);
+  assert.deepEqual(repo.listWritingWorkshopDrafts().map(item => item.id), [second.id]);
+  db.prepare('UPDATE writing_saved_drafts SET draft_json = ? WHERE id = ?').run(rowBeforeCorruption.draft_json, persisted.id);
+  assert.equal(repo.listWritingWorkshopDrafts({ requireComplete: true }).length, 2, 'repair permits complete consultation again');
+  assert.equal(repo.countWritingWorkshopDrafts('deep_research'), 2);
+  assert.equal(repo.getWritingWorkshopDraft('not-a-report'), null, 'a missing record retains its distinct missing response');
+  for (const column of ['brief_json', 'draft_json', 'model_json']) {
+    for (const malformed of ['{broken', 'null', '[]', '42']) {
+      db.prepare(`UPDATE writing_saved_drafts SET ${column} = ? WHERE id = ?`).run(malformed, persisted.id);
+      assert.throws(() => repo.listWritingWorkshopDraftSummaries({ kind: 'deep_research', limit: 1, offset: 1 }), /formato inválido/, 'pagination cannot hide a damaged record');
+      assert.throws(() => repo.countWritingWorkshopDrafts('deep_research'), /formato inválido/);
+      assert.throws(() => repo.listWritingWorkshopDrafts({ requireComplete: true }), /formato inválido/);
+      assert.equal(db.prepare(`SELECT ${column} AS original FROM writing_saved_drafts WHERE id = ?`).get(persisted.id).original, malformed);
+    }
+    db.prepare(`UPDATE writing_saved_drafts SET ${column} = ? WHERE id = ?`).run(rowBeforeCorruption[column], persisted.id);
+  }
+  assert.equal(repo.listWritingWorkshopDraftSummaries({ kind: 'deep_research', limit: 1, offset: 1 }).total, 2);
+
   db.close();
   const reopened = new Database(path.join(root, 'vault.sqlite'), { readonly: true, fileMustExist: true });
   const persistedRow = reopened.prepare('SELECT brief_json, model_json, draft_json FROM writing_saved_drafts WHERE id = ?').get(persisted.id);

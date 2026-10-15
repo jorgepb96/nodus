@@ -6,7 +6,7 @@
  */
 import type { StudyAssistantSourceOption } from '@shared/studyAssistant';
 import type { StudySourceOrganization } from '@shared/studySourceTree';
-import { estimateCompleteGuide } from '@shared/completeGuide/estimate';
+import {previewCompleteGuideSnapshot} from '@shared/completeGuide/preview';
 import type { CompleteGuidePreview, CompleteGuidePreviewRequest } from '@shared/completeGuide/preview';
 import { resolveCompleteGuideSelection } from '@shared/completeGuide/selection';
 import { buildCompleteGuideSnapshot, type CompleteGuideSnapshot, type CompleteGuideSourceText } from '@shared/completeGuide/snapshot';
@@ -108,27 +108,5 @@ export function snapshotCompleteGuideSelection(rawConfig: unknown): CompleteGuid
 
 export function previewCompleteGuide(request: CompleteGuidePreviewRequest): CompleteGuidePreview {
   const { config, resolved, snapshot } = snapshotCompleteGuideSelection(request.completeGuide);
-  const units = new Set(snapshot.sources.map((source) => source.placement.topicId ?? source.placement.folderId ?? source.placement.subjectId ?? 'root')).size;
-  return {
-    sources: snapshot.sources.map((source) => ({
-      sourceKey: source.sourceKey, kind: source.kind, title: source.title, alias: source.alias, path: source.path,
-      chars: source.chars, pages: source.pages?.total ?? null, passages: source.passageIds.length,
-    })),
-    unavailable: resolved.unavailable,
-    superseded: resolved.superseded,
-    issues: snapshot.issues,
-    totals: snapshot.totals,
-    subjects: resolved.subjectIds.length,
-    units,
-    estimate: estimateCompleteGuide({
-      snapshot,
-      model: request.model ?? null,
-      effort: request.thinkingEffort ?? null,
-      verification: config.verification,
-      webText: config.webText,
-      unavailableSources: resolved.unavailable.length,
-      subjectCount: resolved.subjectIds.length,
-      unitCount: units,
-    }),
-  };
+  return previewCompleteGuideSnapshot(request,config,resolved,snapshot);
 }

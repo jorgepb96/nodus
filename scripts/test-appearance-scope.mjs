@@ -100,13 +100,14 @@ test('the scope helper recognises only the palette keys', () => {
 });
 
 test('the setting ships off, is exposed in Appearance, and is translated everywhere', async () => {
-  const [types, settingsRepo, settingsView] = await Promise.all([
+  const [types, settingsRepo, settingsView, defaults] = await Promise.all([
     read('shared/types.ts'),
     read('electron/db/settingsRepo.ts'),
     read('src/views/Settings.tsx'),
+    read('shared/defaultAppSettings.ts'),
   ]);
   assert.match(types, /shareAppThemeAcrossVaults: boolean/);
-  assert.match(settingsRepo, /shareAppThemeAcrossVaults: false/);
+  assert.match(defaults, /shareAppThemeAcrossVaults: false/);
   // The renderer must send the switch with the palette scope it implies, so the
   // route of a palette written in the same patch follows the NEW scope.
   assert.match(settingsRepo, /const sharesAfter = patch\.shareAppThemeAcrossVaults \?\? sharesBefore/);

@@ -6,7 +6,7 @@ import { EditorFilePanel } from './EditorFilePanel';
 import { uploadEditorFile } from './editorAttachments';
 import { academicCitationSequence, academicInlines, academicTargets, type AcademicMetadata, type AcademicCitation } from '@shared/academicDocument';
 import { formatAcademicSnapshot, singleAcademicSnapshot } from '@shared/academicCsl';
-import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BlockNoteSchema, createExtension, COLORS_DEFAULT, createHeadingBlockSpec, createStyleSpec, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSpecs, type ExtensionOptions, type PartialBlock } from '@blocknote/core';
 import { en, es } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/ariakit';
@@ -26,11 +26,12 @@ import type { StudyBlockAnchor } from '@shared/studyEditor';
 import { Markdown } from '../Markdown';
 import { getActiveLang, t } from '../../i18n';
 
+const CompatibilityRender=createContext<((markdown:string)=>ReactNode|null)|undefined>(undefined);
 const compatibility = createReactBlockSpec({ type: 'nodusMarkdown', propSchema: { markdown: { default: '' }, originalJson: { default: '' } }, content: 'none' }, {
-  render: ({ block, editor }) => <div className="nodus-compatibility-block">
-    <Markdown content={block.props.markdown} verify={false} />
+  render: function CompatibilityBlock({block,editor}) {const render=useContext(CompatibilityRender);return <div className="nodus-compatibility-block">
+    {render?.(block.props.markdown)??<Markdown content={block.props.markdown} verify={false} />}
     {editor.isEditable && <details><summary>{t('Editar bloque de compatibilidad')}</summary><textarea aria-label={t('Contenido original')} value={block.props.markdown} onChange={event => editor.updateBlock(block, { props: { markdown: event.target.value, originalJson: '' } })} /></details>}
-  </div>,
+  </div>;},
 })();
 const wiki = createReactInlineContentSpec({ type: 'nodusWiki', propSchema: { reference: { default: '' }, label: { default: '' } }, content: 'none' }, {
   render: ({ inlineContent }) => <span className="nodus-wiki-link" data-wiki-reference={inlineContent.props.reference}>{inlineContent.props.label || inlineContent.props.reference}</span>,
@@ -154,7 +155,10 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   aiReview?: EditorReview | null;
   onCreateImage?(): void;
   listReferences?(): Promise<EditorReference[]>;
-}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences, aiReview, onCreateImage }, ref) => {
+  resolveFileUrl?(url:string):Promise<string>;
+  onDownloadFile?(url:string,name:string):Promise<void>;
+  renderCompatibility?(markdown:string):ReactNode|null;
+}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences, resolveFileUrl, onDownloadFile, renderCompatibility, aiReview, onCreateImage }, ref) => {
   const aiReviewRef = useRef(aiReview); aiReviewRef.current = aiReview;
   const initial = useMemo(() => nativeDocument ?? markdownToBlockNote(value), [documentId]);
   const originals = useMemo(() => {
@@ -163,7 +167,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     visit(initial); return result;
   }, [initial]);
   const initialContent = useMemo(() => forEditor(initial), [initial]);
-  const editor = useCreateBlockNote({ schema, extensions: [AiReviewExtension({ getReview: () => aiReviewRef.current })], initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
+  const editor = useCreateBlockNote({ schema, extensions: [AiReviewExtension({ getReview: () => aiReviewRef.current })], initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, resolveFileUrl, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
   const root = useRef<HTMLDivElement>(null);
   const dictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; time: number; detached?: boolean } | null>(null);
   useEffect(() => {
@@ -251,7 +255,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     const moreAnchor = useRef<HTMLButtonElement>(null);
     const Components = useComponentsContext()!;
     const advanced = new Set(['strikeStyleButton', 'textAlignLeftButton', 'textAlignCenterButton', 'textAlignRightButton', 'nestBlockButton', 'unnestBlockButton']);
-    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item);
+    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} onDownload={onDownloadFile} /> : item);
     return <FormattingToolbar>
       {items.filter(item => !advanced.has(String(item.key)))}
       {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}><Icon name="quote" size={18} /></button>}
@@ -275,7 +279,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
           </Components.FormattingToolbar.Root>
         </GenericPopover>
     </FormattingToolbar>;
-  }, [editor,mountToolbar]);
+  }, [editor,mountToolbar,onDownloadFile]);
   useEffect(() => {
     const content = root.current?.querySelector<HTMLElement>('.bn-editor');
     content?.setAttribute('spellcheck', String(spellcheck));
@@ -469,7 +473,18 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       editor.focus(); notifyHistory(); return true;
     },
   }));
-  return <div ref={root} className="nodus-blocknote" data-document-id={documentId} onKeyDown={event=>{const target=event.target as HTMLElement;if((event.key==='Enter'||event.key===' ')&&target.matches('[data-academic-citation],[data-academic-note],[data-academic-target]')){event.preventDefault();target.click();}}} onClickCapture={event => {
+  return <div ref={root} className="nodus-blocknote" data-document-id={documentId} onTouchEnd={event => {
+    // Embedded WebKit can leave DOM focus on the catalogue control after a touch
+    // selects an editable paragraph. Focus within the same user gesture, preserving
+    // the browser's caret and letting noneditable formula/media controls keep focus.
+    const target = event.target as HTMLElement;
+    if (editable && target.isContentEditable && !editor.prosemirrorView.hasFocus()) {
+      const touch = event.changedTouches[0];
+      const position = touch && editor.prosemirrorView.posAtCoords({ left: touch.clientX, top: touch.clientY });
+      if (position) editor.transact(tr => tr.setSelection(TextSelection.near(tr.doc.resolve(position.pos))));
+      editor.focus();
+    }
+  }} onKeyDown={event=>{const target=event.target as HTMLElement;if((event.key==='Enter'||event.key===' ')&&target.matches('[data-academic-citation],[data-academic-note],[data-academic-target]')){event.preventDefault();target.click();}}} onClickCapture={event => {
     const target = event.target as HTMLElement;
     const cite=target.closest<HTMLElement>('[data-academic-citation]');if(cite&&editable){event.preventDefault();onAcademicAction?.('cite',cite.dataset.academicCitation);return;}
     const note=target.closest<HTMLElement>('[data-academic-note]');if(note&&editable){event.preventDefault();onAcademicAction?.('note',note.dataset.academicNote);return;}
@@ -485,7 +500,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     else if (onNavigateLink) onNavigateLink(href);
     else if (/^https?:\/\//i.test(href)) window.open(href,'_blank','noopener,noreferrer');
   }}>
-    <AcademicRender.Provider value={academicRender}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
+    <AcademicRender.Provider value={academicRender}><CompatibilityRender.Provider value={renderCompatibility}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
       const next = read(); onChange(blockNoteToMarkdown(next), next); notifyHistory();
     }}>
       <FormattingToolbarController formattingToolbar={SelectionToolbar} portalElement={document.body} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } }, useDismissProps: { outsidePress: event => !(event.target instanceof Element && event.target.closest('.editorial-selection-more-popover')) } }} />
@@ -498,7 +513,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
         editor.focus();
       }} />}
       {editable && <EditorInsertController ref={insertController} items={insertItems} />}
-    </BlockNoteView></AcademicRender.Provider>
+    </BlockNoteView></CompatibilityRender.Provider></AcademicRender.Provider>
   </div>;
 });
 BlockNoteCanvas.displayName = 'BlockNoteCanvas';

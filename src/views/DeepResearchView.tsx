@@ -1,5 +1,7 @@
+import type {MobileCompleteGuideActions,MobileResearchSourceScope} from '@shared/mobileCompleteGuide';
 import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import {researchTranslationSource} from '@shared/translationGeneration';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import { DocumentVisualScope, DocumentVisualActions } from '../components/DocumentVisualScope';
@@ -88,6 +90,7 @@ import {
   type DeepResearchSectionLength,
 } from '@shared/deepResearchSectionLength';
 import { useFeatureModel } from '../hooks/useFeatureModel';
+import { savedResearchCatalog } from '@shared/savedResearchCatalog';
 
 const DEEP_SECTION_OPTIONS: { value: DeepResearchSectionLimit; label: string }[] = [
   { value: 'auto', label: 'Secciones: Auto (IA decide)' },
@@ -283,6 +286,8 @@ function formatDate(iso: string): string {
 
 export function DeepResearchView({
   settings,
+  mobile = false,
+  onFullscreenChange,
   isGenealogy = false,
   isStudy = false,
   isTeaching = false,
@@ -292,10 +297,17 @@ export function DeepResearchView({
   onOpenStudyDocument,
   onOpenStudyMaterial,
   onOpenStudyRecording,
+  onNativeRead,
+  onRetryResearch,
+  mobileGuideSources,
+  onLegacyReports,
   completeGuideTarget,
   onCompleteGuideTargetConsumed,
 }: {
   settings: AppSettings;
+  mobile?: boolean;
+  /** The native mobile shell owns the bars and sidebar outside this reader. */
+  onFullscreenChange?: (enabled: boolean) => Promise<void>;
   isGenealogy?: boolean;
   isStudy?: boolean;
   /** Teaching vaults: Unit design — same surface, plus the teacher-defined structure. */
@@ -307,6 +319,11 @@ export function DeepResearchView({
   onOpenStudyDocument?: (id: string, location?: { from?: number | null }) => void;
   onOpenStudyMaterial?: (id: string, location?: { pageNumber?: number | null; slideNumber?: number | null }) => void;
   onOpenStudyRecording?: (id: string, timestamp?: number | null) => void;
+  /** Companion owns a native document reader; Desktop keeps its reader tabs. */
+  onNativeRead?: (id: string) => void;
+  onRetryResearch?: (id:string)=>Promise<void>;
+  mobileGuideSources?: MobileCompleteGuideActions;
+  onLegacyReports?: () => void;
   /** Study vaults: open the composer as a complete guide over these sources (from Materials). */
   completeGuideTarget?: { sourceKeys: string[]; nonce: number } | null;
   onCompleteGuideTargetConsumed?: () => void;
@@ -329,6 +346,8 @@ export function DeepResearchView({
   const [composerOpen, setComposerOpen] = useState(false);
   const [objective, setObjective] = useState('');
   const [notebookId, setNotebookId] = useState<string | null>(null);
+  const [academicDownloads,setAcademicDownloads]=useState<Awaited<ReturnType<NonNullable<MobileCompleteGuideActions['academicDownloads']>>>>([]);
+  const [mobileAcademicRetrieval,setMobileAcademicRetrieval]=useState<import('@shared/researchCorpus').RetrievalSettings|undefined>();
   const [approach, setApproach] = useState<DeepResearchApproach>('general');
   const [deepResearchVersion, setDeepResearchVersion] = useState<DeepResearchVersion>('v1');
   const [language, setLanguage] = useState<PromptLanguage>('es');
@@ -345,6 +364,11 @@ export function DeepResearchView({
   // Study vaults: a retrieval-based report, or a complete guide over chosen sources.
   const [studyReportMode, setStudyReportMode] = useState<'research' | 'complete_guide'>('research');
   const [guideState, setGuideState] = useState<CompleteGuideComposerState>(EMPTY_COMPLETE_GUIDE_STATE);
+  const [mobileSourceScope,setMobileSourceScope] = useState<MobileResearchSourceScope>('linked_corpus');
+  const [savingGuideSources,setSavingGuideSources] = useState(false);
+  useEffect(()=>{if(!composerOpen||!mobileGuideSources?.academicDownloads||mobileSourceScope!=='device_downloads'||isStudy||isTeaching||isGenealogy)return;let active=true;void mobileGuideSources.academicDownloads().then(values=>{if(active)setAcademicDownloads(values);}).catch(error=>{if(active)setError(String(error));});return()=>{active=false;};},[composerOpen,mobileGuideSources,mobileSourceScope,isStudy,isTeaching,isGenealogy]);
+  const loadGuideCatalog = useCallback(() => mobileGuideSources!.catalog(mobileSourceScope),[mobileGuideSources,mobileSourceScope]);
+  const loadGuidePreview = useCallback((request:Parameters<MobileCompleteGuideActions['preview']>[1]) => mobileGuideSources!.preview(mobileSourceScope,request),[mobileGuideSources,mobileSourceScope]);
   const [guideReady, setGuideReady] = useState(false);
   const [kindFilter, setKindFilter] = useState<Array<'reports' | 'guides'>>([]);
   const [approachFilter, setApproachFilter] = useState<DeepResearchApproach[]>([]);
@@ -364,8 +388,10 @@ export function DeepResearchView({
 
   // Data.
   const [savedDrafts, setSavedDrafts] = useState<WritingWorkshopSavedDraft[]>([]);
-  const [loadingSavedDrafts, setLoadingSavedDrafts] = useState(false);
-  /** True once the gallery has been read at least once, empty or not. */
+  const [loadingSavedDrafts, setLoadingSavedDrafts] = useState(true);
+  const [galleryLoadError, setGalleryLoadError] = useState<string | null>(null);
+  const galleryRequest = useRef(0);
+  /** True only after a valid catalogue response, including a confirmed empty one. */
   const [galleryRead, setGalleryRead] = useState(false);
   // The durable main-process lane holds every report, whether it originated in the
   // app or through MCP. Its ids are also the cancellation ids shown in the strip.
@@ -401,6 +427,20 @@ export function DeepResearchView({
   const [exporting, setExporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const nativeFullscreen = useRef(onFullscreenChange);
+  nativeFullscreen.current = onFullscreenChange;
+  useEffect(() => {
+    const update = nativeFullscreen.current;
+    if (!update) return;
+    let active = true;
+    void update(fullscreen).catch((cause) => {
+      if (!active) return;
+      setError(errorText(cause));
+      setFullscreen(false);
+    });
+    return () => { active = false; };
+  }, [fullscreen]);
 
   const hasModel = !!selectedModel;
   const deepRunning = laneJobs.some((job) => job.status === 'running');
@@ -492,20 +532,28 @@ export function DeepResearchView({
   }, [composerOpen, isGenealogy]);
 
   const refreshSavedDrafts = useCallback(async () => {
+    const request = ++galleryRequest.current;
     setLoadingSavedDrafts(true);
+    setGalleryLoadError(null);
     try {
       const all = await window.nodus.listWritingWorkshopDrafts();
-      setSavedDrafts(all.filter((item) => item.brief.kind === 'deep_research'));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoadingSavedDrafts(false);
+      const drafts = savedResearchCatalog(all);
+      if (request !== galleryRequest.current) return;
+      setSavedDrafts(drafts);
       setGalleryRead(true);
+    } catch (e) {
+      if (request === galleryRequest.current) {
+        const detail = e instanceof Error ? e.message : String(e);
+        setGalleryLoadError(detail.trim() ? detail : t('No se pudieron cargar los documentos guardados.'));
+      }
+    } finally {
+      if (request === galleryRequest.current) setLoadingSavedDrafts(false);
     }
   }, []);
 
   useEffect(() => {
     void refreshSavedDrafts();
+    return () => { ++galleryRequest.current; };
   }, [refreshSavedDrafts]);
 
   /**
@@ -574,13 +622,9 @@ export function DeepResearchView({
     void refreshSavedDrafts();
   }, [laneJobs, refreshSavedDrafts]);
 
-  const submitComposer = () => {
-    if (guideMode) {
-      if (!guideReady) { setError(t('Selecciona al menos una fuente con texto legible.')); return; }
-      if (!documentSkills.valid) { setError(t('Corregir límites de skills')); return; }
-      const instructions = objective.trim();
-      const guideRequest: DeepResearchRequest = {
-        objective: instructions || t('Guía de estudio completa'),
+  const makeGuideRequest = (): DeepResearchRequest & {mobileSourceScope?:MobileResearchSourceScope} => {
+    return {
+        objective: objective.trim() || t('Guía de estudio completa'),
         language,
         documentSkills: documentSkills.policy,
         model: selectedModel,
@@ -588,11 +632,12 @@ export function DeepResearchView({
         decorativeImage: { enabled: includeImage, style: imageStyle },
         studyMode: true,
         deepResearchVersion: 'v2',
+        ...(mobileGuideSources ? {mobileSourceScope} : {}),
         completeGuide: {
           version: 1,
           runId: `cg-${crypto.randomUUID()}`,
           selection: guideState.selection,
-          instructions,
+          instructions: objective.trim(),
           aiExamples: guideState.aiExamples,
           webText: guideState.webText,
           webImages: guideState.webImages,
@@ -601,7 +646,17 @@ export function DeepResearchView({
           maxCostUsd: null,
         },
       };
+  };
+
+  const submitComposer = () => {
+    if (guideMode) {
+      if (!guideReady) { setError(t('Selecciona al menos una fuente con texto legible.')); return; }
+      if (!documentSkills.valid) { setError(t('Corregir límites de skills')); return; }
+      const guideRequest = makeGuideRequest();
       void window.nodus.enqueueDeepResearchJob(guideRequest).catch((enqueueError) => {
+        if (enqueueError instanceof Error && enqueueError.name === 'AbortError') {
+          setError(null); setMessage(t('Generación cancelada.')); return;
+        }
         setError(enqueueError instanceof Error ? enqueueError.message : String(enqueueError));
       });
       setComposerOpen(false);
@@ -624,6 +679,8 @@ export function DeepResearchView({
     const outline = isTeaching && structureMode === 'manual' && deepSectionLimit !== 'single' ? unitOutline : null;
     const request = {
       objective: objective.trim(),
+      ...(mobileGuideSources ? {mobileSourceScope} : {}),
+      ...(mobileAcademicRetrieval ? {retrieval:mobileAcademicRetrieval} : {}),
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
@@ -643,6 +700,9 @@ export function DeepResearchView({
       ...(outline ? { outline: outline.map((slot) => ({ title: slot.title.trim(), focus: slot.focus?.trim() || undefined })) } : {}),
     } as DeepResearchRequest & { deepResearchVersion: DeepResearchVersion };
     void window.nodus.enqueueDeepResearchJob(request).catch((enqueueError) => {
+      if (enqueueError instanceof Error && enqueueError.name === 'AbortError') {
+        setError(null); setMessage(t('Generación cancelada.')); return;
+      }
       setError(enqueueError instanceof Error ? enqueueError.message : String(enqueueError));
     });
     setComposerOpen(false);
@@ -657,6 +717,7 @@ export function DeepResearchView({
   };
 
   const openReader = (saved: WritingWorkshopSavedDraft) => {
+    if (mobile && onNativeRead) { onNativeRead(saved.id); return; }
     if (mode === 'reader' && openDraft?.id === saved.id) return;
     setOpenIds((ids) => ids.includes(saved.id) ? ids : [...ids, saved.id]);
     restoredReading.current = readingById.current[saved.id] ?? null;
@@ -1009,6 +1070,7 @@ export function DeepResearchView({
         progress: job.status === 'running' || job.status === 'queued' ? job.progress : null,
         error: job.error ?? job.saveError,
         origin: job.origin,
+        retryable: Boolean((job as DeepResearchJobRecord & {retryable?:boolean}).retryable),
         enqueuedAt: job.enqueuedAt,
       }];
     })
@@ -1067,7 +1129,21 @@ export function DeepResearchView({
   // the report takes is what makes returning to the section look like the app opening
   // the list and clicking the report by itself. `mode` already says the reader was in
   // a report — so wait here, quietly, until the report it names has landed.
-  if (mode === 'reader' && !openDraft) return <RestoringPane />;
+  const galleryFailure = galleryLoadError && (
+    <div role="alert" data-testid="deep-research-catalog-error" className="flex flex-wrap items-center gap-3 border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+      <div className="min-w-0 flex-1">
+        <p>{t('No se pudieron cargar los documentos guardados.')}</p>
+        <p className="mt-1 break-words text-xs">{errorText(galleryLoadError)}</p>
+      </div>
+      <button className="btn btn-ghost shrink-0" onClick={() => void refreshSavedDrafts()}>{t('Reintentar')}</button>
+    </div>
+  );
+
+  if (mode === 'reader' && !openDraft) {
+    return galleryFailure
+      ? <div className="theme-workspace-surface h-full flex flex-col min-h-0">{workspaceTabs}{galleryFailure}</div>
+      : <RestoringPane />;
+  }
 
   if (mode === 'reader' && openDraft) {
     return (
@@ -1077,9 +1153,11 @@ export function DeepResearchView({
             the window, so the report and its own toolbar are all that is left on
             screen. In the shell, the reader fills the space below the tabs. */}
         <div className={fullscreen ? 'fixed inset-0 z-40 flex flex-col bg-neutral-950' : 'flex flex-col flex-1 min-h-0'} data-testid="deep-research-reader-shell" data-fullscreen={fullscreen ? 'on' : 'off'}>
+          {galleryFailure}
           <DocumentVisualScope target={{ kind: 'deep-research', id: openDraft.id }} enabled={!appliedTranslation}>
           <ReaderView
             key={openDraft.id}
+            mobile={mobile}
             saved={openDraft}
             settings={settings}
             initialReading={restoredReading.current}
@@ -1117,7 +1195,7 @@ export function DeepResearchView({
             entityKind="deep_research"
             entityId={openDraft.id}
             sourceTitle={openDraft.draft.title}
-            sourceMarkdown={`# ${openDraft.draft.title}\n\n${openDraft.draft.abstract ? `${openDraft.draft.abstract}\n\n` : ''}${stripLeadingAbstract(openDraft.draft.draftMarkdown, openDraft.draft.abstract)}`}
+            sourceMarkdown={researchTranslationSource(openDraft.draft)}
             model={openDraft.model}
             activeTranslationId={appliedTranslation?.id ?? null}
             onApply={setAppliedTranslation}
@@ -1157,6 +1235,15 @@ export function DeepResearchView({
   return (
     <div className="theme-workspace-surface h-full flex flex-col min-h-0">
       {workspaceTabs}
+      <GalleryScroller
+        anchorId={galleryAnchorId}
+        revision={visibleDrafts}
+        onMissed={() => {
+          setGalleryAnchorId(null);
+          report.current?.({ placement: null });
+        }}
+        onCapture={(anchorId) => report.current?.({ placement: anchorId ? { anchorId } : null })}
+        header={<>
       <SectionHeader
         icon="telescope"
         title={t(copy.heading)}
@@ -1165,16 +1252,18 @@ export function DeepResearchView({
         <button className="btn btn-ghost gap-1.5 border border-neutral-700" onClick={() => setShowTutorial((v) => !v)}>
           <Icon name="help" /> {showTutorial ? t('Ocultar tutorial') : t('Tutorial')}
         </button>
-        {savedDrafts.length > 0 && (
+        {(mobile || savedDrafts.length > 0) && (
           <button
             className={`btn btn-ghost gap-1.5 border ${selecting ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
             onClick={startDownload}
+            disabled={loadingSavedDrafts || savedDrafts.length === 0}
             title={t('Descargar en un ZIP los informes seleccionados')}
           >
             <Icon name="download" /> {t('Descargar')}
             {selecting && selected.size > 0 && <span className="text-xs text-indigo-300">({selected.size})</span>}
           </button>
         )}
+        {onLegacyReports && <button type="button" className="btn btn-secondary" onClick={onLegacyReports}>{t('Informes de versiones anteriores')}</button>}
         <button data-testid="deep-research-new" className="btn btn-primary gap-1.5" onClick={() => setComposerOpen(true)}>
           <Icon name="plus" /> {t(copy.newAction)}
         </button>
@@ -1189,6 +1278,8 @@ export function DeepResearchView({
         </div>
       )}
 
+      {galleryFailure}
+
       {(activeQueue.length > 0 || finishedQueue.length > 0) && (
         <DeepResearchQueueStrip
           active={activeQueue}
@@ -1196,6 +1287,7 @@ export function DeepResearchView({
           running={deepRunning || activeQueue.some((item) => item.status === 'running')}
           onRemove={removeQueued}
           onClearFinished={clearFinished}
+          onRetry={onRetryResearch ? item=>{void onRetryResearch(item.id).catch(error=>setError(error instanceof Error?error.message:String(error)));}:undefined}
         />
       )}
 
@@ -1203,6 +1295,8 @@ export function DeepResearchView({
         <div className="relative min-w-[14rem] flex-1 max-w-md">
           <Icon name="search" size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
           <input
+            type="search"
+            aria-label={t(copy.searchPlaceholder)}
             className="input input-with-leading-icon w-full !py-1.5 text-sm"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1317,19 +1411,12 @@ export function DeepResearchView({
         </div>
       )}
 
-      <GalleryScroller
-        anchorId={galleryAnchorId}
-        revision={visibleDrafts}
-        onMissed={() => {
-          setGalleryAnchorId(null);
-          report.current?.({ placement: null });
-        }}
-        onCapture={(anchorId) => report.current?.({ placement: anchorId ? { anchorId } : null })}
+        </>}
       >
-        {visibleDrafts.length === 0 ? (
+        {visibleDrafts.length === 0 ? galleryLoadError ? null : (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <Icon name="compass" size={28} className="text-neutral-600" />
-            <div className="max-w-md text-sm text-neutral-500">
+            <div role="status" className="max-w-md text-sm text-neutral-500">
               {loadingSavedDrafts
                 ? t(copy.loading)
                 : activeFilterCount > 0
@@ -1409,7 +1496,7 @@ export function DeepResearchView({
           }}
           onUnitOutline={setUnitOutline}
           isAcademic={variant === 'academic'}
-          notebookControl={variant === 'academic' ? <ResearchNotebookControl value={notebookId} onChange={setNotebookId} /> : undefined}
+          notebookControl={variant === 'academic' && !(mobileGuideSources&&mobileSourceScope==='device_downloads') ? <ResearchNotebookControl value={notebookId} onChange={setNotebookId} /> : undefined}
           objective={objective}
           approach={approach}
           version={deepResearchVersion}
@@ -1444,8 +1531,33 @@ export function DeepResearchView({
           studyReportMode={isStudy && !isTeaching ? studyReportMode : undefined}
           onStudyReportMode={setStudyReportMode}
           guideReady={guideReady}
+          sourcePanel={mobileGuideSources ? <div className="space-y-2">
+            <label className="block text-xs">{t('Fuentes de esta investigación')}
+              <select className="ml-2" value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
+                <option value="linked_corpus">{t('Fuentes preparadas del Mac')}</option>
+                <option value="device_downloads">{t('Fuentes elegidas en Descargas')}</option>
+              </select>
+            </label>
+            {variant==='academic' ? <>
+              {mobileSourceScope==='device_downloads' ? <label className="block text-xs">{t('Cuaderno descargado')}<select className="ml-2" value={academicDownloads.find(item=>item.notebookId===notebookId&&(!mobileAcademicRetrieval||JSON.stringify(item.settings)===JSON.stringify(mobileAcademicRetrieval)))?.recordId??''} onChange={event=>{const selected=academicDownloads.find(item=>item.recordId===event.target.value);if(selected){setNotebookId(selected.notebookId);setMobileAcademicRetrieval(selected.settings);}}}><option value="">{t('Elige una copia descargada')}</option>{academicDownloads.map(item=><option key={item.recordId} value={item.recordId}>{item.title}</option>)}</select></label> : null}
+              <p className="text-xs text-neutral-500">{t('Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.')}</p>
+              <div className="flex gap-2">{([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!objective.trim()||!selectedModel||!mobileGuideSources.downloadAcademic} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.downloadAcademic!({objective:objective.trim(),notebookId,model:selectedModel,language,...(mobileAcademicRetrieval?{retrieval:mobileAcademicRetrieval}:{})},days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}</div>
+            </> : isGenealogy ? <>
+              <p className="text-xs text-neutral-500">{t('La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.')}</p>
+              <div className="flex gap-2">{([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!objective.trim()||!selectedModel||!mobileGuideSources.downloadGenealogy} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.downloadGenealogy!({objective:objective.trim(),focusPersonId,model:selectedModel,language},days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}</div>
+            </> : mobileSourceScope === 'device_downloads' && <p className="text-xs text-neutral-500">{t('Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.')}</p>}
+          </div> : undefined}
           guidePanel={guideMode ? (
-            <CompleteGuideComposer value={guideState} onChange={setGuideState} model={selectedModel ?? null} thinkingEffort={thinkingEffort} onReadyChange={setGuideReady} />
+            <>
+              {mobileGuideSources && <div className="flex flex-wrap items-center gap-2">
+                <select aria-label={t('Fuentes de la guía')} value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
+                  <option value="linked_corpus">{t('Fuentes del Mac')}</option><option value="device_downloads">{t('Fuentes descargadas')}</option>
+                </select>
+                {([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!guideReady||!selectedModel} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.download(makeGuideRequest(),days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}
+              </div>}
+              <CompleteGuideComposer value={guideState} onChange={setGuideState} model={selectedModel ?? null} thinkingEffort={thinkingEffort} onReadyChange={setGuideReady}
+                loadCatalog={mobileGuideSources?loadGuideCatalog:undefined} loadPreview={mobileGuideSources?loadGuidePreview:undefined} />
+            </>
           ) : undefined}
         />
       )}
@@ -1472,12 +1584,14 @@ function GalleryScroller({
   revision,
   onMissed,
   onCapture,
+  header,
   children,
 }: {
   anchorId: string | null;
   revision: unknown;
   onMissed: () => void;
   onCapture: (anchorId: string | null) => void;
+  header: ReactNode;
   children: ReactNode;
 }) {
   const scrollerRef = useListPlacement<HTMLDivElement>({
@@ -1486,7 +1600,13 @@ function GalleryScroller({
     onRestoreMissed: onMissed,
     onCapture,
   });
-  return <div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>;
+  // Large system text can make the controls taller than the mobile viewport.
+  // Keep them in the same scroll area as the reports so every card stays reachable,
+  // and restore the reading position against that actual scroll container.
+  const mobile = Boolean((window as Window & { nodusMobileConfig?: unknown }).nodusMobileConfig);
+  return mobile
+    ? <div ref={scrollerRef} className="deep-research-gallery-scroller min-h-0 flex-1 overflow-y-auto">{header}<div className="p-4">{children}</div></div>
+    : <>{header}<div ref={scrollerRef} className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div></>;
 }
 
 function SelectCheck({ checked }: { checked: boolean }) {
@@ -2173,7 +2293,25 @@ function ReaderFontControls({
   );
 }
 
+function ReaderDisclosure({ mobile, label, children }: { mobile: boolean; label: string; children: ReactNode }) {
+  return mobile ? <details className="deep-research-reader-disclosure"><summary>{label}</summary>{children}</details> : <>{children}</>;
+}
+
+function ReaderTitleDialog({ title, onClose }: { title: string; onClose: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
+  return <dialog ref={dialog} aria-label={t('Título del informe')} className="deep-research-title-dialog" onCancel={onClose}>
+    <div className="deep-research-title-dialog-toolbar"><strong>{t('Título del informe')}</strong><button className="btn btn-ghost" onClick={onClose}>{t('Cerrar')}</button></div>
+    <div className="deep-research-title-dialog-content"><p>{title}</p></div>
+  </dialog>;
+}
+
 function ReaderView({
+  mobile,
   saved,
   settings,
   initialReading,
@@ -2201,6 +2339,7 @@ function ReaderView({
   onGuideEvidence,
   onExportCheatSheet,
 }: {
+  mobile: boolean;
   saved: WritingWorkshopSavedDraft;
   settings: AppSettings;
   /** How far into the report the reader had got last time. */
@@ -2239,6 +2378,7 @@ function ReaderView({
   const [annotations, setAnnotations] = useState<WritingDraftAnnotation[]>([]);
   const [highlighterColor, setHighlighterColor] = useState<WritingDraftAnnotationColor | null>(null);
   const [annotationError, setAnnotationError] = useState<string | null>(null);
+  const [showFullTitle, setShowFullTitle] = useState(false);
   const annotationScope = appliedTranslation ? `translation:${appliedTranslation.id}` : 'source';
   const { headings, activeIndex, progress } = useReportOutline({
     scrollerRef: mainRef,
@@ -2313,19 +2453,25 @@ function ReaderView({
   return (
     <div className="h-full flex flex-col min-h-0">
       <NodiViewContextSource title={contextTitle} text={contextMarkdown} />
-      <header data-testid="deep-research-reader-toolbar" className="flex flex-wrap items-center gap-2 border-b border-neutral-800 px-4 py-2.5">
-        <button className="btn btn-ghost gap-1.5" onClick={onBack}>
+      <header data-testid="deep-research-reader-toolbar" className="deep-research-reader-header flex flex-wrap items-center gap-2 border-b border-neutral-800 px-4 py-2.5">
+        <button className="deep-research-reader-back btn btn-ghost gap-1.5" onClick={onBack}>
           <Icon name="chevronLeft" /> {t('Volver a la galería')}
         </button>
-        <div className="min-w-48 flex-1">
-          <div className="truncate text-sm font-semibold text-neutral-100" title={appliedTranslation?.title ?? saved.title}>{appliedTranslation?.title ?? saved.title}</div>
+        <div className="deep-research-reader-meta min-w-48 flex-1">
+          {mobile ? <button className="deep-research-reader-title" aria-label={t('Ver título completo')} onClick={() => setShowFullTitle(true)}>
+            <span>{appliedTranslation?.title ?? saved.title}</span><Icon name="chevronDown" />
+          </button> : <div className="truncate text-sm font-semibold text-neutral-100" title={appliedTranslation?.title ?? saved.title}>{appliedTranslation?.title ?? saved.title}</div>}
+          <ReaderDisclosure mobile={mobile} label={t('Datos del informe')}>
           <div className="mt-0.5 flex flex-wrap items-center gap-2">
             <span className="text-[11px] text-neutral-500">{formatDate(saved.updatedAt)}</span>
             <ReportGenerationTags saved={saved} />
           </div>
+          </ReaderDisclosure>
         </div>
         {/* Icons only: the report title needs the room, and the reader already
             auto-saves, so there is no "Guardar borrador" action to offer here. */}
+        <ReaderDisclosure mobile={mobile} label={t('Opciones del informe')}>
+        <div className="deep-research-reader-actions contents">
         <DraftActionBar
           exporting={exporting}
           savingDraft={false}
@@ -2393,7 +2539,10 @@ function ReaderView({
           data-testid="deep-research-fullscreen-toggle"
           className={`btn-ghost h-9 min-h-9 border ${fullscreen ? 'border-indigo-700/60 text-indigo-200' : 'border-neutral-700'}`}
         />
+        </div>
+        </ReaderDisclosure>
       </header>
+      {mobile && showFullTitle && <ReaderTitleDialog title={appliedTranslation?.title ?? saved.title} onClose={() => setShowFullTitle(false)} />}
 
       {(message || error || annotationError) && (
         <div className={`px-4 py-2 text-sm border-b ${(error || annotationError) ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200' : 'border-neutral-200 text-neutral-500 dark:border-neutral-800 dark:text-neutral-400'}`}>
@@ -2403,7 +2552,7 @@ function ReaderView({
 
       <div className="min-h-0 flex-1 flex">
         <ReportOutlineRail headings={headings} activeIndex={activeIndex} progress={progress} deferUntilWide={showMatrix} onSelect={goToHeading} />
-        <main ref={mainRef} className={`min-w-0 flex-1 overflow-y-auto py-6 max-md:px-4 ${fullscreen ? 'px-10 max-lg:px-6' : 'px-6'}`}>
+        <main ref={mainRef} aria-label={t('Contenido del informe')} className={`deep-research-reader-content min-w-0 flex-1 overflow-y-auto py-6 max-md:px-4 ${fullscreen ? 'px-10 max-lg:px-6' : 'px-6'}`}>
           <div className={`mx-auto space-y-6 ${fullscreen ? 'max-w-6xl' : 'max-w-5xl'}`}>
             <DecorativeImageCard
               entityKind="deep_research"
@@ -2513,6 +2662,7 @@ export function ComposerModal({
   studyReportMode,
   onStudyReportMode,
   guidePanel,
+  sourcePanel,
   guideReady = false,
 }: {
   documentSkills: ReturnType<typeof useDocumentSkills>;
@@ -2560,9 +2710,11 @@ export function ComposerModal({
   studyReportMode?: 'research' | 'complete_guide';
   onStudyReportMode?: (mode: 'research' | 'complete_guide') => void;
   guidePanel?: ReactNode;
+  sourcePanel?: ReactNode;
   guideReady?: boolean;
 }) {
   const guideMode = studyReportMode === 'complete_guide';
+  const backdropTouch = useRef(false);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -2572,7 +2724,14 @@ export function ComposerModal({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      onPointerDownCapture={(event) => { backdropTouch.current = event.target === event.currentTarget; }}
+      onClick={(event) => {
+        if (backdropTouch.current && event.target === event.currentTarget) onClose();
+        backdropTouch.current = false;
+      }}
+    >
       <section
         role="dialog"
         aria-modal="true"
@@ -2615,6 +2774,7 @@ export function ComposerModal({
             </div>
           )}
           {guideMode && guidePanel}
+          {!guideMode && sourcePanel}
           <textarea
             className="input min-h-28 w-full resize-y"
             value={objective}
@@ -2766,10 +2926,10 @@ export function ComposerModal({
                 ))}
               </select>
             </label>
-            <label className="block min-w-0">
+            <div className="block min-w-0">
               <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-neutral-500">{t('Modelo')}</span>
               <ModelPicker settings={settings} value={model} onChange={onModel} ariaLabel={t('Modelo')} className="w-full text-sm" menu />
-            </label>
+            </div>
             <ResearchEffortControl variant="field" label className="w-full !py-2 text-sm" testId="deep-research-thinking" model={model ?? null} value={thinkingEffort} onChange={onThinkingEffort} disabled={!model} />
           </div>
           {!isAcademic && <DocumentSkillsControl value={documentSkills.policy} onChange={documentSkills.setPolicy} onValidityChange={documentSkills.setValid} />}

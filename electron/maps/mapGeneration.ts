@@ -1,3 +1,4 @@
+import { getDb } from '../db/database';
 import { GoogleGenAI } from '@google/genai';
 import type { ImageProvider, MapImageRole, WorldMap, WorldMapKind } from '@shared/types';
 import {
@@ -215,7 +216,7 @@ function imageModel(): ResolvedModel {
 async function runGeneration(
   input: MapPromptInput,
   reference: { bytes: Buffer; mimeType: string } | null,
-): Promise<{ generated: GeneratedImageBytes; degraded: boolean; prompt: string }> {
+): Promise<{ generated: GeneratedImageBytes; degraded: boolean; prompt: string; provider: ImageProvider; model: string }> {
   const { provider, model } = imageModel();
   const wantsReference = needsReference(input.mode) && !!reference;
   const capable = wantsReference && supportsReferenceImage(provider, model);
@@ -223,7 +224,7 @@ async function runGeneration(
   if (capable) {
     try {
       const prompt = buildMapPrompt(input);
-      return { generated: await generateWithReference(provider, model, prompt, reference!), degraded: false, prompt };
+      return { generated: await generateWithReference(provider, model, prompt, reference!), degraded: false, prompt, provider, model };
     } catch (error) {
       // A provider we believed capable and that refused is still a degradation, not a
       // failure: the author gets a map plus an honest notice instead of an error.
@@ -238,7 +239,7 @@ async function runGeneration(
     prompt = buildMapPrompt({ ...input, extra: `${input.extra ?? ''} The geography to reproduce: ${described}`.trim() });
     degraded = true;
   }
-  return { generated: await callImageProvider(provider, model, prompt), degraded, prompt };
+  return { generated: await callImageProvider(provider, model, prompt), degraded, prompt, provider, model };
 }
 
 function noticeFor(degraded: boolean): string | null {
@@ -254,7 +255,7 @@ async function baseImageOf(map: WorldMap): Promise<{ bytes: Buffer; mimeType: st
   return { bytes: blob.blob, mimeType: blob.mimeType };
 }
 
-function promptInputFor(map: WorldMap, request: MapGenerationRequest, region?: MapFootprint): MapPromptInput {
+export function promptInputFor(map: WorldMap, request: MapGenerationRequest, region?: MapFootprint): MapPromptInput {
   return {
     mode: request.mode,
     kind: map.kind as WorldMapKind,
@@ -270,13 +271,23 @@ function promptInputFor(map: WorldMap, request: MapGenerationRequest, region?: M
 }
 
 /** Create or regenerate a map's own image. */
-export async function generateMapImage(request: MapGenerationRequest): Promise<MapGenerationResult> {
+export interface MapGenerationLifecycle { signal?: AbortSignal; progress?: (phase: string) => void }
+function checkpoint(lifecycle: MapGenerationLifecycle, phase: string) { lifecycle.signal?.throwIfAborted(); lifecycle.progress?.(phase); }
+export function mapGenerationSourceSnapshot(map: WorldMap): string { return JSON.stringify({map,input:promptInputFor(map,{mapId:map.mapId,mode:'create'}),markers:listMapMarkers(map.mapId)}); }
+function unchangedMap(map: WorldMap, snapshot: string) { if (JSON.stringify(getWorldMap(map.mapId)) !== JSON.stringify(map) || mapGenerationSourceSnapshot(map) !== snapshot) throw new Error('map_generation_source_conflict'); }
+
+export async function generateMapImage(request: MapGenerationRequest, lifecycle: MapGenerationLifecycle = {}): Promise<MapGenerationResult> {
+  checkpoint(lifecycle, 'context');
   const map = getWorldMap(request.mapId);
   if (!map) throw new Error('Mapa no encontrado.');
+  const snapshot = mapGenerationSourceSnapshot(map);
   const reference = request.mode === 'restyle' || request.mode === 'variant' ? await baseImageOf(map).catch(() => null) : null;
-  const { generated, degraded, prompt } = await runGeneration(promptInputFor(map, request), reference);
+  checkpoint(lifecycle, 'generating');
+  const { generated, degraded, prompt, provider, model } = await runGeneration(promptInputFor(map, request), reference);
   const prepared = await prepareMapImage(generated.bytes);
-  const { provider, model } = imageModel();
+  checkpoint(lifecycle, 'saving');
+  getDb().transaction(() => {
+  unchangedMap(map, snapshot);
   saveMapImage({
     mapId: map.mapId,
     role: 'base' as MapImageRole,
@@ -288,6 +299,7 @@ export async function generateMapImage(request: MapGenerationRequest): Promise<M
     generated: true,
   });
   if (request.style) updateWorldMap(map.mapId, { style: request.style });
+  })();
   return { map: getWorldMap(map.mapId)!, degraded, notice: noticeFor(degraded) };
 }
 
@@ -402,9 +414,11 @@ function segmentFraction(map: WorldMap): number {
  * marker, every vertex and both ends of the calibration in one transaction; if the image
  * were computed from a different growth the map would be silently, permanently wrong.
  */
-export async function expandMapCanvas(request: MapGenerationRequest): Promise<MapGenerationResult> {
+export async function expandMapCanvas(request: MapGenerationRequest, lifecycle: MapGenerationLifecycle = {}): Promise<MapGenerationResult> {
+  checkpoint(lifecycle, 'context');
   const map = getWorldMap(request.mapId);
   if (!map) throw new Error('Mapa no encontrado.');
+  const snapshot = mapGenerationSourceSnapshot(map);
   const edge = request.edge ?? 'north';
   const fraction = request.fraction && request.fraction > 0 ? Math.min(2, request.fraction) : 0.5;
   const growth: CanvasGrowth = growthForEdge(edge, fraction);
@@ -413,15 +427,18 @@ export async function expandMapCanvas(request: MapGenerationRequest): Promise<Ma
   // The canvas the model is asked to continue: the old image in its new position, the
   // rest neutral. Same growth object as the coordinates below — that is the invariant.
   const canvas = await extendMapCanvas(source.bytes, growth);
-  const { generated, degraded, prompt } = await runGeneration(
+  checkpoint(lifecycle, 'generating');
+  const { generated, degraded, prompt, provider, model } = await runGeneration(
     promptInputFor(map, { ...request, mode: 'expand', edge }),
     { bytes: canvas.blob, mimeType: canvas.mimeType },
   );
   const prepared = await prepareMapImage(generated.bytes);
-  const { provider, model } = imageModel();
 
   // Coordinates first: if this throws, the map keeps its old image AND its old
   // coordinates, which is a consistent state. The reverse order would not be.
+  checkpoint(lifecycle, 'saving');
+  getDb().transaction(() => {
+  unchangedMap(map, snapshot);
   growMapCanvas(map.mapId, growth);
   saveMapImage({
     mapId: map.mapId,
@@ -433,6 +450,7 @@ export async function expandMapCanvas(request: MapGenerationRequest): Promise<Ma
     style: map.style,
     generated: true,
   });
+  })();
   return { map: getWorldMap(map.mapId)!, degraded, notice: noticeFor(degraded) };
 }
 

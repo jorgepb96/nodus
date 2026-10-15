@@ -68,6 +68,7 @@ export interface WritingWorkshopDraftSummary {
 export interface ListWritingWorkshopDraftSummariesOptions {
   query?: string;
   kind?: WritingWorkshopKind;
+  excludeKind?: WritingWorkshopKind;
   sort?: 'newest' | 'oldest' | 'title';
   limit: number;
   offset: number;
@@ -79,6 +80,18 @@ export interface ListWritingWorkshopDraftSummariesOptions {
 const SELECT_DRAFTS =
   'SELECT d.*, r.updated_at AS read_at FROM writing_saved_drafts d ' +
   'LEFT JOIN writing_draft_reads r ON r.draft_id = d.id';
+
+const INVALID_DRAFT_CATALOG = 'No se pudieron cargar todos los documentos guardados. Hay registros con un formato inválido; se conserva su contenido.';
+
+/** Count and paginated discovery must not silently discard an unreadable row. */
+function requireReadableDraftCatalog(): void {
+  const invalid = getDb().prepare(`SELECT id FROM writing_saved_drafts
+    WHERE CASE WHEN json_valid(brief_json) THEN json_type(brief_json) != 'object' ELSE 1 END
+       OR CASE WHEN json_valid(draft_json) THEN json_type(draft_json) != 'object' ELSE 1 END
+       OR CASE WHEN model_json IS NULL THEN 0 WHEN json_valid(model_json) THEN json_type(model_json) != 'object' ELSE 1 END
+    LIMIT 1`).get();
+  if (invalid) throw new Error(INVALID_DRAFT_CATALOG);
+}
 
 /**
  * Every read of a saved report goes through here, which is why the citation labels
@@ -107,11 +120,18 @@ function toSavedDraft(row: SavedWritingDraftRow): WritingWorkshopSavedDraft | nu
   }
 }
 
-export function listWritingWorkshopDrafts(): WritingWorkshopSavedDraft[] {
+export function listWritingWorkshopDrafts(options: { requireComplete?: boolean } = {}): WritingWorkshopSavedDraft[] {
+  if (options.requireComplete) requireReadableDraftCatalog();
   const rows = getDb()
     .prepare(`${SELECT_DRAFTS} ORDER BY d.updated_at DESC, d.created_at DESC`)
     .all() as SavedWritingDraftRow[];
-  return rows.map(toSavedDraft).filter((draft): draft is WritingWorkshopSavedDraft => draft !== null);
+  const drafts = rows.map(toSavedDraft);
+  // Consultation must distinguish damaged records from a genuinely empty vault.
+  // Legacy internal callers may still request the intact subset explicitly.
+  if (options.requireComplete && drafts.some(draft => draft === null)) {
+    throw new Error(INVALID_DRAFT_CATALOG);
+  }
+  return drafts.filter((draft): draft is WritingWorkshopSavedDraft => draft !== null);
 }
 
 function toDraftSummary(row: SavedWritingDraftSummaryRow): WritingWorkshopDraftSummary | null {
@@ -152,11 +172,16 @@ function toDraftSummary(row: SavedWritingDraftSummaryRow): WritingWorkshopDraftS
 export function listWritingWorkshopDraftSummaries(
   options: ListWritingWorkshopDraftSummariesOptions
 ): { drafts: WritingWorkshopDraftSummary[]; total: number } {
+  requireReadableDraftCatalog();
   const where = ['json_valid(d.brief_json)', 'json_valid(d.draft_json)'];
   const values: Array<string | number> = [];
   if (options.kind) {
     where.push("json_extract(d.brief_json, '$.kind') = ?");
     values.push(options.kind);
+  }
+  if (options.excludeKind) {
+    where.push("json_extract(d.brief_json, '$.kind') != ?");
+    values.push(options.excludeKind);
   }
   const query = options.query?.trim().toLowerCase();
   if (query) {
@@ -171,10 +196,10 @@ export function listWritingWorkshopDraftSummaries(
     .get(...values) as { total: number };
   const orderBy =
     options.sort === 'oldest'
-      ? 'd.updated_at ASC, d.created_at ASC'
+      ? 'd.updated_at ASC, d.created_at ASC, d.id ASC'
       : options.sort === 'title'
-        ? 'd.title COLLATE NOCASE ASC, d.updated_at DESC'
-        : 'd.updated_at DESC, d.created_at DESC';
+        ? 'd.title COLLATE NOCASE ASC, d.updated_at DESC, d.id ASC'
+        : 'd.updated_at DESC, d.created_at DESC, d.id ASC';
   const rows = getDb()
     .prepare(
       `SELECT d.id, d.title, d.brief_json, d.model_json,
@@ -191,13 +216,16 @@ export function listWritingWorkshopDraftSummaries(
         LIMIT ? OFFSET ?`
     )
     .all(...values, options.limit, options.offset) as SavedWritingDraftSummaryRow[];
+  const drafts = rows.map(toDraftSummary);
+  if (drafts.some(draft => draft === null)) throw new Error(INVALID_DRAFT_CATALOG);
   return {
-    drafts: rows.map(toDraftSummary).filter((draft): draft is WritingWorkshopDraftSummary => draft !== null),
+    drafts: drafts as WritingWorkshopDraftSummary[],
     total: countRow.total,
   };
 }
 
 export function countWritingWorkshopDrafts(kind?: WritingWorkshopKind): number {
+  requireReadableDraftCatalog();
   const kindPredicate = kind ? " AND json_extract(brief_json, '$.kind') = ?" : '';
   const row = getDb()
     .prepare(`SELECT COUNT(*) AS total FROM writing_saved_drafts WHERE json_valid(brief_json)${kindPredicate}`)
@@ -205,9 +233,9 @@ export function countWritingWorkshopDrafts(kind?: WritingWorkshopKind): number {
   return row.total;
 }
 
-export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest): WritingWorkshopSavedDraft {
+export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest, identity?: string): WritingWorkshopSavedDraft {
   const now = new Date().toISOString();
-  const id = uuid();
+  const id = identity ?? uuid();
   const title = request.title?.trim() || request.draft.title.trim() || 'Borrador sin título';
   getDb()
     .prepare(
@@ -232,7 +260,10 @@ export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftReques
 
 export function getWritingWorkshopDraft(id: string): WritingWorkshopSavedDraft | null {
   const row = getDb().prepare(`${SELECT_DRAFTS} WHERE d.id = ?`).get(id) as SavedWritingDraftRow | undefined;
-  return row ? toSavedDraft(row) : null;
+  if (!row) return null;
+  const draft = toSavedDraft(row);
+  if (!draft) throw new Error(INVALID_DRAFT_CATALOG);
+  return draft;
 }
 
 /**

@@ -142,6 +142,23 @@ try {
     stripDisallowedCitations('Value [Source](nodus://passage/known) [Same page](nodus://passage/known) [Source](nodus://passage/known).', new Set(['passage:known'])),
     'Value [Source](nodus://passage/known).', 'only adjacent duplicate targets collapse',
   );
+  const capturedPresentation = 'Hecho [fixture 25, p. p. 1](nodus://passage/documentary%3Afixture25%231). [fixture 25, p. 1](nodus://passage/documentary%3Afixture25%231)';
+  assert.equal(stripDisallowedCitations(capturedPresentation, new Set(['passage:documentary:fixture25#1'])),
+    'Hecho [fixture 25, p. p. 1](nodus://passage/documentary%3Afixture25%231).',
+    'same-target audit chip after terminal punctuation collapses while punctuation remains');
+  const threeChipChain = '[A](nodus://passage/known). [A](nodus://passage/known). [A](nodus://passage/known).';
+  assert.equal(stripDisallowedCitations(threeChipChain, new Set(['passage:known'])), '[A](nodus://passage/known).',
+    'same-target three-chip chain collapses without doubled punctuation');
+  const differentPunctuation = '[A](nodus://passage/known). [A](nodus://passage/known)?';
+  assert.equal(stripDisallowedCitations(differentPunctuation, new Set(['passage:known'])), differentPunctuation,
+    'different punctuation prevents collapse');
+  const proseSeparated = 'Fact [Source](nodus://passage/known). Another [Source](nodus://passage/known).';
+  const differentKinds = '[Idea](nodus://idea/shared) [Work](nodus://work/shared).';
+  assert.equal(stripDisallowedCitations(differentKinds, new Set(['idea:shared', 'work:shared'])), differentKinds,
+    'identical IDs in different citation kinds are distinct targets');
+  assert.equal(stripDisallowedCitations(proseSeparated, new Set(['passage:known'])), proseSeparated, 'real prose separates same-target citations');
+  const lineSeparated = 'Fact [Source](nodus://passage/known).\n[Source](nodus://passage/known)';
+  assert.equal(stripDisallowedCitations(lineSeparated, new Set(['passage:known'])), lineSeparated, 'paragraph/line boundary preserves same-target citation');
   const distinctClaims = 'Value [Source](nodus://passage/known). A second fact [Source](nodus://passage/known) [Other](nodus://passage/other).';
   assert.equal(stripDisallowedCitations(distinctClaims, new Set(['passage:known', 'passage:other'])), distinctClaims,
     'citations for another claim or different source survive');

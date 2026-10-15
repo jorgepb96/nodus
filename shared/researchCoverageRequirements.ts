@@ -57,6 +57,48 @@ function sameSourceQuote(required: string, cited: string): boolean {
   return false;
 }
 
+/** Join literal evidence from supported premises without skipping source text.
+ * Every selected claim must contribute evidence from the required source;
+ * only whitespace may remain between the covered spans. */
+function sameSourceEvidenceUnion(
+  required: string,
+  sourceId: string,
+  chosen: readonly ResearchCoverageRequirementClaim[],
+): boolean {
+  const target = normalized(required).replace(/[.!?。！？…]+$/u, '').trim();
+  if (target.length < 8) return false;
+  const covered = new Uint8Array(target.length);
+  const word = (char: string) => Boolean(char) && /[\p{L}\p{N}_]/u.test(char);
+  for (const claim of chosen) {
+    let contributed = false;
+    for (const evidence of claim.evidence) {
+      if (evidence.id !== sourceId) continue;
+      // Preserve acceptance of a single wider quotation containing the target.
+      if (sameSourceQuote(required, evidence.quote)) {
+        covered.fill(1);
+        contributed = true;
+        continue;
+      }
+      const cited = normalized(evidence.quote);
+      // Prefer exact punctuation; optional terminal punctuation cannot bridge
+      // a missing decimal, negation, connective, or sentence delimiter.
+      const span = target.includes(cited) ? cited : cited.replace(/[.!?。！？…]+$/u, '').trim();
+      if (span.length < 8) continue;
+      let start = target.indexOf(span);
+      while (start >= 0) {
+        const end = start + span.length;
+        if (!word(target[start - 1] ?? '') && !word(target[end] ?? '')) {
+          covered.fill(1, start, end);
+          contributed = true;
+        }
+        start = target.indexOf(span, start + 1);
+      }
+    }
+    if (!contributed) return false;
+  }
+  return covered.every((value, index) => value === 1 || /\s/u.test(target[index]));
+}
+
 function validRequirement(requirement: ResearchCoverageRequirement): boolean {
   if (!plainObject(requirement) || !validText(requirement.id, 1, 160)
     || !validText(requirement.complaint, 2, 600) || !validText(requirement.requiredFact, 8, 600)) return false;
@@ -113,8 +155,7 @@ export function validateResearchCoverageRequirementProof(
       { answerQuotes: [quote] }, maxChars)))) return false;
 
     if (requirement.kind === 'available-fact') {
-      if (chosen.some(claim => !claim.evidence.some(evidence => evidence.id === requirement.sourceId
-        && sameSourceQuote(requirement.quote!, evidence.quote)))) return false;
+      if (!sameSourceEvidenceUnion(requirement.quote!, requirement.sourceId!, chosen)) return false;
     } else if (chosen.some(claim => claim.kind !== 'nonfactual' && claim.kind !== 'inference')) return false;
     seen.add(row.requirementId);
   }

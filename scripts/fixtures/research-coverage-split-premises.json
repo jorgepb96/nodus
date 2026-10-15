@@ -1,0 +1,89 @@
+{
+  "provenance": {
+    "caseId": "R012",
+    "baselineCommit": "51ddac9de08c95fd0dd0475668c97fd40f06c868",
+    "requestSha256": "b2149a00bfe89edbd6a1d99a52bfc7c4c0ded6f86e4e852867e58d602dacdbee",
+    "rawProofSha256": "298ba7ff2fa486928417b46391c38edb924a40f95cdec869845b5ada81ec24de",
+    "description": "Preserved literal coverage proof rejected because one source quotation was split across separately audited premises; QA synthetic sources only."
+  },
+  "question": "Can Vega establish a difference in IQ, or only recall?",
+  "requirements": [
+    {
+      "facetId": "f2",
+      "complaint": "only recall",
+      "kind": "available-fact",
+      "requiredFact": "State the recall comparison and clarify that the excerpts do not establish an IQ difference.",
+      "sourceId": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+      "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured.",
+      "id": "requirement-1"
+    },
+    {
+      "complaint": "State that the cited Vega evidence supports a recall difference (72% versus 51%), while intelligence was not measured, so it cannot establish an IQ difference.",
+      "kind": "available-fact",
+      "requiredFact": "State that the Vega trial reported recall of 72% for spaced retrieval and 51% for rereading, and that intelligence was not measured, so the excerpt cannot establish an IQ difference.",
+      "sourceId": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+      "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured.",
+      "id": "requirement-2"
+    }
+  ],
+  "answer": "In the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 The source states that intelligence was not measured. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 Inference: these reported recall rates establish a recall difference, but because intelligence was not measured, the cited evidence cannot establish an IQ difference. [fixture 02, p. 1](nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0)\n\nIn the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 The source states that intelligence was not measured. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 Inference: these reported recall rates establish a recall difference, but because intelligence was not measured, the cited evidence cannot establish an IQ difference. [fixture 02, p. 1](nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0)",
+  "claims": [
+    {
+      "id": "claim-1",
+      "sentence": "In the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 The source states that intelligence was not measured. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 Inference: these reported recall rates establish a recall difference, but because intelligence was not measured, the cited evidence cannot establish an IQ difference.",
+      "kind": "inference",
+      "evidence": [
+        {
+          "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+          "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+        },
+        {
+          "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+          "quote": "Intelligence was not measured."
+        }
+      ]
+    },
+    {
+      "id": "claim-2",
+      "sentence": "In the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 The source states that intelligence was not measured. nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0 Inference: these reported recall rates establish a recall difference, but because intelligence was not measured, the cited evidence cannot establish an IQ difference.",
+      "kind": "inference",
+      "evidence": [
+        {
+          "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+          "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+        },
+        {
+          "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a:0",
+          "quote": "Intelligence was not measured."
+        }
+      ]
+    }
+  ],
+  "proof": {
+    "addressed": [
+      {
+        "requirementId": "requirement-1",
+        "claimIds": [
+          "claim-1",
+          "claim-2"
+        ],
+        "answerQuotes": [
+          "In the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading.",
+          "because intelligence was not measured, the cited evidence cannot establish an IQ difference."
+        ]
+      },
+      {
+        "requirementId": "requirement-2",
+        "claimIds": [
+          "claim-1",
+          "claim-2"
+        ],
+        "answerQuotes": [
+          "In the Vega trial, spaced retrieval participants recalled 72%, compared with 51% for rereading.",
+          "because intelligence was not measured, the cited evidence cannot establish an IQ difference."
+        ]
+      }
+    ],
+    "omissions": []
+  }
+}

@@ -12,6 +12,8 @@ installRuntimeHooks(root);
 const require = createRequire(import.meta.url), load = file => require(path.join(repoRoot, file));
 globalThis.fetch = () => { throw new Error('Network forbidden in structured answer regressions'); };
 const ai = load('electron/ai/aiClient.ts');
+const structuredAnswer = load('electron/ai/researchStructuredAnswer.ts');
+const answerPlanApi = load('shared/researchAnswerPlan.ts');
 const coverageRouting = load('shared/researchChatGrounding.ts');
 const traceEvents = [];
 const embeddingTrace = load('electron/qa/embeddingTrace.ts');
@@ -22,6 +24,26 @@ const question = 'What is the river level, and what was measured about flow?';
 const passage = { id: 'documentary:river#0', label: 'River survey', pageLabel: '2',
   summary: 'The river level is 18 metres. The flow rate was not measured.', citation: 'nodus://passage/documentary%3Ariver%230' };
 const context = JSON.stringify({ contexto_modular_seleccionado: { pasajes_relevantes: [passage] } });
+const auditSourcesForCitation = coverageRouting.researchChatAuditSources(context);
+const citationPlan = answerPlanApi.validateResearchAnswerPlan({ format: 'table', formatQuestionQuote: 'in a table', facets: [
+  { questionQuote: 'What is the river level', evidence: [{ sourceId: passage.id, quote: 'The river level is 18 metres.' }] },
+] }, 'What is the river level in a table?', auditSourcesForCitation).plan;
+assert.ok(citationPlan, 'citation regression uses a valid requested-table plan');
+const bareTableOutput = { answers: [{ facetId: 'f1', text: 'The measured value follows.' }], tables: [{ facetIds: ['f1'], headers: ['Value'], rows: [[`18 metres [${passage.citation}]`]] }] };
+const canonicalTableOutput = structuredAnswer.canonicalizeAuthorizedWriterCitations(bareTableOutput, auditSourcesForCitation);
+assert.equal(canonicalTableOutput.tables[0].rows[0][0], `18 metres [River survey, p. 2](${passage.citation})`,
+  'only an exact authorized bare table citation is converted into its full citation link');
+assert.equal(canonicalTableOutput.tables[0].rows[0][0].replace(/ \[[^\]]+\]\([^)]+\)/u, ''), '18 metres',
+  'citation normalization preserves the table fact exactly');
+assert.ok(answerPlanApi.validateResearchAnswerOutput(canonicalTableOutput, citationPlan).output,
+  'the canonical citation passes the existing strict table validation');
+for (const unsafeCitation of ['nodus://passage/not-authorized', 'nodus://passage/unsafe|target', 'nodus://passage/river#0']) {
+  const unsafe = structuredAnswer.canonicalizeAuthorizedWriterCitations({ ...bareTableOutput, tables: [{ ...bareTableOutput.tables[0], rows: [[`18 metres [${unsafeCitation}]`]] }] }, auditSourcesForCitation);
+  assert.equal(answerPlanApi.validateResearchAnswerOutput(unsafe, citationPlan).output, null, `${unsafeCitation} remains rejected`);
+}
+const alreadyLinked = { answers: [{ facetId: 'f1', text: `[River survey]( ${passage.citation})` }] };
+assert.deepEqual(structuredAnswer.canonicalizeAuthorizedWriterCitations(alreadyLinked, auditSourcesForCitation), alreadyLinked,
+  'existing Markdown links are not rewritten');
 const facets = ['What is the river level', 'what was measured about flow'];
 const accepted = (row, index) => ({ index, kind: 'fact', supported: true, explicitInference: false, reason: 'Literal fixture', unsupportedParts: [],
   premises: [{ text: row.text, type: 'fact', entailed: true, evidence: [{ id: passage.id, quote: passage.summary }], from: [] }] });

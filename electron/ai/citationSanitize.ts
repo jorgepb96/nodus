@@ -89,7 +89,12 @@ export function stripDisallowedCitations(text: string, allowed: Set<string>): st
       // A repaired bare target can sit beside the auditor's canonical citation.
       // Collapse only adjacent links to the same target, never citations on
       // separate sentences or different evidence sources.
-      .replace(new RegExp(`(\\[[^\\]]+\\]\\((nodus:\\/\\/(?:${ALL_LINK_KINDS})\\/[^\\s)]+)\\))(?:[ \\t]+\\[[^\\]]+\\]\\(\\2\\))+`, 'g'), '$1')
+      .replace(new RegExp(`(\\[[^\\]]+\\]\\((nodus:\\/\\/(?:${ALL_LINK_KINDS.slice(1, -1)})\\/[^\\s)]+)\\))([.!?])?(?:[ \\t]+\\[[^\\]]+\\]\\(\\2\\)([.!?])?)+`, 'g'), (match, firstLink: string) => {
+        const punctuation = [...match.matchAll(/\]\(nodus:\/\/[^)]+\)([.!?])?/g)].map((part) => part[1] ?? '');
+        const meaningfulMarks = [...new Set(punctuation.filter(Boolean))];
+        if (meaningfulMarks.length > 1) return match;
+        return firstLink + (meaningfulMarks[0] ?? '');
+      })
       // 2) A provider may stop mid-link or put spaces inside a malformed URL.
       // Such a link cannot be clicked or verified, so remove the whole citation
       // chip (up to the line/end) instead of leaking a broken nodus:// target.

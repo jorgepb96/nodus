@@ -59,13 +59,31 @@ export function validResearchAnswerQuotes(answer: string, proof: ResearchAnswerQ
   const target = comparable(answer);
   const seen = new Set<string>();
   let total = 0;
+  let hasSubstantiveSpan = false;
   for (const quote of quotes) {
-    if (typeof quote !== 'string' || quote.trim().length < 8 || (total += quote.length) > maxChars) return false;
+    if (typeof quote !== 'string' || !quote.trim() || (total += quote.length) > maxChars) return false;
     const literal = comparable(quote);
-    if (literal.length < 8 || seen.has(literal) || !target.includes(literal)) return false;
+    if (!literal || seen.has(literal) || !target.includes(literal)) return false;
     seen.add(literal);
+    if (literal.length >= 8) {
+      hasSubstantiveSpan = true;
+      continue;
+    }
+    // Tiny answer adjuncts such as "No." can accompany a meaningful span,
+    // but cannot establish coverage themselves. Keep them unique, lexical,
+    // and bounded as whole words in the audited answer.
+    if (!/\p{L}/u.test(literal)) return false;
+    const word = (character: string | undefined) => Boolean(character && /[\p{L}\p{N}_]/u.test(character));
+    let offset = 0, occurrences = 0;
+    while ((offset = target.indexOf(literal, offset)) >= 0) {
+      occurrences += 1;
+      if ((word(target[offset - 1]) && word(literal[0]))
+          || (word(target[offset + literal.length]) && word(literal.at(-1)))) return false;
+      offset += literal.length;
+    }
+    if (occurrences !== 1) return false;
   }
-  return true;
+  return hasSubstantiveSpan;
 }
 
 export function researchChatNeedsGrounding(sourceContext: string): boolean {

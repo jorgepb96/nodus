@@ -135,3 +135,64 @@ test('unknown, duplicate, malformed, and over-bound proof rows fail closed', () 
   const many = Array.from({ length: 13 }, (_, i) => ({ ...requirement, id: `r${i}` }));
   assert.equal(validate({ addressed: [], omissions: many.map(row => ({ requirementId: row.id })) }, many, sourceQuote, [claim]), false);
 });
+
+const splitPremises = JSON.parse(fs.readFileSync(path.join(repoRoot,
+  'scripts/fixtures/research-coverage-split-premises.json'), 'utf8'));
+const validateSplit = (overrides = {}) => {
+  const item = { ...structuredClone(splitPremises), ...overrides };
+  return validate(item.proof, item.requirements, item.answer, item.claims);
+};
+
+test('preserved recall/IQ proof accepts literal same-source evidence split across audited premises', () => {
+  assert.equal(validateSplit(), true);
+  for (const requirement of splitPremises.requirements) {
+    assert.equal(splitPremises.claims[0].evidence.map(row => row.quote).join(' '), requirement.quote);
+  }
+});
+
+test('split source evidence cannot drop either recall or the unmeasured intelligence limitation', () => {
+  for (const excluded of ['Intelligence', '72%']) {
+    const claims = structuredClone(splitPremises.claims);
+    for (const claim of claims) claim.evidence = claim.evidence.filter(row => !row.quote.includes(excluded));
+    assert.equal(validateSplit({ claims }), false, excluded);
+  }
+});
+
+test('every selected supported claim must contribute literal evidence from the required source', () => {
+  for (const mutation of ['foreign-source', 'unrelated', 'invented', 'unsupported']) {
+    const claims = structuredClone(splitPremises.claims);
+    if (mutation === 'foreign-source') for (const claim of claims) {
+      claim.evidence = claim.evidence.map(row => ({ ...row, id: 'doc:foreign' }));
+    }
+    if (mutation === 'unrelated') claims[1].evidence = [{ id: claims[0].evidence[0].id, quote: 'Unrelated evidence about methods.' }];
+    if (mutation === 'invented') for (const claim of claims) {
+      claim.evidence = claim.evidence.map((row, index) => index ? row : { ...row, quote: 'Invented unsupported fact.' });
+    }
+    if (mutation === 'unsupported') claims[0].status = 'removed';
+    assert.equal(validateSplit({ claims }), false, mutation);
+  }
+});
+
+test('evidence union never bridges omitted negation, punctuation, decimals, or connectives', () => {
+  const cases = [
+    ['The rate was 2.5% overall.', ['The rate was 2', '5% overall.']],
+    ['Intelligence was not measured in the trial.', ['Intelligence was', 'measured in the trial.']],
+    ['Recall increased and IQ was measured.', ['Recall increased', 'IQ was measured.']],
+    ['Recall increased; IQ was not measured.', ['Recall increased', 'IQ was not measured.']],
+  ];
+  for (const [quote, evidence] of cases) {
+    const req = { ...requirement, quote };
+    const claim = { ...supported('c1', quote, quote), evidence: evidence.map(quote => ({ id: sourceId, quote })) };
+    assert.equal(validate(proof('c1', quote), [req], quote, [claim]), false, quote);
+  }
+});
+
+test('repeated literal clauses and normalized whitespace remain covered without inventing source text', () => {
+  const quote = 'Recall was measured. Recall was measured. Intelligence was not measured.';
+  const claim = { ...supported('c1', quote, quote), evidence: [
+    { id: sourceId, quote: 'Recall was measured.' }, { id: sourceId, quote: sourceQuote },
+  ] };
+  assert.equal(validate(proof('c1', quote), [{ ...requirement, quote }], quote, [claim]), true);
+  const spaced = { ...requirement, quote: 'Recall was measured.\n\nIntelligence was not measured.' };
+  assert.equal(validate(proof('c1', quote), [spaced], quote, [claim]), true);
+});

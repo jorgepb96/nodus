@@ -1,0 +1,304 @@
+{
+  "format": "nodus.research-grounding-correction-checks/1",
+  "createdAt": "2026-10-15T11:14:00.801Z",
+  "baselineCommit": "51ddac9de08c95fd0dd0475668c97fd40f06c868",
+  "baselineQualityUnchanged": true,
+  "case": "R009",
+  "method": "Exact recorded search decisions through actual isolated Electron and local Q8 embeddings; stop at documentary planner before any new generation.",
+  "identicalSearchRequestInputsAndRawDecisions": true,
+  "before": {
+    "recordedDecisions": 8,
+    "expectedRecordedDecisions": 8,
+    "divergence": null,
+    "isolation": {
+      "writeInsideAllowed": true,
+      "writeOutsideDenied": true,
+      "descendantWriteDenied": true,
+      "externalNetworkDenied": true,
+      "forbiddenLoopbackPortDenied": true,
+      "allowedLoopbackPorts": [
+        60889
+      ]
+    },
+    "newModelGenerations": 0,
+    "paidApiCalls": 0,
+    "sourceFiles": {
+      "electron/ai/researchAssistant.ts": "00b0a1aa4ef3224c6ed8beca85cf1a8b5c1b7de8cc9a3718edc0098b557becee",
+      "electron/ai/researchContextFit.ts": "95769ea8e63c828b51e7fdfdfcab85cb7f3267fb50285214d8f61ffb1bf9c443",
+      "electron/ai/researchCorpusRun.ts": "e1b3fb922ee6d7053585bd4be9d7e0f9523f77c85b2a426799d1f5b04fb00a49"
+    },
+    "effectiveModelWindow": 32768,
+    "measuredRequestUpperBoundBefore": 45433,
+    "measuredRequestUpperBoundAfter": 32445,
+    "passageIdsBefore": [
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:87826efe639a73c03babeb6ba8b8b7423f32a81a202614589edb0f614c74a7e8:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:4db4d926a47f0be820feaade0fa9959328578dbfd55c1247c04fc0e1ba3a84e8:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:7dbc8e948229280a3a9118783c31c98b10adeca55e73be2a42b914cc959a3eac:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:fbd2f3b02ab44514fb0379fbeb5384d248d6ea813ad36b1f766fb1ff762b76a9:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a61031319abe70f958b97cf85d0538ee8dfd7522e29193802ef47bfed884780d:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a6b6ccf1d768bf4d295044dcddaed8994b014ef47752cb411a3b300d82368205:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:90e870bd527e9f80ecf60ed47822df84d44c51f68b73c803ce02797e8acc119b:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:c5be2a2707139181e0b15614cfc50a5ce1cdac2fbf967af95ed5653cf0597011:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:f3850deced90de5be5ecc33d3073e28526da1e2e7d5d8539e2068ad45903a3b0:0"
+    ],
+    "passageIdsAfter": [
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:87826efe639a73c03babeb6ba8b8b7423f32a81a202614589edb0f614c74a7e8:0"
+    ],
+    "plannerSources": [
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+        "label": "fixture 20, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+        "label": "fixture 15, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+        "label": "fixture 30, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0",
+        "label": "fixture 05, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:87826efe639a73c03babeb6ba8b8b7423f32a81a202614589edb0f614c74a7e8:0",
+        "label": "fixture 10, p. 1"
+      }
+    ],
+    "serializedSystem": {
+      "utf8Bytes": 10106,
+      "sha256": "d64664e5224769fcc2480377591c94d4c7d770bdfcc868ae0434fc181dc9f860"
+    },
+    "userBefore": {
+      "utf8Bytes": 25773,
+      "sha256": "bd453e745a9652d6f305861564e9c25a64dbb871250f06b2699e7e9c094328aa"
+    },
+    "userAfter": {
+      "utf8Bytes": 12785,
+      "sha256": "67784a397c8fe30b68a90c3ef1f7a39bfc240bb77b18b5eef500596d5fa6ed1e"
+    }
+  },
+  "after": {
+    "recordedDecisions": 8,
+    "expectedRecordedDecisions": 8,
+    "divergence": null,
+    "isolation": {
+      "writeInsideAllowed": true,
+      "writeOutsideDenied": true,
+      "descendantWriteDenied": true,
+      "externalNetworkDenied": true,
+      "forbiddenLoopbackPortDenied": true,
+      "allowedLoopbackPorts": [
+        61691
+      ]
+    },
+    "newModelGenerations": 0,
+    "paidApiCalls": 0,
+    "sourceFiles": {
+      "electron/ai/researchAssistant.ts": "5b8c1954e06ce539b668fc0c2cb48544becd09ed9fe5f32805dad08b73703696",
+      "electron/ai/researchContextFit.ts": "88c8ba9f91e7d9615ad3cdf4d914f0fb75794e5fa0fc9f0ea3a9bace5d0ed41c",
+      "electron/ai/researchCorpusRun.ts": "e1b3fb922ee6d7053585bd4be9d7e0f9523f77c85b2a426799d1f5b04fb00a49"
+    },
+    "effectiveModelWindow": 32768,
+    "measuredRequestUpperBoundBefore": 45433,
+    "measuredRequestUpperBoundAfter": 32453,
+    "passageIdsBefore": [
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:87826efe639a73c03babeb6ba8b8b7423f32a81a202614589edb0f614c74a7e8:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:4db4d926a47f0be820feaade0fa9959328578dbfd55c1247c04fc0e1ba3a84e8:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:7dbc8e948229280a3a9118783c31c98b10adeca55e73be2a42b914cc959a3eac:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:fbd2f3b02ab44514fb0379fbeb5384d248d6ea813ad36b1f766fb1ff762b76a9:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a61031319abe70f958b97cf85d0538ee8dfd7522e29193802ef47bfed884780d:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:a6b6ccf1d768bf4d295044dcddaed8994b014ef47752cb411a3b300d82368205:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:90e870bd527e9f80ecf60ed47822df84d44c51f68b73c803ce02797e8acc119b:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:c5be2a2707139181e0b15614cfc50a5ce1cdac2fbf967af95ed5653cf0597011:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:f3850deced90de5be5ecc33d3073e28526da1e2e7d5d8539e2068ad45903a3b0:0"
+    ],
+    "passageIdsAfter": [
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:7dbc8e948229280a3a9118783c31c98b10adeca55e73be2a42b914cc959a3eac:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+      "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0"
+    ],
+    "plannerSources": [
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:b236a94b94f21eecde92734791261e1636dc05c8f71ed3a2c43c3c70ee385a1a:0",
+        "label": "fixture 20, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:7dbc8e948229280a3a9118783c31c98b10adeca55e73be2a42b914cc959a3eac:0",
+        "label": "fixture 08, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:79eee19edecfa8edf5bd06381b4aa6ecd7553425cf95758bc3e750c21bd9f4b3:0",
+        "label": "fixture 15, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:74f7cc1ca96545c58ce78aba600de2c8807ecc00f94af6da0e1d3998699ddcae:0",
+        "label": "fixture 30, p. 1"
+      },
+      {
+        "id": "documentary:5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e:dd21af6e5aecda4961d2a4112bab8825a87f824ee80eeeaf471d01c65232d22b:0",
+        "label": "fixture 05, p. 1"
+      }
+    ],
+    "serializedSystem": {
+      "utf8Bytes": 10106,
+      "sha256": "d64664e5224769fcc2480377591c94d4c7d770bdfcc868ae0434fc181dc9f860"
+    },
+    "userBefore": {
+      "utf8Bytes": 25773,
+      "sha256": "b3fe261a837095baf4c5a82c14a564f6e568ca22effe442fb55972ef6fafea82"
+    },
+    "userAfter": {
+      "utf8Bytes": 12793,
+      "sha256": "f601823e86c4b3faf0ca22d1e97b49c3be283281ff6bf0e6681671731eb96bf4"
+    }
+  },
+  "reports": {
+    "before": {
+      "path": "/private/tmp/nodus-research-context-replay-5j4Wrr/artifacts/context-boundary-replay-001/report.json",
+      "sha256": "8c2e774491ba777fb2534bb2dde9d507e36be58ffffaca679090bec355dbd141"
+    },
+    "after": {
+      "path": "/private/tmp/nodus-research-context-final-xdjKMA/artifacts/context-boundary-replay/report.json",
+      "sha256": "5ae39df58cbce7c0c5763a1c1476cb5c057712ca7aae84edbff556382217d179"
+    }
+  },
+  "batch": {
+    "originalRoster": 80,
+    "exactDecisionReplays": 49,
+    "missingBaselineArtifacts": [
+      "R002",
+      "R006",
+      "R010",
+      "R015",
+      "R032",
+      "R051",
+      "R054",
+      "R055",
+      "R058",
+      "R059",
+      "R069",
+      "R072",
+      "R073",
+      "R074"
+    ],
+    "inputDivergences": [
+      "R003",
+      "R004",
+      "R005",
+      "R009",
+      "R013",
+      "R018",
+      "R026",
+      "R035",
+      "R049",
+      "R057",
+      "R061",
+      "R062",
+      "R067",
+      "R071",
+      "R075",
+      "R076",
+      "R077"
+    ],
+    "artifact": {
+      "path": "/private/tmp/nodus-research-context-all80-0ENvq7/artifacts/all-context-boundary-replay-001/report.json",
+      "sha256": "e325a098ef4348fa92e13714156b0b48a77ba3cdebdfc01537afbd675216a1af"
+    },
+    "limitation": "Batch profiles have different cached catalogue-window state from some original segments. Divergent or unavailable cases receive no credit. These are diagnostic evidence delivery checks, not a causal all-80 quality comparison."
+  },
+  "checks": [
+    {
+      "name": "grounding",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-grounding-tests-003.log",
+      "sha256": "12e654294ee0db4303e4d66ee2734bdab85acffc49a19a31ceaea2c51af31aaa"
+    },
+    {
+      "name": "retrieval",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-retrieval-tests-001.log",
+      "sha256": "9999c0daf2d126e45e31c4f191261b72f9825737f9cf7f2bf75f2cf8c4ec9b32"
+    },
+    {
+      "name": "queue-and-quality-policy",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-luna-tests-001.log",
+      "sha256": "e55591747cb42645fd9a77281cb4a808127f8e3e27e1de6883f7c8a5063cf171"
+    },
+    {
+      "name": "clone-and-shards",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-shard-tests-001.log",
+      "sha256": "625e7cecc9032e30291d1b431dab2fcc0ec28428765bfc705079be56c6e14cc2"
+    },
+    {
+      "name": "typecheck",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-typecheck-003.log",
+      "sha256": "d968538ed9e886452cbe3da0e2a51d28c09b9e7c5cc7bae85dc52cc915d4dd08"
+    },
+    {
+      "name": "lint",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-lint-002.log",
+      "sha256": "0d0d5c776ae687fc425e5e888ffdb194fca927307225ac524b430d765285225b"
+    },
+    {
+      "name": "build",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-build-003.log",
+      "sha256": "e7da0413b2346e658fa79d374c56f6fbf080e0a75ae2d01d8e511c6bffa1a57f"
+    },
+    {
+      "name": "literal-tests-after-lint",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-literal-tests-004.log",
+      "sha256": "441f9d5a739e8a59735d5615c327e2beaff05181472e30cce55798f291fbb13e"
+    }
+  ],
+  "uiSmoke": {
+    "status": "passed",
+    "report": {
+      "path": "/private/tmp/nodus-research-4svkhp/artifacts/startup.json",
+      "sha256": "5fc86853f39d40a79c2c125cb82d99c12279ac87de4da4531a7e2bafe4755df6"
+    },
+    "modelCalls": 0,
+    "realEmbeddingFixtures": false,
+    "scope": "Notebook UI/exclusions, verification opt-in, PDF page/original read, activity, modal layouts and isolated database paths.",
+    "screenshot": {
+      "path": "/private/tmp/nodus-research-4svkhp/artifacts/verification-enabled.png",
+      "sha256": "0433cf5d33da70eb627dccd975415aa06c3920f63fc0cbf28c83d84fff7382a8"
+    },
+    "screenshotInspected": true,
+    "firstAttempt": {
+      "status": "failed",
+      "reason": "The external presentation helper hid the QA window, preventing screenshot capture. Preserved; rerun without hiding.",
+      "log": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/fix-ui-smoke-001.log",
+        "sha256": "0f924917e262d9e29146f65c276689ccb1b143a071f570c387f3419f19f29ed4"
+      }
+    }
+  },
+  "limitations": [
+    "No newly generated end-to-end answer-quality rate has been measured after these source corrections.",
+    "Unknown source IDs, nonliteral quotations, missing supported premises and incomplete coverage still fail.",
+    "The original quality gate is not passed by unit tests, source routing, or restored comparator delivery.",
+    "Other native platforms, full packaged reruns and concrete model resource-term clearance remain pending."
+  ]
+}

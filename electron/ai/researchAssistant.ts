@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { withResearchActivity, researchActivityStep, startResearchActivity } from './researchActivity';
 import type { ResearchActivity } from '@shared/researchActivity';
 import { runConcilium } from './researchConcilium';
@@ -60,7 +61,7 @@ import { resolveWorkText } from '../extraction/textExtractor';
 import { AiError, completeText, completeTextStream, resolveModelRef, localModelContextWindow } from './aiClient';
 import { embedQuery } from './aiClient';
 import { retryOnceWhenCutOff } from './cutOffRetry';
-import { enforceContextBudget, humanizeCitationLabels } from './researchContextFit';
+import { enforceContextBudget, humanizeCitationLabels, passagePageCitationLabel } from './researchContextFit';
 import { ResearchWebGrant, webDepth } from './researchWebStep';
 import { WEB_RESEARCH_LIMITS } from '../websearch/webResearch';
 import { getWebPassage } from '../db/researchWebRepo';
@@ -75,6 +76,7 @@ import {
 import { repairLooseCitations } from './deepResearchCore';
 import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { verifyCitations } from '../citations/verifyCitations';
+import { recordEmbeddingTrace } from '../qa/embeddingTrace';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import {
   retrieveHierarchical,
@@ -585,7 +587,7 @@ function passageCiteLabel(passageId: string): string | null {
     if (!passage) return null;
     const base = authorYearLabel(JSON.stringify(passage.work.authors ?? []), passage.work.year)
       || truncateTitle(passage.work.title).replace(/[[\]\r\n]/gu, ' ').trim();
-    return base ? (passage.page_label ? `${base}, p. ${passage.page_label}` : base) : null;
+    return base ? passagePageCitationLabel(base, passage.page_label) : null;
   }
   if (passageId.startsWith('web:')) {
     const web = getWebPassage(passageId);
@@ -604,7 +606,7 @@ function passageCiteLabel(passageId: string): string | null {
   if (!row) return null;
   const base = authorYearLabel(row.authors_json, row.year);
   if (!base) return null;
-  return row.page_label ? `${base}, p. ${row.page_label}` : base;
+  return passagePageCitationLabel(base, row.page_label);
 }
 
 /** "Apellido, Año" from a work's stored author list, or null when neither is known. */
@@ -806,6 +808,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   const notebookScope = requestNotebookScope(request);
   let context: SectionPayload;
   let stats: ResearchContextStats;
+  let passageQueries: string[] = [];
   if (notebookScope && council?.corpus) {
     context = structuredClone(council.corpus.context); stats = council.corpus.stats;
   } else if (notebookScope) {
@@ -837,6 +840,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       : correction ? { ...literalResearchTurnPlan(retrievalQuestion), queries: retrievalQuestion.split('; ').slice(0, 4) }
         : await (planned ?? planResearchTurn(messages, request.model, signal));
     run.agent = { plan, question, compact, correction, minSources: ['definition', 'comparison', 'survey'].includes(plan.kind) ? 3 : 2 };
+    passageQueries = plan.queries;
     if (run.layers.documents) run.seedPriorEvidence(messages.slice(0, -1));
     // A synthesis-route turn searches for the target and its reaction classes: the request
     // itself is mostly output rules, and a planned goal drawn from it retrieved passages on
@@ -848,6 +852,14 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     // The graph belongs to the ideas layer: with it off, it is not read.
     const finishGraph = run.layers.ideas ? startResearchActivity('graph', 'read') : undefined;
     const snapshot = run.snapshotFromEvidence({ kind: 'research_question', objective: question, language: promptLanguage });
+    if (researchContextTraceEnabled()) recordResearchContextReceipt({
+      type: 'research-context-notebook-snapshot',
+      effectiveModelWindow: window ?? null,
+      contextBudget,
+      passages: passageReceipt({ pasajes_relevantes: snapshot.passages }),
+      snapshotJson: receiptHash(JSON.stringify(snapshot)),
+      partial: run.budget.partial,
+    });
     finishGraph?.('completed', snapshot.themes.length + snapshot.gaps.length + snapshot.contradictions.length);
     const nothingConsulted = !run.layers.ideas && !run.layers.documents && !webPassages.length;
     // Works that actually took part: those a passage came from, those a search matched and those
@@ -939,13 +951,48 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     null,
     2
   );
+  if (researchContextTraceEnabled()) recordResearchContextReceipt({
+    type: 'research-context-before-final-fit',
+    model: request.model ?? null,
+    effectiveModelWindow: window ?? null,
+    corpusWindow,
+    passages: passageReceipt(context),
+    contextJson: receiptHash(JSON.stringify(context)),
+  });
   if (corpusWindow && window != null) {
     // Evidence's text bound cannot predict JSON escaping, citation URLs or source
     // metadata. Fit the serialized request as well, keeping whole evidence items
     // and rebuilding the citation contract from only the items actually sent.
-    const fitted = enforceContextBudget(context, window, () => researchRequestUpperBound({
-      system: system + (attachments?.system ?? ''), user: serializeUser() + (attachments?.text ?? ''), maxTokens: generationOptions.maxTokens,
-      englishImagePrompts: skills.some(skill => skillHasCapability(skill, 'image')) }));
+    const requestSystem = system + (attachments?.system ?? '');
+    const fitInputs = () => ({
+      system: requestSystem,
+      user: serializeUser() + (attachments?.text ?? ''),
+      maxTokens: generationOptions.maxTokens,
+      englishImagePrompts: skills.some(skill => skillHasCapability(skill, 'image')),
+    });
+    const serializeUserBeforeFit = researchContextTraceEnabled() ? serializeUser() + (attachments?.text ?? '') : '';
+    const fitted = enforceContextBudget(context, window, () => researchRequestUpperBound(fitInputs()), researchContextTraceEnabled() ? receipt => {
+      const fittedUser = serializeUser() + (attachments?.text ?? '');
+      recordResearchContextReceipt({
+        type: 'research-context-final-fit',
+        model: request.model ?? null,
+        effectiveModelWindow: window,
+        maxOutputTokens: generationOptions.maxTokens,
+        englishImagePrompts: skills.some(skill => skillHasCapability(skill, 'image')),
+        measuredRequestUpperBoundBefore: receipt.measuredSizeBefore,
+        measuredRequestUpperBoundAfter: receipt.measuredSizeAfter,
+        truncated: receipt.truncated,
+        sectionCountsBefore: receipt.sectionCountsBefore,
+        sectionCountsAfter: receipt.sectionCountsAfter,
+        droppedSections: receipt.droppedSections,
+        passageIdsBefore: receipt.passageIdsBefore,
+        passageIdsAfter: receipt.passageIdsAfter,
+        removedPassageIds: receipt.removedPassageIds,
+        system: receiptHash(requestSystem),
+        userBefore: receiptHash(serializeUserBeforeFit),
+        userAfter: receiptHash(fittedUser),
+      });
+    } : undefined, { passageQueries });
     if (fitted.truncated) stats = { ...stats, truncated: true,
       contextChars: JSON.stringify(context).length, passages: Array.isArray(context.pasajes_relevantes) ? context.pasajes_relevantes.length : 0,
       works: Array.isArray(context.obras) ? context.obras.length : 0, documents: Array.isArray(context.obras) ? context.obras.length : 0 };
@@ -983,6 +1030,32 @@ function sanitizeResearchProseCitations(answer: string, sourceContext: string): 
   if (!refs.length) return stripDisallowedCitations(labelled, new Set());
   const allowed = supportedCitationKeys(refs, verifyCitations(refs), sourceContext);
   return stripDisallowedCitations(labelled, allowed);
+}
+
+function recordResearchContextReceipt(event: Record<string, unknown>): void {
+  // `recordEmbeddingTrace` validates the disposable-profile marker and userData path.
+  // Keep receipt construction completely dormant in ordinary profiles.
+  if (!researchContextTraceEnabled()) return;
+  recordEmbeddingTrace({ type: 'research-context-budget', ...event });
+}
+
+function researchContextTraceEnabled(): boolean {
+  return process.env.NODUS_EMBEDDING_QA_TRACE === '1' && Boolean(process.env.NODUS_ISOLATED_ROOT);
+}
+
+function receiptHash(value: string): { utf8Bytes: number; sha256: string } {
+  return { utf8Bytes: Buffer.byteLength(value, 'utf8'), sha256: createHash('sha256').update(value, 'utf8').digest('hex') };
+}
+
+function passageReceipt(context: Record<string, unknown>): { count: number; ids: string[] } {
+  const passages = context.pasajes_relevantes;
+  const ids = Array.isArray(passages) ? passages.flatMap(item => {
+    if (!item || typeof item !== 'object') return [];
+    const row = item as Record<string, unknown>;
+    const id = row.id ?? row.passageId ?? row.nodus_id;
+    return typeof id === 'string' ? [id] : [];
+  }) : [];
+  return { count: Array.isArray(passages) ? passages.length : 0, ids };
 }
 
 /**
@@ -1224,11 +1297,31 @@ export async function buildResearchContext(
   if (selection.passages !== false) {
     const passages = await listRelevantPassages(scope, passageScopeWorkIds, heavyCap);
     context.pasajes_relevantes = passages;
+    if (researchContextTraceEnabled()) recordResearchContextReceipt({
+      type: 'research-context-retrieval-snapshot',
+      effectiveContextLimit: maxContextChars,
+      passages: passageReceipt(context),
+      contextJson: receiptHash(JSON.stringify(context)),
+    });
     sections.push(prompt.context.sections.passages);
   }
 
   if (scope.sourceScope) for (const id of linkedWorkIds) if (!scope.sourceScope.workIds.has(id)) linkedWorkIds.delete(id);
-  const budget = enforceContextBudget(context, maxContextChars);
+  const budget = enforceContextBudget(context, maxContextChars, undefined, researchContextTraceEnabled() ? receipt => {
+    recordResearchContextReceipt({
+      type: 'research-context-selection-fit',
+      effectiveContextLimit: maxContextChars,
+      measuredContextCharsBefore: receipt.measuredSizeBefore,
+      measuredContextCharsAfter: receipt.measuredSizeAfter,
+      truncated: receipt.truncated,
+      sectionCountsBefore: receipt.sectionCountsBefore,
+      sectionCountsAfter: receipt.sectionCountsAfter,
+      droppedSections: receipt.droppedSections,
+      passageIdsBefore: receipt.passageIdsBefore,
+      passageIdsAfter: receipt.passageIdsAfter,
+      removedPassageIds: receipt.removedPassageIds,
+    });
+  } : undefined);
   truncated = truncated || budget.truncated;
 
   const contextChars = JSON.stringify(context).length;

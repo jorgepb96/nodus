@@ -53,9 +53,18 @@ try {
     ['ellipsis-joined-spans', { answerQuote: 'The measured value is 18 metres. ... A distinct supported result is 24 people.' }, false],
     ['meaningless-short-span', { answerQuotes: ['short'] }, false],
     ['non-string-span', { answerQuotes: ['The measured value is 18 metres.', 4] }, false],
+    ['short-adjunct-with-substantial-literal-span', { answerQuotes: ['No.', 'A distinct supported result is 24 people.'] }, true, undefined,
+      'No. A distinct supported result is 24 people.'],
+    ['short-only-adjunct', { answerQuotes: ['No.'] }, false, undefined, 'No.'],
+    ['short-word-fragment', { answerQuotes: ['No.', 'The measured value is 18 metres.', 'mea'] }, false, undefined,
+      'No. The measured value is 18 metres. means something else.'],
+    ['short-ambiguous-repeat', { answerQuotes: ['No.', 'The measured value is 18 metres.'] }, false, undefined,
+      'No. The measured value is 18 metres. No.'],
+    ['short-punctuation-only', { answerQuotes: ['.', 'The measured value is 18 metres.'] }, false],
+    ['short-duplicate-adjunct', { answerQuotes: ['No.', 'No.', 'A distinct supported result is 24 people.'] }, false],
   ];
-  for (const [name, proof, expected, limit = maxChars] of synthetic) {
-    const actual = validResearchAnswerQuotes(syntheticAnswer, proof, limit);
+  for (const [name, proof, expected, limit = maxChars, answer = syntheticAnswer] of synthetic) {
+    const actual = validResearchAnswerQuotes(answer, proof, limit);
     assert.equal(actual, expected, `${name}: expected ${expected ? 'acceptance' : 'rejection'}`);
     record(`synthetic-${name}`, true);
   }

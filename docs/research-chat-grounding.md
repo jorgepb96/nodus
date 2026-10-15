@@ -23,6 +23,15 @@ and application-added routing metadata are recorded separately; this binding
 does not approve claims, rewrite answer quotes or infer evidence.
 Native OpenAI/OpenRouter schema bytes count toward the conservative context
 budget, and a provider error cannot silently remove the schema.
+When the final request must trim literal passages, notebook chat promotes lexical
+representatives of its planned search queries before retaining further hits from
+the same query. Terms shared across queries are discounted. Only already
+authorized evidence is reordered, within the same serialized request bound;
+the remaining retrieval order is preserved. This is a coverage hint, not proof
+that a question facet is answered. Missing lexical overlap keeps the original
+ranking, and factual auditing remains required. Isolated QA traces record the
+ordered passage identities, removals, effective window, measured request bound
+and serialized input hashes at retrieval/snapshot/final-fit boundaries.
 The planner and structured writer keep their existing single validation retry.
 That retry receives up to twelve bounded validator diagnostics (path, code and
 message), so it can correct the actual contract failure without relaxing literal
@@ -47,8 +56,16 @@ redraft cannot publish. QA traces retain the original draft, `sourceRedraft` fla
 and `focusedDraft` replacement, with `sourceDraftMs` separate from auditing.
 The existing Deep Research auditor then checks atomic
 premises. A verdict needs known source IDs, literal evidence and consistent
-premises; a positive model judgement alone cannot approve invented quotes. Evidence
-entailment permits faithful paraphrases, while preserving the subject, action,
+premises; a positive model judgement alone cannot approve invented quotes.
+Source IDs sent to the prose judge use short request-local aliases. Exact alias
+bindings restore the original identities before validation and publication;
+unknown IDs are never guessed. Quotes and verdict content are unchanged, and
+isolated QA records the bindings separately. A unique literal evidence anchor of
+8–11 characters may be expanded to its complete, safely bounded source sentence
+inside that same authorized excerpt. Ambiguous, numeric-only, partial-word and
+unbounded anchors remain rejected. The original anchor stays in the audit trace;
+expansion supplies no new semantic approval.
+Evidence entailment permits faithful paraphrases, while preserving the subject, action,
 object and temporal scope. A directly stated negation can be described as
 explicit without the source calling itself explicit. This does not permit adding
 unstated facts or inferring absence from an entire corpus. A positive verdict
@@ -79,6 +96,8 @@ verified answer in `answerQuotes`; the legacy `answerQuote` remains supported.
 Separate paragraphs or bullet points must stay separate, never joined with
 synthetic ellipses. Every span is checked individually and the aggregate length
 is bounded; invented text, duplicate spans and mixed formats fail validation.
+A short lexical adjunct such as “No.” can accompany a substantive literal span;
+it cannot prove coverage alone. It must occur uniquely at a whole-word boundary.
 each omitted available fact needs an exact authorized source quote, while an
 unaddressed evidence gap asks only for a scoped acknowledgement. Fabricated spans,
 empty formatting and unknown source IDs fail validation. The application derives
@@ -87,7 +106,25 @@ A malformed proof gets one retry of the identical frozen request; provider and
 transport failures are never replayed. This resolves coverage
 complaints that demand an unsupported absence assertion or speculative conclusion
 without restoring rejected prose. The original critic and confirmation are both
-retained in QA traces. When a confirmed missing acknowledgement has already
+retained in QA traces. In structured mode, a negative critic is also adjudicated
+separately from the independent full-question proof. Dismissing its complaint
+requires literal answer spans inside currently supported audited claims, and
+same-source evidence for the specific factual predicate or qualification. A
+precise epistemic acknowledgement must instead select an audited nonfactual or
+inference claim. Generic values or cautions cannot bypass that evidence link.
+Only independently source-validated omissions become persistent coverage
+requirements; initial planner quotations and rejected premise lists never do.
+A repair receives those requirements and must pass a separate requirement proof
+against newly audited claims, even if the next general completeness verdict is
+positive. Literal source linkage checks provenance mechanically; the auditor
+may split a requirement's literal source quotation across multiple premises.
+Their same-source evidence must cover its entire text, allowing only intervening
+whitespace and optional terminal sentence punctuation. Every selected claim must
+contribute evidence; missing negation, quantities, connectives or interior
+punctuation cannot be bridged. The source quotation and audited answer are never
+rewritten to satisfy this check. The auditor
+still judges semantic entailment. All requirements and their proofs are retained
+in isolated QA traces. When a confirmed missing acknowledgement has already
 verified nonfactual limits, a narrow equivalence check compares only those limits
 with the requested acknowledgement, without the source exposition or original
 critic. Every equivalence needs an exact meaningful quote from a known verified
@@ -133,6 +170,8 @@ npm run audit:research:openrouter               # dry run, no provider calls
 # Further OpenRouter credential access is stopped by the user instruction.
 node scripts/collect-research-openrouter.mjs
 node scripts/e2e-research-isolated.mjs --notebooks --verification --pdf --activity
+node scripts/replay-research-context-boundary.mjs --clone-receipt=CLONE_RECEIPT --campaign=CLOSED_CAMPAIGN --case-id=R009
+# Add --run only to replay recorded decisions in that disposable clone. No new generation.
 npm run test:research:luna
 npm run audit:research:luna                    # fixed-plan dry run
 npm run collect:research:luna -- --reviews=audit/research-luna-directed/source-reviews.json
@@ -231,6 +270,15 @@ packaging gates. Preserve the original failed campaign as a baseline alongside
 any subsequent improvement report.
 
 ## Recorded result and limits
+
+The [closed 80-case baseline at `51ddac9d`](../audit/research-live-quality/closed-51ddac9d/README.md)
+has now concluded. Its strict positive utility is 35/60, qualified published
+fidelity 48/48, and correct insufficient-evidence handling 13/20. Quality
+acceptance fails; whole-cohort runtime invariant acceptance remains pending.
+Subsequent literal-evidence, citation and context-fit fixes are a separate
+regression phase and do not retroactively improve those figures. In particular,
+a recorded-decision replay that restores a missing comparator demonstrates
+evidence delivery, not a newly generated correct answer.
 
 The [final regression at `82dac50f`](../audit/research-chat-grounding/final-82dac50f/README.md)
 executed 113/120 cases before the shared proxy refused a reservation. Every

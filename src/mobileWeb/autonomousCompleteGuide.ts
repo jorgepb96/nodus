@@ -1,3 +1,4 @@
+import {mobileCompleteGuideWebImages} from './completeGuideWebImages';
 import {runCompleteGuide,type CompleteGuideDeps} from '../../electron/ai/completeGuide/core';
 import {COMPLETE_GUIDE_PROMPT_VERSION} from '../../electron/ai/completeGuide/prompts';
 import {completeGuidePrice} from '@shared/completeGuide/estimate';
@@ -26,7 +27,7 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
  assertMobileCompleteGuideSource(source,config.selection);
  const embedding=checkpoint.embeddingConfiguration;
  // These options require a device-owned web retrieval host; no silent Mac relay.
- if(config.webText||config.webImages)throw new Error('Configura la búsqueda web del móvil antes de incluir fuentes o imágenes web en la guía.');
+ if(config.webText)throw new Error('Configura la búsqueda web del móvil antes de incluir fuentes o imágenes web en la guía.');
  let writes=Promise.resolve();
  const flush=async()=>{await writes;signal.throwIfAborted();};
  const store=()=>{writes=writes.then(persist);};
@@ -59,6 +60,7 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
  checkpoint.guideCache??={};checkpoint.guideCheckpoints??={};
  const deps:CompleteGuideDeps={
   json,
+  ...(config.webImages?{webImages:async requests=>{const key=`source:guide-web-images:${sha256Snapshot(requests)}`;return durableDeepResearchCall(checkpoint,key,requests,()=>mobileCompleteGuideWebImages(call,requests,(request.language??'es').split('-')[0],signal),persist);}} satisfies Partial<CompleteGuideDeps>:{}),
   embed:async texts=>{const vectors=[];for(const text of texts){const raw=await paid({model:{provider:embedding.provider,model:embedding.model},system:'',user:text.slice(0,8000),maxTokens:1,format:'embedding',embeddingDimensions:embedding.dim,generationId:checkpoint.id,completionKey:`guide:embed:${sha256Snapshot([embedding,text])}`});const vector=typeof raw==='string'?JSON.parse(raw):raw;if(!Array.isArray(vector)||vector.length!==embedding.dim||vector.some(v=>typeof v!=='number'||!Number.isFinite(v))||vector.every(v=>v===0)){const error=new Error('invalid_mobile_embedding_response');controller.abort(error);throw error;}vectors.push(vector as number[]);}return vectors;},
   audit:async(markdown,sources)=>{const checked=await auditor.audit(markdown,sources);return {markdown:checked.markdown,removed:checked.claims.filter(claim=>claim.status!=='supported'&&!(claim.kind==='nonfactual'&&claim.failure!=='nonfactual_with_content')).length};},
   conflicts:async statements=>(await audit.findResearchConflicts(statements,model,signal)).filter(row=>row.incompatible).map(({a,b,reason})=>({a,b,reason})),

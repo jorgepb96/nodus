@@ -17,6 +17,16 @@ import { buildResearchLiveShardAssignment, sourceHashesForProduction, validateRe
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
+// Operator scheduling is separate from model quality. Keep the same five-minute
+// request deadline; an explicit low-impact run can allow more time for admission.
+const generatorQueueMs = Number(arg('generator-queue-ms') ?? researchLunaPhasePolicy.queueMs);
+const casePauseMs = Number(arg('case-pause-ms') ?? 0);
+const hiddenWindow = process.argv.includes('--hidden-window');
+if (!Number.isSafeInteger(generatorQueueMs) || generatorQueueMs < 1 || generatorQueueMs > 180_000
+    || !Number.isSafeInteger(casePauseMs) || casePauseMs < 0 || casePauseMs > 60_000) {
+  throw new Error('Invalid bounded generator queue or between-case pause');
+}
+const campaignPhasePolicy = Object.freeze({ ...researchLunaPhasePolicy, queueMs: generatorQueueMs });
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const safeRead = (file, maxBytes = 128 * 1024 * 1024) => {
   const stat = fs.lstatSync(file);
@@ -261,6 +271,9 @@ function validateContinuation({ continuation, state, manifest, inputs: current, 
   if (manifest?.format !== 'nodus.research-live-answer-campaign/1' || state?.format !== manifest.format) reject('format mismatch');
   if (manifest.mode !== 'structured-only' || manifest.sourceSnapshotSha256 !== current.sourceHash || manifest.preregistrationSha256 !== current.preregHash || manifest.casesSha256 !== current.casesHash) reject('source snapshot or preregistration changed');
   if (JSON.stringify(manifest.sourceFiles) !== JSON.stringify(hashes)) reject('campaign implementation or production source changed');
+  if (JSON.stringify(manifest.execution?.phasePolicy) !== JSON.stringify(campaignPhasePolicy)
+      || (manifest.execution?.casePauseMs ?? 0) !== casePauseMs
+      || (manifest.execution?.hiddenWindow ?? false) !== hiddenWindow) reject('operator scheduling policy changed');
   if (JSON.stringify(manifest.diagnosticSelection ?? null) !== JSON.stringify(diagnosticSelection)) reject('diagnostic selection changed');
   if (state.root !== manifest.root || !state.root || fs.realpathSync(state.root) !== state.root) reject('root mismatch');
   markedRoot(state.root);
@@ -333,7 +346,7 @@ if (!generatorPoolRoot) throw new Error('Set --generator-pool-root to the shared
 const generatorLease = acquireResearchLunaSlot(path.resolve(generatorPoolRoot), root);
 const releaseGenerator = () => generatorLease.release();
 process.once('exit', releaseGenerator);
-const bridge = await startResearchLunaBridge({ root, phasePolicy: researchLunaPhasePolicy, maxRequests: Math.min(MAX_SEGMENT_CALLS, callCeiling - shardCallsUsed) });
+const bridge = await startResearchLunaBridge({ root, phasePolicy: campaignPhasePolicy, maxRequests: Math.min(MAX_SEGMENT_CALLS, callCeiling - shardCallsUsed) });
 const bridgeNonceSha256 = digest(Buffer.from(bridge.nonce, 'utf8'));
 if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === bridgeNonceSha256)) {
   await bridge.close();
@@ -343,7 +356,7 @@ const sourceVersion = { sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs
   preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceFiles: currentSourceHashes };
 const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campaign/1', mode: 'structured-only', root,
   execution: { generatorPoolRoot: generatorLease.poolRoot, generatorSlots: generatorLease.slots,
-    producerSlot: generatorLease.slot, phasePolicy: researchLunaPhasePolicy, totalRequestDeadlineMs: 300_000 },
+    producerSlot: generatorLease.slot, phasePolicy: campaignPhasePolicy, totalRequestDeadlineMs: 300_000, casePauseMs, hiddenWindow },
   ...(diagnosticSelection ? { diagnosticSelection } : {}),
   ...(assignedShard ? { assignment: assignmentPath, assignmentSha256: digest(safeRead(assignmentPath)), shardId: assignedShard.id,
     plannedCount: assignedShard.caseIds.length, assignedCaseIds: assignedShard.caseIds, maxShardCalls: MAX_SHARD_CALLS, fullSnapshotPlannedCount: 80 } : {}),
@@ -377,6 +390,9 @@ try {
   harness = await createResearchApp({ root, extraPorts: [Number(new URL(bridge.url).port)], extraEnv: {
     NODUS_HARNESS_KEYS_FILE: keysFile, NODUS_EMBEDDING_QA_TRACE: '1' } });
   ({ app, page } = await harness.launch());
+  if (hiddenWindow) await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.hide();
+  });
   report.isolation = prior?.state.isolation ?? harness.proof;
   await app.evaluate((electron, bridgePort) => {
     const originalFetch = global.fetch;
@@ -621,6 +637,7 @@ try {
       receiptsHash: input.receiptsHash, attemptStatus: attempt.attemptStatus, bridgeRequestIds: attempt.bridgeRequestIds,
       bridgeCompletionIds: attempt.bridgeCompletionIds, error: attempt.error ?? null, finishedAt: attempt.finishedAt });
     if (attempt.attemptStatus === 'protocol-failure' || stopping) break;
+    if (casePauseMs) await new Promise(resolve => setTimeout(resolve, casePauseMs));
   }
   report.segments.push({ id: segmentId, ordinal: segmentOrdinal, bridgeNonceSha256, startedAt: segmentStartedAt,
     callsAccepted: bridge.acceptedRequests(), softPauseAt: SOFT_PAUSE_CALLS, requestLimit: MAX_SEGMENT_CALLS, attemptedCaseIds: attemptedThisSegment.map(row => row.caseId),
@@ -659,7 +676,7 @@ try {
   report.segments ??= [];
   const currentSegment = report.segments.find(row => row.id === segmentId);
   const segmentCases = report.answers.filter(row => row.segmentId === segmentId).map(row => row.caseId);
-  if (currentSegment) { currentSegment.execution = { generatorPoolRoot: generatorLease.poolRoot, generatorSlots: generatorLease.slots, producerSlot: generatorLease.slot, phasePolicy: researchLunaPhasePolicy, totalRequestDeadlineMs: 300_000 }; currentSegment.finishedAt = now(); currentSegment.attemptedCaseIds = segmentCases; }
+  if (currentSegment) { currentSegment.execution = { generatorPoolRoot: generatorLease.poolRoot, generatorSlots: generatorLease.slots, producerSlot: generatorLease.slot, phasePolicy: campaignPhasePolicy, totalRequestDeadlineMs: 300_000, casePauseMs, hiddenWindow }; currentSegment.finishedAt = now(); currentSegment.attemptedCaseIds = segmentCases; }
   else report.segments.push({ id: segmentId, ordinal: segmentOrdinal, bridgeNonceSha256, startedAt: segmentStartedAt, finishedAt: now(),
     callsAccepted: bridge.acceptedRequests(), requestLimit: MAX_SEGMENT_CALLS, attemptedCaseIds: segmentCases, pendingAtEnd: report.pending?.notAttempted?.length ?? 80 });
   try { report.executionTimings = snapshotResearchLunaQueue({ root }); }

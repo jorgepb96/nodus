@@ -52,6 +52,7 @@ try {
   assert.match(prepared.prompt, /max_output_tokens=30000/u);
   assert.match(prepared.prompt, /COMPLETE request JSON/u);
   assert.match(prepared.prompt, /If the request is truncated or incomplete, stop/u);
+  assert.match(prepared.prompt, /Compute readAt with new Date\(\)\.toISOString\(\) in the subprocess/u);
   const jobFile = path.join(data.artifacts, 'dispatch-jobs', `${data.id}.json`);
   const originalJob = fs.readFileSync(jobFile);
   const job = JSON.parse(originalJob);

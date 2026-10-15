@@ -60,6 +60,19 @@ try {
   assert.match(timing.evidenceNature, /scheduling and tools/);
   assert.throws(() => observeResearchLunaDispatch({ root: success.root, requestId: success.id, phase: 'reading-started' }), /completed or abandoned/);
 
+  // Serial operator admission can exceed 60 seconds without weakening the
+  // observed reading boundary or the original total request deadline.
+  let serialClock = Date.now();
+  const serialRun = await begin({ timeoutMs: 300_000,
+    phasePolicy: { queueMs: 180_000, readingMs: 90_000 }, now: () => serialClock });
+  const serialAccepted = serialRun.events()[0];
+  assert.equal(Date.parse(serialAccepted.deadlineAt) - Date.parse(serialAccepted.at), 300_000);
+  serialClock += 75_000;
+  recordResearchLunaPhase({ root: serialRun.root, requestId: serialRun.id, phase: 'reading-started', now: serialClock });
+  serialClock += 90_000;
+  assert.equal((await serialRun.response).status, 504);
+  assert.equal(serialRun.events().at(-1).reason, 'reading_timeout');
+
   // Virtual host clock tests phase expiry without sleeping for five minutes.
   for (const mode of ['queue', 'reading', 'post-read']) {
     let clock = Date.now();

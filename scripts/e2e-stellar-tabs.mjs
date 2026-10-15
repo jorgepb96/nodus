@@ -202,10 +202,22 @@ try {
  await hub().locator('.stellar-search-toggle').nth(1).click();
  await page.waitForFunction(n=>document.querySelectorAll('.stellar-tab-panel .stellar-hit').length===n,initialHubNodes+2);
  await page.keyboard.press('Escape');
+ const preservedHubIds=await hub().locator('.stellar-hit').evaluateAll(nodes=>nodes.map(node=>node.dataset.node).sort());
+ assert.equal(preservedHubIds.length,initialHubNodes+2,'both additions exist before leaving the hub');
  await page.locator(`${themeNode}[data-node="${busiest.id}"]`).click();
  await active().waitFor();
  await page.getByRole('button',{name:'Volver a los temas'}).click();
+ await hub().waitFor();
+ // The hub remounts with no themes or pins and restores both through asynchronous
+ // corpus requests. Wait for those actual nodes, rather than inspecting the empty
+ // first render. Exact IDs also catch replacement or loss masked by an equal count.
+ await page.waitForFunction(expected=>{
+  const hub=document.querySelector('.stellar-tab-panel [data-testid="stellar-themes"]');
+  const ids=hub?Array.from(hub.querySelectorAll('.stellar-hit'),node=>node.dataset.node).sort():[];
+  return ids.length===expected.length&&ids.every((id,index)=>id===expected[index]);
+ },preservedHubIds,{timeout:30000});
  assert.equal(await hub().locator('.stellar-hit').count(),initialHubNodes+2,'hub additions survive entering and leaving a theme');
+ assert.deepEqual(await hub().locator('.stellar-hit').evaluateAll(nodes=>nodes.map(node=>node.dataset.node).sort()),preservedHubIds,'the same themes and pinned ideas survive the round trip');
  await page.locator('.stellar-tab').nth(1).locator('.stellar-tab-close').click();
  await hubSearch.focus();
  await hub().locator('.stellar-search-toggle').nth(1).click();

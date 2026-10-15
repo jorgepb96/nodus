@@ -346,6 +346,8 @@ export function DeepResearchView({
   const [composerOpen, setComposerOpen] = useState(false);
   const [objective, setObjective] = useState('');
   const [notebookId, setNotebookId] = useState<string | null>(null);
+  const [academicDownloads,setAcademicDownloads]=useState<Awaited<ReturnType<NonNullable<MobileCompleteGuideActions['academicDownloads']>>>>([]);
+  const [mobileAcademicRetrieval,setMobileAcademicRetrieval]=useState<import('@shared/researchCorpus').RetrievalSettings|undefined>();
   const [approach, setApproach] = useState<DeepResearchApproach>('general');
   const [deepResearchVersion, setDeepResearchVersion] = useState<DeepResearchVersion>('v1');
   const [language, setLanguage] = useState<PromptLanguage>('es');
@@ -364,6 +366,7 @@ export function DeepResearchView({
   const [guideState, setGuideState] = useState<CompleteGuideComposerState>(EMPTY_COMPLETE_GUIDE_STATE);
   const [mobileSourceScope,setMobileSourceScope] = useState<MobileResearchSourceScope>('linked_corpus');
   const [savingGuideSources,setSavingGuideSources] = useState(false);
+  useEffect(()=>{if(!composerOpen||!mobileGuideSources?.academicDownloads||mobileSourceScope!=='device_downloads'||isStudy||isTeaching||isGenealogy)return;let active=true;void mobileGuideSources.academicDownloads().then(values=>{if(active)setAcademicDownloads(values);}).catch(error=>{if(active)setError(String(error));});return()=>{active=false;};},[composerOpen,mobileGuideSources,mobileSourceScope,isStudy,isTeaching,isGenealogy]);
   const loadGuideCatalog = useCallback(() => mobileGuideSources!.catalog(mobileSourceScope),[mobileGuideSources,mobileSourceScope]);
   const loadGuidePreview = useCallback((request:Parameters<MobileCompleteGuideActions['preview']>[1]) => mobileGuideSources!.preview(mobileSourceScope,request),[mobileGuideSources,mobileSourceScope]);
   const [guideReady, setGuideReady] = useState(false);
@@ -677,6 +680,7 @@ export function DeepResearchView({
     const request = {
       objective: objective.trim(),
       ...(mobileGuideSources ? {mobileSourceScope} : {}),
+      ...(mobileAcademicRetrieval ? {retrieval:mobileAcademicRetrieval} : {}),
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
@@ -1492,7 +1496,7 @@ export function DeepResearchView({
           }}
           onUnitOutline={setUnitOutline}
           isAcademic={variant === 'academic'}
-          notebookControl={variant === 'academic' ? <ResearchNotebookControl value={notebookId} onChange={setNotebookId} /> : undefined}
+          notebookControl={variant === 'academic' && !(mobileGuideSources&&mobileSourceScope==='device_downloads') ? <ResearchNotebookControl value={notebookId} onChange={setNotebookId} /> : undefined}
           objective={objective}
           approach={approach}
           version={deepResearchVersion}
@@ -1527,14 +1531,18 @@ export function DeepResearchView({
           studyReportMode={isStudy && !isTeaching ? studyReportMode : undefined}
           onStudyReportMode={setStudyReportMode}
           guideReady={guideReady}
-          sourcePanel={mobileGuideSources && (isStudy || isTeaching || isGenealogy) ? <div className="space-y-2">
+          sourcePanel={mobileGuideSources ? <div className="space-y-2">
             <label className="block text-xs">{t('Fuentes de esta investigación')}
               <select className="ml-2" value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
                 <option value="linked_corpus">{t('Fuentes preparadas del Mac')}</option>
                 <option value="device_downloads">{t('Fuentes elegidas en Descargas')}</option>
               </select>
             </label>
-            {isGenealogy ? <>
+            {variant==='academic' ? <>
+              {mobileSourceScope==='device_downloads' ? <label className="block text-xs">{t('Cuaderno descargado')}<select className="ml-2" value={academicDownloads.find(item=>item.notebookId===notebookId&&(!mobileAcademicRetrieval||JSON.stringify(item.settings)===JSON.stringify(mobileAcademicRetrieval)))?.recordId??''} onChange={event=>{const selected=academicDownloads.find(item=>item.recordId===event.target.value);if(selected){setNotebookId(selected.notebookId);setMobileAcademicRetrieval(selected.settings);}}}><option value="">{t('Elige una copia descargada')}</option>{academicDownloads.map(item=><option key={item.recordId} value={item.recordId}>{item.title}</option>)}</select></label> : null}
+              <p className="text-xs text-neutral-500">{t('Se conservan los pasajes ya preparados y el grafo autorizado de este cuaderno. La investigación usa recuperación léxica local, sin extraer ni indexar documentos en el móvil.')}</p>
+              <div className="flex gap-2">{([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!objective.trim()||!selectedModel||!mobileGuideSources.downloadAcademic} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.downloadAcademic!({objective:objective.trim(),notebookId,model:selectedModel,language,...(mobileAcademicRetrieval?{retrieval:mobileAcademicRetrieval}:{})},days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}</div>
+            </> : isGenealogy ? <>
               <p className="text-xs text-neutral-500">{t('La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.')}</p>
               <div className="flex gap-2">{([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!objective.trim()||!selectedModel||!mobileGuideSources.downloadGenealogy} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.downloadGenealogy!({objective:objective.trim(),focusPersonId,model:selectedModel,language},days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}</div>
             </> : mobileSourceScope === 'device_downloads' && <p className="text-xs text-neutral-500">{t('Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.')}</p>}

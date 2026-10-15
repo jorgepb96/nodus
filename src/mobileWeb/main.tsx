@@ -394,6 +394,8 @@ const mobileCompleteGuideActions:MobileCompleteGuideActions = {
  },
  download:(request,days)=>call('mobileCompleteGuideDownload',request,days),
  downloadGenealogy:(request,days)=>call('mobileGenealogyResearchDownload',request,days),
+ downloadAcademic:(request,days)=>call('mobileAcademicResearchDownload',request,days),
+ academicDownloads:()=>call('mobileAcademicResearchCatalog'),
 };
 function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);

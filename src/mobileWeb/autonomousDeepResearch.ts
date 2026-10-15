@@ -1,11 +1,11 @@
+import {hasLegacyResearchTranscript,legacyBridgeResearch} from './legacyBridgeResearch';
+import {autonomousAcademicResearch} from './autonomousAcademicResearch';
 import {autonomousGenealogyResearch} from './autonomousGenealogyResearch';
 import {autonomousStudyResearch} from './autonomousStudyResearch';
 import {mobileDeepResearchCover} from './deepResearchCover';
 import {autonomousCompleteGuide} from './autonomousCompleteGuide';
-import {orchestrateDeepResearch,type DeepResearchDeps} from '../../electron/ai/deepResearchCore';
-import {mobileDeepResearchCoverMetadata,durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource,type MobileDeepResearchReport} from '@shared/mobileDeepResearch';
+import {mobileDeepResearchCoverMetadata,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,type MobileDeepResearchCheckpoint,type MobileDeepResearchReport} from '@shared/mobileDeepResearch';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
-import {structuredPrompt} from './structuredPrompt';
 import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord} from '@shared/types';
 
 type Call=(method:string,...args:any[])=>Promise<any>;
@@ -25,36 +25,13 @@ export async function enqueueAutonomousDeepResearch(call:Call,raw:DeepResearchRe
 async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,controller:AbortController,notify:(progress:DeepResearchProgress)=>void):Promise<void> {
  const persist=async()=>{checkpoint.citationIndex=indexMobileDeepResearchCitations(checkpoint);await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);};
  const request=checkpoint.request,model=request.model!,signal=controller.signal;
- let progressWrites=Promise.resolve();
- const source=async<T>(stage:string,input:unknown):Promise<T>=>{
-  signal.throwIfAborted();
-  const key=`source:${sha256Snapshot([stage,input])}`;
-  return durableDeepResearchCall(checkpoint,key,input,async()=>{
-   for(let round=0;round<128;round++){
-    signal.throwIfAborted();
-    const replies=Object.fromEntries(Object.entries(checkpoint.calls).filter(([key])=>key.startsWith('host:')).map(([key,value])=>[key.slice(5),value.output]));
-    let result:any;
-    try {result=await call('getMobileDeepResearchSource',{request,generationId:checkpoint.id,expectedVaultId:checkpoint.context?.vaultId,expectedRevision:checkpoint.context?.revision,stage,input,history:checkpoint.history??[],transcript:checkpoint.completionTranscript,replies});}
-    catch(error){controller.abort();throw error;}
-
-    if(result?.version!==1)throw new Error('invalid_deep_research_stage_response');
-    if(result.progress){checkpoint.progress=result.progress;notify(result.progress);}
-    if(Object.hasOwn(result,'value')){
-     checkpoint.history??=[];checkpoint.history.push({stage,input:structuredClone(input)});return result.value as T;
-    }
-    const prompt=result.completion;
-    if(!prompt||typeof prompt.id!=='string'||!(/^[a-f0-9]{64}:\d+$/.test(prompt.id))||prompt.model?.provider!==model.provider||prompt.model?.model!==model.model||typeof prompt.system!=='string'||typeof prompt.user!=='string'||!['json','text'].includes(prompt.format))throw new Error('invalid_deep_research_completion_frame');
-    const body=structuredPrompt({system:prompt.system,user:prompt.user,temperature:prompt.temperature??0.2,maxTokens:prompt.maxTokens},model,prompt.researchEffort??request.thinkingEffort);
-    const completionRequest={...body,format:prompt.format,generationId:checkpoint.id,completionKey:checkpoint.completionAttempt?`${prompt.id}:review:${checkpoint.completionAttempt}`:prompt.id};
-    await durableDeepResearchCall(checkpoint,`host:${prompt.id}`,prompt,()=>call('mobileStructuredCompletion',completionRequest),persist,{paid:true,request:completionRequest,recover:async()=>{const value=await call('mobileSavedStructuredCompletion',checkpoint.inflight?.request??completionRequest);return value===null?undefined:value;}});
-   }
-   throw new Error('La etapa requiere demasiadas decisiones de modelo. La investigación y sus respuestas se conservan para revisión.');
-  },persist);
- };
  try {
   if(request.decorativeImage?.enabled&&!checkpoint.imageModel){const imageModel=await call('mobileImageConfiguration');if(!imageModel?.provider||!imageModel?.model)throw new Error('Configura un modelo de imagen del móvil antes de generar la portada.');checkpoint.imageModel=imageModel;await persist();}
   if(!checkpoint.report){
-   if(request.completeGuide){
+   if(hasLegacyResearchTranscript(checkpoint)){
+    checkpoint.state='running';delete checkpoint.error;await persist();
+    checkpoint.report=await legacyBridgeResearch(call,checkpoint,persist,controller,notify);
+   }else if(request.completeGuide){
     checkpoint.state='running';delete checkpoint.error;await persist();
     checkpoint.report=await autonomousCompleteGuide(call,checkpoint,persist,controller,notify);
     checkpoint.report.draft.generationModel=model;
@@ -66,32 +43,8 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
     checkpoint.state='running';delete checkpoint.error;await persist();
     checkpoint.report=await autonomousGenealogyResearch(call,checkpoint,persist,controller,progress=>{checkpoint.progress=progress;notify(progress);});
    }else{
-   const description=await source<{variant:string;context:MobileDeepResearchCheckpoint['context']}>('describe',[]);
-   if(!description.context||description.context.version!==1)throw new Error('invalid_deep_research_source_description');
-   checkpoint.context??=description.context;checkpoint.state='running';delete checkpoint.error;await persist();
-   if(description.variant!=='academic'){
-    const completed=await source<{report:NonNullable<MobileDeepResearchCheckpoint['report']>}>('variantRun',[]);
-    if(!completed.report?.draft||!completed.report.meta)throw new Error('invalid_deep_research_variant_result');
-    checkpoint.report=completed.report;
-   } else {
-   const deps:DeepResearchDeps={
-    strictDocumentaryGrounding:true,
-    buildSnapshot:async brief=>{const captured=await source<MobileDeepResearchSource>('snapshot',{brief});assertMobileDeepResearchSource(captured);checkpoint.context??={version:captured.version,vaultId:captured.vaultId,vaultType:captured.vaultType,revision:captured.revision,sourceScope:captured.sourceScope,queryEmbeddingModel:captured.queryEmbeddingModel,preparedSourcesOnly:captured.preparedSourcesOnly};await persist();return captured.snapshot;},
-    planReport:input=>source('planReport',input),writeSection:input=>source('writeSection',input),finalize:input=>source('finalize',input),
-    verifyCitations:(claims,language)=>source('verifyCitations',[claims,language]),checkCoherence:(sections,language)=>source('checkCoherence',[sections,language]),
-    retrieveForSection:input=>source('section',input),researchTraversal:()=>source('researchTraversal',[]),
-    repairSectionCoverage:(input,draft)=>source('repairSectionCoverage',[input,draft]),checkSectionCoverage:(input,draft)=>source('checkSectionCoverage',[input,draft]),
-    auditFactualProse:markdown=>source('auditFactualProse',markdown),auditReportConsistency:statements=>source('auditReportConsistency',[statements]),
-    ...(request.deepResearchVersion==='v2'?{
-     decomposeObjective:(objective:string,language:NonNullable<DeepResearchRequest['language']>)=>source<string[]>('decomposeObjective',[objective,language]),
-     auditFinalSummary:(input,draft)=>source('auditFinalSummary',[input,draft]),auditPlanCoverage:input=>source('auditPlanCoverage',input),auditSectionClaims:input=>source('auditSectionClaims',input),reviseSection:input=>source('reviseSection',input),
-    }:{}),
-   };
-   checkpoint.state='running';delete checkpoint.error;await persist();
-   checkpoint.report=await orchestrateDeepResearch({...request,studyMode:false,unitMode:false,documentSkills:undefined},deps,progress=>{checkpoint.progress=progress;notify(progress);progressWrites=progressWrites.then(persist);},signal);
-   await progressWrites;signal.throwIfAborted();
-   const report=checkpoint.report;report.draft={...report.draft,brief:{...report.draft.brief,deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion},deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion,deepResearchSectionLength:request.sectionLength,generationModel:model,documentSkills:undefined};
-   }
+    checkpoint.state='running';delete checkpoint.error;await persist();
+   checkpoint.report=await autonomousAcademicResearch(call,checkpoint,persist,controller,progress=>{checkpoint.progress=progress;notify(progress);});
    }
    await persist();
   }
@@ -107,8 +60,8 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
   if(checkpoint.inflight?.request){
    try {const recovered=await call('mobileSavedStructuredCompletion',checkpoint.inflight.request);if(recovered!==null){checkpoint.calls[checkpoint.inflight.key]={input:checkpoint.inflight.input,output:recovered};if(checkpoint.inflight.key.startsWith('host:')){checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(checkpoint.inflight.key.slice(5)))checkpoint.completionTranscript.push(checkpoint.inflight.key.slice(5));}delete checkpoint.inflight;}}catch{/* Original failure remains; unresolved marker still forbids automatic repayment. */}
   }
-  checkpoint.state=signal.aborted&&checkpoint.state==='cancelled'?'cancelled':'failed';checkpoint.error=String(error).includes('mobile_paid_response_uncertain')?'El paso quedó sin una respuesta confirmada y pudo haberse enviado al proveedor. No se volverá a comprar automáticamente; revisa este paso antes de reintentarlo.':String(error);await persist();throw error;
- } finally {await progressWrites.catch(()=>{});await call('endAutonomousAuthoring',checkpoint.id);}
+  checkpoint.state=signal.aborted&&checkpoint.state==='cancelled'?'cancelled':'failed';checkpoint.error=String(error).includes('mobile_paid_response_uncertain')?'El paso quedó sin una respuesta confirmada y pudo haberse enviado al proveedor. No se volverá a comprar automáticamente; revisa este paso antes de reintentarlo.':hasLegacyResearchTranscript(checkpoint)?`Este informe anterior conserva sus respuestas y necesita el Mac para continuar su recorrido original. ${String(error)}`:String(error);await persist();throw error;
+ } finally {await call('endAutonomousAuthoring',checkpoint.id);}
 }
 export async function autonomousDeepResearchCheckpoints(call:Call,summaries=false):Promise<MobileDeepResearchCheckpoint[]> {const values=await call('mobileDeepResearchCheckpoints',...(summaries?['summaries']:[]));if(!Array.isArray(values))throw new Error('invalid_deep_research_checkpoints');return values;}
 export async function cancelAutonomousDeepResearch(call:Call,id:string):Promise<boolean>{

@@ -72,6 +72,9 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
  for(const [callKey,call] of Object.entries(checkpoint.calls)){
   if(!callKey.startsWith('source:')||!call.output||typeof call.output!=='object')continue;
   const output=call.output as Record<string,unknown>;
+  const academicScope=output.scope as {id?:unknown}|undefined;
+  if(callKey==='source:academic'&&Array.isArray(output.passages)&&typeof academicScope?.id==='string'){const scopeId=academicScope.id;output.passages.forEach((passage,position)=>{if(typeof passage.id==='string')index[`passage:documentary:${scopeId}:${passage.id}`]={callKey,path:['passages',position],citation:`nodus://passage/${encodeURIComponent(`documentary:${scopeId}:${passage.id}`)}`};if(typeof passage.workId==='string'&&passage.workId)index[`work:${passage.workId}`]??={callKey,path:['passages',position],citation:`nodus://work/${encodeURIComponent(passage.workId)}`};});}
+  if(callKey==='source:academic'&&Array.isArray(output.legacyPassages))output.legacyPassages.forEach((item,position)=>{if(typeof item.receipt?.passage_id==='string')index[`passage:${item.receipt.passage_id}`]={callKey,path:['legacyPassages',position,'receipt'],citation:`nodus://passage/${encodeURIComponent(item.receipt.passage_id)}`};if(typeof item.receipt?.nodus_id==='string')index[`work:${item.receipt.nodus_id}`]??={callKey,path:['legacyPassages',position,'receipt'],citation:`nodus://work/${encodeURIComponent(item.receipt.nodus_id)}`};});
   if(callKey==='source:study'&&Array.isArray(output.entries))output.entries.forEach((entry,position)=>{
    const route=entry.kind==='material'?'material':entry.kind==='document'?'doc':entry.kind==='transcript'?'recording':null;
    if(!route||typeof entry.sourceId!=='string')return;

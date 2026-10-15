@@ -43,7 +43,7 @@ export function resolveAcademicRunScope(notebookId?: string | null): ResolvedRes
 }
 
 /** One run owns the scope, evidence ledger and traversal across all sections. */
-function scopedResearchGraph(scope:ResolvedResearchScope,workIds:string[],ideaIds:string[],budget:ResearchRetrievalBudget,contextDocuments:Set<string>):Pick<WritingWorkshopSnapshot,'gaps'|'contradictions'|'themes'> {
+export function scopedResearchGraph(scope:ResolvedResearchScope,workIds:string[],ideaIds:string[],budget:ResearchRetrievalBudget,contextDocuments:Set<string>):Pick<WritingWorkshopSnapshot,'gaps'|'contradictions'|'themes'> {
     const db = getDb();
     const works = JSON.stringify(workIds);
     const ideas = JSON.stringify(ideaIds);

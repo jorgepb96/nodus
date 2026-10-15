@@ -1,3 +1,5 @@
+import {captureAcademicResearchSource} from './mobileAcademicResearch';
+import {captureMobileAcademicResearchSource} from '../../shared/mobileAcademicResearch';
 import {captureGenealogyResearchSource} from '../ai/genealogyDeepResearch';
 import {captureMobileGenealogyResearchSource} from '../../shared/mobileGenealogyResearch';
 import {getMobileStudyResearchSourcePack} from '../ai/studySearch';
@@ -31,7 +33,7 @@ import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepRes
 import type { SectionRetrievalInput } from '../ai/deepResearchCore';
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
 export {mobileDeepResearchCorpusRevision} from './mobileResearchRevision';
-const STAGES = ['genealogySnapshot','studySnapshot','guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
+const STAGES = ['academicSnapshot','genealogySnapshot','studySnapshot','guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
 type Stage = typeof STAGES[number];
 type StageInput = {stage:Stage;input:unknown};
 export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):Promise<unknown> {
@@ -40,6 +42,7 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
  const request=normalizeMobileDeepResearchRequest(value.request),vault=getActiveVault();
  if(value.expectedVaultId!=null&&value.expectedVaultId!==vault.id)throw new Error('deep_research_source_scope_conflict');
  if(value.expectedRevision!=null&&value.expectedRevision!==mobileDeepResearchCorpusRevision(request))throw new Error('deep_research_source_conflict');
+ if(value.stage==='academicSnapshot'){if(value.history.length||Object.keys(value.replies).length||vault.type!=='academic'||request.completeGuide||request.studyMode||request.unitMode)throw new Error('invalid_academic_research_source');const revision=mobileDeepResearchCorpusRevision(request),capture=captureAcademicResearchSource(request);if(mobileDeepResearchCorpusRevision(request)!==revision)throw new Error('deep_research_source_conflict');return {version:1,value:captureMobileAcademicResearchSource(capture,{version:1,vaultId:vault.id,vaultType:vault.type,revision,sourceScope:'linked_corpus',preparedSourcesOnly:true})};}
  if(value.stage==='genealogySnapshot'){if(value.history.length||Object.keys(value.replies).length||vault.type!=='genealogy')throw new Error('invalid_genealogy_research_source');const revision=mobileDeepResearchCorpusRevision(request),capture=captureGenealogyResearchSource(request);if(mobileDeepResearchCorpusRevision(request)!==revision)throw new Error('deep_research_source_conflict');return {version:1,value:captureMobileGenealogyResearchSource(capture,{version:1,vaultId:vault.id,vaultType:vault.type,revision,sourceScope:'linked_corpus',preparedSourcesOnly:true})};}
  if(value.stage==='studySnapshot'){if(value.history.length||Object.keys(value.replies).length||!['estudio','docencia'].includes(vault.type))throw new Error('invalid_study_research_source');return {version:1,value:getMobileStudyResearchSourcePack(request.objective)};}
  if(value.stage==='guideSnapshot'){if(value.history.length||Object.keys(value.replies).length)throw new Error('invalid_complete_guide_source');return {version:1,value:await captureMobileCompleteGuide(request,mobileDeepResearchCorpusRevision(request),signal)};}

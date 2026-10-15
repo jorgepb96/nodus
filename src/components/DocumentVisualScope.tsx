@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { DocumentVisualDiscard, DocumentVisualManifest, DocumentVisualTarget } from '@shared/documentSkills';
 import { documentVisualDiscardTally, documentVisualDiscardText } from '@shared/documentSkills';
 import type { AppSettings, ModelRef } from '@shared/types';
@@ -38,6 +38,8 @@ export function DocumentVisualActions() {
   const context = useContext(Context), config = useDocumentSkills();
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [settings, setSettings] = useState<AppSettings | null>(null), [model, setModel] = useState<ModelRef | null>(null);
+  const statusDialog = useRef<HTMLDialogElement>(null);
+  const statusId = useId();
   const chosen = useRef(false);
   const kind = context?.target.kind;
   useEffect(() => {
@@ -58,6 +60,14 @@ export function DocumentVisualActions() {
   const { target, manifest, refresh } = context;
   const discards = manifest?.discarded ?? [];
   const running = busy || manifest?.state === 'planning' || manifest?.state === 'generating';
+  const incomplete = manifest && ['partial', 'failed', 'cancelled'].includes(manifest.state);
+  const emptyMessage = manifest?.state === 'ready' && !manifest.figures.length
+    ? (discards.length
+      ? tx('No se añadió ninguna figura: se descartaron {n} propuestas.', { n: discards.length })
+      : t('No se añadieron figuras: no eran necesarias.'))
+    : '';
+  const statusMessage = !running ? (error || (incomplete ? t('Algunos recursos no se pudieron generar.') : emptyMessage)) : '';
+  const actionClass = 'btn btn-ghost document-visual-action border border-neutral-300 dark:border-neutral-700';
   const run = async (retry = false) => {
     if (!config.valid && !retry) return;
     setBusy(true); setOpen(false); setError('');
@@ -66,18 +76,23 @@ export function DocumentVisualActions() {
     finally { setBusy(false); }
   };
   return <div className="document-visual-actions" data-reader-ignore="true">
-    <button className="btn btn-ghost border border-neutral-300 dark:border-neutral-700 text-xs" aria-label={t('Añadir recursos visuales')} title={t('Añadir recursos visuales')} disabled={running} onClick={() => { if (manifest) config.setPolicy(manifest.policy); setOpen(true); }}><Icon name="sparkles" size={16} /></button>
-    {running && <button className="btn btn-ghost text-xs" onClick={() => void window.nodus.cancelDocumentVisuals(target)}>{t('Cancelar')}</button>}
-    {manifest && !running && <button className="btn btn-ghost text-xs" aria-label={t('Deshacer enriquecimiento')} title={t('Deshacer enriquecimiento')} onClick={() => void window.nodus.undoDocumentVisuals(target).then(refresh)}><Icon name="undo" size={16} /></button>}
-    {manifest && ['partial', 'failed', 'cancelled'].includes(manifest.state) && !running && <button className="btn btn-ghost text-xs" onClick={() => void run(true)}>{t('Reintentar')}</button>}
-    {running && <span className="text-xs text-neutral-500">{t('Preparando recursos visuales…')}</span>}
-    {error && <p role="alert" className="text-xs text-red-500">{error}</p>}
-    {/* A document that needed no figures, and one whose every proposal was refused, asked
-        for the same sentence before: the difference is what the reader needs to know. */}
-    {manifest?.state === 'ready' && !manifest.figures.length && (discards.length
-      ? <details className="text-xs text-neutral-500"><summary>{tx('No se añadió ninguna figura: se descartaron {n} propuestas.', { n: discards.length })}</summary><DiscardReasons discarded={discards} /></details>
-      : <p className="text-xs text-neutral-500" role="status">{t('No se añadieron figuras: no eran necesarias.')}</p>)}
-    {manifest && !running && ['partial','failed','cancelled'].includes(manifest.state) && <details className="text-xs text-neutral-500"><summary>{t('Algunos recursos no se pudieron generar.')}</summary>{manifest.error && <p>{manifest.error}</p>}{manifest.figures.filter(figure => figure.error).map(figure => <p key={figure.id}>{figure.caption}: {figure.error}</p>)}<DiscardReasons discarded={discards} /></details>}
+    <button type="button" className={actionClass} aria-label={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} title={t(running ? 'Preparando recursos visuales…' : 'Añadir recursos visuales')} disabled={running} onClick={() => { if (manifest) config.setPolicy(manifest.policy); setOpen(true); }}><Icon name={running ? 'sync' : 'sparkles'} size={16} className={running ? 'animate-spin' : ''} /></button>
+    {running && <button type="button" className={actionClass} aria-label={t('Cancelar')} title={t('Cancelar')} onClick={() => void window.nodus.cancelDocumentVisuals(target)}><Icon name="stop" size={16} /></button>}
+    {manifest && !running && <button type="button" className={actionClass} aria-label={t('Deshacer enriquecimiento')} title={t('Deshacer enriquecimiento')} onClick={() => void window.nodus.undoDocumentVisuals(target).then(refresh)}><Icon name="undo" size={16} /></button>}
+    {incomplete && !running && <button type="button" className={actionClass} aria-label={t('Reintentar')} title={t('Reintentar')} onClick={() => void run(true)}><Icon name="sync" size={16} /></button>}
+    {statusMessage && <>
+      <button type="button" className={`${actionClass}${error || incomplete ? ' text-amber-600 dark:text-amber-400' : ''}`} aria-label={statusMessage} title={statusMessage} aria-haspopup="dialog" aria-controls={statusId} onClick={() => statusDialog.current?.showModal()}><Icon name={error || incomplete ? 'alert' : 'info'} size={16} /></button>
+      <dialog ref={statusDialog} id={statusId} className="document-visual-status-dialog" aria-labelledby={`${statusId}-title`}>
+        <header>
+          <h2 id={`${statusId}-title`}>{statusMessage}</h2>
+          <button type="button" className={actionClass} aria-label={t('Cerrar')} title={t('Cerrar')} onClick={() => statusDialog.current?.close()}><Icon name="x" size={16} /></button>
+        </header>
+        {incomplete && manifest?.error && <p>{manifest.error}</p>}
+        {incomplete && manifest?.figures.filter(figure => figure.error).map(figure => <p key={figure.id}>{figure.caption}: {figure.error}</p>)}
+        <DiscardReasons discarded={discards} />
+      </dialog>
+    </>}
+    <span className="sr-only" role={error ? 'alert' : 'status'}>{running ? t('Preparando recursos visuales…') : statusMessage}</span>
     {open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onMouseDown={() => setOpen(false)}><section className="w-full max-w-xl rounded-xl bg-white dark:bg-neutral-950 p-5 max-h-[90vh] overflow-auto" role="dialog" aria-modal="true" aria-label={t('Añadir recursos visuales')} onMouseDown={event => event.stopPropagation()}>
       <h2 className="font-semibold mb-3">{t('Añadir recursos visuales')}</h2>
       <DocumentSkillsControl value={config.policy} onChange={config.setPolicy} onValidityChange={config.setValid} />

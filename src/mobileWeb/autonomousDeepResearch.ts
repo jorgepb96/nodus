@@ -1,3 +1,4 @@
+import {autonomousGenealogyResearch} from './autonomousGenealogyResearch';
 import {autonomousStudyResearch} from './autonomousStudyResearch';
 import {mobileDeepResearchCover} from './deepResearchCover';
 import {autonomousCompleteGuide} from './autonomousCompleteGuide';
@@ -61,6 +62,9 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
    }else if(request.studyMode||request.unitMode){
     checkpoint.state='running';delete checkpoint.error;await persist();
     checkpoint.report=await autonomousStudyResearch(call,checkpoint,persist,controller,progress=>{checkpoint.progress=progress;notify(progress);});
+   }else if(Object.hasOwn(request,'focusPersonId')||checkpoint.context?.vaultType==='genealogy'){
+    checkpoint.state='running';delete checkpoint.error;await persist();
+    checkpoint.report=await autonomousGenealogyResearch(call,checkpoint,persist,controller,progress=>{checkpoint.progress=progress;notify(progress);});
    }else{
    const description=await source<{variant:string;context:MobileDeepResearchCheckpoint['context']}>('describe',[]);
    if(!description.context||description.context.version!==1)throw new Error('invalid_deep_research_source_description');

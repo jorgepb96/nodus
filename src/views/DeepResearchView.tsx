@@ -1527,14 +1527,17 @@ export function DeepResearchView({
           studyReportMode={isStudy && !isTeaching ? studyReportMode : undefined}
           onStudyReportMode={setStudyReportMode}
           guideReady={guideReady}
-          sourcePanel={mobileGuideSources && (isStudy || isTeaching) ? <div className="space-y-2">
+          sourcePanel={mobileGuideSources && (isStudy || isTeaching || isGenealogy) ? <div className="space-y-2">
             <label className="block text-xs">{t('Fuentes de esta investigación')}
               <select className="ml-2" value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
                 <option value="linked_corpus">{t('Fuentes preparadas del Mac')}</option>
                 <option value="device_downloads">{t('Fuentes elegidas en Descargas')}</option>
               </select>
             </label>
-            {mobileSourceScope === 'device_downloads' && <p className="text-xs text-neutral-500">{t('Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.')}</p>}
+            {isGenealogy ? <>
+              <p className="text-xs text-neutral-500">{t('La copia conserva los documentos y textos ya preparados elegidos para este objetivo y esta persona, sus hechos familiares y sus citas. La selección es léxica y acotada; no representa todo el archivo.')}</p>
+              <div className="flex gap-2">{([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!objective.trim()||!selectedModel||!mobileGuideSources.downloadGenealogy} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.downloadGenealogy!({objective:objective.trim(),focusPersonId,model:selectedModel,language},days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}</div>
+            </> : mobileSourceScope === 'device_downloads' && <p className="text-xs text-neutral-500">{t('Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.')}</p>}
           </div> : undefined}
           guidePanel={guideMode ? (
             <>

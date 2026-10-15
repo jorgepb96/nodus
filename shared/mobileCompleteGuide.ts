@@ -67,4 +67,5 @@ export interface MobileCompleteGuideActions {
  catalog(scope:MobileResearchSourceScope):Promise<CompleteGuideCatalog>;
  preview(scope:MobileResearchSourceScope,request:CompleteGuidePreviewRequest):Promise<ReturnType<typeof previewMobileCompleteGuide>>;
  download(request:import('./types').DeepResearchRequest,days:7|30):Promise<void>;
+ downloadGenealogy?(request:import('./types').DeepResearchRequest,days:7|30):Promise<void>;
 }

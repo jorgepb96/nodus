@@ -59,6 +59,34 @@ try {
   assert.deepEqual(await actions.runMobileDatabaseButton(buttonRequest,id,'fixture-grant',vault.id),run);assert.equal(JSON.parse(repo.getRow(row.id).cells[button.id]).clicks,1);
   const interruptedId=randomUUID();database.getDb().prepare("INSERT INTO mobile_database_action_receipts VALUES(?,?,?,'started',NULL,NULL)").run(interruptedId,'fixture-grant',require('node:crypto').createHash('sha256').update(require('../shared/canonicalJson.ts').canonicalJson(buttonRequest)).digest('hex'));
   await assert.rejects(actions.runMobileDatabaseButton(buttonRequest,interruptedId,'fixture-grant',vault.id),/interrupted_review_required/);assert.equal(JSON.parse(repo.getRow(row.id).cells[button.id]).clicks,1);
+  // Injected external receipt only: publication must never send this webhook.
+  const automations=require('../electron/db/databaseAutomationsRepo.ts');
+  const actionDb=repo.createDatabase('Device receipts'),actionRow=repo.createRow(actionDb.id),relatedRow=repo.createRow(actionDb.id);
+  const actionButton=repo.createColumn(actionDb.id,'Execute','button'),stateColumn=repo.createColumn(actionDb.id,'State','text');
+  const relation=repo.createColumn(actionDb.id,'Related','relation',{relationTargetKind:'db_row',relationTargetDatabaseId:actionDb.id});repo.addRelation(actionRow.id,relation.id,'db_row',relatedRow.id);
+  const destination=repo.createDatabase('Created pages'),targetTitle=repo.createColumn(destination.id,'Title','title');
+  automations.createAutomationRule(actionDb.id,{name:'Canonical five actions',trigger:{type:'button',columnId:actionButton.id},maxAttempts:1,actions:[
+    {type:'set_property',columnId:stateColumn.id,value:{type:'literal',value:'device-set'}},
+    {type:'update_related',relationColumnId:relation.id,changes:[{columnId:stateColumn.id,value:{type:'literal',value:'related-set'}}]},
+    {type:'create_page',databaseId:destination.id,properties:{[targetTitle.id]:{type:'literal',value:'Device-created page'}},blocks:[{type:'paragraph',content:{text:'Exact device-authored page'}}]},
+    {type:'notify',title:'Device notice',body:'Confirmed local steps'},
+    {type:'webhook',url:'https://never-called.invalid/receipt',method:'POST',headers:{},body:'explicit-user-action'}
+  ]});
+  const beforeCapture=database.getDb().prepare('SELECT total_changes() AS n').get().n;
+  const captured=actions.getMobileDatabaseActionSource({rowId:actionRow.id,columnId:actionButton.id,kind:'button'});
+  assert.equal(database.getDb().prepare('SELECT total_changes() AS n').get().n,beforeCapture,'Capture never writes or executes actions');
+  assert.deepEqual(new Set(captured.plan.operations.map(operation=>operation.type)),new Set(['button_click','set_property','create_page','notify','webhook']));
+  const deviceId=randomUUID(),clickedAt='2026-10-15T10:00:00Z',plan=actions.instantiateMobileDatabaseButtonPlan(captured.plan,deviceId,clickedAt);
+  const webhooks=Object.fromEntries(plan.operations.flatMap((operation,index)=>operation.type==='webhook'?[[String(index),{status:'succeeded',httpStatus:204,attempt:1}]]:[]));
+  const deviceInput={requestId:deviceId,request:{rowId:actionRow.id,columnId:actionButton.id,kind:'button',revision:captured.revision},result:{clickedAt,finishedAt:'2026-10-15T10:00:01Z',completedSteps:plan.operations.length,webhooks}};
+  const receipt=await dispatch.executeMobileDatabaseAction(vault.id,['corpus','writing'],'saveMobileDatabaseButtonResult',[deviceInput],{deviceGrant:'fixture-device-button',idempotencyKey:deviceId});
+  assert.equal(repo.getRow(actionRow.id).cells[stateColumn.id],'device-set');assert.equal(repo.getRow(relatedRow.id).cells[stateColumn.id],'related-set');
+  const created=plan.operations.find(operation=>operation.type==='create_page');assert.equal(repo.getRow(created.rowId).cells[targetTitle.id],'Device-created page');
+  const page=require('../electron/db/pagesRepo.ts').getPageDocumentForRow(created.rowId);assert(page.markdown.includes('Exact device-authored page'));
+  assert.equal(automations.listAutomationNotifications(actionDb.id).length,1);
+  const unchanged=database.getDb().prepare('SELECT total_changes() AS n').get().n;
+  assert.deepEqual(actions.saveMobileDatabaseButtonResult(deviceInput,'fixture-device-button'),receipt);
+  assert.equal(database.getDb().prepare('SELECT total_changes() AS n').get().n,unchanged,'Lost ACK never repeats notifications, hooks or local writes');
  }));
  assert.equal(providerCalls,0);console.log('PASS real isolated canonical DB source/CAS/receipt/button contracts; no providers or external actions invoked');
 }finally{globalThis.fetch=originalFetch;runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

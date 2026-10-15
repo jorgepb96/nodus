@@ -36,10 +36,15 @@ function manifest(raw:unknown,id:string):Manifest {
   return {version:1,id:uuid(id),rowId,columnId,fileName,mimeType,size,sha256:value.sha256.toLowerCase(),chunkCount:Math.ceil(size/MOBILE_DATABASE_FILE_CHUNK_BYTES),expectedRowRevision:value.expectedRowRevision as number,expectedColumnRevision:value.expectedColumnRevision as number};
 }
 function context(spec:Manifest){const column=getColumn(spec.columnId),row=getRow(spec.rowId);if(!column||!row||row.databaseId!==column.databaseId||!['files','attachment','ai_image'].includes(column.type))fail('database_file_parent_unavailable');return {column,row};}
+function resultMetadata(spec:Manifest,id:string):Record<string,unknown> {
+  const attachment=getDb().prepare('SELECT id,database_id,row_id,column_id,file_name,mime_type,bytes,content_hash,revision,position,created_at,updated_at,created_by,updated_by FROM db_attachments WHERE id=? AND row_id=? AND column_id=?').get(id,spec.rowId,spec.columnId);
+  const row=getDb().prepare('SELECT * FROM db_rows WHERE id=?').get(spec.rowId);
+  return {attachment,row};
+}
 function knownResult(spec:Manifest):Record<string,unknown>|undefined {
   const id='datt_'+spec.id,existing=getAttachment(id);if(!existing)return undefined;
   if(existing.rowId!==spec.rowId||existing.columnId!==spec.columnId||existing.contentHash!==spec.sha256||existing.bytes!==spec.size||existing.fileName!==spec.fileName||existing.mimeType!==spec.mimeType)fail('database_file_identity_conflict');
-  return {id:existing.id,rowId:existing.rowId,columnId:existing.columnId,fileName:existing.fileName,mimeType:existing.mimeType,bytes:existing.bytes,sha256:existing.contentHash};
+  return {id:existing.id,rowId:existing.rowId,columnId:existing.columnId,fileName:existing.fileName,mimeType:existing.mimeType,bytes:existing.bytes,sha256:existing.contentHash,...resultMetadata(spec,existing.id)};
 }
 function preconditions(spec:Manifest){context(spec);const db=getDb(),row=db.prepare('SELECT revision FROM db_rows WHERE id=?').get(spec.rowId) as {revision:number},column=db.prepare('SELECT revision FROM db_columns WHERE id=?').get(spec.columnId) as {revision:number};if(row.revision!==spec.expectedRowRevision||column.revision!==spec.expectedColumnRevision)fail('database_file_revision_conflict','La fila o la propiedad cambió en Nodus. El archivo se conserva en el dispositivo para revisar su destino.');}
 function maxFileBytes(){const options=getDb().pragma('compile_options') as Array<{compile_options:string}>;const configured=options.map(value=>/^MAX_LENGTH=(\d+)$/.exec(value.compile_options)).find(Boolean);return configured?Number(configured[1]):1_000_000_000;}
@@ -76,7 +81,7 @@ export async function mobileDatabaseFileUpload(vaultId:string,grantId:string,id:
     const existing=knownResult(state.manifest);if(existing){state.result=existing;save(directory,state);return descriptor(state);}
     const {bytes}=readMobileDatabaseUploadedBlob(vaultId,grantId,id);
     const attachment=getDb().transaction(()=>addAttachment({rowId:state.manifest.rowId,columnId:state.manifest.columnId,fileName:state.manifest.fileName,mimeType:state.manifest.mimeType,bytes:bytes.length,blob:bytes,contentHash:state.manifest.sha256,identity:'datt_'+state.manifest.id,extractedText:null,thumb:null}))();
-    state.result={id:attachment.id,rowId:attachment.rowId,columnId:attachment.columnId,fileName:attachment.fileName,mimeType:attachment.mimeType,bytes:attachment.bytes,sha256:attachment.contentHash};state.updatedAt=Date.now();save(directory,state);
+    state.result={id:attachment.id,rowId:attachment.rowId,columnId:attachment.columnId,fileName:attachment.fileName,mimeType:attachment.mimeType,bytes:attachment.bytes,sha256:attachment.contentHash,...resultMetadata(state.manifest,attachment.id)};state.updatedAt=Date.now();save(directory,state);
     for(let index=0;index<state.manifest.chunkCount;index++)fs.rmSync(path.join(directory,`chunk-${index}`),{force:true});invalidateLiveCorpus(vaultId);return descriptor(state);
   },['corpus','writing'])));
 }

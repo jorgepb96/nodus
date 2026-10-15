@@ -33,6 +33,8 @@ try {
   await assert.rejects(run('status',{},'other-grant'),error=>error.code==='database_file_upload_unavailable');
   await assert.rejects(run('commit',{},'grant',false),error=>error.code==='permission_denied');
   const result=await run('commit');assert.equal(result.state,'available');assert.equal(result.result.bytes,bytes.length);assert.equal(result.result.id,'datt_'+id);
+  assert.equal(result.result.attachment.id,result.result.id);assert.equal(result.result.attachment.content_hash,sha(bytes));assert.equal(result.result.attachment.revision,1);
+  assert.equal(result.result.row.id,rowId);assert(result.result.row.revision>input.expectedRowRevision,'the response exposes the real post-attachment parent revision');
   await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,()=>{
     const actual=repo.getAttachmentBlob(result.result.id);assert.equal(sha(actual),sha(bytes));assert.deepEqual(actual,bytes);
     assert.equal(repo.getAttachment(result.result.id).extractedText,null,'Transport does not extract or index files');

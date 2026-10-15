@@ -23,9 +23,9 @@ function withoutDirectBranch(method) {
   return dispatcherSource.slice(0, branch.getStart(source)) + dispatcherSource.slice(branch.end);
 }
 
-test('real HTTP dispatcher covers its 38 direct methods without inventing IPC handlers', () => {
+test('real HTTP dispatcher covers its 39 direct methods without inventing IPC handlers', () => {
   const census = mobileOperationCensus(input);
-  assert.equal(census.directMethods.size, 38); // 27 literal routes + 7 DB Set routes + 4 export Set routes.
+  assert.equal(census.directMethods.size, 39); // 28 literal routes + 7 DB Set routes + 4 export Set routes.
   for (const method of census.directMethods) {
     assert(census.entries.some(entry => entry.method === method));
     assert(!census.invoked.some(entry => entry.method === method));

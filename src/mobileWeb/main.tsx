@@ -1,3 +1,4 @@
+import {mergeMobileDeepResearchReports} from '@shared/mobileDeepResearchCatalogue';
 import {enqueueAutonomousDeepResearch,localDeepResearchJobs,localDeepResearchReports,cancelAutonomousDeepResearch,clearLocalDeepResearchJobs,retryLocalDeepResearch} from './autonomousDeepResearch';
 import { autonomousDictionary } from './autonomousDictionary';
 import { autonomousImmersion, autonomousImmersionContext } from './autonomousImmersion';
@@ -288,7 +289,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
   if(method==='clearFinishedDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>clearLocalDeepResearchJobs(call);
   if(method==='listWritingWorkshopDrafts'&&config.surface==='deepResearch') return async()=>{
     const own=await localDeepResearchReports(call);
-    try {const remote=await call(method);return [...own,...remote];}
+    try {const remote=await call(method);return mergeMobileDeepResearchReports(own,remote);}
     catch(error){if((error as {code?:string})?.code!=='offline')throw error;return own;}
   };
   if (method === 'startDictionaryGeneration' && native.nodusMobileConfig.executionMode === 'autonomous') return (request: Parameters<typeof autonomousDictionary>[2]) => autonomousDictionary(call, progress => { for (const listener of subscriptions.get('onDictionaryProgress') ?? []) listener(progress); if (['done','degraded'].includes(progress.phase)) for (const listener of subscriptions.get('onDictionaryChanged') ?? []) listener(null); }, request);

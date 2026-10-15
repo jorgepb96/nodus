@@ -77,7 +77,9 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
    }
    checkpoint.state='saved';await persist();
   }
-  try {checkpoint.result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await persist();}
+  try {const result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});
+   if(!result||result.id!==checkpoint.id)throw new Error('invalid_deep_research_publication_receipt');
+   checkpoint.result=result;checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await persist();}
   catch(error){checkpoint.publicationPending=true;checkpoint.error=String(error);await persist();}
  } catch(error) {
   // Cancellation stops future stages, while an accepted completion may already
@@ -100,7 +102,7 @@ export async function localDeepResearchJobs(call:Call):Promise<Array<DeepResearc
 }
 export async function localDeepResearchReports(call:Call) {
  const checkpoints=await call('mobileDeepResearchCheckpoints','reports') as MobileDeepResearchCheckpoint[];
- return checkpoints.flatMap(item=>item.report?[{id:`mobile-dr-${item.id}`,title:item.report.draft.title,brief:item.report.draft.brief,selection:item.report.draft.selection,model:item.request.model,draft:item.report.draft,createdAt:item.createdAt,updatedAt:item.createdAt,readAt:null}]:[]);
+ return checkpoints.flatMap(item=>item.report?[{id:`mobile-dr-${item.id}`,title:item.report.draft.title,brief:item.report.draft.brief,selection:item.report.draft.selection,model:item.request.model,draft:item.report.draft,image:null,createdAt:item.createdAt,updatedAt:item.createdAt,readAt:null,mobilePublicationId:item.state==='available'&&typeof (item.result as {id?:unknown}|undefined)?.id==='string'?(item.result as {id:string}).id:undefined}]:[]);
 }
 export async function clearLocalDeepResearchJobs(call:Call):Promise<number>{let count=0;for(const checkpoint of await autonomousDeepResearchCheckpoints(call)){if(active.has(checkpoint.entityKey)||checkpoint.hiddenFromQueue)continue;checkpoint.hiddenFromQueue=true;await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);count++;}return count;}
 

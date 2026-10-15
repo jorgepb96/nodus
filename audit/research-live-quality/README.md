@@ -1,6 +1,23 @@
 # Current-source Research Chat quality campaign
 
-Status: in progress. No new embedding profile is validated by this directory.
+Status: the fixed eighty-case baseline is closed; follow-up correction validation
+is in progress. No new embedding profile is validated by this directory.
+
+The [closed baseline](closed-51ddac9d/README.md) preserves every attempted outcome:
+35/60 complete correct positive answers, 48/48 source-supported qualified
+published answers (conditional fidelity), and 13/20 correct insufficient-evidence
+responses. Four raw published answers lack valid generation/read bindings and
+receive no quality credit. The useful-answer and absence-handling gates fail;
+conditional fidelity is not whole-cohort accuracy or an external human review.
+
+The [general corrections](followup-2026-10-15/README.md) preserve comparator
+evidence through final context fitting and harden literal evidence, source
+routing and citation representation. The [merged-main verification](merged-main-2026-10-15/README.md)
+records the current isolated UI and actual macOS ARM64 ASAR rerun, including a
+corrected narrow-composer defect and preserved failed build/test attempts.
+New targeted generations remain a separate diagnostic, not a replacement for
+the closed baseline. The chronological receipts below describe their own
+recorded revisions and must not be read as current-head quality measurements.
 
 The owner approved prospective, separate targets: at least 85% correct and complete answers over all planned answerable questions, 95% published answers without material unsupported claims, 90% published recognition of insufficient evidence, passage-level Recall@10 of 90%, actual resolution of every captured citation, and zero observed scope/contract leaks. The policy is `research-answer-quality/3`; every arm requires sixty preregistered answerable questions. These are directed project targets, not population guarantees. Prior campaigns keep their original policy and failed or pending results.
 

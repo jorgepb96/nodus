@@ -1,0 +1,264 @@
+{
+  "format": "nodus.merged-main-verification/1",
+  "at": "2026-10-15T11:29:48.737852+00:00",
+  "sourceCommit": "7b9a519cf1a9badea45e278660b2d32a14854c46",
+  "mergedMainCommit": "560812e2",
+  "hardware": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "processor": "Apple M2",
+    "memoryGiB": 16
+  },
+  "scope": "Merged production sources, actual Electron UI and locally ad-hoc signed macOS ASAR; no new answer-quality rate.",
+  "checks": [
+    {
+      "name": "typecheck",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-typecheck-001.log",
+      "sha256": "040d349ba8d1880929957441eb8c30e99ad868305c5f4758761312ae8f7d4152",
+      "bytes": 101
+    },
+    {
+      "name": "lint",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-lint-001.log",
+      "sha256": "82270906f55b20d319c198359edee4eb3ed3bfa81d84433917f5b55f9a223728",
+      "bytes": 48
+    },
+    {
+      "name": "grounding",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-grounding-001.log",
+      "sha256": "b6ae12fbaad0b09ad669b11898fe8673e1d15cd112a5fa37742e9828ac9789bf",
+      "bytes": 21475
+    },
+    {
+      "name": "embedding-contracts",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-contracts-001.log",
+      "sha256": "b52257287a2fb51741142ddd28a11941b16145da604f99f288003fe093243b95",
+      "bytes": 5024
+    },
+    {
+      "name": "retrieval",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-retrieval-001.log",
+      "sha256": "ab0c675a5457ba08d813c7d574757c9c349c78d21b743f5a50b3a9f84ab73c74",
+      "bytes": 7796
+    },
+    {
+      "name": "citation-context-and-packaging",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-integration-tests-001.log",
+      "sha256": "7e301b70b74de9a43d0510ace8a43d4f19026b0c3acc76273248ada4fba685b1",
+      "bytes": 12388
+    },
+    {
+      "name": "process-lifecycle",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-process-tests-001.log",
+      "sha256": "9dc3c692a6e62e4d14e529c254fe7e7e0162451dbe53423be25a3f8222ff79a6",
+      "bytes": 1328
+    },
+    {
+      "name": "clone-shard-queue-and-policy",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-qa-tests-001.log",
+      "sha256": "d198d5be5124da3e7bce970b8571afa3eed61f41b54188980a3cb4ed73ce68be",
+      "bytes": 1166
+    },
+    {
+      "name": "diagnostic-selection-and-package-closure",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-diagnostic-tests-001.log",
+      "sha256": "8a2942713d6a07e6af0024d6ec6184ce633e374410d42d5c16c60a7239cab3fb",
+      "bytes": 1479
+    },
+    {
+      "name": "full-build",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-build-001.log",
+      "sha256": "da8376b264f493945f3dead6a98cdd55e78cdd17fa9eed90c66a2692b88537af",
+      "bytes": 65046
+    },
+    {
+      "name": "composer-build",
+      "status": "passed",
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-composer-build-001.log",
+      "sha256": "190cd04adcfb714d508edb9190e388c4bb3bffddeeeb0be19c4a51e5bc0ae255",
+      "bytes": 64329
+    }
+  ],
+  "sourceFiles": {
+    "build/packagedNodeModules.cjs": "52c86a7bc05f6c72582289f353717778d2b3c0e6be1191c80a0c2f94d1755953",
+    "vite.config.ts": "9f9c4302bd39a362fe38000f7d2a4a1b4b82764ca6bfbed30f90bd710cc9dbb7",
+    "electron/ai/researchAssistant.ts": "26c386998109b3b9df58a9791fef32d6a8cc3ba2ef28d8e375338bbb23168b8d",
+    "electron/ai/researchContextFit.ts": "8d8269405cb5ca73dc07a6373557baa31c2341a8329185e94ed82e36f48ec6a0",
+    "src/views/ResearchAssistantModal.tsx": "d4b9131d9b636f84a86eb6e6cb8511c6329bdf80bab8b7908bfbb6ad947da050",
+    "src/views/researchAssistant.css": "dfb8e311d01d5c1d32f2534160a8b55f14cf39c5f5a62e24b81884a6e8fe01af",
+    "scripts/test-packaged-node-modules.mjs": "89b45002671a0be63c45ee114a516e20b4d78cf88c8b3df7fcb1e504416162af",
+    "scripts/e2e-research-isolated.mjs": "3561cf638abf3acf63b0fb35ef3fefaa70d1dafb26a73f9710556e54f869d6f2",
+    "scripts/verify-research-activity-ui.mjs": "370e45f4d6ba87678c0b7f5bee07dac319e55dd89302b37b1681713441dd06d5"
+  },
+  "uiSmoke": {
+    "status": "passed",
+    "report": {
+      "path": "/private/tmp/nodus-research-4TVwDX/artifacts/startup.json",
+      "sha256": "95dcc305141c6be3a13d779836137bc9c42c5bd247ba54b4a0d9b1a2d242a31b",
+      "bytes": 16178
+    },
+    "modelCalls": 0,
+    "databaseOpens": 23,
+    "checks": [
+      "notebook filters and exclusion revocation",
+      "verification off/structured/off",
+      "four activity turns including cancellation and failure",
+      "PDF page and original-file access",
+      "light/dark 1280x800 and 800x640 with usable question field"
+    ],
+    "screenshotInspected": {
+      "path": "/private/tmp/nodus-research-4TVwDX/artifacts/activity-light-800.png",
+      "sha256": "08eb11c202884f05252cd769a7bd92c903db13d4108c1c324a5b0286c8e85c49",
+      "bytes": 114694
+    }
+  },
+  "packageSmoke": {
+    "status": "passed",
+    "report": {
+      "path": "/private/tmp/nodus-research-PvJmnp/artifacts/package-smoke.json",
+      "sha256": "9477a924787756a847f3fa4d15177db89784fe303296eb0bd40e509c73ec5a36",
+      "bytes": 10585
+    },
+    "buildLog": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-package-build-002.log",
+      "sha256": "6aba916b38a5d4e7e66be45e734bb792100b1a423ec81ebcde7fd80c9a941277",
+      "bytes": 20680
+    },
+    "buildToolNode": "22.13.1",
+    "electron": "43.6.0",
+    "applicationRuntimeNode": "24.20.0",
+    "paidApiCalls": 0,
+    "profiles": [
+      {
+        "profile": "embeddinggemma-2-text-q8-512-v1",
+        "semanticCandidates": 1
+      },
+      {
+        "profile": "embeddinggemma-2-text-q8-256-v1",
+        "semanticCandidates": 1
+      }
+    ],
+    "separateUtilityProcess": true,
+    "processes": [
+      {
+        "at": "2026-10-15T11:27:31.055Z",
+        "type": "embedding-gemma-process",
+        "phase": "spawn",
+        "pid": 67827,
+        "service": "Nodus EmbeddingGemma Q8"
+      }
+    ],
+    "settings": {
+      "language": "en",
+      "sharedCardCount": 1,
+      "experimentalBadge": true,
+      "licenseTermsLocalized": true,
+      "sharedDeletionWarning": true,
+      "cancelledDeletionPreservesBothProfiles": true
+    },
+    "assetProof": [
+      {
+        "file": "config.json",
+        "bytes": 5031,
+        "sha256": "8d011bfe08b5e345bbe0b81e5c6fd02c381920b345b986047bc2a33ce7b90d1d"
+      },
+      {
+        "file": "tokenizer.json",
+        "bytes": 32170510,
+        "sha256": "4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4"
+      },
+      {
+        "file": "tokenizer_config.json",
+        "bytes": 1599,
+        "sha256": "17bd5d6e9364ca49a534e1502076593317c298d4a663623091ed45388f004874"
+      },
+      {
+        "file": "onnx/model_quantized.onnx",
+        "bytes": 495165,
+        "sha256": "d06edd601f851c633a2519304cbeb8dc6170d7ceb61b436625c17fb9b6e74953"
+      },
+      {
+        "file": "onnx/model_quantized.onnx_data",
+        "bytes": 313724928,
+        "sha256": "278a7ff1248c3618e4bd11a607fc54f7bdc7778854230f3956d3f86bd9db4f3b"
+      }
+    ],
+    "modelWeightsBundled": false,
+    "screenshotInspected": {
+      "path": "/private/tmp/nodus-research-PvJmnp/artifacts/package-settings.png",
+      "sha256": "816f7ff182917c2a126399c2e3e3e7270239a86880517c233b61e07382466674",
+      "bytes": 46774
+    }
+  },
+  "preservedAttempts": [
+    {
+      "kind": "UI failure before composer correction",
+      "reason": "A narrow chat with history and verification controls reduced the question field to zero width. Corrected with wrapping controls and checked field bounds.",
+      "report": {
+        "path": "/private/tmp/nodus-research-bD2jIA/artifacts/startup.json",
+        "sha256": "1f2cb012c31a049b4828bb46df17ca3ca92f09d1af438d24b1d839f8de7457b3",
+        "bytes": 10213
+      },
+      "screenshot": {
+        "path": "/private/tmp/nodus-research-bD2jIA/artifacts/failure.png",
+        "sha256": "6e403cfc05d5734c01a889cf5119b77003875723c7f3fe6e1836b71d8f1cfc78",
+        "bytes": 110406
+      }
+    },
+    {
+      "kind": "earlier UI failure, same cause",
+      "log": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-ui-smoke-001.log",
+        "sha256": "0b521b696ed9dafcd82d486c04f6c3699f45beb84b2ea6386a887b449dfef30a",
+        "bytes": 8480
+      }
+    },
+    {
+      "kind": "build-tool shutdown hang",
+      "reason": "Node 24.19.0 waited in V8 concurrent baseline compilation during process shutdown after verifying all 81 Drift recordings. Stopped only the recorded QA build PIDs, rebuilt with installed Node 22.13.1. The packaged application still uses Electron 43.6.0 / Node 24.20.0.",
+      "log": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-package-build-001.log",
+        "sha256": "0be309a5190a2a388c3253f7249bca0cae60a03bf791bf9eafed7a21160b03da",
+        "bytes": 10663
+      },
+      "sample": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-drift-wait-sample-002.txt",
+        "sha256": "1e119abaeecd2fb36d37bae43d5863472ef4cfb93478ac61c595247ca9ce77cc",
+        "bytes": 72647
+      }
+    }
+  ],
+  "baselineUnchanged": {
+    "positiveUtility": {
+      "passed": 35,
+      "total": 60
+    },
+    "qualifiedPublishedFidelity": {
+      "passed": 48,
+      "total": 48,
+      "conditional": true
+    },
+    "insufficientEvidence": {
+      "passed": 13,
+      "total": 20
+    },
+    "acceptance": false
+  },
+  "limitations": [
+    "Fresh targeted generated-answer diagnostics are separate and do not revise the closed 80-case baseline.",
+    "No native real-weight package run on Windows, Linux or macOS Intel.",
+    "No new 10K-fragment latency or full five-model quality result.",
+    "Concrete resource Apache-2.0 / Prohibited Use Policy clarification remains pending.",
+    "EmbeddingGemma profiles remain experimental; validatedProfiles stays empty."
+  ]
+}

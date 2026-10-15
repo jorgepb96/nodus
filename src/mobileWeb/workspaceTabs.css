@@ -85,6 +85,38 @@
   flex: 0 0 auto;
   min-height: var(--mobile-workspace-tab-height);
 }
+.mobile-surface .editorial-header-leading > .library-workspace-tabs {
+  flex: 1 1 auto;
+  width: 0;
+}
+.mobile-surface .editorial-options > summary {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+.nodus-phone .mobile-surface .editorial-header-leading {
+  flex: 1 0 100%;
+  width: 100%;
+}
+.nodus-phone .mobile-surface .editorial-location { display: none; }
+.nodus-phone .mobile-surface .editorial-save-status {
+  display: block;
+  order: 1;
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  white-space: normal;
+  text-align: left;
+}
+.nodus-phone .mobile-surface .editorial-editor-header > :is(.editorial-header-action, .editorial-options) {
+  order: 2;
+}
+@media (orientation: landscape) {
+  .nodus-phone .mobile-surface .editorial-header-leading { flex: 1 1 0; width: auto; }
+  .nodus-phone .mobile-surface .editorial-save-status { flex: 0 1 82px; }
+}
 
 /* The graph owns its tab state, but its touch geometry follows the same row. */
 .mobile-surface .stellar-tabs-header {

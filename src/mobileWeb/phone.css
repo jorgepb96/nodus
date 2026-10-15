@@ -230,13 +230,14 @@
 .nodus-phone .dictionary-mobile .dictionary-row-heading{min-width:0;grid-template-columns:32px 1fr}
 .nodus-phone .dictionary-mobile .dictionary-row-heading>*:nth-child(n+3){display:none}
 .nodus-phone .dictionary-mobile .dictionary-entry-row{min-width:0;grid-template-columns:32px repeat(3,minmax(0,1fr));gap:8px;padding:12px}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>input{grid-column:1;grid-row:1}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>button:nth-child(2){grid-column:2/-1}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>button:nth-child(2) strong{white-space:normal;overflow-wrap:anywhere}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(3){grid-column:2/-1}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(4){grid-column:2}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(7){grid-column:2/-1}
-.nodus-phone .dictionary-mobile .dictionary-entry-row>*:nth-child(8){grid-column:2/4}
+.nodus-phone .dictionary-mobile .dictionary-entry-select{grid-column:1;grid-row:1}
+.nodus-phone .dictionary-mobile .dictionary-entry-title{grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-title strong{white-space:normal;overflow-wrap:anywhere}
+.nodus-phone .dictionary-mobile .dictionary-entry-state{grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-counts{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;min-width:0;grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-tags{grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-updated{grid-column:2/4}
+.nodus-phone .dictionary-mobile .dictionary-entry-open{grid-column:4}
 .nodus-phone .dictionary-mobile .dictionary-count-label{display:inline}
 @media(orientation:landscape){
   .nodus-phone .dictionary-mobile>header{padding:6px 12px 0}

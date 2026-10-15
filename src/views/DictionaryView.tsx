@@ -328,7 +328,7 @@ function StatusPill({ status }: { status: string }) {
 
 function Tag({ children }: { children: ReactNode }) {
   return (
-    <span className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+    <span className="max-w-full break-words rounded-md bg-neutral-100 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
       {children}
     </span>
   );
@@ -1737,11 +1737,12 @@ function DictionaryRows({
           className={`dictionary-entry-row grid min-w-[960px] ${columns} items-center gap-3 border-b border-neutral-100 px-3 transition-colors last:border-b-0 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/55 ${compact ? "py-2" : "py-3"} ${selected.has(entry.id) ? "bg-indigo-50/60 dark:bg-indigo-950/20" : ""}`}
         >
           <input
+            className="dictionary-entry-select"
             type="checkbox"
             checked={selected.has(entry.id)}
             onChange={() => onToggle(entry.id)}
           />
-          <button className="min-w-0 text-left" onClick={() => onOpen(entry)}>
+          <button className="dictionary-entry-title min-w-0 text-left" onClick={() => onOpen(entry)}>
             <span className="flex items-center gap-2">
               <strong className="truncate text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-300">
                 {entry.name}
@@ -1769,25 +1770,29 @@ function DictionaryRows({
               </span>
             )}
           </button>
-          <DictionaryGenerationState
-            progress={generationJobs.get(entry.id)}
-            status={entry.status}
-          />
-          <span className="text-xs text-neutral-500"><span className="dictionary-count-label">{t("Autores")} · </span>{entry.authorCount}</span>
-          <span className="text-xs text-neutral-500"><span className="dictionary-count-label">{t("Obras")} · </span>{entry.workCount}</span>
-          <span className="text-xs text-neutral-500">
-            <span className="dictionary-count-label">{t("Evidencia")} · </span>{entry.evidenceCount}
-          </span>
-          <div className="flex flex-wrap gap-1">
+          <div className="dictionary-entry-state min-w-0">
+            <DictionaryGenerationState
+              progress={generationJobs.get(entry.id)}
+              status={entry.status}
+            />
+          </div>
+          <div className="dictionary-entry-counts contents" role="group" aria-label={`${t("Autores")}, ${t("Obras")}, ${t("Evidencia")}`}>
+            <span className="dictionary-entry-count whitespace-nowrap text-xs text-neutral-500"><span className="dictionary-count-label">{t("Autores")} · </span>{entry.authorCount}</span>
+            <span className="dictionary-entry-count whitespace-nowrap text-xs text-neutral-500"><span className="dictionary-count-label">{t("Obras")} · </span>{entry.workCount}</span>
+            <span className="dictionary-entry-count whitespace-nowrap text-xs text-neutral-500">
+              <span className="dictionary-count-label">{t("Evidencia")} · </span>{entry.evidenceCount}
+            </span>
+          </div>
+          <div className="dictionary-entry-tags flex flex-wrap gap-1">
             {entry.tags.slice(0, compact ? 2 : 5).map((item) => (
               <Tag key={item}>{item}</Tag>
             ))}
           </div>
-          <span className="text-[10px] text-neutral-500">
+          <span className="dictionary-entry-updated text-[10px] text-neutral-500">
             {date(entry.updatedAt)}
           </span>
           <button
-            className="grid h-7 w-7 place-items-center rounded-lg text-neutral-400 hover:bg-neutral-200 hover:text-indigo-600 dark:hover:bg-neutral-800 dark:hover:text-indigo-300"
+            className="dictionary-entry-open grid h-7 w-7 place-items-center rounded-lg text-neutral-400 hover:bg-neutral-200 hover:text-indigo-600 dark:hover:bg-neutral-800 dark:hover:text-indigo-300"
             onClick={() => onOpen(entry)}
           >
             <Icon name="chevronRight" size={13} />

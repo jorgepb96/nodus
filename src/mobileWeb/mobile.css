@@ -71,8 +71,9 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
 .dictionary-mobile .dictionary-detail-actions[open]>.dictionary-model-options{margin-block:4px}
 .dictionary-mobile .dictionary-filters-hidden,.dictionary-mobile .dictionary-facets.dictionary-filters-hidden{display:none}
 .dictionary-mobile .dictionary-facets{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%}
-/* Catalogue tags and count labels retain complete text in their grid cells. */
-.dictionary-mobile .dictionary-entry-row>div:nth-child(7)>span,.dictionary-mobile .dictionary-entry-row>span:nth-child(n+4):nth-child(-n+6){min-width:0;max-width:100%;overflow-wrap:anywhere}
+/* Tags can wrap within a cell; a count keeps its complete vocabulary together. */
+.dictionary-mobile .dictionary-entry-tags>span{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.dictionary-mobile .dictionary-entry-count{white-space:nowrap;overflow-wrap:normal}
 /* Available pane width and accessible font size both determine the tab grid. */
 .dictionary-mobile .dictionary-detail-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,6rem),1fr));overflow:visible;gap:4px}
 .dictionary-mobile .dictionary-detail-tabs>button{height:auto;min-height:44px;min-width:0;justify-content:center;flex-wrap:wrap;padding:8px 6px;gap:4px;overflow-wrap:anywhere}
@@ -95,13 +96,14 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
   .dictionary-mobile .dictionary-row-heading{min-width:0;grid-template-columns:32px 1fr}
   .dictionary-mobile .dictionary-row-heading>*:nth-child(n+3){display:none}
   .dictionary-mobile .dictionary-entry-row{min-width:0;grid-template-columns:32px repeat(3,minmax(0,1fr));gap:8px;padding:12px}
-  .dictionary-mobile .dictionary-entry-row>input{grid-column:1;grid-row:1}
-  .dictionary-mobile .dictionary-entry-row>button:nth-child(2){grid-column:2/-1}
-  .dictionary-mobile .dictionary-entry-row>button:nth-child(2) strong{white-space:normal;overflow-wrap:anywhere}
-  .dictionary-mobile .dictionary-entry-row>*:nth-child(3){grid-column:2/-1}
-  .dictionary-mobile .dictionary-entry-row>*:nth-child(4){grid-column:2}
-  .dictionary-mobile .dictionary-entry-row>*:nth-child(7){grid-column:2/-1}
-  .dictionary-mobile .dictionary-entry-row>*:nth-child(8){grid-column:2/4}
+  .dictionary-mobile .dictionary-entry-select{grid-column:1;grid-row:1}
+  .dictionary-mobile .dictionary-entry-title{grid-column:2/-1}
+  .dictionary-mobile .dictionary-entry-title strong{white-space:normal;overflow-wrap:anywhere}
+  .dictionary-mobile .dictionary-entry-state{grid-column:2/-1}
+  .dictionary-mobile .dictionary-entry-counts{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;min-width:0;grid-column:2/-1}
+  .dictionary-mobile .dictionary-entry-tags{grid-column:2/-1}
+  .dictionary-mobile .dictionary-entry-updated{grid-column:2/4}
+  .dictionary-mobile .dictionary-entry-open{grid-column:4}
   .dictionary-mobile .dictionary-count-label{display:inline}
   .dictionary-mobile [data-testid="dictionary-entry-detail"]>div>section:first-child{padding:12px}
   .dictionary-mobile .dictionary-detail-actions{min-width:0}

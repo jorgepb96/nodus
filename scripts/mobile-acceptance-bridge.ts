@@ -21,6 +21,7 @@ void app.whenReady().then(async () => {
   await (await import('./mobile-acceptance-fixtures')).ensureAcceptanceFixtures(lab);
   await (await import('./mobile-acceptance-file-fixtures')).ensureAcceptanceFileFixtures(lab);
   await (await import('./mobile-acceptance-source-citation-fixtures')).ensureAcceptanceSourceCitationFixtures(lab);
+  await (await import('./mobile-acceptance-figure-fixtures')).ensureAcceptanceFigureFixtures(lab);
   if (process.env.NODUS_MOBILE_ACCEPTANCE_SAVED_AUDIO === '1') {
     await (await import('./mobile-acceptance-audio-fixtures')).ensureAcceptanceAudioFixtures(lab);
   }

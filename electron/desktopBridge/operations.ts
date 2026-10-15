@@ -1,3 +1,4 @@
+import {mobileStudyKnowledgeSource} from './mobileStudyKnowledge';
 import {MOBILE_DATABASE_ACTION_METHODS,executeMobileDatabaseAction} from './databaseActionsOperation';
 import {mobileDeepResearchSource,saveMobileDeepResearchReport} from './mobileDeepResearch';
 import type { IpcMainInvokeEvent } from 'electron';
@@ -119,6 +120,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileDossierFiles(vaultId, domains, args[0])));
   }
+  if(method==='getMobileStudyKnowledgeSource'){if(args.length!==1)throw new Error('invalid_operation_arguments');return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>mobileStudyKnowledgeSource(vaultId,args[0])));}
   if (method === 'getMobileWorldMapReadSource') {
     if (args.length !== 1) throw new Error('invalid_arguments');
     return withOwningVault(vaultId, () => withVaultDatabase(vaultId, () => mobileWorldMapReadSource(vaultId, args[0])));

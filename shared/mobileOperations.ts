@@ -25,6 +25,7 @@ export const MOBILE_OPERATIONS = {
   getMobilePageDocuments: ['mobile:page:documents', 'corpus'],
   getMobileSyncedBlockSource: ['mobile:page:syncedSource', 'corpus'],
   getMobileLinkedDatabaseRead: ['mobile:page:linkedDatabase', 'corpus'],
+  getMobileStudyKnowledgeSource: ['mobile:studyKnowledge:source', 'corpus'],
   getMobileWorldMapReadSource: ['mobile:worldMap:read', 'corpus'],
   getResearchCorpusSources: ['research:corpus:sources', 'corpus'],
   getResearchPreparationInventory: ['research:preparation:inventory', 'corpus'],

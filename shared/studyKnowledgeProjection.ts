@@ -68,7 +68,7 @@ function group(rows: StudyProjectionRow[], key: string) {
 }
 // SQLite LIKE folds ASCII case and treats % / _ as wildcards. Preserve that
 // behaviour when the same search is made against a downloaded publication.
-function sqliteLike(query: string) {
+export function sqliteLike(query: string) {
   const fold = (value: string) => value.replace(/[A-Z]/g, letter=>letter.toLowerCase());
   const pattern = fold(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/%/g,'.*').replace(/_/g,'.');
   const expression = new RegExp(`^.*${pattern}.*$`,'su');

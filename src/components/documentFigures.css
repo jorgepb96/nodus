@@ -28,8 +28,14 @@
 @media print{.document-figure{float:none!important;width:100%!important;max-width:100%!important;break-inside:avoid}.document-figure-actions{display:none}}
 .document-snapshot .capability-view-model-hint{display:none}
 .document-visual-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.document-visual-actions>button{flex-shrink:0}
-.document-visual-actions>details{max-width:260px}
-/* A details panel is narrow, so the reasons read as a short list, one motive per line. */
+.document-visual-action.btn{flex:0 0 2.25rem;width:2.25rem;height:2.25rem;min-height:2.25rem;padding:0;gap:0}
+.document-visual-action:disabled{opacity:.5;cursor:default}
+.document-visual-action:focus-visible{outline:2px solid #818cf8;outline-offset:2px}
+.document-visual-status-dialog{width:min(32rem,calc(100vw - 2rem));max-height:80vh;margin:auto;overflow:auto;border:1px solid #d4d4d4;border-radius:12px;padding:20px;background:#fff;color:#404040;font-size:.875rem;line-height:1.6;overflow-wrap:anywhere}
+.document-visual-status-dialog::backdrop{background:rgb(0 0 0 / .55)}
+.document-visual-status-dialog>header{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.document-visual-status-dialog h2{flex:1;font-weight:600}
+.document-visual-status-dialog p{margin:8px 0;white-space:pre-wrap}
+.dark .document-visual-status-dialog{border-color:#404040;background:#171717;color:#e5e5e5}
 .document-visual-discards{margin:4px 0 0;padding-left:14px;list-style:disc}
 .document-visual-discards li{margin:2px 0}

@@ -313,7 +313,7 @@ export function installTooltipLayer(): () => void {
   const onPointerMove = (event: PointerEvent) => {
     if (event.pointerType === 'touch') return;
     pointer = { x: event.clientX, y: event.clientY };
-    if (event.target === lastTarget) {
+    if (event.target === lastTarget && anchor) {
       if (pressed && anchor && source === 'pointer') {
         pressed = false;
         blankTitles(anchor);
@@ -357,6 +357,9 @@ export function installTooltipLayer(): () => void {
   };
 
   const onKeyDown = () => {
+    // A key switches back to keyboard navigation immediately, even just after a
+    // click. The pointer-focus grace period must not swallow the next Tab's tooltip.
+    lastPressAt = -Infinity;
     if (!anchor) return;
     hide();
     suppressed = true;

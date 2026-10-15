@@ -1,0 +1,67 @@
+
+> nodus@5.8.1 test:research:retrieval
+> node --test scripts/test-documentary-retrieval.mjs scripts/test-research-chat-agent.mjs scripts/test-research-corpus-run.mjs scripts/test-research-synthesis-context.mjs scripts/test-synthesis-evidence-passages.mjs
+
+Documentary retrieval worker: baseline regressions plus four lexical facets, local cosine and key scope, byte limits, direct reads, alias deduplication and fair expansion passed.
+✔ scripts/test-documentary-retrieval.mjs (3383.729292ms)
+Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+✔ scripts/test-research-chat-agent.mjs (13959.690875ms)
+Corpus run: pre-ranking scope, mixed Ideas, lexical-only retrieval, shared section budget, no profile barrier and selection revocation passed.
+✔ scripts/test-research-corpus-run.mjs (15385.453167ms)
+2026-10-12T15:12:24.533Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.644Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 0 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.680Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 0 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.760Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:24.817Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[perf][deep] JSON retry 15ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+[perf][deep] JSON retry 1ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.307Z [synthesisEvidence] 0.3s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:25.384Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:25.401Z [research] dropped 1 drawing request(s) from a route answer; the final report draws the route once it passes
+[perf][deep] JSON retry 59ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.570Z [synthesisEvidence] 0.1s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.1s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 2 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[perf][deep] JSON retry 0ms attempt=1 jsonMode=true invariantRequest=true status=error error=Falta la clave de IA para openai. Configúrala en Ajustes. retry=false
+2026-10-12T15:12:25.867Z [synthesisEvidence] 0.1s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 2 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+2026-10-12T15:12:26.010Z [synthesisEvidence] 0.0s · route search 0.0s · availability 0.0s · ORD disconnections 0.0s · textbook preparations 0.0s · passages 0.0s · target CCOC(=O)c1ccc(N)cc1 · ORD disconnections 0 · passages 1 · textbook preparations 0 · candidate routes 0 · target purchasable no/unknown · stock off
+[routeReview] no review parsed: 13 chars from the configured model after 0.0s, budget 2000 tokens, 1 steps; reply began "{\"issues\":[]}"
+2026-10-12T15:12:26.176Z [routeReport] 0.0s · ORD precedent 0.0s · stock 0.0s · textbook precedent 0.0s · compatibility 0.0s · audit 0.0s · review 0.0s · step support 0.0s
+[routeReview] no review parsed: 13 chars from the configured model after 0.0s, budget 2000 tokens, 1 steps; reply began "{\"issues\":[]}"
+2026-10-12T15:12:26.180Z [routeReport] 0.0s · textbook precedent 0.0s · ORD precedent 0.0s · compatibility 0.0s · stock 0.0s · audit 0.0s · review 0.0s · step support 0.0s
+[route-evidence] 1 steps: ord 0, textbook 0, web 0 (0 ms)
+✔ selected works constrain pre-answer chemistry evidence and post-answer options (126.195541ms)
+✔ documents switched off contribute no chemistry passages, even with selected books (54.788334ms)
+✔ an empty source selection remains empty instead of searching the full library (32.747083ms)
+✔ an authorized notebook limits chemistry to its own works (35.662667ms)
+✔ automatic academic authorization preserves external chemistry evidence; explicit restrictions do not (16.646625ms)
+✔ repeated correction retains the original target beyond the 4096 history window (28.838834ms)
+✔ repeated correction retains the original target beyond the cloud history window (53.829167ms)
+✔ retrieval starts once ORD has answered, beside the rest of the gather (516.731292ms)
+✔ a run of corrections keeps the route request in the replayed conversation (47.878542ms)
+✔ a stop during the route check keeps the answer the reader was shown (10.603792ms)
+✔ a route request that asks for the web is an explicit web request (307.517875ms)
+✔ a route correction searches its request again without planning or supervising the chip (246.85475ms)
+✔ a correction round inspects no molecules (143.824708ms)
+✔ cancelling a prompt interrupts the evidence embedding instead of finishing retrieval (30.420917ms)
+✔ cancellation reaches concurrent route tools, and one gather opens one runner (17.124667ms)
+✔ post-answer checks preserve structural verification while respecting the source grant (21.880792ms)
+✔ the opt-in revision pass honours web-off and propagates web cancellation (1.2115ms)
+✔ scheme indexes are searched only when every record and template is in scope (18.609625ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1767.224
+✔ scripts/test-research-synthesis-context.mjs (18422.505958ms)
+Synthesis textbook passages: dense lane off the main process, embeddings requested together, same passages.
+✔ scripts/test-synthesis-evidence-passages.mjs (11485.757292ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18435.955875

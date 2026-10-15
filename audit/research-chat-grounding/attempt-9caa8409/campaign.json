@@ -1,0 +1,460 @@
+{
+  "format": "nodus.research-chat-grounding-campaign/1",
+  "collectedAt": "2026-10-07T22:27:56.389Z",
+  "baseline": {
+    "file": "../../embeddinggemma-2/campaign.json",
+    "sha256": "1331d8376a78b9bff8c0d5d7e60f0448e555065781214a7a8289093470c510f1",
+    "directedReviewedFactual": {
+      "passed": 19,
+      "reviewed": 42
+    },
+    "comparisonLimit": "The original directed failure review and revised questions are different samples. No population accuracy or paired percentage improvement is claimed."
+  },
+  "evaluation": {
+    "stage": "evaluation",
+    "acceptanceEligible": true,
+    "design": "12 scenarios × 2 repetitions × 5 isolated embedding profiles; previously attempted questions, repeated regression evaluation after fixes.",
+    "planned": {
+      "total": 120,
+      "factual": 80,
+      "insufficientEvidence": 40
+    },
+    "executed": 48,
+    "reviewed": 48,
+    "reviewedPublishedAnswers": 43,
+    "reviewedFailureCases": 5,
+    "measuredRevision": "9caa8409",
+    "candidate": {
+      "gitHead": "9caa840900a95e62eb3117190d6784abd0932d48",
+      "files": {
+        "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+        "electron/ai/researchClaimAudit.ts": "644f3ea8c12262aa64d646c39d965b6557473a9386ca4e13fa97d6ad980010ee",
+        "electron/ai/researchChatGrounding.ts": "50a6c252d5f6b28abef03febd519bee300b33bbbdce98aae509bdd280ff557ee",
+        "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+        "shared/researchChatGrounding.ts": "a046ba8564904034e8f871e9eaa8e4b70a97599626fceb0a95fc1e664fadb099",
+        "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+      },
+      "applicationEntry": "2648f5040b0d2623b991d58bf1ca8aad32b3cb6b1ff8810de7853ee60c851418"
+    },
+    "candidateMatchesMeasured": false,
+    "executionErrors": 5,
+    "pending": 72,
+    "allExecuted": false,
+    "allReviewed": false,
+    "sameRuntime": true,
+    "observedReviewedFactual": {
+      "passed": 24,
+      "reviewed": 32
+    },
+    "observedReviewedAbsence": {
+      "passed": 16,
+      "reviewed": 16
+    },
+    "factualPassed": 24,
+    "absencePassed": 16,
+    "factualSupportAndAdequacy": null,
+    "insufficientEvidence": null,
+    "citations": {
+      "captured": 82,
+      "allResolvable": true,
+      "rate": 1
+    },
+    "semanticCandidatesSelected": true,
+    "gates": {
+      "factualSupportAndAdequacy": 0.95,
+      "insufficientEvidence": 0.9,
+      "resolvableCitations": 1,
+      "passed": false
+    },
+    "reviewer": "Codex independent source inspection, separate from the application auditor; not an external human or blinded review."
+  },
+  "cost": {
+    "campaignRoot": "/private/tmp/nodus-research-EkjNvg",
+    "ledgerSha256": "ee9484cd1cf8317fe5a29cbdbd7e83afd3fcd7ea25ecffda417f68de238936f3",
+    "limitUsd": 8,
+    "cumulativeAccountedUsd": 5.095465950000002,
+    "cumulativeCommittedUsd": 5.1799205750000015,
+    "calls": 3617,
+    "note": "Cumulative proxy accounting for the original campaign, including prior stages, using verified tariff/cache-miss upper bounds where the provider supplies no cost. Reconciled historical peak estimates retain their original ledger and method. This is not a billing invoice. Unknown usage retains its full reservation. This collector never resets or changes the budget."
+  },
+  "hardware": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "os": "25.6.0",
+    "cpu": "Apple M2",
+    "memoryBytes": 17179869184,
+    "node": "v22.23.2"
+  },
+  "products": [
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "sourceVersion": {
+        "gitHead": "9caa840900a95e62eb3117190d6784abd0932d48",
+        "files": {
+          "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+          "electron/ai/researchClaimAudit.ts": "2cc8c689220a8541b4d1b5cc8c4c9fc4ffca46db89042583ab707dd801164322",
+          "electron/ai/researchChatGrounding.ts": "3214557b0a21f9b49fcfc2195a065ec18f2d5f1219ed9c802f0e1bb0a292d5f7",
+          "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+          "shared/researchChatGrounding.ts": "758e44fe9a08a606bf0d04eea9608655bad2b24833a4e7cf036f2d60f9ed5df6",
+          "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+        },
+        "applicationEntry": "bc96c4434c3bebefc5acab781f81e4af148e0e9e9663870f8988d3236e1f8ec0",
+        "campaignDefinition": "37159a68c3c16eb0d33f8f1172264c5df56bfc23ef8e16af14d813baebfbe195",
+        "chatHarness": "a5a73303f82845adb596fb9b1319ba0dc92557c369bd371b9b83b81b4899c797",
+        "providerProxy": "08729432c1f5e484f5aa02268d00b210ede80f6dde75f6492cf840b00773bffa",
+        "tariff": "40a68472d64560b7b46dbb7d31b0221073391e304a5c8a092238bcb5c867c496",
+        "costLedger": "194e22b72c905763bcf3a2f08ac040a2cf55220b3595febc584d816f775d3fc5",
+        "node": "v22.23.2"
+      },
+      "file": "embeddinggemma-2-text-q8-512-v1.json",
+      "completed": true,
+      "budgetExhausted": false,
+      "executionErrors": 3,
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          63756,
+          63758
+        ]
+      },
+      "databaseIsolation": {
+        "escaped": 0,
+        "opened": 3056
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "sourceVersion": {
+        "gitHead": "9caa840900a95e62eb3117190d6784abd0932d48",
+        "files": {
+          "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+          "electron/ai/researchClaimAudit.ts": "2cc8c689220a8541b4d1b5cc8c4c9fc4ffca46db89042583ab707dd801164322",
+          "electron/ai/researchChatGrounding.ts": "3214557b0a21f9b49fcfc2195a065ec18f2d5f1219ed9c802f0e1bb0a292d5f7",
+          "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+          "shared/researchChatGrounding.ts": "758e44fe9a08a606bf0d04eea9608655bad2b24833a4e7cf036f2d60f9ed5df6",
+          "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+        },
+        "applicationEntry": "bc96c4434c3bebefc5acab781f81e4af148e0e9e9663870f8988d3236e1f8ec0",
+        "campaignDefinition": "37159a68c3c16eb0d33f8f1172264c5df56bfc23ef8e16af14d813baebfbe195",
+        "chatHarness": "a5a73303f82845adb596fb9b1319ba0dc92557c369bd371b9b83b81b4899c797",
+        "providerProxy": "08729432c1f5e484f5aa02268d00b210ede80f6dde75f6492cf840b00773bffa",
+        "tariff": "40a68472d64560b7b46dbb7d31b0221073391e304a5c8a092238bcb5c867c496",
+        "costLedger": "194e22b72c905763bcf3a2f08ac040a2cf55220b3595febc584d816f775d3fc5",
+        "node": "v22.23.2"
+      },
+      "file": "multilingual-e5-small-int8.json",
+      "completed": true,
+      "budgetExhausted": false,
+      "executionErrors": 2,
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          63757,
+          63759
+        ]
+      },
+      "databaseIsolation": {
+        "escaped": 0,
+        "opened": 2025
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "pending": true,
+      "excludedMeasuredRevision": "69f4fe888f82bef64768acefd453044443dd7e34"
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "pending": true,
+      "excludedMeasuredRevision": "69f4fe888f82bef64768acefd453044443dd7e34"
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "pending": true
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "603674a9fc9685aa6a9bae173d53c951598e72f390266cc8c82565e2f9459f06",
+      "bytes": 430812
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "35572551e6419b4b2bfb70af3b3596fd5b834cfa0ccf62b96c1cda8c8c7d1504",
+      "bytes": 418629
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "f6ea24ef220589c1f2ba794c4774665b459817ddbb28f3f1d55eedce9bc9e8d4",
+      "bytes": 497648
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "58183f8ea0eeae8dfa01b92fbd5e7c088d0b7a3d34a55744be76032aeee6ab42",
+      "bytes": 416020
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "4fca9c8d68afcaf6eb9ada03e27e382d1f570c8193c4bacbb30e19767749c2a4",
+      "bytes": 434810
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-negation.png",
+      "sha256": "c7c99a7687527b0ce252187b77f0d69e95c45938f9517cb7ee67278a55c47105",
+      "bytes": 613731
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "e1e4f414d6cfbc8f94fb555cbcb4af973804df0a8c122d654ad3bdcc154fff39",
+      "bytes": 491086
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "78390e0e70a050c427301b0a9cbae597df495620e77cad117360e4ad7bb61fd8",
+      "bytes": 653708
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "26a30f65537fab34c3c8576c2052a7b8322c45e2f343a5a96189c2b2d4e97c41",
+      "bytes": 386217
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "487b387a76122141093931dc2c1a8ace9870cbe7344f7a74b54fdf251919617c",
+      "bytes": 392278
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "b7cd31d7c20cf9b8a90ae96884acba0cde8880fa9f960c6c205e52fb693aa21b",
+      "bytes": 391546
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "a79fdd80df850d3da5f7c7823e24d3446171a1eec9965899ab7438e51fcf3486",
+      "bytes": 457680
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "8b5de162e277f527c34278cb9be8e24f4b9a254c0898a9142c029f0d3199ceaa",
+      "bytes": 404380
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "d9652c9ea9f356faf8810bd12afd0efa6c52945815894e1a3d64bbb680eab02a",
+      "bytes": 434758
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-statistics.png",
+      "sha256": "7452f1956e39d484876329ef41f6574e172afc0328a31d721be416bf2e10fe18",
+      "bytes": 495505
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "e1b700c98efff17b6fc77611056615bf447d4df2c9115418e54cada7f610c6f8",
+      "bytes": 570886
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "ef465d2e1b9e9f7e25f63095ec28e0f870c0d341f08cfae01e229f42ffd10ffd",
+      "bytes": 705279
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "14f7f4835e31e5a5617edd1b86b4fbb0a92023e66b51aeafe48e6389e016a90d",
+      "bytes": 392510
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "1590bc87d60268d92f57aee5fa7c43a88b4751c33585070005bb625a004e4edf",
+      "bytes": 392265
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "973ddfc40c00bef3d7e2dc447af6f0c9496184a7072c4f7c2d66921cecb3ad90",
+      "bytes": 391534
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "3af87d7b00bdae47b041542865ffb185b6a58f5569ee5dfe6edcf79b2f4e74bc",
+      "bytes": 448036
+    },
+    {
+      "file": "embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "14349e076ba0098024f6eb59878392678fdbb2202cfd2d42795ca99087a4e902",
+      "bytes": 5659437
+    },
+    {
+      "file": "diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791402647288.json",
+      "sha256": "a8443141eb09f5cf74cf97f3f83bb701d05b1b18940a000ec7d2f37145d665fd",
+      "bytes": 2540236
+    },
+    {
+      "file": "diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791406378874.json",
+      "sha256": "5775ba2c13cc03de4214dcded6b9b8e595fb46a270ef8eaf7120762233c563a2",
+      "bytes": 2657699
+    },
+    {
+      "file": "diagnostic-embeddinggemma-2-text-q8-512-v1-grounding-evaluation-previous-1791411107784.json",
+      "sha256": "02e12476dad06582f29e9144e167a0d45501c7d470a22b9cbe4bf1336603831e",
+      "bytes": 3357940
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-dates.png",
+      "sha256": "7b2cea0d861d208322b35fba6a94e3550ff80677daafa14366791a67836b5b67",
+      "bytes": 402911
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-sensor.png",
+      "sha256": "773bee78010d64f231c0ade161159fd026ba884448cf85563676db95e810b180",
+      "bytes": 405185
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-calculation.png",
+      "sha256": "dfc556344e3283018e3cb65a499d1f959176500e84d75306edc17f12053b8159",
+      "bytes": 525200
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-correction.png",
+      "sha256": "c2af1078f0623d7b7f0cfdf31de8d6b4da9843e38df53979a75576212364c538",
+      "bytes": 445804
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-statistics.png",
+      "sha256": "c569cb0c7ca616a33ddd3a4fc429ff235c3614c30c5afd6bda5d3a2b695aaa27",
+      "bytes": 453836
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-policy.png",
+      "sha256": "03dba3dc2457a4e91b5397ce1bcc238a4cb34bd44796d31d6c784472559e68f8",
+      "bytes": 444088
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-paper.png",
+      "sha256": "d9e6f0846f7f0e4765a84772a6d8a20a5d9ca049925053a2a4b83afbe4d40a63",
+      "bytes": 722418
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-price.png",
+      "sha256": "6c841d1c2597f67f109fef1d9cd7f075e2218dea37e3ee6ec0e75a6bc7b2c70f",
+      "bytes": 404230
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-donor.png",
+      "sha256": "2304201fc8368b42c60b20b766d9afcdc424e81651ffc59cf9c5f04f2bdf0c7d",
+      "bytes": 418818
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-funding.png",
+      "sha256": "035e4ebc8c15d9e424616a3c7f4cb88067086cfdcac2323cdc2ec1a5680b586b",
+      "bytes": 393972
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-0-heldout-absent-data.png",
+      "sha256": "e64fdca39c9436f5b1fd402a8ddf26972f72766c6a53571eabe79a9879115a5a",
+      "bytes": 453057
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-dates.png",
+      "sha256": "384534dfdb525938d14878704a0e562e4b926f8e9da967b959ade29024122f0b",
+      "bytes": 402021
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-sensor.png",
+      "sha256": "50e5bc6cba47127601eeb9007eb6c3e9fe7815dcb4981c9ca008ce2ae9d2e7a1",
+      "bytes": 415743
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-calculation.png",
+      "sha256": "464ec64088e779dd30b6784cdc5e916685b06645b4f56ac8f58ba5d050091a79",
+      "bytes": 517728
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-correction.png",
+      "sha256": "50ea1fe04489fbf1a27d3aaaa68e59111f17ebb83d76f71476ed49aa28053c67",
+      "bytes": 453999
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-negation.png",
+      "sha256": "dd2467b7e58afff15887ceff7bc8a6d93b6fcc1acdc0d88bca750d6e18c69038",
+      "bytes": 637092
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-policy.png",
+      "sha256": "83a4a77f9acc8485d56017918d209d2f37f1ba185e90d54b69bd08f93802b9c7",
+      "bytes": 415482
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-paper.png",
+      "sha256": "f38515c7ab648405a7bc259a8c4b25619327ac7c157187b8098e7f5d3b235cbb",
+      "bytes": 713661
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-price.png",
+      "sha256": "020099a63a8db62303d1a43e6e35abfe6ec943dacb189f0d24f16087454af9a8",
+      "bytes": 387727
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-donor.png",
+      "sha256": "bbc2cbabd77e45b75ba4f207b9fbf1e7308cb20b40c12e73ddb41cb2a9a6247f",
+      "bytes": 393468
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-funding.png",
+      "sha256": "3f3f9c246d0f7f66d3c459ed1bb26f2a6b3043bcb7120e470345ad64ba71b08a",
+      "bytes": 395921
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-evaluation-chat-1-heldout-absent-data.png",
+      "sha256": "d5a3d3c16be3b9019b9b1e1a691e0e565fbea8c449d11a775d2d1218de5d4e05",
+      "bytes": 434203
+    },
+    {
+      "file": "multilingual-e5-small-int8.json",
+      "sha256": "255f69e403d06a52906c82fc37eb555d70063b1e6c36313845e1bb7c9b63e94d",
+      "bytes": 5042248
+    },
+    {
+      "file": "diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791402647282.json",
+      "sha256": "7387a79449d590693fb4bc5c6c5eb999fbb2be68266d62ad11f97cdf297b0b83",
+      "bytes": 349179
+    },
+    {
+      "file": "diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791406378817.json",
+      "sha256": "70fdf9f241bb95db70a5a7590a0a64d3c3a667154223f2fb47b02fae08e6a8df",
+      "bytes": 2519695
+    },
+    {
+      "file": "diagnostic-multilingual-e5-small-int8-grounding-evaluation-previous-1791411107780.json",
+      "sha256": "64c725e37644db1fb13b437462058fb68b4e63e4e5a6e8720ab72d9b9c137a21",
+      "bytes": 3726623
+    },
+    {
+      "file": "diagnostic-gte-multilingual-base-int8-69f4fe88.json",
+      "sha256": "243099958e5454e31ab227deb036dbd207c6e8d474db734c3f5928dd806ee448",
+      "bytes": 1314503
+    },
+    {
+      "file": "diagnostic-bge-m3-q8-0-69f4fe88.json",
+      "sha256": "50cb0232d92431633bc1353feeed45b6c0e3713bc12bcdb0dada074779b8caa1",
+      "bytes": 586654
+    },
+    {
+      "file": "manual-reviews.json",
+      "sha256": "4bfaaebd1dd3d5235cc5f90858020f4bda27b4b5f70aae66ff8f4efbf7403295",
+      "bytes": 30197
+    }
+  ],
+  "release": {
+    "validatedProfiles": [],
+    "note": "Grounding acceptance alone cannot validate an embedding profile. Native Windows/Linux/macOS Intel execution and the remaining unexecuted release gates stay pending; this report alone never promotes profiles."
+  }
+}

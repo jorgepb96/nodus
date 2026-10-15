@@ -1,0 +1,323 @@
+{
+  "format": "nodus.integrated-live-retrieval-summary/1",
+  "createdAt": "2026-10-13T14:29:15.831Z",
+  "sourceGitHead": "638cea0370ac3b14b074409eb355bd9ef00a466f",
+  "portableQaFixHead": "f68dd172780233e832c805f045c1838a274e7733",
+  "root": "/private/tmp/nodus-research-JrC222",
+  "sourceStatus": "retrieval-complete-awaiting-index-identity-audit",
+  "productionSourceUnchangedAcrossPortableQaFix": true,
+  "sourceCounts": {
+    "documents": 40,
+    "passages": 787,
+    "queries": 80,
+    "semanticQueries": 80,
+    "resolvedReferences": 885,
+    "scopeLeaks": 0,
+    "searchErrors": 0
+  },
+  "annotationTransfer": {
+    "approvedBy": "/root/live_research_sources",
+    "mappedPassages": 787,
+    "mappedLiteralEvidence": 512,
+    "newPendingMappings": 0,
+    "previousIncompleteGoldQueries": 24,
+    "limitation": "Identity transfer of previously reviewed gold, not a newly blind annotation. Original stale embedded review-state strings are preserved and explained by detached approval."
+  },
+  "metrics": [
+    {
+      "arm": "semantic",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9833333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9833333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.9861111111111112,
+            "plannedDenominatorLowerBound": 0.5916666666666667,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9583333333333334,
+            "plannedDenominatorLowerBound": 0.575,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.9413875053234118,
+            "plannedDenominatorLowerBound": 0.5648325031940471,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    },
+    {
+      "arm": "lexical",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 1,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 0.9907407407407409,
+            "plannedDenominatorLowerBound": 0.9836111111111111,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.8564814814814814,
+            "plannedDenominatorLowerBound": 0.5138888888888888,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9398148148148149,
+            "plannedDenominatorLowerBound": 0.5638888888888889,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.8192540063784215,
+            "plannedDenominatorLowerBound": 0.4915524038270529,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    },
+    {
+      "arm": "hybrid-selected",
+      "summary": {
+        "plannedQueryCount": 80,
+        "answerablePlannedDenominator": 60,
+        "answerableCompleteGold": 36,
+        "answerablePendingGold": 24,
+        "answerablePendingQueryIds": [
+          "R001",
+          "R002",
+          "R005",
+          "R006",
+          "R008",
+          "R009",
+          "R013",
+          "R015",
+          "R018",
+          "R021",
+          "R025",
+          "R026",
+          "R034",
+          "R035",
+          "R036",
+          "R037",
+          "R038",
+          "R039",
+          "R040",
+          "R041",
+          "R046",
+          "R047",
+          "R055",
+          "R058"
+        ],
+        "noEvidencePlannedDenominator": 20,
+        "noEvidenceVerified": 20,
+        "noEvidenceUnverified": 0,
+        "metrics": {
+          "evidenceHitAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9333333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24
+          },
+          "factCoverageAt10": {
+            "completeGoldMean": 1,
+            "plannedDenominatorLowerBound": 0.9333333333333333,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "pendingFactCount": 33,
+            "pendingGoldContribution": 0
+          },
+          "exhaustiveRecallAt10": {
+            "completeGoldMean": 0.9861111111111112,
+            "plannedDenominatorLowerBound": 0.5916666666666667,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "mrrAt10": {
+            "completeGoldMean": 0.9282407407407407,
+            "plannedDenominatorLowerBound": 0.5569444444444444,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "ndcgAt10": {
+            "completeGoldMean": 0.9202727720066455,
+            "plannedDenominatorLowerBound": 0.5521636632039874,
+            "plannedDenominator": 60,
+            "unresolvedCount": 24,
+            "status": "partial_pending"
+          },
+          "falseHitAt10": {
+            "verifiedGoldMean": 1,
+            "plannedDenominator": 20,
+            "verifiedCount": 20,
+            "unresolvedCount": 0,
+            "unresolvedQueryIds": []
+          }
+        }
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/campaign.json",
+      "sha256": "2442f6ca06c521070d7bbad560719fa307e587dce483a44f0ae1299f91292db7"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/semantic-identity-audit-20261013T141124Z-55964983-9b64-459f-bab1-edda23dfb6d4.json",
+      "sha256": "6ad1ab0f02dd3ac414d85637a6a5b8a70eb1716ccc29b4cb84d03e9648f8e69c"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/case-sources-index-audited-001.json",
+      "sha256": "7725ef21b8567f555e6a54e16823442e3636c7d3eb1897a2009dca0966918309"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/current-passages-001.json",
+      "sha256": "4e45b43048d749c369ab7f6f027e8548f25cb62afa0fe859c0f316629c77f9c0"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/preregistration.json",
+      "sha256": "b64fb838d01a4920bcd3d9d77b5b02e4b08256ad34c8dbbed5c51af13e07ec29"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/retrieval-passage-annotations-transfer-002.json",
+      "sha256": "1ef4e065db2029275878ad0383868c2ed3d08bb069dc7ee3f8e1677d9a39ff0e"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/retrieval-passage-annotations-transfer-002-receipt.json",
+      "sha256": "0bc764b704f44bc136f5114460255ac4ac908f5b33ea633d0a1946fb96328cc7"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/retrieval-passage-annotations-transfer-002-freeze.json",
+      "sha256": "3dd1adf3a974b07d03b78bf9fcfca798650d1bf4cb98330fa0c6681273da9913"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/passage-rankings-integrated-001.json",
+      "sha256": "4f1acfa04e5f2ac4c2c2b5a64443fb430e325ca05c7e16bd088526111b2775b8"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/passage-retrieval-score-integrated-001.json",
+      "sha256": "9866c70e0cd00d0c9b9054460ec958793f59fc5d3e5ad982f8bd9ba5e4125931"
+    }
+  ],
+  "limits": [
+    "These saved candidate arrays come from one production search, not independent ablation runs.",
+    "EvidenceHit and FactCoverage lower bounds use all 60 answerable cases. Exhaustive Recall, MRR and nDCG still have 24 pending gold cases.",
+    "Returning candidates on insufficient-evidence questions is not a generation hallucination score.",
+    "The integrated 80-case answer campaign has not started; no answer quality acceptance is claimed.",
+    "No paid provider calls, credential or real-vault access were needed."
+  ]
+}

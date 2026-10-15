@@ -34,7 +34,7 @@ import { monomerLibraryDirectory } from './chemistryMonomers';
 import { textbookCitations, textbookSchemeDirectory, textbookTemplateCitations } from './textbookSchemes';
 import { formatTemplateCitation, formatTextbookCitation, textbookPreparations, type TextbookPreparation } from '@shared/textbookSchemes';
 import { rerank, rerankerAvailable } from './localReranker';
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 import { chemistryRunner } from './moleculeInspection';
 import type { ChemistryEvidenceScope } from './chemistryEvidenceScope';
 
@@ -392,7 +392,7 @@ export async function textbookPassages(queries: string[], workIds: string[], sig
   const scannedWork = scannedWorkLookup();
   // Every query's embedding is requested at once: they were awaited one query after another,
   // a provider round trip each. A failed one is that query's dense lane only, as before.
-  const vectors = queries.map((query) => embed(query, signal));
+  const vectors = queries.map((query) => embedQuery(query, signal));
   for (const vector of vectors) vector.catch(() => undefined); // awaited in the loop
   for (const [index, query] of queries.entries()) {
     signal?.throwIfAborted();

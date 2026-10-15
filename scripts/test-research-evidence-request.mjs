@@ -52,6 +52,7 @@ try {
     VALUES('unrelated','unrelated','UNRELATED_TITLE_MUST_NOT_BE_SENT','[]',2020,'book','text','hash')`).run();
   const ai = load('electron/ai/aiClient.ts');
   ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const planner = load('electron/ai/researchTurnPlanner.ts');
   planner.planResearchTurn = async () => planner.literalResearchTurnPlan('budget evidence');
   const preparation = load('electron/ai/documentaryPreparation.ts');

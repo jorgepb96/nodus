@@ -1,0 +1,58 @@
+Parameter Efficient Finetuning (PEFT) method, most of the memory footprint for LLM finetuning
+comes from activation gradients and not from the learned LoRA parameters. For a 7B LLaMA
+model trained on FLAN v2 with a batch size of 1, with LoRA weights equivalent to commonly used
+0.2% of the original model weights[28, 37], the LoRA input gradients have a memory footprint
+of 567 MB while the LoRA parameters take up only 26 MB. With gradient checkpointing [9], the
+input gradients reduce to an average of 18 MB per sequence making them more memory intensive
+than all LoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of
+memory. This highlights that gradient checkpointing is important but also that aggressively reducing
+the amount of LoRA parameter yields only minor memory benefits. This means we can use more
+adapters without significantly increasing the overall training memory footprint (see Appendix G
+for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision
+performance.
+
+3   QL O RA Finetuning
+QL O RA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat
+(NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to
+prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have
+traditionally made finetuning on a single machine difficult for large models.
+QL O RA has one low-precision storage data type, in our case usually 4-bit, and one computation data
+type that is usually BFloat16. In practice, this means whenever a QL O RA weight tensor is used, we
+dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit.
+We now discuss the components of QL O RA followed by a formal definition of QL O RA.
+4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization
+[15] which is an information-theoretically optimal data type that ensures each quantization bin has an
+equal number of values assigned from the input tensor. Quantile quantization works by estimating
+the quantile of the input tensor through the empirical cumulative distribution function.
+The main limitation of quantile quantization is that the process of quantile estimation is expensive.
+Therefore fast quantile approximation algorithms, such as SRAM quantiles [15], are used to estimate
+them. Due to the approximate nature of these quantile estimation algorithms, the data type has large
+quantization errors for outliers, which are often the most important values.
+Expensive quantile estimates and approximation errors can be avoided when input tensors come from
+a distribution fixed up to a quantization constant. In such cases, input tensors have the same quantiles
+making exact quantile estimation computationally feasible.
+Since pretrained neural network weights usually have a zero-centered normal distribution with
+standard deviation σ (see Appendix F), we can transform all weights to a single fixed distribution by
+scaling σ such that the distribution fits exactly into the range of our data type. For our data type, we
+set the arbitrary range [−1, 1]. As such, both the quantiles for the data type and the neural network
+weights need to be normalized into this range.
+The information theoretically optimal data type for zero-mean normal distributions with arbitrary
+standard deviations σ in the range [−1, 1] is computed as follows: (1) estimate the 2k + 1 quantiles
+of a theoretical N (0, 1) distribution to obtain a k-bit quantile quantization data type for normal distri-
+butions, (2) take this data type and normalize its values into the [−1, 1] range, (3) quantize an input
+weight tensor by normalizing it into the [−1, 1] range through absolute maximum rescaling.
+Once the weight range and data type range match, we can quantize as usual. Step (3) is equivalent to
+rescaling the standard deviation of the weight tensor to match the standard deviation of the k-bit data
+type. More formally, we estimate the 2k values qi of the data type as follows:
+                                                                                 
+                                   1                   i                     i+1
+                            qi =           QX                    + QX                     ,            (4)
+                                   2                2k + 1                  2k + 1
+
+where QX (·) is the quantile function of the standard normal distribution N (0, 1). A problem for
+a symmetric k-bit quantization is that this approach does not have an exact representation of zero,
+which is an important property to quantize padding and other zero-valued elements with no error. To
+
+
+                                                         4
+

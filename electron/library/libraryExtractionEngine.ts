@@ -490,14 +490,37 @@ function extractCaptionedTable(
   page: PageLayout,
   lines: LayoutLine[],
   continuing: boolean,
+  bodySize: number,
 ): CaptionedTableExtraction {
   const captionIndex = continuing ? -1 : lines.findIndex((line) => /^(?:tabla|table)\s+\d+[.:]/i.test(line.text));
   if (!continuing && captionIndex < 0) return { lines, table: null, continues: false };
   const searchStart = continuing ? 0 : captionIndex + 1;
   const sourceIndex = lines.findIndex((line, index) => index >= searchStart && /^(?:fuente|source)\s*:/i.test(line.text));
-  const regionEnd = sourceIndex >= 0 ? sourceIndex : lines.length;
+  let regionEnd = sourceIndex >= 0 ? sourceIndex : lines.length;
   const firstTabular = lines.findIndex((line, index) => index >= searchStart && index < regionEnd && rowCells(line).cells.length >= 2);
   if (firstTabular < 0 || firstTabular >= regionEnd) return { lines, table: null, continues: false };
+  // A caption or a page-continuation can be followed by prose without a Source
+  // footer. Stop before a non-row line at an established paragraph boundary;
+  // otherwise retain one-cell lines as wrapped table content.
+  for (let index = firstTabular + 1; index < regionEnd; index += 1) {
+    const line = lines[index];
+    if (rowCells(line).cells.length >= 2) continue;
+    const previous = lines[index - 1];
+    const gap = previous ? line.top - previous.bottom : 0;
+    const columnJump = previous && (line.x0 > previous.x1 + 30 || previous.x0 > line.x1 + 30);
+    const previousNearMargin = previous
+      ? previous.x0 - localColumnLeft(page, previous, lines) < bodySize * 0.8
+      : false;
+    const indentedParagraphStart = previous
+      && previousNearMargin
+      && line.x0 - localColumnLeft(page, line, lines) >= bodySize * 1.45
+      && !/[-‐‑‒–—]$/.test(previous.text);
+    const semanticBoundary = /^(?:tabla|table)\s+\d+[.:]|^(?:fuente|source)\s*:/i.test(line.text);
+    if (gap > bodySize * 1.15 || columnJump || indentedParagraphStart || line.paragraphBreakBefore || semanticBoundary) {
+      regionEnd = index;
+      break;
+    }
+  }
   const region = lines.slice(firstTabular, regionEnd);
   const candidates = region.map((line) => ({ line, ...rowCells(line) })).filter((entry) => entry.cells.length >= 2);
   if (candidates.length < 2) return { lines, table: null, continues: false };
@@ -535,12 +558,15 @@ function extractCaptionedTable(
     || emptyCells / Math.max(1, rows.length * width) >= 0.2
     || fragmentedCells / Math.max(1, populatedCells.length) >= 0.18
     || populatedCells.some((cell) => cell.length > 220);
-  const consumed = new Set(region);
-  const lastLine = region.at(-1);
+  // Lines rowCells cannot parse remain available to paragraph extraction. They
+  // are never silently discarded just because they fell inside this region.
+  const consumed = new Set(region.filter((line) => rowCells(line).cells.length > 0));
+  const tableLines = region.filter((line) => consumed.has(line));
+  const lastLine = tableLines.at(-1);
   const continues = sourceIndex < 0 && !!lastLine && lastLine.bottom >= page.height * 0.72;
   return {
     lines: lines.filter((line) => !consumed.has(line)),
-    table: { lines: region, rows, visualFallback },
+    table: { lines: tableLines, rows, visualFallback },
     continues,
   };
 }
@@ -619,7 +645,7 @@ function pageBlocks(
   const blocks: OutputBlock[] = [];
   const footnotes = extractFootnoteBlocks(page, lines, bodySize, lineOrder);
   lines = lines.filter((line) => !footnotes.lines.has(line));
-  const captioned = detectTables ? extractCaptionedTable(page, lines, continuingTable) : { lines, table: null, continues: false };
+  const captioned = detectTables ? extractCaptionedTable(page, lines, continuingTable, bodySize) : { lines, table: null, continues: false };
   lines = captioned.lines;
   if (captioned.table) {
     const x0 = Math.min(...captioned.table.lines.map((line) => line.x0));

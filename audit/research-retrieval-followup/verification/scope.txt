@@ -1,0 +1,84 @@
+TAP version 13
+# Source jobs: exclusivity, restart fencing, idempotency, pause, changed revisions, vault boundaries, retry bound, cancellation and Unicode chunk bounds passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-documentary-requests.mjs
+ok 1 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-documentary-requests.mjs
+  ---
+  duration_ms: 467.588084
+  ...
+# Subtest: document routing is additive and preserves independent idea/evidence quotas
+ok 2 - document routing is additive and preserves independent idea/evidence quotas
+  ---
+  duration_ms: 3.070917
+  ...
+# Subtest: rank fusion rewards agreement without adding incompatible raw scores
+ok 3 - rank fusion rewards agreement without adding incompatible raw scores
+  ---
+  duration_ms: 0.114791
+  ...
+# Subtest: deep-research evidence selection spends its first slots on independent works when available
+ok 4 - deep-research evidence selection spends its first slots on independent works when available
+  ---
+  duration_ms: 0.135334
+  ...
+# Subtest: routed retrieval remains pending while its asynchronous lane yields to the event loop
+ok 5 - routed retrieval remains pending while its asynchronous lane yields to the event loop
+  ---
+  duration_ms: 4.766959
+  ...
+# Subtest: the clean Markdown regains a marker at every page change
+ok 6 - the clean Markdown regains a marker at every page change
+  ---
+  duration_ms: 3.870875
+  ...
+# Subtest: passages built from the clean copy carry the page of what they quote
+ok 7 - passages built from the clean copy carry the page of what they quote
+  ---
+  duration_ms: 2.140542
+  ...
+# Subtest: a map for other bytes, or no map, never invents a page
+ok 8 - a map for other bytes, or no map, never invents a page
+  ---
+  duration_ms: 0.437375
+  ...
+# Subtest: the source map is read only from inside its extraction folder
+ok 9 - the source map is read only from inside its extraction folder
+  ---
+  duration_ms: 2.494166
+  ...
+# Subtest: the deep-scan text of a Library item goes through the page markers
+ok 10 - the deep-scan text of a Library item goes through the page markers
+  ---
+  duration_ms: 0.760292
+  ...
+# Subtest: a page-crossing passage shows the model where each page begins
+ok 11 - a page-crossing passage shows the model where each page begins
+  ---
+  duration_ms: 0.482667
+  ...
+# local chat fit + citation repair test passed
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-local-chat-fit.mjs
+ok 4 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-local-chat-fit.mjs
+  ---
+  duration_ms: 143.636791
+  ...
+# Structured actions, invalid decisions, independent source search, separate evidence and decision allowances, explicit reads and scope rejection passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-actions.mjs
+ok 5 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-actions.mjs
+  ---
+  duration_ms: 3824.942958
+  ...
+# Real native PDF original read: bounded pages, byte budget, hash fence, cancellation and no preparation writes passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-original-read.mjs
+ok 6 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-original-read.mjs
+  ---
+  duration_ms: 826.595375
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3833.217792

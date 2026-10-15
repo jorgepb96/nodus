@@ -1,0 +1,157 @@
+
+> nodus@5.8.0 test:research:grounding
+> node --test scripts/test-research-chat-grounding.mjs scripts/test-research-claim-audit.mjs scripts/test-research-chat-agent.mjs scripts/test-research-assistant-i18n.mjs scripts/test-main-error-i18n.mjs
+
+TAP version 13
+# Subtest: no Spanish error literal in the main process reaches a foreign-language reader untranslated
+ok 1 - no Spanish error literal in the main process reaches a foreign-language reader untranslated
+  ---
+  duration_ms: 434.913708
+  type: 'test'
+  ...
+# Subtest: no Spanish error literal in the main process is erased into the generic message
+ok 2 - no Spanish error literal in the main process is erased into the generic message
+  ---
+  duration_ms: 270.038375
+  type: 'test'
+  ...
+# Subtest: every catalogue entry is translated in all seven languages and left alone in Spanish
+ok 3 - every catalogue entry is translated in all seven languages and left alone in Spanish
+  ---
+  duration_ms: 8.729333
+  type: 'test'
+  ...
+# Subtest: every parameterized pattern keeps its runtime values and translates around them
+ok 4 - every parameterized pattern keeps its runtime values and translates around them
+  ---
+  duration_ms: 7.027083
+  type: 'test'
+  ...
+# Subtest: Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+ok 5 - Scriptor errors preserve recovery codes and unsupported formula elements through IPC
+  ---
+  duration_ms: 1.200167
+  type: 'test'
+  ...
+# Subtest: catalogue and server-address errors keep their specific cause through IPC in every UI language
+ok 6 - catalogue and server-address errors keep their specific cause through IPC in every UI language
+  ---
+  duration_ms: 0.553542
+  type: 'test'
+  ...
+# Subtest: the local provider failure that opened this file names its cause in every language
+ok 7 - the local provider failure that opened this file names its cause in every language
+  ---
+  duration_ms: 0.299709
+  type: 'test'
+  ...
+# Subtest: a transport detail we did not author is passed through verbatim
+ok 8 - a transport detail we did not author is passed through verbatim
+  ---
+  duration_ms: 0.066958
+  type: 'test'
+  ...
+# Subtest: the Settings connection test reports its HTTP status, not a generic failure
+ok 9 - the Settings connection test reports its HTTP status, not a generic failure
+  ---
+  duration_ms: 0.262583
+  type: 'test'
+  ...
+# Subtest: the Settings result travels as an IPC payload, which is the path the report used
+ok 10 - the Settings result travels as an IPC payload, which is the path the report used
+  ---
+  duration_ms: 0.404584
+  type: 'test'
+  ...
+# Subtest: the two literals the scanner cannot evaluate are translated in their real runtime form
+ok 11 - the two literals the scanner cannot evaluate are translated in their real runtime form
+  ---
+  duration_ms: 0.324916
+  type: 'test'
+  ...
+# Subtest: research assistant packs preserve complete rules, schemas, citations and limits
+ok 12 - research assistant packs preserve complete rules, schemas, citations and limits
+  ---
+  duration_ms: 57.605042
+  type: 'test'
+  ...
+# Subtest: research assistant wires prompt language into all model-facing branches and genealogy labels
+ok 13 - research assistant wires prompt language into all model-facing branches and genealogy labels
+  ---
+  duration_ms: 1.549084
+  type: 'test'
+  ...
+# Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.
+# Subtest: scripts/test-research-chat-agent.mjs
+ok 3 - scripts/test-research-chat-agent.mjs
+  ---
+  duration_ms: 3654.161
+  type: 'test'
+  ...
+# ✔ only authorized literal passages from the frozen turn enter verification (1.155209ms)
+# ✔ an explicit constructed exercise retains its writing mode; untrusted source text cannot disable verification (0.11625ms)
+# ✔ a supported answer retains the literal fact and a canonical source attribution (2.860459ms)
+# ✔ a fabricated quote cannot approve a claim even when the judge returns supported (0.419958ms)
+# ✔ an unavailable verifier is an availability failure, never a successful absence answer (0.451667ms)
+# ✔ a contradictory inference classification needs a fresh consistent verdict, not automatic approval (0.44975ms)
+# ✔ repeated contradictory inference classifications stay unavailable after one retry (0.21225ms)
+# ✔ cancellation during verification never returns the unchecked draft (0.214084ms)
+# ✔ general answers without documentary excerpts do not trigger paid audits (0.108166ms)
+# ✔ verified citations remain inside table cells and web evidence keeps its own target (0.11925ms)
+# ✔ a semantically correct paraphrase cannot masquerade as a direct quote (0.660375ms)
+# ✔ simple calculated equations and table values are checked despite an approving semantic judge (1.304959ms)
+# ✔ a malformed premise reference gets a bounded schema repair, not an unchecked answer (0.238292ms)
+# ✔ repair receives the deterministic cause even when the semantic reason approves the premises (0.318167ms)
+# ✔ a rejected translated direct quote is repaired without deleting its supported value (1.117833ms)
+# ✔ a supported premise survives a fresh review after an unsupported compound claim is repaired (0.173875ms)
+# ✔ verified but irrelevant background is repaired when the requested fact exists (0.331708ms)
+# ✔ coverage outages and persistently incomplete repairs cannot become successful refusals (0.309ms)
+# ✔ a verified evidence gap retains the requested facet even without a factual claim (0.160208ms)
+# ✔ coverage cannot demand a corpus-absence assertion instead of an already verified price limitation (0.143292ms)
+# ✔ an interpretation complaint is checked against the precise verified distribution limit (0.103416ms)
+# ✔ coverage confirmation cannot invent answer spans or supporting source quotes (0.329667ms)
+# ✔ a malformed coverage proof gets one identical retry and completeness is derived from validated proof (0.202125ms)
+# ✔ coverage proof retries are bounded and transport failures are never replayed (0.182916ms)
+# ✔ a confirmed missing limit is compared with the exact already verified acknowledgement before another repair (0.261333ms)
+# ✔ limit comparison cannot invent quotes, indices or a verified statement (0.275625ms)
+# ✔ an unrelated verified limitation cannot satisfy the missing requested facet (0.176875ms)
+# ✔ broad drafts are redrafted from original excerpts without passing invented prose to the writer or judge (0.201917ms)
+# ✔ a source-only redraft table still needs separate quantity and negation evidence (0.183334ms)
+# ✔ a short draft citing generated orientation is redrafted and a fabricated replacement still cannot publish (0.138834ms)
+# ✔ empty, unavailable and cancelled source redrafts cannot publish unchecked prose (0.190083ms)
+# ✔ a positive coverage boolean cannot bypass independent proof or publish invented answer spans (0.471708ms)
+# ✔ independent positive proof repairs refused reasoning from literal premises and audits the comparison anew (0.275375ms)
+# ✔ a long draft with few compound sentences still redrafts from original excerpts (0.132666ms)
+# ✔ full-question proof accepts separate literal request facets without inheriting a critic complaint (0.137125ms)
+# ✔ full-question proof rejects empty, invented and duplicate request-facet records (0.226583ms)
+# ✔ the real chat stream holds draft content, cancels safely and rechecks scope after verification (3859.002875ms)
+# ℹ tests 37
+# ℹ suites 0
+# ℹ pass 37
+# ℹ fail 0
+# ℹ cancelled 0
+# ℹ skipped 0
+# ℹ todo 0
+# ℹ duration_ms 3904.867292
+# Subtest: scripts/test-research-chat-grounding.mjs
+ok 4 - scripts/test-research-chat-grounding.mjs
+  ---
+  duration_ms: 5308.414833
+  type: 'test'
+  ...
+# Claim ledger: atomic premises, verdict agreement, silence, qualified inference, retired-claim carry-over, whole-report contradictions and orchestration passed.
+# Subtest: scripts/test-research-claim-audit.mjs
+ok 5 - scripts/test-research-claim-audit.mjs
+  ---
+  duration_ms: 821.62825
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5319.625833

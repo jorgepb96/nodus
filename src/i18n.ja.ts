@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
@@ -16,6 +17,7 @@ import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -107,6 +109,7 @@ export const JA: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS.ja,
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS.ja,
   ...RESEARCH_ATTACHMENT_TRANSLATIONS.ja,
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['ja'],
   ...VAULT_FILE_DROP_TRANSLATIONS['ja'],
   ...DOCUMENT_SKILLS_TRANSLATIONS.ja,
   ...RESEARCH_PROMPT_TRANSLATIONS.ja,
@@ -178,6 +181,7 @@ export const JA: Record<string, string> = {
   ...DEEP_RESEARCH_QUALITY_TRANSLATIONS.ja,
   ...TEXT_PROVENANCE_TRANSLATIONS.ja,
   ...MODEL_SETTINGS_TRANSLATIONS.ja,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['ja'],
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.ja,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.ja,
   ...ACADEMIC_TOUR_TRANSLATIONS.ja,

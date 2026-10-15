@@ -25,7 +25,7 @@ import { getApiKey } from '../secrets/secretStore';
 import { buildIdeaGraph, getContradictions } from '../graph/graphService';
 import { getImmersionSession, recordImmersionAnswer, saveImmersionSession } from '../db/immersionRepo';
 import { buildWritingWorkshopSnapshot } from './writingWorkshop';
-import { completeJson, embed } from './aiClient';
+import { completeJson, embedQuery } from './aiClient';
 import { ResearchCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
 import { RETRIEVAL_PRESETS } from '@shared/researchCorpus';
 import {
@@ -172,7 +172,7 @@ export async function buildImmersionMaterial(
 ): Promise<ImmersionMaterial> {
   const query = topic.trim();
   const research = researchModel === undefined ? null : new ResearchCorpusRun(resolveAcademicRunScope(), RETRIEVAL_PRESETS.balanced);
-  const vector = await embed(query);
+  const vector = await embedQuery(query);
   const snapshot = await buildWritingWorkshopSnapshot({ kind: 'deep_research', objective: query });
   await yieldLoop();
 

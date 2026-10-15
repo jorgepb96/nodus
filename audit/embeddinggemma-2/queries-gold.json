@@ -1,0 +1,1562 @@
+[
+  {
+    "id": "monolingual-1",
+    "kind": "monolingual",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "development",
+    "question": "¿Cuándo comenzó a funcionar la biblioteca escolar de Puerto Claro?",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-01"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-1",
+    "kind": "cross-language",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "development",
+    "question": "When did the school library at Puerto Claro first open? (source: Puerto Claro · archive 1)",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-01"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "monolingual-2",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Which learning activity produced better recall in the Vega trial?",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-02"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-2",
+    "kind": "cross-language",
+    "language": "fr",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Quelle activité a amélioré le rappel dans l’essai Vega ? (source: Vega · archive 2)",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-02"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "monolingual-3",
+    "kind": "monolingual",
+    "language": "fr",
+    "sourceLanguage": "fr",
+    "split": "evaluation",
+    "question": "Quelle propriété de l’eau mesure Alba et avec quelle lumière ?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-03"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-3",
+    "kind": "cross-language",
+    "language": "de",
+    "sourceLanguage": "fr",
+    "split": "evaluation",
+    "question": "Welche Wassereigenschaft misst Alba und mit welchem Licht? (Quelle: Alba · archive 3)",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-03"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "monolingual-4",
+    "kind": "monolingual",
+    "language": "de",
+    "sourceLanguage": "de",
+    "split": "development",
+    "question": "Wie viele Teilnehmer und Dörfer umfasste Bruma?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-04"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-4",
+    "kind": "cross-language",
+    "language": "pt",
+    "sourceLanguage": "de",
+    "split": "development",
+    "question": "Quantas pessoas e aldeias participaram em Bruma? (fonte: Bruma · archive 4)",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-04"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "monolingual-5",
+    "kind": "monolingual",
+    "language": "pt",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Por quanto tempo Linde conserva eventos na versão 2?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-05"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-5",
+    "kind": "cross-language",
+    "language": "it",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Per quanto tempo Linde conserva eventi nella versione 2? (fonte: Linde · archive 5)",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-05"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-6",
+    "kind": "monolingual",
+    "language": "it",
+    "sourceLanguage": "it",
+    "split": "evaluation",
+    "question": "Quando aprì la biblioteca scolastica di Puerto Claro?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-06"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-6",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "it",
+    "split": "evaluation",
+    "question": "¿Cuándo comenzó a funcionar la biblioteca escolar de Puerto Claro? (fuente: Puerto Claro · archive 6)",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-06"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "monolingual-7",
+    "kind": "monolingual",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "¿Qué actividad obtuvo más recuerdo en el ensayo Vega?",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-07"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-7",
+    "kind": "cross-language",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "Which learning activity produced better recall in the Vega trial? (source: Vega · archive 7)",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-07"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "monolingual-8",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Which water property does Alba measure, and with which light?",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-08"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-8",
+    "kind": "cross-language",
+    "language": "fr",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Quelle propriété de l’eau mesure Alba et avec quelle lumière ? (source: Alba · archive 8)",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-08"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "monolingual-9",
+    "kind": "monolingual",
+    "language": "fr",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Combien de participants et de villages comptait Bruma ?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-09"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-9",
+    "kind": "cross-language",
+    "language": "de",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Wie viele Teilnehmer und Dörfer umfasste Bruma? (Quelle: Bruma · archive 9)",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-09"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "monolingual-10",
+    "kind": "monolingual",
+    "language": "de",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Wie lange speichert Linde Ereignisse in Version 2?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-10"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-10",
+    "kind": "cross-language",
+    "language": "pt",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Por quanto tempo Linde conserva eventos na versão 2? (fonte: Linde · archive 10)",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-10"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-11",
+    "kind": "monolingual",
+    "language": "pt",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quando abriu a biblioteca escolar de Puerto Claro?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-11"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-11",
+    "kind": "cross-language",
+    "language": "it",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quando aprì la biblioteca scolastica di Puerto Claro? (fonte: Puerto Claro · archive 11)",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-11"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "monolingual-12",
+    "kind": "monolingual",
+    "language": "it",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "Quale attività migliorò il ricordo nello studio Vega?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-12"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-12",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "¿Qué actividad obtuvo más recuerdo en el ensayo Vega? (fuente: Vega · archive 12)",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-12"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "monolingual-13",
+    "kind": "monolingual",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "¿Qué propiedad del agua mide Alba y con qué luz?",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-13"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-13",
+    "kind": "cross-language",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "Which water property does Alba measure, and with which light? (source: Alba · archive 13)",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-13"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "monolingual-14",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "How many participants and villages were included in Bruma?",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-14"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-14",
+    "kind": "cross-language",
+    "language": "fr",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Combien de participants et de villages comptait Bruma ? (source: Bruma · archive 14)",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-14"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "monolingual-15",
+    "kind": "monolingual",
+    "language": "fr",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Combien de temps Linde conserve-t-elle les événements en version 2 ?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-15"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-15",
+    "kind": "cross-language",
+    "language": "de",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Wie lange speichert Linde Ereignisse in Version 2? (Quelle: Linde · archive 15)",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-15"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-16",
+    "kind": "monolingual",
+    "language": "de",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Wann eröffnete die Schulbibliothek von Puerto Claro?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-16"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-16",
+    "kind": "cross-language",
+    "language": "pt",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Quando abriu a biblioteca escolar de Puerto Claro? (fonte: Puerto Claro · archive 16)",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-16"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "monolingual-17",
+    "kind": "monolingual",
+    "language": "pt",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Que atividade melhorou a memória no ensaio Vega?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-17"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-17",
+    "kind": "cross-language",
+    "language": "it",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quale attività migliorò il ricordo nello studio Vega? (fonte: Vega · archive 17)",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-17"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "monolingual-18",
+    "kind": "monolingual",
+    "language": "it",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "Quale proprietà dell’acqua misura Alba e con quale luce?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-18"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-18",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "¿Qué propiedad del agua mide Alba y con qué luz? (fuente: Alba · archive 18)",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-18"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "monolingual-19",
+    "kind": "monolingual",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "¿Cuántos participantes y localidades tuvo Bruma?",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-19"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-19",
+    "kind": "cross-language",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "How many participants and villages were included in Bruma? (source: Bruma · archive 19)",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-19"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "monolingual-20",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "How long does Linde retain events in version 2?",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-20"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-20",
+    "kind": "cross-language",
+    "language": "fr",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Combien de temps Linde conserve-t-elle les événements en version 2 ? (source: Linde · archive 20)",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-20"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-21",
+    "kind": "monolingual",
+    "language": "fr",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Quand la bibliothèque scolaire de Puerto Claro a-t-elle ouvert ?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-21"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-21",
+    "kind": "cross-language",
+    "language": "ca",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Quin cabal porta el canal Cerç i es tracta d’una mesura de pressió?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-21"
+    ],
+    "expected": "42 litres per minute; flow, not pressure"
+  },
+  {
+    "id": "monolingual-22",
+    "kind": "monolingual",
+    "language": "de",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Welche Lernaktivität verbesserte das Erinnern im Vega-Versuch?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-22"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-22",
+    "kind": "cross-language",
+    "language": "eu",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Zer neurtu zuen Haize estazioak eguerdian eta zenbat gradu ziren?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-22"
+    ],
+    "expected": "temperature; seventeen degrees; not humidity"
+  },
+  {
+    "id": "monolingual-23",
+    "kind": "monolingual",
+    "language": "pt",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Que propriedade da água mede Alba e com que luz?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-23"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-23",
+    "kind": "cross-language",
+    "language": "la",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quot amphoras navis Aster portat et quot vacuae sunt?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-23"
+    ],
+    "expected": "thirty amphorae; twenty empty"
+  },
+  {
+    "id": "monolingual-24",
+    "kind": "monolingual",
+    "language": "it",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "Quante persone e quanti villaggi comprendeva Bruma?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-24"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-24",
+    "kind": "cross-language",
+    "language": "mixed",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "Why did Mistral cerrar and how many días lasted the closure?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-24"
+    ],
+    "expected": "maintenance; five days; not weather"
+  },
+  {
+    "id": "monolingual-25",
+    "kind": "monolingual",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "¿Durante cuánto tiempo conserva eventos Linde en la versión 2?",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-25"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-25",
+    "kind": "cross-language",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "How long does Linde retain events in version 2? (source: Linde · archive 25)",
+    "filterLanguage": "es",
+    "relevant": [
+      "fixture-25"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-26",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "When did the school library at Puerto Claro first open?",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "cross-language-26",
+    "kind": "cross-language",
+    "language": "fr",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Quand la bibliothèque scolaire de Puerto Claro a-t-elle ouvert ? (source: Puerto Claro · archive 26)",
+    "filterLanguage": "en",
+    "relevant": [
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "monolingual-27",
+    "kind": "monolingual",
+    "language": "fr",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Quelle activité a amélioré le rappel dans l’essai Vega ?",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "cross-language-27",
+    "kind": "cross-language",
+    "language": "de",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Welche Lernaktivität verbesserte das Erinnern im Vega-Versuch? (Quelle: Vega · archive 27)",
+    "filterLanguage": "fr",
+    "relevant": [
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "monolingual-28",
+    "kind": "monolingual",
+    "language": "de",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Welche Wassereigenschaft misst Alba und mit welchem Licht?",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "cross-language-28",
+    "kind": "cross-language",
+    "language": "pt",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "Que propriedade da água mede Alba e com que luz? (fonte: Alba · archive 28)",
+    "filterLanguage": "de",
+    "relevant": [
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "monolingual-29",
+    "kind": "monolingual",
+    "language": "pt",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quantas pessoas e aldeias participaram em Bruma?",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "cross-language-29",
+    "kind": "cross-language",
+    "language": "it",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Quante persone e quanti villaggi comprendeva Bruma? (fonte: Bruma · archive 29)",
+    "filterLanguage": "pt",
+    "relevant": [
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "monolingual-30",
+    "kind": "monolingual",
+    "language": "it",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "Per quanto tempo Linde conserva eventi nella versione 2?",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "cross-language-30",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "¿Durante cuánto tiempo conserva eventos Linde en la versión 2? (fuente: Linde · archive 30)",
+    "filterLanguage": "it",
+    "relevant": [
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "monolingual-31",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by LoRA: Low-Rank Adaptation of Large Language Models?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-LORA0001"
+    ],
+    "expected": "LoRA freezes pretrained weights and learns low-rank updates."
+  },
+  {
+    "id": "cross-language-31",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone LoRA: Low-Rank Adaptation of Large Language Models?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-LORA0001"
+    ],
+    "expected": "LoRA freezes pretrained weights and learns low-rank updates."
+  },
+  {
+    "id": "monolingual-32",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by Self-Instruct: Aligning Language Models with Self-Generated Instructions?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-SELF0001"
+    ],
+    "expected": "Self-Instruct generates instructions using a language model and filters them."
+  },
+  {
+    "id": "cross-language-32",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone Self-Instruct: Aligning Language Models with Self-Generated Instructions?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-SELF0001"
+    ],
+    "expected": "Self-Instruct generates instructions using a language model and filters them."
+  },
+  {
+    "id": "monolingual-33",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by LLaMA: Open and Efficient Foundation Language Models?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-LLAMA001"
+    ],
+    "expected": "LLaMA is a collection of foundation language models trained on publicly available datasets."
+  },
+  {
+    "id": "cross-language-33",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone LLaMA: Open and Efficient Foundation Language Models?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-LLAMA001"
+    ],
+    "expected": "LLaMA is a collection of foundation language models trained on publicly available datasets."
+  },
+  {
+    "id": "monolingual-34",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by Segment Anything?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-SAM00001"
+    ],
+    "expected": "Segment Anything introduces promptable image segmentation."
+  },
+  {
+    "id": "cross-language-34",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone Segment Anything?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-SAM00001"
+    ],
+    "expected": "Segment Anything introduces promptable image segmentation."
+  },
+  {
+    "id": "monolingual-35",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by RWKV: Reinventing RNNs for the Transformer Era?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-RWKV0001"
+    ],
+    "expected": "RWKV combines recurrent inference with transformer-like parallel training."
+  },
+  {
+    "id": "cross-language-35",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone RWKV: Reinventing RNNs for the Transformer Era?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-RWKV0001"
+    ],
+    "expected": "RWKV combines recurrent inference with transformer-like parallel training."
+  },
+  {
+    "id": "monolingual-36",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by QLoRA: Efficient Finetuning of Quantized LLMs?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-QLORA001"
+    ],
+    "expected": "QLoRA finetunes a frozen 4-bit quantized model with low-rank adapters."
+  },
+  {
+    "id": "cross-language-36",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone QLoRA: Efficient Finetuning of Quantized LLMs?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-QLORA001"
+    ],
+    "expected": "QLoRA finetunes a frozen 4-bit quantized model with low-rank adapters."
+  },
+  {
+    "id": "monolingual-37",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by Direct Preference Optimization: Your Language Model is Secretly a Reward Model?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-DPO00001"
+    ],
+    "expected": "DPO optimizes preferences without fitting a separate reward model."
+  },
+  {
+    "id": "cross-language-37",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone Direct Preference Optimization: Your Language Model is Secretly a Reward Model?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-DPO00001"
+    ],
+    "expected": "DPO optimizes preferences without fitting a separate reward model."
+  },
+  {
+    "id": "monolingual-38",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-ARENA001"
+    ],
+    "expected": "Chatbot Arena uses human preferences from pairwise model comparisons."
+  },
+  {
+    "id": "cross-language-38",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-ARENA001"
+    ],
+    "expected": "Chatbot Arena uses human preferences from pairwise model comparisons."
+  },
+  {
+    "id": "monolingual-39",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by Generative Agents: Interactive Simulacra of Human Behavior?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-AGENT001"
+    ],
+    "expected": "Generative Agents combines memory, reflection and planning."
+  },
+  {
+    "id": "cross-language-39",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone Generative Agents: Interactive Simulacra of Human Behavior?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-AGENT001"
+    ],
+    "expected": "Generative Agents combines memory, reflection and planning."
+  },
+  {
+    "id": "monolingual-40",
+    "kind": "monolingual",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "What is the main method proposed by HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-HUGGPT01"
+    ],
+    "expected": "HuggingGPT coordinates models using a language model as a controller."
+  },
+  {
+    "id": "cross-language-40",
+    "kind": "cross-language",
+    "language": "es",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "¿Qué método propone HuggingGPT: Solving AI Tasks with ChatGPT and its Friends in Hugging Face?",
+    "filterLanguage": "en",
+    "relevant": [
+      "public-HUGGPT01"
+    ],
+    "expected": "HuggingGPT coordinates models using a language model as a controller."
+  },
+  {
+    "id": "hard-1",
+    "kind": "hard-negative",
+    "language": "es",
+    "sourceLanguage": "es",
+    "split": "development",
+    "question": "¿La biblioteca abrió en 1913 o fue otro espacio?",
+    "relevant": [
+      "fixture-01",
+      "fixture-06",
+      "fixture-11",
+      "fixture-16",
+      "fixture-21",
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "absent-1",
+    "kind": "no-evidence",
+    "language": "es",
+    "split": "development",
+    "question": "¿Quién donó los libros de Puerto Claro?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-2",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "development",
+    "question": "Does the Vega result demonstrate higher intelligence?",
+    "relevant": [
+      "fixture-02",
+      "fixture-07",
+      "fixture-12",
+      "fixture-17",
+      "fixture-22",
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "absent-2",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What were the Vega participants’ names?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-3",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Does Alba measure dissolved oxygen?",
+    "relevant": [
+      "fixture-03",
+      "fixture-08",
+      "fixture-13",
+      "fixture-18",
+      "fixture-23",
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "absent-3",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What is the Alba sensor’s retail price?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-4",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "de",
+    "split": "development",
+    "question": "Was the Bruma median 24?",
+    "relevant": [
+      "fixture-04",
+      "fixture-09",
+      "fixture-14",
+      "fixture-19",
+      "fixture-24",
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "absent-4",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "How many Bruma participants were under 18?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-5",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "pt",
+    "split": "development",
+    "question": "Can Linde restore a closed account?",
+    "relevant": [
+      "fixture-05",
+      "fixture-10",
+      "fixture-15",
+      "fixture-20",
+      "fixture-25",
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "absent-5",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "Where is Linde’s source code hosted?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-6",
+    "kind": "hard-negative",
+    "language": "es",
+    "sourceLanguage": "it",
+    "split": "development",
+    "question": "¿Coinciden los años de inauguración del laboratorio y la biblioteca?",
+    "relevant": [
+      "fixture-01",
+      "fixture-06",
+      "fixture-11",
+      "fixture-16",
+      "fixture-21",
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "absent-6",
+    "kind": "no-evidence",
+    "language": "es",
+    "split": "development",
+    "question": "¿Cuántos libros tenía Puerto Claro el día de su inauguración?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-7",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "development",
+    "question": "Was the rereading group the one that recalled 72 percent?",
+    "relevant": [
+      "fixture-02",
+      "fixture-07",
+      "fixture-12",
+      "fixture-17",
+      "fixture-22",
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "absent-7",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What was the age of Vega’s oldest participant?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-8",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "development",
+    "question": "Is Alba calibrated once per year?",
+    "relevant": [
+      "fixture-03",
+      "fixture-08",
+      "fixture-13",
+      "fixture-18",
+      "fixture-23",
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "absent-8",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What company manufactures Alba?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-9",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "fr",
+    "split": "development",
+    "question": "Did Bruma sample six people from 240 villages?",
+    "relevant": [
+      "fixture-04",
+      "fixture-09",
+      "fixture-14",
+      "fixture-19",
+      "fixture-24",
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "absent-9",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What was the Bruma response rate?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-10",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "de",
+    "split": "development",
+    "question": "Did version two shorten the Linde retention interval?",
+    "relevant": [
+      "fixture-05",
+      "fixture-10",
+      "fixture-15",
+      "fixture-20",
+      "fixture-25",
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "absent-10",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "development",
+    "question": "What is the monthly price of a Linde subscription?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-11",
+    "kind": "hard-negative",
+    "language": "es",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "¿Qué espacio escolar abrió primero y cuál un año después?",
+    "relevant": [
+      "fixture-01",
+      "fixture-06",
+      "fixture-11",
+      "fixture-16",
+      "fixture-21",
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "absent-11",
+    "kind": "no-evidence",
+    "language": "es",
+    "split": "evaluation",
+    "question": "¿Cuál es el domicilio de la escuela de Puerto Claro?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-12",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "it",
+    "split": "evaluation",
+    "question": "Can Vega establish a difference in IQ, or only recall?",
+    "relevant": [
+      "fixture-02",
+      "fixture-07",
+      "fixture-12",
+      "fixture-17",
+      "fixture-22",
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "absent-12",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "Was the Vega trial preregistered?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-13",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "Could Alba supply an oxygen reading from its green-light measurement?",
+    "relevant": [
+      "fixture-03",
+      "fixture-08",
+      "fixture-13",
+      "fixture-18",
+      "fixture-23",
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "absent-13",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "What is Alba’s maximum operating temperature?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-14",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Should the Bruma mean and median be reported as the same statistic?",
+    "relevant": [
+      "fixture-04",
+      "fixture-09",
+      "fixture-14",
+      "fixture-19",
+      "fixture-24",
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "absent-14",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "Which six villages were surveyed in Bruma?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-15",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "fr",
+    "split": "evaluation",
+    "question": "Are deleted objects and closed accounts equally recoverable in Linde?",
+    "relevant": [
+      "fixture-05",
+      "fixture-10",
+      "fixture-15",
+      "fixture-20",
+      "fixture-25",
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "absent-15",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "Who is the lead developer of Linde?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-16",
+    "kind": "hard-negative",
+    "language": "es",
+    "sourceLanguage": "de",
+    "split": "evaluation",
+    "question": "¿Es correcta la afirmación de que la biblioteca nació después del laboratorio?",
+    "relevant": [
+      "fixture-01",
+      "fixture-06",
+      "fixture-11",
+      "fixture-16",
+      "fixture-21",
+      "fixture-26"
+    ],
+    "expected": "1912"
+  },
+  {
+    "id": "absent-16",
+    "kind": "no-evidence",
+    "language": "es",
+    "split": "evaluation",
+    "question": "¿Cuál fue el presupuesto anual de la biblioteca de Puerto Claro?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-17",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "pt",
+    "split": "evaluation",
+    "question": "Does the 51 percent recall figure belong to spaced retrieval?",
+    "relevant": [
+      "fixture-02",
+      "fixture-07",
+      "fixture-12",
+      "fixture-17",
+      "fixture-22",
+      "fixture-27"
+    ],
+    "expected": "72%; 51%; recall, not intelligence"
+  },
+  {
+    "id": "absent-17",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "Which ethics committee approved Vega?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-18",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "it",
+    "split": "evaluation",
+    "question": "Is the 530 nm specification a calibration period or a wavelength?",
+    "relevant": [
+      "fixture-03",
+      "fixture-08",
+      "fixture-13",
+      "fixture-18",
+      "fixture-23",
+      "fixture-28"
+    ],
+    "expected": "turbidity; green; 530 nm; not oxygen"
+  },
+  {
+    "id": "absent-18",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "How much electrical power does Alba draw?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-19",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "es",
+    "split": "evaluation",
+    "question": "Does a preliminary Bruma count supersede its final sample of 240?",
+    "relevant": [
+      "fixture-04",
+      "fixture-09",
+      "fixture-14",
+      "fixture-19",
+      "fixture-24",
+      "fixture-29"
+    ],
+    "expected": "240; six; median 18; mean 24"
+  },
+  {
+    "id": "absent-19",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "When were the Bruma interviews conducted?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  },
+  {
+    "id": "hard-20",
+    "kind": "hard-negative",
+    "language": "en",
+    "sourceLanguage": "en",
+    "split": "evaluation",
+    "question": "Which Linde retention claim refers to the old version: seven days or fourteen?",
+    "relevant": [
+      "fixture-05",
+      "fixture-10",
+      "fixture-15",
+      "fixture-20",
+      "fixture-25",
+      "fixture-30"
+    ],
+    "expected": "14 days; deleted items; not closed accounts"
+  },
+  {
+    "id": "absent-20",
+    "kind": "no-evidence",
+    "language": "en",
+    "split": "evaluation",
+    "question": "Which database engine implements Linde event storage?",
+    "relevant": [],
+    "expected": "insufficient evidence"
+  }
+]

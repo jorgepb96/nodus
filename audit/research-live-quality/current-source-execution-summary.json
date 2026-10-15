@@ -1,0 +1,90 @@
+{
+  "format": "nodus.current-source-execution-summary/1",
+  "createdAt": "2026-10-13T12:56:51.898Z",
+  "root": "/private/tmp/nodus-research-n1DX40",
+  "extractionPipeline": "nodus-clean-markdown/12",
+  "profileId": "embeddinggemma-2-text-q8-512-v1",
+  "provenance": {
+    "finalization": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/campaign-posthoc-finalized-002.json",
+      "sha256": "d39c4c0cc76c9333a0a036e41d1e51a6be53e1bc79c438cb9f22a26d1a84c890"
+    },
+    "identity": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/semantic-identity-audit-20261013T123808Z-98f7441b-5b32-4d2d-81c2-d9883bc9161a.json",
+      "sha256": "010b5d7c28137a7ab89ded1f5c359ac096b07724169c4410f2b0e8753f55c796"
+    },
+    "inventory": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/current-passages-001.json",
+      "sha256": "4977896b339818b256797a5e1db9a4a18665222a666474c87975d70a850dea90"
+    },
+    "source": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/case-sources-index-audited-002.json",
+      "sha256": "5531fcd91ad7690710836b8d686ebe2e9436cf907308c91cf274627a60bd8e6b"
+    },
+    "preregistration": {
+      "path": "/private/tmp/nodus-research-n1DX40/artifacts/preregistration.json",
+      "sha256": "8b0887366f4f142a0b6b20693cbd6078970733426bea062ba027a960f9e7173e"
+    }
+  },
+  "sourceInventory": {
+    "sourceDocuments": 40,
+    "importedLibraryItems": 40,
+    "extractedLibraryItems": 40,
+    "fullyPreparedLibraryItems": 40,
+    "sourceInventorySha256": "c7e9d1e997229092f6d7575d16a82913233bcdc962e10f1897f9bec2c9988b45"
+  },
+  "retrieval": {
+    "cases": 80,
+    "answerable": 60,
+    "insufficient": 20,
+    "semanticCases": 80,
+    "lexicalFallbackCases": 0,
+    "scopeLeakCount": 0,
+    "searchErrorCases": 0,
+    "citationResolution": {
+      "captured": 885,
+      "resolved": 885,
+      "unresolved": 0,
+      "rate": 1
+    }
+  },
+  "identity": {
+    "status": "verified",
+    "summary": {
+      "scopeDocumentCount": 40,
+      "lexicalKeyCount": 40,
+      "traceVectorKeyCount": 40,
+      "literalKeyIntersection": 0,
+      "pairCount": 40,
+      "sourceIdentitiesMatchAll": true,
+      "productionFingerprintsMatchAll": true,
+      "contractMatchAll": true,
+      "embeddedReadyAll": true,
+      "vectorCountsAndWidthsCorrectAll": true,
+      "lexicalRows": 40,
+      "noPassageTextRead": true,
+      "noVectorContentRead": true
+    },
+    "mismatchCount": 0
+  },
+  "termination": {
+    "reportingFailure": true,
+    "coordinatorExitCode": 1,
+    "coordinatorFailureKind": "playwright-electron-process-wrapper-unavailable-after-close",
+    "coordinatorErrorLogHashBound": true,
+    "electronPid": 36008,
+    "electronExitCode": 0,
+    "electronSignal": null,
+    "electronExitedNormally": true,
+    "coordinatorClean": false
+  },
+  "quality": {
+    "retrievalRelevance": "pending frozen independent annotations",
+    "answerGeneration": "not started",
+    "validatedProfiles": []
+  },
+  "limitations": [
+    "Finalized offline from saved campaign artifacts after the coordinator failed while reporting.",
+    "No answer-generation or quality scoring was run by this finalizer. Retrieval ranks and source passage text are intentionally excluded."
+  ]
+}

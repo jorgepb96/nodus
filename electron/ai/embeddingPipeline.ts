@@ -286,6 +286,7 @@ export async function startEmbedding(nodusIds?: string[], options: { ideaIds?: r
       if (await waitIfPaused()) break;
       const texts = work.ideas.map((idea) => embeddingTextForIdea(idea));
       const embeddings = await embedManyStrict(texts, undefined, {
+        role: 'document',
         perf: { nodusId: work.nodusId, title: work.title },
         jobId: `${work.nodusId}:idea-embeddings`,
       });
@@ -381,9 +382,10 @@ export async function reindexAll(): Promise<void> {
 async function reembedAllSummaries(): Promise<void> {
   const rows = allWorkSummaryRows().filter((row) => summaryNeedsEmbedding(row, row.summary));
   if (!rows.length) return;
-  const embeddings = await embedManyStrict(rows.map((row) => row.summary));
+  const titles = rows.map(row => (getDb().prepare('SELECT title FROM works WHERE nodus_id=?').get(row.nodus_id) as { title: string } | undefined)?.title);
+  const embeddings = await embedManyStrict(rows.map((row) => row.summary), undefined, { role: 'document', titles });
   getDb().transaction(() => {
-    rows.forEach((row, index) => updateWorkSummaryEmbedding(row.nodus_id, row.summary, embeddings[index]));
+    rows.forEach((row, index) => updateWorkSummaryEmbedding(row.nodus_id, row.summary, embeddings[index], titles[index]));
   })();
 }
 

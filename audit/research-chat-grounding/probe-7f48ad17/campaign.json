@@ -1,0 +1,236 @@
+{
+  "format": "nodus.research-chat-grounding-campaign/1",
+  "collectedAt": "2026-10-07T21:42:32.552Z",
+  "baseline": {
+    "file": "../../embeddinggemma-2/campaign.json",
+    "sha256": "1331d8376a78b9bff8c0d5d7e60f0448e555065781214a7a8289093470c510f1",
+    "directedReviewedFactual": {
+      "passed": 19,
+      "reviewed": 42
+    },
+    "comparisonLimit": "The original directed failure review and revised questions are different samples. No population accuracy or paired percentage improvement is claimed."
+  },
+  "evaluation": {
+    "stage": "coverage",
+    "acceptanceEligible": false,
+    "design": "4 known failure scenarios × 1 repetition × 5 isolated embedding profiles; diagnostic probe, never the acceptance campaign.",
+    "planned": {
+      "total": 20,
+      "factual": 10,
+      "insufficientEvidence": 10
+    },
+    "executed": 8,
+    "reviewed": 8,
+    "reviewedPublishedAnswers": 7,
+    "reviewedFailureCases": 1,
+    "measuredRevision": "7f48ad17",
+    "candidate": {
+      "gitHead": "7f48ad17d0e18e1dba38e37d570c879b42c7f134",
+      "files": {
+        "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+        "electron/ai/researchClaimAudit.ts": "2cc8c689220a8541b4d1b5cc8c4c9fc4ffca46db89042583ab707dd801164322",
+        "electron/ai/researchChatGrounding.ts": "e2f3ce97c3c85c9bd729dc157e4752cc932c45ae1b1570d5f53126bc75f5ebf3",
+        "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+        "shared/researchChatGrounding.ts": "549d2434819309555709dbfb88e7b76515040cdc52a16df906aca251d072b8b8",
+        "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+      },
+      "applicationEntry": "f5e9562e17062410003ab01e9ca698a45faeecd9c87e8e0e679e51f087dffe42"
+    },
+    "candidateMatchesMeasured": false,
+    "executionErrors": 1,
+    "pending": 12,
+    "allExecuted": false,
+    "allReviewed": false,
+    "sameRuntime": true,
+    "observedReviewedFactual": {
+      "passed": 3,
+      "reviewed": 4
+    },
+    "observedReviewedAbsence": {
+      "passed": 4,
+      "reviewed": 4
+    },
+    "factualPassed": 3,
+    "absencePassed": 4,
+    "factualSupportAndAdequacy": null,
+    "insufficientEvidence": null,
+    "citations": {
+      "captured": 17,
+      "allResolvable": true,
+      "rate": 1
+    },
+    "semanticCandidatesSelected": true,
+    "gates": {
+      "factualSupportAndAdequacy": 0.95,
+      "insufficientEvidence": 0.9,
+      "resolvableCitations": 1,
+      "passed": false
+    },
+    "reviewer": "Codex independent source inspection, separate from the application auditor; not an external human or blinded review."
+  },
+  "cost": {
+    "campaignRoot": "/private/tmp/nodus-research-EkjNvg",
+    "ledgerSha256": "8ce617a8047937e5b8bac7ef1a15707112602d8e8cfd0fec2154d56534289238",
+    "limitUsd": 5,
+    "cumulativeAccountedUsd": 4.142383800000001,
+    "cumulativeCommittedUsd": 4.226838425,
+    "calls": 2743,
+    "note": "Cumulative proxy accounting for the original campaign, including prior stages, using verified tariff/cache-miss upper bounds where the provider supplies no cost. Reconciled historical peak estimates retain their original ledger and method. This is not a billing invoice. Unknown usage retains its full reservation. This collector never resets or changes the budget."
+  },
+  "hardware": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "os": "25.6.0",
+    "cpu": "Apple M2",
+    "memoryBytes": 17179869184,
+    "node": "v22.23.2"
+  },
+  "products": [
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "sourceVersion": {
+        "gitHead": "7f48ad17d0e18e1dba38e37d570c879b42c7f134",
+        "files": {
+          "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+          "electron/ai/researchClaimAudit.ts": "2cc8c689220a8541b4d1b5cc8c4c9fc4ffca46db89042583ab707dd801164322",
+          "electron/ai/researchChatGrounding.ts": "2651e6efe3f734c66a12c72c9ee67e67d3e92ab3eb20f0b6db6f05e5355be28f",
+          "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+          "shared/researchChatGrounding.ts": "549d2434819309555709dbfb88e7b76515040cdc52a16df906aca251d072b8b8",
+          "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+        },
+        "applicationEntry": "f5e9562e17062410003ab01e9ca698a45faeecd9c87e8e0e679e51f087dffe42",
+        "campaignDefinition": "33bd628cd49b3be6a97f66cb6c20dbd2f7fb005950b5d4cfeb1f1fe9dbac475e",
+        "chatHarness": "a5a73303f82845adb596fb9b1319ba0dc92557c369bd371b9b83b81b4899c797",
+        "providerProxy": "08729432c1f5e484f5aa02268d00b210ede80f6dde75f6492cf840b00773bffa",
+        "tariff": "40a68472d64560b7b46dbb7d31b0221073391e304a5c8a092238bcb5c867c496",
+        "node": "v22.23.2"
+      },
+      "file": "embeddinggemma-2-text-q8-512-v1.json",
+      "completed": true,
+      "budgetExhausted": false,
+      "executionErrors": 0,
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          55883,
+          55884
+        ]
+      },
+      "databaseIsolation": {
+        "escaped": 0,
+        "opened": 2829
+      }
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "sourceVersion": {
+        "gitHead": "7f48ad17d0e18e1dba38e37d570c879b42c7f134",
+        "files": {
+          "electron/ai/researchAssistant.ts": "a2f34248cc423aad143e8829548191e691a594bba7ee4cd79f340b24609409a5",
+          "electron/ai/researchClaimAudit.ts": "2cc8c689220a8541b4d1b5cc8c4c9fc4ffca46db89042583ab707dd801164322",
+          "electron/ai/researchChatGrounding.ts": "2651e6efe3f734c66a12c72c9ee67e67d3e92ab3eb20f0b6db6f05e5355be28f",
+          "electron/ai/researchTurnPlanner.ts": "56c01f786def489371f83a034895ceb99dd62f494e24499dac2f634cc88e97fa",
+          "shared/researchChatGrounding.ts": "549d2434819309555709dbfb88e7b76515040cdc52a16df906aca251d072b8b8",
+          "shared/mainProcessErrors.ts": "19cef3b005e630a0ece4d7a3c39d18a76b5513147e7dc39abc6ff1aaf9d27550"
+        },
+        "applicationEntry": "f5e9562e17062410003ab01e9ca698a45faeecd9c87e8e0e679e51f087dffe42",
+        "campaignDefinition": "33bd628cd49b3be6a97f66cb6c20dbd2f7fb005950b5d4cfeb1f1fe9dbac475e",
+        "chatHarness": "a5a73303f82845adb596fb9b1319ba0dc92557c369bd371b9b83b81b4899c797",
+        "providerProxy": "08729432c1f5e484f5aa02268d00b210ede80f6dde75f6492cf840b00773bffa",
+        "tariff": "40a68472d64560b7b46dbb7d31b0221073391e304a5c8a092238bcb5c867c496",
+        "node": "v22.23.2"
+      },
+      "file": "multilingual-e5-small-int8.json",
+      "completed": true,
+      "budgetExhausted": false,
+      "executionErrors": 1,
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          55881,
+          55882
+        ]
+      },
+      "databaseIsolation": {
+        "escaped": 0,
+        "opened": 1845
+      }
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "pending": true
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "pending": true
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "pending": true
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-statistics.png",
+      "sha256": "0e2ee41cc28a7e5390dd68753aa10c13804d572d92a032b5adc95d9258237b1f",
+      "bytes": 465167
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "b44925985cc440fd0bf006dd5df05dccfbc34dc03d359a3862d62a60b01c1d0e",
+      "bytes": 657695
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "a61b412373e90c9e5b888def613bf6282dcb1a67659ac2b324ae952cc2e8ae7e",
+      "bytes": 398491
+    },
+    {
+      "file": "screenshots/embeddinggemma-2-text-q8-512-v1-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "b1b3ae0013189135fd0108ef72d9f26808b4a25820b685a881a5f81f4ca98f66",
+      "bytes": 435046
+    },
+    {
+      "file": "embeddinggemma-2-text-q8-512-v1.json",
+      "sha256": "bc08398f62a5ddf8a11c9a567acfe3e96d20cbad81a75af208e2a7849ac38f5c",
+      "bytes": 855569
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-paper.png",
+      "sha256": "f9027d967ab2abfee2e35d49a937c123b0988de8261c908ac5560698e5aa7495",
+      "bytes": 691288
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-price.png",
+      "sha256": "a4aab5645e195998c87c3efa62b1c981b97fb0e9bd657c3c835c1568711494e6",
+      "bytes": 393444
+    },
+    {
+      "file": "screenshots/multilingual-e5-small-int8-grounding-coverage-chat-0-heldout-absent-data.png",
+      "sha256": "4402774b0e365b2b56d6bd14a46eaff1cb9c2c259e19318032c8d238aa0db03c",
+      "bytes": 433461
+    },
+    {
+      "file": "multilingual-e5-small-int8.json",
+      "sha256": "dda9a1b9c89340800fd276774ad8ad0efa3c2402505c093955095905932aad90",
+      "bytes": 581827
+    },
+    {
+      "file": "manual-reviews.json",
+      "sha256": "5a20baf052b8887b6257b0a3a59600453a440138ca3bd6aa7bc349e1346e7f4f",
+      "bytes": 5079
+    }
+  ],
+  "release": {
+    "validatedProfiles": [],
+    "note": "Grounding acceptance alone cannot validate an embedding profile. Native Windows/Linux/macOS Intel execution and the remaining unexecuted release gates stay pending; this report alone never promotes profiles."
+  }
+}

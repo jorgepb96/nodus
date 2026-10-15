@@ -1,0 +1,158 @@
+{
+  "format": "nodus.regression37-serial-amendment/1",
+  "at": "2026-10-15T18:52:34.536Z",
+  "root": "/private/tmp/nodus-research-regression37-serial-Bgzxr9",
+  "pool": "/private/tmp/nodus-research-x8zc8w",
+  "nodeBinary": "/Users/jorgepb96/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+  "repo": "/Users/jorgepb96/.codex/worktrees/ffb6/nodus",
+  "originalPlanSha256": "7fe041d2ab5376d6b250526825282fccc1be9b780b4c07db8417ed3ff786f2ec",
+  "priorReport": "/private/tmp/nodus-research-hlWqiL/artifacts/collection-infrastructure-closed-001/report.json",
+  "priorReportSha256": "400fc329e4cd298b585c9dbc0ee34977b3066f852e5a578636d0de5312cc9c5c",
+  "priorAttempts": [
+    {
+      "caseId": "R002",
+      "status": "verification-withheld",
+      "requests": 18,
+      "completed": 18
+    },
+    {
+      "caseId": "R006",
+      "status": "protocol-failure",
+      "requests": 7,
+      "completed": 5
+    },
+    {
+      "caseId": "R008",
+      "status": "protocol-failure",
+      "requests": 3,
+      "completed": 1
+    },
+    {
+      "caseId": "R005",
+      "status": "protocol-failure",
+      "requests": 10,
+      "completed": 9
+    },
+    {
+      "caseId": "R007",
+      "status": "protocol-failure",
+      "requests": 7,
+      "completed": 6
+    },
+    {
+      "caseId": "R009",
+      "status": "protocol-failure",
+      "requests": 4,
+      "completed": 1
+    },
+    {
+      "caseId": "R012",
+      "status": "protocol-failure",
+      "requests": 3,
+      "completed": 0
+    }
+  ],
+  "retainedValidCaseIds": [
+    "R002"
+  ],
+  "oneTimeInfrastructureReplacementCaseIds": [
+    "R006",
+    "R008",
+    "R005",
+    "R007",
+    "R009",
+    "R012"
+  ],
+  "previouslyUnattemptedCaseIds": [
+    "R010",
+    "R013",
+    "R014",
+    "R015",
+    "R017",
+    "R018",
+    "R021",
+    "R022",
+    "R023",
+    "R029",
+    "R031",
+    "R032",
+    "R033",
+    "R034",
+    "R035",
+    "R044",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R070",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "caseIds": [
+    "R005",
+    "R006",
+    "R007",
+    "R008",
+    "R009",
+    "R010",
+    "R012",
+    "R013",
+    "R014",
+    "R015",
+    "R017",
+    "R018",
+    "R021",
+    "R022",
+    "R023",
+    "R029",
+    "R031",
+    "R032",
+    "R033",
+    "R034",
+    "R035",
+    "R044",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R070",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "rationale": "Six cases never completed a qualified transport attempt. Permit exactly one infrastructure replacement for all six, before observing any replacement answer. Keep the valid withheld result and every original event; never choose the best answer or retry a quality failure.",
+  "policy": {
+    "generatorSlots": 1,
+    "electronProcesses": 1,
+    "queueMs": 180000,
+    "readingMs": 90000,
+    "totalDeadlineMs": 300000,
+    "casePauseMs": 20000,
+    "hiddenWindow": true,
+    "nice": 10,
+    "paidCalls": 0
+  },
+  "productionCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "productionSourcesChanged": false,
+  "qaSourceHashes": {
+    "scripts/research-live-answer-campaign.mjs": "3c705f6e3c7fb60fa129180bf9b19b4956e613744e642ee65e43e50d27307c04",
+    "scripts/research-luna-dispatch.mjs": "df94dd2fd81cfa847e76b2207079d09147b9b37d7ad69d4085f09b9597027b47"
+  },
+  "sourceContexts": "/private/tmp/nodus-research-regression37-serial-Bgzxr9/artifacts/qualified-case-sources.json",
+  "preregistration": "/private/tmp/nodus-research-lB0K6I/artifacts/preregistration.json",
+  "output": "/private/tmp/nodus-research-regression37-serial-Bgzxr9/artifacts/failed32-controls5-serial-001",
+  "interpretation": "Report initial infrastructure failures separately from the first qualified result. A second infrastructure failure remains unresolved; no further case retry. No global embedding improvement estimate."
+}

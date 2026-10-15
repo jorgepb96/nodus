@@ -16,6 +16,8 @@ import { LibraryDiskStore } from './libraryStorage';
 import { failLibraryExtractionRevision, markLibraryExtractionRevision } from './libraryRevision';
 import { disposeLibraryExtractionWorkers, extractLibraryItemInWorker } from './libraryExtractionWorkerHost';
 import { logPipelineFailure, logPipelineSuccess, logPipelineWarning } from '../logging/pipelineLogCore';
+import { recordEmbeddingTrace } from '../qa/embeddingTrace';
+import { withoutDatabaseContext } from '../db/database';
 
 type ExtractFn = typeof extractLibraryItem;
 
@@ -129,10 +131,12 @@ export class LibraryExtractionQueue {
   private schedule(): void {
     if (this.scheduled || this.disposed) return;
     this.scheduled = true;
-    setImmediate(() => {
+    // The Global Library outlives a vault-scoped IPC invocation. Its progress
+    // events must not inherit that invocation's connection after it is closed.
+    withoutDatabaseContext(() => setImmediate(() => {
       this.scheduled = false;
       void this.drain();
-    });
+    }));
   }
 
   private async drain(): Promise<void> {
@@ -151,9 +155,10 @@ export class LibraryExtractionQueue {
       ...initial, status: 'processing', phase: 'analyze', progress: 0.01,
       attempts: initial.attempts + 1, error: null, updatedAt: new Date().toISOString(),
     };
-    this.catalog.putExtractionJob(job);
-    this.emit(job, 'Iniciando extracción…');
     try {
+      this.catalog.putExtractionJob(job);
+      recordEmbeddingTrace({ type: 'extraction-queue', phase: 'starting', itemId: job.itemId });
+      this.emit(job, 'Iniciando extracción…');
       const item = this.item(job.itemId);
       if (!item) throw new Error('El documento ya no existe en la biblioteca.');
       const current = this.store.readMaterializedItem(item.storageId) ?? item;

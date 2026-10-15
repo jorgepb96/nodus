@@ -10,7 +10,7 @@ import type {
 } from '@shared/types';
 import { getDb } from '../db/database';
 import { findSimilarIdeas } from '../db/ideasRepo';
-import { completeJson, embed } from './aiClient';
+import { completeJson, embedQuery } from './aiClient';
 import { coreStructuredPrompt } from './prompts';
 import { getSettings } from '../db/settingsRepo';
 import * as repo from '../db/researchMapRepo';
@@ -151,7 +151,7 @@ function ideaContext(globalId: string, score: number): IdeaCandidate | null {
 
 /** Top candidate ideas for a sub-question: semantic if embeddings exist, else lexical. */
 async function retrieveCandidates(text: string, lexRows: IdeaLexRow[]): Promise<IdeaCandidate[]> {
-  const emb = await embed(text);
+  const emb = await embedQuery(text);
   if (emb) {
     const hits = findSimilarIdeas(emb, SEM_THRESHOLD, MAX_CANDIDATES);
     if (hits.length > 0) {

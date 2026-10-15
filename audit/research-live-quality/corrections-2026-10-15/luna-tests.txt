@@ -1,0 +1,37 @@
+
+> nodus@5.10.0 test:research:luna
+> node --test scripts/test-research-luna-bridge.mjs scripts/test-research-luna-lifecycle.mjs scripts/test-research-luna-campaign.mjs scripts/test-research-luna-collection.mjs scripts/test-research-quality-policy.mjs scripts/test-research-luna-dispatch.mjs scripts/test-research-live-answer-campaign.mjs scripts/test-collect-research-live-answers.mjs scripts/test-research-live-index-authorization.mjs scripts/test-research-live-semantic-identity-audit.mjs
+
+PASS current live-answer collector: fixed 80-item denominator, failed-attempt handling, exact citation blinding, independent review binding, and pending product invariants.
+✔ scripts/test-collect-research-live-answers.mjs (870.153833ms)
+{"ok":true,"sourceFixtureCases":80,"localBridgeCasesCompleted":2,"previousAcceptedExcludedFromNextCase":true,"nextSegmentCasesPending":78,"receiptSnapshotsLoaded":true,"electronLaunches":0,"modelGenerations":0}
+✔ scripts/test-research-live-answer-campaign.mjs (598.891208ms)
+✔ identity fingerprints are stable across object key order (11.158417ms)
+✔ full semantic identity pairs authorize trace keys through their lexical bases (12.70075ms)
+✔ derived snapshot verifies receipt and immutable database snapshot, independent of later live DB writes (14.986625ms)
+✔ modified immutable SQLite snapshot fails its hash binding (55.157375ms)
+✔ missing or altered identity pairs fail closed (7.914333ms)
+✔ wrong lexical document authorization and incomplete readiness fail closed (9.07125ms)
+✔ derived snapshot rejects case and contract edits even when stored snapshot hashes are left unchanged (23.218542ms)
+research-live-semantic-identity-audit: 6 contract checks passed
+✔ scripts/test-research-live-semantic-identity-audit.mjs (110.240458ms)
+PASS research Luna QA bridge: isolated loopback nonce, capped private request queue, completion hash artifacts, symlink rejection, cancellation cleanup, and exact response passthrough.
+✔ scripts/test-research-luna-bridge.mjs (1636.275375ms)
+PASS Luna campaign controls: fixed Q8-512 plan, completed-refusal classification, exact first-four continuation binding, no-retry pending states, and cumulative receipt gates.
+✔ scripts/test-research-luna-campaign.mjs (484.926584ms)
+PASS Luna collection: source archive and answer hash binding, blind partial packet, fixed 8/2 denominators, citation capture, reviewer coverage, unavailable answers, unknown reviewers, and bridge receipt guards. Synthetic gate answers/reviews test collector controls only; they measure no model quality.
+✔ scripts/test-research-luna-collection.mjs (1018.488ms)
+PASS Luna dispatch helper: canonical isolated roots, live/deadline and hash receipts, immutable idempotent jobs, pointer safety, binding, read-attestation verification, mapping references, and synthetic local bridge integration. No model generation occurred.
+✔ scripts/test-research-luna-dispatch.mjs (541.995666ms)
+QA lifecycle: cross-process admission, complete local transport, observed queue/read/post-read/delivery timing, phase-specific expiry, unchanged total deadline, retained requests and terminal rejection passed. Zero model generations.
+✔ scripts/test-research-luna-lifecycle.mjs (635.465042ms)
+PASS versioned research answer-quality policy: fixed denominators, hash binding, separate conditional fidelity, abstention handling, citation resolution, and scope/contract guards.
+✔ scripts/test-research-quality-policy.mjs (50.847417ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1648.120375

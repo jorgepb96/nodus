@@ -1,0 +1,434 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/0",
+    "answerSha256": "aff6c727f6bdbc6f9864b3009ef975233f5ace82339044fe8a75b0c12cad30de",
+    "sourcesSha256": "bb5dbc114bbae52030b96a2d4f00c3ebb5fbdb972ef13d742ee1584d6a0316bf",
+    "evidenceSha256": "8efaefca04c88817f805a86b4851f7cf9ecfe1915612f92598d32b461d99d3c4",
+    "faithful": false,
+    "adequate": true,
+    "notes": "Correct dates and predicate roles, but describes the separate language records as other versions of the same file without explicit provenance evidence. This additional source relationship fails fidelity under the fixed criterion."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/0",
+    "answerSha256": "de125d89820c12634de085040d86a70bbabf343926e0577810133bc6e107e583",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct turbidity, visible green 530 nm and oxygen exclusion; raw parenthesized locator is redundant formatting, not a factual error."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/0",
+    "answerSha256": "1574fe70ad432311310c58ece493c7f67a8a97659b2966cc960c42c1e37f1fbf",
+    "sourcesSha256": "77d226c1a0fee595ffc87e4bb764efcd05101e66b00822b8129d640f73b2aa3f",
+    "evidenceSha256": "fc77cb9e51036ccf8eb65c4d33f86779a9343510e15877f7a5af4e16d72c685e",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate table, recall/intelligence distinction and labelled 21 percentage-point subtraction from supported 72/51 values."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/0",
+    "answerSha256": "44489ff20fd0d4518a3f36558a49f2a343efbafb2e07f2ca477fbdeb57dd59f6",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 participants supersedes preliminary 239 records; quoted correction is literal."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "af82a8682e3dc704066efa19774c66bc857362d15d841c25213c6fb6f666ea9b",
+    "sourcesSha256": "65ff9e4e76370eb2eae110c699bd84c9677b5cb5067c52877e65ec59596c1c7c",
+    "evidenceSha256": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate 18/24 figures, supported non-equivalence and precise inability to establish distribution shape from the excerpts."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/0",
+    "answerSha256": "2b3b510929e56c8557030aa17feed59d206d17de7f0bc9cd80d90080401d349f",
+    "sourcesSha256": "a9bc855fcf8af9708599b7effd304e08f4126953d539bbb51ff577a10fc33391",
+    "evidenceSha256": "82afd8840c3ae377e0b394b543709930f8f82bbf0767a20c437d2aae0498652b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Compares supported measurement limits: recall without intelligence, non-equivalent Bruma statistics and superseded count. Correct labelled derived difference and no claim of a determined distribution shape."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-policy/0",
+    "answerSha256": "fab64e0dfa6b878033c047d49eec9b7377bcf45292fe4594eb33111887c00b6e",
+    "sourcesSha256": "a39eb8ee666881b3e04655b8b52cd6e0a1a101d4ad5b1dbc18c26db96ddd422c",
+    "evidenceSha256": "afde233d4277d06b754aa81d922ced5a22af781c06b7d87f20981b682f50923b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Deleted items versus closed accounts preserved; event retention separately identified and correct."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/0",
+    "answerSha256": "a6a76c04ea3d6b94f00d05a936da7480e8c9024e3a8dc3afa7ef7572092d00d8",
+    "sourcesSha256": "f6dd4cdfb87c3b23935f1a6461fa72abd3b564e8d886a9895200c94f5cbe725d",
+    "evidenceSha256": "3a95973cc08d6b724cdaa7ec8f96e5ca643c9eef133e2be0e8519585800ad257",
+    "faithful": true,
+    "adequate": true,
+    "notes": "NF4 zero-centered normal-bin property, DQ constants, paged spikes and storage/BF16 computation agree with source. Explicitly labelled DQ calculation rounds 0.126953125 to 0.127 bits correctly; no invented NF4 quantile count."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/0",
+    "answerSha256": "8d03bb7204dccdbc53272027771b105833daf1ccf18d6b54df2bd2f28f930d38",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap; additional sensor facts accurately attributed."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor/0",
+    "answerSha256": "8ad6875681342336f20b3e4c2c119c10b92f14425dc72ec0ebca63e16e0c0e74",
+    "sourcesSha256": "065e6439445d9b622c941162506b586a31fcc4decbf6708aeb7a5b193648fefc",
+    "evidenceSha256": "b47e55a9a2699be43b464d6c31e90ffc3399f8d33c0fb804758799e5aa369238",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap; opening dates retain the correct library/laboratory distinction."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "befbf52c2d2a7eb1f373cf5e45f60cb062f0f007cdf20c36ed066d8f15149b75",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap without inventing absence from the corpus."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "6096a066be568ac5fc3e7e0df4a3d82537de606cccf4adc14e133a7a64611668",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct precise absence acknowledgement; no fabricated individual records."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-dates/1",
+    "answerSha256": "537261fc901179b04d60f4dc7e6917b15c8231d087e3e124d322d754728a91e4",
+    "sourcesSha256": "752443eb1cbfd790a73c6c6bda65735bc0fdbfa625be6ec2cef2cc2ef80f771a",
+    "evidenceSha256": "8efaefca04c88817f805a86b4851f7cf9ecfe1915612f92598d32b461d99d3c4",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct predicate roles and dates; states only visible multilingual wording, not a common version lineage."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-sensor/1",
+    "answerSha256": "4ff9431d2c81fbaec0b9e5cb8dbb4fb7f98d9ec577f67f77830b2a35995cbf8b",
+    "sourcesSha256": "e95ea793c13025cd0addf0f3eb6bd175dc3481d82ba30c1f8e4ec460d02b78c9",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct visible-light turbidity and explicit oxygen exclusion."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-calculation/1",
+    "answerSha256": "1bbdf8db2d64da95a118fed3947f2688263b46c33e3a212d8b4495b752072f52",
+    "sourcesSha256": "77d226c1a0fee595ffc87e4bb764efcd05101e66b00822b8129d640f73b2aa3f",
+    "evidenceSha256": "c20a92376c7feb35ad4dbfc6ea9fba10cdcf77b7be664c4e9dc73f4890bb791a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table values, labelled 21 percentage-point subtraction and measured recall distinction."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-correction/1",
+    "answerSha256": "b9e1d81734b0af74fb2a8beeea1f6454ed6de1d74d33d41e9da65b2f4ebd3af3",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "4c14913e1e4e2d7101e521cc7629f5dea5314dc5b549360315e7dd12acafccd3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Final 240 supersedes preliminary 239; redundant raw URL is a formatting defect, not factual fabrication."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/1",
+    "answerSha256": "5c6ce2448549ee93850486fbeae2cdb0785372cb6e074f2cdbffffbc3a81806f",
+    "sourcesSha256": "5fb05628c6c8be4a8cca12715954b14562faed50f899c6660d03fd70a4ad92ff",
+    "evidenceSha256": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct statistics, labelled derived difference 6 and precise distribution-shape limitation."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-negation/1",
+    "answerSha256": "aead6330da68ace3438b1fc9854e110afcac7387956f2acd83cdcb62dcf8fd1b",
+    "sourcesSha256": "a9bc855fcf8af9708599b7effd304e08f4126953d539bbb51ff577a10fc33391",
+    "evidenceSha256": "f78cc5db85b8b337b470ad11fb60f98162f1189656cded66d85de3dc1939d79c",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Correct facts followed by unsupported absence of interpretation-limit statements and refusal to compare supported constraints; factual inventory alone is inadequate."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-policy/1",
+    "answerSha256": "21d318f183257de1de801857edbff5e15f51d1c31d6860f4d46eaa2c6bbf9c79",
+    "sourcesSha256": "a39eb8ee666881b3e04655b8b52cd6e0a1a101d4ad5b1dbc18c26db96ddd422c",
+    "evidenceSha256": "afde233d4277d06b754aa81d922ced5a22af781c06b7d87f20981b682f50923b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Restoration scope and separate event retention/version change are supported."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/1",
+    "answerSha256": "6efe8d553ebee90a7ce4833c7fcab84d3c7270d2b733ae160ec08ec339278a0b",
+    "sourcesSha256": "7df3636496215fb8a32429c9231479bb39efc6ac7ea49e7824fe8fa99647b0ff",
+    "evidenceSha256": "baae4cc8216103a55321fa528f5df6a7a93d10328c31bcf27aae9425aaee21a9",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Requested mechanisms and precision distinction supported; labelled DQ calculation correctly approximates 3 GB."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "b9547652c375a213e32554361205dc8958d0d2475f180398b758669e9a4963a1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding/1",
+    "answerSha256": "e1908f4ac924f01f5da91e60e6c158251b4782e10499bb770cbdffdeaf4d5361",
+    "sourcesSha256": "7394ff35244ca5956e2d264df275c64b831cf23e8f2eecfcec155dd926dd2eb3",
+    "evidenceSha256": "befbf52c2d2a7eb1f373cf5e45f60cb062f0f007cdf20c36ed066d8f15149b75",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap; added Vega measurements are source-supported."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/1",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "6096a066be568ac5fc3e7e0df4a3d82537de606cccf4adc14e133a7a64611668",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Availability failure is not a correct lack-of-evidence answer; no published answer to review."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/0",
+    "answerSha256": "ad8c69b4c59f7a681713f31f2350bca4fa18ae24c95c92e5f604a97485dcb7ee",
+    "sourcesSha256": "d3f9a7216511faf4732036fc031703bb304596faa216b32b74518c6f46cb7fb5",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct library/laboratory dates and literal multilingual quotes; other records do not assert common file-version lineage. Stray opening parenthesis is a presentation defect."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/0",
+    "answerSha256": "bc8dd339c898426c7efb36e434d1d62e5facf7fcac655a595cf21543170b16e9",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Directly stated oxygen negation supports explicit exclusion; turbidity and 530 nm are accurate."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/0",
+    "answerSha256": "7d490a215a8038825d266b1d8bdc674622a49f8d7c1296c8cbe690f4a456c48c",
+    "sourcesSha256": "64b6824ef07dd74f4cdec479e482a06c4ee0e72b145e2512af1173f026e7bbe2",
+    "evidenceSha256": "e5a3f2e5fb03e885cfd2a52d5ec66989a2d60d0158fa1c4e5c7725e918d466e8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Supported table quantities and outcome; explicitly labelled correct 21 percentage-point derived difference."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/0",
+    "answerSha256": "e31dedd1b581ef79f0f764a3d9765cbd8d86ed012791bccf483155fb70be852e",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct final/preliminary quantities and literal superseded qualification."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "37d55fee0203b78aced49f249a159a2e0f278c501dd7afbcf4a373b4c1a6ec1d",
+    "sourcesSha256": "42e68b53d630344c50dc23fd56f048d8069a9c3be6fdbf5f411f22c7973d42f3",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Accurate 18/24 figures and non-equivalence, but omits the requested distribution conclusion or its precise evidentiary limitation. Repeating the values is insufficient."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/0",
+    "answerSha256": "7699a48fe007aa9e281a8e461956ed6f307ad8d49cfe141b6e55c43a99427b64",
+    "sourcesSha256": "0e59d46e8bf9396696b6e6d419772d380f2ba5cf623ec5042b34dc2595068a87",
+    "evidenceSha256": "efa8d74ae6846efa99db1e2c5eff04117ea0755c68e26ca43496cf6ba6879be8",
+    "faithful": false,
+    "adequate": false,
+    "notes": "Refuses the requested supported comparison and asserts that the excerpts contain no interpretation-limit statements, despite explicit unmeasured intelligence, non-equivalent statistics and superseded count. Correct listed facts and subtraction do not cure the unsupported absence assertion or missing comparison."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-policy/0",
+    "answerSha256": "ac4ccacc502e064dafe1059061dcb6bf6223b8791ef03673d9ec9e67ed3307c3",
+    "sourcesSha256": "a1c1ff9d91d29265637e530e4df4c6b6ed37a044196c2da646a4dd7067f2073f",
+    "evidenceSha256": "30658119dc0750e7a91be58195c80cf9348c6de11b3a1cfc373f0bec0ad8657d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct restoration inclusion/exclusion, with retention/version-change clearly separate."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/0",
+    "answerSha256": "2453ca7f6eb7f4618779ab81bf7948b583774c98920b6d2ae54402b7cfefc604",
+    "sourcesSha256": "dc621b37291f3f6575fcb4d10e24aff0f3857156b94b301b680d2a5d37bfd08b",
+    "evidenceSha256": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Source-supported storage/BF16 computation, NF4 property, DQ mechanism and paged memory-spike handling. Extra labelled 65B × 0.37-bit approximation is correct; source metadata match."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/0",
+    "answerSha256": "0098003ac055f0948b50e168d96943cdbe66163112f6b5ba62dd3e7ab7edce42",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Acknowledges unavailable price. Additional sensor properties match the supplied source and do not establish absence from the full document."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-donor/0",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "34b975dfe22747b43c547a6c6a6b05c896b5cbd3d66ffd00f83e720ce5a05bb8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise unavailable-donor acknowledgement without invented source absence or donor."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-funding/0",
+    "answerSha256": "700f03204f218f64db3446ca852f88c0dcb0aabec1a0815a1059b16bfdcfaa69",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "55de9a63de9a2123c01242f7dc5fda5b7a0eeb21b7e9e87e95cd176c61465788",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap, no invented organization."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "d020c737a2e62e33d4b831f73da63b8b5020b990fd9854d6473e05798cb480ae",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap without fabricated data."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-dates/1",
+    "answerSha256": "d7cf1b71fb9561caded27f435aa1db84eb4e87a22e5a1c80a63d452d8640904d",
+    "sourcesSha256": "af7948a45d9e8724bbbab687fede7a3d8025e7fa2bd7b078e9a967a1336f193a",
+    "evidenceSha256": "54c21ff53cd6c75f5a205703f10cd0e5a49b77b9e546078e15ca0556ca36005c",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct separate library/laboratory dates and temporal contrast."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-sensor/1",
+    "answerSha256": "cff2269f949362d3996e8f7bee95bc4f50254c16bb036ab1273951015b23da12",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate turbidity, green 530 nm light and oxygen exclusion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-calculation/1",
+    "answerSha256": "ec201882e5a87503551509c587865b73b4083f032faefbc39843cf3e8f268bd3",
+    "sourcesSha256": "64b6824ef07dd74f4cdec479e482a06c4ee0e72b145e2512af1173f026e7bbe2",
+    "evidenceSha256": "4f61c99fd06b6a93cc63c2d5e95a5f02214477ef49bbba5adf0d253ce866c093",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct table and labelled derived 21-point difference; recall and unmeasured intelligence distinguished."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-correction/1",
+    "answerSha256": "6c19bb7e66fe540efc082c60fe8b69dcf1ca422e81076a184e1e87c5d99a0b46",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "2b28458c72312fe27fda40214dce8015fdc3391ac6e4cdfaccde4638dd08b2da",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct superseding count and literal correction quotation."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/1",
+    "answerSha256": "216a6da8d8b416de5e19536b6ee0f608a53ab7df0018dac42accb9c482740c91",
+    "sourcesSha256": "6b1de3cce28e95fe44ee55a3e068340dd401bc6ee225732024381ccc6b980637",
+    "evidenceSha256": "feca3d9d86f6dc01a4d1d1c6bcdd1cc4ae0de9bd96d7eb0a712c8a0711b86531",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Accurate statistics, correct labelled difference 6 and explicit evidence limit on distribution inference."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-negation/1",
+    "answerSha256": "862c0436d11d653145eda5ec83cca3fe6e5f8192ccee91f3904a340fbc4ce859",
+    "sourcesSha256": "1f41e0e947ff30e7096847ae3c17f4a72cb5581bc9c31e7acd99a050ec1b80bb",
+    "evidenceSha256": "d413f1bc3b5c4ffae4070df42d1f4fca1765a6430edb53251fef53a315f54371",
+    "faithful": true,
+    "adequate": false,
+    "notes": "Correct measured facts, but refuses the requested comparison of limitations available from those facts. Refusal is not adequate when the supported comparison exists."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-policy/1",
+    "answerSha256": "e3b746952a6ed90fb1242acbb6dd345607bbbad0a6b3cf15608509df5fc28ab9",
+    "sourcesSha256": "eaac2761a41f0587571abb99f1d9019a2c597acd9a77f7748b89693b1d0e0d67",
+    "evidenceSha256": "30658119dc0750e7a91be58195c80cf9348c6de11b3a1cfc373f0bec0ad8657d",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Correct restore inclusion/exclusion and separately stated event-retention premises; no invented restoration deadline."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/1",
+    "answerSha256": "610faf4322af964ef7d8dc6b0764a02d4a5a139690e7d083a6c63e15936a42dc",
+    "sourcesSha256": "1ea19e0d28be2842d378be913ff2c9834a9fafe862867d450dd458e25f00fe58",
+    "evidenceSha256": "a3395eaadb09d9d97f41b531fd91b142c6d9600a56d01334f39ed95c1c911e3a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "All technical properties and quantitative assertions match the original frozen QLoRA excerpts; storage and computation correctly distinguished."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/1",
+    "answerSha256": "b73d2307f5291d3f6a280329460d8d62c0b9876d4175807bcf3d756bd5dfd6dc",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise price gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-donor/1",
+    "answerSha256": "ac631654d2b8a736e48336d5b0a8ab223179e14363279c37e991e15a2f4bed53",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "4a707b029a01bef6fd725adc7890194de303e5b666647e86ed002733649838c4",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise donor gap."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-funding/1",
+    "answerSha256": "711e72fb0e78889b7b08fc2c60cf63ea4e6448aa6ba7d131dd0ef8ed3efddca3",
+    "sourcesSha256": "cd07c1dbd1aa7634259220590c79cfbbb54a79998983398e5ff7c3332f4f8699",
+    "evidenceSha256": "e6341d76fb5d8e8a433b4b0e503d120cbaafd9a04a1ebefb89d1d207d8a3892b",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise funding gap; added recall measurements and intelligence exclusion are supported."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/1",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "3b723e72ab9d2d20a9d7875bd5864c67e66a2fd9794e8552e4905ecc68b9acc2",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Precise individual-record gap."
+  }
+]

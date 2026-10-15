@@ -1,0 +1,156 @@
+{
+  "format": "research-openrouter-source-review/1",
+  "model": "mistralai/mistral-small-3.2-24b-instruct",
+  "canonicalModel": "mistralai/mistral-small-3.2-24b-instruct-2506",
+  "frozenRuntime": {
+    "workingTreeDirty": true,
+    "commit": "cde00ce0725931b0c08a616b6295de599a8b4193",
+    "files": {
+      "electron/ai/researchChatGrounding.ts": "e308b14e106b3314d9b537b28216f66ab9ad77817f8c8541ac3918a6a8dded6f",
+      "electron/ai/researchStructuredAnswer.ts": "9be44fdffce613e5f907d5301c764833f4ef20f5bf22beccc0a883110d068c64",
+      "electron/ai/researchClaimAudit.ts": "644f3ea8c12262aa64d646c39d965b6557473a9386ca4e13fa97d6ad980010ee",
+      "shared/researchChatGrounding.ts": "19c49739b940f52549db4b039e6377c6a8938adf3245b1a7343ca4f38ea2ce3d",
+      "shared/researchClaimAudit.ts": "31332562d228a2f57a27d72e49a902f5cec35b19c3694360aa00edbb2b7fe2c3",
+      "shared/researchAnswerPlan.ts": "1e4355d1b2ab094cbc95b27dfcc02be294317f01cbe74125f8557d19a2b49190",
+      "shared/researchAnswerStructure.ts": "3a147ed9377878727cc44cfb542f31e038d3c76d559d220cfb85d5de825257f5",
+      "electron/ai/providers.ts": "e2a7a3367181a47c773b0cfe5493af7a3a0872ccd19d23ea5c70001703f40994",
+      "electron/qa/researchProviderProxy.ts": "44d70fbefd94428771f4db283b2619bb7e3f376b9adfc806963d39cdf589e41a",
+      "electron/bootstrap.ts": "181763d7a4d276926627aad4435cb305f56dfa9ba5e2a61442e1c5f8a44636b6",
+      "scripts/lib/tsRuntimeHooks.mjs": "9d198653650e913a83477088959e103708f93511be793b0ae16745ca64343908",
+      "scripts/research-openrouter-proxy.mjs": "3e061e05aa28e55ad79f3b13fc4f9cc5e1ebeba346730a681a5646dec77c6b01",
+      "scripts/research-openrouter-budget.mjs": "2d373a0daa605c87850e7a631f26b6e902442772f8a3f3fa72a1160194a19b3b",
+      "scripts/research-openrouter-campaign.mjs": "fb2ee523babb2e9fab0ba190b4b4381e839ab5c6a3f4be39ffed194136ae0606"
+    }
+  },
+  "completed": false,
+  "arms": {
+    "legacy": {
+      "executed": 3,
+      "reviewed": 0,
+      "positive": {
+        "passed": 0,
+        "planned": 40,
+        "executed": 3,
+        "reviewed": 0
+      },
+      "insufficientEvidence": {
+        "passed": 0,
+        "planned": 20,
+        "executed": 0,
+        "reviewed": 0
+      }
+    },
+    "structured": {
+      "executed": 2,
+      "reviewed": 0,
+      "positive": {
+        "passed": 0,
+        "planned": 40,
+        "executed": 2,
+        "reviewed": 0
+      },
+      "insufficientEvidence": {
+        "passed": 0,
+        "planned": 20,
+        "executed": 0,
+        "reviewed": 0
+      }
+    }
+  },
+  "allReviewed": false,
+  "measuredDirectedGenerationGate": null,
+  "validatedEmbeddingProfiles": [],
+  "limits": [
+    "Repeated synthetic/public-source regression, not a population or untouched holdout accuracy estimate.",
+    "Frozen post-retrieval evidence: extraction, embeddings, semantic candidates and application citation dialogs are not re-executed by this campaign.",
+    "QA citation IDs are remapped to the frozen manifest; resolving to this manifest is not a product citation-resolver test.",
+    "Model auditor approvals are not independent quality scores; source reviews must be recorded separately."
+  ],
+  "reviewerLimit": "Codex source inspection is separate from application auditors; it is not an external human review or population estimate.",
+  "cost": {
+    "closedAt": "2026-10-12T13:44:07.468Z",
+    "limitUsd": 0.49788477,
+    "campaignCeilingUsd": 0.5,
+    "priorUnknownUsd": 0.00211523,
+    "calls": 33,
+    "accountedUpperBoundUsd": 0.09076114,
+    "cumulativeCampaignUpperBoundUsd": 0.09287637
+  },
+  "outcomes": [
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "legacy",
+      "positive": true,
+      "reviewId": "b0ed49e48e39a190",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+      "answered": false,
+      "review": null,
+      "passed": false,
+      "citations": {
+        "captured": 0,
+        "knownManifestTargets": 0
+      }
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "structured",
+      "positive": true,
+      "reviewId": "9e8ede895e7259a4",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+      "answered": false,
+      "review": null,
+      "passed": false,
+      "citations": {
+        "captured": 0,
+        "knownManifestTargets": 0
+      }
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "structured",
+      "positive": true,
+      "reviewId": "c4f92290f2c998e5",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+      "answered": false,
+      "review": null,
+      "passed": false,
+      "citations": {
+        "captured": 0,
+        "knownManifestTargets": 0
+      }
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "legacy",
+      "positive": true,
+      "reviewId": "7c43a333fb097a5b",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+      "answered": false,
+      "review": null,
+      "passed": false,
+      "citations": {
+        "captured": 0,
+        "knownManifestTargets": 0
+      }
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-calculation",
+      "arm": "legacy",
+      "positive": true,
+      "reviewId": "f485d62b997b203c",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "92015a84f8c61948e2c2ca8b474a8424663e9eac48fb878a05ee3fb8e249041f",
+      "answered": false,
+      "review": null,
+      "passed": false,
+      "citations": {
+        "captured": 0,
+        "knownManifestTargets": 0
+      }
+    }
+  ]
+}

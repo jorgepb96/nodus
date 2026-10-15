@@ -41,6 +41,7 @@ export async function verifyResearchActivityUi(page, app, root) {
     await page.setViewportSize(viewport);
     const box = await panel.boundingBox();
     const composer = await input.boundingBox();
+    assert.ok(composer && composer.width >= 100 && composer.height >= 20, 'the question field stays editable beside history and verification controls');
     assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1, 'activity panel fits the window');
     assert.ok(box.y + box.height <= composer.y, 'panel does not cover the composer');
     const toolbar = await page.locator('.research-assistant-header').boundingBox();

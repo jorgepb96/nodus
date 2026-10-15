@@ -58,6 +58,9 @@ test('every package the main process loads stays, on every platform', () => {
     'node_modules/libheif-js',
     'node_modules/harfbuzzjs',
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-common',
+    'node_modules/@nodus/embeddinggemma-transformers',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-common',
     // Each platform's native package reaches its own build through optionalDependencies.
     'node_modules/@openai/codex-darwin-arm64',
     'node_modules/@openai/codex-win32-x64',
@@ -78,6 +81,7 @@ test('the renderer-only packages are left out of the app', () => {
   for (const at of [
     'node_modules/onnxruntime-web',
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-web',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-web',
     'node_modules/@mathjax/src',
     'node_modules/@mathjax/mathjax-newcm-font',
     'node_modules/@blocknote/react',
@@ -122,16 +126,17 @@ test('every package electron/ resolves by name at runtime is kept', () => {
 });
 
 test('the Node builds of transformers load nothing the closure leaves out', () => {
-  const transformers = 'node_modules/@huggingface/transformers';
-  for (const build of ['transformers.node.mjs', 'transformers.node.cjs']) {
-    const source = fs.readFileSync(path.join(repoRoot, transformers, 'dist', build), 'utf8');
-    const imported = new Set([...source.matchAll(/(?:^import .* from|\brequire\()\s*["']([^"'.][^"']*)["']/gm)].map((match) => match[1]));
-    assert.ok(imported.has('onnxruntime-node'), `${build} still uses the native runtime`);
-    assert.ok(!imported.has('onnxruntime-web'), `${build} must not load the web runtime the packager drops`);
-    for (const specifier of imported) {
-      if (specifier.startsWith('node:') || BUILTINS.has(specifier)) continue;
-      const at = pruning.resolveLockPath(packages, transformers, pruning.packageNameOf(specifier));
-      assert.ok(at && reached.has(at), `${build} imports ${specifier}, which must be packed (${at})`);
+  for (const transformers of ['node_modules/@huggingface/transformers', 'node_modules/@nodus/embeddinggemma-transformers']) {
+    for (const build of ['transformers.node.mjs', 'transformers.node.cjs']) {
+      const source = fs.readFileSync(path.join(repoRoot, transformers, 'dist', build), 'utf8');
+      const imported = new Set([...source.matchAll(/(?:^import .* from|\brequire(?:FromHere)?\()\s*["']([^"'.][^"']*)["']/gm)].map((match) => match[1]));
+      assert.ok(imported.has('onnxruntime-node'), `${build} still uses the native runtime`);
+      assert.ok(!imported.has('onnxruntime-web'), `${build} must not load the web runtime the packager drops`);
+      for (const specifier of imported) {
+        if (specifier.startsWith('node:') || BUILTINS.has(specifier)) continue;
+        const at = pruning.resolveLockPath(packages, transformers, pruning.packageNameOf(specifier));
+        assert.ok(at && reached.has(at), `${build} imports ${specifier}, which must be packed (${at})`);
+      }
     }
   }
 });
@@ -143,6 +148,10 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
     'node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/onnxruntime_binding.node',
     'node_modules/@huggingface/transformers/dist/transformers.node.mjs',
     'node_modules/@huggingface/transformers/dist/transformers.node.cjs',
+    'node_modules/@nodus/embeddinggemma-transformers/dist/transformers.node.mjs',
+    'node_modules/@nodus/embeddinggemma-transformers/dist/transformers.node.cjs',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-common/dist/cjs/index.js',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/darwin/arm64/onnxruntime_binding.node',
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-common/dist/cjs/index.js',
     'node_modules/pdfjs-dist/legacy/build/pdf.mjs',
     'node_modules/sharp/package.json',
@@ -158,6 +167,11 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
     'node_modules/@huggingface/transformers/dist/transformers.web.js',
     'node_modules/@huggingface/transformers/dist/ort-wasm-simd-threaded.jsep.wasm',
     'node_modules/@huggingface/transformers/node_modules/onnxruntime-web/dist/ort.min.js',
+    'node_modules/@nodus/embeddinggemma-transformers/dist/transformers.web.js',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-web/dist/ort.webgpu.bundle.min.mjs',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/darwin/x64/onnxruntime_binding.node',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/linux/x64/libonnxruntime.so.1',
+    'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/win32/x64/onnxruntime.dll',
     'node_modules/onnxruntime-web/dist/ort-wasm.wasm',
     'node_modules/@mathjax/src/package.json',
     'node_modules/pdfjs-dist/build/pdf.mjs.map',
@@ -173,6 +187,44 @@ test("electron-builder's own matcher keeps exactly this platform's runtime", () 
   assert.ok(windows('node_modules/onnxruntime-node/bin/napi-v3/win32/x64/onnxruntime.dll'));
   assert.ok(!windows('node_modules/onnxruntime-node/bin/napi-v3/win32/arm64/onnxruntime.dll'));
   assert.ok(!windows('node_modules/onnxruntime-node/bin/napi-v3/darwin/arm64/onnxruntime_binding.node'));
+  const nestedRuntime = 'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6';
+  for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'arm64']]) {
+    const filter = nodeModuleFilter(platform, arch);
+    assert.ok(filter(`${nestedRuntime}/${platform}/${arch}/onnxruntime_binding.node`));
+    const otherPlatform = platform === 'win32' ? 'linux' : 'win32';
+    assert.ok(!filter(`${nestedRuntime}/${otherPlatform}/x64/onnxruntime_binding.node`));
+    assert.ok(!filter(`${nestedRuntime}/${platform}/${arch === 'arm64' ? 'x64' : 'arm64'}/onnxruntime_binding.node`));
+  }
+});
+
+test('the actual installed ONNX native slices match the platform filter for both pinned runtimes', () => {
+  for (const runtime of ['node_modules/onnxruntime-node', 'node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node']) {
+    const files = [];
+    const walk = relative => {
+      for (const entry of fs.readdirSync(path.join(repoRoot, relative), { withFileTypes: true })) {
+        const child = `${relative}/${entry.name}`;
+        if (entry.isDirectory()) walk(child);
+        else if (/\.(?:node|dll|dylib)$|\.so(?:\.\d+)*$/u.test(entry.name)) files.push(child);
+      }
+    };
+    walk(`${runtime}/bin`);
+    assert.ok(files.length > 5, `${runtime} exposes its actual native distribution`);
+    for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64'], ['darwin', 'arm64']]) {
+      const filter = nodeModuleFilter(platform, arch);
+      let bindings = 0;
+      for (const file of files) {
+        const slice = /\/bin\/napi-v\d+\/([^/]+)\/([^/]+)\//u.exec(file);
+        assert.ok(slice, `unrecognized native slice must be reviewed: ${file}`);
+        const expected = slice[1] === platform && slice[2] === arch;
+        assert.equal(filter(file), expected, `${platform}/${arch}: ${file}`);
+        if (expected && file.endsWith('/onnxruntime_binding.node')) bindings++;
+      }
+      // The pinned ONNX 1.30 npm artifact does not ship a macOS Intel binary.
+      // Keep this gap explicit rather than inventing a path in a matcher test.
+      const unavailableIntel = runtime.includes('@nodus/') && platform === 'darwin' && arch === 'x64';
+      assert.equal(bindings, unavailableIntel ? 0 : 1, `${runtime}: actual ${platform}/${arch} bindings (Intel Gemma remains unavailable)`);
+    }
+  }
 });
 
 test('local and release packaging both carry the pruning', () => {
@@ -323,4 +375,3 @@ test('the packed app carries the download manifest for its platform and none of 
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
-

@@ -1,0 +1,421 @@
+{
+  "name": "conversation-attachment-indexed",
+  "repetition": 0,
+  "question": "¿Cuántos minutos reserva Arco para la calibración ámbar? Cita esta fuente.",
+  "scope": "explicit-attachment",
+  "started": 1791325344544,
+  "finished": 1791325359447,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Cuántos minutos reserva Arco para la calibración ámbar? Cita esta fuente.",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "5589ae9d-5ddb-40a9-9021-8d306d74a317"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "023ee856-2036-472e-8fcf-2aec51a9c92c",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "Arco reserva exactamente **97 minutos** para la ventana de calibración ámbar ([conversation-only.txt](nodus://passage/documentary%3A6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6%3A07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef%3A0)).\n\n**Nota sobre el alcance de la evidencia:** esta cifra proviene únicamente de «conversation-only.txt», una fuente acotada a la conversación que, además, se declara ajena a Alba y sin autorización para otros documentos ([conversation-only.txt](nodus://passage/documentary%3A6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6%3A07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef%3A0)). No hay otros documentos en el contexto consultado que corroboren o maticen ese dato, por lo que la respuesta se limita a lo que esta fuente afirma literalmente.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 1,
+      "documents": 1,
+      "summaries": 0,
+      "passages": 1,
+      "contextChars": 4090,
+      "truncated": false,
+      "researchTraversal": {
+        "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+        "sourceCount": 1,
+        "rounds": 3,
+        "evidenceTokens": 173,
+        "decisionTokens": 4727,
+        "matchedDocumentIds": [
+          "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [],
+        "sourceCoverage": [
+          {
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+            "title": "conversation-only.txt",
+            "reasons": []
+          }
+        ],
+        "limitations": [],
+        "partial": false,
+        "queries": [
+          {
+            "query": "¿Cuántos minutos reserva Arco para la calibración ámbar?",
+            "sources": [
+              "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+            ],
+            "candidates": 1,
+            "partial": false
+          },
+          {
+            "query": "Arco calibración ámbar minutos",
+            "sources": [
+              "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+            ],
+            "candidates": 1,
+            "partial": false
+          },
+          {
+            "query": "calibración ámbar Arco tiempo reservado",
+            "sources": [
+              "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+            ],
+            "candidates": 1,
+            "partial": false
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+        "nodus_id": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+        "libraryItemId": null,
+        "attachmentId": "e2677130-0916-4986-92ba-bbb7d831bb84",
+        "conversationAttachment": {
+          "conversationId": "fd93e9c8-7c6f-4230-95ed-e6b807dc5dec",
+          "attachmentId": "e2677130-0916-4986-92ba-bbb7d831bb84"
+        },
+        "revision": "13ebc7c436ef03c50897e9c96fb13f44ca7160aa02ebcfb3c452d1ae18001683",
+        "historical": false,
+        "provenance": "source",
+        "text": "The Arco QA mission reserves its amber calibration window for exactly 97 minutes. This conversation-only memo is unrelated to Alba and does not authorize any other document.",
+        "page_label": null,
+        "source_ref": "conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:e2677130-0916-4986-92ba-bbb7d831bb84",
+        "page_number": null,
+        "chunk_index": 0,
+        "work": {
+          "title": "conversation-only.txt",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:22:26.985Z",
+      "type": "documentary-retrieval",
+      "query": "¿Cuántos minutos reserva Arco para la calibración ámbar?",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "vectorKeys": [
+        "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "selected": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+            "lexicalIds": [
+              "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+            ],
+            "semanticIds": [
+              "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:22:27.074Z",
+      "type": "research-evidence-selection",
+      "query": "¿Cuántos minutos reserva Arco para la calibración ámbar?",
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "sharedCandidates": [
+        {
+          "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+          "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [],
+      "selectedPassages": [
+        "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+      ],
+      "selectedIdeas": [],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:22:28.132Z",
+      "type": "documentary-retrieval",
+      "query": "Arco calibración ámbar minutos",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "vectorKeys": [
+        "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "selected": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+            "lexicalIds": [
+              "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+            ],
+            "semanticIds": [
+              "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:22:28.216Z",
+      "type": "research-evidence-selection",
+      "query": "Arco calibración ámbar minutos",
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "sharedCandidates": [
+        {
+          "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+          "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [],
+      "selectedPassages": [
+        "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+      ],
+      "selectedIdeas": [],
+      "limitations": [],
+      "partial": false
+    },
+    {
+      "at": "2026-10-06T22:22:29.581Z",
+      "type": "documentary-retrieval",
+      "query": "calibración ámbar Arco tiempo reservado",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "vectorKeys": [
+        "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84"
+          }
+        ],
+        "selected": [
+          {
+            "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+            "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+            "lexicalIds": [
+              "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+            ],
+            "semanticIds": [
+              "df5e92249081488346daf59121419bafb893f743cff1ec058fee4f3bb26fa3b5:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:22:29.664Z",
+      "type": "research-evidence-selection",
+      "query": "calibración ámbar Arco tiempo reservado",
+      "scopeId": "6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6",
+      "sharedCandidates": [
+        {
+          "id": "07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+          "documentId": "vault:b8668804-9b8f-4d40-b73b-a013e219d46d:conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:attachment:e2677130-0916-4986-92ba-bbb7d831bb84",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [],
+      "selectedPassages": [
+        "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0"
+      ],
+      "selectedIdeas": [],
+      "limitations": [],
+      "partial": false
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+      "title": "conversation-only.txt",
+      "locator": "conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:e2677130-0916-4986-92ba-bbb7d831bb84",
+      "content": "Pasaje de texto completo\nconversation-only.txt\nOBRA ENLAZADA\n1\nconversation-only.txt\nEVIDENCIA ANCLADA\n1\nThe Arco QA mission reserves its amber calibration window for exactly 97 minutes. This conversation-only memo is unrelated to Alba and does not authorize any other document."
+    },
+    {
+      "id": "documentary:6dd344f759f2e744139fa4bb475bb8862c5b6562de1f3026b12ae3b85e1953f6:07ca31ad594d4f6c78b091d196cab6d17829b5cab2d987b4319612e8396f63ef:0",
+      "title": "conversation-only.txt",
+      "locator": "conversation:fd93e9c8-7c6f-4230-95ed-e6b807dc5dec:e2677130-0916-4986-92ba-bbb7d831bb84",
+      "content": "Pasaje de texto completo\nconversation-only.txt\nOBRA ENLAZADA\n1\nconversation-only.txt\nEVIDENCIA ANCLADA\n1\nThe Arco QA mission reserves its amber calibration window for exactly 97 minutes. This conversation-only memo is unrelated to Alba and does not authorize any other document."
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-SG18aD/artifacts/chat-0-conversation-attachment-indexed.png"
+}

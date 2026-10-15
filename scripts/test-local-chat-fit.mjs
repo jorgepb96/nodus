@@ -26,7 +26,7 @@ try {
     platform: 'node',
     logLevel: 'silent',
   });
-  const { enforceContextBudget, humanizeCitationLabels, CONTEXT_DROP_ORDER } = await import(pathToFileURL(outfile).href);
+  const { enforceContextBudget, prioritizePassageQueryCoverage, humanizeCitationLabels, passagePageCitationLabel, CONTEXT_DROP_ORDER } = await import(pathToFileURL(outfile).href);
 
   // Build a realistic context: a big ideas array (most relevant), some contradictions and
   // gaps (less relevant), plus a panoramic authors object (least relevant, dropped first).
@@ -73,9 +73,90 @@ try {
     assert.ok(!small.contexto_recortado, 'no cut annotation when nothing dropped');
   }
 
+  // The optional receipt snapshots IDs/counts instead of retaining live array references,
+  // and reports measurements from the same callback that drives the fit.
+  {
+    const makeReceiptContext = () => ({
+      pasajes_relevantes: Array.from({ length: 8 }, (_, i) => ({ id: `passage-${i}`, nodus_id: 'same-parent-work', text: 'x'.repeat(700) })),
+    });
+    const traced = makeReceiptContext();
+    const untraced = makeReceiptContext();
+    const bound = value => Buffer.byteLength(JSON.stringify(value), 'utf8');
+    const budget = 3100;
+    const beforeBytes = bound(traced);
+    let sizeCalls = 0;
+    let receipt;
+    const size = () => { sizeCalls += 1; return bound(traced); };
+    const fitResult = enforceContextBudget(traced, budget, size, value => { receipt = value; });
+    const untracedResult = enforceContextBudget(untraced, budget, () => bound(untraced));
+    assert.ok(fitResult.truncated && untracedResult.truncated, 'same over-budget case is fitted');
+    assert.deepEqual(traced, untraced, 'tracing does not change fit output or item order');
+    assert.equal(receipt.measuredSizeBefore, beforeBytes, 'receipt captures actual initial size callback result');
+    assert.equal(receipt.measuredSizeAfter, bound(traced), 'receipt captures actual post-fit size callback result');
+    assert.ok(sizeCalls > 1, 'the supplied size callback drives the fit');
+    assert.deepEqual(receipt.passageIdsBefore, Array.from({ length: 8 }, (_, i) => `passage-${i}`));
+    assert.deepEqual(receipt.removedPassageIds, receipt.passageIdsBefore.filter(id => !receipt.passageIdsAfter.includes(id)));
+    assert.ok(receipt.removedPassageIds.length > 0, 'receipt identifies passages removed by fitting');
+    traced.pasajes_relevantes.length = 0;
+    assert.notEqual(receipt.passageIdsBefore.length, traced.pasajes_relevantes.length, 'receipt passage IDs do not alias context arrays');
+    assert.equal(receipt.sectionCountsBefore.pasajes_relevantes, 8, 'receipt section counts are snapshots');
+  }
+
   assert.ok(CONTEXT_DROP_ORDER[0] === 'grafo' && CONTEXT_DROP_ORDER.at(-1) === 'pasajes_relevantes', 'drop order least→most relevant');
 
+  // A final window used to keep only repeated records of the first comparator.
+  // The same byte bound must retain representatives of the planned searches.
+  for (const [first, second] of [['Cedar', 'Orion'], ['Álamo', 'Órbita']]) {
+    const makeComparison = () => ({ pasajes_relevantes: [
+      ...Array.from({ length: 6 }, (_, index) => ({ id: `policy-${index}`, summary: `${first} retains events for fourteen days. ${'x'.repeat(180)}` })),
+      ...Array.from({ length: 5 }, (_, index) => ({ id: `sensor-${index}`, summary: `${second} measures turbidity with green light. ${'x'.repeat(180)}` })),
+    ] });
+    const queries = [`${second} measurement exclusions`, `${first} restoration exclusions`, `${first} event retention`];
+    const original = makeComparison();
+    const bound = value => Buffer.byteLength(JSON.stringify(value), 'utf8') + 500;
+    const oldFit = structuredClone(original), newFit = structuredClone(original);
+    const budget = 1800;
+    enforceContextBudget(oldFit, budget, () => bound(oldFit));
+    let receipt;
+    enforceContextBudget(newFit, budget, () => bound(newFit), value => { receipt = value; }, { passageQueries: queries });
+    assert.ok(oldFit.pasajes_relevantes.every(row => row.id.startsWith('policy-')), 'baseline tail pruning loses the other comparator');
+    assert.ok(newFit.pasajes_relevantes.some(row => row.id === 'policy-0') && newFit.pasajes_relevantes.some(row => row.id === 'sensor-0'),
+      'same budget preserves a representative for each independently planned search');
+    assert.ok(bound(newFit) <= budget, 'query coverage never adds unbudgeted text');
+    assert.deepEqual(original, makeComparison(), 'the source snapshot is not mutated');
+    assert.equal(receipt.passageIdsBefore.length, 11);
+    assert.ok(receipt.passageIdsAfter.includes('sensor-0'), 'receipt identifies the retained comparator');
+    const under = makeComparison();
+    enforceContextBudget(under, 100000, () => bound(under), undefined, { passageQueries: queries });
+    assert.deepEqual(under, original, 'no reordering when the context already fits');
+    const droppedOtherSections = { obras: [{ summary: 'x'.repeat(10000) }], ...makeComparison() };
+    enforceContextBudget(droppedOtherSections, bound(original) + 500, () => bound(droppedOtherSections), undefined, { passageQueries: queries });
+    assert.deepEqual(droppedOtherSections.pasajes_relevantes, original.pasajes_relevantes,
+      'dropping other sections first avoids unnecessary passage reordering');
+    assert.deepEqual(prioritizePassageQueryCoverage(original.pasajes_relevantes, ['unmatched facet', 'no matching tokens']), original.pasajes_relevantes,
+      'unmatched facets do not fabricate coverage or perturb retrieval order');
+    const exactOrder = prioritizePassageQueryCoverage(original.pasajes_relevantes, queries);
+    assert.deepEqual(exactOrder.map(row => row.id), ['policy-0', 'sensor-0', ...original.pasajes_relevantes.map(row => row.id).filter(id => !['policy-0', 'sensor-0'].includes(id))],
+      'representatives and remaining evidence retain their relative ranking');
+  }
+  assert.deepEqual(prioritizePassageQueryCoverage([
+    { id: 'shared', summary: 'alpha' }, { id: 'first', summary: 'beta' }, { id: 'second', summary: 'gamma' },
+  ], ['alpha beta', 'alpha gamma']).map(row => row.id), ['first', 'second', 'shared'],
+  'shared query vocabulary is discounted so it cannot crowd out the distinct facet terms on a tie');
+
   // ── humanizeCitationLabels: repair both weak-model shapes ───────────────────
+  assert.equal(passagePageCitationLabel('fixture 25', 'p. 1'), 'fixture 25, p. 1');
+  assert.equal(passagePageCitationLabel('fixture 25', 'pp. 1–2'), 'fixture 25, pp. 1–2');
+  assert.equal(passagePageCitationLabel('fixture 25', 'page 1'), 'fixture 25, page 1');
+  assert.equal(passagePageCitationLabel('fixture 25', 'pages 1–2'), 'fixture 25, pages 1–2');
+  assert.equal(passagePageCitationLabel('fixture 25', ' p.   1 '), 'fixture 25, p.   1');
+  assert.equal(passagePageCitationLabel('fixture 25', '1'), 'fixture 25, p. 1');
+  assert.equal(passagePageCitationLabel('fixture 25', 'iv'), 'fixture 25, p. iv');
+  assert.equal(passagePageCitationLabel('fixture 25', 'Sec. 2'), 'fixture 25, Sec. 2');
+  assert.equal(passagePageCitationLabel('fixture 25', 'Table 3'), 'fixture 25, Table 3');
+  assert.equal(passagePageCitationLabel('fixture 25', 'paragraph 4'), 'fixture 25, paragraph 4');
+  assert.equal(passagePageCitationLabel('fixture 25', null), 'fixture 25');
+
   // Fake corpus lookup: g-0001 → "Toro Tamayo, 2019"; w-1 → "Kossoy, 2014"; others null.
   const WORK_UUID = '2aea3baa-5f5f-4822-a9f4-1ef6ac6127ef';
   const lookup = (kind, id) => {

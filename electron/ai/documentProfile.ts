@@ -1540,6 +1540,7 @@ export async function runDocumentProfileScan(work: Work, options: RunDocumentPro
   ].filter((source) => source.text.trim());
   const vectorEmbeddingConfig = currentEmbeddingConfig();
   const embeddings = await embedMany(vectorSources.map((source) => source.text), options.signal, {
+    role: 'document', title: work.title,
     perf: options.perf,
     jobId: `${options.jobId}:profile-embeddings`,
   });

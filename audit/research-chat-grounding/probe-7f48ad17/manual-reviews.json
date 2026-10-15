@@ -1,0 +1,74 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "c01e10dc7efce8e87eb8bf8603d2cac9bca27582ad154e9217d82224a563e659",
+    "sourcesSha256": "1e5c02d93c3056552c7df267c7d67028218fba2fddb02b64a8b6593e401f9603",
+    "evidenceSha256": "8e1aed5a7ad30224e1d2ce7c73977a49629ad0f09b36f26aa7f2b07504eedae3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Bruma passages support median 18/mean 24 and explicit non-equivalence. The answer preserves the requested values and states a precise inability to establish distribution shape rather than inferring skewness."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/0",
+    "answerSha256": "3b0d0f1abe19ef8baccd37652856e1d9767170bf82f002a6870bd0ea302110a3",
+    "sourcesSha256": "2973cd0d53bf640082ca230a9f4c1bd2dda2d43de387d0e0b7f00d10f8b731f4",
+    "evidenceSha256": "baae4cc8216103a55321fa528f5df6a7a93d10328c31bcf27aae9425aaee21a9",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The retained NF4, quantile, DQ constants/~0.37bits/~3GB, paged checkpointing-OOM and NF4-storage/BF16-compute statements match the actual QLoRA excerpts. The previous false future-work assertion is absent. Additional critical GPU sizes and >780-to-<48GB attributed values are explicitly present in the excerpts and original article."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/0",
+    "answerSha256": "3d5f0461da9ccb6f1fcfced82c294ae1aaa5a70ab356306d66c114e857d8f608",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "No fabricated price or currency. The absence clause is restricted to the authorized excerpt, which contains only Alba turbidity/oxygen/calibration facts; it does not claim absence from the complete corpus."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/0",
+    "answerSha256": "1b1499f4c906139630a295a5a6ce3cb89ac4d5c1977a710f9a662241e81d2dcf",
+    "sourcesSha256": "44053475fb5915da2513f40efcf98b6dcd2453a3e7594c6357f3a2ab9c5ed20d",
+    "evidenceSha256": "fd92ec9e2e3bf1d79f29634c16012ada60bc6093c51aee5e3cc0c722f11c3ea3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "The answer limits its inability and absence clause to authorized excerpts, which supply aggregates rather than individual values. The extra 240/six villages/95 confidence/18median/24mean/non-equivalence facts match the cited Bruma passage."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: no answer is published. The exact QA application log records schema_mismatch in the coverage proof, after repair had preserved the actual 18/24 values and a scoped distribution limit. Does not count as factual adequacy or correct refusal."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/0",
+    "answerSha256": "6de34eb9f6c93e68cebbc6f657f87504651ac41a00b0474315e28d760a75e882",
+    "sourcesSha256": "b73efec1ac8032d7479521e34d4652b448d4cc8b20e6a6dada66f0b7d5574bcb",
+    "evidenceSha256": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+    "faithful": true,
+    "adequate": true,
+    "notes": "All three requested mechanisms and storage/compute are explicitly present in the literal QLoRA excerpts. It accurately scopes inability to reconstruct the detailed paging mechanism from the cut excerpt, without inventing the earlier future-work claim."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/0",
+    "answerSha256": "93e1241b6bb2ea009754966d156bc5c79e1b4850fb6c04ef54d1af3cbbf55b82",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Exact scoped inability to establish the purchase price; no invented amount or whole-corpus absence assertion."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/0",
+    "answerSha256": "52ce8514c2a5e813be800694d25fe615dc08562fbe85d549ae96f566faf45faf",
+    "sourcesSha256": "44f59eb0c5c7508e6fe4fcd97dbdf8b1b46d3f39f567144b9e9ad78abe960662",
+    "evidenceSha256": "d020c737a2e62e33d4b831f73da63b8b5020b990fd9854d6473e05798cb480ae",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Exact inability to identify individual respondent values. The additionally labelled arithmetic inference 24×240=5760 is correct from the actual mean/sample source and is explicitly distinguished from source data; it does not pretend to reconstruct individual values."
+  }
+]

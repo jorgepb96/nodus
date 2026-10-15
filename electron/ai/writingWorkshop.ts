@@ -23,7 +23,7 @@ import { activeManualIdeaIds } from '../db/manualIdeaVisibility';
 import { getContradictions } from '../graph/graphService';
 import { listTutorRoutes } from '../db/tutorRepo';
 import { completeJson } from './aiClient';
-import { embed, embedMany } from './aiClient';
+import { embedQuery, embedMany } from './aiClient';
 import { findSimilarIdeasPaged } from '../db/ideasRepo';
 import { findSimilarWorksPaged } from '../db/workSummariesRepo';
 import { findSimilarPassagesPaged, type SimilarPassage } from '../db/passagesRepo';
@@ -297,7 +297,7 @@ async function buildSemanticRanking(
   const probes = [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, MAX_PROBES);
   if (probes.length === 0) return empty;
   try {
-    const vectors = (await embedMany(probes)).filter((v): v is number[] => Array.isArray(v) && v.length > 0);
+    const vectors = (await embedMany(probes, undefined, { role: 'query' })).filter((v): v is number[] => Array.isArray(v) && v.length > 0);
     if (vectors.length === 0) return empty;
 
     // Merging by score and then trimming to the cap is NOT enough: the objective's
@@ -545,7 +545,7 @@ export async function retrieveSectionMaterial(input: {
   // after each question has received its first evidence slot.
   const retrieveProbe = async (probe: string, literalQueries: string[]) => {
     let vector: number[] | null = null;
-    try { vector = await embed(`${input.sectionTitle}\n${probe}`); } catch { /* FTS remains available */ }
+    try { vector = await embedQuery(`${input.sectionTitle}\n${probe}`); } catch { /* FTS remains available */ }
     return retrieveHierarchical(`${probe}\n${input.sectionTitle}`, {
       embedding: vector,
       documentLimit: 20,
@@ -661,7 +661,7 @@ export async function retrieveSectionMaterialLegacy(input: {
 }> {
   const query = [input.sectionTitle, input.purpose, ...input.keyClaims].filter(Boolean).join('. ').trim();
   if (!query) return { ideas: [], passages: [] };
-  const vector = await embed(`${input.objective}\n${query}`);
+  const vector = await embedQuery(`${input.objective}\n${query}`);
   if (!vector) return { ideas: [], passages: [] };
 
   const skipIdeas = new Set(input.excludeIdeaIds);
@@ -1368,7 +1368,7 @@ async function selectedPassagesForDraft(
   if (!objective.trim()) return capPassageContext([...byId.values()]);
 
   try {
-    const query = await embed(objective.trim());
+    const query = await embedQuery(objective.trim());
     if (!query) return capPassageContext([...byId.values()]);
     const scope = selectedWorkScope(selection);
     for (const passage of selected) {

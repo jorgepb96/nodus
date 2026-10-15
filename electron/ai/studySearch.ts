@@ -17,7 +17,7 @@ import { parseStudyMaterialMarkers } from '@shared/studyMaterials';
 import { getDb } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
 import { activeVaultDir } from '../vaults/vaultRegistry';
-import { embed, embedMany } from './aiClient';
+import { embedQuery, embedMany } from './aiClient';
 
 type Row = Record<string, unknown>;
 type ProgressListener = (progress: StudySearchProgress) => void;
@@ -357,7 +357,7 @@ export async function retrieveStudyAssistantEntries(
       seenFragments.add(key); return true;
     });
   const hasVectors = candidates.some((entry) => entry.embedding?.length);
-  const queryVector = hasVectors ? await embed(query).catch(() => null) : null;
+  const queryVector = hasVectors ? await embedQuery(query).catch(() => null) : null;
   const ranked = rankStudySearchEntries(query, candidates, { ...options, limit: Math.max(limit * 3, 60) }, queryVector);
   const byId = new Map(candidates.map((entry) => [entry.indexId, entry]));
   const ordered = ranked.map((result) => byId.get(result.indexId)).filter((entry): entry is StudySearchIndexEntry => Boolean(entry));
@@ -459,7 +459,7 @@ export async function searchStudyCorpus(query: string, options: StudySearchOptio
   if (clean.length < 2) return { results: [], semanticAvailable: false, correctedQuery: null, suggestions: [], elapsedMs: 0 };
   const store = ensureLexicalIndex();
   const hasVectors = store.entries.some((entry) => entry.embedding?.length);
-  const queryVector = hasVectors ? await embed(clean).catch(() => null) : null;
+  const queryVector = hasVectors ? await embedQuery(clean).catch(() => null) : null;
   const results = rankStudySearchEntries(clean, store.entries, options, queryVector);
   const suggestions = results.length < 5 ? suggestStudySearchCorrections(clean, store.entries) : [];
   const correctedQuery = suggestions.length && clean.split(/\s+/).length === 1 ? suggestions[0] : null;

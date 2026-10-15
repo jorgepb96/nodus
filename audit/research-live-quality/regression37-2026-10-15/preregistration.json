@@ -1,0 +1,15 @@
+{
+  "format": "nodus.regression37-preregistration/1",
+  "selectionSha256": "7fe041d2ab5376d6b250526825282fccc1be9b780b4c07db8417ed3ff786f2ec",
+  "executionRegistrationSha256": "f0a6a1d1b227b5031527e2df431853b566e1b8aa1922b49e20d051033cc8290f",
+  "sourceCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "stage": "running",
+  "expectedSelected": 37,
+  "expectedPreviousFailures": 32,
+  "expectedControls": 5,
+  "fullBaselineUnchanged": true,
+  "qualityAcceptanceEligible": false,
+  "qualityCriteria": "Resolved failure or retained normal control requires execution-qualified published answer, independent source review, no material unsupported assertions, and complete/correct answer for positives or explicit correct insufficient-evidence handling for absence questions. Protocol/withheld/missing read-binding outcomes receive no credit.",
+  "reviewPolicy": "Model-assisted source-based review, blinded to case ID and baseline/failure/control status; no gold or expected answers in generation or reviewer packets. Preserve answer/source/request hashes and every outcome.",
+  "limits": "No population/general improvement rate inferred from a selected-failure cohort plus five controls. No default/model/vector changes. No paid provider calls or real profile access."
+}

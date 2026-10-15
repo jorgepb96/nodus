@@ -184,7 +184,7 @@ import { isStudentFilled } from '@shared/teachingGroups';
 import { normalizeVaultType, type VaultType } from '@shared/vaultTypes';
 import { searchStudyCorpus } from '../ai/studySearch';
 import { buildAuthorGraph, getDebate, getDebates } from '../graph/graphService';
-import { embed, AiError } from '../ai/aiClient';
+import { embedQuery, AiError } from '../ai/aiClient';
 import { decomposeQuestion, mapCoverage } from '../ai/researchMap';
 import { buildWritingWorkshopSnapshot, generateWritingWorkshopDraft } from '../ai/writingWorkshop';
 import { buildDeepResearchBrief, assembleClientDeepResearchReport } from '../ai/deepResearchClient';
@@ -1419,7 +1419,7 @@ export function registerTools(server: McpServer): void {
     },
     ({ query, limit }) =>
       tool(async () => {
-        const vector = await embed(query);
+        const vector = await embedQuery(query);
         if (!vector) {
           throw new McpToolError(
             'ai_unconfigured',
@@ -1966,7 +1966,7 @@ export function registerTools(server: McpServer): void {
       tool(async () => {
         const nodusId = workId ? resolveWorkNodusId(workId) : null;
         if (workId && !nodusId) throw notFound('work', workId);
-        const vector = await embed(query);
+        const vector = await embedQuery(query);
         if (!vector) {
           throw new McpToolError(
             'ai_unconfigured',
@@ -2949,7 +2949,7 @@ export function registerTools(server: McpServer): void {
     },
     ({ query, limit, minSimilarity }) =>
       tool(async () => {
-        const vector = await embed(query);
+        const vector = await embedQuery(query);
         if (!vector) {
           throw new McpToolError(
             'ai_unconfigured',

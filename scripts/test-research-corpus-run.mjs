@@ -43,7 +43,7 @@ try {
   const scope = notebookService.resolveResearchNotebook(notebook.id);
   const ai = load('electron/ai/aiClient.ts');
   let embeddingCalls = 0;
-  ai.embed = async () => { embeddingCalls++; return null; };
+  ai.embedQuery = async () => { embeddingCalls++; return null; };
   // This unit fixture exercises actual scope/SQL/ranking/budget and dependency
   // binding. Worker-backed shared retrieval is covered in the Electron E2E.
   const preparation = load('electron/ai/documentaryPreparation.ts');

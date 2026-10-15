@@ -111,12 +111,13 @@ await chmod(executable, 0o755);
 
 let manager;
 try {
-  // ── Bundle the real manager, stubbing only Electron's app ──────────────────
+  // Bundle the real manager. The unused Gemma utility path must fail if invoked;
+  // this regression still exercises the real llama.cpp child and HTTP transport.
   const electronStub = path.join(tmp, 'electron-stub.mjs');
   const catalogueStub = path.join(tmp, 'local-models-stub.mjs');
   await writeFile(
     electronStub,
-    `export const app = { getPath: () => ${JSON.stringify(tmp)}, once: () => {} };\nexport default { app };\n`
+    `export const app = { getPath: () => ${JSON.stringify(tmp)}, once: () => {} };\nexport const utilityProcess = { fork: () => { throw new Error('Unexpected Gemma utility process in llama.cpp URL regression'); } };\nexport default { app, utilityProcess };\n`
   );
   await writeFile(catalogueStub, `
     const model = ${JSON.stringify(verifiedModel)};

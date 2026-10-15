@@ -1,0 +1,58 @@
+{
+  "format": "research-openrouter-authorization/1",
+  "limitUsd": 0.5,
+  "authorizedAt": "2026-10-12",
+  "oldDeepSeekCampaignReopened": false,
+  "credentialAccessStoppedByUser": true,
+  "priorAttempts": [
+    {
+      "report": "audit/research-openrouter-runtime-startup/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-runtime-database-audit/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-runtime-evaluate-loader/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-qwen-zdr-preflight/campaign.json",
+      "committedUsd": 0.00211523
+    },
+    {
+      "report": "audit/research-openrouter-metadata-preflight/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-availability-attempt/campaign.json",
+      "committedUsd": 0.09076114
+    },
+    {
+      "report": "audit/research-openrouter-keychain-startup/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-credential-unavailable/campaign.json",
+      "committedUsd": 0
+    },
+    {
+      "report": "audit/research-openrouter-deferred-credential-timeout/campaign.json",
+      "committedUsd": 0
+    }
+  ],
+  "remainingUsd": 0.40712363,
+  "state": "closed",
+  "conditionalReserve": {
+    "authorizedAt": "2026-10-13",
+    "currency": "EUR",
+    "limit": 0.5,
+    "condition": "Only if necessary for the current quality improvement work",
+    "activated": false,
+    "committed": 0,
+    "usdConversion": null,
+    "doesNotReopenDeepSeek": true,
+    "doesNotAuthorizeAdditionalCredentialAccess": true
+  }
+}

@@ -32,6 +32,17 @@ test('without an embedding model, searchable text is enough', () => {
   assert.deepEqual({ ready: status.ready, pending: status.pending, unprepared: status.unprepared }, { ready: 1, pending: 0, unprepared: [] });
 });
 
+test('lexically ready documents with partial or incompatible vectors stay pending', () => {
+  const status = notebookPreparationStatus(['partial', 'stale', 'complete'], [
+    doc('partial', 'ready', 'partial', { passages: 3, embedded: 1 }),
+    doc('stale', 'ready', 'stale', { passages: 3, embedded: 0 }),
+    doc('complete', 'ready', 'ready', { passages: 3, embedded: 3 }),
+  ], true);
+  assert.equal(status.ready, 1);
+  assert.equal(status.pending, 2);
+  assert.deepEqual(status.unprepared, ['partial', 'stale']);
+});
+
 test('failed and blocked documents are reported and do not hold the notebook back', () => {
   const status = notebookPreparationStatus(['a', 'b', 'c'], [doc('a', 'failed', 'missing', { reason: 'extraction_failed' }), doc('b', 'blocked', 'missing', { reason: 'ocr_required' }), doc('c', 'ready', 'failed', { reason: 'provider_failed' })], true);
   assert.equal(status.pending, 0);

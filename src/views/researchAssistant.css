@@ -376,7 +376,10 @@
   box-shadow: 0 3px 20px #00000018;
 }
 .research-composer-shell:focus-within { border-color: color-mix(in srgb, var(--vault-accent) 55%, transparent); }
-.research-composer-shell .research-composer { border: 0; box-shadow: none; background: transparent; padding-left: 10px; }
+.research-composer-shell .research-composer { border: 0; box-shadow: none; background: transparent; padding-left: 10px; flex-wrap: wrap; }
+/* The history sidebar can leave a narrow composer even in a wide window. Keep
+   an editable field and wrap the controls instead of shrinking it to zero. */
+.research-composer-shell .research-composer-input { flex-basis: 180px; }
 .research-composer-attach { flex: 0 0 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #a1a1aa; background: transparent; }
 .research-composer-attach:hover:not(:disabled) { background: #8882; color: var(--vault-accent); }
 .research-composer-attach:disabled { opacity: .4; cursor: wait; }

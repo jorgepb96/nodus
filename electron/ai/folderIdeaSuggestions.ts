@@ -1,7 +1,7 @@
 // Suggest ideas to integrate into a notes folder. Given the folder's summary
 // (a free-text brief of what the folder is meant to hold), match it against the
 // whole idea base in three staged passes:
-//   1. semantic — embed the summary and pull the most similar ideas (excluding
+//   1. semantic — embedQuery the summary and pull the most similar ideas (excluding
 //      ones already filed in the folder subtree);
 //   2. connections — expand one hop through the graph edges of those seeds so
 //      conceptually linked ideas surface even when their wording differs;
@@ -11,7 +11,7 @@ import type { FolderIdeaSuggestion, FolderIdeaSuggestionsResult, IdeaType, Promp
 import { getDb } from '../db/database';
 import { getNoteFolder } from '../db/notesRepo';
 import * as ideas from '../db/ideasRepo';
-import { embed, completeJson } from './aiClient';
+import { embedQuery, completeJson } from './aiClient';
 import { getSettings } from '../db/settingsRepo';
 import { folderPromptPack } from '@shared/academicPromptPacks';
 
@@ -129,7 +129,7 @@ export async function suggestFolderIdeas(folderId: string, requestedLanguage?: P
 
   let vector: number[] | null;
   try {
-    vector = await embed(summary);
+    vector = await embedQuery(summary);
   } catch (e) {
     return { ...empty(e instanceof Error ? e.message : String(e)), excludedCount };
   }

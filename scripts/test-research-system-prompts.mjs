@@ -41,7 +41,7 @@ try {
   skills.saveChatSkill({ ...svgSkill, enabled: { assistant: true, nodi: false } });
   const ai = load('electron/ai/aiClient.ts');
   const captured = [];
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.completeTextStream = async (options, onDelta) => { captured.push(options); onDelta('Respuesta de prueba.'); return 'Respuesta de prueba.'; };
   const db = load('electron/db/databasesRepo.ts').createDatabase('Datos');
   const article = load('electron/db/worldEncyclopediaRepo.ts').createWorldArticle({ title: 'Observatorio', body: 'Tiene tres cúpulas.' });

@@ -41,6 +41,9 @@ const DEFAULT_LOCAL_PROVIDERS: AppSettings['localProviders'] = {
   lmstudio: { baseUrl: DEFAULT_LOCAL_BASE_URLS.lmstudio, contextMode: 'auto' },
 };
 
+const embeddingRevisions = new Map<string, number>();
+export function embeddingSettingsRevision(): number { return embeddingRevisions.get(getDb().name) ?? 0; }
+
 /** No default endpoint exists for someone else's gateway: unconfigured means off. */
 const DEFAULT_CUSTOM_PROVIDER: AppSettings['customProvider'] = { baseUrl: '', models: [] };
 
@@ -208,6 +211,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   codexReasoningEfforts: {},
   researchEffortByModel: {},
   researchWebSearch: 'auto',
+  researchAnswerVerification: 'off',
   openRouterThroughput: true,
   providerFreeTier: {},
   unpaywallEmail: '',
@@ -408,6 +412,7 @@ export function getSettings(): AppSettings {
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(parsed.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(parsed.researchEffortByModel);
   merged.researchWebSearch = parsed.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchAnswerVerification = ['legacy', 'structured'].includes(parsed.researchAnswerVerification ?? '') ? parsed.researchAnswerVerification : 'off';
   merged.mascotScale = normalizeNodiScale(parsed.mascotScale);
   merged.studyImproveToolbarStyleIds = [...new Set((Array.isArray(merged.studyImproveToolbarStyleIds) ? merged.studyImproveToolbarStyleIds : [])
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0))].slice(0, 4);
@@ -572,6 +577,7 @@ export function getSettings(): AppSettings {
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(merged.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(merged.researchEffortByModel);
   merged.researchWebSearch = merged.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchAnswerVerification = ['legacy', 'structured'].includes(merged.researchAnswerVerification ?? '') ? merged.researchAnswerVerification : 'off';
   if ((merged.sttProvider as string) === 'local') {
     merged.sttProvider = 'transformers';
     seed.sttProvider = 'transformers';
@@ -733,5 +739,12 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
     }
   }
   writeRaw('app', JSON.stringify(rest));
-  return getSettings();
+  const updated = getSettings();
+  if (updated.embeddingProvider !== previous.embeddingProvider || updated.embeddingModel !== previous.embeddingModel
+    || JSON.stringify(updated.localProviders) !== JSON.stringify(previous.localProviders)
+    || JSON.stringify(updated.customProvider) !== JSON.stringify(previous.customProvider)) {
+    const name = getDb().name;
+    embeddingRevisions.set(name, (embeddingRevisions.get(name) ?? 0) + 1);
+  }
+  return updated;
 }

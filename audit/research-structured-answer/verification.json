@@ -1,0 +1,105 @@
+{
+  "format": "nodus.research-correction-verification/1",
+  "recordedAt": "2026-10-12T15:39:22.600Z",
+  "sourceVersion": {
+    "commit": "91945f4c294bcbed9ecdbafb322c3cbceeab4882",
+    "workingTreeDirty": true,
+    "files": {
+      "electron/ai/aiClient.ts": "5fb9dceeeed87fe21e66c96777dd3d10c187191fc70453a0bae26b007015280b",
+      "electron/ai/researchChatGrounding.ts": "89929cd78b03772ed03dec2c9529e00ff58459063e031bea2729f2ac0e6483d3",
+      "electron/ai/researchStructuredAnswer.ts": "b879a73fa6e16a1fa76524e035bc6539ece5215837f7001263928b71f7f7894f",
+      "electron/ai/researchAssistant.ts": "9d31752338c9be11f8882a99e87792605a815f710614c72015e4b21a5b103462",
+      "shared/researchAnswerPlan.ts": "822dc880fc5e3d3dc3beb76f519a8c8e7a598414045f3836638048708a67a6e2",
+      "shared/researchAnswerSchema.ts": "757017fb4b5c7ba519ded00b8056f061df1dd305f313063247981fb6a33ce35c",
+      "scripts/research-openrouter-proxy.mjs": "4a50e043bbc6bd38844133da4eba27fb34da99b09ebade6694ebf9496c3127c1",
+      "scripts/e2e-research-isolated.mjs": "b1371361680ca4021447094b49e6e6c11368f50fd18eadd9ddb127e274506c6a",
+      "scripts/test-chat-abort-partial.mjs": "1484e667a8fa27bc972bd538783f8e38fadb6740fb6ae35cc882fd6f230142df",
+      "scripts/test-research-concilium.mjs": "958778559212132e664703299d918c3b22657fe2c38d64d1d36edf46a22eb4ac",
+      "scripts/test-research-synthesis-context.mjs": "9ca0daeebda791a579219cab7bf012a58ab89c358836265c60fa80bb11332c94",
+      "scripts/test-synthesis-evidence-passages.mjs": "fae1c09b8ebc7a91c226d0e11a47ed005ab92c9cc296b83e0cda8cfa18f05e51"
+    }
+  },
+  "hardware": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M2",
+    "totalMemoryBytes": 17179869184
+  },
+  "checks": [
+    {
+      "command": "npm run test:research:grounding",
+      "status": "passed",
+      "entries": 25,
+      "existingInnerGroundingCases": 38
+    },
+    {
+      "command": "npm run test:research:retrieval",
+      "status": "passed",
+      "files": 5,
+      "innerSynthesisContextCases": 18
+    },
+    {
+      "command": "npm run test:research:openrouter",
+      "status": "passed",
+      "entries": 15
+    },
+    {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "command": "node scripts/e2e-research-isolated.mjs --notebooks --verification --pdf --activity",
+      "status": "passed",
+      "modelCalls": 0,
+      "databaseOpens": 15,
+      "buildUnchanged": true
+    }
+  ],
+  "priorCi": {
+    "commit": "91945f4c294bcbed9ecdbafb322c3cbceeab4882",
+    "url": "https://github.com/jorgepb96/nodus/actions/runs/38261660813",
+    "status": "failed",
+    "testContractFailures": [
+      "scripts/test-chat-abort-partial.mjs",
+      "scripts/test-research-concilium.mjs",
+      "scripts/test-research-synthesis-context.mjs",
+      "scripts/test-synthesis-evidence-passages.mjs"
+    ],
+    "localRecheck": "all four passed; included in focused suites",
+    "newHeadStatus": "pending separate CI execution"
+  },
+  "budget": {
+    "additionalCeilingUsd": 0.5,
+    "additionalCommittedUsd": 0.09287637,
+    "additionalRemainingUsd": 0.40712363,
+    "oldDeepSeekCampaignReopened": false
+  },
+  "quality": {
+    "newCampaignCompleted": false,
+    "newAcceptance": null,
+    "blocker": "Encrypted QA credential read blocked in macOS Keychain before any model request.",
+    "limits": [
+      "Local regressions and the zero-call UI smoke do not measure generated-answer accuracy.",
+      "No new independently source-reviewed published answers; the 95% quality acceptance remains unmet.",
+      "Embedding profiles remain experimental."
+    ]
+  },
+  "artifacts": {
+    "grounding.log": "babefb2b1ffc9579b61d25acf01f1ef4326adeb51631cbc8b62d28086d6fe40e",
+    "retrieval.log": "ab6abde314f098f005ff2f52449e41f25d3f4fb8eb7cefa8e6032d6d8dc2e7ee",
+    "openrouter.log": "004c3af01c3158cda9706ac7006a5b5379943fdf08b0587419ffb39121a93566",
+    "typecheck.log": "c515be91a307e0081b3136d1f84363559096aa84d1a6f854d4eb846c594a98f6",
+    "lint.log": "70eb84ddba0e0b5b2b47f0d73373e0aaa58706ff7d280a2e17754fd749b80a30",
+    "build.log": "441bde54e421c715b5b632bf242a4157dcfc42b84e3602a3f6a2217b7c8ebeeb",
+    "ui-smoke.json": "c37eee61788c89618d7fb6b8e256b275e84b2724af898c0583ae6bc70b7e905a",
+    "verification-enabled.png": "0433cf5d33da70eb627dccd975415aa06c3920f63fc0cbf28c83d84fff7382a8"
+  }
+}

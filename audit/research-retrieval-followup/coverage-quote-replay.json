@@ -1,0 +1,112 @@
+{
+  "format": "research-coverage-quotes-regression-v1",
+  "measuredAt": "2026-10-09T18:10:49.565Z",
+  "scope": "Representation-only helper regressions; archived synthetic traces and local inputs, no providers or quality-rate claims.",
+  "currentSources": {
+    "shared/researchChatGrounding.ts": "19c49739b940f52549db4b039e6377c6a8938adf3245b1a7343ca4f38ea2ce3d",
+    "electron/ai/researchChatGrounding.ts": "766b8e05ad99dc03b997e032f47345df3c45115fe88686a5ea0a3818ccc304be"
+  },
+  "artifacts": {
+    "multilingual-e5-small-int8.json": {
+      "path": "audit/research-chat-grounding/final-82dac50f/multilingual-e5-small-int8.json",
+      "sha256": "879c38640f73f2b5632895b2c8bf6b7353e644d84d5268fb22f0da492517d98c"
+    },
+    "gte-multilingual-base-int8.json": {
+      "path": "audit/research-chat-grounding/final-82dac50f/gte-multilingual-base-int8.json",
+      "sha256": "8f537d576a7abf87c5165710bb08256322c598d8f3e6bdefc44ebb0370e8623e"
+    },
+    "embeddinggemma-2-text-q8-256-v1.json": {
+      "path": "audit/research-chat-grounding/final-82dac50f/embeddinggemma-2-text-q8-256-v1.json",
+      "sha256": "f81e6635d92a81461c1bf36433c94a1ffa07f3c9418a90b9e3fb7bafd0073f76"
+    }
+  },
+  "results": [
+    {
+      "name": "shared-guard-export",
+      "passed": true
+    },
+    {
+      "name": "synthetic-legacy-single-span",
+      "passed": true
+    },
+    {
+      "name": "synthetic-structured-single-span",
+      "passed": true
+    },
+    {
+      "name": "synthetic-structured-multiple-spans",
+      "passed": true
+    },
+    {
+      "name": "synthetic-zero-spans",
+      "passed": true
+    },
+    {
+      "name": "synthetic-more-than-six-spans",
+      "passed": true
+    },
+    {
+      "name": "synthetic-over-aggregate-character-limit",
+      "passed": true
+    },
+    {
+      "name": "synthetic-duplicate-spans",
+      "passed": true
+    },
+    {
+      "name": "synthetic-mixed-legacy-and-array-formats",
+      "passed": true
+    },
+    {
+      "name": "synthetic-fabricated-span",
+      "passed": true
+    },
+    {
+      "name": "synthetic-ellipsis-joined-spans",
+      "passed": true
+    },
+    {
+      "name": "synthetic-meaningless-short-span",
+      "passed": true
+    },
+    {
+      "name": "synthetic-non-string-span",
+      "passed": true
+    },
+    {
+      "name": "archived-multilingual-e5-small-int8/heldout-paper/0",
+      "passed": true
+    },
+    {
+      "name": "archived-gte-multilingual-base-int8/heldout-negation/1",
+      "passed": true
+    },
+    {
+      "name": "archived-embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+      "passed": true
+    }
+  ],
+  "archivedResults": [
+    {
+      "id": "multilingual-e5-small-int8/heldout-paper/0",
+      "focusedDraftSha256": "abbadc094686339a3cb0845df6c0fc5c31e2ba9b2063dad17b490e751f3b884e",
+      "invalidJoinedQuoteRejected": true,
+      "copiedStructuredSpansAccepted": true,
+      "inventedFragmentRejected": true
+    },
+    {
+      "id": "gte-multilingual-base-int8/heldout-negation/1",
+      "focusedDraftSha256": "671ec7b70939b4bd515ed68504733c9b2cd466847bc53c892cf998eb8707dbdf",
+      "invalidJoinedQuoteRejected": true,
+      "copiedStructuredSpansAccepted": true,
+      "inventedFragmentRejected": true
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-256-v1/heldout-negation/0",
+      "focusedDraftSha256": "8b4c5900da693760321691adc0035be39c28f5a626e8459c4b6df9e21469a17b",
+      "invalidJoinedQuoteRejected": true,
+      "copiedStructuredSpansAccepted": true,
+      "inventedFragmentRejected": true
+    }
+  ]
+}

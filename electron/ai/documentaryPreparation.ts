@@ -1,4 +1,7 @@
+import { isEmbeddingGemma2, embeddingGemma2Contract } from '@shared/embeddingGemma2';
+import { canonicalizeEmbeddingContract } from '@shared/embeddingContract';
 import { listResearchNotebooks } from '../db/researchNotebooksRepo';
+import { recordEmbeddingTrace } from '../qa/embeddingTrace';
 import { selectResearchDocuments } from './researchCorpusScope';
 import { researchActivityEnabled, startResearchActivity } from './researchActivity';
 import { app } from 'electron';
@@ -202,7 +205,11 @@ function cleanedChunks(chunks: DocumentaryChunk[], cleaning: SchemeCleaning | nu
 /** Upper bound per document; the provider gate (automatic 2→4, halved on a 429) is the real limit. */
 const DOCUMENTARY_EMBEDDING_BATCHES_IN_FLIGHT = 4;
 
-function embeddingIdentityParameters(config: EmbeddingExecutionConfig) {
+function embeddingIdentityParameters(config: EmbeddingExecutionConfig): Record<string, string | number | boolean> {
+  if (config.provider === 'nodus' && isEmbeddingGemma2(config.modelId)) return {
+    endpoint: createHash('sha256').update(config.endpoint).digest('hex'),
+    inputPolicy: 'utf8-4096/2', contract: canonicalizeEmbeddingContract(embeddingGemma2Contract(config.modelId)),
+  };
   return { endpoint: createHash('sha256').update(config.endpoint).digest('hex'), inputPolicy: 'utf8-4096/2' };
 }
 
@@ -278,7 +285,9 @@ async function prepareDocumentaryEmbeddingsNow(indexKey: string, chunks: Documen
       const batch = texts.slice(start, end);
       const attempt = checkpoints.begin(operation, start, batch.length);
       try {
-        const received = await embedMany(batch, batchSignal, { config: execution, jobId: `${operation}:${start}` });
+        const received = await embedMany(batch, batchSignal, { config: execution, role: 'document',
+          title: researchCorpusInventory().documents.find(document => document.id === base.documentId)?.title,
+          jobId: `${operation}:${start}` });
         // A sibling's failure cancels what is still in flight, but a response that has
         // already arrived was paid for and is kept; only a pause or a lost lease drops it.
         controller.signal.throwIfAborted();
@@ -402,7 +411,9 @@ export function getResearchPreparationInventory(): ResearchPreparationInventory 
   const chunkCount = (row: { index_key: string }) => counts.get(row.index_key) ?? 0;
   const wantedParameters = selectedEmbedding && JSON.stringify(embeddingIdentityParameters(selectedEmbedding));
   const paused = store.preference('paused');
-  return { enabled: new DocumentaryCampaigns(store.db).policy(getActiveVault().id).futureAdditions, embeddingSpaces: [...embeddingSpaces.values()], documents: inventory.map((current, index) => {
+  return { enabled: new DocumentaryCampaigns(store.db).policy(getActiveVault().id).futureAdditions,
+    embeddingsExpected: !!selectedEmbedding && embeddingConfigurationUsable(selectedEmbedding),
+    embeddingSpaces: [...embeddingSpaces.values()], documents: inventory.map((current, index) => {
     const document = pinned[index];
     const stale = document.indexedSource && document.indexedSource.revision !== document.revision;
     const groups = groupsOf[index];
@@ -902,7 +913,7 @@ function stopDocumentaryRetrievalWorker(worker: RetrievalWorker | null = retriev
 
 export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchScope, query: string, settings: RetrievalSettings, vector: number[] | null, signal?: AbortSignal, read?: ResearchDocumentRead,
   // A run passes its own, so one search does not build the whole inventory twice more.
-  currentDocuments: () => ReturnType<typeof researchCorpusInventory>['documents'] = () => researchCorpusInventory().documents): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
+  currentDocuments: () => ReturnType<typeof researchCorpusInventory>['documents'] = () => researchCorpusInventory().documents, lexicalQueries?: string[]): Promise<{ evidence: ResearchEvidence[]; traversal: { partial: boolean; rounds: number; candidates: number; evidenceTokens: number; visited: string[] } }> {
   const config = currentEmbeddingConfig();
   let parameters: ReturnType<typeof embeddingIdentityParameters> | null = null;
   try { parameters = embeddingIdentityParameters(effectiveEmbeddingConfig()); } catch { /* Lexical retrieval remains available without an endpoint. */ }
@@ -977,11 +988,15 @@ export async function retrieveSharedDocumentaryEvidence(scope: ResolvedResearchS
           else { activities.get(message.key)?.('completed', message.count); activities.delete(message.key); }
           return;
         }
+        recordEmbeddingTrace({ type: 'documentary-retrieval', query, profile: config,
+          contract: parameters?.contract ? JSON.parse(String(parameters.contract)) : null, scopeId: scope.id, vectorKeys,
+          retrieval: message.retrievalTrace ?? null, limitations: { incompleteAttachments: [...incompleteAttachments], lexicalOnly: !vector || !vectorKeys.length },
+        });
         finish(message.error ? new Error(message.error) : null, message);
       },
       fail: error => finish(error),
     });
-    worker.process.postMessage({ id, filename: documentaryStore().db.name, query, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
+    worker.process.postMessage({ id, filename: documentaryStore().db.name, query, lexicalQueries, lexicalKeys: keys, vectorKeys, vector, settings, threshold, read, activity: researchActivityEnabled() });
   });
   const latest = documentsById(currentDocuments());
   for (const document of scope.documents) assertResearchDocumentPermission(scope, document.id, latest.get(document.id));

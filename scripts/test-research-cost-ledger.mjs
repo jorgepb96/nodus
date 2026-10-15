@@ -9,7 +9,7 @@ test('campaign reservations survive restart and fail closed at the shared seven-
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-ledger-test-'));
   try {
     const file = path.join(root, 'cost.json');
-    for (const value of [NaN, Infinity, 0, -1, 7.01, 8]) assert.throws(() => new ResearchCostLedger(file, value));
+    for (const value of [NaN, Infinity, 0, -1, 8.01, 9]) assert.throws(() => new ResearchCostLedger(file, value));
     const ledger = new ResearchCostLedger(file);
     const call = { provider: 'deepseek', model: 'deepseek-flash', maximumUsd: 3 };
     assert.throws(() => ledger.reserve({ ...call, model: 'unapproved' }));
@@ -37,7 +37,20 @@ test('campaign reservations survive restart and fail closed at the shared seven-
     assert.throws(() => ledger.reserve({ ...call, maximumUsd: 0.6 }), /exhausted/);
     fs.writeFileSync(file, JSON.stringify({ limitUsd: 7, calls: [{ id: 'spent', provider: 'deepseek', model: 'deepseek-flash', maximumUsd: 4.5, actualUsd: 4.5 }] }));
     ledger.reserve({ ...call, maximumUsd: 0.6 });
-    fs.writeFileSync(file, JSON.stringify({ limitUsd: 7.5, calls: [] }));
+    fs.writeFileSync(file, JSON.stringify({ limitUsd: 8.01, calls: [] }));
     assert.throws(() => ledger.reserve({ ...call, maximumUsd: 0.1 }), /Invalid research ledger/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('an explicit eight-dollar campaign preserves every reservation and cannot exceed its authorization', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-ledger-eight-'));
+  try {
+    const file = path.join(root, 'cost.json'), ledger = new ResearchCostLedger(file, 8);
+    const call = ledger.reserve({ provider: 'deepseek', model: 'deepseek-flash', maximumUsd: 7.9 });
+    assert.equal(ledger.read().limitUsd, 8);
+    assert.throws(() => ledger.reserve({ provider: 'deepseek', model: 'deepseek-flash', maximumUsd: .1 }), /exhausted/);
+    assert.equal(ledger.read().calls[0].id, call);
+    assert.equal(ledger.read().calls[0].actualUsd, null, 'unknown usage is never released to fit another request');
+    assert.throws(() => new ResearchCostLedger(file).reserve({ provider: 'deepseek', model: 'deepseek-flash', maximumUsd: .01 }), /exhausted/, 'a default caller still uses its lower limit');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

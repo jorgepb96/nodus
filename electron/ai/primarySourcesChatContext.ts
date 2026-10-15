@@ -2,7 +2,7 @@
 // intentionally separate from genealogy: it preserves archival hierarchy, access
 // policy, literal/reviewed text, locators, evidence roles and researcher analysis.
 
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 import { findArchiveItemsSimilar } from '../db/archiveRepo';
 import { getDb } from '../db/database';
 import { searchPrimarySourceCorpus } from '../db/primarySourceResearchRepo';
@@ -193,7 +193,7 @@ export async function buildPrimarySourcesChatContext(question: string): Promise<
   let semanticAvailable = false;
   const scores = new Map<string, number>();
   try {
-    const vector = question.trim() ? await embed(question.trim()) : null;
+    const vector = question.trim() ? await embedQuery(question.trim()) : null;
     if (vector) {
       const similar = await findArchiveItemsSimilar(vector, { limit: MAX_SOURCES * 2, minSimilarity: 0.25 });
       semanticAvailable = similar.length > 0;

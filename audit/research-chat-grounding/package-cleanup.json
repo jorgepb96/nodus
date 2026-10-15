@@ -1,0 +1,58 @@
+[
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-final-locale",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "618cf7047dda0b4dc56388f7483879bb85f67418aeb6276dd0730f7dd2d23b34",
+    "asarBytes": 1649300949
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-limit-equivalence",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "4476a86566f6c9262408e8c0cbb8539343522a6bf8ee80e65ddf086095cb85fa",
+    "asarBytes": 1736735819
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-positive-proof",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "cbd52014fc18958798e2c2f282c729e2aac9ccd31ac8805a25a89e8d2f4ab7ca",
+    "asarBytes": 1824197417
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-proof-schema",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "bf1998847712012d1fce99f964b626d521d908a74d5bf103dd6487677a313831",
+    "asarBytes": 1714873954
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-regression",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "2025dd161767f4d36ccc497d03e546f0c525269cc223d05ebda09e939a1d2533",
+    "asarBytes": 1561896006
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-semantic-repair",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "4efafe41c93b704b2eef29a39b1b96b2d065595b42b9f26d41df58b40a148108",
+    "asarBytes": 1758600481
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-source-redraft",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "f6548c062f2c11555f8dce7dd3e99819259b25c8e533f1b15785ad6d09b08f6b",
+    "asarBytes": 1780464987
+  },
+  {
+    "temporaryBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-typed-repair",
+    "keptFinalBuild": "/private/tmp/nodus-research-EkjNvg/packages-grounding-facet-proof",
+    "reason": "Reproducible intermediate package; source commits, logs, measurements, hashes and screenshots remain archived. No profile, vault, database, credential or model directory is removed.",
+    "asarSha256": "c46a2e31c94f1295315171abe142d09263743f29311f801c8ab3eb6e93b41ae7",
+    "asarBytes": 1627449123
+  }
+]

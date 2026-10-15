@@ -1,0 +1,350 @@
+{
+  "format": "nodus.failed32-controls5-regression/1",
+  "frozenAt": "2026-10-15T18:08:23.639Z",
+  "sourceCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "baseline": {
+    "file": "audit/research-live-quality/closed-51ddac9d/evaluation.json",
+    "sha256": "869f1a63cf7acac73e67ccec5941a43e1529448cacbfb0d8feef416164ad48cc",
+    "productionRevision": "51ddac9de08c95fd0dd0475668c97fd40f06c868"
+  },
+  "failedCaseIds": [
+    "R002",
+    "R005",
+    "R006",
+    "R007",
+    "R008",
+    "R009",
+    "R010",
+    "R012",
+    "R013",
+    "R014",
+    "R015",
+    "R017",
+    "R021",
+    "R023",
+    "R029",
+    "R031",
+    "R032",
+    "R034",
+    "R035",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "controls": [
+    "R018",
+    "R022",
+    "R033",
+    "R044",
+    "R070"
+  ],
+  "controlSelection": {
+    "rule": "Five smallest SHA-256 of nodus-failure-regression-controls/1 + newline + baseline SHA-256 + newline + case ID among the 48 qualified published successes. Frozen before new generation.",
+    "ranking": [
+      {
+        "caseId": "R022",
+        "sha256": "0aafbc2f23dd2731914645033185dd879509fb514e483c16803257a1ac1dcb03"
+      },
+      {
+        "caseId": "R033",
+        "sha256": "0b4c28fdcd5599d57e7eceae1fc7da1ae810242e7f5ab5172fd6c041653b9336"
+      },
+      {
+        "caseId": "R044",
+        "sha256": "159baf4b74197570213afba569a27240a969bab4a5955c27ed33e8c29e174639"
+      },
+      {
+        "caseId": "R070",
+        "sha256": "197fa05c0ed9a1f45b99f1c4f32945800f8fc41e340c6d02c10d30db5df75b3d"
+      },
+      {
+        "caseId": "R018",
+        "sha256": "2940393d24fa5123d3eb5f388696584732337fae11b5aa02e8dd353d92f00441"
+      },
+      {
+        "caseId": "R062",
+        "sha256": "2ab5f1b5ad1e553deacdb54647c5eddd08901f3d9ccd24a25d9de9fb6cc725a4"
+      },
+      {
+        "caseId": "R003",
+        "sha256": "2e8c214ed8a492d6b25ea352dc2606beea24adf818a7020b2134e0f69af4a8ca"
+      },
+      {
+        "caseId": "R075",
+        "sha256": "3b713c8b81060b860be4a6ec36fa6dd677a00c8575953cedf37c2352ddbf6a74"
+      },
+      {
+        "caseId": "R026",
+        "sha256": "3ba120a424e25769f47ca7413b99e32df9ff6397be8fd971e77da57e91234bf2"
+      },
+      {
+        "caseId": "R019",
+        "sha256": "3c781cd9038431987c651118baf6054fb13dfcf1afcf6feccf24b9f61a062c66"
+      },
+      {
+        "caseId": "R067",
+        "sha256": "45e66b15f0e137b79b0083562b35c6998e95cbf6219543437e37689e91ddc3a5"
+      },
+      {
+        "caseId": "R042",
+        "sha256": "4b95aa298abcb55aeeac3cfb9e3cca7345f22bd579c1ba7b9eb3fed834443385"
+      },
+      {
+        "caseId": "R040",
+        "sha256": "4bd8b6ef1041f3d848df595e42988bd7acedcbf9c4695b955619059188c22d55"
+      },
+      {
+        "caseId": "R078",
+        "sha256": "4ed3244e9b5ee4e0c925d76d9fe7db063f6bd1108566aaf2225c01eed366fa48"
+      },
+      {
+        "caseId": "R037",
+        "sha256": "4f37e14575dbc85d77d5b36031556a110c903fa2b6639e3899029e0ffc430b48"
+      },
+      {
+        "caseId": "R057",
+        "sha256": "5a535933ca6c7bc943ee1e19fb8209cb6385efceace43206b94dd19f9172663f"
+      },
+      {
+        "caseId": "R043",
+        "sha256": "5b0291601b39dd8e72c7a773093da78ed806bf63e3a0773b9ff7e1f2fc50b51f"
+      },
+      {
+        "caseId": "R065",
+        "sha256": "604ba4d694b48353eb9564ae22e6650e21dd98b411edaa78cb7fc048dc1228e2"
+      },
+      {
+        "caseId": "R046",
+        "sha256": "6173c942f606b0e251a61dadf409a656711513d88d08e5f10adbbc25d8614365"
+      },
+      {
+        "caseId": "R060",
+        "sha256": "65c79341824583a84a63f687803a82eeffd22e5245ac98215126351c74c53af3"
+      },
+      {
+        "caseId": "R045",
+        "sha256": "69a1f528cc13c111a30e3a7cb98390b90fa9a549bae39967774240790c925c01"
+      },
+      {
+        "caseId": "R028",
+        "sha256": "7342b9ebbe929f9793c4c56ffc585e3e6a0012ea1ce8d7640f19927bd580e6c6"
+      },
+      {
+        "caseId": "R063",
+        "sha256": "737ff2c89fb60cfa479c7fac89a9f6ae28d4d23949c2e2da70086c9495625984"
+      },
+      {
+        "caseId": "R049",
+        "sha256": "741d8a4d83e494f46e258de7fad13d51526f853f094d92b58f06c19706fbcaeb"
+      },
+      {
+        "caseId": "R016",
+        "sha256": "76b1ab601bc3225bd680d2f4e5cd927423e8c30ab0a25a223d420bf8b4daa125"
+      },
+      {
+        "caseId": "R027",
+        "sha256": "7f71b9387165a4d273e516a0ce7dcb9a4bb398f8a6aa11c023708d99929c4bd3"
+      },
+      {
+        "caseId": "R025",
+        "sha256": "868aae4ed06096e63b91466822ec46346962b1a17debc516d6cb8a2327d05449"
+      },
+      {
+        "caseId": "R079",
+        "sha256": "a1dba806c077532fbac194f9d02aee1a331c8c3fadbcbb9d65e3bcd9c55a78cf"
+      },
+      {
+        "caseId": "R052",
+        "sha256": "a5b3f952ee778798fea168f14e8c833ae4aa69997f6d224c0e5b24ef986389bc"
+      },
+      {
+        "caseId": "R041",
+        "sha256": "b1d134ff02f3a19e1454f3bca84395998daafab01d535a900a97d6025facd556"
+      },
+      {
+        "caseId": "R011",
+        "sha256": "b9e3be74438ff43160a827693dfb4d785f7ef8d63d3ff9b57e1c15952c5ed444"
+      },
+      {
+        "caseId": "R038",
+        "sha256": "bf21719adcebb9e2ad671a0b68d27ba9479303ddc8ff4167d11023d02718e7cd"
+      },
+      {
+        "caseId": "R020",
+        "sha256": "c29a7f409a3f96da161eca12e50c51c8ab5e060b93cd26eae665b04ed97f09bc"
+      },
+      {
+        "caseId": "R056",
+        "sha256": "c8c4ebef242e807a36094fe8f263e3d9c1d0aee1fd2480dc363f93b1203f3399"
+      },
+      {
+        "caseId": "R066",
+        "sha256": "ca42351cdef68df9e1a7d4be4c0825afe51eb656a956d138d1046c1c7e2b57ba"
+      },
+      {
+        "caseId": "R053",
+        "sha256": "cbd9dbcfc87289ee077f81d852fbf912ae75d937a6268995724082d1cdc6bde5"
+      },
+      {
+        "caseId": "R004",
+        "sha256": "cc6000195e6d0e2a505b23d50ea4a5589df297fed151987cb8f66103ac0c21c8"
+      },
+      {
+        "caseId": "R076",
+        "sha256": "cca53d445f5f77550a09b5bcab07812cf09d4d15b90f3db6508fc257661e1feb"
+      },
+      {
+        "caseId": "R080",
+        "sha256": "d2652de0b4dc66d1cf380456e0b2bc53d0696abcfc00d0e0e20c788361e6f797"
+      },
+      {
+        "caseId": "R050",
+        "sha256": "d2e2e303c0983d0d862db6d3e85e8a733dabb55a65961eec6443d2790c5b62c7"
+      },
+      {
+        "caseId": "R030",
+        "sha256": "dfd597d44cdbd854ad78c36107b8e0877f03dda466dfe2b506afb24c9e5b079b"
+      },
+      {
+        "caseId": "R036",
+        "sha256": "e4cd7451ef589ceab638c2ffe0b0a0027d7cec5e0092dd724004be314872e71e"
+      },
+      {
+        "caseId": "R001",
+        "sha256": "ec789871dfc0d70a50475b50adafa56a91a37aa21b88b76ab8c5b17b78b63166"
+      },
+      {
+        "caseId": "R048",
+        "sha256": "f0463bab4646fdeb2ad6d0c21a3329cc3ff7655d6260809eb1ed2e926add1ba2"
+      },
+      {
+        "caseId": "R077",
+        "sha256": "f9bb66a68e694dfdd7b921bfef6f92e2ba75ab6c05e3f4208f08b07bcc95dcec"
+      },
+      {
+        "caseId": "R024",
+        "sha256": "fa9c0942854a943f6ae875146c94d6735ce1e0fcacfe8453c01d9552d760ffbb"
+      },
+      {
+        "caseId": "R039",
+        "sha256": "faf5002d1470e82ea5317d87c6ca72f26bd5981a786532205bfe54dd70d45dbf"
+      },
+      {
+        "caseId": "R061",
+        "sha256": "fef2fc3005439069e9f0c3131628ae29e25636e21ef84aee5eb105950f5d87a6"
+      }
+    ]
+  },
+  "caseIds": [
+    "R002",
+    "R005",
+    "R006",
+    "R007",
+    "R008",
+    "R009",
+    "R010",
+    "R012",
+    "R013",
+    "R014",
+    "R015",
+    "R017",
+    "R018",
+    "R021",
+    "R022",
+    "R023",
+    "R029",
+    "R031",
+    "R032",
+    "R033",
+    "R034",
+    "R035",
+    "R044",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R070",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "groups": [
+    {
+      "name": "a",
+      "caseIds": [
+        "R002",
+        "R006",
+        "R008",
+        "R010",
+        "R013",
+        "R015",
+        "R018",
+        "R022",
+        "R029",
+        "R032",
+        "R034",
+        "R044",
+        "R051",
+        "R055",
+        "R059",
+        "R068",
+        "R070",
+        "R072",
+        "R074"
+      ]
+    },
+    {
+      "name": "b",
+      "caseIds": [
+        "R005",
+        "R007",
+        "R009",
+        "R012",
+        "R014",
+        "R017",
+        "R021",
+        "R023",
+        "R031",
+        "R033",
+        "R035",
+        "R047",
+        "R054",
+        "R058",
+        "R064",
+        "R069",
+        "R071",
+        "R073"
+      ]
+    }
+  ],
+  "generatorPoolRoot": "/private/tmp/nodus-research-hlWqiL",
+  "maxConcurrentGenerators": 2,
+  "models": {
+    "embedding": "embeddinggemma-2-text-q8-512-v1",
+    "generation": "gpt-6-luna via fresh no-history Codex agent for each actual application request"
+  },
+  "paidProviderCallsAllowed": 0,
+  "qualityAcceptanceEligible": false,
+  "metrics": {
+    "resolvedFailuresDenominator": 32,
+    "normalRegressionDenominator": 5
+  },
+  "retryPolicy": "One application attempt per selected case in this new campaign. Preserve every terminal outcome; continue only previously unattempted cases after a closed segment. Do not revise any baseline or previous failed follow-up.",
+  "status": "frozen-before-generation"
+}

@@ -1,6 +1,7 @@
 import { BACKUPS_RUNTIME_ERRORS, BACKUPS_RUNTIME_ERROR_PATTERNS } from './backupsErrors';
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
+import { EMBEDDING_GEMMA2_ERRORS, EMBEDDING_GEMMA2_ERROR_PATTERNS } from './embeddingGemma2Errors';
 import { CLOUDFLARE_SYNC_ERRORS, CLOUDFLARE_SYNC_ERROR_PATTERNS } from './cloudflareSyncErrors';
 import { STT_RUNTIME_ERRORS, STT_RUNTIME_ERROR_PATTERNS } from './sttErrors';
 
@@ -55,6 +56,48 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   ko: "볼트가 다른 연결에서 사용 중이어서 마이그레이션 전에 복사할 수 없습니다. 아무것도 변경되지 않았습니다. 몇 초 후 다시 여세요.",
   ja: "ボールトは別の接続で使用中のため、移行前にコピーできません。何も変更されていません。数秒後にもう一度開いてください。", },
   ...SCRIPTOR_RUNTIME_ERRORS,
+  ...EMBEDDING_GEMMA2_ERRORS,
+  'EmbeddingGemma: falta configuración del proceso aislado.': {
+    en: 'EmbeddingGemma: isolated process configuration is missing.', fr: 'EmbeddingGemma : la configuration du processus isolé est manquante.',
+    de: 'EmbeddingGemma: Die Konfiguration des isolierten Prozesses fehlt.', pt: 'EmbeddingGemma: falta a configuração do processo isolado.',
+    'pt-BR': 'EmbeddingGemma: falta a configuração do processo isolado.', it: 'EmbeddingGemma: manca la configurazione del processo isolato.',
+    tr: 'EmbeddingGemma: yalıtılmış süreç yapılandırması eksik.', 'zh-CN': 'EmbeddingGemma：缺少隔离进程配置。',
+    'zh-TW': 'EmbeddingGemma：缺少隔離程序設定。', ja: 'EmbeddingGemma: 分離プロセスの設定がありません。', ko: 'EmbeddingGemma: 격리된 프로세스 설정이 없습니다.',
+  },
+  'EmbeddingGemma: operación de proceso desconocida.': {
+    en: 'EmbeddingGemma: unknown process operation.', fr: 'EmbeddingGemma : opération de processus inconnue.',
+    de: 'EmbeddingGemma: Unbekannter Prozessvorgang.', pt: 'EmbeddingGemma: operação de processo desconhecida.',
+    'pt-BR': 'EmbeddingGemma: operação de processo desconhecida.', it: 'EmbeddingGemma: operazione di processo sconosciuta.',
+    tr: 'EmbeddingGemma: bilinmeyen süreç işlemi.', 'zh-CN': 'EmbeddingGemma：未知的进程操作。',
+    'zh-TW': 'EmbeddingGemma：未知的程序操作。', ja: 'EmbeddingGemma: 不明なプロセス操作です。', ko: 'EmbeddingGemma: 알 수 없는 프로세스 작업입니다.',
+  },
+  'EmbeddingGemma: solicitud de proceso inválida.': {
+    en: 'EmbeddingGemma: invalid process request.', fr: 'EmbeddingGemma : requête de processus non valide.',
+    de: 'EmbeddingGemma: Ungültige Prozessanfrage.', pt: 'EmbeddingGemma: pedido de processo inválido.',
+    'pt-BR': 'EmbeddingGemma: solicitação de processo inválida.', it: 'EmbeddingGemma: richiesta di processo non valida.',
+    tr: 'EmbeddingGemma: geçersiz süreç isteği.', 'zh-CN': 'EmbeddingGemma：无效的进程请求。',
+    'zh-TW': 'EmbeddingGemma：無效的程序請求。', ja: 'EmbeddingGemma: プロセス要求が無効です。', ko: 'EmbeddingGemma: 프로세스 요청이 잘못되었습니다.',
+  },
+  'EmbeddingGemma: configuración de proceso inválida.': {
+    en: 'EmbeddingGemma: invalid process configuration.', fr: 'EmbeddingGemma : configuration de processus non valide.',
+    de: 'EmbeddingGemma: Ungültige Prozesskonfiguration.', pt: 'EmbeddingGemma: configuração de processo inválida.',
+    'pt-BR': 'EmbeddingGemma: configuração de processo inválida.', it: 'EmbeddingGemma: configurazione di processo non valida.',
+    tr: 'EmbeddingGemma: geçersiz süreç yapılandırması.', 'zh-CN': 'EmbeddingGemma：无效的进程配置。',
+    'zh-TW': 'EmbeddingGemma：無效的程序設定。', ja: 'EmbeddingGemma: プロセス設定が無効です。', ko: 'EmbeddingGemma: 프로세스 구성이 잘못되었습니다.',
+  },
+  'No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.': {
+    en: 'The answer could not be verified against its sources. Please try again.',
+    fr: 'La réponse n’a pas pu être vérifiée par rapport à ses sources. Réessayez.',
+    de: 'Die Antwort konnte nicht anhand ihrer Quellen überprüft werden. Bitte versuche es erneut.',
+    pt: 'Não foi possível verificar a resposta com as suas fontes. Tenta novamente.',
+    'pt-BR': 'Não foi possível verificar a resposta com suas fontes. Tente novamente.',
+    it: 'Non è stato possibile verificare la risposta rispetto alle sue fonti. Riprova.',
+    tr: 'Yanıt kaynaklarıyla doğrulanamadı. Lütfen yeniden deneyin.',
+    'zh-CN': '无法根据来源核实回答。请重试。',
+    'zh-TW': '無法根據來源核實回答。請重試。',
+    ja: '回答を出典に照らして検証できませんでした。もう一度お試しください。',
+    ko: '답변을 출처와 대조하여 검증하지 못했습니다. 다시 시도해 주세요.',
+  },
   ...CLOUDFLARE_SYNC_ERRORS,
   ...STT_RUNTIME_ERRORS,
   ...BACKUPS_RUNTIME_ERRORS,
@@ -4738,6 +4781,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
 /** Messages that carry runtime values, matched by shape. Order matters: the more
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
+  ...EMBEDDING_GEMMA2_ERROR_PATTERNS,
   ...STT_RUNTIME_ERROR_PATTERNS,
   ...BACKUPS_RUNTIME_ERROR_PATTERNS,
   ...SCRIPTOR_RUNTIME_ERROR_PATTERNS,

@@ -3,7 +3,7 @@ import type { DocumentSearchHit } from '@shared/types';
 import { findSimilarIdeasPaged } from '../db/ideasRepo';
 import { findSimilarPassagesPaged, lexicalPassageSearch, type SimilarPassage } from '../db/passagesRepo';
 import { findDocumentSupportPassages, findSimilarDocuments, lexicalDocumentSearch } from '../db/documentProfilesRepo';
-import { embed } from './aiClient';
+import { embedQuery } from './aiClient';
 
 const MAX_LITERAL_PROBES = 16;
 
@@ -230,7 +230,7 @@ export async function retrieveHierarchical(
   const routedWorkLimit = Math.max(0, options.routedWorkLimit ?? 12);
   const routedPassageLimit = Math.max(0, options.routedPassageLimit ?? passageLimit);
   const supportPassageLimit = Math.max(0, options.supportPassageLimit ?? routedPassageLimit);
-  const vector = options.embedding === undefined ? await embed(clean) : options.embedding;
+  const vector = options.embedding === undefined ? await embedQuery(clean) : options.embedding;
   const finishProfiles = options.lexicalDocuments !== false && clean && documentLimit > 0 ? startResearchActivity('profiles', 'lexical') : undefined;
   const lexical = options.lexicalDocuments === false || !clean || documentLimit === 0
     ? []

@@ -1,0 +1,4 @@
+Alba · archive 23
+
+O sensor Alba mede turbidez com luz verde de 530 nm. Não mede oxigénio. Deve ser calibrado a cada 30 dias.
+Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt.

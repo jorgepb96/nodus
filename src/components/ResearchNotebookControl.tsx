@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ResearchCorpusCollection, ResearchNotebook, ResearchPreparationInventory, ResearchSourceReference } from '@shared/researchCorpus';
+import { notebookPreparationStatus } from '@shared/researchCorpus';
 import { CollectionSourceIcon } from './CollectionSourceIcon';
 import { Icon } from './ui';
 import { t, tx } from '../i18n';
@@ -124,7 +125,7 @@ export function NotebookDialog({ notebook, onClose, onSaved }: { notebook: Resea
   });
   const chosen = [...selected].filter(key => tree.nodes.has(key));
   const documentIds = new Set(chosen.flatMap(key => [...tree.nodes.get(key)!.documents]));
-  const indexed = inventory ? inventory.documents.filter(document => documentIds.has(document.id) && document.preparation.status === 'ready').length : 0;
+  const indexed = inventory ? notebookPreparationStatus([...documentIds], inventory.documents, inventory.embeddingsExpected ?? false).ready : 0;
   const needle = fold(query.trim());
   const visible = useMemo(() => {
     if (!needle) return null;

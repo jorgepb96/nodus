@@ -1,8 +1,10 @@
 import { currentResearchRequestBudget, researchPromptUpperBound } from './researchRequestBudget';
+import { isEmbeddingGemma2 } from '@shared/embeddingGemma2';
 import { documentedContextWindow } from '@shared/providerContextWindows';
 import { withJobThinking } from './thinkingEffort';
 import { researchReasoningBody, researchReasoningProfile, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
-import { getSettings } from '../db/settingsRepo';
+import { getSettings, embeddingSettingsRevision } from '../db/settingsRepo';
+import { getDb } from '../db/database';
 import { documentVisualPlanningPrompt } from './documentVisualContext';
 import { jobOutputLanguage } from './jobOutputLanguage';
 import { recordProviderUsage } from './usageMeter';
@@ -32,8 +34,9 @@ import type { AiProvider, CodexReasoningEffort, EmbeddingProvider, LocalProvider
 import { vaultTypePromptPack } from '@shared/vaultTypes';
 import { codexReasoningFor } from '@shared/codexReasoning';
 import { anthropicVisionContent, openAiVisionContent, type VisionImagePart } from '@shared/imageAnalysis';
-import { getActiveVault } from '../vaults/vaultRegistry';
+import { getActiveVault, activeVaultRevision } from '../vaults/vaultRegistry';
 import { jsonrepair } from 'jsonrepair';
+import { mayRetryWithoutStructuredSchema, structuredResponseFormat, type ResearchNativeResponseSchema } from '@shared/researchAnswerSchema';
 import { perfLogNs, startPerf, type PerfContext } from '../perf';
 import {
   embedWithNodusLocal,
@@ -64,7 +67,7 @@ import { completeWithOpenCodeGo, OUTPUT_TRUNCATED_MARKER } from './openCodeGoCom
 import { nodusUserAgent, openCodeGoSessionId } from './clientIdentity';
 import { recordOpenCodeGoUsage } from './openCodeGoUsage';
 import { AI_MODEL_REQUIRED_ERROR_CODE } from '@shared/aiModelRequired';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   logPipelineFailure,
   logPipelineWarning,
@@ -238,6 +241,7 @@ function providerRequestHash(model: ModelRef, opts: CallOpts): string {
     maxTokens: opts.maxTokens ?? null,
     reasoning: opts.reasoning ?? null,
     ...(opts.researchEffort !== undefined ? { researchEffort: opts.researchEffort } : {}),
+    ...(opts.responseSchema !== undefined ? { responseSchema: opts.responseSchema } : {}),
     deterministic: opts.deterministic ?? false,
     images: opts.images?.map((part) => ({
       mediaType: part.mediaType,
@@ -524,6 +528,8 @@ function nodusLocalMaxTokens(model: ModelRef, opts: CallOpts, requestedMax: numb
 import { withTranscript as __withTranscript, transcriptFetch as __transcriptFetch } from './transcript';
 
 export interface CallOpts {
+  /** Strict native JSON Schema, explicitly opted into by structured Research Chat only. */
+  responseSchema?: ResearchNativeResponseSchema;
   /** Backend academic corpus requests only; include all final prompt/output bytes. */
   corpusContext?: boolean;
   /** Set exclusively by Research Assistant; absent preserves every other surface. */
@@ -849,7 +855,8 @@ function withPromptContext<T extends { system: string; plainContext?: boolean }>
  * Prompt builders call this before dispatch, while they can still select less evidence. */
 export function researchRequestUpperBound(opts: CallOpts): number {
   const contextual = withPromptContext(opts);
-  return researchPromptUpperBound(contextual.system, contextual.user, contextual.maxTokens ?? 8000);
+  return researchPromptUpperBound(contextual.system, contextual.user, contextual.maxTokens ?? 8000)
+    + responseSchemaRequestBytes(contextual);
 }
 
 /** Resolve which model to use: explicit override, else the synthesis workload. */
@@ -904,9 +911,15 @@ export async function researchModelContextWindow(model: ModelRef): Promise<{ tok
   return { tokens: 32768, known: false };
 }
 /** Byte sizes of a request's parts, largest payload fields first, for the overflow log. */
+function responseSchemaRequestBytes(opts: CallOpts): number {
+  if (!opts.responseSchema) return 0;
+  const responseFormat = structuredResponseFormat('openai', opts.responseSchema);
+  return responseFormat ? new TextEncoder().encode(JSON.stringify(responseFormat)).length : 0;
+}
+
 function requestSizeBreakdown(opts: CallOpts): string {
   const bytes = (text: string) => new TextEncoder().encode(text).length;
-  const parts = [`system ${bytes(opts.system)}`, `user ${bytes(opts.user)}`, `output ${opts.maxTokens ?? 8000}`];
+  const parts = [`system ${bytes(opts.system)}`, `user ${bytes(opts.user)}`, `schemaBytes ${responseSchemaRequestBytes(opts)}`, `output ${opts.maxTokens ?? 8000}`];
   try {
     const payload = JSON.parse(opts.user) as Record<string, unknown>;
     const fields = Object.entries(payload).map(([key, value]) => [key, bytes(JSON.stringify(value) ?? '')] as const).sort((a, b) => b[1] - a[1]).slice(0, 8);
@@ -922,7 +935,8 @@ async function assertCorpusRequestFits(model: ModelRef, opts: CallOpts): Promise
   if (!active && !opts.corpusContext) return;
   const effective = await researchModelContextWindow(model);
   const window = Math.min(effective.tokens, active?.window ?? Infinity);
-  const needed = researchPromptUpperBound(opts.system, opts.user, opts.maxTokens ?? 8000);
+  const needed = researchPromptUpperBound(opts.system, opts.user, opts.maxTokens ?? 8000)
+    + responseSchemaRequestBytes(opts);
   if (needed > window) {
     // Say what is large: the generic message a cloud model gets carries no numbers.
     console.warn(`[research] request refused before sending: needs ~${needed} (bytes as tokens) > window ${window} for ${model.provider}/${model.model}; ${requestSizeBreakdown(opts)}`);
@@ -938,6 +952,21 @@ async function assertCorpusRequestFits(model: ModelRef, opts: CallOpts): Promise
  * be rejected by some models, so callers retry once without them on a 400.
  */
 function optionalBody(model: ModelRef, jsonMode: boolean, reasoning: ReasoningEffort, opts: CallOpts): Record<string, unknown> {
+  if (opts.responseSchema) {
+    const responseFormat = structuredResponseFormat(model.provider, opts.responseSchema);
+    // If a caller supplies a schema for a provider without this contract, do not pretend
+    // that JSON mode enforces it. Structured Research Chat only opts in for OpenAI/router.
+    if (!responseFormat) throw new AiError('Native structured JSON schema is unavailable for this provider.', false, true, 'bad_request');
+    const auditedOpenRouterProvider = process.env.NODUS_AUDIT_OPENROUTER_PROVIDER?.trim();
+    return {
+      response_format: responseFormat,
+      ...(model.provider === 'openrouter'
+        ? auditedOpenRouterProvider
+          ? { provider: { only: [auditedOpenRouterProvider], allow_fallbacks: false } }
+          : openRouterRoutingBody(getSettings().openRouterThroughput)
+        : {}),
+    };
+  }
   // A gateway that already refused this body once keeps the plain one for the rest of the
   // session: rediscovering the refusal per chunk would triple the requests a long scan
   // costs. See optionalFieldsSupport.ts.
@@ -1536,7 +1565,7 @@ async function rawCompleteTransport(
       // `optionalFieldReplays` for the order and `replayRefusedOptionalFields` for how far a
       // custom gateway is allowed to push the request back to the plain OpenAI body.
       const sentReasoning = (extras as any).reasoning_effort !== undefined;
-      if (!opts.noRetry && Object.keys(extras).length > 0 && shouldRetryWithoutOptionalFields(e, { provider: model.provider })) {
+      if (mayRetryWithoutStructuredSchema(opts.responseSchema) && !opts.noRetry && Object.keys(extras).length > 0 && shouldRetryWithoutOptionalFields(e, { provider: model.provider })) {
         res = await replayRefusedOptionalFields(model, extras, e, sentReasoning, replayBody);
       } else {
         throw e;
@@ -2372,7 +2401,11 @@ export interface EmbeddingExecutionConfig {
   provider: EmbeddingProvider;
   modelId: string;
   endpoint: string;
+  scope?: string;
+  revision?: number;
+  session?: string;
 }
+const embeddingExecutionSession = randomUUID();
 
 /** Capture before dispatch; never persist credentials in a job. */
 export function effectiveEmbeddingConfig(): EmbeddingExecutionConfig {
@@ -2380,11 +2413,22 @@ export function effectiveEmbeddingConfig(): EmbeddingExecutionConfig {
   const endpoint = config.provider === 'nodus' ? 'nodus-local-runtime'
     : config.provider === 'gemini' ? geminiBatchEmbeddingEndpoint(config.modelId) : openAiCompatBase(config.provider);
   if (!endpoint) throw new AiError('Falta el endpoint del proveedor de embeddings.', false, true);
-  return { ...config, endpoint };
+  return { ...config, endpoint, scope: getDb().name, revision: embeddingSettingsRevision(), session: embeddingExecutionSession };
+}
+
+function assertEmbeddingExecution(config: EmbeddingExecutionConfig, signal?: AbortSignal): void {
+  signal?.throwIfAborted();
+  const current = effectiveEmbeddingConfig();
+  if (current.provider !== config.provider || current.modelId !== config.modelId || current.endpoint !== config.endpoint
+    || (config.scope !== undefined && current.scope !== config.scope)
+    || (config.session === embeddingExecutionSession && config.revision !== undefined && current.revision !== config.revision)) throw new AiError('La bóveda o la configuración de embeddings cambió durante la solicitud. No se publicará el resultado.', false);
 }
 
 export interface EmbeddingRequestOptions {
   config?: EmbeddingExecutionConfig;
+  role?: import('@shared/embeddingGemma2').EmbeddingRole;
+  title?: string;
+  titles?: (string | undefined)[];
   perf?: PerfContext;
   jobId?: string;
 }
@@ -2435,7 +2479,10 @@ async function requestEmbeddings(
     });
   };
   if (provider === 'nodus') {
-    return validate(await runEmbeddingRequest(() => embedWithNodusLocal(modelId, input, signal)));
+    // This family owns its query-prioritized queue. A second outer queue would
+    // hold queries behind an entire documentary preparation request.
+    if (isEmbeddingGemma2(modelId)) return validate(await embedWithNodusLocal(modelId, input, signal, options));
+    return validate(await runEmbeddingRequest(() => embedWithNodusLocal(modelId, input, signal, options)));
   }
   const freeTier = isProviderFreeTier(provider);
   if (provider === 'gemini') {
@@ -2524,11 +2571,14 @@ async function requestEmbeddings(
 export async function embed(text: string, signal?: AbortSignal, options: EmbeddingRequestOptions = {}): Promise<number[] | null> {
   signal?.throwIfAborted();
   const config = options.config ?? effectiveEmbeddingConfig();
+  const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
   options = { ...options, config };
   const { provider, modelId } = config;
   const key = resolveProviderKey(provider);
   if (!key) return null;
-  const vectors = await requestEmbeddings(provider, key, modelId, text.slice(0, 8000), signal, options);
+  const vectors = await requestEmbeddings(provider, key, modelId, provider === 'nodus' && isEmbeddingGemma2(modelId) ? text : text.slice(0, 8000), signal, options);
+  assertEmbeddingExecution(config, signal);
+  if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
   return vectors[0] ?? null;
 }
 
@@ -2549,9 +2599,9 @@ async function embedBatchBisect(
 ): Promise<number[][]> {
   return requestEmbeddingBatchWithBisection(
     texts,
-    (batch) => requestEmbeddings(provider, key, modelId, batch, signal, options),
+    (batch, offset) => requestEmbeddings(provider, key, modelId, batch, signal, { ...options, titles: options.titles?.slice(offset, offset + batch.length) }),
     signal,
-    (error) => !(error instanceof AiError && (error.config || error.retriable)),
+    (error) => !(provider === 'nodus' && isEmbeddingGemma2(modelId)) && !(error instanceof AiError && (error.config || error.retriable)),
   );
 }
 
@@ -2559,8 +2609,10 @@ async function embedBatchBisect(
 export async function embedManyStrict(texts: string[], signal?: AbortSignal, options: EmbeddingRequestOptions = {}): Promise<number[][]> {
   signal?.throwIfAborted();
   if (texts.length === 0) return [];
-  const clipped = texts.map((t) => t.slice(0, 8000));
   const config = options.config ?? effectiveEmbeddingConfig();
+  const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
+  const clipped = config.provider === 'nodus' && isEmbeddingGemma2(config.modelId) ? texts : texts.map((t) => t.slice(0, 8000));
+  if (options.titles && options.titles.length !== texts.length) throw new AiError('Los títulos de embeddings no coinciden con las entradas.', false);
   options = { ...options, config };
   const { provider, modelId } = config;
   const key = resolveProviderKey(provider);
@@ -2575,7 +2627,7 @@ export async function embedManyStrict(texts: string[], signal?: AbortSignal, opt
     modelId,
     batch,
     signal,
-    { ...options, jobId: options.jobId ? `${options.jobId}:batch:${index}` : undefined },
+    { ...options, titles: options.titles?.slice(index * size, (index + 1) * size), jobId: options.jobId ? `${options.jobId}:batch:${index}` : undefined },
   )))).flat();
   if (vectors.length !== texts.length) {
     // One missing vector publishes a broken index, so this aborts the work — and it is the
@@ -2587,6 +2639,8 @@ export async function embedManyStrict(texts: string[], signal?: AbortSignal, opt
     });
     throw new AiError(`La indexación produjo ${vectors.length} embeddings para ${texts.length} entradas; no se publicará un índice incompleto.`, false);
   }
+  assertEmbeddingExecution(config, signal);
+  if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
   return vectors;
 }
 
@@ -2596,4 +2650,14 @@ export async function embedMany(texts: string[], signal?: AbortSignal, options: 
   const { provider } = options.config ?? effectiveEmbeddingConfig();
   if (!resolveProviderKey(provider)) return texts.map(() => null);
   return embedManyStrict(texts, signal, options);
+}
+
+export function embedQuery(text: string, signal?: AbortSignal, options: EmbeddingRequestOptions = {}) {
+  return embed(text, signal, { ...options, role: 'query' });
+}
+export function embedDocument(text: string, signal?: AbortSignal, options: EmbeddingRequestOptions = {}) {
+  return embed(text, signal, { ...options, role: 'document' });
+}
+export function embedDocuments(texts: string[], signal?: AbortSignal, options: EmbeddingRequestOptions = {}) {
+  return embedManyStrict(texts, signal, { ...options, role: 'document' });
 }

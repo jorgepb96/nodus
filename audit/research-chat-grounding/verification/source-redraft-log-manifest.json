@@ -1,0 +1,67 @@
+[
+  {
+    "file": "verification/logs/nodus-grounding-final-budget-tests.log",
+    "sha256": "06cd7d132bb186aac99d478f95cfe3abae05dfb53b799124dcf8cded6e515da4",
+    "bytes": 1514
+  },
+  {
+    "file": "verification/logs/nodus-grounding-semantic-repair-build.log",
+    "sha256": "dc779874e4e515aee78e0b78ee78730f809aff36aae40bbb6ca416a438756029",
+    "bytes": 63854
+  },
+  {
+    "file": "verification/logs/nodus-grounding-semantic-repair-final-lint.log",
+    "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+    "bytes": 47
+  },
+  {
+    "file": "verification/logs/nodus-grounding-semantic-repair-final-tests.log",
+    "sha256": "a8fde9a515645fd2d0d2c1ea44e52732363e0e92d78eb61c14b9909313b94884",
+    "bytes": 7525
+  },
+  {
+    "file": "verification/logs/nodus-grounding-semantic-repair-package-smoke.log",
+    "sha256": "3ca537018cedf2d57634e464a75a665d2309dac736f725aa57b2547b4b641939",
+    "bytes": 80
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-build.log",
+    "sha256": "73e92c64054d905959deba29cda2a012738cb1d92b9a971fc1d7733fd56347e8",
+    "bytes": 63853
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-final-tests.log",
+    "sha256": "e70d5bee84d31c4a01ec783e6d8363f0aaf5d338ad5878ffe2b0cd6f020ee905",
+    "bytes": 4070
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-inner-tests.log",
+    "sha256": "e6a5191676bf7669371079b4e50d496fff7842da5b8fdfb970d06f798a84f1f0",
+    "bytes": 3585
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-lint.log",
+    "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+    "bytes": 47
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-package-smoke.log",
+    "sha256": "fe7d1efb2dd0a211d626763c579e0fb766231811e320e01f58a49ab42b159d27",
+    "bytes": 343
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-package.log",
+    "sha256": "8d7e467afc3c1ec3dced62289a642736eb71d54926e9da3828dffedbddecd625",
+    "bytes": 13243
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-suite.log",
+    "sha256": "813e1b977c74e733b8ffa722f885ac66c8425b9ea1f42ecb164978ed9a1a6a6e",
+    "bytes": 7665
+  },
+  {
+    "file": "verification/logs/nodus-grounding-source-redraft-tests.log",
+    "sha256": "c5006b7d6482408558d80081b1b7ef9593dc1b26652bc80759e7c1eeb52e7e41",
+    "bytes": 10798
+  }
+]

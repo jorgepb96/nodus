@@ -2244,6 +2244,8 @@ export interface AppSettings {
   researchEffortByModel: Record<string, ResearchEffort>;
   /** Research Chat's web step: automatic (the agent decides) or off. App-wide. */
   researchWebSearch: ResearchWebSearchMode;
+  /** Explicit experimental documentary verification; off keeps the standard writer. */
+  researchAnswerVerification?: 'off' | 'legacy' | 'structured';
   // When using OpenRouter, bias routing toward the fastest upstream provider.
   openRouterThroughput: boolean;
   /**

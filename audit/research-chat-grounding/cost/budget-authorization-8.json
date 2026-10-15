@@ -1,0 +1,15 @@
+{
+  "format": "nodus.qa-explicit-budget-authorization/1",
+  "recordedAt": "2026-10-07T22:07:30.855929+00:00",
+  "authorization": "8 y nada mas. Debe quedar cerrado ahi",
+  "source": "Explicit human reply in this task; final cumulative campaign ceiling, no further increase.",
+  "previousLimitUsd": 5,
+  "authorizedLimitUsd": 8,
+  "beforeLedgerSha256": "c931624065f6aabdeab697ea9ce224c080b127a62a6708a24e6f1ed214c5700c",
+  "afterLedgerSha256": "3d2ad7c3f964f5b9a16974bbe7df9fbec0c0aad701299d78375b95daf17f7399",
+  "callsSha256Unchanged": "4c87f46e253fa509c29baea8c5c36ba5d420c6584002dfe608556b3509f91069",
+  "callsPreserved": 3009,
+  "unknownReservationsPreserved": 4,
+  "committedUsdUnchanged": 4.515475625,
+  "backup": "cost-ledger-before-budget-8-c931624065f6aabdeab697ea9ce224c080b127a62a6708a24e6f1ed214c5700c.json"
+}

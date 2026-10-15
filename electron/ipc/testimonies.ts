@@ -13,7 +13,7 @@ import { buildTestimonyPackage } from '../export/testimonyExport';
 import { analyzeTestimonyInterview, improveTestimonyTranscript } from '../ai/testimonyAnalysis';
 import { buildTestimonyIndex, testimonyIndexStatus } from '../ai/testimonyIndex';
 import { dropAllEmbeddings as dropTestimonyEmbeddings, semanticSearch as testimonySemanticSearch } from '../db/testimonyEmbeddingsRepo';
-import { embed as embedText } from '../ai/aiClient';
+import { embedQuery as embedText } from '../ai/aiClient';
 import type { TestimonyAccessChannel, TestimonyAgreementInput, TestimonyExportRequest, TestimonyAnnotationInput, TestimonyCodeInput, TestimonyContrastFilters, TestimonyContrastInput, TestimonyInterviewInput, TestimonyMediaRole, TestimonyParticipantInput, TestimonyParticipantRole, TestimonySearchKind, TestimonySessionInput, TestimonyTranscriptKind, TestimonyAnnotationKind } from '@shared/types';
 import fs from 'node:fs';
 import { dialog } from 'electron';

@@ -2,16 +2,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-/** Highest paid-inference budget any campaign may authorize (raised from USD 5 on
- * 25 September 2026). A ledger file's own limitUsd is its campaign's authorization. */
-export const RESEARCH_BUDGET_CEILING_USD = 7;
+/** Explicit campaign authorization may reach USD 8 (7 October 2026). Existing
+ * defaults remain USD 7; each ledger's own limitUsd is still its authorization. */
+export const RESEARCH_BUDGET_CEILING_USD = 8;
+export const RESEARCH_DEFAULT_BUDGET_USD = 7;
+const DEFAULT_APPROVED_MODELS = Object.freeze([
+  Object.freeze({ provider: 'deepseek', model: 'deepseek-flash' }),
+  Object.freeze({ provider: 'openrouter', model: 'baai/bge-m3' }),
+]);
 
 /** Single campaign ledger shared by every test/provider; reservations are durable
  * before network dispatch and unknown/failed usage keeps the full reservation. */
 export class ResearchCostLedger {
-  constructor(file, limit = RESEARCH_BUDGET_CEILING_USD) {
+  constructor(file, limit = RESEARCH_DEFAULT_BUDGET_USD, { approvedModels = DEFAULT_APPROVED_MODELS } = {}) {
     if (!Number.isFinite(limit) || limit <= 0 || limit > RESEARCH_BUDGET_CEILING_USD) throw new Error('Invalid research budget');
+    if (!Array.isArray(approvedModels) || !approvedModels.length || approvedModels.some(item => !item
+      || typeof item.provider !== 'string' || !item.provider || typeof item.model !== 'string' || !item.model)) throw new Error('Invalid approved research models');
     this.file = file; this.limit = limit;
+    this.approvedModels = approvedModels.map(item => Object.freeze({ provider: item.provider, model: item.model }));
   }
   read() {
     const ledger = fs.existsSync(this.file) ? JSON.parse(fs.readFileSync(this.file, 'utf8')) : { limitUsd: this.limit, calls: [] };
@@ -25,7 +33,7 @@ export class ResearchCostLedger {
     return ledger;
   }
   reserve({ provider, model, maximumUsd }) {
-    if (!((provider === 'deepseek' && model === 'deepseek-flash') || (provider === 'openrouter' && model === 'baai/bge-m3'))) throw new Error('Unapproved research model');
+    if (!this.approvedModels.some(item => item.provider === provider && item.model === model)) throw new Error('Unapproved research model');
     if (!Number.isFinite(maximumUsd) || maximumUsd <= 0) throw new Error('A conservative cost bound is required');
     fs.mkdirSync(path.dirname(this.file), { recursive: true });
     const lock = fs.openSync(`${this.file}.lock`, 'wx', 0o600);

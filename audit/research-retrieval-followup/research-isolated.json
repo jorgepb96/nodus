@@ -1,0 +1,444 @@
+{
+  "root": "/private/tmp/nodus-research-NnEDFR",
+  "proof": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true
+  },
+  "completed": true,
+  "modelCalls": 0,
+  "productionFixtures": false,
+  "notebooks": {
+    "passed": true,
+    "collections": 3,
+    "sources": 3,
+    "preparedPassages": 1,
+    "layouts": [
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      }
+    ]
+  },
+  "activity": {
+    "passed": true,
+    "mode": "deterministic IPC/UI fixture, no live model or Zotero calls",
+    "turns": 4,
+    "layouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 226.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 295.5
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 226.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 295.5
+        }
+      }
+    ],
+    "webLayouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": 47.9453125,
+            "bottom": 86.7890625
+          },
+          {
+            "layer": "profiles",
+            "top": 87.7890625,
+            "bottom": 126.6328125
+          },
+          {
+            "layer": "ideas",
+            "top": 127.6328125,
+            "bottom": 166.4765625
+          },
+          {
+            "layer": "nodus",
+            "top": 167.4765625,
+            "bottom": 206.3203125
+          },
+          {
+            "layer": "context",
+            "top": 207.3203125,
+            "bottom": 237.3203125
+          },
+          {
+            "layer": "graph",
+            "top": 238.3203125,
+            "bottom": 268.3203125
+          },
+          {
+            "layer": "zotero",
+            "top": 269.3203125,
+            "bottom": 308.1640625
+          },
+          {
+            "layer": "attachments",
+            "top": 309.1640625,
+            "bottom": 339.1640625
+          },
+          {
+            "layer": "tools",
+            "top": 340.1640625,
+            "bottom": 370.1640625
+          },
+          {
+            "layer": "web",
+            "top": 371.1640625,
+            "bottom": 1185.0390625
+          },
+          {
+            "layer": "response",
+            "top": 1186.0390625,
+            "bottom": 1216.0390625
+          }
+        ],
+        "webBottom": 1185.0390625,
+        "detailBottom": 1179.0390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 456,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -449.5546875,
+            "bottom": -410.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -409.7109375,
+            "bottom": -370.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -369.8671875,
+            "bottom": -331.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -330.0234375,
+            "bottom": -291.1796875
+          },
+          {
+            "layer": "context",
+            "top": -290.1796875,
+            "bottom": -260.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -259.1796875,
+            "bottom": -229.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -228.1796875,
+            "bottom": -189.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -188.3359375,
+            "bottom": -158.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -157.3359375,
+            "bottom": -127.3359375
+          },
+          {
+            "layer": "web",
+            "top": -126.3359375,
+            "bottom": 687.5390625
+          },
+          {
+            "layer": "response",
+            "top": 688.5390625,
+            "bottom": 718.5390625
+          }
+        ],
+        "webBottom": 687.5390625,
+        "detailBottom": 681.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 244,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -501.5546875,
+            "bottom": -462.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -461.7109375,
+            "bottom": -422.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -421.8671875,
+            "bottom": -383.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -382.0234375,
+            "bottom": -343.1796875
+          },
+          {
+            "layer": "context",
+            "top": -342.1796875,
+            "bottom": -312.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -311.1796875,
+            "bottom": -281.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -280.1796875,
+            "bottom": -241.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -240.3359375,
+            "bottom": -210.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -209.3359375,
+            "bottom": -179.3359375
+          },
+          {
+            "layer": "web",
+            "top": -178.3359375,
+            "bottom": 635.5390625
+          },
+          {
+            "layer": "response",
+            "top": 636.5390625,
+            "bottom": 666.5390625
+          }
+        ],
+        "webBottom": 635.5390625,
+        "detailBottom": 629.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 456,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -661.5546875,
+            "bottom": -622.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -621.7109375,
+            "bottom": -582.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -581.8671875,
+            "bottom": -543.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -542.0234375,
+            "bottom": -503.1796875
+          },
+          {
+            "layer": "context",
+            "top": -502.1796875,
+            "bottom": -472.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -471.1796875,
+            "bottom": -441.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -440.1796875,
+            "bottom": -401.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -400.3359375,
+            "bottom": -370.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -369.3359375,
+            "bottom": -339.3359375
+          },
+          {
+            "layer": "web",
+            "top": -338.3359375,
+            "bottom": 475.5390625
+          },
+          {
+            "layer": "response",
+            "top": 476.5390625,
+            "bottom": 506.5390625
+          }
+        ],
+        "webBottom": 475.5390625,
+        "detailBottom": 469.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 244,
+        "scrollHeight": 1179
+      }
+    ],
+    "requestFiltering": true,
+    "simultaneousOperations": true,
+    "keyboard": true,
+    "minimizeExpand": true,
+    "neverClosed": true,
+    "failure": true,
+    "cancellation": true
+  },
+  "pdf": {
+    "passed": true,
+    "notebookId": "c296acb9-bbad-4219-ab4c-b49764df1736",
+    "physicalPage": 1,
+    "originalRead": {
+      "passed": true,
+      "noCampaignCreated": true,
+      "physicalPage": 1
+    },
+    "marker": "PACKAGED73"
+  },
+  "paths": {
+    "userData": "/private/tmp/nodus-research-NnEDFR/profile",
+    "sessionData": "/private/tmp/nodus-research-NnEDFR/sessions",
+    "temp": "/private/tmp/nodus-research-NnEDFR/tmp",
+    "appData": "/private/tmp/nodus-research-NnEDFR/app-data",
+    "downloads": "/private/tmp/nodus-research-NnEDFR/downloads"
+  },
+  "databaseOpens": 9
+}

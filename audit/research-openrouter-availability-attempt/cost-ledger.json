@@ -1,0 +1,317 @@
+{
+  "limitUsd": 0.49788477,
+  "calls": [
+    {
+      "id": "51e897fb-fa27-4011-88cb-036285a8e451",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0022700375,
+      "reservedAt": "2026-10-12T13:38:05.176Z",
+      "actualUsd": 0.000014550000000000001,
+      "inputTokens": 178,
+      "outputTokens": 6,
+      "settledAt": "2026-10-12T13:38:06.488Z"
+    },
+    {
+      "id": "fec355a5-7e05-416d-8545-03a903095f5b",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0049445,
+      "reservedAt": "2026-10-12T13:38:06.672Z",
+      "actualUsd": null
+    },
+    {
+      "id": "ccbb1d13-a9f1-4012-a87f-ef29a292e580",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0049445,
+      "reservedAt": "2026-10-12T13:38:10.361Z",
+      "actualUsd": null
+    },
+    {
+      "id": "2516ffdd-ca49-4d7f-8887-3ce81325dfab",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0049445,
+      "reservedAt": "2026-10-12T13:38:14.481Z",
+      "actualUsd": 0.0006001750000000001,
+      "inputTokens": 7293,
+      "outputTokens": 266,
+      "settledAt": "2026-10-12T13:38:25.970Z"
+    },
+    {
+      "id": "e167ddd0-b3b8-4e35-957c-749285776fe6",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.00514295,
+      "reservedAt": "2026-10-12T13:38:26.229Z",
+      "actualUsd": 0.000600525,
+      "inputTokens": 7831,
+      "outputTokens": 66,
+      "settledAt": "2026-10-12T13:38:30.328Z"
+    },
+    {
+      "id": "decf5f3d-c11e-48d9-92b8-07262b211b4b",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.00671825,
+      "reservedAt": "2026-10-12T13:38:30.535Z",
+      "actualUsd": 0.00085655,
+      "inputTokens": 8570,
+      "outputTokens": 1069,
+      "settledAt": "2026-10-12T13:39:19.421Z"
+    },
+    {
+      "id": "d45290d7-f834-4c2b-b43c-8627e156f2fe",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.006786087499999999,
+      "reservedAt": "2026-10-12T13:39:19.714Z",
+      "actualUsd": 0.0007875,
+      "inputTokens": 8676,
+      "outputTokens": 684,
+      "settledAt": "2026-10-12T13:39:53.624Z"
+    },
+    {
+      "id": "d9c773b7-8574-43c7-b2c9-fcdf79dbd6a5",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.005144375,
+      "reservedAt": "2026-10-12T13:39:53.813Z",
+      "actualUsd": null
+    },
+    {
+      "id": "0a6319db-5a0f-4025-b575-cc6ee8d2ea6c",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.005144375,
+      "reservedAt": "2026-10-12T13:39:57.530Z",
+      "actualUsd": 0.0007196,
+      "inputTokens": 7896,
+      "outputTokens": 637,
+      "settledAt": "2026-10-12T13:40:26.882Z"
+    },
+    {
+      "id": "b43c4ea7-4a08-4162-8f73-b74c798a7731",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0068331125,
+      "reservedAt": "2026-10-12T13:40:27.075Z",
+      "actualUsd": null
+    },
+    {
+      "id": "d158d2e3-636a-4a89-bb3d-5ea6625bd820",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0046865,
+      "reservedAt": "2026-10-12T13:40:30.829Z",
+      "actualUsd": 0.000670475,
+      "inputTokens": 7233,
+      "outputTokens": 640,
+      "settledAt": "2026-10-12T13:41:01.918Z"
+    },
+    {
+      "id": "981a314c-f2e6-4692-bb0a-7b2cadf3d6dd",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0047039375,
+      "reservedAt": "2026-10-12T13:41:02.093Z",
+      "actualUsd": null
+    },
+    {
+      "id": "a29bb23a-ea1c-444a-a55f-84d8e1b250a3",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0029617625,
+      "reservedAt": "2026-10-12T13:41:05.977Z",
+      "actualUsd": 0.00008002500000000001,
+      "inputTokens": 579,
+      "outputTokens": 183,
+      "settledAt": "2026-10-12T13:41:15.552Z"
+    },
+    {
+      "id": "ae5a025c-2dbc-43af-a2a6-d62d5392d571",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0038504,
+      "reservedAt": "2026-10-12T13:41:15.721Z",
+      "actualUsd": 0.000120925,
+      "inputTokens": 1447,
+      "outputTokens": 62,
+      "settledAt": "2026-10-12T13:41:19.915Z"
+    },
+    {
+      "id": "bb55303c-bbdb-4eaf-bd21-1fcf63b6e079",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0049820375,
+      "reservedAt": "2026-10-12T13:41:20.071Z",
+      "actualUsd": null
+    },
+    {
+      "id": "58b62c92-95a2-4be5-ab37-0d50a909b4bd",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0050709125,
+      "reservedAt": "2026-10-12T13:41:23.670Z",
+      "actualUsd": null
+    },
+    {
+      "id": "29a4b824-9df7-4ba3-8a76-0f5d1a831b91",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0033354125,
+      "reservedAt": "2026-10-12T13:41:27.039Z",
+      "actualUsd": 0.00009465,
+      "inputTokens": 1038,
+      "outputTokens": 84,
+      "settledAt": "2026-10-12T13:41:31.894Z"
+    },
+    {
+      "id": "370761cc-8aab-49d4-b262-6dca017f3b2e",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0034182125,
+      "reservedAt": "2026-10-12T13:41:32.083Z",
+      "actualUsd": null
+    },
+    {
+      "id": "caa74898-5c03-49f0-b188-5ef6ef45c9a5",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0034182125,
+      "reservedAt": "2026-10-12T13:41:35.589Z",
+      "actualUsd": 0.000095075,
+      "inputTokens": 1177,
+      "outputTokens": 34,
+      "settledAt": "2026-10-12T13:41:37.441Z"
+    },
+    {
+      "id": "dd872bec-fe92-46b5-996e-16b081632f14",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0049802375,
+      "reservedAt": "2026-10-12T13:41:37.589Z",
+      "actualUsd": 0.000198175,
+      "inputTokens": 1877,
+      "outputTokens": 287,
+      "settledAt": "2026-10-12T13:41:51.670Z"
+    },
+    {
+      "id": "bf69b137-aea4-47a6-b74c-27b645f44080",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0027226999999999998,
+      "reservedAt": "2026-10-12T13:41:51.988Z",
+      "actualUsd": null
+    },
+    {
+      "id": "ff99c4dc-b5fa-424e-9e91-582a60114df2",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0045202625,
+      "reservedAt": "2026-10-12T13:41:55.885Z",
+      "actualUsd": null
+    },
+    {
+      "id": "f857ea85-dd2c-4b5c-8947-833a7c5721d0",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0045202625,
+      "reservedAt": "2026-10-12T13:41:59.576Z",
+      "actualUsd": 0.000444775,
+      "inputTokens": 4573,
+      "outputTokens": 509,
+      "settledAt": "2026-10-12T13:42:20.088Z"
+    },
+    {
+      "id": "271d71bb-d6dd-4c7c-b8da-601b184bd740",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0046838374999999995,
+      "reservedAt": "2026-10-12T13:42:20.283Z",
+      "actualUsd": null
+    },
+    {
+      "id": "5aa751e4-234b-4dbe-b657-19f5494a5e05",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0046838374999999995,
+      "reservedAt": "2026-10-12T13:42:24.325Z",
+      "actualUsd": null
+    },
+    {
+      "id": "004e5ccd-2420-4b0c-bd01-f3bd4ed7ccc7",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0046838374999999995,
+      "reservedAt": "2026-10-12T13:42:28.062Z",
+      "actualUsd": null
+    },
+    {
+      "id": "23c53abf-3bc2-4fb1-9dad-03a3e0b8e86e",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0046838374999999995,
+      "reservedAt": "2026-10-12T13:42:32.136Z",
+      "actualUsd": 0.00041885,
+      "inputTokens": 4990,
+      "outputTokens": 223,
+      "settledAt": "2026-10-12T13:42:44.356Z"
+    },
+    {
+      "id": "ef06cfc6-c31a-44fd-a340-c9877a766310",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0063713,
+      "reservedAt": "2026-10-12T13:42:44.548Z",
+      "actualUsd": null
+    },
+    {
+      "id": "5fa4f28b-e0c3-4351-b5b0-8d7c89acb3e1",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.0064838,
+      "reservedAt": "2026-10-12T13:42:48.487Z",
+      "actualUsd": null
+    },
+    {
+      "id": "d8563834-c673-461c-9666-49ad2577b730",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.006317525,
+      "reservedAt": "2026-10-12T13:42:52.367Z",
+      "actualUsd": 0.00066545,
+      "inputTokens": 5854,
+      "outputTokens": 1132,
+      "settledAt": "2026-10-12T13:43:40.560Z"
+    },
+    {
+      "id": "62ce3322-9efe-4236-bd2e-8a34b069c200",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.006229325,
+      "reservedAt": "2026-10-12T13:43:40.759Z",
+      "actualUsd": 0.000461125,
+      "inputTokens": 5655,
+      "outputTokens": 185,
+      "settledAt": "2026-10-12T13:43:54.778Z"
+    },
+    {
+      "id": "b032e900-cab9-434c-874f-b9bb83a70c44",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.004870775,
+      "reservedAt": "2026-10-12T13:43:54.973Z",
+      "actualUsd": null
+    },
+    {
+      "id": "37427321-f1ec-4ef4-9da5-e0637355f174",
+      "provider": "openrouter",
+      "model": "mistralai/mistral-small-3.2-24b-instruct-2506",
+      "maximumUsd": 0.004870775,
+      "reservedAt": "2026-10-12T13:43:58.877Z",
+      "actualUsd": null
+    }
+  ]
+}

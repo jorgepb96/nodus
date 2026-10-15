@@ -14,6 +14,13 @@ export const fileConcurrency = 2;
 const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
+  // Nodus Sign's real-cryptography cases need a pyHanko interpreter; run them with NODUS_SIGN_PYTHON.
+  ['real PKCS#12 inspection handles wrong, missing and expired certificates', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
+  ['real PAdES B-B signs incrementally, validates and preserves a previous signature', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
+  ['multi-page real signatures preserve an earlier signature and reject invalid page selections', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
+  ['tampering and expired signing are rejected, no output presented as valid', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
+  ['engine cancellation interrupts the subprocess', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
+  ['real automatic Python download and installation can sign and validate without any preinstalled Python', 'Set NODUS_SIGN_INSTALL_TEST=1 to download and install the real engine'],
 ]);
 // These nine native macOS cases run as mandatory release checks on Apple
 // silicon. Linux still runs their files and every platform-independent case.

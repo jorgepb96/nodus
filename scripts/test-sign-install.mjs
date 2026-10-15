@@ -38,7 +38,7 @@ test('failed and cancelled installs do not publish a ready environment',async()=
   await assert.rejects(()=>promise,/SIGN_INSTALL_CANCELLED/);
   assert.ok(!(await fs.readdir(cancelledRoot)).some(n=>n.startsWith('env-')||n==='installed.json'));
 });
-test('real automatic Python download and installation can sign and validate without any preinstalled Python', {skip:!process.env.NODUS_SIGN_INSTALL_TEST,timeout:900000},async()=>{
+test('real automatic Python download and installation can sign and validate without any preinstalled Python', {skip:process.env.NODUS_SIGN_INSTALL_TEST?false:'Set NODUS_SIGN_INSTALL_TEST=1 to download and install the real engine',timeout:900000},async()=>{
   const root=path.join(temp,'real');
   const phases=[];
   const installer=new SignInstaller(root,assets,'/missing',async()=>null);

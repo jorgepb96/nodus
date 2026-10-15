@@ -43,7 +43,7 @@ try{
     const title=row.querySelector('.dictionary-entry-title'),state=row.querySelector('.dictionary-entry-state'),tags=row.querySelector('.dictionary-entry-tags'),counts=row.querySelector('.dictionary-entry-counts'),pill=row.querySelector('.dictionary-status-pill');
     let naturalPillWidth=null;
     if(pill){const range=document.createRange();range.selectNodeContents(pill);const style=getComputedStyle(pill);naturalPillWidth=range.getBoundingClientRect().width+parseFloat(style.paddingLeft)+parseFloat(style.paddingRight)+parseFloat(style.borderLeftWidth)+parseFloat(style.borderRightWidth);}
-    return {id:window.dictionaryFixture.entries[index].id,row:rect(row),title:rect(title),titleFont:parseFloat(getComputedStyle(title.querySelector('strong')).fontSize),state:rect(state),stateText:state.textContent,pill:pill?rect(pill):null,naturalPillWidth,
+    return {id:window.dictionaryFixture.entries[index].id,row:rect(row),title:rect(title),headingText:rect(title.querySelector('strong')),titleFont:parseFloat(getComputedStyle(title.querySelector('strong')).fontSize),state:rect(state),stateText:state.textContent,pill:pill?rect(pill):null,naturalPillWidth,
      gridColumns:getComputedStyle(row).gridTemplateColumns,countsDisplay:getComputedStyle(counts).display,
      tagsArea:rect(tags),tags:[...tags.children].map(tag=>({text:tag.textContent,rect:rect(tag),scrollWidth:tag.scrollWidth,clientWidth:tag.clientWidth})),
      counts:[...counts.querySelectorAll('.dictionary-entry-count')].map(cell=>{const range=document.createRange();range.selectNodeContents(cell);return {text:cell.textContent,rect:rect(cell),textRect:rect(range),font:parseFloat(getComputedStyle(cell).fontSize),lineHeight:parseFloat(getComputedStyle(cell).lineHeight),whiteSpace:getComputedStyle(cell).whiteSpace,labelDisplay:getComputedStyle(cell.firstElementChild).display};}),
@@ -56,6 +56,7 @@ try{
   for(const row of measured.rows){
    assert(row.titleFont>=14*scale-.1,`${context}/${row.id}: text must not be shrunk to conceal overflow`);
    assert(row.title.width>0&&row.title.height>=(device==='desktop'?1:44),`${context}/${row.id}: real opening button remains touch-sized`);
+   if(device==='phone'||width<=600)assert(row.headingText.width>=row.title.width-1,`${context}/${row.id}: evidence badge must not squeeze a long title into a narrow column`);
    if(row.pill)assert(row.pill.width<=row.naturalPillWidth+2,`${context}/${row.id}: lifecycle pill must remain intrinsic rather than fill its grid area`);
    assert(row.state.width>0&&row.state.height>0&&row.stateText.trim(),`${context}/${row.id}: lifecycle/progress text remains visible`);
    for(const tag of row.tags){assert(tag.rect.right<=row.tagsArea.right+1&&tag.rect.x>=row.tagsArea.x-1,`${context}/${row.id}: long tag remains inside its own grid area`);assert(tag.scrollWidth<=tag.clientWidth+1,`${context}/${row.id}: full long tag wraps without clipped or overflowing text`);}

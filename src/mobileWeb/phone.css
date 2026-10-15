@@ -232,6 +232,8 @@
 .nodus-phone .dictionary-mobile .dictionary-entry-row{min-width:0;grid-template-columns:32px repeat(3,minmax(0,1fr));gap:8px;padding:12px}
 .nodus-phone .dictionary-mobile .dictionary-entry-select{grid-column:1;grid-row:1}
 .nodus-phone .dictionary-mobile .dictionary-entry-title{grid-column:2/-1}
+.nodus-phone .dictionary-mobile .dictionary-entry-heading{flex-wrap:wrap;align-items:flex-start}
+.nodus-phone .dictionary-mobile .dictionary-entry-heading>strong{flex-basis:100%;min-width:0}
 .nodus-phone .dictionary-mobile .dictionary-entry-title strong{white-space:normal;overflow-wrap:anywhere}
 .nodus-phone .dictionary-mobile .dictionary-entry-state{grid-column:2/-1}
 .nodus-phone .dictionary-mobile .dictionary-entry-counts{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;min-width:0;grid-column:2/-1}

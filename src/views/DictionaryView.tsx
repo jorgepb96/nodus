@@ -1743,7 +1743,7 @@ function DictionaryRows({
             onChange={() => onToggle(entry.id)}
           />
           <button className="dictionary-entry-title min-w-0 text-left" onClick={() => onOpen(entry)}>
-            <span className="flex items-center gap-2">
+            <span className="dictionary-entry-heading flex items-center gap-2">
               <strong className="truncate text-sm font-medium hover:text-indigo-600 dark:hover:text-indigo-300">
                 {entry.name}
               </strong>

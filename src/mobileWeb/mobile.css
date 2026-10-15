@@ -71,6 +71,8 @@ html input,html textarea,html [contenteditable="true"]{font-size:max(16px,1em)!i
 .dictionary-mobile .dictionary-detail-actions[open]>.dictionary-model-options{margin-block:4px}
 .dictionary-mobile .dictionary-filters-hidden,.dictionary-mobile .dictionary-facets.dictionary-filters-hidden{display:none}
 .dictionary-mobile .dictionary-facets{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%}
+/* Catalogue tags and count labels retain complete text in their grid cells. */
+.dictionary-mobile .dictionary-entry-row>div:nth-child(7)>span,.dictionary-mobile .dictionary-entry-row>span:nth-child(n+4):nth-child(-n+6){min-width:0;max-width:100%;overflow-wrap:anywhere}
 /* Available pane width and accessible font size both determine the tab grid. */
 .dictionary-mobile .dictionary-detail-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,6rem),1fr));overflow:visible;gap:4px}
 .dictionary-mobile .dictionary-detail-tabs>button{height:auto;min-height:44px;min-width:0;justify-content:center;flex-wrap:wrap;padding:8px 6px;gap:4px;overflow-wrap:anywhere}

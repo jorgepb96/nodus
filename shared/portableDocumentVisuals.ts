@@ -219,7 +219,7 @@ export async function enrichPortableDocumentVisuals<Provider extends { id: strin
       if (!skill || !budget.remaining(figure.skillId)) { figure.state = 'failed'; figure.error = 'The skill is disabled or has reached its maximum.'; persist(); continue; }
       try {
         budget.reserve(skill.id);
-        figure.state = 'running'; figure.owner = host.owner('document-figure', `${target.kind}:${target.id}:${manifest.revision}:${figure.id}`, vaultId); persist();
+        figure.state = 'running'; figure.ownerRevision = manifest.revision; figure.owner = host.owner('document-figure', `${target.kind}:${target.id}:${manifest.revision}:${figure.id}`, vaultId); persist();
         const block = manifest.blocks.find(item => item.id === figure.blockId)!;
         await flushPersist();
         const answer = await host.completeText({ system: `${buildChatSkillsPrompt([skill])}\n${DOCUMENT_VISUAL_RULES}\nProduce exactly ONE insertable resource for the requested figure. Only this skill is enabled. Return its complete output protocol; no additional figures or commentary. Use the supplied evidence only.`,

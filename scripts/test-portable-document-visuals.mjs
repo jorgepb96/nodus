@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 
 const copy = value => JSON.parse(JSON.stringify(value));
+const withoutOwnerRevision = value => JSON.parse(JSON.stringify(value, (key, item) => key === 'ownerRevision' ? undefined : item));
 const portable = await build({ entryPoints: ['shared/portableDocumentVisuals.ts'], bundle: true, platform: 'browser', format: 'iife', globalName: 'visuals', write: false, metafile: true });
 const stubs = {
   'node:crypto': 'export const randomUUID=()=>globalThis.fixture.id();',
@@ -67,7 +68,7 @@ function fixture({ body = 'Evidence [work](nodus://works/one).', max = 3, plan, 
       else result = plan ? plan(payload, ++planning) : payload.blocks.filter(b => !b.markdown.startsWith('#')).map(b => ({ blockId: b.id, skillId: 'svg', brief: 'Draw only supplied evidence', caption: 'Evidence', sources: [], layout: 'wide' }));
       assert.equal(guard(result), true, 'scripted response must obey the actual provider guard'); return result;
     },
-    completeText: async (opts, chosen) => { assert.deepEqual(chosen, model); assert.equal(opts.noRetry, true); if (durable) assert.equal(durable.usage.svg.attempts, 1); trace.push(['text', opts]); if (invalidateAfterText) valid = false; return '```svg\n<svg xmlns="http://www.w3.org/2000/svg"></svg>\n```'; },
+    completeText: async (opts, chosen) => { assert.deepEqual(chosen, model); assert.equal(opts.noRetry, true); if (durable) assert.ok(durable.usage.svg.attempts >= 1 && durable.usage.svg.attempts <= max); trace.push(['text', opts]); if (invalidateAfterText) valid = false; return '```svg\n<svg xmlns="http://www.w3.org/2000/svg"></svg>\n```'; },
     executeResources: async (_answer, execution) => {
       assert.deepEqual([...execution.registry.providers.keys()], ['nodus:svg']); assert.deepEqual(execution.pins, { test: 'exact-pins' });
       execution.beforeInvoke(); await execution.flushPersist?.();
@@ -100,10 +101,11 @@ test('browser bundle is Node-free and Desktop delegates the exact planning/enric
   const b = await desktopAPI.enrichDocumentVisuals(target, desktopFixture.policy, { hints: ['Consider a diagram'] });
   const c = await canonicalAPI.enrichDocumentVisuals(target, canonicalFixture.policy, { hints: ['Consider a diagram'] });
   assert.deepEqual(copy(a), copy(b));
-  assert.deepEqual(copy(a), copy(c));
+  assert.deepEqual(withoutOwnerRevision(a), copy(c));
+  assert.equal(a.figures[0].ownerRevision, a.revision);
   const normalTrace = f => copy(f.trace).map(row => row[0] === 'text' ? ['text', { ...row[1], signal: undefined }] : row);
   assert.deepEqual(normalTrace(browserFixture), normalTrace(desktopFixture));
-  assert.deepEqual(normalTrace(browserFixture), normalTrace(canonicalFixture));
+  assert.deepEqual(withoutOwnerRevision(normalTrace(browserFixture)), withoutOwnerRevision(normalTrace(canonicalFixture)));
   assert.equal(a.figures.length, 1); assert.ok(a.discarded.some(d => d.reason === 'not-selected'));
   const calls = browserFixture.trace.filter(e => e[0] === 'json');
   assert.equal(calls.filter(c => c[2].blocks).length, 3, 'a block over 24k stays whole between its heading and the final block');
@@ -131,6 +133,8 @@ test('a poster retry preserves the paid resource and makes no planning/text/reso
   assert.equal(failed.state, 'partial'); assert.ok(failed.figures[0].view && failed.figures[0].owner);
   const second = fixture({ previous: copy(failed) }); const recovered = await run(second, { retry: true });
   assert.equal(recovered.state, 'ready'); assert.deepEqual(copy(recovered.usage), copy(failed.usage));
+  assert.equal(recovered.figures[0].ownerRevision, failed.figures[0].ownerRevision);
+  assert.equal(recovered.figures[0].owner, failed.figures[0].owner);
   assert.equal(second.trace.filter(e => ['json', 'text', 'paid-resource'].includes(e[0])).length, 0);
   assert.equal(second.trace.filter(e => e[0] === 'snapshot').length, 1);
 });
@@ -141,6 +145,19 @@ test('stale revision and failed durable flush cannot execute resources or publis
   const diskFailure = fixture({ failedFlush: true });
   await assert.rejects(run(diskFailure), /durable storage failed/);
   assert.equal(diskFailure.trace.filter(e => ['json', 'text', 'paid-resource'].includes(e[0])).length, 0);
+});
+
+test('Desktop figure removal advances the manifest while preserving surviving owner birth', async () => {
+  const f = fixture({ body: 'First evidence.\n\nSecond evidence.' });
+  const api = realm(desktop, 'desktop', f);
+  const original = await api.enrichDocumentVisuals(target, f.policy);
+  assert.equal(original.figures.length, 2);
+  const survivor = copy(original.figures[1]);
+  const removed = api.removeDocumentFigure(target, original.figures[0].id);
+  assert.equal(removed.figures.length, 1);
+  assert.notEqual(removed.revision, original.revision);
+  assert.equal(removed.figures[0].owner, survivor.owner);
+  assert.equal(removed.figures[0].ownerRevision, survivor.ownerRevision);
 });
 
 test('cancellation checkpoints the actual cancelled state without any provider or resource call', async () => {

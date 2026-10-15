@@ -6,11 +6,12 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createResearchApp } from './lib/research-app-harness.mjs';
-import { startResearchLunaBridge, researchLunaBridgeProtocol } from './research-luna-bridge.mjs';
+import { acquireResearchLunaSlot } from './lib/researchLunaAdmission.mjs';
+import { startResearchLunaBridge, researchLunaBridgeProtocol, researchLunaPhasePolicy } from './research-luna-bridge.mjs';
 import { classifyResearchLunaAttempt } from './lib/researchLunaCampaignState.mjs';
 import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases, selectResearchLiveDiagnosticCases,
   summarizeResearchLiveTerminalEvents, validateResearchLiveAdmissionStop } from './lib/researchLiveAnswerCampaignState.mjs';
-import { prepareResearchLunaDispatch, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
+import { prepareResearchLunaDispatch, snapshotResearchLunaQueue, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 import { verifyDerivedIndexAuthorization } from './lib/researchLiveIndexAuthorization.mjs';
 import { buildResearchLiveShardAssignment, sourceHashesForProduction, validateResearchLiveShardAssignment, validateResearchLiveShardSource } from './lib/researchLiveAnswerShards.mjs';
 
@@ -49,7 +50,7 @@ const SOURCE_FILES = ['scripts/research-live-answer-campaign.mjs', 'scripts/lib/
   'scripts/test-research-live-answer-shards.mjs', 'scripts/lib/researchLiveIndexAuthorization.mjs',
   'scripts/test-research-live-index-authorization.mjs', 'scripts/research-luna-bridge.mjs',
   'scripts/research-luna-response.mjs', 'scripts/research-luna-dispatch.mjs', 'scripts/research-isolation.mjs',
-  'scripts/lib/researchLunaCampaignState.mjs', 'scripts/lib/tsRuntimeHooks.mjs',
+  'scripts/lib/researchLunaAdmission.mjs', 'scripts/lib/researchLunaCampaignState.mjs', 'scripts/lib/tsRuntimeHooks.mjs',
   'scripts/lib/research-app-harness.mjs', 'scripts/research-live-evidence-campaign.mjs',
   'scripts/lib/researchLiveAnswerCampaignState.mjs', 'scripts/test-research-live-answer-campaign.mjs',
   'electron/ai/researchAssistant.ts', 'electron/ipc/academic.ts', 'electron/preload/academic.ts',
@@ -327,7 +328,12 @@ const bridgeEventOffset = fs.existsSync(rootBridgeEventFile) ? fs.statSync(rootB
 const shardCallsUsed = prior?.state.network?.shardCallsAccepted ?? 0;
 const callCeiling = assignedShard ? MAX_SHARD_CALLS : MAX_CAMPAIGN_CALLS;
 if (shardCallsUsed >= callCeiling) throw new Error('Assigned shard hard request allocation is exhausted');
-const bridge = await startResearchLunaBridge({ root, maxRequests: Math.min(MAX_SEGMENT_CALLS, callCeiling - shardCallsUsed) });
+const generatorPoolRoot = arg('generator-pool-root') ?? process.env.NODUS_QA_GENERATOR_POOL;
+if (!generatorPoolRoot) throw new Error('Set --generator-pool-root to the shared, initialized isolated generator pool before starting any producer');
+const generatorLease = acquireResearchLunaSlot(path.resolve(generatorPoolRoot), root);
+const releaseGenerator = () => generatorLease.release();
+process.once('exit', releaseGenerator);
+const bridge = await startResearchLunaBridge({ root, phasePolicy: researchLunaPhasePolicy, maxRequests: Math.min(MAX_SEGMENT_CALLS, callCeiling - shardCallsUsed) });
 const bridgeNonceSha256 = digest(Buffer.from(bridge.nonce, 'utf8'));
 if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === bridgeNonceSha256)) {
   await bridge.close();
@@ -336,6 +342,8 @@ if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === 
 const sourceVersion = { sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash, preregistration: preregFile,
   preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceFiles: currentSourceHashes };
 const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campaign/1', mode: 'structured-only', root,
+  execution: { generatorPoolRoot: generatorLease.poolRoot, generatorSlots: generatorLease.slots,
+    producerSlot: generatorLease.slot, phasePolicy: researchLunaPhasePolicy, totalRequestDeadlineMs: 300_000 },
   ...(diagnosticSelection ? { diagnosticSelection } : {}),
   ...(assignedShard ? { assignment: assignmentPath, assignmentSha256: digest(safeRead(assignmentPath)), shardId: assignedShard.id,
     plannedCount: assignedShard.caseIds.length, assignedCaseIds: assignedShard.caseIds, maxShardCalls: MAX_SHARD_CALLS, fullSnapshotPlannedCount: 80 } : {}),
@@ -651,9 +659,11 @@ try {
   report.segments ??= [];
   const currentSegment = report.segments.find(row => row.id === segmentId);
   const segmentCases = report.answers.filter(row => row.segmentId === segmentId).map(row => row.caseId);
-  if (currentSegment) { currentSegment.finishedAt = now(); currentSegment.attemptedCaseIds = segmentCases; }
+  if (currentSegment) { currentSegment.execution = { generatorPoolRoot: generatorLease.poolRoot, generatorSlots: generatorLease.slots, producerSlot: generatorLease.slot, phasePolicy: researchLunaPhasePolicy, totalRequestDeadlineMs: 300_000 }; currentSegment.finishedAt = now(); currentSegment.attemptedCaseIds = segmentCases; }
   else report.segments.push({ id: segmentId, ordinal: segmentOrdinal, bridgeNonceSha256, startedAt: segmentStartedAt, finishedAt: now(),
     callsAccepted: bridge.acceptedRequests(), requestLimit: MAX_SEGMENT_CALLS, attemptedCaseIds: segmentCases, pendingAtEnd: report.pending?.notAttempted?.length ?? 80 });
+  try { report.executionTimings = snapshotResearchLunaQueue({ root }); }
+  catch (error) { report.executionTimingFailure = String(error?.message ?? error).slice(0, 500); }
   report.finishedAt = now();
   report.pending = pendingFor(runPlan, report.answers);
   const finalSourceHashes = Object.fromEntries(SOURCE_FILES.map(file => [file, digest(fs.readFileSync(path.join(repo, file)))]));
@@ -672,10 +682,11 @@ try {
     auditFile: databaseAccessFile };
   report.completed = report.pending.notAttempted.length === 0 && report.answers.length === runPlan.length
     && report.answers.every(row => ['answered','verification-withheld'].includes(row.attemptStatus) && row.receiptsComplete === true)
-    && report.sourceHashesVerified && databasesContained;
+    && report.sourceHashesVerified && databasesContained && !report.executionTimingFailure;
   report.segmentPaused = !report.completed;
   save(path.join(outputRoot, 'manifest.json'), manifest);
   save(path.join(outputRoot, 'campaign.json'), report);
+  releaseGenerator(); process.removeListener('exit', releaseGenerator);
   process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
 }
 if (!report.completed) process.exitCode = 1;

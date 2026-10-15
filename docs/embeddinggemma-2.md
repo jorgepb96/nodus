@@ -16,7 +16,11 @@ The exclusive npm alias `@nodus/embeddinggemma-transformers` pins Transformers.j
 The pinned alias resolves ONNX Runtime Node **1.30.0**, whose installed npm
 artifact contains `napi-v6` CPU bindings for Windows x64, Linux x64 and macOS
 ARM64, but **no macOS x64 binding**. EmbeddingGemma is therefore unavailable on
-Intel Macs with this dependency set. Intel support requires an explicitly built
+Intel Macs with this dependency set. Both profiles remain visible with a localized
+unavailability message in Settings, but are removed from embedding choices;
+download and both inference entry points reject before allocating a worker or
+transferring assets. Existing weights remain removable and a saved selection is
+never silently changed. Intel support requires an explicitly built
 and independently verified compatible native runtime; it cannot be inferred from
 an Intel Nodus build or provided by silently loading the historical ONNX runtime.
 Installer tests inspect actual native files for both runtime versions rather
@@ -54,6 +58,65 @@ npm run test:embeddinggemma:runtime
 npm run audit:embeddinggemma -- --all
 npm run test:e2e:embeddinggemma
 ```
+
+### Focused correction preflight
+
+Run the bounded regressions before scheduling another answer campaign:
+
+```sh
+npm run test:research:focused
+npm run test:research:luna
+npm run test:research:grounding
+npm run typecheck:ci
+npm run build
+npm run test:research:corrections:e2e
+```
+
+The last command launches real Electron under the macOS isolation boundary with
+empty harness keys. It verifies UI and IPC denial under a simulated Intel
+architecture and restores the actual ARM architecture to check availability.
+It does not claim native Intel execution. The captured R007 auditor regression
+uses exact recorded inputs/verdicts; its retry replies are synthetic. No test
+above measures a new generated-answer accuracy rate or calls a paid provider.
+
+R007's operands and requested calculation reached both planner and writer.
+The writer correctly labelled `72% − 51% = 21` as a calculation. The auditor
+accepted its literal operands and derivation, but returned
+`explicitInference=false`, causing the deterministic guard to remove it.
+A leading calculation label with otherwise valid support now receives one
+fresh sentence-only consistency audit. The code never flips that flag to
+approve the sentence. A repeated contradiction, rejection, missing literal
+quote, unsupported assertion, invalid dependency or failed retry still blocks
+it. This correction applies to documentary verification with any embedding model.
+
+New live Luna campaigns require one shared generator pool across all producer
+processes. Create a marked disposable root with `createResearchTestRoot()` from
+`scripts/research-isolation.mjs`, then initialize its capacity once:
+
+```sh
+node scripts/lib/researchLunaAdmission.mjs --root=/ABSOLUTE/MARKED/QA/POOL --slots=2
+```
+
+Pass `--generator-pool-root=/ABSOLUTE/MARKED/QA/POOL` (or
+`NODUS_QA_GENERATOR_POOL`) to every live-answer producer, alongside its existing
+qualified clone/source arguments. Each producer holds one exclusive slot for
+its segment; a third producer cannot run against two slots. Normal exit releases
+it. A crashed producer leaves its lease for explicit operator review, with no
+automatic PID-based reclamation or duplicated generation.
+
+Dispatch jobs use format `/4`; `/2` and `/3` remain readable for historical
+receipts. The generator's first helper records `reading-started`. After its
+complete hash-bound multipart read and read attestation, a second helper records
+`reading-completed`. The exact-response helper records `response-ready` before
+publication. The bridge records final delivery/abandonment. The campaign saves
+per-request execution timings: queue, reading, post-read-until-helper, delivery
+and total. Post-read time includes model generation, scheduling and tools; it
+is not claimed as native inference latency. Missing boundaries remain unknown.
+New live requests fail after 60 seconds in queue or 90 seconds reading, and the
+hard total remains **300 seconds**, including all stages. Nothing extends the
+production model timeout. Helpers refuse expired/cancelled/terminal work;
+original request bytes survive abandonment for diagnosis. Closed baseline and
+failed campaign receipts are never rewritten or given new quality credit.
 
 `npm run audit:embeddinggemma:process-parity` defaults to a dry run. Its explicit `--prepare` and `--run --root=…` phases verify owned isolated assets, compare the same Q8 weights through the direct-thread reference and the isolated production-source host at both dimensions, then kill only the recorded QA utility process and check that the application and the same profile recover. See [the current campaign receipts and limits](../audit/research-live-quality/README.md); numerical parity, answer quality and packaged-platform coverage are separate checks.
 
@@ -97,7 +160,7 @@ The [model-independent Research Chat follow-up](research-chat-grounding.md) adds
 
 ## Release gates
 
-Validated profiles require Recall@10 ≥ 0.85; 512-dimensional nDCG@10 within 0.02 of correctly prepared E5 with no major-category regression > 0.05; and 256-dimensional nDCG@10 within 0.02 of 512. Citations must resolve 100%, at least 95% of factual answers must be supported and at least 90% of insufficient-evidence scenarios recognized. There must be zero contract/scope mixes and zero real database access. Review twenty answers and every grounding failure against actual source passages. Native and packaged smoke tests are required on Windows x64, Linux x64, macOS ARM64 and macOS Intel.
+Validated profiles require Recall@10 ≥ 0.85; 512-dimensional nDCG@10 within 0.02 of correctly prepared E5 with no major-category regression > 0.05; and 256-dimensional nDCG@10 within 0.02 of 512. Citations must resolve 100%, at least 95% of factual answers must be supported and at least 90% of insufficient-evidence scenarios recognized. There must be zero contract/scope mixes and zero real database access. Review twenty answers and every grounding failure against actual source passages. Native and packaged inference smoke tests are required on Windows x64, Linux x64 and macOS ARM64. The pinned runtime does not support macOS Intel; that platform requires availability-denial checks and must not be advertised as supporting EmbeddingGemma inference. Future Intel support needs its own native and package verification.
 
 The Apple M2/16 GB target is hot query p95 ≤ 1.5 seconds against 10,000 chunks and ordinary runtime memory growth ≤ 1.5 GiB. Report 2K/8K-token runs independently. Profiles remain experimental until all applicable gates have evidence; preserve failed results and do not replace an existing default.
 

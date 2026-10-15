@@ -120,6 +120,7 @@ export function LocalAiModelsSettings({
       {NODUS_LOCAL_MODELS.filter((model, index, all) => model.kind === kind && (!model.assetFamily || all.findIndex(other => other.assetFamily === model.assetFamily) === index)).map((model) => {
         const local = installed.get(model.id);
         const downloaded = Boolean(local?.downloaded);
+        const unavailableReason = local?.unavailableReason;
         const runtimeReady = model.runtime !== 'llama_cpp' || Boolean(status?.runtime.ready);
         return <article key={model.id} data-testid={`local-model-${model.id}`} className={settingsModelRowClass(false, false, 'sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4')}>
           <div className="min-w-0">
@@ -134,6 +135,7 @@ export function LocalAiModelsSettings({
               </p>
               <p className="mt-1.5 max-w-3xl text-xs leading-5 text-neutral-600 dark:text-neutral-500">{t(model.description)}</p>
               {model.assetFamily && <p className="mt-1 text-xs text-neutral-500">{t('Los perfiles de 256 y 512 dimensiones comparten una única descarga. Eliminarla afecta a ambos.')}</p>}
+              {unavailableReason && <p role="status" data-testid="local-model-unavailable" className="mt-1 text-xs text-amber-700 dark:text-amber-400">{t(unavailableReason)}</p>}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:max-w-[25rem] sm:justify-end">
             <span className={`mr-auto rounded-full px-2 py-1 text-[10px] font-medium sm:mr-0 ${downloaded ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/35 dark:text-emerald-400' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-900 dark:text-neutral-500'}`}>
@@ -141,7 +143,7 @@ export function LocalAiModelsSettings({
             </span>
             {downloaded
               ? <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" disabled={transferBusy} onClick={() => setDeleting(model)}><Icon name="trash" size={10} />{t('Eliminar')}</button>
-              : <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={transferBusy} onClick={() => void download(model)}><Icon name={local?.downloading || busy === model.id ? 'sync' : 'download'} className={local?.downloading || busy === model.id ? 'animate-spin' : ''} size={10} />{local?.downloading && status?.runtime.downloading ? t('Preparando motor…') : local?.downloading || busy === model.id ? t('Descargando…') : t('Descargar')}</button>}
+              : <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={transferBusy || !local || Boolean(unavailableReason)} onClick={() => void download(model)}><Icon name={local?.downloading || busy === model.id ? 'sync' : 'download'} className={local?.downloading || busy === model.id ? 'animate-spin' : ''} size={10} />{local?.downloading && status?.runtime.downloading ? t('Preparando motor…') : local?.downloading || busy === model.id ? t('Descargando…') : t('Descargar')}</button>}
             {downloaded && model.runtime === 'llama_cpp' && !status?.runtime.processedOnCpu && (
               <button className="btn btn-ghost h-7 px-2 text-[10px]" disabled={transferBusy} title={t('Mide cuántas peticiones simultáneas admite este equipo. No se ejecuta automáticamente.')} onClick={() => void calibrateModel(model)}>
                 <Icon name={busy === `calibrate:${model.id}` ? 'sync' : 'scale'} className={busy === `calibrate:${model.id}` ? 'animate-spin' : ''} size={10} />{t('Medir concurrencia')}

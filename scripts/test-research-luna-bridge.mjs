@@ -140,14 +140,14 @@ try {
     id: first.id, content: 'done', finish_reason: 'stop' }), { mode: 0o600, flag: 'wx' });
   assert.equal((await firstPromise).status, 200);
 
-  // Aborting the caller removes the queued request and pending bridge state.
+  // Aborting the caller retains the request and closes pending bridge state.
   const controller = new AbortController();
   const beforeCancel = fs.readdirSync(bridge.requestDirectory);
   const canceledPromise = submit(bridge, requestBody(), { signal: controller.signal });
   const { record: canceledRequest, file: canceledFile } = await queuedRequest(bridge, beforeCancel);
   controller.abort();
   await assert.rejects(canceledPromise);
-  await eventually(() => bridge.pendingCount() === 0 && !fs.existsSync(canceledFile), 'canceled request cleanup');
+  await eventually(() => bridge.pendingCount() === 0 && fs.existsSync(path.join(root, 'artifacts', 'failed-requests', `${canceledRequest.id}.json`)), 'canceled request cleanup');
   const cancelEvent = fs.readFileSync(bridge.eventFile, 'utf8').trim().split('\n').map(JSON.parse)
     .find(row => row.id === canceledRequest.id && row.event === 'abandoned');
   assert.equal(cancelEvent.reason, 'callerabort');
@@ -160,12 +160,12 @@ try {
   fs.writeFileSync(path.join(bridge.responseDirectory, `${malformedRequest.id}.json`), malformedRaw, { mode: 0o600, flag: 'wx' });
   assert.equal((await malformedPromise).status, 502);
   assert.equal(fs.readFileSync(path.join(root, 'artifacts', 'failed-responses', `${malformedRequest.id}.txt`), 'utf8'), malformedRaw);
-  assert.equal(fs.existsSync(malformedFile), false);
+  assert.equal(fs.existsSync(malformedFile), true);
   const malformedEvent = fs.readFileSync(bridge.eventFile, 'utf8').trim().split('\n').map(JSON.parse)
     .find(row => row.id === malformedRequest.id && row.event === 'abandoned');
   assert.equal(malformedEvent.reason, 'jsonparse');
 
-  // A stale/foreign agent response cannot be delivered, and the request is removed.
+  // A stale/foreign agent response cannot be delivered; the request is retained.
   const beforeBadResponse = fs.readdirSync(bridge.requestDirectory);
   const badResponsePromise = submit(bridge);
   const { record: badResponseRequest, file: badResponseFile } = await queuedRequest(bridge, beforeBadResponse);
@@ -177,7 +177,7 @@ try {
   const invalidResponsePath = path.join(bridge.responseDirectory, `${badResponseRequest.id}.json`);
   fs.writeFileSync(invalidResponsePath, invalidResponseText, { mode: 0o600, flag: 'wx' });
   assert.equal((await badResponsePromise).status, 502);
-  assert.equal(fs.existsSync(badResponseFile), false);
+  assert.equal(fs.existsSync(badResponseFile), true);
   const failedRequestCopy = path.join(root, 'artifacts', 'failed-requests', `${badResponseRequest.id}.json`);
   const failedResponseCopy = path.join(root, 'artifacts', 'failed-responses', `${badResponseRequest.id}.txt`);
   assert.ok(fs.readFileSync(failedRequestCopy).equals(badRequestBytes), 'failed request copy preserves the accepted artifact');
@@ -188,14 +188,14 @@ try {
   assert.equal(invalidEvent.responseHash, hash(Buffer.from(invalidResponseText)));
   assert.equal(bridge.pendingCount(), 0);
 
-  // Deadline expiry removes its pending request, with a distinct timeout response.
+  // Deadline expiry retains the immutable request and closes its live job.
   const timeoutBridge = await startResearchLunaBridge({ root, timeoutMs: 1000, pollMs: 10 });
   const beforeTimeout = fs.readdirSync(timeoutBridge.requestDirectory);
   const timeoutPromise = submit(timeoutBridge);
   const { file: timedOutFile } = await queuedRequest(timeoutBridge, beforeTimeout);
   assert.equal((await timeoutPromise).status, 504);
   assert.equal(timeoutBridge.pendingCount(), 0);
-  assert.equal(fs.existsSync(timedOutFile), false);
+  assert.equal(fs.existsSync(timedOutFile), true);
   const timeoutEvent = fs.readFileSync(timeoutBridge.eventFile, 'utf8').trim().split('\n').map(JSON.parse).at(-1);
   assert.equal(timeoutEvent.reason, 'timeout');
   await timeoutBridge.close();
@@ -209,7 +209,7 @@ try {
   const closingResponse = await closingPromise;
   assert.equal(closingResponse.status, 503);
   assert.equal(closingBridge.pendingCount(), 0);
-  assert.equal(fs.existsSync(closingFile), false);
+  assert.equal(fs.existsSync(closingFile), true);
 
   // The campaign ceiling counts accepted completions, including internally retried requests.
   const cappedBridge = await startResearchLunaBridge({ root, timeoutMs: 5000, pollMs: 10, maxRequests: 1 });

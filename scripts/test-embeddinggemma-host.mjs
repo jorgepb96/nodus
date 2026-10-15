@@ -60,6 +60,9 @@ globalThis.embeddingQaBackgroundFactory = (file, serviceName, options) => {
 };
 const file = path.join(scratch, 'host.cjs');
 await build({ entryPoints: ['electron/ai/embeddingGemma2Host.ts'], outfile: file, bundle: true, platform: 'node', format: 'cjs', logLevel: 'silent',
+  // Controlled workers test scheduling on a supported simulated platform. Intel
+  // denial is exercised separately against the real manager and direct host.
+  define: { 'process.platform': '"linux"' },
   plugins: [{ name: 'controlled-native-lifecycle', setup(builder) {
     builder.onResolve({ filter: /^\.\.\/workers\/backgroundProcess$/ }, () => ({ path: 'background-process', namespace: 'qa-bg' }));
     builder.onLoad({ filter: /.*/, namespace: 'qa-bg' }, () => ({ contents: 'export function backgroundProcess(file, name, options) { return globalThis.embeddingQaBackgroundFactory(file, name, options); }', loader: 'js' }));

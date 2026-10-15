@@ -1,3 +1,4 @@
+import { EMBEDDING_GEMMA2_INTEL_COPY, EMBEDDING_GEMMA2_INTEL_UNAVAILABLE } from './embeddingGemma2Availability';
 import type { MainErrorTranslations } from './mainProcessErrors';
 
 // Keep specific runtime failures visible in every UI language, including errors
@@ -191,7 +192,10 @@ const translations = (index: number, value?: string): MainErrorTranslations => O
   Object.entries(TABLES).map(([lang, strings]) => [lang, strings[index].replace('{value}', () => value ?? '')]),
 ) as MainErrorTranslations;
 
-export const EMBEDDING_GEMMA2_ERRORS = Object.fromEntries(KEYS.slice(0, staticCount).map((key, index) => [key, translations(index)]));
+export const EMBEDDING_GEMMA2_ERRORS: Record<string, MainErrorTranslations> = {
+  ...Object.fromEntries(KEYS.slice(0, staticCount).map((key, index) => [key, translations(index)])),
+  [EMBEDDING_GEMMA2_INTEL_UNAVAILABLE]: EMBEDDING_GEMMA2_INTEL_COPY,
+};
 export const EMBEDDING_GEMMA2_ERROR_PATTERNS = dynamic.map((pattern, index) => ({
   pattern,
   translate: (value: string): MainErrorTranslations => {

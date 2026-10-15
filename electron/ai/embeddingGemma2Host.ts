@@ -1,3 +1,4 @@
+import { assertNodusLocalModelAvailable } from '../../shared/embeddingGemma2Availability';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -186,6 +187,7 @@ function submit(operation: Job['operation'], texts: string[], dimensions: number
 }
 export async function embedEmbeddingGemma2(model: string, modelDirectory: string, texts: string[], options: { role?: EmbeddingRole; title?: string; titles?: (string | undefined)[] }, signal?: AbortSignal): Promise<number[][]> {
   if (!isEmbeddingGemma2(model)) throw new Error('Perfil EmbeddingGemma desconocido.');
+  assertNodusLocalModelAvailable(model, process.platform, process.arch);
   if (directory && directory !== modelDirectory && embeddingGemma2Busy()) throw new Error('EmbeddingGemma: otra biblioteca está en uso.');
   if (directory !== modelDirectory) { closeEmbeddingGemma2Worker(); directory = modelDirectory; }
   const role = options.role ?? 'document';

@@ -41,6 +41,8 @@ export interface NodusLocalModelDefinition {
 }
 
 export interface NodusLocalModelStatus {
+  /** Installed files may remain removable even when the runtime is unavailable. */
+  unavailableReason?: string;
   id: string;
   downloaded: boolean;
   downloadedBytes: number;

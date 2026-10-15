@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /** Safe, idempotent dispatch metadata tooling for an isolated Luna QA queue. */
+import { recordResearchLunaPhase, researchLunaTiming } from './research-luna-bridge.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ISOLATION_FORMAT = 'nodus.isolated-research-profile/1';
-const JOB_FORMAT = 'nodus.luna-generation-job/3';
+const JOB_FORMAT = 'nodus.luna-generation-job/4';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPECTED_RESPONSE_HELPER = path.join(REPO, 'scripts', 'research-luna-response.mjs');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
-const PROMPT_TEMPLATE = `Generate one real gpt-6-luna completion for the isolated QA queue. Read the generation-job metadata at {{metadataFile}} and use its requestFile path. Read ONLY that request file using exec_command with max_output_tokens=30000. Print the COMPLETE request JSON, including request.messages and response_format. Use all file paths from the metadata; do not copy or retype UUIDs. If the request is truncated or incomplete, stop without completing. Follow the actual request.messages. Do not read other requests, reports, repository files, gold data, web pages, credentials, or mapping metadata. After reading the complete request, write a JSON object containing exactly the keys and values specified by metadata.expectedReadAudit to metadata.readAuditFile, replacing readAt with the current ISO-8601 timestamp immediately after the complete read. Generate the requested raw UTF-8 completion into rawFile without repairing or normalizing it. Invoke responseHelper through nodeBinary as a subprocess with --request=requestFile --content=rawFile --finish-reason=stop, using only paths from the metadata. Do not hand-write a response envelope. Final reply only the helper response path.`;
+const PROMPT_TEMPLATE = `Generate one real gpt-6-luna completion for the isolated QA queue. Read the generation-job metadata at {{metadataFile}} and use its requestFile path. FIRST invoke metadata.dispatchHelper through metadata.nodeBinary with begin --root=metadata.root --request-id=metadata.requestId (use actual metadata values). If it rejects the job, stop without reading or generating. Read ONLY that request file using exec_command with max_output_tokens=30000. Print the COMPLETE request JSON, including request.messages and response_format. Use all file paths from the metadata; do not copy or retype UUIDs. If the request is truncated or incomplete, stop without completing. Follow the actual request.messages. Do not read other requests, reports, repository files, gold data, web pages, credentials, or mapping metadata. After reading the complete request, write a JSON object containing exactly the keys and values specified by metadata.expectedReadAudit to metadata.readAuditFile, replacing readAt with the current ISO-8601 timestamp immediately after the complete read. Then invoke metadata.dispatchHelper through metadata.nodeBinary with read-complete --root=metadata.root --request-id=metadata.requestId; stop if it rejects. Generate the requested raw UTF-8 completion into rawFile without repairing or normalizing it. Invoke responseHelper through nodeBinary as a subprocess with --request=requestFile --content=rawFile --finish-reason=stop, using only paths from the metadata. Do not hand-write a response envelope. Final reply only the helper response path.`;
 const MULTIPART_PROMPT_TEMPLATE = PROMPT_TEMPLATE.replace(
   'Read ONLY that request file using exec_command with max_output_tokens=30000. Print the COMPLETE request JSON, including request.messages and response_format.',
   'Read ONLY that request file, in EVERY metadata.requestReadParts entry in order, using exec_command with max_output_tokens=30000 for EACH part. Invoke metadata.nodeBinary to print the UTF-8 bytes at each byteOffset for byteLength from metadata.requestFile. Each part ends at a UTF-8 boundary and its SHA-256 is in the metadata. Do not print the whole file in one call, summarize, skip, or truncate any part. Together the parts are the COMPLETE request JSON, including request.messages and response_format. Interpret them as one complete JSON request.');
@@ -190,7 +191,7 @@ export function prepareResearchLunaDispatch({ root, nodeBinary, responseHelper, 
   // A child must capture its own immutable job file. The mutable latest-job
   // pointer is retained for operators, but must never be in a dispatched prompt.
   const prompt = promptFor(jobFile, multipartRead);
-  const job = { format: JOB_FORMAT, requestId: event.id, acceptedAt: event.at, deadlineAt,
+  const job = { format: JOB_FORMAT, root: context.root, dispatchHelper: fileURLToPath(import.meta.url), requestId: event.id, acceptedAt: event.at, deadlineAt,
     requestFile, requestSha256: sha(bytes), requestBytes: bytes.length,
     maxRequestBytes, ...(requestReadParts ? { requestReadParts } : {}),
     rawFile: path.join(context.artifacts, 'raw-completions', `${event.id}.txt`),
@@ -226,7 +227,7 @@ function loadJob({ root, requestId }) {
   const context = rootContext(root);
   const jobFile = path.join(context.artifacts, 'dispatch-jobs', `${requestId}.json`);
   const job = readJson(jobFile, { maxBytes: 2 * 1024 * 1024 });
-  if (![JOB_FORMAT, 'nodus.luna-generation-job/2'].includes(job.format) || job.requestId !== requestId) fail('Dispatch job identity mismatch');
+  if (![JOB_FORMAT, 'nodus.luna-generation-job/3', 'nodus.luna-generation-job/2'].includes(job.format) || job.requestId !== requestId) fail('Dispatch job identity mismatch');
   return { ...context, job, jobFile };
 }
 
@@ -242,6 +243,20 @@ export function bindResearchLunaDispatch({ root, requestId, task, model = 'gpt-6
   appendIdempotent(path.join(artifacts, 'agent-prompts.jsonl'), promptRecord, requestId);
   appendIdempotent(path.join(artifacts, 'agent-executions.jsonl'), executionRecord, requestId);
   return { requestId, task, model, forkTurns, jobFile: relativeJob, mapping: job.mapping ?? null };
+}
+
+/** The first agent tool starts reading; the second follows its full-read receipt.
+ * Both fail before doing more work when a job was cancelled or expired. */
+export function observeResearchLunaDispatch({ root, requestId, phase, now = Date.now() } = {}) {
+  const { artifacts, job } = loadJob({ root, requestId });
+  if (phase === 'reading-completed') {
+    verifyResearchLunaRead({ root, requestId, now });
+    const read = readJson(job.readAuditFile, { maxBytes: 64 * 1024 });
+    const started = readEvents(artifacts).find(row => row.id === requestId && row.event === 'reading-started');
+    if (!started || Date.parse(read.readAt) < Date.parse(started.at) || Date.parse(read.readAt) > now) fail('Read attestation is outside observed reading boundaries');
+  }
+  if (!['reading-started', 'reading-completed'].includes(phase)) fail('Invalid agent boundary');
+  return recordResearchLunaPhase({ root, requestId, phase, now });
 }
 
 function appendIdempotent(file, record, requestId) {
@@ -343,7 +358,7 @@ export function snapshotResearchLunaQueue({ root } = {}) {
     const jobFile = path.join(context.artifacts, 'dispatch-jobs', `${id}.json`);
     const jobExists = pathExists(jobFile);
     const job = jobExists ? readJson(jobFile, { maxBytes: 2 * 1024 * 1024 }) : null;
-    if (job && (job.requestId !== id || ![JOB_FORMAT, 'nodus.luna-generation-job/2'].includes(job.format))) fail('Dispatch job identity mismatch in snapshot');
+    if (job && (job.requestId !== id || ![JOB_FORMAT, 'nodus.luna-generation-job/3', 'nodus.luna-generation-job/2'].includes(job.format))) fail('Dispatch job identity mismatch in snapshot');
     const bound = prompts.some(row => row.request_id === id) && executions.some(row => row.request_id === id);
     const end = terminal.get(id);
     let status = end?.event ?? (job ? (bound ? 'bound' : 'prepared') : 'accepted');
@@ -358,7 +373,8 @@ export function snapshotResearchLunaQueue({ root } = {}) {
     }
     return { id, status, acceptedAt: event.at ?? null, terminalAt: end?.at ?? null,
       task: prompts.find(row => row.request_id === id)?.task ?? null,
-      jobFile: job ? path.relative(context.artifacts, jobFile).split(path.sep).join('/') : null };
+      jobFile: job ? path.relative(context.artifacts, jobFile).split(path.sep).join('/') : null,
+      timing: researchLunaTiming(events, id) };
   });
 }
 
@@ -380,9 +396,11 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       ...(args['mapping-file'] ? { mappingFile: args['mapping-file'], mappingSha256: args['mapping-sha256'] } : {}) });
     else if (command === 'bind') result = bindResearchLunaDispatch({ root, requestId: args['request-id'], task: args.task,
       model: args.model ?? 'gpt-6-luna', forkTurns: args['fork-turns'] ?? 'none' });
+    else if (command === 'begin' || command === 'read-complete') result = observeResearchLunaDispatch({ root, requestId: args['request-id'],
+      phase: command === 'begin' ? 'reading-started' : 'reading-completed' });
     else if (command === 'verify-read') result = verifyResearchLunaRead({ root, requestId: args['request-id'] });
     else if (command === 'snapshot') result = { root: path.resolve(root), jobs: snapshotResearchLunaQueue({ root }) };
-    else fail('Use prepare, bind, verify-read, or snapshot');
+    else fail('Use prepare, bind, begin, read-complete, verify-read, or snapshot');
     console.log(JSON.stringify(result));
   } catch (error) {
     console.error(`Research Luna dispatch rejected: ${String(error?.message ?? error)}`);

@@ -1,3 +1,5 @@
+import { EMBEDDING_GEMMA2_INTEL_COPY, EMBEDDING_GEMMA2_INTEL_UNAVAILABLE } from '../shared/embeddingGemma2Availability';
+
 const KEYS = [
   'Texto multilingüe · perfil recomendado de esta familia. Validación de producto pendiente.',
   'Texto multilingüe · índice más pequeño. Validación de producto pendiente.',
@@ -12,7 +14,7 @@ function table(values: readonly string[]): Record<string, string> {
   return Object.fromEntries(KEYS.map((key, index) => [key, values[index]]));
 }
 
-export const EMBEDDING_GEMMA2_TRANSLATIONS = {
+const profileTranslations = {
   en: table([
     'Multilingual text · recommended profile in this family. Product validation pending.',
     'Multilingual text · smaller index. Product validation pending.',
@@ -102,3 +104,8 @@ export const EMBEDDING_GEMMA2_TRANSLATIONS = {
     '실험적',
   ]),
 } as const;
+
+for (const locale of Object.keys(profileTranslations) as (keyof typeof profileTranslations)[]) {
+  profileTranslations[locale][EMBEDDING_GEMMA2_INTEL_UNAVAILABLE] = EMBEDDING_GEMMA2_INTEL_COPY[locale];
+}
+export const EMBEDDING_GEMMA2_TRANSLATIONS = profileTranslations;

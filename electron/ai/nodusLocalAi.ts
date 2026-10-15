@@ -1,3 +1,4 @@
+import { assertNodusLocalModelAvailable, nodusLocalModelUnavailableReason } from '@shared/embeddingGemma2Availability';
 import { app } from 'electron';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -333,6 +334,7 @@ async function modelStatus(model: NodusLocalModelDefinition) {
   const active = activeDownloads.get(downloadKey(model.id));
   return {
     id: model.id,
+    unavailableReason: nodusLocalModelUnavailableReason(model.id, process.platform, process.arch),
     downloaded,
     downloadedBytes,
     totalBytes: nodusLocalModelBytes(model),
@@ -878,6 +880,7 @@ export async function downloadNodusLocalModel(
 ): Promise<NodusLocalAiStatus> {
   const model = getNodusLocalModel(modelId);
   if (!model) throw new Error(`Modelo local no soportado: ${modelId}`);
+  assertNodusLocalModelAvailable(modelId, process.platform, process.arch);
   const family = downloadKey(modelId);
   const running = activeDownloads.get(family);
   if (running) return followDownload(running, onProgress);
@@ -954,7 +957,7 @@ export function listNodusLocalChatModels(): ModelInfo[] {
 }
 
 export function listNodusLocalEmbeddingModels(): ModelInfo[] {
-  return NODUS_LOCAL_MODELS.filter((model) => model.kind === 'embedding').map((model) => ({
+  return NODUS_LOCAL_MODELS.filter((model) => model.kind === 'embedding' && !nodusLocalModelUnavailableReason(model.id, process.platform, process.arch)).map((model) => ({
     id: model.id,
     name: model.label,
     sizeBytes: nodusLocalModelBytes(model),
@@ -1582,6 +1585,7 @@ export async function embedWithNodusLocal(modelId: string, input: string | strin
   signal?.throwIfAborted();
   const model = getNodusLocalModel(modelId);
   if (!model || model.kind !== 'embedding') throw new Error(`Modelo de embeddings local no soportado: ${modelId}`);
+  assertNodusLocalModelAvailable(modelId, process.platform, process.arch);
   const texts = Array.isArray(input) ? input : [input];
   if (isEmbeddingGemma2(modelId)) {
     if (!await verifyNodusLocalModel(modelId)) throw new Error(`Descarga y verifica «${model.label}» desde Ajustes → Modelos IA.`);

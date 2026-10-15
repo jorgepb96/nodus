@@ -1,0 +1,102 @@
+{
+  "format": "nodus.research-corrections-ui/1",
+  "root": "/private/tmp/nodus-research-sGvgFM",
+  "startedAt": "2026-10-15T15:19:51.770Z",
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true,
+    "allowedLoopbackPorts": []
+  },
+  "sourceHashes": {
+    "electron/ai/nodusLocalAi.ts": "af470b5a1a15a8200fff2dd81e284a8713b68fb801589c09e5e9a7a31f5ac35b",
+    "electron/ai/embeddingGemma2Host.ts": "76479db9ea9dc47dd5e7bfe80ac23b44d0c6acb844c527b496094258de00a398",
+    "shared/embeddingGemma2Availability.ts": "fd9d1fc8265e5a5d5b820d0172a9c07d007622f1f12247777c198d1af72123e5",
+    "src/components/LocalAiModelsSettings.tsx": "b53ead40d16c1dc6e8d401012387f45906e3be9323106bce232220115a8d024b",
+    "dist-electron/main.js": "dd9b7fc8ab74965f94b8a87e3366004adec2151743f1f92fe6e543a23753a9df",
+    "dist/index.html": "e0ba3683bdc2d4b12631b13506ebf64d06c137d612cbb9d17a638cb2d0ad410d"
+  },
+  "completed": true,
+  "modelCalls": 0,
+  "credentials": "empty harness file; safe storage disabled",
+  "scope": "Real Electron/UI/IPC on macOS ARM; simulated process.arch=x64 availability. No native Intel inference claimed.",
+  "host": {
+    "arch": "arm64",
+    "platform": "darwin",
+    "versions": {
+      "node": "24.20.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "148",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.6",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2025c",
+      "undici": "7.29.0",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.0.245.31-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "43.6.0",
+      "chrome": "150.0.7871.250"
+    }
+  },
+  "intelSimulation": {
+    "status": [
+      {
+        "id": "embeddinggemma-2-text-q8-512-v1",
+        "unavailableReason": "EmbeddingGemma no está disponible en los Mac con procesador Intel. Elige otro modelo de embeddings.",
+        "downloaded": false,
+        "downloadedBytes": 0,
+        "totalBytes": 346397233,
+        "path": "/private/tmp/nodus-research-sGvgFM/profile/local-ai/models/embeddinggemma-2-text-q8-v1",
+        "downloading": false,
+        "progress": 0
+      },
+      {
+        "id": "embeddinggemma-2-text-q8-256-v1",
+        "unavailableReason": "EmbeddingGemma no está disponible en los Mac con procesador Intel. Elige otro modelo de embeddings.",
+        "downloaded": false,
+        "downloadedBytes": 0,
+        "totalBytes": 346397233,
+        "path": "/private/tmp/nodus-research-sGvgFM/profile/local-ai/models/embeddinggemma-2-text-q8-v1",
+        "downloading": false,
+        "progress": 0
+      }
+    ],
+    "availableModels": [
+      "bge-m3-q8_0",
+      "gte-multilingual-base-int8",
+      "multilingual-e5-small-int8"
+    ],
+    "downloadError": "Error invoking remote method 'ai:nodusLocal:downloadModel': Error: EmbeddingGemma is unavailable on Intel Macs. Choose another embedding model.",
+    "preservedModel": "embeddinggemma-2-text-q8-512-v1",
+    "screenshot": "/private/tmp/nodus-research-sGvgFM/artifacts/intel-unavailable.png"
+  },
+  "arm": {
+    "screenshot": "/private/tmp/nodus-research-sGvgFM/artifacts/arm-available.png"
+  },
+  "databaseIsolation": {
+    "opens": 12,
+    "allContained": true
+  },
+  "finishedAt": "2026-10-15T15:19:59.439Z"
+}

@@ -1,0 +1,132 @@
+{
+  "format": "nodus.research-correction-preflight/1",
+  "at": "2026-10-15T15:23:55.444157+00:00",
+  "baseCommit": "8067cf1b02ec316f5bf798daaacbd82d72983837",
+  "workingTree": "modified; exact listed source hashes, not a new full-cohort answer campaign",
+  "sourceSha256": {
+    "audit/research-live-quality/README.md": "ae16e2f1bd22741449e0351f7728a9de5c75e944a4c0be36915a15cc70ec790d",
+    "docs/embeddinggemma-2.md": "1ee8c1cb1c8504e3618954438b9d5a64d0ddfffe021774d0fee007423ecefe0d",
+    "electron/ai/embeddingGemma2Host.ts": "76479db9ea9dc47dd5e7bfe80ac23b44d0c6acb844c527b496094258de00a398",
+    "electron/ai/nodusLocalAi.ts": "af470b5a1a15a8200fff2dd81e284a8713b68fb801589c09e5e9a7a31f5ac35b",
+    "electron/ai/researchClaimAudit.ts": "c0d01fc93f37db6f4cf7e82694d9f426f0df4990ad7db4ffbe5f5cf38212262d",
+    "package.json": "234a6807270e442a314b378241b296b853e2349df0eaed944da62956af986a31",
+    "scripts/fixtures/research-audit/r007-calculation.json": "df7b8df50af51509d6aa21b8005c7ff7303751ad6ddcb1d0b3cab1f6c3e49d65",
+    "scripts/lib/researchLunaAdmission.mjs": "2a5caf1a03d3a1173f47f85810cec1fd0426a5cc9e6fce745cfea224c78ec995",
+    "scripts/research-live-answer-campaign.mjs": "63d8df79599bf339e0c34ec8b14f342eb2aefc5679f293c1ec1ca20ee13e7ec4",
+    "scripts/research-luna-bridge.mjs": "60a715212c66c81576f27d15424c91d4cea9b32c3fe6a3cc96a418b400421e39",
+    "scripts/research-luna-dispatch.mjs": "af9bc772ac59a8f58b2dbfe32ea57025b89d73fe861d21cfd2ca5f14b31ff3e3",
+    "scripts/test-embeddinggemma-availability.mjs": "f0f8a613c0d8fe229a38ad10ec5b2f33bc607b1cdeb532af4422e108cd8beb18",
+    "scripts/test-embeddinggemma-host.mjs": "590d404cd16ec86031213882482ea992dbbcb41e822936c3cde1ee5735979a70",
+    "scripts/test-research-calculation-audit.mjs": "3538c5811d9ca95756d0986cbecfc67cded91d248b21abe17e4b2b6077619096",
+    "scripts/test-research-luna-bridge.mjs": "4d06c7f54f9496e746750d1e6248cd954769cc7cc9645d9483e160bf2eff95d7",
+    "scripts/test-research-luna-lifecycle.mjs": "0b319a0db097f0232ca72b99e2f2c89fa9f99d7a428295e4942293a3357c70c9",
+    "scripts/verify-research-corrections-ui.mjs": "e5639487df3bfaf3ebeb27febb436b14681e1f4ca231c46247121d9091592fe3",
+    "shared/embeddingGemma2Availability.ts": "fd9d1fc8265e5a5d5b820d0172a9c07d007622f1f12247777c198d1af72123e5",
+    "shared/embeddingGemma2Errors.ts": "9ae2981b1c419295b50a793fa8a06c9c7631847a43d2d5c633329a2e6ef1a62d",
+    "shared/localAiModels.ts": "446361a878a8f4ada0c57bca9a75e3903c936eaf9ec1f6127896b882e6feb1b7",
+    "src/components/LocalAiModelsSettings.tsx": "b53ead40d16c1dc6e8d401012387f45906e3be9323106bce232220115a8d024b",
+    "src/i18n.embeddingGemma2.ts": "d690d0f09f6621c2410bca4cfbe5e7e2380d6b4d098a0589e26df546e1886771"
+  },
+  "checks": [
+    {
+      "command": "npm run test:research:focused",
+      "result": "passed",
+      "topLevelTests": 3,
+      "log": "focused-tests.txt"
+    },
+    {
+      "command": "npm run test:research:luna",
+      "result": "passed",
+      "topLevelTests": 16,
+      "log": "luna-tests.txt"
+    },
+    {
+      "command": "npm run test:research:grounding",
+      "result": "passed",
+      "topLevelTests": 29
+    },
+    {
+      "command": "npm run test:embeddinggemma:contracts",
+      "result": "passed",
+      "topLevelTests": 40
+    },
+    {
+      "command": "node --test scripts/test-research-luna-lifecycle.mjs scripts/test-research-luna-dispatch.mjs scripts/test-research-claim-audit-batching.mjs scripts/test-embeddinggemma-availability.mjs scripts/test-local-ai-models.mjs",
+      "result": "passed",
+      "topLevelTests": 5
+    },
+    {
+      "command": "npm run typecheck:ci",
+      "result": "passed"
+    },
+    {
+      "command": "eslint changed TypeScript/TSX files",
+      "result": "passed"
+    },
+    {
+      "command": "node node_modules/vite/bin/vite.js build",
+      "nodeVersion": "22.13.1",
+      "result": "passed",
+      "buildLogSha256": "60869a743e6f61efe2afe0e46af09377977a467782251f53652afa57219917f2"
+    },
+    {
+      "command": "npm run test:research:corrections:e2e",
+      "result": "passed",
+      "receipt": "corrections-ui.json",
+      "databaseOpens": 12,
+      "allContained": true,
+      "intelArchitecture": "simulated x64 in actual macOS ARM64 Electron"
+    }
+  ],
+  "r007": {
+    "provenance": {
+      "requestId": "b4b3f514-3831-406b-b00d-edffb91436ca",
+      "requestSha256": "9f8a8de5d4b8ab45a23a342d9625b2f87b97ef0d0a24ce1f687a4160bd0f5060",
+      "rawCompletionSha256": "b3a15e4f3df2439cbe864f12ee7ce9fe091907fcfb94339d307e61eb00ffd5fd",
+      "nature": "Exact captured audit input and raw verdict; test retry responses are synthetic, not new quality results.",
+      "writerRequestId": "a8cd76f1-c754-45a1-9b22-cf9d763dcfd5",
+      "writerRawCompletionSha256": "87dfb64dffb148b0ea72903e7e19449cf4f72c40f16c7699273c5d685fccc363"
+    },
+    "diagnosis": "Correct labelled calculation written; otherwise positive inference verdict incorrectly sets explicitInference=false; deterministic guard then removes it.",
+    "correction": "One fresh sentence-only consistency audit; no automatic flag flip or approval; all original literal/premise gates remain.",
+    "retryReplies": "synthetic regression fixtures, not real model quality evidence"
+  },
+  "qaExecution": {
+    "dispatchFormat": "nodus.luna-generation-job/4",
+    "historicFormatsRemainReadable": [
+      "/2",
+      "/3"
+    ],
+    "globalAdmission": "one producer per explicitly shared generator pool slot; immutable capacity and atomic cross-process leases",
+    "queueDeadlineMs": 60000,
+    "readingDeadlineMs": 90000,
+    "totalDeadlineMs": 300000,
+    "inferenceLatencyClaim": false,
+    "lateRequestsRetained": true
+  },
+  "firstUiAttempt": {
+    "root": "/private/tmp/nodus-research-u9wYpg",
+    "assertions": "passed",
+    "screenshot": "Intel screenshot was obscured by the existing dialog opened by the intentionally rejected IPC download. Fixed the UI test to close that dialog and recaptured; no production change required."
+  },
+  "limits": {
+    "freshModelGenerations": 0,
+    "paidProviderCalls": 0,
+    "keychainPrompts": 0,
+    "qualityAcceptanceEligible": false,
+    "baselineRegraded": false,
+    "validatedProfiles": [],
+    "nativeIntelInference": "unavailable with pinned runtime; UI/IPC denial simulated and checked",
+    "newGeneratedAnswerAccuracy": null,
+    "freshLunaGenerationReliability": "not established by deterministic local protocol tests",
+    "windowsLinuxRealWeightPackages": "pending"
+  },
+  "evidenceSha256": {
+    "luna-tests.txt": "6c446f0df48f8e3fc5064378e644134eb98dbcf4c2a447f0ea52ae34bd598a3b",
+    "arm-available.png": "e4c618e58a67b692bc5655845e106a7d094688a7e6598c944f1cfd61d1f5dc5b",
+    "README.md": "61cef0819a0bc193cceb9b70646e5ba05b01f810dcaff2f8fa8af8b17677a868",
+    "intel-unavailable.png": "a773a725be5f75323d174952894bd66a6e86c81ff8a942f1b557adc568d66ee4",
+    "focused-tests.txt": "cc795ec72f2d8d7c8f62d5c97f659c41a6b05dbd0484c2c62eeb6ad41ee86b28",
+    "corrections-ui.json": "a579a1f7690f3426212d92098d90356484ae4226e50797595d2295416f4bfe71"
+  }
+}

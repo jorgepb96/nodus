@@ -328,7 +328,10 @@ test('every variant records the requested length through the one metadata seam',
 test('the study, teaching and genealogy writers all receive localized length guidance', () => {
   const desktop = readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
   assert.match(desktop, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/u);
-  assert.match(desktop, /aiWriteSection[^}]*\} = canonicalAcademicAI/u);
+  assert.match(desktop, /portableAcademicDeepResearch\(\{ai:canonicalAcademicAI,/u);
+  const academic = readFileSync(path.join(root, 'shared/portableAcademicDeepResearch.ts'), 'utf8');
+  assert.match(academic, /aiWriteSection[^}]*\}=host\.ai/u);
+  assert.match(academic, /writeSection: \(input\) => aiWriteSection\(input, model,/u);
   assert.match(readFileSync(path.join(root,'electron/ai/studyDeepResearch.ts'),'utf8'),/portableStudyDeepResearch\(/u);
   assert.match(readFileSync(path.join(root,'electron/ai/genealogyDeepResearch.ts'),'utf8'),/const genealogyEngine=portableGenealogyDeepResearch\(/u);
   for (const file of ['shared/portableStudyDeepResearch.ts', 'shared/portableGenealogyDeepResearch.ts', 'shared/portableDeepResearchAI.ts']) {

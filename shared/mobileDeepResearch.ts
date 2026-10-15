@@ -4,6 +4,7 @@ import {parseDeepResearchRequestVersion} from './deepResearchVersions';
 import {normalizeDeepResearchApproach} from './deepResearchApproaches';
 import {normalizeDeepResearchSectionLength} from './deepResearchSectionLength';
 import {PROMPT_LANGUAGES} from './types';
+import {normalizeCompleteGuideConfig} from './completeGuide/types';
 
 export interface MobileDeepResearchSource {
  version:1;vaultId:string;vaultType:string;revision:string;snapshot:WritingWorkshopSnapshot;
@@ -14,9 +15,11 @@ export interface MobileDeepResearchSource {
 }
 export type MobileDeepResearchProof = Pick<MobileDeepResearchSource,"version"|"vaultId"|"vaultType"|"revision"|"sourceScope"|"queryEmbeddingModel"|"preparedSourcesOnly">;
 export interface MobileDeepResearchCheckpoint {
+ embeddingConfiguration?:{provider:string;model:string;dim:number};
  id:string;entityKey:string;request:DeepResearchRequest;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';createdAt:string;
  completionTranscript?:string[];
  citationIndex?:Record<string,{callKey:string;path:Array<string|number>;citation?:string}>;
+ guideCache?:Record<string,unknown>;guideCheckpoints?:Record<string,unknown>;
  context?:MobileDeepResearchProof;calls:Record<string,{input:string;output:unknown}>;report?:DeepResearchReport;
  inflight?:{key:string;input:string;request?:unknown;createdAt:string};
  uncertainAttempts?:Array<{key:string;input:string;request?:unknown;createdAt:string}>;completionAttempt?:string;
@@ -31,7 +34,7 @@ export function normalizeMobileDeepResearchRequest(raw:unknown):DeepResearchRequ
  if(request.language!=null&&!(PROMPT_LANGUAGES as readonly unknown[]).includes(request.language))throw new Error('invalid_deep_research_language');
  if(request.sectionLimit!=null&&!['auto','single'].includes(String(request.sectionLimit))&&(!Number.isSafeInteger(request.sectionLimit)||Number(request.sectionLimit)<1))throw new Error('invalid_deep_research_sections');
  if(!request.model?.provider||!request.model.model.trim())throw new Error('mobile_deep_research_model_missing');
- return {...request,objective:request.objective.trim(),deepResearchVersion:parseDeepResearchRequestVersion(request.deepResearchVersion),approach:normalizeDeepResearchApproach(request.approach),sectionLength:normalizeDeepResearchSectionLength(request.sectionLength)};
+ return {...request,...(request.completeGuide?{completeGuide:normalizeCompleteGuideConfig(request.completeGuide)}:{}),objective:request.objective.trim(),deepResearchVersion:parseDeepResearchRequestVersion(request.deepResearchVersion),approach:normalizeDeepResearchApproach(request.approach),sectionLength:normalizeDeepResearchSectionLength(request.sectionLength)};
 }
 export function assertMobileDeepResearchSource(source:MobileDeepResearchSource):void {
  if(source?.version!==1||!source.vaultId||!source.revision||!['linked_corpus','device_downloads'].includes(source.sourceScope)||!source.snapshot||!Array.isArray(source.relationships))throw new Error('invalid_deep_research_source');
@@ -48,12 +51,12 @@ export async function durableDeepResearchCall<T>(checkpoint:MobileDeepResearchCh
  if(existing){if(existing.input!==canonical)throw new Error('deep_research_checkpoint_input_conflict');return structuredClone(existing.output) as T;}
  if(options?.paid&&checkpoint.inflight){
   if(checkpoint.inflight.key===key&&checkpoint.inflight.input===canonical&&options.recover){
-   const recovered=await options.recover();if(recovered!==undefined){checkpoint.calls[key]={input:canonical,output:structuredClone(recovered)};checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(key.slice(5)))checkpoint.completionTranscript.push(key.slice(5));delete checkpoint.inflight;await persist();return recovered;}
+   const recovered=await options.recover();if(recovered!==undefined){checkpoint.calls[key]={input:canonical,output:structuredClone(recovered)};if(key.startsWith('host:')){checkpoint.completionTranscript??=[];if(!checkpoint.completionTranscript.includes(key.slice(5)))checkpoint.completionTranscript.push(key.slice(5));}delete checkpoint.inflight;await persist();return recovered;}
   }
   throw new Error('mobile_paid_response_uncertain');
  }
  if(options?.paid){checkpoint.inflight={key,input:canonical,request:structuredClone(options.request),createdAt:new Date().toISOString()};await persist();}
- const output=await invoke();checkpoint.calls[key]={input:canonical,output:structuredClone(output)};if(options?.paid){checkpoint.completionTranscript??=[];checkpoint.completionTranscript.push(key.slice(5));}if(checkpoint.inflight?.key===key)delete checkpoint.inflight;await persist();return output;
+ const output=await invoke();checkpoint.calls[key]={input:canonical,output:structuredClone(output)};if(options?.paid&&key.startsWith('host:')){checkpoint.completionTranscript??=[];checkpoint.completionTranscript.push(key.slice(5));}if(checkpoint.inflight?.key===key)delete checkpoint.inflight;await persist();return output;
 }
 export interface MobileDeepResearchCompletion {system:string;user:string;temperature?:number;maxTokens?:number;model?:ModelRef|null;format:'json'|'text'}
 

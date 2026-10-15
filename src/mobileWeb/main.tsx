@@ -1,3 +1,4 @@
+import {previewMobileCompleteGuide,type MobileCompleteGuideActions} from '@shared/mobileCompleteGuide';
 import {mergeMobileDeepResearchReports} from '@shared/mobileDeepResearchCatalogue';
 import {enqueueAutonomousDeepResearch,localDeepResearchJobs,localDeepResearchReports,cancelAutonomousDeepResearch,clearLocalDeepResearchJobs,retryLocalDeepResearch} from './autonomousDeepResearch';
 import { autonomousDictionary } from './autonomousDictionary';
@@ -384,6 +385,15 @@ function SurfaceIssue({issue,title}: {issue: string; title?: string}) {
     {denied && <details><summary>{t('Detalles')}</summary><p>{issue}</p></details>}</div><button onClick={() => location.reload()}>{t('Reintentar')}</button></div>;
 }
 
+const mobileCompleteGuideActions:MobileCompleteGuideActions = {
+ catalog:scope=>scope==='device_downloads'?call('mobileCompleteGuideCatalog'):call('listCompleteGuideCatalog'),
+ preview:async(scope,request)=>{
+  if(scope==='linked_corpus')return call('previewCompleteGuide',request);
+  const copies=await call('mobileCompleteGuideSource',{objective:'Guía de estudio completa',model:request.model,completeGuide:request.completeGuide,mobileSourceScope:'device_downloads'});
+  return previewMobileCompleteGuide(copies,request);
+ },
+ download:(request,days)=>call('mobileCompleteGuideDownload',request,days),
+};
 function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [offlineReadSettings]=useState<AppSettings>(()=>({...DEFAULT_APP_SETTINGS,
@@ -448,7 +458,7 @@ function App() {
       : config.surface === 'workspace' ? <WorkspaceView settings={settings}/>
       : config.surface === 'studyDocument' ? <MobileStudyDocument id={config.initialStudyDocumentId??''} settings={settings} draftScope={config.documentDraftScope??''} call={call} onOpen={(kind,id)=>navigate(kind,id)}/>
       : config.surface === 'page' ? <MobilePageDocument id={config.initialPageId??''} onOpen={id=>navigate('page',id)}/>
-      : config.surface === 'deepResearch' ? <DeepResearchView mobile settings={settings} onRetryResearch={config.executionMode==='autonomous'?id=>retryLocalDeepResearch(call,id,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);}):undefined} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
+      : config.surface === 'deepResearch' ? <DeepResearchView mobile mobileGuideSources={config.executionMode==='autonomous'?mobileCompleteGuideActions:undefined} settings={settings} onRetryResearch={config.executionMode==='autonomous'?id=>retryLocalDeepResearch(call,id,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);}):undefined} onNativeRead={id=>navigate('deepResearchReport',id)} onFullscreenChange={enabled => call('surfaceFullscreen', enabled)} isGenealogy={config.vaultType === 'genealogy'} isStudy={config.vaultType === 'estudio'} isTeaching={config.vaultType === 'docencia'} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'databaseResearch' ? <DatabaseDeepResearchView mobile settings={settings} loadReportSummaries={databaseReportSummaries} enqueueMobileResearch={enqueueMobileDatabaseResearch} retryMobileResearch={config.executionMode==='autonomous'?id=>retryLocalDatabaseResearch(call,id,progress=>{for(const listener of subscriptions.get('onDatabaseDeepResearchProgress')??[])listener(progress);}):undefined} snapshot={databaseSnapshot} onSnapshotChange={value=>setDatabaseSnapshot(current=>({...current,...value}))}/>
       : config.surface === 'immersion' ? <ImmersionView settings={settings} onOpenLibraryWork={openLibraryWork}/>
       : config.surface === 'chat' ? mobileChatSurface(config.vaultType) === 'world'

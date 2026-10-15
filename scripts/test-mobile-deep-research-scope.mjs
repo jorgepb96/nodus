@@ -36,6 +36,25 @@ try {
   assert.throws(()=>saveMobileDeepResearchReport({...publication,requestId:'78029bdb-f7fc-48be-9f88-d4edcd014678'},'isolated-test-device'),/source_conflict/);
 
  },['corpus','writing'])));
+ // Complete guides must carry their canonical evidence sidecar into the same
+ // durable publication; a receipt alone must never advertise missing evidence.
+ const studyVault=vaults.createVault('Isolated mobile complete guide publication','estudio');
+ await vaults.withOwningVault(studyVault.id,()=>database.withVaultDatabase(studyVault.id,()=>withMobileOperation(async()=>{
+  const {normalizeCompleteGuideConfig}=require('../shared/completeGuide/types.ts');
+  const {getCompleteGuideArtifacts}=require('../electron/db/completeGuideRepo.ts');
+  const config=normalizeCompleteGuideConfig({version:1,runId:'cg-device-publication',selection:{nodes:[{kind:'source',id:'document:owned-fixture'}],excludedSourceKeys:[]}});
+  const {runId,...savedConfig}=config;
+  const guideRequest={...request,completeGuide:config};
+  const artifacts={runId,items:[{id:'real-captured-item',statement:'Retained canonical evidence'}],chapters:[],syllabus:{title:'Actual captured plan'},sources:[],passages:[]};
+  const report={draft:{generatedAt:new Date().toISOString(),brief:{kind:'deep_research',objective:request.objective,language:'es'},selection:{ideaIds:[],themeIds:[],workIds:[],passageIds:[],gapIds:[],contradictionIds:[],tutorRouteIds:[]},title:'Canonical complete guide',abstract:'Summary',outline:[],draftMarkdown:'Complete guide with retained evidence',matrix:[],bibliography:[],nextSteps:[],limitations:[],completeGuide:{version:1,runId,config:savedConfig}},meta:{},completeGuideArtifacts:artifacts};
+  const publication={request:guideRequest,source:{version:1,vaultId:studyVault.id,vaultType:'estudio',revision:mobileDeepResearchCorpusRevision(guideRequest),sourceScope:'device_downloads'},report,requestId:'88029bdb-f7fc-48be-9f88-d4edcd014678'};
+  assert.throws(()=>saveMobileDeepResearchReport({...publication,report:{...report,completeGuideArtifacts:undefined}},'guide-device'),/invalid_complete_guide_publication/);
+  assert.equal(database.getDb().prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='mobile_deep_research_publications'").get().n,0,'Malformed guide is rejected before even preparing a publication table');
+  const saved=saveMobileDeepResearchReport(publication,'guide-device');
+  assert.deepEqual(getCompleteGuideArtifacts(saved.id),artifacts,'Canonical Mac reader can retrieve the actual published evidence');
+  assert.deepEqual(saveMobileDeepResearchReport(publication,'guide-device'),saved,'Lost guide ACK does not duplicate draft or evidence');
+  assert.equal(database.getDb().prepare('SELECT COUNT(*) AS n FROM complete_guide_artifacts').get().n,1);
+ },['corpus','writing'])));
  const providers=require('../electron/ai/providers.ts'),secrets=require('../electron/secrets/secretStore.ts');
  const oldList=providers.listModels,oldKey=secrets.getApiKey;let catalogs=0,keyReads=0;
  providers.listModels=async()=>{catalogs++;return [{id:model.model}];};secrets.getApiKey=()=>{keyReads++;return 'test-only';};

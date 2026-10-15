@@ -1,3 +1,6 @@
+import {saveCompleteGuideArtifacts} from '../db/completeGuideRepo';
+import {seedCompleteGuideFigures} from '../ai/completeGuide/figures';
+import {captureMobileCompleteGuide} from './mobileCompleteGuide';
 import {getDocumentaryPassageDetail} from '../citations/documentaryCitations';
 import {getScopedLegacyPassageDetail} from '../citations/scopedLegacyCitations';
 import {effectiveEmbeddingConfig} from '../ai/aiClient';
@@ -35,7 +38,7 @@ export function mobileDeepResearchCorpusRevision(request?:DeepResearchRequest):s
  if(scope)digest.update(canonicalJson({scopeId:scope.id,notebookId:scope.notebookId,notebookRevision:scope.notebookRevision,permissionFingerprint:scope.permissionFingerprint,documents:scope.documents.map(item=>({id:item.id,revision:item.revision})).sort((a,b)=>a.id.localeCompare(b.id))}));
  return digest.digest('hex');
 }
-const STAGES = ['describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
+const STAGES = ['guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
 type Stage = typeof STAGES[number];
 type StageInput = {stage:Stage;input:unknown};
 export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):Promise<unknown> {
@@ -44,6 +47,8 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
  const request=normalizeMobileDeepResearchRequest(value.request),vault=getActiveVault();
  if(value.expectedVaultId!=null&&value.expectedVaultId!==vault.id)throw new Error('deep_research_source_scope_conflict');
  if(value.expectedRevision!=null&&value.expectedRevision!==mobileDeepResearchCorpusRevision(request))throw new Error('deep_research_source_conflict');
+ if(value.stage==='guideSnapshot'){if(value.history.length||Object.keys(value.replies).length)throw new Error('invalid_complete_guide_source');return {version:1,value:await captureMobileCompleteGuide(request,mobileDeepResearchCorpusRevision(request),signal)};}
+
  for(const entry of [...value.history,{stage:value.stage,input:value.input}]){
   if(!entry||!STAGES.includes(entry.stage)||Object.keys(entry).some(key=>!['stage','input'].includes(key)))throw new Error('invalid_deep_research_source_stage');
   const objective=(entry.input as {objective?:unknown}|null)?.objective;
@@ -97,6 +102,11 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
  if(input.source?.version!==1||typeof input.source.vaultId!=="string"||!input.source.vaultId||!/^[a-f0-9]{64}$/.test(input.source.revision)||!["linked_corpus","device_downloads"].includes(input.source.sourceScope))throw new Error("invalid_deep_research_source_proof");
  const report=input.report;
  if(!report?.draft||report.draft.brief?.kind!=='deep_research'||report.draft.brief.objective!==request.objective||typeof report.draft.draftMarkdown!=='string'||!report.draft.draftMarkdown.trim()||!Array.isArray(report.draft.bibliography)||!report.meta)throw new Error('invalid_deep_research_report');
+ if(request.completeGuide){
+  const artifacts=report.completeGuideArtifacts as {runId?:unknown;items?:unknown;chapters?:unknown;syllabus?:unknown;sources?:unknown;passages?:unknown}|undefined;
+  const {runId,...config}=request.completeGuide;
+  if(report.draft.completeGuide?.runId!==runId||canonicalJson(report.draft.completeGuide.config)!==canonicalJson(config)||artifacts?.runId!==runId||!Array.isArray(artifacts.items)||!Array.isArray(artifacts.chapters)||!Array.isArray(artifacts.sources)||!Array.isArray(artifacts.passages)||!artifacts.syllabus)throw new Error('invalid_complete_guide_publication');
+ }else if(report.draft.completeGuide||report.completeGuideArtifacts||report.completeGuideFigures)throw new Error('invalid_complete_guide_publication');
  const db=getDb(),fingerprint=hash(input);
  db.exec('CREATE TABLE IF NOT EXISTS mobile_deep_research_publications(device_grant TEXT NOT NULL,request_id TEXT NOT NULL,payload_hash TEXT NOT NULL,result_json TEXT NOT NULL,PRIMARY KEY(device_grant,request_id))');
  return db.transaction(()=>{
@@ -114,6 +124,12 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
   if(getWritingWorkshopDraft(input.requestId))throw new Error('deep_research_identity_conflict');
   const draft={...report.draft,generationModel:request.model,mobileGenerationReceipt:{requestId:input.requestId,inputHash:fingerprint,sourceScope:input.source.sourceScope}};
   const result=saveWritingWorkshopDraft({draft,model:request.model},input.requestId);
+  if(request.completeGuide){
+   saveCompleteGuideArtifacts(result.id,request.completeGuide.runId,report.completeGuideArtifacts);
+   // The receipt is committed only after required evidence and prepared figures
+   // land. Replaying a lost ACK returns that same receipt before corpus CAS.
+   if(report.completeGuideFigures){const {figures,siblings}=report.completeGuideFigures;seedCompleteGuideFigures(result.id,figures,itemId=>siblings[itemId]??[]);}
+  }
   db.prepare('INSERT INTO mobile_deep_research_publications VALUES(?,?,?,?)').run(deviceGrant,input.requestId,fingerprint,JSON.stringify(result));return result;
  })();
 }

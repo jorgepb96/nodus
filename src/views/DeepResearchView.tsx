@@ -1,3 +1,4 @@
+import type {MobileCompleteGuideActions,MobileResearchSourceScope} from '@shared/mobileCompleteGuide';
 import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import {researchTranslationSource} from '@shared/translationGeneration';
@@ -298,6 +299,7 @@ export function DeepResearchView({
   onOpenStudyRecording,
   onNativeRead,
   onRetryResearch,
+  mobileGuideSources,
   completeGuideTarget,
   onCompleteGuideTargetConsumed,
 }: {
@@ -319,6 +321,7 @@ export function DeepResearchView({
   /** Companion owns a native document reader; Desktop keeps its reader tabs. */
   onNativeRead?: (id: string) => void;
   onRetryResearch?: (id:string)=>Promise<void>;
+  mobileGuideSources?: MobileCompleteGuideActions;
   /** Study vaults: open the composer as a complete guide over these sources (from Materials). */
   completeGuideTarget?: { sourceKeys: string[]; nonce: number } | null;
   onCompleteGuideTargetConsumed?: () => void;
@@ -357,6 +360,10 @@ export function DeepResearchView({
   // Study vaults: a retrieval-based report, or a complete guide over chosen sources.
   const [studyReportMode, setStudyReportMode] = useState<'research' | 'complete_guide'>('research');
   const [guideState, setGuideState] = useState<CompleteGuideComposerState>(EMPTY_COMPLETE_GUIDE_STATE);
+  const [mobileSourceScope,setMobileSourceScope] = useState<MobileResearchSourceScope>('linked_corpus');
+  const [savingGuideSources,setSavingGuideSources] = useState(false);
+  const loadGuideCatalog = useCallback(() => mobileGuideSources!.catalog(mobileSourceScope),[mobileGuideSources,mobileSourceScope]);
+  const loadGuidePreview = useCallback((request:Parameters<MobileCompleteGuideActions['preview']>[1]) => mobileGuideSources!.preview(mobileSourceScope,request),[mobileGuideSources,mobileSourceScope]);
   const [guideReady, setGuideReady] = useState(false);
   const [kindFilter, setKindFilter] = useState<Array<'reports' | 'guides'>>([]);
   const [approachFilter, setApproachFilter] = useState<DeepResearchApproach[]>([]);
@@ -610,13 +617,9 @@ export function DeepResearchView({
     void refreshSavedDrafts();
   }, [laneJobs, refreshSavedDrafts]);
 
-  const submitComposer = () => {
-    if (guideMode) {
-      if (!guideReady) { setError(t('Selecciona al menos una fuente con texto legible.')); return; }
-      if (!documentSkills.valid) { setError(t('Corregir límites de skills')); return; }
-      const instructions = objective.trim();
-      const guideRequest: DeepResearchRequest = {
-        objective: instructions || t('Guía de estudio completa'),
+  const makeGuideRequest = (): DeepResearchRequest & {mobileSourceScope?:MobileResearchSourceScope} => {
+    return {
+        objective: objective.trim() || t('Guía de estudio completa'),
         language,
         documentSkills: documentSkills.policy,
         model: selectedModel,
@@ -624,11 +627,12 @@ export function DeepResearchView({
         decorativeImage: { enabled: includeImage, style: imageStyle },
         studyMode: true,
         deepResearchVersion: 'v2',
+        ...(mobileGuideSources ? {mobileSourceScope} : {}),
         completeGuide: {
           version: 1,
           runId: `cg-${crypto.randomUUID()}`,
           selection: guideState.selection,
-          instructions,
+          instructions: objective.trim(),
           aiExamples: guideState.aiExamples,
           webText: guideState.webText,
           webImages: guideState.webImages,
@@ -637,6 +641,13 @@ export function DeepResearchView({
           maxCostUsd: null,
         },
       };
+  };
+
+  const submitComposer = () => {
+    if (guideMode) {
+      if (!guideReady) { setError(t('Selecciona al menos una fuente con texto legible.')); return; }
+      if (!documentSkills.valid) { setError(t('Corregir límites de skills')); return; }
+      const guideRequest = makeGuideRequest();
       void window.nodus.enqueueDeepResearchJob(guideRequest).catch((enqueueError) => {
         if (enqueueError instanceof Error && enqueueError.name === 'AbortError') {
           setError(null); setMessage(t('Generación cancelada.')); return;
@@ -1513,7 +1524,16 @@ export function DeepResearchView({
           onStudyReportMode={setStudyReportMode}
           guideReady={guideReady}
           guidePanel={guideMode ? (
-            <CompleteGuideComposer value={guideState} onChange={setGuideState} model={selectedModel ?? null} thinkingEffort={thinkingEffort} onReadyChange={setGuideReady} />
+            <>
+              {mobileGuideSources && <div className="flex flex-wrap items-center gap-2">
+                <select aria-label={t('Fuentes de la guía')} value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
+                  <option value="linked_corpus">{t('Fuentes del Mac')}</option><option value="device_downloads">{t('Fuentes descargadas')}</option>
+                </select>
+                {([7,30] as const).map(days=><button key={days} type="button" disabled={savingGuideSources||!guideReady||!selectedModel} onClick={()=>{setSavingGuideSources(true);void mobileGuideSources.download(makeGuideRequest(),days).then(()=>setMessage(t('Fuentes guardadas para generar sin conexión con el Mac.'))).catch(error=>setError(error instanceof Error?error.message:String(error))).finally(()=>setSavingGuideSources(false));}}>{savingGuideSources?t('Guardando fuentes…'):days===7?t('Guardar 7 días'):t('Guardar 30 días')}</button>)}
+              </div>}
+              <CompleteGuideComposer value={guideState} onChange={setGuideState} model={selectedModel ?? null} thinkingEffort={thinkingEffort} onReadyChange={setGuideReady}
+                loadCatalog={mobileGuideSources?loadGuideCatalog:undefined} loadPreview={mobileGuideSources?loadGuidePreview:undefined} />
+            </>
           ) : undefined}
         />
       )}

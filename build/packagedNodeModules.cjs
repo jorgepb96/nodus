@@ -121,8 +121,8 @@ const UNUSED_PACKAGE_FILES = [
   '!node_modules/onnxruntime-node/bin/napi-v3/!(${platform}){,/**}',
   '!node_modules/onnxruntime-node/bin/napi-v3/${platform}/!(${arch}){,/**}',
   // EmbeddingGemma uses its pinned runtime nested beneath the alias package.
-  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v3/!(${platform}){,/**}',
-  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v3/${platform}/!(${arch}){,/**}',
+  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/!(${platform}){,/**}',
+  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/${platform}/!(${arch}){,/**}',
   // The browser builds of transformers, and a 21 MB copy of the ONNX web runtime.
   // The renderer bundles its own copy into dist/; main loads only the Node builds.
   '!node_modules/@huggingface/transformers/dist/!(transformers.node.mjs|transformers.node.cjs)',

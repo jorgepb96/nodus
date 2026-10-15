@@ -13,6 +13,16 @@ Both profiles resolve to `embeddinggemma-2-text-q8-v1` on disk. Download, progre
 
 The exclusive npm alias `@nodus/embeddinggemma-transformers` pins Transformers.js **4.3.1**. Other consumers retain their existing Transformers.js dependency. The standalone `embeddingGemma2Worker.cjs` is built into `dist-electron`; the alias and both versions of ONNX Runtime’s native libraries are unpacked from ASAR. A missing or unsupported runtime fails explicitly. No automatic precision or model fallback is permitted.
 
+The pinned alias resolves ONNX Runtime Node **1.30.0**, whose installed npm
+artifact contains `napi-v6` CPU bindings for Windows x64, Linux x64 and macOS
+ARM64, but **no macOS x64 binding**. EmbeddingGemma is therefore unavailable on
+Intel Macs with this dependency set. Intel support requires an explicitly built
+and independently verified compatible native runtime; it cannot be inferred from
+an Intel Nodus build or provided by silently loading the historical ONNX runtime.
+Installer tests inspect actual native files for both runtime versions rather
+than assuming matching paths. CI skips optional CUDA downloads for its CPU tests;
+this does not change the selected model, precision or CPU inference.
+
 Queries use `task: search result | query: `; documents use `title: … | text: `, with `none` when no title is available. The model’s `sentence_embedding` output already includes its pooling/projection. The worker checks the native 768-component output, performs Matryoshka prefix reduction, then L2 normalization. Counts, dimensions, finiteness and nonzero norms are checked before publication.
 
 Tokenization includes prompts and special tokens, with truncation disabled. More than 8,192 tokens produces an explicit error. Documentary preparation’s existing UTF-8 bounded, locator-preserving chunks remain below this limit; an indivisible excessive title/input is rejected. Historical models retain their previous 8,000-character preparation.

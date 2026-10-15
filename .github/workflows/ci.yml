@@ -18,6 +18,12 @@ on:
 permissions:
   contents: read
 
+# These runners exercise CPU inference. Both pinned ONNX installers already
+# carry the CPU binaries; optional CUDA downloads must not gate the test suite.
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}

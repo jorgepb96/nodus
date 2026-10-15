@@ -193,7 +193,7 @@ test('Genealogy keeps its evidence-first and unproven-kinship rules', async () =
   assert.match(source, /genealogyDeepResearchPromptPack/);
   assert.match(promptPacks, /Sigue el estándar de prueba genealógico/);
   assert.match(promptPacks, /nunca afirmes una identidad o un parentesco sin apoyo documental/);
-  assert.match(source, /if \(approach === 'general'\)[\s\S]*orchestrateGenealogyDeepResearch\(request, ordinarySources, family, realDeps\(model, signal\)/);
+  assert.match(source, /if \(approach === 'general'\)[\s\S]*orchestrateGenealogyDeepResearch\(request, ordinarySources, family, realDeps\(model, signal, companion\)/);
 });
 
 test('all supported UI languages include every approach string', async () => {

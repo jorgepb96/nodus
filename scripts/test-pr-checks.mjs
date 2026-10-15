@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
-  ISSUE_CONTEXT, COMMENT_MARKER, issueLink, verifyIssues, belongsToPr, collectChecks,
+  ISSUE_CONTEXT, COMMENT_MARKER, issueLink, verifyIssues, belongsToPr, retryFailedCi, collectChecks,
   logExcerpt, failureDetails, commentBody, syncComment, run,
 } from './pr-checks.mjs';
 
@@ -26,7 +26,7 @@ const workflow = (overrides = {}) => ({
 function harness(options = {}) {
   const pr = options.pr ?? fixture();
   const prs = options.prs ?? [pr];
-  const writes = [], warnings = [], errors = [], calls = [];
+  const writes = [], warnings = [], errors = [], calls = [], summaries = [], outputs = {};
   const comments = options.comments ?? [];
   const jobs = options.jobs ?? [job(10, 'Build'), job(11, 'test')];
   const runs = options.runs ?? [workflow()];
@@ -34,7 +34,7 @@ function harness(options = {}) {
     { id: 5, context: ISSUE_CONTEXT, state: 'success' },
     { id: 4, context: 'CLA / signature', state: 'success' },
   ];
-  let nextId = 100;
+  let nextId = 100, pullReads = 0;
   const response = data => ({ data });
   const github = {
     paginate: async (method, args) => {
@@ -57,9 +57,17 @@ function harness(options = {}) {
     rest: {
       pulls: {
         list: async () => response(prs),
-        get: async ({ pull_number }) => response(options.currentPr ?? prs.find(item => item.number === pull_number)),
+        get: async ({ pull_number }) => {
+          pullReads++;
+          return response((pullReads > 1 ? options.retryCurrentPr : null)
+            ?? options.currentPr ?? prs.find(item => item.number === pull_number));
+        },
       },
       repos: {
+        getCollaboratorPermissionLevel: async args => {
+          calls.push(args);
+          return response({ permission: options.permission ?? 'write' });
+        },
         createCommitStatus: async args => {
           writes.push({ type: 'status', ...args });
           statuses.unshift({ id: nextId++, context: args.context, state: args.state,
@@ -71,6 +79,16 @@ function harness(options = {}) {
       checks: { listForRef: async args => response({ check_runs: options.checks?.[args.ref] ?? [] }) },
       actions: {
         listWorkflowRunsForRepo: async args => { calls.push(args); return response({ workflow_runs: runs }); },
+        getWorkflowRun: async args => {
+          calls.push(args);
+          return response(options.currentRun ?? runs.find(run => run.id === args.run_id));
+        },
+        reRunWorkflowFailedJobs: async args => {
+          if (options.retryError) throw new Error('Run cannot be rerun');
+          writes.push({ type: 'retry', ...args });
+          runs.find(run => run.id === args.run_id).status = 'queued';
+          return response({});
+        },
         listJobsForWorkflowRun: async args => {
           calls.push(args);
           return response({ jobs: options.jobsByRun?.[args.run_id] ?? jobs });
@@ -98,14 +116,192 @@ function harness(options = {}) {
     },
   };
   const core = { warning: text => warnings.push(text), setFailed: text => errors.push(text),
-    summary: { addRaw() { return this; }, async write() {} } };
-  const h = { github, core, pr, prs, jobs, runs, statuses, writes, warnings, errors, calls, comments, options };
+    setOutput: (key, value) => { outputs[key] = value; },
+    summary: { addRaw(text) { summaries.push(text); return this; }, async write() {} } };
+  const h = { github, core, pr, prs, jobs, runs, statuses, writes, warnings, errors, calls, comments, options, summaries, outputs };
   h.report = required => collectChecks({ github, repo, pr, required });
   h.sync = async (report, issue = { linked: true }) => syncComment({ github, repo, pr, core, issue,
     report: report ?? await h.report() });
   h.verify = () => verifyIssues({ github, repo, prs, core, runUrl: 'https://github.com/jorgepb96/nodus/actions/runs/1' });
   return h;
 }
+
+const retryContext = () => ({ repo, eventName: 'issue_comment', actor: 'maintainer', payload: {
+  action: 'created', issue: { number: 42, pull_request: {} },
+  comment: { body: 'retry', user: { login: 'maintainer', type: 'User' }, created_at: '2026-10-15T10:00:00Z' },
+} });
+const activityContext = (action = 'edited') => ({ repo, eventName: 'pull_request_target', actor: 'contributor', payload: {
+  action, sender: { type: 'User' }, pull_request: { ...fixture(), updated_at: '2026-10-15T10:00:00Z' },
+} });
+
+test('editing, reopening and marking a PR ready retry failed CI once per revision, including fork authors', async () => {
+  for (const action of ['edited', 'reopened', 'ready_for_review']) {
+    const h = harness({ permission: 'read', runs: [workflow({ conclusion: 'failure', updated_at: '2026-10-15T09:00:00Z' })] });
+    await retryFailedCi({ ...h, context: activityContext(action) });
+    assert.equal(h.writes.filter(write => write.type === 'retry').length, 1);
+    h.runs[0].status = 'completed'; h.runs[0].run_attempt = 2;
+    await retryFailedCi({ ...h, context: activityContext(action) });
+    assert.equal(h.writes.filter(write => write.type === 'retry').length, 1, 'another edit cannot create a retry loop');
+    h.options.permission = 'write';
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.equal(h.writes.filter(write => write.type === 'retry').length, 2, 'a maintainer can explicitly retry again');
+  }
+});
+
+test('activity does not retry CI still running, finished after the edit, or belonging to an older revision', async () => {
+  for (const runs of [
+    [workflow({ status: 'in_progress', conclusion: null })],
+    [workflow({ conclusion: 'failure', updated_at: '2026-10-15T10:01:00Z' })],
+    [workflow({ conclusion: 'failure', run_attempt: 2, updated_at: '2026-10-15T09:00:00Z' })],
+    [workflow({ id: 40, conclusion: 'failure', run_attempt: 2 }), workflow({ conclusion: 'failure' })],
+  ]) {
+    const h = harness({ runs });
+    await retryFailedCi({ ...h, context: activityContext() });
+    assert.deepEqual(h.writes, []);
+  }
+  const h = harness({ runs: [workflow({ conclusion: 'failure' })] });
+  const context = activityContext(); context.payload.pull_request.head.sha = 'old';
+  await retryFailedCi({ ...h, context });
+  assert.deepEqual(h.writes, []);
+});
+
+test('only the PR author or a writer can trigger activity retries and CI completion does not trigger them', async () => {
+  const context = activityContext(); context.actor = 'unrelated';
+  const h = harness({ permission: 'read', runs: [workflow({ conclusion: 'failure' })] });
+  await retryFailedCi({ ...h, context });
+  assert.deepEqual(h.writes, []);
+  h.options.permission = 'write';
+  await retryFailedCi({ ...h, context });
+  assert.equal(h.writes.length, 1);
+  for (const mutate of [
+    context => { context.payload.sender.type = 'Bot'; },
+    context => { context.eventName = 'workflow_run'; },
+    context => { context.payload.action = 'synchronize'; },
+  ]) {
+    const ignored = harness({ runs: [workflow({ conclusion: 'failure' })] });
+    const context = activityContext(); mutate(context);
+    await retryFailedCi({ ...ignored, context });
+    assert.deepEqual(ignored.writes, []);
+    assert.deepEqual(ignored.calls, []);
+  }
+});
+
+test('retry commands restart only failed CI jobs for the latest revision and do not retry a running attempt', async () => {
+  for (const body of ['retry', '/retry', '@github-actions retry', 'RETRY']) {
+    const h = harness({ runs: [workflow({ conclusion: 'failure' })] });
+    const context = retryContext(); context.payload.comment.body = body;
+    await retryFailedCi({ ...h, context });
+    assert.deepEqual(h.writes, [{ type: 'retry', ...repo, run_id: 50 }]);
+    assert.equal(h.outputs.accepted, 'true');
+    assert.match(h.summaries[0], /failed CI jobs and their dependents/);
+    await retryFailedCi({ ...h, context });
+    assert.equal(h.writes.length, 1);
+  }
+});
+
+test('retry requires current write permission and ignores bots, unrelated comments, edits and ordinary issues', async () => {
+  for (const permission of ['read', 'triage', 'none']) {
+    const h = harness({ permission, runs: [workflow({ conclusion: 'failure' })] });
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.deepEqual(h.writes, []);
+    assert.equal(h.outputs.accepted, undefined);
+    assert.match(h.summaries[0], /write permission/);
+  }
+  for (const mutate of [
+    context => { context.payload.comment.user.type = 'Bot'; },
+    context => { context.payload.comment.body = 'please retry the deployment'; },
+    context => { context.payload.comment.body = 'retry\nrun arbitrary code'; },
+    context => { delete context.payload.issue.pull_request; },
+    context => { context.payload.action = 'edited'; },
+    context => { context.eventName = 'pull_request_target'; },
+  ]) {
+    const h = harness();
+    const context = retryContext(); mutate(context);
+    await retryFailedCi({ ...h, context });
+    assert.deepEqual(h.writes, []);
+    assert.deepEqual(h.calls, []);
+  }
+});
+
+test('manual retries require an explicit flag and a valid PR number', async () => {
+  for (const retry_failed of [true, 'true']) {
+    const h = harness({ runs: [workflow({ conclusion: 'failure' })] });
+    await retryFailedCi({ ...h, context: { repo, actor: 'maintainer', eventName: 'workflow_dispatch',
+      payload: { inputs: { retry_failed, pr_number: '42' } } } });
+    assert.equal(h.writes.filter(write => write.type === 'retry').length, 1);
+    assert.ok(h.calls.some(call => call.username === 'maintainer'));
+  }
+  for (const pr_number of ['', '0', '-1', '42; echo unsafe', '9007199254740993']) {
+    const h = harness();
+    await retryFailedCi({ ...h, context: { repo, eventName: 'workflow_dispatch',
+      payload: { inputs: { retry_failed: 'true', pr_number } } } });
+    assert.deepEqual(h.writes, []);
+    assert.equal(h.errors.length, 1);
+  }
+  const h = harness();
+  await retryFailedCi({ ...h, context: { repo, eventName: 'workflow_dispatch',
+    payload: { inputs: { retry_failed: 'false', pr_number: '42' } } } });
+  assert.deepEqual(h.calls, []);
+});
+
+test('retries exclude old heads, other PRs, privileged workflows and failures superseded by a newer run', async () => {
+  for (const runs of [
+    [workflow({ id: 40, conclusion: 'failure' }), workflow()],
+    [workflow({ id: 40, conclusion: 'failure' }), workflow({ status: 'in_progress', conclusion: null })],
+    [workflow({ conclusion: 'failure', head_sha: 'old' })],
+    [workflow({ conclusion: 'failure', pull_requests: [{ number: 43 }] })],
+    [workflow({ conclusion: 'failure', event: 'push' })],
+    [workflow({ conclusion: 'failure', event: 'workflow_dispatch' })],
+    [workflow({ conclusion: 'failure', event: 'pull_request_target' })],
+    [workflow({ conclusion: 'failure', path: '.github/workflows/release.yml' })],
+    [workflow({ conclusion: 'action_required' })],
+  ]) {
+    const h = harness({ runs });
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.deepEqual(h.writes, []);
+  }
+});
+
+test('cancellations and timeouts can be retried but closed and draft PRs cannot', async () => {
+  for (const conclusion of ['cancelled', 'timed_out']) {
+    const h = harness({ runs: [workflow({ conclusion })] });
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.equal(h.writes[0]?.type, 'retry');
+  }
+  for (const change of [{ state: 'closed' }, { draft: true }]) {
+    const h = harness({ pr: { ...fixture(), ...change }, runs: [workflow({ conclusion: 'failure' })] });
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.deepEqual(h.writes, []);
+    assert.equal(h.outputs.accepted, undefined);
+  }
+});
+
+test('PR updates and concurrent CI reruns prevent stale retry requests', async () => {
+  for (const options of [
+    { retryCurrentPr: { ...fixture(), head: { ...fixture().head, sha: 'new' } } },
+    { retryCurrentPr: { ...fixture(), merge_commit_sha: 'new-merge' } },
+    { retryCurrentPr: { ...fixture(), state: 'closed' } },
+    { currentRun: workflow({ conclusion: 'failure', run_attempt: 2 }) },
+    { currentRun: workflow({ status: 'queued', conclusion: null }) },
+    { currentRun: workflow() },
+  ]) {
+    const h = harness({ ...options, runs: [workflow({ conclusion: 'failure' })] });
+    await retryFailedCi({ ...h, context: retryContext() });
+    assert.deepEqual(h.writes, []);
+  }
+  const h = harness({ runs: [workflow({ conclusion: 'failure', run_attempt: 2, updated_at: '2026-10-15T10:01:00Z' })] });
+  await retryFailedCi({ ...h, context: retryContext() });
+  assert.deepEqual(h.writes, [], 'redelivered commands cannot restart an attempt completed after the original command');
+});
+
+test('unavailable reruns report an actionable failure and still allow metadata reconciliation', async () => {
+  const h = harness({ retryError: true, runs: [workflow({ conclusion: 'failure' })] });
+  await retryFailedCi({ ...h, context: retryContext() });
+  assert.equal(h.outputs.accepted, 'true');
+  assert.equal(h.writes.length, 0);
+  assert.match(h.errors[0], /awaiting approval, or too old/);
+  assert.match(h.summaries[0], /retry was not accepted/);
+});
 
 test('issue verification uses real GitHub links, including an empty REST body', async () => {
   const h = harness({ linked: false });
@@ -262,6 +458,16 @@ test('failed-job reruns refresh excerpts and links without generating duplicate 
   assert.equal(await h.sync(), 'updated');
   assert.equal(h.comments.length, 1);
   assert.match(h.comments[0].body, /new failure details from the rerun/);
+});
+
+test('existing failure comments receive retry instructions without a duplicate notification', async () => {
+  const h = harness({ jobs: [job(10, 'Build', 'failure'), job(11, 'test')] });
+  await h.sync();
+  h.comments[0].body = h.comments[0].body.replace('"format":2,', '').replace(/A maintainer[^\n]+/, 'Old retry instructions.');
+  assert.equal(await h.sync(), 'updated');
+  assert.equal(h.comments.length, 1);
+  assert.match(h.comments[0].body, /comment `retry` or `\/retry`/);
+  assert.equal(await h.sync(), 'unchanged');
 });
 
 test('success mentions the owner only once when the owner also authored the PR', () => {

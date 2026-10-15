@@ -9,6 +9,8 @@ const PASS = new Set(['success', 'neutral', 'skipped']);
 const MAX_FAILURES = 20;
 const MAX_LOGS = 8;
 const MAX_LOG_CHARS = 1800;
+const RETRYABLE = new Set(['failure', 'cancelled', 'timed_out']);
+const ciWorkflow = run => run.path?.split('@')[0] === '.github/workflows/ci.yml';
 const HISTORICAL = '\n\n**Checks are being re-evaluated. The result above is historical until the current checks finish.**';
 
 const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -92,6 +94,75 @@ export function belongsToPr(run, pr) {
   return run.head_repository?.full_name === pr.head.repo?.full_name && run.head_branch === pr.head.ref;
 }
 
+export async function retryFailedCi({ github, context, core }) {
+  const { repo, payload, eventName } = context;
+  const comment = eventName === 'issue_comment' ? payload.comment : null;
+  const activity = eventName === 'pull_request_target' && payload.sender?.type === 'User'
+    && ['edited', 'reopened', 'ready_for_review'].includes(payload.action) ? payload.pull_request : null;
+  const manual = eventName === 'workflow_dispatch'
+    && [true, 'true'].includes(payload.inputs?.retry_failed);
+  if (!manual && !activity && !(comment?.user?.type === 'User' && payload.action === 'created'
+    && payload.issue?.pull_request && /^(?:\/?retry|@github-actions retry)$/i.test(comment.body))) return;
+
+  const finish = async message => core.summary.addRaw(message).write();
+  const number = String(comment ? payload.issue.number : activity?.number ?? payload.inputs?.pr_number ?? '');
+  if (!/^[1-9]\d*$/.test(number) || !Number.isSafeInteger(Number(number))) {
+    core.setFailed('Enter a PR number when requesting a retry.');
+    return finish('No CI jobs retried: a valid PR number is required.');
+  }
+  const { data: pr } = await github.rest.pulls.get({ ...repo, pull_number: Number(number) });
+  if (pr.state !== 'open' || pr.draft) return finish(`PR #${pr.number}: no retry for a closed or draft PR.`);
+  const actor = comment?.user.login ?? context.actor;
+  // Explicit commands match GitHub's native rerun permission. Activity by the
+  // PR's own author may also request the single automatic retry, including forks.
+  if (!activity || actor.toLowerCase() !== pr.user.login.toLowerCase()) {
+    const { data: access } = await github.rest.repos.getCollaboratorPermissionLevel({
+      ...repo, username: actor,
+    });
+    if (!['write', 'maintain', 'admin'].includes(access.permission)) {
+      return finish('No CI jobs retried: repository write permission is required.');
+    }
+  }
+  if (activity && activity.head.sha !== pr.head.sha) {
+    return finish(`PR #${pr.number}: activity was for an older revision; no CI jobs retried.`);
+  }
+  core.setOutput('accepted', 'true');
+  // Only CI's latest pull_request run on the current head can be retried. A
+  // privileged metadata, push, release or manual workflow is never a candidate.
+  const runs = (await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
+    ...repo, head_sha: pr.head.sha, event: 'pull_request', per_page: 100,
+  })).filter(item => belongsToPr(item, pr) && ciWorkflow(item)).sort((a, b) => b.id - a.id);
+  const candidate = runs[0];
+  if (!candidate || candidate.status !== 'completed' || !RETRYABLE.has(candidate.conclusion)) {
+    return finish(`PR #${pr.number}: no completed failed CI run to retry; refreshing metadata checks.`);
+  }
+  if (activity && (runs.some(item => item.run_attempt > 1)
+    || candidate.run_attempt !== 1 || Date.parse(candidate.updated_at) > Date.parse(activity.updated_at))) {
+    return finish(`PR #${pr.number}: automatic retry already used, or CI finished after the activity; refreshing metadata checks.`);
+  }
+  // A queued or redelivered comment must not retry an attempt which started
+  // after that command was posted, even if it has already failed again.
+  if (comment && candidate.run_attempt > 1 && Date.parse(candidate.updated_at) > Date.parse(comment.created_at)) {
+    return finish(`PR #${pr.number}: CI has already been retried since this command; refreshing metadata checks.`);
+  }
+  const { data: currentPr } = await github.rest.pulls.get({ ...repo, pull_number: pr.number });
+  const { data: currentRun } = await github.rest.actions.getWorkflowRun({ ...repo, run_id: candidate.id });
+  if (identity(currentPr) !== identity(pr) || currentPr.merge_commit_sha !== pr.merge_commit_sha
+    || !belongsToPr(currentRun, currentPr) || !ciWorkflow(currentRun)
+    || currentRun.run_attempt !== candidate.run_attempt || currentRun.status !== 'completed'
+    || !RETRYABLE.has(currentRun.conclusion)) {
+    return finish(`PR #${pr.number}: PR or CI changed while preparing the retry; no stale run restarted.`);
+  }
+  try {
+    await github.rest.actions.reRunWorkflowFailedJobs({ ...repo, run_id: candidate.id });
+    return finish(`PR #${pr.number}: requested failed CI jobs and their dependents for ${linked('CI', candidate.html_url)}.`);
+  } catch (error) {
+    core.warning(`CI retry for PR #${pr.number}: ${error.message}`);
+    core.setFailed('CI could not be retried. Inspect the run in Actions; it may be running, awaiting approval, or too old to rerun.');
+    return finish(`PR #${pr.number}: CI retry was not accepted; inspect ${linked('CI', candidate.html_url)}.`);
+  }
+}
+
 export async function collectChecks({ github, repo, pr, required = REQUIRED }) {
   const runs = latestBy((await github.paginate(github.rest.actions.listWorkflowRunsForRepo, {
     ...repo, head_sha: pr.head.sha, event: 'pull_request', per_page: 100,
@@ -120,7 +191,7 @@ export async function collectChecks({ github, repo, pr, required = REQUIRED }) {
   }
   // CI must exist even if no checks have been published yet (fork approval,
   // queue delay, or a workflow startup failure). No empty-set green messages.
-  const ci = runs.find(run => run.path?.split('@')[0] === '.github/workflows/ci.yml');
+  const ci = runs.find(ciWorkflow);
   if (!ci) {
     checks.push({ name: 'CI', state: 'pending' });
   }
@@ -230,11 +301,13 @@ export async function failureDetails({ github, repo, report, issue, core }) {
 
 export function commentBody({ pr, report, details = '', owner }) {
   const kind = report.failures.length ? 'failure' : 'success';
-  const marker = `${COMMENT_MARKER}${JSON.stringify({ sha: pr.head.sha, kind,
+  const marker = `${COMMENT_MARKER}${JSON.stringify({ sha: pr.head.sha, kind, format: 2,
     fingerprint: report.fingerprint, logVersion: report.logVersion })} -->`;
   const revision = `Latest revision: \`${pr.head.sha.slice(0, 12)}\`.`;
   if (kind === 'failure') return `${marker}\n@${pr.user.login}, the following checks have failed:\n\n${details}\n\n`
-    + 'Please resolve the reported failures so that all required checks pass. For cancellations or runner problems, inspect the details and rerun the affected checks when appropriate.\n\n' + revision;
+    + 'Please resolve the reported failures so that all required checks pass. A maintainer with repository write access can comment `retry` or `/retry` to rerun failed CI jobs for the current revision and refresh Issue linked. '
+    + 'Editing, reopening, or marking the PR ready for review can retry failed CI once per revision. '
+    + 'External checks and CLA acceptance need the resolution described above. New commits run CI automatically.\n\n' + revision;
   const mentions = [...new Set([owner.toLowerCase(), pr.user.login.toLowerCase()])].map(login => `@${login}`).join(' ');
   return `${marker}\n${mentions}, all required checks have passed for the latest revision of this PR. `
     + 'It is ready for maintainer review and merge consideration.\n\n' + revision;
@@ -255,7 +328,8 @@ export async function syncComment({ github, repo, pr, report, issue, core, requi
   }
   const kind = report.failures.length ? 'failure' : 'success';
   if (previousState?.sha === pr.head.sha && previousState.kind === kind && previousState.fingerprint === report.fingerprint
-    && previousState.logVersion === report.logVersion && !previous.body.endsWith(HISTORICAL)) return 'unchanged';
+    && previousState.format === 2 && previousState.logVersion === report.logVersion
+    && !previous.body.endsWith(HISTORICAL)) return 'unchanged';
   const details = report.failures.length ? await failureDetails({ github, repo, report, issue, core }) : '';
   const body = commentBody({ pr, report, details, owner: repo.owner });
   // Log downloads can take time. Re-read both metadata and checks immediately

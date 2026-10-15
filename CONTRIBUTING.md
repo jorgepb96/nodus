@@ -202,8 +202,9 @@ Every pull request must address an existing issue. Open or find the issue first
 and link it from **Development**, or use `Closes #123` / `Fixes #123` in the PR
 description when targeting the default branch. A plain `#123` mention does not
 create a linked issue. The required **Issue linked** check blocks merging until
-the link exists. Sidebar changes are reconciled hourly; maintainers can run
-**PR checks** manually to refresh the result immediately.
+the link exists. After changing a sidebar link, maintainers can run **PR checks**
+manually or comment `retry` on the PR to refresh the result. There is no hourly
+scan.
 
 Keep each pull request focused on one coherent change. In the pull request:
 
@@ -229,6 +230,13 @@ When every applicable check passes, it mentions the repository owner and author
 once each. This means the PR is ready for maintainer review and merge
 consideration; it does not promise or perform a merge. Drafts receive the issue
 check but no notification comments.
+
+Editing, reopening, or marking a PR ready for review can retry its failed CI
+once per revision, when the activity comes from its author or a maintainer.
+New commits run CI normally. Maintainers can comment `retry` or `/retry` for
+another failed-jobs retry, or use **Actions → PR checks → Run workflow** with
+the retry option and PR number. Successful CI jobs are retained; CLA and
+external checks follow their own instructions.
 
 Maintainer setup and operation: [PR checks automation](docs/pr-checks.md).
 

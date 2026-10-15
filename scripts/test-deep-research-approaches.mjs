@@ -117,10 +117,13 @@ test('specialized Genealogy repairs only malformed citations to allowed sources'
 });
 
 test('Academic Deep Research binds both engines to a scoped cancellable corpus', async () => {
-  const [source, workshop] = await Promise.all([
+  const [desktop, workshop, portable] = await Promise.all([
     readFile(path.join(repoRoot, 'electron/ai/deepResearch.ts'), 'utf8'),
     readFile(path.join(repoRoot, 'electron/ai/writingWorkshop.ts'), 'utf8'),
+    readFile(path.join(repoRoot, 'shared/portableAcademicDeepResearch.ts'), 'utf8'),
   ]);
+  assert.match(desktop, /portableAcademicDeepResearch\(\{ai:canonicalAcademicAI,buildHistoricalWritingWorkshopSnapshot,buildIdeaFirstWritingWorkshopSnapshot,retrieveSectionMaterial,retrieveSectionMaterialLegacy/,'Desktop binds the actual canonical AI and source repositories');
+  const source=desktop+'\n'+portable;
   assert.match(source, /deepResearchEnginePath\(deepResearchVersion, approach\) === 'v1-general'[\s\S]*legacyAcademicDeps\(model(?:, signal)?\)/, 'v1 retains the historical dependency route');
   assert.match(source, /deepResearchEnginePath\(deepResearchVersion, approach\) === 'v2-general'[\s\S]*realDeps\(model(?:, signal)?\)/, 'v2 retains the idea-first document-enrichment route');
   assert.match(source, /orchestrateDeepResearch\(\{ \.\.\.versionedRequest, model \}, bindAcademicCorpusRun\(baseDeps, versionedRequest, signal\), onProgress, signal\)/, 'both routes share the scoped versioned cancellable orchestration boundary');

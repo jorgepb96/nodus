@@ -156,7 +156,7 @@ test('study searches reserve icon space through the common input contract', asyn
 });
 
 test('study materials expose downloadable hover actions and pedagogical Deep Research', async () => {
-  const [materials, preload, ipc, types, app, navigation, deep, markdown] = await Promise.all([
+  const [materials, preload, ipc, types, app, navigation, adapter, deep, markdown] = await Promise.all([
     read('src/views/StudyMaterialsView.tsx'),
     read('@bridge'),
     read('@main'),
@@ -164,6 +164,7 @@ test('study materials expose downloadable hover actions and pedagogical Deep Res
     read('@shell'),
     read('src/navigation.ts'),
     read('electron/ai/studyDeepResearch.ts'),
+    read('shared/portableStudyDeepResearch.ts'),
     read('src/components/Markdown.tsx'),
   ]);
   assert.match(materials, /study-material-download/);
@@ -174,6 +175,7 @@ test('study materials expose downloadable hover actions and pedagogical Deep Res
   assert.match(navigation, /studyDeepResearch/);
   assert.match(app, /studyDeepResearch: \(/);
   assert.match(app, /isStudy/);
+  assert.match(adapter, /portableStudyDeepResearch\(\{completeJson,completeText,retrieveStudyAssistantEntries,listStudyIdeasForSources\}\)/, 'Desktop must inject real completions and study source retrieval into the canonical prompt implementation');
   for (const language of ['es', 'en', 'fr', 'tr', 'de', 'pt']) assert.match(deep, new RegExp(`\\n  ${language}: \\{`));
   assert.match(deep, /\n {2}'pt-BR': \{/);
   assert.match(deep, /conceptos complejos paso a paso/);

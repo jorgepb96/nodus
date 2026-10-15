@@ -98,7 +98,7 @@ export function WorkspaceTabStrip({
       }
     }
     return () => observer?.disconnect();
-  }, [activeKey, tabs.length, activeTitle, homeLabel]);
+  }, [activeKey, tabs.length, activeTitle, homeLabel, showHome]);
 
   if (!tabs.length && (!alwaysShowHome || !showHome)) return null;
 
@@ -199,6 +199,24 @@ export function WorkspaceTabStrip({
           );
         })}
       </div>
+      {tabs.length > 1 && <label className="library-workspace-tab-picker hidden">
+        <span aria-hidden="true"><Icon name="copy" size={13} /><span>{tabs.length}</span></span>
+        <select
+          aria-label={`${homeLabel}: ${t('Abiertos')}`}
+          data-testid="workspace-open-tabs"
+          value={activeKey === null ? 'home' : String(tabs.findIndex(tab => tab.key === activeKey))}
+          onChange={event => {
+            if (event.target.value === 'home') onActivateHome();
+            else {
+              const tab = tabs[Number(event.target.value)];
+              if (tab) onActivateTab(tab.key);
+            }
+          }}
+        >
+          {showHome && <option value="home">{homeLabel}</option>}
+          {tabs.map((tab, index) => <option key={tab.key} value={String(index)}>{tab.title}</option>)}
+        </select>
+      </label>}
     </div>
   );
 }

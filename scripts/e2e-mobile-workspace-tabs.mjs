@@ -25,14 +25,15 @@ await build({
     import {WorkspaceTabStrip} from './src/components/library/LibraryWorkspaceTabs';
     import {EditorialHeader} from './src/components/workspace/EditorialChrome';
     function Fixture(){
-      const [editor,setEditor]=useState(false);
-      window.setTabsFixtureHost=host=>setEditor(host==='editor');
+      const [host,setHost]=useState('reader');
+      const editor=host==='editor';
+      window.setTabsFixtureHost=setHost;
       const [tabs,setTabs]=useState([
         {key:'first',title:'Una idea con un título muy largo que debe truncarse sin cubrir el botón de cierre',icon:'book'},
         {key:'second',title:'Otra investigación con referencias y un título extenso que debe caber en esta pestaña',icon:'telescope'},
       ]);
       const [active,setActive]=useState('second');
-      const strip=<WorkspaceTabStrip homeLabel="Deep Research" homeIcon="telescope" homeTestId="home"
+      const strip=<WorkspaceTabStrip showHome={host!=='source'} homeLabel="Deep Research" homeIcon="telescope" homeTestId="home"
           tabTestId={tab=>'tab-'+tab.key} closeTestId={tab=>'close-'+tab.key}
           tabs={tabs} activeKey={active} onActivateHome={()=>setActive(null)}
           onActivateTab={setActive} onCloseTab={id=>{
@@ -72,7 +73,7 @@ try {
   const page = await app.firstWindow(), errors = [];
   page.on('pageerror', error => errors.push(String(error)));
   await page.getByTestId('tab-second').waitFor();
-  for (const host of ['reader','editor']) for (const device of ['phone', 'tablet']) for (const theme of ['light', 'dark']) {
+  for (const host of ['reader','editor','source']) for (const device of ['phone', 'tablet']) for (const theme of ['light', 'dark']) {
     await page.evaluate(host=>window.setTabsFixtureHost(host),host);
     for (const [width, height, scale] of [[320,700,1],[390,760,1],[844,320,1],[600,780,1.75],[1024,760,1.75]]) {
       await app.evaluate(({ BrowserWindow }, { width, height }) => BrowserWindow.getAllWindows()[0].setContentSize(width, height), {width,height});
@@ -85,9 +86,10 @@ try {
       const measured = await page.evaluate(() => {
         const rect = element => {const r=element.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
         const strip=document.querySelector('.library-workspace-tabs');
-        return {strip:rect(strip),home:rect(document.querySelector('[data-testid="home"]')),main:rect(document.querySelector('[data-testid="tab-second"]')),
+        return {strip:rect(strip),home:document.querySelector('[data-testid="home"]')?rect(document.querySelector('[data-testid="home"]')):null,main:rect(document.querySelector('[data-testid="tab-second"]')),
           close:rect(document.querySelector('[data-testid="close-second"]')),
           content:rect(document.querySelector('[data-testid="document"]')),
+          picker:rect(document.querySelector('[data-testid="workspace-open-tabs"]')),
           actions:Array.from(document.querySelectorAll('.editorial-header-action,.editorial-options>summary'),rect),
           viewport:innerWidth,pageWidth:document.documentElement.scrollWidth};
       });
@@ -103,8 +105,10 @@ try {
       assert.ok(measured.content.y>=measured.strip.bottom-.5,`${context}: tabs must not cover the document`);
       assert.ok(measured.pageWidth<=measured.viewport,`${context}: only the strip may scroll horizontally`);
       if(device==='phone') {
-        assert.ok(measured.home.x>=measured.strip.x-.5,`${context}: the catalogue remains reachable while documents scroll`);
-        assert.ok(measured.main.x>=measured.home.right-.5,`${context}: the catalogue must not cover the active document title`);
+        assert.ok(measured.picker.width>=44&&measured.picker.height>=44,`${context}: native selection control keeps its touch target`);
+        assert.ok(measured.picker.x>=measured.close.right-.5&&measured.picker.right<=measured.viewport+.5,`${context}: tab selection must not cover the active document or close button`);
+        if(measured.home)assert.ok(measured.home.x>=measured.strip.x-.5,`${context}: the catalogue remains reachable while documents scroll`);
+        if(measured.home)assert.ok(measured.main.x>=measured.home.right-.5,`${context}: the catalogue must not cover the active document title`);
       }
       for(const action of measured.actions) {
         assert.ok(action.width>=44&&action.height>=44,`${context}: every editor header action is touch-sized`);
@@ -114,7 +118,14 @@ try {
       if(width===390||width===844) await page.screenshot({path:path.join(output,`${host}-${device}-${theme}-${width}.png`)});
     }
   }
+  await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setContentSize(390,760));
+  await page.evaluate(()=>{document.documentElement.classList.add('nodus-phone');document.documentElement.style.fontSize='16px';window.setTabsFixtureHost('reader');});
+  const picker=page.getByTestId('workspace-open-tabs');
+  await picker.selectOption('0');assert.equal(await page.getByTestId('tab-first').getAttribute('aria-selected'),'true');
+  await picker.selectOption('home');assert.equal(await page.getByTestId('home').getAttribute('aria-selected'),'true');
+  await picker.selectOption('1');assert.equal(await page.getByTestId('tab-second').getAttribute('aria-selected'),'true');
   await page.getByTestId('close-second').click();
+  assert.equal(await picker.count(),0,'One remaining document does not need the picker');
   assert.equal(await page.getByTestId('tab-second').count(),0);
   assert.equal(await page.getByTestId('tab-first').getAttribute('aria-selected'),'true');
   await page.getByTestId('home').click();
@@ -126,7 +137,7 @@ try {
   assert.equal(await page.locator('[data-testid^="tab-"]').count(),0);
   assert.deepEqual(errors,[]);
   for(const file of sourceFiles) assert.equal(createHash('sha256').update(fs.readFileSync(file)).digest('hex'),sourceHashes[String(file)],'A fixture input changed during execution.');
-  fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({scope:'isolated actual React component in Electron; native acceptance separate',startedAt,completedAt:new Date().toISOString(),sourceHashes,styles,scenarios:results,interactions:['close-active','catalogue','keyboard-End','keyboard-Delete'],passed:true},null,2)+'\n');
+  fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({scope:'isolated actual React component in Electron; native acceptance separate',startedAt,completedAt:new Date().toISOString(),sourceHashes,styles,scenarios:results,interactions:['picker-select-document','picker-select-catalogue','picker-closes-with-one-document','close-active','catalogue','keyboard-End','keyboard-Delete'],passed:true},null,2)+'\n');
   console.log(`Mobile workspace tabs: ${results.length} geometry scenarios and close/catalogue/keyboard interactions passed.`);
 } catch(error) {
   const attempt=startedAt.replaceAll(':','-');

@@ -50,6 +50,41 @@
 .nodus-phone .mobile-surface .library-workspace-tab {
   flex-basis: 218px;
 }
+.nodus-phone .mobile-surface .library-workspace-tabs {
+  display: flex;
+  align-items: stretch;
+}
+.nodus-phone .mobile-surface .library-workspace-tabs-scroll {
+  flex: 1 1 0;
+}
+/* WKWebView presents this select with the system's selection control. */
+.nodus-phone .mobile-surface .library-workspace-tab-picker {
+  display: flex;
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  min-height: var(--mobile-workspace-tab-height);
+  align-items: center;
+  justify-content: center;
+}
+.nodus-phone .mobile-surface .library-workspace-tab-picker > span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: .7rem;
+}
+.nodus-phone .mobile-surface .library-workspace-tab-picker select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.nodus-phone .mobile-surface .library-workspace-tab-picker:focus-within {
+  outline: 2px solid var(--mobile-accent);
+  outline-offset: -2px;
+}
 .nodus-phone .mobile-surface .library-workspace-tab.is-library {
   flex-basis: 150px;
   position: sticky;
@@ -71,6 +106,9 @@
 }
 @media (max-width: 600px) {
   .nodus-phone .mobile-surface .library-workspace-tabs-scroll {
+    --mobile-tab-home-width: 0px;
+  }
+  .nodus-phone .mobile-surface .library-workspace-tabs-scroll:has(> .is-library) {
     --mobile-tab-home-width: 44px;
   }
   .nodus-phone .mobile-surface .library-workspace-tabs-scroll:has(> .is-library.is-active) {

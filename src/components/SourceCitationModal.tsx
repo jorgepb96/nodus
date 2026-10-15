@@ -25,6 +25,7 @@ import { buildAuthorIndex, lookupAuthor } from '../authorLinks';
 import { evidenceLocator, openEvidenceAtPage, requestLibraryDocumentOpen } from '../evidenceJump';
 import { parsePageNumber } from '@shared/pageLocation';
 import { t, tx } from '../i18n';
+import { WorkspaceTabStrip } from './library/LibraryWorkspaceTabs';
 
 const LearningCitationOrigin = createContext<{conversationId?:string;messageId?:string}|null>(null);
 export type CitationTarget =
@@ -154,7 +155,6 @@ function CitationWorkspace({
   ]);
   const [activeKey, setActiveKey] = useState(initialKey);
   const [authors, setAuthors] = useState<AuthorSummary[]>([]);
-  const tabStripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -171,11 +171,6 @@ function CitationWorkspace({
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
-
-  useEffect(() => {
-    tabStripRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [activeKey, tabs.length]);
 
   const openTarget = useCallback((nextTarget: NonNullCitationTarget, title?: string) => {
     const key = targetKey(nextTarget);
@@ -224,36 +219,20 @@ function CitationWorkspace({
           <button data-testid="source-citation-close" className="btn btn-ghost h-8 w-8 p-0" onClick={onClose} title={t('Cerrar')}><Icon name="x" size={15} /></button>
         </header>
 
-        <div className="library-workspace-tabs shrink-0 border-b border-neutral-800/80" data-testid="source-citation-tabs">
-          <div ref={tabStripRef} className="library-workspace-tabs-scroll" role="tablist" aria-label={t('Fuentes abiertas')}>
-            {tabs.map((tab) => {
-              const active = tab.key === activeKey;
-              return (
-                <div key={tab.key} className={`library-workspace-tab ${active ? 'is-active' : ''}`} title={tab.title}>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    tabIndex={active ? 0 : -1}
-                    data-testid={`source-citation-tab-${tab.key}`}
-                    className="library-workspace-tab-main"
-                    onClick={() => setActiveKey(tab.key)}
-                  >
-                    <Icon name={targetIcon(tab.target)} size={12} />
-                    <span className="max-w-52 truncate">{tab.title}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="library-workspace-tab-close"
-                    data-testid={`source-citation-close-tab-${tab.key}`}
-                    aria-label={`${t('Cerrar pestaña')}: ${tab.title}`}
-                    title={t('Cerrar pestaña')}
-                    onClick={(event) => { event.stopPropagation(); closeTab(tab.key); }}
-                  ><Icon name="x" size={11} /></button>
-                </div>
-              );
-            })}
-          </div>
+        <div className="shrink-0" data-testid="source-citation-tabs">
+          <WorkspaceTabStrip
+            homeLabel={t('Fuentes abiertas')}
+            homeIcon="bookOpen"
+            homeTestId="source-citation-home"
+            showHome={false}
+            tabs={tabs.map(tab => ({ key: tab.key, title: tab.title, icon: targetIcon(tab.target) }))}
+            activeKey={activeKey}
+            tabTestId={tab => `source-citation-tab-${tab.key}`}
+            closeTestId={tab => `source-citation-close-tab-${tab.key}`}
+            onActivateHome={() => {}}
+            onActivateTab={setActiveKey}
+            onCloseTab={closeTab}
+          />
         </div>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-neutral-950/70" data-testid="source-citation-content">

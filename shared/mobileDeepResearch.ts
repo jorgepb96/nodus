@@ -1,3 +1,5 @@
+import {citationUrl} from './completeGuide/locators';
+import type {CompleteGuideSnapshot} from './completeGuide/snapshot';
 import type {DeepResearchRequest,DeepResearchReport,WritingWorkshopSnapshot,DeepResearchProgress,ModelRef} from './types';
 import {canonicalJson} from './canonicalJson';
 import {parseDeepResearchRequestVersion} from './deepResearchVersions';
@@ -70,6 +72,16 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
  for(const [callKey,call] of Object.entries(checkpoint.calls)){
   if(!callKey.startsWith('source:')||!call.output||typeof call.output!=='object')continue;
   const output=call.output as Record<string,unknown>;
+  if(callKey==='source:completeGuide'){
+   const snapshot=(output.frozen as {snapshot?:CompleteGuideSnapshot}|undefined)?.snapshot;
+   snapshot?.sources.forEach((source,position)=>{
+    const passage=snapshot.passages.find(passage=>passage.sourceKey===source.sourceKey);if(!passage)return;
+    const route=source.kind==='material'?'material':source.kind==='document'?'doc':'recording';
+    const id=source.kind==='transcript'?source.recordingId??source.sourceId:source.sourceId;
+    index[`study:${route}:${id}`]={callKey,path:['frozen','snapshot','sources',position],citation:citationUrl(source,passage.locator)};
+   });
+  }
+
   const containers:Array<{value:Record<string,unknown>;path:Array<string|number>;citation?:string}>= [{value:output,path:[]}];
   if(output.snapshot&&typeof output.snapshot==='object')containers.push({value:output.snapshot as Record<string,unknown>,path:['snapshot']});
   if(Array.isArray(output.sources))output.sources.forEach((row,position)=>{
@@ -93,3 +105,7 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
 
 export interface MobileDeepResearchCover {model:ModelRef;style:import('./types').DecorativeImageStyle;context:string;prompt:string;bytes:string;mime:string}
 export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover};
+
+export function mobileDeepResearchCoverMetadata(cover:MobileDeepResearchCover,id:string,createdAt:string):import('./types').DecorativeImage {
+ return {entityKind:'deep_research',entityId:id,requested:true,status:'ready',provider:cover.model.provider as 'openai'|'gemini'|'openrouter',model:cover.model.model,style:cover.style,visualContext:cover.context,prompt:cover.prompt,assetRef:null,mimeType:cover.mime,error:null,source:'ai',hasPrevious:false,createdAt,updatedAt:createdAt};
+}

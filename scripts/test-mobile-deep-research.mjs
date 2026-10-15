@@ -41,6 +41,12 @@ try {
  assert.deepEqual(citationIndex['work:actual'],{callKey:'source:actual',path:['snapshot','works',0]});
  assert(citationIndex['passage:documentary:source:2']);assert.equal(citationIndex['idea:fabricated'],undefined,'Provider output does not invent captured source identities');
  assert(!JSON.stringify(citationIndex).includes('Captured source'),'Source index points to captured body without duplicating it');
+ const guideCitations={...checkpoint,calls:{'source:completeGuide':{input:'chosen',output:{frozen:{snapshot:{sources:[{sourceKey:'material:shared-id',kind:'material',sourceId:'shared-id'},{sourceKey:'document:shared-id',kind:'document',sourceId:'shared-id'}],passages:[{sourceKey:'material:shared-id',text:'Captured actual page',locator:{kind:'page',page:2,from:0,to:20}},{sourceKey:'document:shared-id',text:'Captured actual note',locator:{kind:'offset',from:0,to:20}}]}}}}}};
+ const guideIndex=indexMobileDeepResearchCitations(guideCitations);
+ assert.deepEqual(guideIndex['study:material:shared-id'].path,['frozen','snapshot','sources',0]);
+ assert.deepEqual(guideIndex['study:doc:shared-id'].path,['frozen','snapshot','sources',1]);
+ assert.equal(guideIndex['study:material:shared-id'].citation,'nodus://study/material/shared-id?page=2');
+ assert(!JSON.stringify(guideIndex).includes('Captured actual'),'Guide citation index is a scoped pointer and never duplicates source bodies');
  const original=execFileSync('git',['show','02ac5b212ec8a86a10a12ea24c08d346b1065641:electron/ai/deepResearch.ts'],{encoding:'utf8'});
  const current=await fs.readFile(path.join(root,'shared/portableDeepResearchAI.ts'),'utf8');
  const old=original.slice(original.indexOf('async function aiReviewReport(')).replace('export const __decomposeObjectiveForTesting = aiDecomposeObjective;','').replace('export const __verifyCitationsForTesting = aiVerifyCitations;','').replace('export async function aiVerifyCitations','async function aiVerifyCitations').replaceAll('ReturnType<typeof academicRelationshipContext>','AcademicApproachContext["relationships"]').replaceAll("getActiveVault().type === 'academic'",'host.documentaryEvidence');

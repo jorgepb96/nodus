@@ -1,7 +1,7 @@
 import {mobileDeepResearchCover} from './deepResearchCover';
 import {autonomousCompleteGuide} from './autonomousCompleteGuide';
 import {orchestrateDeepResearch,type DeepResearchDeps} from '../../electron/ai/deepResearchCore';
-import {durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource,type MobileDeepResearchReport} from '@shared/mobileDeepResearch';
+import {mobileDeepResearchCoverMetadata,durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource,type MobileDeepResearchReport} from '@shared/mobileDeepResearch';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {structuredPrompt} from './structuredPrompt';
 import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord} from '@shared/types';
@@ -114,7 +114,7 @@ export async function localDeepResearchJobs(call:Call):Promise<Array<DeepResearc
 }
 export async function localDeepResearchReports(call:Call) {
  const checkpoints=await call('mobileDeepResearchCheckpoints','reports') as MobileDeepResearchCheckpoint[];
- return checkpoints.flatMap(item=>item.report?[{id:`mobile-dr-${item.id}`,title:item.report.draft.title,brief:item.report.draft.brief,selection:item.report.draft.selection,model:item.request.model??null,draft:item.report.draft,image:null,createdAt:item.createdAt,updatedAt:item.createdAt,readAt:null,mobilePublicationId:item.state==='available'&&typeof (item.result as {id?:unknown}|undefined)?.id==='string'?(item.result as {id:string}).id:undefined}]:[]);
+ return checkpoints.flatMap(item=>item.report?[{id:`mobile-dr-${item.id}`,title:item.report.draft.title,brief:item.report.draft.brief,selection:item.report.draft.selection,model:item.request.model??null,draft:item.report.draft,image:(item.report as MobileDeepResearchReport).mobileCover?mobileDeepResearchCoverMetadata((item.report as MobileDeepResearchReport).mobileCover!,`mobile-dr-${item.id}`,item.createdAt):null,createdAt:item.createdAt,updatedAt:item.createdAt,readAt:null,mobilePublicationId:item.state==='available'&&typeof (item.result as {id?:unknown}|undefined)?.id==='string'?(item.result as {id:string}).id:undefined}]:[]);
 }
 export async function clearLocalDeepResearchJobs(call:Call):Promise<number>{let count=0;for(const checkpoint of await autonomousDeepResearchCheckpoints(call)){if(active.has(checkpoint.entityKey)||checkpoint.hiddenFromQueue)continue;checkpoint.hiddenFromQueue=true;await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);count++;}return count;}
 

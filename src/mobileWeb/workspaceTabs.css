@@ -1,0 +1,129 @@
+/* Every embedded workspace uses the same touch-sized row. Desktop's 36px
+   strip cannot contain the host's 44px buttons: its scroll clipping cut off
+   labels and close controls in research, dictionary and Scriptor. */
+.mobile-surface {
+  --mobile-workspace-tab-height: max(44px, 2.75rem);
+}
+.mobile-surface .library-workspace-tabs {
+  box-sizing: border-box;
+  height: calc(var(--mobile-workspace-tab-height) + 1px);
+  min-height: calc(var(--mobile-workspace-tab-height) + 1px);
+  max-width: 100%;
+  padding: 0 8px;
+  flex: 0 0 auto;
+}
+.mobile-surface .library-workspace-tabs-scroll {
+  height: var(--mobile-workspace-tab-height);
+  min-height: var(--mobile-workspace-tab-height);
+  max-width: 100%;
+  align-items: stretch;
+  scroll-padding-inline: 4px;
+}
+.mobile-surface .library-workspace-tab {
+  box-sizing: border-box;
+  height: var(--mobile-workspace-tab-height);
+  min-height: var(--mobile-workspace-tab-height);
+  flex: 0 0 260px;
+  max-width: 100%;
+  overflow: hidden;
+  border-width: 0;
+}
+.mobile-surface .library-workspace-tab.is-library {
+  flex: 0 0 168px;
+}
+.mobile-surface .library-workspace-tab-main {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.mobile-surface .library-workspace-tab-close {
+  box-sizing: border-box;
+  width: 44px;
+  min-width: 44px;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+}
+.mobile-surface .library-workspace-tab.is-active {
+  box-shadow: inset 0 -2px var(--mobile-accent);
+}
+.nodus-phone .mobile-surface .library-workspace-tab {
+  flex-basis: 218px;
+}
+.nodus-phone .mobile-surface .library-workspace-tab.is-library {
+  flex-basis: 150px;
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 2;
+  background: var(--app-canvas);
+}
+/* Keep the catalogue reachable while giving the document its title space. */
+.nodus-phone .mobile-surface .library-workspace-tab.is-library:not(.is-active) {
+  flex-basis: 44px;
+  min-width: 44px;
+}
+.nodus-phone .mobile-surface .library-workspace-tab.is-library:not(.is-active) .library-workspace-tab-main {
+  justify-content: center;
+  padding: 0;
+}
+.nodus-phone .mobile-surface .library-workspace-tab.is-library:not(.is-active) .library-workspace-tab-main > span {
+  display: none;
+}
+@media (max-width: 600px) {
+  .nodus-phone .mobile-surface .library-workspace-tabs-scroll {
+    --mobile-tab-home-width: 44px;
+  }
+  .nodus-phone .mobile-surface .library-workspace-tabs-scroll:has(> .is-library.is-active) {
+    --mobile-tab-home-width: 150px;
+  }
+  .nodus-phone .mobile-surface .library-workspace-tab:not(.is-library) {
+    flex-basis: calc(100% - var(--mobile-tab-home-width) - 4px);
+  }
+}
+.mobile-surface .editorial-editor-header {
+  height: auto;
+  flex: 0 0 auto;
+  min-height: var(--mobile-workspace-tab-height);
+}
+
+/* The graph owns its tab state, but its touch geometry follows the same row. */
+.mobile-surface .stellar-tabs-header {
+  min-width: 0;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+.mobile-surface .stellar-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: stretch;
+  scrollbar-width: none;
+}
+.mobile-surface .stellar-tabs::-webkit-scrollbar { display: none; }
+.mobile-surface .stellar-tab {
+  height: var(--mobile-workspace-tab-height);
+  max-width: min(260px, 100%);
+  overflow: hidden;
+  border-width: 0;
+}
+.mobile-surface .stellar-tab [role="tab"] {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0 10px;
+  overflow: hidden;
+  font-size: .75rem;
+}
+.mobile-surface .stellar-tab :is(svg, .stellar-tab-close) { flex-shrink: 0; }
+.mobile-surface .stellar-tab-close {
+  width: 44px;
+  min-width: 44px;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+}
+.mobile-surface :is(.stellar-new-tab, .stellar-fullscreen) {
+  min-width: 44px;
+  height: var(--mobile-workspace-tab-height);
+  min-height: var(--mobile-workspace-tab-height);
+}

@@ -11,6 +11,7 @@ import {mobileModelInformation} from './structuredPrompt';
 import '../index.css';
 import './mobile.css';
 import './phone.css';
+import './workspaceTabs.css';
 import './page.css';
 import './database.css';
 import { useEffect, useState } from 'react';
@@ -432,6 +433,7 @@ function App() {
   return <main className="mobile-surface" data-surface={config.surface}>
     {error && <SurfaceIssue issue={error} />}
     {jobError && <SurfaceIssue issue={jobError} title={t('Estado de los trabajos')} />}
+    <div className="mobile-surface-content">
     {config.surface === 'graph' && ['estudio','docencia'].includes(config.vaultType)
       ? !settings ? <div role="status" className="mobile-loading">Cargando Nodus…</div>
         : <StudyGraphView mobile settings={settings} onSettingsChange={()=>{void call('getSettings').then(setSettings);}}
@@ -460,6 +462,7 @@ function App() {
           : mobileChatSurface(config.vaultType) === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId={null} onOpenSavedNote={id=>navigate('citation',`nodus://note/${encodeURIComponent(id)}`)}/>
           : <ResearchAssistantModal settings={settings} embedded isAcademic={config.vaultType === 'academic'} isGenealogy={config.vaultType === 'genealogy'}/>
       : <ArgumentMapView settings={settings} mobile initialSeed={config.initialArgumentSeed}/>}
+    </div>
     <FeedbackHost/>
   </main>;
 }

@@ -1,7 +1,8 @@
 html,body,#root,.mobile-surface{height:100%;width:100%;margin:0;overflow:hidden}
 body{-webkit-text-size-adjust:100%;touch-action:manipulation;background:var(--app-canvas);color:var(--app-text)}
 .mobile-surface{display:flex;flex-direction:column}
-.mobile-surface>div:not(.mobile-error){min-height:0;flex:1}
+.mobile-surface>.mobile-surface-content{min-height:0;min-width:0;flex:1;display:flex;flex-direction:column}
+.mobile-surface-content>*{min-height:0;min-width:0;flex:1}
 .mobile-loading{display:grid;place-items:center;color:var(--mobile-accent)}
 .mobile-error{padding:12px;display:flex;gap:12px;align-items:center;background:#fef2f2;color:#991b1b;z-index:100}
 .mobile-error button{padding:8px;flex-shrink:0}

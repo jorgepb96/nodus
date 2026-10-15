@@ -81,10 +81,6 @@
 .nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-editor-header{height:auto;flex-wrap:wrap}
 .nodus-phone .mobile-surface:is([data-surface="workspace"],[data-surface="studyDocument"]) .editorial-save-status{white-space:normal}
 .nodus-phone .editorial-editor-header{gap:4px;padding:4px 8px;flex-basis:auto}
-.nodus-phone .editorial-header-leading .library-workspace-tab.is-library{flex:0 0 44px;min-width:44px}
-.nodus-phone .editorial-header-leading .library-workspace-tab.is-library .library-workspace-tab-main{justify-content:center;padding:0;min-width:44px}
-.nodus-phone .editorial-header-leading .library-workspace-tab.is-library .library-workspace-tab-main>span{display:none}
-.nodus-phone .editorial-header-leading .library-workspace-tab:not(.is-library){flex:0 0 160px}
 .nodus-phone .editorial-action-bar{flex-wrap:nowrap;overflow-x:auto;padding:4px 12px;gap:8px}
 .nodus-phone .editorial-action-groups{flex-wrap:nowrap;flex-shrink:0;gap:4px}
 .nodus-phone .editorial-action-divider{margin-left:0;padding-left:4px}

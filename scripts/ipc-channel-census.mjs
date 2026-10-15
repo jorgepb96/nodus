@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,6 +46,103 @@ const RENDERER_INVOKE = /ipcRenderer\.invoke\(\s*(['"])([^'"\n]+)\1/g;
 const RENDERER_SEND = /ipcRenderer\.(?:send|sendSync)\(\s*(['"])([^'"\n]+)\1/g;
 const RENDERER_ON = /ipcRenderer\.(?:on|once)\(\s*(['"])([^'"\n]+)\1/g;
 
+function parseTypeScript(file, code) {
+  const source = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true);
+  if (source.parseDiagnostics.length) throw new Error(`Cannot census malformed TypeScript: ${file}`);
+  return source;
+}
+
+function unwrap(node) {
+  while (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node)) node = node.expression;
+  return node;
+}
+
+function declaration(source, name) {
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    const found = statement.declarationList.declarations.find(node => ts.isIdentifier(node.name) && node.name.text === name);
+    if (found?.initializer) return unwrap(found.initializer);
+  }
+  throw new Error(`Missing literal ${name} in ${source.fileName}`);
+}
+
+function literalArray(node, label) {
+  node = unwrap(node);
+  if (!ts.isArrayLiteralExpression(node) || node.elements.some(value => !ts.isStringLiteral(value))) {
+    throw new Error(`${label} must remain a literal string array.`);
+  }
+  return node.elements.map(value => value.text);
+}
+
+// Only a positive selector of the dispatcher's method parameter names a route.
+// Nested callbacks, comments, validation-only branches and post-IPC transforms
+// must not create an apparent direct HTTP implementation.
+function selectedMethods(expression) {
+  expression = unwrap(expression);
+  if (ts.isBinaryExpression(expression)) {
+    if ([ts.SyntaxKind.BarBarToken, ts.SyntaxKind.AmpersandAmpersandToken].includes(expression.operatorToken.kind)) {
+      return [...selectedMethods(expression.left), ...selectedMethods(expression.right)];
+    }
+    if (expression.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
+      for (const [parameter, value] of [[expression.left, expression.right], [expression.right, expression.left]]) {
+        if (ts.isIdentifier(unwrap(parameter)) && unwrap(parameter).text === 'method' && ts.isStringLiteral(unwrap(value))) return [unwrap(value).text];
+      }
+    }
+  }
+  if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression) &&
+      expression.expression.name.text === 'includes' && expression.arguments.length === 1 &&
+      ts.isIdentifier(unwrap(expression.arguments[0])) && unwrap(expression.arguments[0]).text === 'method') {
+    return literalArray(expression.expression.expression, 'Direct mobile selector');
+  }
+  return [];
+}
+
+function returnsDirectly(statement) {
+  if (ts.isReturnStatement(statement)) return statement.expression !== undefined;
+  if (ts.isBlock(statement)) return statement.statements.length > 0 && returnsDirectly(statement.statements.at(-1));
+  if (ts.isIfStatement(statement)) return statement.elseStatement !== undefined && returnsDirectly(statement.thenStatement) && returnsDirectly(statement.elseStatement);
+  return false;
+}
+
+/** Source-injected so regressions can remove real branches without editing the
+ * production dispatcher. A mobile entry still requires either a direct route or
+ * its actual IPC handler; a label alone is never a routing exception. */
+export function mobileOperationCensus({ registrySource, dispatcherSource, exportsSource }) {
+  const registry = declaration(parseTypeScript('shared/mobileOperations.ts', registrySource), 'MOBILE_OPERATIONS');
+  if (!ts.isObjectLiteralExpression(registry)) throw new Error('MOBILE_OPERATIONS must remain a literal object.');
+  const entries = registry.properties.map(property => {
+    if (!ts.isPropertyAssignment(property) || !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) throw new Error('Mobile registry methods must remain literal.');
+    const values = literalArray(property.initializer, `Mobile operation ${property.name.text}`);
+    if (values.length !== 2) throw new Error(`Invalid mobile operation ${property.name.text}`);
+    return { method: property.name.text, channel: values[0], file: 'shared/mobileOperations.ts' };
+  });
+  const names = new Set(entries.map(entry => entry.method));
+  if (!entries.length || names.size !== entries.length) throw new Error('The typed mobile operation census is incomplete.');
+  const exportSet = declaration(parseTypeScript('electron/desktopBridge/exports.ts', exportsSource), 'MOBILE_EXPORT_METHODS');
+  if (!ts.isNewExpression(exportSet) || !ts.isIdentifier(exportSet.expression) || exportSet.expression.text !== 'Set' || exportSet.arguments?.length !== 1) throw new Error('The direct mobile export vocabulary must remain a literal Set.');
+  const directExports = new Set(literalArray(exportSet.arguments[0], 'Direct mobile exports'));
+  const dispatcher = parseTypeScript('electron/desktopBridge/operations.ts', dispatcherSource);
+  const execute = dispatcher.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === 'executeMobileOperation');
+  if (!execute?.body || !execute.parameters.some(parameter => ts.isIdentifier(parameter.name) && parameter.name.text === 'method')) throw new Error('Missing mobile operation dispatcher.');
+  const statements = [...execute.body.statements];
+  const fallback = statements.findIndex(statement => ts.isVariableStatement(statement) && statement.declarationList.declarations.some(node =>
+    ts.isIdentifier(node.name) && node.name.text === 'handler' && node.initializer && ts.isCallExpression(node.initializer) &&
+    ts.isPropertyAccessExpression(node.initializer.expression) && ts.isIdentifier(node.initializer.expression.expression) &&
+    node.initializer.expression.expression.text === 'handlers' && node.initializer.expression.name.text === 'get' &&
+    node.initializer.arguments.length === 1 && ts.isIdentifier(node.initializer.arguments[0]) && node.initializer.arguments[0].text === 'channel'));
+  if (fallback < 0) throw new Error('Cannot identify the IPC fallback boundary in the mobile dispatcher.');
+  const directMethods = new Set();
+  for (const statement of statements.slice(0, fallback)) {
+    if (!ts.isIfStatement(statement)) continue;
+    const selected = selectedMethods(statement.expression);
+    for (const method of selected) if (!names.has(method)) throw new Error(`Unknown MOBILE_OPERATIONS method in HTTP dispatcher: ${method}`);
+    if (returnsDirectly(statement.thenStatement)) for (const method of selected) directMethods.add(method);
+  }
+  for (const method of directExports) if (!names.has(method)) throw new Error(`Unknown MOBILE_OPERATIONS export: ${method}`);
+  return { entries, directMethods, directExports,
+    invoked: entries.filter(entry => !directExports.has(entry.method) && !directMethods.has(entry.method)) };
+}
+
 let cached = null;
 
 /**
@@ -70,21 +168,12 @@ export function ipcCensus() {
   const main = sources.filter((entry) => !entry.bridge);
   const bridge = sources.filter((entry) => entry.bridge);
 
-  // The typed mobile Bridge dispatches this closed vocabulary to the same
-  // registered handlers. Export operations instead have their own renderer;
-  // derive that exception from the actual export dispatcher, not a test list.
-  const mobileFile = 'shared/mobileOperations.ts';
-  const mobileCode = readFileSync(path.join(repoRoot, mobileFile), 'utf8');
-  const mobileRegistry = mobileCode.slice(mobileCode.indexOf('MOBILE_OPERATIONS = {'), mobileCode.indexOf('} as const'));
-  const exportsCode = readFileSync(path.join(repoRoot, 'electron/desktopBridge/exports.ts'), 'utf8');
-  const exportsSet = exportsCode.match(/MOBILE_EXPORT_METHODS = new Set\(\[([^\]]+)\]\)/);
-  if (!exportsSet) throw new Error('The direct mobile export vocabulary must remain literal.');
-  const directExports = new Set([...exportsSet[1].matchAll(/['"]([^'"]+)['"]/g)].map(match => match[1]));
-  const mobileEntries = [...mobileRegistry.matchAll(/\b([A-Za-z0-9_]+):\s*\[\s*(['"])([^'"\n]+)\2\s*,/g)]
-    .map(match => ({ method: match[1], channel: match[3], file: mobileFile }));
-  if (!mobileEntries.length || [...directExports].some(method => !mobileEntries.some(entry => entry.method === method)))
-    throw new Error('The typed mobile operation census is incomplete.');
-  const mobileInvoked = mobileEntries.filter(entry => !directExports.has(entry.method));
+  const mobile = mobileOperationCensus({
+    registrySource: readFileSync(path.join(repoRoot, 'shared/mobileOperations.ts'), 'utf8'),
+    dispatcherSource: readFileSync(path.join(repoRoot, 'electron/desktopBridge/operations.ts'), 'utf8'),
+    exportsSource: readFileSync(path.join(repoRoot, 'electron/desktopBridge/exports.ts'), 'utf8'),
+  });
+  const mobileInvoked = mobile.invoked;
 
   // The NodusApi surface, wherever it is declared: the interface in
   // shared/types.ts plus the per-domain slices in shared/api/.
@@ -100,6 +189,7 @@ export function ipcCensus() {
   }
 
   cached = {
+    mobile,
     handled: [...collect(HANDLE, main), ...collect(IPC_MAIN_HANDLE, main)],
     listened: [...collect(IPC_MAIN_ON, main), ...collect(WEB_CONTENTS_IPC_ON, main)],
     invoked: [...collect(RENDERER_INVOKE, bridge), ...mobileInvoked],

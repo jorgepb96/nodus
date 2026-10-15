@@ -88,7 +88,8 @@ export const MOBILE_OPERATIONS = {
   moveNote: ['notes:move', 'writing'], patchNoteTags: ['notes:tags:patch', 'writing'],
   trashNoteFolder: ['notes:folders:trash', 'writing'], removeStudyNoteLinks: ['study:noteLinks:remove', 'writing'],
   trashNotes: ['notes:trash', 'writing'], restoreNotes: ['notes:restore', 'writing'],
-  duplicateMobileWorkspaceNote: ['mobile:workspace:duplicate', 'writing'], trashMobileWorkspaceNote: ['mobile:workspace:trash', 'writing'],
+  // Workspace duplicate/trash aliases are native-only: the companion queues
+  // durable /workspace-edits commands. They are not remote RPC capabilities.
   restoreWorkspaceNoteVersion: ['workspace:editor:restore', 'writing'],
   createWorkspaceAnnotation: ['workspace:annotation:create', 'writing'], updateWorkspaceAnnotation: ['workspace:annotation:update', 'writing'],
   addWorkspaceLibraryLink: ['workspace:library:add', 'writing'], removeWorkspaceLibraryLink: ['workspace:library:remove', 'writing'],

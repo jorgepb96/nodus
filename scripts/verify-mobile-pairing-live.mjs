@@ -75,6 +75,7 @@ try {
   assert.equal(caps.deviceId,offer.macDeviceId);assert.equal(caps.wholeWorkspace,true);
   assert.deepEqual(new Set(caps.vaultIds),new Set(vaults.map(v=>v.id)));
   assert.equal((await request('/bridge/v2/health')).version,JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version);
+  console.log('Pairing via real preload and Mac LAN HTTPS passed.');
   await close();
   await assert.rejects(request('/bridge/v2/health'),/ECONNREFUSED|ECONNRESET|socket hang up/,'Closing the real Mac app must stop the listener');
   await launch();
@@ -84,11 +85,13 @@ try {
   assert.equal(restored.pairings.filter(p=>p.id===grant.id).length,1);
   assert.equal((await request('/bridge/v2/capabilities')).deviceId,caps.deviceId);
   assert.equal((await request('/bridge/v2/pairing')).pairing.id,grant.id);
+  console.log('Real Mac process restart preserved listener, TLS pin, token and grant.');
   const renewed=randomBytes(32).toString('base64url');
   await request('/bridge/v2/pairing/renew','POST',{nextToken:renewed});
   await request('/bridge/v2/health','GET',undefined,401);bearer=renewed;
   assert.equal((await request('/bridge/v2/pairing')).pairing.id,grant.id);
-  assert.equal(await page.evaluate(id=>window.nodus.revokeDesktopBridgePairing(id),grant.id),true);
+  const revoked=await page.evaluate(id=>window.nodus.revokeDesktopBridgePairing(id),grant.id);
+  assert(revoked.pairings.find(p=>p.id===grant.id)?.revokedAt, 'The Desktop IPC returns the updated device status');
   await request('/bridge/v2/capabilities','GET',undefined,401);
   const end=await page.evaluate(()=>window.nodus.getDesktopBridgeStatus());
   assert.equal(end.pairings.filter(p=>p.id===grant.id&&!p.revokedAt).length,0);

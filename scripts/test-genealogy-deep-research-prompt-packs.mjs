@@ -74,7 +74,7 @@ test('genealogy module is wired to the explicit prompt language and pack stages'
   assert.match(source, /const promptLanguage = normalizePromptLanguage\(input\.language\);/);
   assert.match(source, /deepResearchNarrativeRules\(promptLanguage\)/);
   assert.match(source, /deepResearchLengthPromptPack\(promptLanguage\)/);
-  assert.match(source, /specializedGenealogyDeps\(model, approach, retrieval, language, signal\)/);
+  assert.match(source, /specializedGenealogyDeps\(model, approach, retrieval, language, signal, companion\)/);
   assert.match(source, /approachRules\(approach, 'genealogy', language\)/);
   for (const legacy of ['Eres el planificador de un INFORME', 'Eres el redactor de un INFORME', 'Eres el editor final de un informe']) {
     assert.doesNotMatch(source, new RegExp(legacy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `legacy inline prompt remains: ${legacy}`);

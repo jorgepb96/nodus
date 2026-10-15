@@ -326,7 +326,10 @@ test('every variant records the requested length through the one metadata seam',
 });
 
 test('the study, teaching and genealogy writers all receive localized length guidance', () => {
-  for (const file of ['electron/ai/studyDeepResearch.ts', 'electron/ai/genealogyDeepResearch.ts', 'electron/ai/deepResearch.ts']) {
+  const desktop = readFileSync(path.join(root, 'electron/ai/deepResearch.ts'), 'utf8');
+  assert.match(desktop, /import \{portableDeepResearchAI\} from '@shared\/portableDeepResearchAI'/u);
+  assert.match(desktop, /aiWriteSection[^}]*\} = canonicalAcademicAI/u);
+  for (const file of ['electron/ai/studyDeepResearch.ts', 'electron/ai/genealogyDeepResearch.ts', 'shared/portableDeepResearchAI.ts']) {
     const source = readFileSync(path.join(root, file), 'utf8');
     assert.match(source, /deepResearchLengthPromptPack\(/u, `${file}: no localized length pack`);
     assert.match(source, /lengthPack\.section\(/u, `${file}: the section writer gets no length steer`);

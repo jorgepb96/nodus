@@ -1,0 +1,704 @@
+.sign-workspace {
+  --sign-border: #e5e5e5;
+  --sign-bg: #fff;
+  --sign-soft: #f5f5f5;
+  --sign-muted: #737373;
+  --sign-ink: #262626;
+  --sign-accent: #d97706;
+  --sign-accent-ink: #b45309;
+  --sign-tint: #fff7ed;
+  container-type: inline-size;
+  container-name: sign;
+  display: flex;
+  flex-direction: column;
+  color: var(--sign-ink);
+  min-width: 0;
+  min-height: calc(100vh - 8rem);
+  gap: 12px;
+}
+.dark .sign-workspace {
+  --sign-border: #333;
+  --sign-bg: #191919;
+  --sign-soft: #222;
+  --sign-muted: #a3a3a3;
+  --sign-ink: #e5e5e5;
+  --sign-accent: #fbbf24;
+  --sign-accent-ink: #fbbf24;
+  --sign-tint: #302410;
+}
+html.theme-active :is(.sign-workspace, .sign-dialog) {
+  --sign-border: var(--theme-border-light);
+  --sign-bg: var(--n-50);
+  --sign-soft: var(--n-100);
+  --sign-muted: var(--n-600);
+  --sign-ink: var(--theme-text-light);
+  --sign-accent: var(--a-600);
+  --sign-accent-ink: var(--a-700);
+  --sign-tint: var(--a-50);
+}
+html.theme-active.dark :is(.sign-workspace, .sign-dialog) {
+  --sign-border: var(--theme-border-dark);
+  --sign-bg: var(--n-900);
+  --sign-soft: var(--n-950);
+  --sign-muted: var(--n-400);
+  --sign-ink: var(--theme-text-dark);
+  --sign-accent: var(--a-400);
+  --sign-accent-ink: var(--a-300);
+  --sign-tint: var(--a-950);
+}
+.sign-workspace .toolkit-header-compact {
+  margin-bottom: 0;
+}
+.sign-workspace .toolkit-hero {
+  padding: 20px 24px;
+  border-radius: 16px;
+}
+.sign-workspace .toolkit-hero-title {
+  font-size: 1.75rem;
+}
+.sign-workspace .toolkit-hero-description {
+  max-width: 600px;
+}
+.sign-actions,
+.sign-toolbar,
+.sign-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sign-grow {
+  flex: 1;
+  min-width: 0;
+}
+.sign-local {
+  color: var(--sign-muted);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sign-actions .btn,
+.sign-toolbar .btn {
+  min-height: 34px;
+}
+.sign-toolbar {
+  border: 1px solid var(--sign-border);
+  background: var(--sign-bg);
+  border-radius: 10px;
+  padding: 7px;
+  gap: 4px;
+}
+.sign-filename {
+  font-size: 0.75rem;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--sign-muted);
+}
+.sign-workspace
+  input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+.sign-workspace select,
+.sign-workspace textarea,
+.sign-dialog input:not([type="color"]) {
+  background: var(--sign-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--sign-border, #ddd);
+  border-radius: 7px;
+  padding: 7px 9px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.8rem;
+}
+.sign-workspace input:focus-visible,
+.sign-workspace select:focus-visible,
+.sign-workspace button:focus-visible,
+.sign-workspace [tabindex]:focus-visible,
+.sign-dialog :focus-visible {
+  outline: 2px solid var(--sign-accent);
+  outline-offset: 2px;
+}
+.sign-page-number {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+.sign-page-number input {
+  width: 52px;
+}
+.sign-body {
+  display: flex;
+  min-width: 0;
+  height: max(360px, calc(100dvh - 395px));
+  border: 1px solid var(--sign-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--sign-bg);
+}
+.sign-thumbs {
+  width: 112px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 12px;
+  border-right: 1px solid var(--sign-border);
+  background: var(--sign-soft);
+}
+.sign-thumb {
+  display: block;
+  width: 100%;
+  margin-bottom: 14px;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  padding: 4px;
+  color: var(--sign-muted);
+  border: 1px solid transparent;
+}
+.sign-thumb canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 1px 4px #0002;
+  background: white;
+}
+.sign-thumb span {
+  display: block;
+  margin-top: 5px;
+}
+.sign-thumb[aria-current="true"] {
+  border-color: var(--sign-accent);
+  background: var(--sign-tint);
+  color: var(--sign-accent-ink);
+}
+.sign-viewer {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  background: var(--sign-soft);
+  overflow: hidden;
+}
+.sign-stage {
+  height: 100%;
+  width: 100%;
+  padding: 24px;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+}
+.sign-paper {
+  margin: auto;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 3px 20px #0002;
+  line-height: 0;
+  background: white;
+}
+.sign-paper > canvas {
+  display: block;
+}
+.sign-overlays {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.sign-placement {
+  position: absolute;
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+  border: 1px solid transparent;
+  line-height: 0;
+}
+.sign-placement:hover,
+.sign-placement.is-selected {
+  border-color: var(--sign-accent);
+  outline: 1px dashed var(--sign-accent);
+  background: color-mix(in srgb, var(--sign-accent) 4%, transparent);
+}
+.sign-placement img {
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  object-fit: fill;
+}
+.sign-resize {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  background: var(--sign-accent);
+  border: 2px solid white;
+  border-radius: 2px;
+  cursor: nwse-resize;
+  display: none;
+  touch-action: none;
+}
+.is-selected > .sign-resize,
+.sign-crypto > .sign-resize {
+  display: block;
+}
+.sign-crypto {
+  border: 1px dashed var(--sign-accent);
+  background: color-mix(in srgb, var(--sign-accent) 5%, transparent);
+}
+.sign-preview .sign-placement {
+  border-color: transparent !important;
+  outline: none !important;
+  pointer-events: none;
+  background: none !important;
+}
+.sign-preview .sign-resize {
+  display: none;
+}
+.sign-loading {
+  position: absolute;
+  inset: 50% auto auto 45%;
+  font-size: 0.8rem;
+  color: var(--sign-muted);
+}
+.sign-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  padding: 32px;
+}
+.sign-empty-icon {
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--sign-tint);
+  color: var(--sign-accent-ink);
+}
+.sign-empty h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.sign-empty p {
+  max-width: 380px;
+  color: var(--sign-muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.sign-divider {
+  width: 7px;
+  cursor: col-resize;
+  flex-shrink: 0;
+  border-left: 1px solid var(--sign-border);
+}
+.sign-divider:hover {
+  background: color-mix(in srgb, var(--sign-accent) 25%, transparent);
+}
+.sign-panel {
+  width: var(--sign-panel-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--sign-bg);
+}
+.sign-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--sign-border);
+  padding: 0 8px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.sign-tabs button {
+  font-size: 0.75rem;
+  padding: 13px 5px;
+  border-bottom: 2px solid transparent;
+  flex: 1;
+}
+.sign-tabs [aria-selected="true"] {
+  border-color: var(--sign-accent);
+  color: var(--sign-accent-ink);
+  font-weight: 600;
+}
+.dark .sign-tabs [aria-selected="true"] {
+  color: var(--sign-accent-ink);
+}
+.sign-panel-content {
+  padding: 18px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  font-size: 0.8rem;
+}
+.sign-panel-content h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.sign-panel-content h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.sign-panel-content p {
+  color: var(--sign-muted);
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+.sign-panel-content label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+.sign-panel-content textarea {
+  resize: vertical;
+  min-height: 66px;
+}
+.sign-panel-content input[type="range"] {
+  accent-color: var(--sign-accent);
+  width: 100%;
+}
+.sign-panel-content .sign-check {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.5;
+}
+.sign-check input {
+  margin-top: 3px;
+  accent-color: var(--sign-accent);
+}
+.sign-panel-content code {
+  display: block;
+  overflow-wrap: anywhere;
+  background: var(--sign-soft);
+  padding: 8px;
+  border-radius: 5px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+}
+.sign-signature-card {
+  border: 1px solid var(--sign-border);
+  border-radius: 9px;
+  padding: 9px;
+}
+.sign-signature-preview {
+  height: 80px;
+  display: block;
+  width: 100%;
+  background: #fff;
+  border-radius: 5px;
+  background-image:
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+}
+.sign-signature-preview img {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  margin: auto;
+}
+.sign-signature-preview:disabled {
+  cursor: default;
+}
+.sign-signature-card .sign-row {
+  margin-top: 6px;
+}
+.sign-library-empty {
+  border: 1px dashed var(--sign-border);
+  border-radius: 8px;
+  padding: 20px;
+  color: var(--sign-muted);
+  line-height: 1.7;
+  text-align: center;
+}
+.sign-history-card,
+.sign-certificate,
+.sign-validation article {
+  border: 1px solid var(--sign-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.sign-history-card small,
+.sign-certificate small {
+  color: var(--sign-muted);
+  font-size: 0.7rem;
+}
+.sign-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--sign-border);
+  padding-top: 10px;
+}
+.sign-engine {
+  padding: 10px;
+  border: 1px solid var(--sign-border);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.75rem;
+  gap: 8px;
+}
+.sign-engine.is-ready {
+  border-color: #16a34a66;
+}
+.sign-validation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sign-message {
+  background: var(--sign-soft);
+  padding: 10px 14px;
+  border: 1px solid var(--sign-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sign-error {
+  color: #b91c1c !important;
+  background: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+.dark .sign-error {
+  color: #fca5a5 !important;
+  background: #450a0a !important;
+  border-color: #7f1d1d !important;
+}
+.sign-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  gap: 12px;
+  color: var(--sign-muted);
+  padding: 2px 4px;
+}
+.sign-dialog {
+  --sign-bg: #fff;
+  --sign-border: #ddd;
+  --sign-ink: #262626;
+  --sign-muted: #737373;
+  --sign-accent: #d97706;
+  background: var(--sign-bg);
+  color: var(--sign-ink);
+  border-radius: 16px;
+  width: min(780px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 100px #0005;
+}
+.dark .sign-dialog {
+  --sign-bg: #222;
+  --sign-border: #444;
+  --sign-ink: #e5e5e5;
+  --sign-muted: #a3a3a3;
+  --sign-accent: #fbbf24;
+}
+.sign-dialog header,
+.sign-dialog footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sign-dialog footer {
+  justify-content: flex-end;
+}
+.sign-dialog h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.sign-dialog p {
+  font-size: 0.8rem;
+  color: var(--sign-muted);
+  line-height: 1.7;
+}
+.sign-dialog > label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+.sign-dialog canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  touch-action: none;
+  cursor: crosshair;
+  background-image: linear-gradient(
+    transparent 75%,
+    #ddd5 75%,
+    transparent 76%
+  );
+}
+.sign-dialog .sign-row {
+  font-size: 0.75rem;
+}
+.sign-dialog .sign-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sign-dialog .sign-row input[type="color"] {
+  width: 28px;
+  height: 28px;
+}
+.sign-vault-picker {
+  position: fixed;
+  z-index: 125;
+  inset: 15% 20%;
+  background: var(--sign-bg);
+  border: 1px solid var(--sign-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 100px #0006;
+  padding: 20px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sign-vault-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sign-vault-source {
+  display: flex;
+  gap: 12px;
+  text-align: left;
+  border: 1px solid var(--sign-border);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+.sign-vault-source:hover {
+  border-color: var(--sign-accent);
+}
+.sign-vault-source small {
+  display: block;
+  color: var(--sign-muted);
+  margin-top: 4px;
+}
+@media (max-width: 1050px) {
+  .sign-thumbs {
+    width: 85px;
+    padding: 8px;
+  }
+  .sign-panel {
+    width: 260px;
+  }
+  .sign-filename {
+    display: none;
+  }
+  .sign-local {
+    display: none;
+  }
+  .sign-stage {
+    padding: 16px;
+  }
+}
+@container sign (max-width: 760px) {
+  .sign-body {
+    height: auto;
+    min-height: 600px;
+    flex-wrap: wrap;
+  }
+  .sign-viewer {
+    height: 65vh;
+    min-width: calc(100% - 85px);
+  }
+  .sign-thumbs { height: 65vh; }
+  .sign-panel {
+    width: 100%;
+    max-height: 500px;
+    border-top: 1px solid var(--sign-border);
+  }
+  .sign-divider {
+    display: none;
+  }
+  .sign-tabs button {
+    padding: 12px;
+  }
+  .sign-panel-content {
+    padding: 16px;
+  }
+  .sign-workspace .toolkit-hero {
+    padding: 16px;
+  }
+  .sign-vault-picker {
+    inset: 8%;
+  }
+  .sign-status {
+    flex-wrap: wrap;
+  }
+  .sign-toolbar .btn {
+    padding: 6px;
+  }
+  .sign-toolbar {
+    gap: 2px;
+  }
+}
+
+.sign-workspace button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sign-overlays { overflow: hidden; }
+
+.sign-placement-controls,
+.sign-page-target {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--sign-border);
+  border-radius: 9px;
+  padding: 12px;
+}
+.sign-placement-controls legend,
+.sign-page-target legend { font-weight: 600; padding: 0 4px; }
+.sign-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sign-dimensions input { width: 100%; }
+.sign-panel-content .btn { min-height: 36px; height: auto; white-space: normal; line-height: 1.4; padding-top: 8px; padding-bottom: 8px; }
+.sign-panel-content label, .sign-panel-content fieldset { flex-shrink: 0; }
+.sign-panel-content .sign-row > label { flex: 1; min-width: 85px; }
+.sign-input-error { color: var(--sign-accent-ink) !important; }
+.sign-panel-content input[aria-invalid="true"] { border-color: var(--sign-accent); }
+.sign-multipage-note { padding: 10px; border-radius: 7px; background: var(--sign-tint); }
+.sign-page-target p { overflow-wrap: anywhere; max-height: 80px; overflow-y: auto; }
+
+.sign-install-progress { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--sign-border); border-radius: 8px; }
+.sign-install-progress progress { width: 100%; height: 7px; accent-color: var(--sign-accent); }
+.sign-advanced-engine { font-size: .75rem; color: var(--sign-muted); }
+.sign-advanced-engine summary { cursor: pointer; padding: 6px 0; }
+
+.sign-install-progress progress { appearance: none; border: 0; border-radius: 6px; overflow: hidden; background: var(--sign-soft); }
+.sign-install-progress progress::-webkit-progress-bar { background: var(--sign-soft); }
+.sign-install-progress progress::-webkit-progress-value { background: var(--sign-accent); }
+.sign-install-progress progress::-moz-progress-bar { background: var(--sign-accent); }

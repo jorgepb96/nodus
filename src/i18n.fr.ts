@@ -1,3 +1,4 @@
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
@@ -8921,3 +8922,5 @@ export const FR: Record<string, string> = {
   ...ACADEMIC_INTERFACE_TRANSLATIONS["fr"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["fr"],
 };
+
+Object.assign(FR, SIGN_TRANSLATIONS['fr']);

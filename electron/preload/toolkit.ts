@@ -6,6 +6,32 @@ import { webUtils } from 'electron';
 import type { ToolkitApi } from '@shared/api/toolkit';
 
 export const toolkitApi: ToolkitApi = {
+  getSignLibrary: () => ipcRenderer.invoke('sign:library'),
+  saveSignSignature: signature => ipcRenderer.invoke('sign:signature:save', signature),
+  deleteSignSignature: id => ipcRenderer.invoke('sign:signature:delete', id),
+  saveSignProfile: profile => ipcRenderer.invoke('sign:profile:save', profile),
+  deleteSignProfile: id => ipcRenderer.invoke('sign:profile:delete', id),
+  openSignDocument: source => ipcRenderer.invoke('sign:document:open', source),
+  readSignHistory: id => ipcRenderer.invoke('sign:history:read', id),
+  deleteSignHistory: id => ipcRenderer.invoke('sign:history:delete', id),
+  saveSignVisual: (id, placements) => ipcRenderer.invoke('sign:visual:save', id, placements),
+  exportSignDocument: id => ipcRenderer.invoke('sign:document:export', id),
+  saveSignToVault: id => ipcRenderer.invoke('sign:document:vault', id),
+  revealSignDocument: id => ipcRenderer.invoke('sign:document:reveal', id),
+  getSignEngineStatus: () => ipcRenderer.invoke('sign:engine:status'),
+  configureSignPython: () => ipcRenderer.invoke('sign:engine:configure'),
+  installSignEngine: async onProgress => {
+    const listener = (_e: unknown, event: Parameters<typeof onProgress>[0]) => onProgress(event);
+    ipcRenderer.on('sign:engine:progress', listener);
+    try { return await ipcRenderer.invoke('sign:engine:install'); }
+    finally { ipcRenderer.removeListener('sign:engine:progress', listener); }
+  },
+  cancelSignEngineInstall: () => ipcRenderer.invoke('sign:engine:cancel'),
+  pickSignCertificate: () => ipcRenderer.invoke('sign:certificate:pick'),
+  inspectSignCertificate: (token, password) => ipcRenderer.invoke('sign:certificate:inspect', token, password),
+  inspectSignDocument: id => ipcRenderer.invoke('sign:document:inspect', id),
+  signWithCertificate: request => ipcRenderer.invoke('sign:crypto:sign', request),
+  cancelSignOperation: () => ipcRenderer.invoke('sign:operation:cancel'),
   getBackupCatalog: ids => ipcRenderer.invoke('backups:catalog', ids),
   getBackupCatalogRecords: query => ipcRenderer.invoke('backups:records', query),
   previewOpenBackup: options => ipcRenderer.invoke('backups:preview', options),

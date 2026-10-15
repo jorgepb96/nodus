@@ -188,7 +188,9 @@
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
     "test:presenter-lan": "node scripts/verify-presenter-lan.cjs",
     "test:cloudflare-safety": "node --test scripts/test-cloudflare-sync-safety.mjs scripts/test-cloudflare-local-safety.mjs scripts/test-replica-utility-safety.mjs",
-    "test:e2e:backups": "node scripts/e2e-backups.mjs"
+    "test:e2e:backups": "node scripts/e2e-backups.mjs",
+    "test:sign": "node --test scripts/test-sign.mjs scripts/test-sign-install.mjs scripts/test-sign-i18n.mjs",
+    "verify:sign": "node scripts/verify-sign.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -366,6 +368,15 @@
       {
         "from": "build/zotero-mcp",
         "to": "zotero-mcp"
+      },
+      {
+        "from": "electron/assets/sign",
+        "to": "sign",
+        "filter": [
+          "engine.py",
+          "requirements.lock",
+          "requirements.txt"
+        ]
       }
     ],
     "files": [

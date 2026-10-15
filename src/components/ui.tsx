@@ -172,6 +172,7 @@ const ICON_PATHS: Record<string, string> = {
   // A party popper: marks a holiday in the attendance grid (its own drawing, not a copied set).
   partyPopper: '<path d="M4 20 8.5 9l6.5 6.5z"/><path d="M7.3 13.3l3.4 3.4"/><path d="M11 7c-.4-1.8.6-3.2 2.4-3.4"/><path d="M17 13c1.8.4 3.2-.6 3.4-2.4"/><path d="M13.5 10.5 19 5"/><path d="M17 2.5v.01"/><path d="M21.5 7v.01"/><path d="M21 16.5v.01"/>',
   edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  signature: '<path d="M3 15.5C6.5 13.5 11 8 11 5.5c0-2.5-3-2.5-4 0-1.3 3.3-1.5 9.5.5 10s4.5-5 5.5-4c.8.8-1.5 4 .5 4 1.5 0 2-3 3.5-3 .8 0 .2 3 2 3H21"/><path d="M3 20h18"/>',
   lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4"/><path d="m8.6 13.5 6.8 4"/>',

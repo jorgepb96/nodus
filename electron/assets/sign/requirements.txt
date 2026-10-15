@@ -1,0 +1,4 @@
+# Optional app-private engine, installed by the Nodus Sign button.
+# Complete hash-locked dependency set: requirements.lock
+pyHanko==0.35.1
+Pillow==12.1.1

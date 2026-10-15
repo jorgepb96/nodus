@@ -1,0 +1,23 @@
+Digital Signature Info of: certificate-signed.pdf
+Signature #1:
+  - Signature Field Name: NodusSign_95e3a2aaff5a4a18a2e9b98af778bd88
+  - Signer Certificate Common Name: Nodus TEST ONLY
+  - Signer full Distinguished Name: CN=Nodus TEST ONLY
+  - Signing Time: Oct 16 2026 00:17:49
+  - Signing Hash Algorithm: SHA-256
+  - Signature Type: ETSI.CAdES.detached
+  - Signed Ranges: [0 - 61224], [65222 - 65778]
+  - Not total document signed
+  - Signature Validation: Signature is Valid.
+  - Certificate Validation: Certificate issuer is unknown.
+Signature #2:
+  - Signature Field Name: NodusSign_af458d950ed347a8b22a496621349d69
+  - Signer Certificate Common Name: Nodus TEST ONLY
+  - Signer full Distinguished Name: CN=Nodus TEST ONLY
+  - Signing Time: Oct 16 2026 00:17:49
+  - Signing Hash Algorithm: SHA-256
+  - Signature Type: ETSI.CAdES.detached
+  - Signed Ranges: [0 - 98861], [102859 - 103424]
+  - Total document signed
+  - Signature Validation: Signature is Valid.
+  - Certificate Validation: Certificate issuer is unknown.

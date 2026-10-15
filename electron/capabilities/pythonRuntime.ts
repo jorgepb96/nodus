@@ -1,3 +1,4 @@
+import { findSystemPython } from '../systemPython';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -10,7 +11,7 @@ import type { TrustedWorkerRuntime } from './workerHost';
 
 /** Python environments a capability declares and the host builds.
  *
- *  The interpreter is the user's — Nodus does not ship one — but everything installed into
+ *  Capability runtimes use an existing interpreter; everything installed into
  *  the environment is pinned: the package carries a lock naming every wheel with its URL,
  *  size and SHA-256, the host downloads each one through the capability's own declared
  *  network permission, verifies it, and installs with `--no-index --require-hashes` from
@@ -100,23 +101,7 @@ export function validateRuntimeLock(input: unknown): RuntimeLock {
   return structuredClone(value);
 }
 
-/** The interpreter the user already has, or nothing. Nodus never installs one. */
-export async function findSystemPython(minVersion: string): Promise<{ path: string; version: string } | null> {
-  const candidates = process.platform === 'win32' ? ['py', 'python3', 'python'] : ['python3', 'python'];
-  const [minMajor, minMinor] = minVersion.split('.').map(Number);
-  for (const candidate of candidates) {
-    try {
-      const { stdout } = await run(candidate, ['-c', 'import sys; print("%d.%d.%d" % sys.version_info[:3])'], { timeout: 10_000 });
-      const version = stdout.trim();
-      const [major, minor] = version.split('.').map(Number);
-      if (major > minMajor || major === minMajor && minor >= minMinor) {
-        const { stdout: resolved } = await run(candidate, ['-c', 'import sys; print(sys.executable)'], { timeout: 10_000 });
-        return { path: resolved.trim(), version };
-      }
-    } catch { /* try the next candidate */ }
-  }
-  return null;
-}
+export { findSystemPython } from '../systemPython';
 
 export interface EnsureRuntimeContext {
   /** Downloads one pinned artifact through the capability's own network permission. */

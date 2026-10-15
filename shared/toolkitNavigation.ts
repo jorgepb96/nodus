@@ -1,5 +1,5 @@
 /** Stable Toolkit destinations that may be pinned into the main sidebar. */
-export const TOOLKIT_TOOL_PAGES = ['backups', 'apps', 'convert', 'drift', 'protect', 'translate', 'presenter', 'ocr'] as const;
+export const TOOLKIT_TOOL_PAGES = ['backups', 'apps', 'convert', 'drift', 'protect', 'translate', 'presenter', 'sign', 'ocr'] as const;
 
 export type ToolkitToolPage = (typeof TOOLKIT_TOOL_PAGES)[number];
 

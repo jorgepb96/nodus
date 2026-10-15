@@ -1,3 +1,4 @@
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
@@ -8930,3 +8931,5 @@ export const DE: Record<string, string> = {
   ...ACADEMIC_INTERFACE_TRANSLATIONS["de"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["de"],
 };
+
+Object.assign(DE, SIGN_TRANSLATIONS['de']);

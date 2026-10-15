@@ -71,10 +71,12 @@ export function NodeDetailPanel({
   onSaveIdea,
   onSaveEdge,
   readOnly = false,
+  allowNoteCopy = false,
   edgeLabel,
   edgeContext,
 }: {
   readOnly?: boolean;
+  allowNoteCopy?: boolean;
   edgeLabel?: string;
   edgeContext?: string;
   ideaDetail: IdeaDetail | null;
@@ -100,6 +102,7 @@ export function NodeDetailPanel({
   // A note pending capture: built lazily from whichever detail is open.
   const [saving, setSaving] = useState<{ content: string; title: string; ref: string } | null>(null);
   const [savingExternal, setSavingExternal] = useState(false);
+  const [savingError,setSavingError]=useState('');
   const panelRef=useRef<HTMLDivElement>(null);
   useLearningEvidenceVisibility(ideaDetail,panelRef);
 
@@ -127,9 +130,10 @@ export function NodeDetailPanel({
         title={t('Ajustar ancho')}
         onPointerDown={startResize}
       />
+      {savingError && <div role="alert" className="shrink-0 p-3 text-sm text-red-500">{savingError}</div>}
       <div className="graph-detail-header relative z-10 flex shrink-0 items-center justify-end gap-1 border-b border-neutral-800 px-4 py-2">
         {ideaDetail && onEditIdea && <button className="btn btn-primary mr-auto text-xs" data-testid="graph-edit-manual-idea" onClick={() => onEditIdea(ideaDetail.idea.global_id)}><Icon name="edit" size={13} /> {t('Editar')}</button>}
-        {!onEditIdea && !readOnly && (ideaDetail || edgeDetail) && (
+        {!onEditIdea && (!readOnly || allowNoteCopy || (ideaDetail ? !!onSaveIdea : !!onSaveEdge)) && (ideaDetail || edgeDetail) && (
           <button
             className="card mr-auto inline-flex items-center gap-1.5 bg-neutral-900 px-2 py-1 text-xs hover:bg-neutral-800"
             title={t('Guardar en notas')}
@@ -137,8 +141,8 @@ export function NodeDetailPanel({
             onClick={() => {
               if (ideaDetail) {
                 if (onSaveIdea) {
-                  setSavingExternal(true);
-                  void onSaveIdea(ideaDetail).finally(() => setSavingExternal(false));
+                  setSavingExternal(true);setSavingError('');
+                  void onSaveIdea(ideaDetail).catch(error=>setSavingError(error instanceof Error?error.message:String(error))).finally(() => setSavingExternal(false));
                   return;
                 }
                 setSaving({
@@ -148,8 +152,8 @@ export function NodeDetailPanel({
                 });
               } else if (edgeDetail) {
                 if (onSaveEdge) {
-                  setSavingExternal(true);
-                  void onSaveEdge(edgeDetail).finally(() => setSavingExternal(false));
+                  setSavingExternal(true);setSavingError('');
+                  void onSaveEdge(edgeDetail).catch(error=>setSavingError(error instanceof Error?error.message:String(error))).finally(() => setSavingExternal(false));
                   return;
                 }
                 setSaving({
@@ -454,20 +458,23 @@ function itemTypeLabel(type?: string | null): string | null {
 export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: IdeaDetail['occurrences'][number]; readOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<WorkSummary | null>(null);
+  const [summaryError,setSummaryError]=useState('');
+  const [summaryAttempt,setSummaryAttempt]=useState(0);
   const work = occurrence.work;
   const author = work.authors[0] ?? t('Autor desconocido');
   const year = work.year ?? t('s.f.');
 
   useEffect(() => {
     let active = true;
-    if (readOnly || work.summary_status !== 'done') return;
+    if (work.summary_status !== 'done') return;
+    setSummary(null); setSummaryError('');
     void window.nodus.getWorkSummary(work.nodus_id).then((value) => {
       if (active) setSummary(value);
-    });
+    }).catch(error=>{if(active)setSummaryError(error instanceof Error?error.message:String(error));});
     return () => {
       active = false;
     };
-  }, [work.nodus_id, work.summary_status, readOnly]);
+  }, [work.nodus_id, work.summary_status, summaryAttempt]);
 
   return (
     <div className="card p-3 mb-2">
@@ -479,7 +486,7 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
             {work.authors.length > 1 ? ' et al.' : ''} ({year})
           </div>
         </div>
-        {!readOnly && <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-200 p-1"
             title={open ? t('Ocultar metadatos') : t('Mostrar metadatos')}
@@ -487,20 +494,21 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
           >
             <Icon name="info" size={14} />
           </button>
-          <button
+          {!readOnly && <button
             className="inline-flex items-center gap-1 text-indigo-400 text-xs p-1 hover:text-indigo-300"
             title={t('Abrir en Zotero')}
             onClick={() => window.nodus.openInZotero(work.zotero_key)}
           >
             <Icon name="external" size={13} /> Zotero
-          </button>
-        </div>}
+          </button>}
+        </div>
       </div>
       {open && <OccurrenceMeta work={work} />}
       <div className="text-[11px] text-neutral-500 mt-2">
         {occurrence.role} · conf {occurrence.confidence.toFixed(2)}
       </div>
       <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{occurrence.development}</p>
+      {summaryError && <div role="alert">{summaryError}<button className="btn" onClick={()=>setSummaryAttempt(value=>value+1)}>{t('Reintentar')}</button></div>}
       {summary && (
         <div className="mt-2 border-l-2 border-violet-700 pl-2 text-xs leading-relaxed text-neutral-300">
           <div className="mb-0.5 text-[10px] font-medium uppercase text-violet-300">{t('Resumen (orientación)')}</div>
@@ -515,16 +523,18 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
 /** Bibliographic detail for one occurrence — authors, venue, pages — read live from Zotero. */
 function OccurrenceMeta({ work }: { work: WorkView }) {
   const [meta, setMeta] = useState<WorkMeta | null>(null);
+  const [error,setError]=useState('');const [attempt,setAttempt]=useState(0);
   useEffect(() => {
-    let on = true;
+    let on = true;setError('');
     void window.nodus.getWorkMeta(work.nodus_id).then((m) => {
       if (on) setMeta(m);
-    });
+    }).catch(error=>{if(on)setError(error instanceof Error?error.message:String(error));});
     return () => {
       on = false;
     };
-  }, [work.nodus_id]);
+  }, [work.nodus_id,attempt]);
 
+  if(error)return <div role="alert">{error}<button className="btn" onClick={()=>setAttempt(value=>value+1)}>{t('Reintentar')}</button></div>;
   const authors = meta?.authors?.length ? meta.authors : work.authors;
   const type = itemTypeLabel(meta?.itemType ?? work.item_type);
   const year = work.year ?? meta?.year ?? null;

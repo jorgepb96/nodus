@@ -66,6 +66,7 @@ export function StudyGraphView({
     target={target}
     dataSource={dataSource}
     mobile={mobile}
+    allowMobileStudyNotes={mobile}
     onFullscreenChange={onFullscreenChange}
     snapshot={snapshot}
     onSnapshotChange={onSnapshotChange}

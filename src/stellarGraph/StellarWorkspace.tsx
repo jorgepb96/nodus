@@ -85,6 +85,7 @@ export interface StellarWorkspaceProps {
   onOpenIdea?(id: string): void;
   onEditIdea?(id: string): void;
   openEvidence?(ref: string, location: string | null, quote?: string): void;
+  allowNoteCopy?: boolean;
   saveIdea?(detail: IdeaDetail): Promise<void>;
   saveEdge?(detail: EdgeDetail): Promise<void>;
   audit?: boolean;
@@ -228,6 +229,7 @@ function StellarGraphTab({
   onEditIdea,
   openEvidence,
   saveIdea,
+  allowNoteCopy = false,
   saveEdge,
   audit,
   active,
@@ -1074,6 +1076,7 @@ function StellarGraphTab({
         {active && sidebar ? sidebar : (idea || edge || detailLoading) && (
           <NodeDetailPanel
             readOnly={source.readOnly}
+            allowNoteCopy={allowNoteCopy}
             edgeLabel={edge ? relation(engine?.edges.get(edge.edge.id)?.type || edge.edge.type).label : undefined}
             edgeContext={edge ? t(edge.feedback?.verdict === "confirmed" ? "Relación confirmada mediante revisión del usuario." : "Relación pendiente de validación. La confianza es una puntuación del sistema: comprueba la dirección, la justificación y los pasajes originales.") : undefined}
             ideaDetail={idea}

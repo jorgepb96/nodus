@@ -25,6 +25,7 @@ export function GraphView({
   onSnapshotChange,
   onEditManualIdea,
   mobile = false,
+  allowMobileStudyNotes = false,
   onFullscreenChange,
 }: {
   onEditManualIdea?: (noteId: string) => void;
@@ -37,6 +38,7 @@ export function GraphView({
   snapshot?: StellarWorkspaceSnapshot;
   onSnapshotChange?(snapshot: StellarWorkspaceSnapshot): void;
   mobile?: boolean;
+  allowMobileStudyNotes?: boolean;
   onFullscreenChange?(fullscreen: boolean): Promise<void>;
 }) {
   const [tutorTarget, setTutorTarget] = useState<GraphNavigationTarget | null>(
@@ -95,8 +97,9 @@ export function GraphView({
         author={target?.preset === "authors" ? target?.label : undefined}
         title={target?.workTitle}
         openEvidence={dataSource.openEvidence}
-        saveIdea={mobile ? undefined : dataSource.saveIdea}
-        saveEdge={mobile ? undefined : dataSource.saveEdge}
+        allowNoteCopy={mobile}
+        saveIdea={mobile && !allowMobileStudyNotes ? undefined : dataSource.saveIdea}
+        saveEdge={mobile && !allowMobileStudyNotes ? undefined : dataSource.saveEdge}
         audit={settings.academicMode !== 'manual' && dataSource.capabilities.audit}
         sidebar={modal === "tutor" ? (
           <TutorPanel

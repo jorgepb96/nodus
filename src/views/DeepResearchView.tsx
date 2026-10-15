@@ -300,6 +300,7 @@ export function DeepResearchView({
   onNativeRead,
   onRetryResearch,
   mobileGuideSources,
+  onLegacyReports,
   completeGuideTarget,
   onCompleteGuideTargetConsumed,
 }: {
@@ -322,6 +323,7 @@ export function DeepResearchView({
   onNativeRead?: (id: string) => void;
   onRetryResearch?: (id:string)=>Promise<void>;
   mobileGuideSources?: MobileCompleteGuideActions;
+  onLegacyReports?: () => void;
   /** Study vaults: open the composer as a complete guide over these sources (from Materials). */
   completeGuideTarget?: { sourceKeys: string[]; nonce: number } | null;
   onCompleteGuideTargetConsumed?: () => void;
@@ -674,6 +676,7 @@ export function DeepResearchView({
     const outline = isTeaching && structureMode === 'manual' && deepSectionLimit !== 'single' ? unitOutline : null;
     const request = {
       objective: objective.trim(),
+      ...(mobileGuideSources ? {mobileSourceScope} : {}),
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
@@ -1256,6 +1259,7 @@ export function DeepResearchView({
             {selecting && selected.size > 0 && <span className="text-xs text-indigo-300">({selected.size})</span>}
           </button>
         )}
+        {onLegacyReports && <button type="button" className="btn btn-secondary" onClick={onLegacyReports}>{t('Informes de versiones anteriores')}</button>}
         <button data-testid="deep-research-new" className="btn btn-primary gap-1.5" onClick={() => setComposerOpen(true)}>
           <Icon name="plus" /> {t(copy.newAction)}
         </button>
@@ -1523,6 +1527,15 @@ export function DeepResearchView({
           studyReportMode={isStudy && !isTeaching ? studyReportMode : undefined}
           onStudyReportMode={setStudyReportMode}
           guideReady={guideReady}
+          sourcePanel={mobileGuideSources && (isStudy || isTeaching) ? <div className="space-y-2">
+            <label className="block text-xs">{t('Fuentes de esta investigación')}
+              <select className="ml-2" value={mobileSourceScope} onChange={event=>setMobileSourceScope(event.target.value as MobileResearchSourceScope)}>
+                <option value="linked_corpus">{t('Fuentes preparadas del Mac')}</option>
+                <option value="device_downloads">{t('Fuentes elegidas en Descargas')}</option>
+              </select>
+            </label>
+            {mobileSourceScope === 'device_downloads' && <p className="text-xs text-neutral-500">{t('Usará únicamente los materiales, notas y clases que elegiste llevar en Descargas → Fuentes de estudio, con recuperación léxica local. No necesita el Mac durante la investigación.')}</p>}
+          </div> : undefined}
           guidePanel={guideMode ? (
             <>
               {mobileGuideSources && <div className="flex flex-wrap items-center gap-2">
@@ -2638,6 +2651,7 @@ export function ComposerModal({
   studyReportMode,
   onStudyReportMode,
   guidePanel,
+  sourcePanel,
   guideReady = false,
 }: {
   documentSkills: ReturnType<typeof useDocumentSkills>;
@@ -2685,6 +2699,7 @@ export function ComposerModal({
   studyReportMode?: 'research' | 'complete_guide';
   onStudyReportMode?: (mode: 'research' | 'complete_guide') => void;
   guidePanel?: ReactNode;
+  sourcePanel?: ReactNode;
   guideReady?: boolean;
 }) {
   const guideMode = studyReportMode === 'complete_guide';
@@ -2748,6 +2763,7 @@ export function ComposerModal({
             </div>
           )}
           {guideMode && guidePanel}
+          {!guideMode && sourcePanel}
           <textarea
             className="input min-h-28 w-full resize-y"
             value={objective}

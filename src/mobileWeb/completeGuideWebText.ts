@@ -1,3 +1,4 @@
+import {decodeWebText} from '@shared/webTextDecoding';
 import {runWebResearch,type WebResearchDeps} from '../../electron/websearch/webResearch';
 import {extractHtmlPage,extractTextPage} from '../../electron/websearch/webPageExtract';
 import {PLAN_SYSTEM,REFORMULATE_SYSTEM,PICK_SYSTEM,RATE_SYSTEM,validPlan,validQueries,validPick,validRatings} from '../../electron/websearch/webPlanning';
@@ -11,7 +12,7 @@ export async function mobileCompleteGuideWebText(call:Call,endpoint:string,input
  const model=<T>(system:string,user:unknown,maxTokens:number,validate:(value:unknown)=>value is T)=>json({stage:'web',system,user:JSON.stringify(user),maxTokens,temperature:0,mechanical:true,validate});
  const deps:WebResearchDeps={
   search:async(query,category)=>{const url=new URL(search);url.searchParams.set('q',query);url.searchParams.set('categories',category);url.searchParams.set('format','json');const result=await call('mobilePublicWebResource',url.href,'json');if(!Array.isArray(result.results))throw new Error('invalid_mobile_search_response');return {results:result.results,unresponsive:result.unresponsive_engines??[]};},
-  fetchPage:url=>call('mobilePublicWebResource',url,'page'),
+  fetchPage:async url=>{const page=await call('mobilePublicWebResource',url,'page');if(typeof page.bodyBytes==='string')page.body=decodeWebText(Uint8Array.from(atob(page.bodyBytes),character=>character.charCodeAt(0)),page.contentType??'');if(typeof page.body!=='string')throw new Error('invalid_mobile_web_page');return page;},
   extract:async page=>page.kind==='text'?extractTextPage(String(page.body),page.finalUrl):extractHtmlPage(String(page.body),page.finalUrl),
   planQueries:input=>model(PLAN_SYSTEM,{...input,requested:input.count},400,validPlan),
   reformulate:async input=>(await model(REFORMULATE_SYSTEM,{...input,requested:input.count},300,validQueries)).queries,

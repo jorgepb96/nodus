@@ -1,3 +1,5 @@
+import {getMobileStudyResearchSourcePack} from '../ai/studySearch';
+import {mobileDeepResearchCorpusRevision} from './mobileResearchRevision';
 import {prepareImageStorage} from '../imageStorage';
 import {markDecorativeImagePending,saveDecorativeImagePrompt,saveDecorativeImageReady} from '../db/decorativeImagesRepo';
 import {buildDecorativeImagePrompt} from '../../shared/imageStyles';
@@ -26,24 +28,8 @@ import { normalizeMobileDeepResearchRequest, type MobileDeepResearchProof, type 
 import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepResearchProgress} from '../../shared/types';
 import type { SectionRetrievalInput } from '../ai/deepResearchCore';
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
-/** Corpus source revision excludes derived indexes/profiles and their status.
- * It includes actual authored graph content and authoritative work text identity. */
-export function mobileDeepResearchCorpusRevision(request?:DeepResearchRequest):string {
- const db=getDb(),digest=createHash('sha256');
- const vaultType=getActiveVault().type;
- const tables=vaultType==='academic'?['works','ideas','themes','gaps','edges']:vaultType==='genealogy'?['works','persons','events','relationships','social_relations','archive_items','archive_item_persons','evidence','places']:['study_docs','study_subjects','study_materials','study_transcripts','study_transcript_segments','study_ideas','study_idea_connections','study_questions'];
- for(const table of tables){
-  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))continue;
-  const rows=db.prepare(`SELECT * FROM ${table}`).all() as Record<string,unknown>[];
-  const source=rows.map(row=>Object.fromEntries(Object.entries(row).filter(([key])=>!/^deep_|^embedding|^updated_at$|^last_|^document_profile|^resolved_text_cached|^read_tag$|^read_at$|^created_at$/.test(key)))).sort((a,b)=>canonicalJson(a).localeCompare(canonicalJson(b)));
-  digest.update(canonicalJson([table,source]));
- }
- const scope=vaultType==='academic'?resolveAcademicRunScope(request?.notebookId):null;
- digest.update(canonicalJson(effectiveEmbeddingConfig()));
- if(scope)digest.update(canonicalJson({scopeId:scope.id,notebookId:scope.notebookId,notebookRevision:scope.notebookRevision,permissionFingerprint:scope.permissionFingerprint,documents:scope.documents.map(item=>({id:item.id,revision:item.revision})).sort((a,b)=>a.id.localeCompare(b.id))}));
- return digest.digest('hex');
-}
-const STAGES = ['guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
+export {mobileDeepResearchCorpusRevision} from './mobileResearchRevision';
+const STAGES = ['studySnapshot','guideSnapshot','describe','variantRun','snapshot','section','researchTraversal','auditFactualProse','auditReportConsistency','repairSectionCoverage','checkSectionCoverage','planReport','writeSection','finalize','auditFinalSummary','decomposeObjective','auditPlanCoverage','auditSectionClaims','reviseSection','verifyCitations','checkCoherence'] as const;
 type Stage = typeof STAGES[number];
 type StageInput = {stage:Stage;input:unknown};
 export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):Promise<unknown> {
@@ -52,6 +38,7 @@ export async function mobileDeepResearchSource(raw:unknown,signal?:AbortSignal):
  const request=normalizeMobileDeepResearchRequest(value.request),vault=getActiveVault();
  if(value.expectedVaultId!=null&&value.expectedVaultId!==vault.id)throw new Error('deep_research_source_scope_conflict');
  if(value.expectedRevision!=null&&value.expectedRevision!==mobileDeepResearchCorpusRevision(request))throw new Error('deep_research_source_conflict');
+ if(value.stage==='studySnapshot'){if(value.history.length||Object.keys(value.replies).length||!['estudio','docencia'].includes(vault.type))throw new Error('invalid_study_research_source');return {version:1,value:getMobileStudyResearchSourcePack(request.objective)};}
  if(value.stage==='guideSnapshot'){if(value.history.length||Object.keys(value.replies).length)throw new Error('invalid_complete_guide_source');return {version:1,value:await captureMobileCompleteGuide(request,mobileDeepResearchCorpusRevision(request),signal)};}
 
  for(const entry of [...value.history,{stage:value.stage,input:value.input}]){
@@ -142,7 +129,7 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
   const result=saveWritingWorkshopDraft({draft,model:request.model},input.requestId);
   if(cover){
    const image=prepareImageStorage(Buffer.from(cover.bytes,'base64'),cover.mime);
-   markDecorativeImagePending({entityKind:'deep_research',entityId:result.id,provider:cover.model.provider as 'openai'|'gemini'|'openrouter',model:cover.model.model,style:cover.style,preserveContext:false,preservePrompt:false});
+   markDecorativeImagePending({entityKind:'deep_research',entityId:result.id,provider:cover.model.provider==='gemini'?'google':cover.model.provider as 'openai'|'openrouter',model:cover.model.model,style:cover.style,preserveContext:false,preservePrompt:false});
    saveDecorativeImagePrompt('deep_research',result.id,cover.context,cover.prompt);
    result.image=saveDecorativeImageReady('deep_research',result.id,image.image,image.mimeType,image.thumbnail,image.thumbnailMimeType);
   }

@@ -1,3 +1,5 @@
+import {mobileDeepResearchCorpusRevision} from '../desktopBridge/mobileResearchRevision';
+import {listStudyIdeasForSources} from '../db/studyKnowledgeRepo';
 import crypto from 'node:crypto';
 import {isMobileOperation,mobileDomainAllowed,assertDesktopPreparation,withMobileOperation} from '../desktopBridge/executionBoundary';
 import fs from 'node:fs';
@@ -347,6 +349,20 @@ export async function retrieveStudyAssistantEntries(
   return orderStudyChatEntries(query,candidates,options,sourceKeys,queryVector,limit);
 }
 
+/** Source-only research preparation over the existing index. No model, index
+ * refresh or extraction is permitted: the same lexical fallback used by Desktop
+ * selects a bounded candidate pool, then complete chosen source fragments travel. */
+export function getMobileStudyResearchSourcePack(objective:string):MobileStudyChatSourcePack {
+  return withMobileOperation(()=>{
+    const store=ensureLexicalIndex();
+    const candidates=studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),{kinds:['material','document','transcript']},[]);
+    const selected=orderStudyChatEntries(objective,candidates,{},[],null,48);
+    const sourceKeys=[...new Set(selected.map(entry=>`${entry.kind}:${entry.sourceId}`))];
+    if(!sourceKeys.length)throw new Error('study_research_sources_unavailable');
+    return getMobileStudyChatSourcePack({scope:'manual',sourceKeys});
+  });
+}
+
 /** Exports only already-indexed, complete selected fragments. This query must
  * never refresh/extract/index or make a Mac embedding/provider call. */
 export function getMobileStudyChatSourcePack(raw:unknown):MobileStudyChatSourcePack {
@@ -365,6 +381,20 @@ export function getMobileStudyChatSourcePack(raw:unknown):MobileStudyChatSourceP
       return selected;
     })();
     const pack:MobileStudyChatSourcePack={version:1,vaultId:vault.id,capturedAt:new Date().toISOString(),selection,entries,proofs:Object.fromEntries(entries.map(entry=>[entry.indexId,signStudyChatEntry(entry)])),originals,id:''};
+    const sourceKeys=[...new Set(entries.filter(entry=>['material','document'].includes(entry.kind)).map(entry=>`${entry.kind}:${entry.sourceId}`))];
+    if(sourceKeys.length<=100){
+    const ideas=new Map<string,ReturnType<typeof listStudyIdeasForSources>['ideas'][number]>(),ideaSources:Record<string,string[]>={};
+    for(const key of sourceKeys)for(const idea of listStudyIdeasForSources([key]).ideas){ideas.set(idea.id,idea);(ideaSources[idea.id]??=[]).push(key);}
+    const ids=[...ideas.keys()];
+    const edges:Array<Record<string,unknown>>=[];
+    let bytes=Buffer.byteLength(JSON.stringify({pack,ideas:[...ideas.values()],ideaSources}))+4096,oversized=bytes>MOBILE_STUDY_CHAT_MAX_BYTES;
+    if(ids.length&&!oversized)for(const raw of getDb().prepare(`SELECT * FROM study_idea_edges WHERE from_id IN (${ids.map(()=>'?').join(',')}) AND to_id IN (${ids.map(()=>'?').join(',')}) ORDER BY confidence DESC`).iterate(...ids,...ids)){
+      const row=raw as Record<string,unknown>;bytes+=Buffer.byteLength(JSON.stringify(row))+2;
+      if(bytes>MOBILE_STUDY_CHAT_MAX_BYTES){oversized=true;break;}edges.push(row);
+    }
+    if(oversized)pack.researchUnavailable='context_too_large';
+    else pack.research={context:{version:1,vaultId:vault.id,vaultType:vault.type,revision:mobileDeepResearchCorpusRevision(),sourceScope:'linked_corpus',preparedSourcesOnly:true},knowledge:{ideas:[...ideas.values()],connections:edges.map(row=>({id:String(row.id),subjectId:String(row.subject_id),fromId:String(row.from_id),toId:String(row.to_id),type:String(row.type) as ReturnType<typeof listStudyIdeasForSources>['connections'][number]['type'],basis:String(row.basis??''),confidence:Number(row.confidence??0)}))},ideaSources};
+    }else pack.researchUnavailable='too_many_sources';
     pack.id=sha256Snapshot(studyChatPackPayload(pack));
     if(Buffer.byteLength(JSON.stringify(pack),'utf8')>MOBILE_STUDY_CHAT_MAX_BYTES)throw new Error('El contexto de estudio supera 16 MB. Elige fuentes concretas para llevar.');
     return pack;

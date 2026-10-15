@@ -72,6 +72,12 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
  for(const [callKey,call] of Object.entries(checkpoint.calls)){
   if(!callKey.startsWith('source:')||!call.output||typeof call.output!=='object')continue;
   const output=call.output as Record<string,unknown>;
+  if(callKey==='source:study'&&Array.isArray(output.entries))output.entries.forEach((entry,position)=>{
+   const route=entry.kind==='material'?'material':entry.kind==='document'?'doc':entry.kind==='transcript'?'recording':null;
+   if(!route||typeof entry.sourceId!=='string')return;
+   const id=route==='recording'?entry.location?.recordingId??entry.sourceId:entry.sourceId;
+   index[`study:${route}:${id}`]??={callKey,path:['entries',position],citation:`nodus://study/${route}/${encodeURIComponent(id)}`};
+  });
   if(callKey==='source:completeGuide'){
    const snapshot=(output.frozen as {snapshot?:CompleteGuideSnapshot}|undefined)?.snapshot;
    snapshot?.sources.forEach((source,position)=>{
@@ -107,5 +113,5 @@ export interface MobileDeepResearchCover {model:ModelRef;style:import('./types')
 export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover};
 
 export function mobileDeepResearchCoverMetadata(cover:MobileDeepResearchCover,id:string,createdAt:string):import('./types').DecorativeImage {
- return {entityKind:'deep_research',entityId:id,requested:true,status:'ready',provider:cover.model.provider as 'openai'|'gemini'|'openrouter',model:cover.model.model,style:cover.style,visualContext:cover.context,prompt:cover.prompt,assetRef:null,mimeType:cover.mime,error:null,source:'ai',hasPrevious:false,createdAt,updatedAt:createdAt};
+ return {entityKind:'deep_research',entityId:id,requested:true,status:'ready',provider:cover.model.provider==='gemini'?'google':cover.model.provider as 'openai'|'openrouter',model:cover.model.model,style:cover.style,visualContext:cover.context,prompt:cover.prompt,assetRef:null,mimeType:cover.mime,error:null,source:'ai',hasPrevious:false,createdAt,updatedAt:createdAt};
 }

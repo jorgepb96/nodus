@@ -1,3 +1,4 @@
+import {autonomousStudyResearch} from './autonomousStudyResearch';
 import {mobileDeepResearchCover} from './deepResearchCover';
 import {autonomousCompleteGuide} from './autonomousCompleteGuide';
 import {orchestrateDeepResearch,type DeepResearchDeps} from '../../electron/ai/deepResearchCore';
@@ -57,6 +58,9 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
     checkpoint.report=await autonomousCompleteGuide(call,checkpoint,persist,controller,notify);
     checkpoint.report.draft.generationModel=model;
     checkpoint.report.draft.documentSkills=request.documentSkills;
+   }else if(request.studyMode||request.unitMode){
+    checkpoint.state='running';delete checkpoint.error;await persist();
+    checkpoint.report=await autonomousStudyResearch(call,checkpoint,persist,controller,progress=>{checkpoint.progress=progress;notify(progress);});
    }else{
    const description=await source<{variant:string;context:MobileDeepResearchCheckpoint['context']}>('describe',[]);
    if(!description.context||description.context.version!==1)throw new Error('invalid_deep_research_source_description');

@@ -45,6 +45,14 @@ try {
       }
       const manual={scope:'manual',sourceKeys:[`document:${source}`]},manualPack=search.getMobileStudyChatSourcePack(manual);
       assert.equal(manualPack.entries.length,4);
+      const research=require('../shared/mobileStudyResearch.ts');
+      const carried=research.captureMobileStudyResearchSources([manualPack],'device_downloads');
+      assert.equal(carried.entries.length,4);assert.equal(carried.context.vaultId,vault.id);assert.equal(carried.context.vaultType,type);assert.equal(carried.context.sourceScope,'device_downloads');assert.equal(carried.retrieval,'lexical');assert.match(carried.context.revision,/^[a-f0-9]{64}$/);
+      const oldResearchPack=structuredClone(manualPack);delete oldResearchPack.research;oldResearchPack.id=sha(shared.studyChatPackPayload(oldResearchPack));shared.validateMobileStudyChatSourcePack(oldResearchPack,vault.id);
+      assert.throws(()=>research.captureMobileStudyResearchSources([oldResearchPack],'device_downloads'),/download_needs_refresh/,'Old chat data remains valid but cannot invent a research revision');
+      const changedRevision=structuredClone(manualPack);changedRevision.research.context.revision='f'.repeat(64);changedRevision.id=sha(shared.studyChatPackPayload(changedRevision));
+      assert.throws(()=>research.captureMobileStudyResearchSources([manualPack,changedRevision],'device_downloads'),/source_conflict/);
+
       const item=questions.createStudyQuestion({prompt:'¿Qué regula el intercambio de membrana?',type:'short',answer:{text:'El gradiente'},explanation:'El gradiente de concentración permite el intercambio.'});
       const exam=assessments.createStudyAssessment({kind:'exam',title:'Examen de membrana',description:'Fuentes seleccionadas',questionIds:[item.id]});
       const attempt=assessments.startStudyAttempt({assessmentId:exam.id,mode:'practice'});

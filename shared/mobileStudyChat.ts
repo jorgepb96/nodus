@@ -30,6 +30,10 @@ export interface MobileStudyChatSourcePack {
   /** Complete selected question/exam records, kept with their chosen fragments.
    * Older packs omit this and remain usable for retrieval and quoted evidence. */
   originals?:Record<string,MobileStudyChatOriginal>;
+  /** Additive source-only provenance for complete offline research. Old chat packs
+   * remain readable but cannot invent a research revision or knowledge graph. */
+  researchUnavailable?: 'context_too_large'|'too_many_sources';
+  research?: {context:import('./mobileDeepResearch').MobileDeepResearchProof;knowledge:{ideas:import('./studyKnowledge').StudyIdeaSummary[];connections:import('./studyKnowledge').StudyIdeaConnection[]};ideaSources:Record<string,string[]>};
 }
 export interface MobileStudyChatEvidence {entry:StudySearchIndexEntry;signature:string;maxChars:number}
 export type MobileStudyChatOptions=Pick<StudyAssistantRequest,'selection'|'task'|'level'|'tone'|'language'|'allowExternalKnowledge'>;

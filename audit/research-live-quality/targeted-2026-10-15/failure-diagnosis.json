@@ -1,0 +1,94 @@
+{
+  "format": "nodus.prospective-failure-diagnosis/1",
+  "scope": {
+    "roots": [
+      "/private/tmp/nodus-research-prospective-1015-Et39vF",
+      "/private/tmp/nodus-research-prospective-b-1015-1umNeX",
+      "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ"
+    ],
+    "frozenPlan": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-parallel-plan-001.json",
+    "frozenPlanSha256": "87cf55e9463117667fa9ccf01df46f8926848b7dd63c8a16855cab55e2c0ee95",
+    "caseDenominators": {
+      "R005": {"accepted": 17, "completed": 16, "abandoned": 1},
+      "R007": {"accepted": 11, "completed": 9, "abandoned": 2},
+      "R012": {"accepted": 3, "completed": 2, "abandoned": 1},
+      "aggregate": {"accepted": 31, "completed": 27, "abandoned": 4}
+    },
+    "selectedButUnattempted": ["R009", "R014"],
+    "campaignsCompleted": false,
+    "qualityAcceptanceEligible": false,
+    "noQualityCredit": true
+  },
+  "abandonedRequests": [
+    {
+      "caseId": "R005",
+      "requestId": "5dcd1d24-7715-4091-9c5d-e9e33e723f6b",
+      "stage": "final independent coverage confirmation",
+      "acceptedAt": "2026-10-15T11:40:00.256Z",
+      "deadlineAt": "2026-10-15T11:45:00.256Z",
+      "abandonedAt": "2026-10-15T11:45:00.277Z",
+      "readAuditAt": null,
+      "rawCompletionAt": null,
+      "completionWrapperAt": null,
+      "productStateBeforeTransportLoss": "Earlier coverage work had been repaired, but the QA trace ended with coverageRequirementProofs=0; final independent confirmation did not complete. Not a successful answer.",
+      "boundaryInterpretation": "No read/raw record; the five-minute interval cannot be divided among queueing, reading, generation, or helper work."
+    },
+    {
+      "caseId": "R007",
+      "requestId": "d21a290a-18fc-4c02-9f97-c32bd7b44b54",
+      "stage": "research action selection",
+      "acceptedAt": "2026-10-15T11:39:19.568Z",
+      "deadlineAt": "2026-10-15T11:44:19.568Z",
+      "abandonedAt": "2026-10-15T11:44:19.614Z",
+      "readAuditAt": null,
+      "rawCompletionAt": null,
+      "completionWrapperAt": null,
+      "productStateBeforeTransportLoss": "This action-selection request timed out, but the case continued with later planning, drafting, and audits; this timeout alone did not terminate the case.",
+      "boundaryInterpretation": "No read/raw record; the five-minute interval cannot be divided among queueing, reading, generation, or helper work."
+    },
+    {
+      "caseId": "R007",
+      "requestId": "79be4901-d6aa-4446-bc56-3bd66b958a9e",
+      "stage": "frozen minimum coverage checklist",
+      "acceptedAt": "2026-10-15T11:50:02.051Z",
+      "deadlineAt": "2026-10-15T11:55:02.051Z",
+      "abandonedAt": "2026-10-15T11:55:02.068Z",
+      "readAuditAt": "2026-10-15T11:50:33.663Z",
+      "rawCompletionAt": "2026-10-15T12:04:09.544Z",
+      "rawCompletionTimestampBasis": "filesystem mtime",
+      "rawCompletionBytes": 1183,
+      "completionWrapperAt": null,
+      "productStateBeforeTransportLoss": "A preceding adequacy check returned complete=false with one missing facet. Late raw JSON reported two addressed and one omitted. It was written after the deadline, had no completion wrapper, and does not establish a passed checklist; undercoverage remained unresolved in the available evidence.",
+      "boundaryInterpretation": "31.612 seconds from acceptance to read audit; raw file appeared 9m07.493s after deadline and 13m35.881s after read. No generation-start or helper-start timestamp exists, so elapsed time after read cannot be attributed to generation or helper work."
+    },
+    {
+      "caseId": "R012",
+      "requestId": "99c9006f-c759-4a26-b384-aad0ca35bb5f",
+      "stage": "documentary answer planning / structured draft",
+      "acceptedAt": "2026-10-15T11:39:39.822Z",
+      "deadlineAt": "2026-10-15T11:44:39.822Z",
+      "abandonedAt": "2026-10-15T11:44:39.842Z",
+      "readAuditAt": null,
+      "rawCompletionAt": null,
+      "completionWrapperAt": null,
+      "productStateBeforeTransportLoss": "Grounding trace failed at stage structured-draft. No completed research-answer-plan, structure, or answer generation was recorded. A prior action-selection decision existed, but documentary planning did not pass.",
+      "boundaryInterpretation": "No read/raw record; the five-minute interval cannot be divided among queueing, reading, generation, or helper work."
+    }
+  ],
+  "timingLimits": [
+    "Accepted, deadline, abandonment, read-audit, raw-file mtime, and completion-wrapper events are distinguishable where present.",
+    "No per-request agent-start, generation-start, or helper-start timestamps were recorded. For requests without a read audit, the five-minute timeout interval is not attributable to a specific substage.",
+    "A raw file mtime is not a completion/return timestamp; late raw output without a completion wrapper is not counted as completed."
+  ],
+  "sourceHashesSha256": [
+    {"path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/followup-diagnostic-001/campaign.json", "sha256": "e7a1703a4090b56cdf577c92b2c9800846224ce44fd9dee59926fc57817443d5"},
+    {"path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/followup-diagnostic-001/bridge-events.jsonl", "sha256": "9d09304d3528c49e0271b5faeda676a647b1e2c63277e83ff9e2c12d0f8645b0"},
+    {"path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/followup-diagnostic-001/attempts.jsonl", "sha256": "c9ff9856c1bf03472db2f2120355d5b499af5084aa879633a87295d197b99825"},
+    {"path": "/private/tmp/nodus-research-prospective-b-1015-1umNeX/artifacts/followup-diagnostic-001/campaign.json", "sha256": "2f88b5608c197225ad10c6d117f2bffd385f0948db108d56b41e9650e04fe436"},
+    {"path": "/private/tmp/nodus-research-prospective-b-1015-1umNeX/artifacts/followup-diagnostic-001/bridge-events.jsonl", "sha256": "b1938a9ead2d184da54852dfb6fc930112b27aefae97c0e3199c2dd3aa5463bf"},
+    {"path": "/private/tmp/nodus-research-prospective-b-1015-1umNeX/artifacts/followup-diagnostic-001/attempts.jsonl", "sha256": "85d4009e209bffb98b1171eaf116268c7fb14a7a47f0d46782a4038f3bbfaca4"},
+    {"path": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ/artifacts/followup-diagnostic-001/campaign.json", "sha256": "e06f44cd908ed0f21e80cfbe4574277f09c72e43da7f2472ef2ba9f43d871b06"},
+    {"path": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ/artifacts/followup-diagnostic-001/bridge-events.jsonl", "sha256": "cc9c26af3ac372e160251ae84df90cf5a879f514087242e25db66caf77ea9734"},
+    {"path": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ/artifacts/followup-diagnostic-001/attempts.jsonl", "sha256": "75fe75c5e0b70fbcf89c4da4f01cd19bc9ca250293a06c0979a8371348571f92"}
+  ]
+}

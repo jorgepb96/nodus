@@ -1,5 +1,11 @@
 # Merged-main verification
 
+The [later closeout](../targeted-2026-10-15/README.md) supersedes this report's
+initial assumption about the alias's native directory: ONNX 1.30 uses `napi-v6`,
+and its npm artifact has no macOS Intel binding. A fresh package and actual-file
+checks verify corrected native-slice pruning. The receipts below remain bound
+to their originally recorded build.
+
 The branch incorporates `main` at `560812e2`. The merge preserves the pinned
 EmbeddingGemma alias in the centralized main-process dependency closure,
 including its undeclared `onnxruntime-common` import and nested native ONNX

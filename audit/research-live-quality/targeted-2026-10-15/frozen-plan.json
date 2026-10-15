@@ -1,0 +1,74 @@
+{
+  "format": "nodus.targeted-regression-parallel-plan/1",
+  "frozenAt": "2026-10-15T11:37:30.825312+00:00",
+  "productionRevision": "13cb334d",
+  "qaRevision": "7b9a519c",
+  "selectedCaseIds": [
+    "R005",
+    "R007",
+    "R009",
+    "R012",
+    "R014"
+  ],
+  "qualityAcceptanceEligible": false,
+  "retryPolicy": "None. One application attempt per selected case. Preserve negative outcomes. No global quality credit.",
+  "models": {
+    "embeddings": "embeddinggemma-2-text-q8-512-v1",
+    "generation": "gpt-6-luna via fresh no-history Codex agent per actual request"
+  },
+  "paidProviderCallsAllowed": 0,
+  "maxConcurrentGenerators": 2,
+  "scopeId": "5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e",
+  "administrativeTransfer": {
+    "firstCampaignOriginallySelectedAllFive": true,
+    "admittedCaseIdsAtTransfer": [
+      "R005"
+    ],
+    "unattemptedCaseIdsAtTransfer": [
+      "R007",
+      "R009",
+      "R012",
+      "R014"
+    ],
+    "stopReceipt": {
+      "path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/live-answer-stop.json",
+      "sha256": "5ba227b3e3815c3624c8d318e61e610e988a49d4a96b5e66db4e15ad60895da9"
+    },
+    "initialCampaignSnapshotSha256": "c17044c5d319672f2a4a979950c842046de19cfe8ca3af945efe0016961ee70f"
+  },
+  "groups": [
+    {
+      "root": "/private/tmp/nodus-research-prospective-1015-Et39vF",
+      "caseIds": [
+        "R005"
+      ],
+      "qualification": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-qualification-001.json",
+        "sha256": "67db1e1bb604cda8e4e050aaefe685104b2c70ee41f11ec493b725747698287d"
+      }
+    },
+    {
+      "root": "/private/tmp/nodus-research-prospective-b-1015-1umNeX",
+      "caseIds": [
+        "R007",
+        "R009"
+      ],
+      "qualification": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-qualification-002.json",
+        "sha256": "4b907d63702c197bf87ea4047fb74ef8c63530e9b871858f05a41ccf27e39cbc"
+      }
+    },
+    {
+      "root": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ",
+      "caseIds": [
+        "R012",
+        "R014"
+      ],
+      "qualification": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-qualification-003.json",
+        "sha256": "03bc030abf2ab1cd554649bbb41bddd5ada0ac9dcf07ce2dc98c8874147cebbe"
+      }
+    }
+  ],
+  "sourceContextReadPolicy": "Only the generation agent reads its exact request. Coordinator does not read requests or alter completions. No inherited gold or parent history."
+}

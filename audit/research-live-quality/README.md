@@ -15,8 +15,11 @@ evidence through final context fitting and harden literal evidence, source
 routing and citation representation. The [merged-main verification](merged-main-2026-10-15/README.md)
 records the current isolated UI and actual macOS ARM64 ASAR rerun, including a
 corrected narrow-composer defect and preserved failed build/test attempts.
-New targeted generations remain a separate diagnostic, not a replacement for
-the closed baseline. The chronological receipts below describe their own
+The [targeted follow-up](targeted-2026-10-15/README.md) stopped after three
+protocol failures and two unattempted cases: 31 requests, 27 bridge completions,
+four abandonments and no published answer. It gives no new quality credit.
+It also records corrected `napi-v6` package pruning and the pinned runtime's
+missing macOS Intel binding. The chronological receipts below describe their own
 recorded revisions and must not be read as current-head quality measurements.
 
 The owner approved prospective, separate targets: at least 85% correct and complete answers over all planned answerable questions, 95% published answers without material unsupported claims, 90% published recognition of insufficient evidence, passage-level Recall@10 of 90%, actual resolution of every captured citation, and zero observed scope/contract leaks. The policy is `research-answer-quality/3`; every arm requires sixty preregistered answerable questions. These are directed project targets, not population guarantees. Prior campaigns keep their original policy and failed or pending results.

@@ -187,7 +187,9 @@ export function prepareResearchLunaDispatch({ root, nodeBinary, responseHelper, 
   const metadataFile = path.join(context.artifacts, 'generation-job.json');
   const jobFile = path.join(jobsDirectory, `${event.id}.json`);
   const requestReadParts = multipartRead ? researchLunaRequestReadParts(bytes) : null;
-  const prompt = promptFor(metadataFile, multipartRead);
+  // A child must capture its own immutable job file. The mutable latest-job
+  // pointer is retained for operators, but must never be in a dispatched prompt.
+  const prompt = promptFor(jobFile, multipartRead);
   const job = { format: JOB_FORMAT, requestId: event.id, acceptedAt: event.at, deadlineAt,
     requestFile, requestSha256: sha(bytes), requestBytes: bytes.length,
     maxRequestBytes, ...(requestReadParts ? { requestReadParts } : {}),
@@ -314,6 +316,52 @@ export function verifyResearchLunaRead({ root, requestId, now = Date.now(), life
     mapping: job.mapping ?? null };
 }
 
+/** Read-only queue view. Event identities always come from events.jsonl `id`;
+ * `requestId` is an output/binding convention and is never used to join events. */
+export function snapshotResearchLunaQueue({ root } = {}) {
+  const context = rootContext(root);
+  const events = readEvents(context.artifacts);
+  const accepted = new Map();
+  const terminal = new Map();
+  for (const event of events) {
+    if (event.event === 'accepted') {
+      if (!UUID.test(event.id ?? '') || accepted.has(event.id)) fail('Duplicate or invalid accepted request event');
+      accepted.set(event.id, event);
+    } else if (['completed', 'abandoned'].includes(event.event)) {
+      if (!UUID.test(event.id ?? '') || terminal.has(event.id)) fail('Duplicate or invalid terminal request event');
+      terminal.set(event.id, event);
+    }
+  }
+  const readJsonl = file => {
+    if (!pathExists(file)) return [];
+    regularFile(file);
+    return fs.readFileSync(file, 'utf8').split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
+  };
+  const prompts = readJsonl(path.join(context.artifacts, 'agent-prompts.jsonl'));
+  const executions = readJsonl(path.join(context.artifacts, 'agent-executions.jsonl'));
+  return [...accepted.entries()].map(([id, event]) => {
+    const jobFile = path.join(context.artifacts, 'dispatch-jobs', `${id}.json`);
+    const jobExists = pathExists(jobFile);
+    const job = jobExists ? readJson(jobFile, { maxBytes: 2 * 1024 * 1024 }) : null;
+    if (job && (job.requestId !== id || ![JOB_FORMAT, 'nodus.luna-generation-job/2'].includes(job.format))) fail('Dispatch job identity mismatch in snapshot');
+    const bound = prompts.some(row => row.request_id === id) && executions.some(row => row.request_id === id);
+    const end = terminal.get(id);
+    let status = end?.event ?? (job ? (bound ? 'bound' : 'prepared') : 'accepted');
+    if (!end && job && bound && pathExists(job.readAuditFile)) {
+      // Use the accepted deadline as the clock so the snapshot is stable across
+      // repeated calls and after a live request expires.
+      const acceptedAt = Date.parse(event.at ?? '');
+      const deadlineAt = Date.parse(job.deadlineAt ?? event.deadlineAt ?? '');
+      const snapshotNow = Number.isFinite(deadlineAt) ? deadlineAt : acceptedAt;
+      const read = verifyResearchLunaRead({ root: context.root, requestId: id, now: snapshotNow });
+      if (read.verified) status = 'full-read';
+    }
+    return { id, status, acceptedAt: event.at ?? null, terminalAt: end?.at ?? null,
+      task: prompts.find(row => row.request_id === id)?.task ?? null,
+      jobFile: job ? path.relative(context.artifacts, jobFile).split(path.sep).join('/') : null };
+  });
+}
+
 function parseArgs(argv) {
   const values = Object.fromEntries(argv.filter(arg => arg.startsWith('--')).map(arg => {
     const index = arg.indexOf('=');
@@ -333,7 +381,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     else if (command === 'bind') result = bindResearchLunaDispatch({ root, requestId: args['request-id'], task: args.task,
       model: args.model ?? 'gpt-6-luna', forkTurns: args['fork-turns'] ?? 'none' });
     else if (command === 'verify-read') result = verifyResearchLunaRead({ root, requestId: args['request-id'] });
-    else fail('Use prepare, bind, or verify-read');
+    else if (command === 'snapshot') result = { root: path.resolve(root), jobs: snapshotResearchLunaQueue({ root }) };
+    else fail('Use prepare, bind, verify-read, or snapshot');
     console.log(JSON.stringify(result));
   } catch (error) {
     console.error(`Research Luna dispatch rejected: ${String(error?.message ?? error)}`);

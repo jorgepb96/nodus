@@ -1,0 +1,299 @@
+{
+  "format": "nodus.closed-withheld-answer-triage/1",
+  "reviewer": "Root model-assisted source/trace inspection; not external human review",
+  "preservesOriginalOutcomes": true,
+  "doesNotAwardImprovementCredit": true,
+  "cases": [
+    {
+      "caseId": "R005",
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-c-UXLcJt/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "a73fd0b2185914d5f418d67e8518cf6d9f697eb7dea7dfaf6aeea0627cff3018"
+      },
+      "groundingTraceSha256": "8a32c442e42aa0b649b53afe40d7f891e6ff674f410efe9edbfc51db9e6e6e8d",
+      "classification": "short-literal-evidence-removed",
+      "finding": "A unique short literal mean anchor was filtered before source validation; later proof correctly rejects spans absent from the fallback and an invented mixed-language quote. Exact bounded sentence expansion now has regressions; fresh generation remains unmeasured.",
+      "requestIds": [
+        "2a9ee006-794e-4d73-a760-97ba8c78e107",
+        "c4d81a34-7196-45e7-8cec-a03917219505",
+        "db3ff4a9-0fb4-4c08-bc8e-c5bb3f61e935",
+        "264f0091-2dcd-4fe2-8aa2-5b4d00e4cc1f",
+        "d85785e1-284d-4fd4-960e-383bf5347677",
+        "08965943-fe21-41bd-a6a4-4b9d34adca58",
+        "c437d7db-3bdf-4e71-9036-697e41a30d78",
+        "22087017-72b6-4e09-81da-f579c341547b",
+        "b3f2b80c-18fe-4036-b690-7ce5d48b08ba",
+        "88ac03ee-3b09-4b25-94fa-7c58fcdd4365",
+        "9a51cccd-2b0f-4928-a8fe-43b396683f2f",
+        "906b0a30-380e-4684-913d-c1085336467a",
+        "3b12ff67-3435-4af6-827b-b24f9538075e",
+        "284433c8-a8dc-4274-8a25-d2466a22b760",
+        "0e00e080-33ec-4f49-902f-ce53be340654",
+        "974da6d1-0af2-4829-842a-1609f4a9dca9"
+      ]
+    },
+    {
+      "caseId": "R007",
+      "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-b-wC28QK/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe3d42114a891240b605dda4f2f2d1c695e3e6a5eacfb8cfb8c38d6360b921b6"
+      },
+      "groundingTraceSha256": "13b1145ed12bb8e495a102ad5141b7a685d4070e5ff04cee8c5e6a4fde54dbf0",
+      "classification": "writer-citation-structure",
+      "finding": "Bare authorized passage URIs in table cells violated the link contract, followed by a malformed repair. Exact authorized URI canonicalization now has positive/negative tests.",
+      "requestIds": [
+        "a3ff1af9-39aa-4369-8a47-29b6280e8807",
+        "89fc59b8-777c-4199-b49e-2a4e9fb4120b",
+        "f974a39f-fbe9-4dfd-8bea-895ed210239b",
+        "0454e304-1556-4a9d-a687-9f7d44874be1",
+        "fb278fdd-73bd-46db-b85e-b39ead5b33c1",
+        "8d9cb896-b9df-4f65-9474-80715f7c0dc1",
+        "3609a94c-38d9-45ee-b1c9-c5ac8d568c58",
+        "816309fa-4a07-42c5-9c52-ad583d6a4b62",
+        "f8946081-8920-432a-b13a-813d625e687e",
+        "b09439f4-26e4-404b-8f5e-c1b56fde0b67",
+        "c64784de-63b6-496f-8b17-c536668f6300"
+      ]
+    },
+    {
+      "caseId": "R009",
+      "question": "Compare Alba and Linde in separate rows: what does Alba measure and explicitly exclude, and what can Linde restore and explicitly exclude? Keep Linde’s event-retention period as a separate field.",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-a2-KKDOky/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe8ec8efe15aef42145dc20488f7c7728ead96367d9e81e49d95eceaa8010c7e"
+      },
+      "groundingTraceSha256": "ebfc7c941dd03e8f3641b42faeb489b83873efc88eec12db0734396c205cbcab",
+      "classification": "final-context-tail-pruning",
+      "finding": "All eight recorded search decisions replay identically. Thirteen passages become five Linde-only passages during final fit at32768. Query-coverage ordering restores an Alba passage within the same bound; no new answer has been generated.",
+      "requestIds": [
+        "ed4737de-59ee-46e3-91d5-d467656df558",
+        "9fc1dfa6-9076-4978-8776-c5f77aa10b64",
+        "09985a8e-45ba-4a6a-985a-b0084fc4d917",
+        "599a1ae6-fab6-42fb-a2ac-2345b13ed759",
+        "b1d2827b-9419-4065-a55b-4c778340811b",
+        "d4f562bb-1032-4466-8574-97487a9bc7f9",
+        "0839d4a0-5e5a-4df4-8ba9-a33986f234bc",
+        "32378b81-901b-4723-afbf-de6546b9c984",
+        "71b471fd-ca09-4ad1-bb52-48f0fe20ad18",
+        "78c0e9fe-4263-41ef-981b-0bad0e7ba044",
+        "87cb8667-b74b-41c2-84df-e306993ce51a",
+        "1e48b89a-f054-4a05-bdc2-45a1a1aae0a3",
+        "9720bee2-bfe2-431f-b41c-0ff01c5abcba",
+        "c39123ae-d602-47b8-a0bf-d6bc8d759d17",
+        "0c7b4deb-c7f1-41df-ad67-32519c7c7ef6",
+        "dd9a5e86-01d8-4ba6-a7fd-53cc0d3d6a78",
+        "287f79da-0cc8-4cf3-8191-a1001735f68f",
+        "4d3d471f-0874-47a6-949e-2eaca756a223",
+        "bee04c27-5ba0-43f6-abcd-94a9a9e4dbe1",
+        "6b5bf3bf-c6f2-4963-a412-63f80266a116",
+        "568baaf4-0db2-48ed-84a3-a41dccbb994b",
+        "3ddbc6b9-f8db-4fb7-99cd-6731577d3ed5",
+        "456cffd1-793b-486b-9e8c-5df6f1cdda5a",
+        "81825194-3103-4976-b9e2-736731c8bcf3",
+        "32f87e4b-e110-4196-a102-659c33ef936f",
+        "3481e822-f5a8-4417-8123-4a3d416a3b10",
+        "30c85949-e3ae-4dd1-942d-d033ddf8d746",
+        "bdc5b8c1-6a39-4f05-8c27-11f5cb48c5de",
+        "059c112f-2e3e-48e3-8309-1543b510ff98"
+      ]
+    },
+    {
+      "caseId": "R012",
+      "question": "Can Vega establish a difference in IQ, or only recall?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-a2-KKDOky/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe8ec8efe15aef42145dc20488f7c7728ead96367d9e81e49d95eceaa8010c7e"
+      },
+      "groundingTraceSha256": "f0515ed263fbc03c259bc2c85c4936e4ff3ad6c88b5001cff80850d5f5998a00",
+      "classification": "split-literal-requirement-evidence",
+      "finding": "Audited inference premises quote recall and unmeasured intelligence separately; their exact same-source join covers the full requirement. Union validation fixes this mechanical rejection without dropping the negation or recall premise.",
+      "requestIds": [
+        "98a88b9f-6e55-42bf-8e60-cba7e24ab055",
+        "39439bab-9d52-42c6-bef8-ff563cf61689",
+        "606caa3e-da7d-438d-9a39-6453beffb14e",
+        "5eac5b30-d709-46ed-ad2e-1f28ba3e7f15",
+        "fd24f42c-b186-4ee5-a034-1317d86479c0",
+        "281fed52-5591-4bdd-9c2d-c46fa7e189ad",
+        "f474f84f-2cc1-41a8-a7e7-77a66699e96f",
+        "14217b0e-c688-4ee0-af5e-22c7418ade90",
+        "100493ee-9063-4da2-8a79-bfe26491c5a0",
+        "d88c43f5-5039-40ce-8bcf-3b978fe9dad8",
+        "ac02fcb2-91c0-456c-b09d-3c7a0da64592",
+        "3058fafb-3ca8-493e-bb2d-0e08fe76a182",
+        "8e4b4e10-7eac-4b17-bdd8-2c7bf0199697",
+        "8c5dcdf1-54ac-498d-be78-eff4f071c0da",
+        "8f32fa86-0e55-40cb-9565-6ba65267fa63"
+      ]
+    },
+    {
+      "caseId": "R014",
+      "question": "Should the Bruma mean and median be reported as the same statistic?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-c-UXLcJt/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "a73fd0b2185914d5f418d67e8518cf6d9f697eb7dea7dfaf6aeea0627cff3018"
+      },
+      "groundingTraceSha256": "d75c8cc4ed371bfe0395abc6fe0edcc02d264d57106441a476b323f4064e0835",
+      "classification": "short-literal-answer-adjunct",
+      "finding": "Exact No. plus a substantive factual answer span was rejected by the minimum span length. Unique short adjuncts now require a substantive literal companion and unchanged adequacy checking.",
+      "requestIds": [
+        "0f207ce5-a654-4240-bfa1-3d7348a2bae9",
+        "3a08d77b-6d1d-4601-ba26-91747343ac1c",
+        "18998fa3-087b-43d2-b3a5-6a753d541878",
+        "24310447-1107-407f-9bb6-e1b6814ba603",
+        "188843b6-664f-4107-896f-2c0afe61cd60",
+        "ca03fa4a-e184-4b33-af9d-eea6961822ae",
+        "e4b7d6fb-cfb0-41de-88ae-078f5990a811",
+        "b7a3bdfd-c579-4995-b35c-1bd8ecf24174"
+      ]
+    },
+    {
+      "caseId": "R021",
+      "question": "Welche Wassereigenschaft misst Alba und mit welchem Licht? (Quelle: Alba · archive 3)",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-a2-KKDOky/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe8ec8efe15aef42145dc20488f7c7728ead96367d9e81e49d95eceaa8010c7e"
+      },
+      "groundingTraceSha256": "500274255313eb6028ddd2a7627a9ed2cfaa9473fcd1a2c7bf748d12be299ae9",
+      "classification": "invalid-double-encoded-writer-json",
+      "finding": "Recorded writer payload is a JSON string containing an object rather than the required object; its Spanish text also fails the requested German locale. No automatic fact/language rewriting is introduced.",
+      "requestIds": [
+        "512bfdc1-76da-48fb-9e37-56a7b9bbd22a",
+        "07bac60c-f528-4151-8520-3225a2eee7f2",
+        "37332dc4-8ac2-4ee7-be22-0f9e7c434526",
+        "4d1ded89-6ceb-4bda-bbff-099c550023e0"
+      ]
+    },
+    {
+      "caseId": "R031",
+      "question": "Which learning activity produced better recall in the Vega trial?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-b-wC28QK/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe3d42114a891240b605dda4f2f2d1c695e3e6a5eacfb8cfb8c38d6360b921b6"
+      },
+      "groundingTraceSha256": "8b6967ce73eda874a94c28807077435dfab4bef8906f4a9b7d0e3449d26f0def",
+      "classification": "unlabelled-comparison-inference",
+      "finding": "The initial causal wording is unsupported. A repaired quantitative comparison has supported premises but lacks the required explicit inference label. The model ignored existing repair guidance; the guard is retained.",
+      "requestIds": [
+        "fba63753-8b82-4c94-92a4-46859cc13e2f",
+        "62fda484-8fef-4490-b7fe-e4817a4d8bda",
+        "6a5e3900-dec1-4832-af29-38ad1b2707f3",
+        "d9bd9848-628c-49b9-847d-8fe71249e617",
+        "c20b95a0-8ba1-437a-908d-d864ed82a06d",
+        "36fa2139-90fd-4af2-bda4-1a5eca019847",
+        "ba2c32ef-d39d-4c72-9f8f-8a2bcefba3d6",
+        "873f3730-7b27-4673-af59-91431b000c6d"
+      ]
+    },
+    {
+      "caseId": "R034",
+      "question": "¿Qué método propone LoRA: Low-Rank Adaptation of Large Language Models?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-b-wC28QK/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe3d42114a891240b605dda4f2f2d1c695e3e6a5eacfb8cfb8c38d6360b921b6"
+      },
+      "groundingTraceSha256": "b8042ac6e624d6324d01f071357ae91d4730f0a3051c7262fe99c1493e358967",
+      "classification": "nonliteral-evidence-and-overbroad-coverage-quote",
+      "finding": "Some verdicts cite the wrong passage or normalize literal mathematical typography. Later supported prose has a shorter quote than the persisted requirement, which also includes an earlier hypothesis sentence. No fuzzy quote approval or silent shortening of requirements is introduced.",
+      "requestIds": [
+        "6d68542a-aaa5-4e1a-8773-62d6fca25ccd",
+        "9ea404e2-0a4c-4671-bbdf-f93a7dd6b8b7",
+        "68afeb45-5f32-4b11-a9a0-2a48da6c66e0",
+        "d9ff81c4-033d-40c7-b364-f2fb9466d54d",
+        "fd6d4684-82a1-44d9-8214-e3bb32b042a2",
+        "aac41412-a7df-464a-bfc9-ab49f6628932",
+        "7cf8ae28-6692-41dd-8bff-f747d65cb531",
+        "8019b58c-c0e7-4168-91fb-008b91522a17",
+        "43878c6e-6355-4682-bd15-beeea9644eb6",
+        "65b4c5e2-186d-4369-9a65-298e0fd0159b",
+        "1c92cdb8-86a3-4677-9ce1-0cd48e445b79",
+        "e3b9c79c-5d58-4219-a90d-bb205c9dbdc8",
+        "aad7fee9-b1a1-4e06-80a0-bdcdbf29388c",
+        "f9d0f7d7-c552-4e00-b43d-689733205a9c",
+        "7376ff8d-8a06-4466-8371-8a262f64f728",
+        "fd62285d-1649-4c84-848a-09191ec1076e",
+        "229df19c-2b52-4e8a-a4e4-210a907a6c89",
+        "65eb47ec-24e5-473d-a7ec-c19da6538bb4"
+      ]
+    },
+    {
+      "caseId": "R047",
+      "question": "Quelle propriété de l’eau mesure Alba et avec quelle lumière ?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-c-UXLcJt/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "a73fd0b2185914d5f418d67e8518cf6d9f697eb7dea7dfaf6aeea0627cff3018"
+      },
+      "groundingTraceSha256": "a905918ff23d05f14e4e2ce773359cd41e61ffb2d615ae47777a163e110ddbd0",
+      "classification": "source-id-typo-and-translated-verbatim-quotes",
+      "finding": "One evidence ID has a typed hexadecimal error; later purported literal Italian quotes are translated into French or change Il to Le. Request-local prose source aliases prevent long-ID copying in new calls; unknown IDs and nonliteral quotes still fail.",
+      "requestIds": [
+        "b7ed7d7b-a553-4f6e-a8cf-e048fcbb9f34",
+        "1246503e-b888-44f1-94af-11c966a3c803",
+        "9e278a2a-7c53-4a10-9667-7ce6ae9ec522",
+        "1658c52e-8811-46f0-9e5c-ed746accf61d",
+        "bc461e95-9d8d-4435-96b7-8d7d2202e232",
+        "84c5f8ae-f79f-4894-b89c-da7c1d3b688f",
+        "3206273f-76d2-4584-92b2-1add858c6e24",
+        "820e477b-a231-472e-a05d-fd592b3fe8e4",
+        "12089216-8d6f-42bf-937f-d363d54dcbf5",
+        "2baf050a-bb1d-4544-9bed-a2620b8b6699",
+        "4446e6ef-31a8-423b-a624-0d40693b5a85",
+        "bfd65b43-af6a-4aac-ab93-3897fc8aea49",
+        "e0d70451-2e9d-486c-b71a-3afb0543f748",
+        "bf109f44-5d53-4c9b-8c20-0a9498a26031",
+        "09e8364a-e81b-45e2-bb70-ec651c5decd7",
+        "ffa3b431-ede9-4806-aa38-4cf0aa75b1a9",
+        "b518843c-5e81-47d0-b59f-e4470e98598f",
+        "0353aeaf-8882-40c7-97f3-0ce1615cebef",
+        "9f17b926-31cd-4f62-922b-eb904f899bd1"
+      ]
+    },
+    {
+      "caseId": "R064",
+      "question": "How many Bruma participants were under 18?",
+      "outcome": "verification-withheld",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-qa-shard-b-wC28QK/artifacts/live-answer-campaign-batch-003/campaign.json",
+        "sha256": "fe3d42114a891240b605dda4f2f2d1c695e3e6a5eacfb8cfb8c38d6360b921b6"
+      },
+      "groundingTraceSha256": "7a261041784d26f728edb77919fe0ece3c5bd2dfd6e9d1529e2f75743af5a678",
+      "classification": "epistemic-limit-versus-source-absence",
+      "finding": "Specific abstentions are classified as unsupported inferences or mixed with source-absence assertions; the generic fallback then fails exact requested-quantity coverage. No numeric age count is published. This remains unresolved.",
+      "requestIds": [
+        "c15c9ca1-10b9-4eef-b774-86c192420369",
+        "710051c5-6dbf-4fda-b34a-fcea6f7e1ae7",
+        "ab8783ac-b96f-46b3-9958-ded04a0553d6",
+        "755b9b68-3369-46c3-9149-b3a66a33a536",
+        "fd5602c2-3c93-47d0-9440-08e81ff8b59b",
+        "439322b2-0b60-479c-8f6f-bc6142babee7",
+        "97fd1564-9346-4651-a206-0abaa67e62f2",
+        "37fd91f6-bf56-4f7e-aa69-c88486480d04",
+        "6a6d079e-6256-42a8-b53b-deac485adbbf",
+        "b0c300fb-0096-4f1b-bba3-2a6e7ffe8a96",
+        "629c7bb1-3abb-4c6b-a76d-6f8550afe12b",
+        "a8921d72-d4df-46fc-a9ee-1cba1569e1dc",
+        "007bbe3e-bbd1-4b87-8352-37a5600d676b",
+        "aa519530-3fd0-40ad-9466-3ffbe70dae80",
+        "9a33b45b-ba63-416f-8d13-344f6d47c787",
+        "706ff8ee-b31b-4029-a8be-997928899508",
+        "775b821c-2800-4f2e-881b-f1d0c88ee863",
+        "eacdb21a-ce87-4923-889e-b90b0e010f1d",
+        "1adad1e4-d9dd-4002-969d-2b5d64a8d2dc",
+        "cc58f61b-4a7b-4787-a6f8-58cfd9f89e47",
+        "03a1336e-3f2b-45c7-b8a8-53c1f4badee3",
+        "9f97bb35-133f-4675-8da6-0d9d56083c96",
+        "26c0ad6b-eef6-4fb1-8478-aca067577817"
+      ]
+    }
+  ]
+}

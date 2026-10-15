@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import { startResearchLunaBridge } from './research-luna-bridge.mjs';
-import { bindResearchLunaDispatch, prepareResearchLunaDispatch, researchLunaRequestReadParts, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
+import { bindResearchLunaDispatch, prepareResearchLunaDispatch, researchLunaRequestReadParts, snapshotResearchLunaQueue, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-luna-dispatch-test-')));
@@ -43,6 +43,7 @@ async function eventually(check, description) {
 
 try {
   const data = fixture();
+  assert.equal(snapshotResearchLunaQueue({ root: data.root })[0].status, 'accepted');
   const prepared = prepareResearchLunaDispatch({ root: data.root, nodeBinary: data.nodeBinary,
     responseHelper: data.responseHelper, now: data.now, lifetimeMs: 10_000,
     mappingFile: data.mappingFile, mappingSha256: data.mappingSha256 });
@@ -51,10 +52,13 @@ try {
   assert.match(prepared.prompt, /max_output_tokens=30000/u);
   assert.match(prepared.prompt, /COMPLETE request JSON/u);
   assert.match(prepared.prompt, /If the request is truncated or incomplete, stop/u);
-  assert.doesNotMatch(prepared.prompt, new RegExp(data.id, 'u'), 'prompt derives all UUID paths through metadata');
   const jobFile = path.join(data.artifacts, 'dispatch-jobs', `${data.id}.json`);
   const originalJob = fs.readFileSync(jobFile);
   const job = JSON.parse(originalJob);
+  assert.equal(snapshotResearchLunaQueue({ root: data.root })[0].status, 'prepared');
+  assert.deepEqual(snapshotResearchLunaQueue({ root: data.root }), snapshotResearchLunaQueue({ root: data.root }), 'queue snapshots are deterministic');
+  assert.match(job.prompt, new RegExp(`dispatch-jobs/${data.id}\\.json`, 'u'), 'child prompt captures immutable job metadata');
+  assert.doesNotMatch(job.prompt, /generation-job\.json/u, 'child prompt never follows mutable latest-job pointer');
   assert.equal(job.model, 'gpt-6-luna');
   assert.equal(job.forkTurns, 'none');
   assert.equal(job.reasoningEffort, 'inherited; effective effort not established');
@@ -81,6 +85,7 @@ try {
   assert.equal(prompts.length, 1, 'binding writes are idempotent');
   assert.throws(() => bindResearchLunaDispatch({ root: data.root, requestId: data.id,
     task: '/root/current_pdf_retrieval', model: 'gpt-6-astra' }), /model\/fork policy mismatch/u);
+  assert.equal(snapshotResearchLunaQueue({ root: data.root })[0].status, 'bound');
 
   const audit = { requestId: data.id, requestSha256: job.requestSha256, requestBytes: job.requestBytes,
     toolBudget: 30_000, requestJsonPrintedComplete: true, messagesIncluded: true,
@@ -93,6 +98,9 @@ try {
   assert.equal(verified.responseFormatIncluded, true);
   assert.match(verified.evidenceNature, /self-reported/u);
   assert.deepEqual(verified.mapping, job.mapping);
+  const beforeSnapshot = fs.readFileSync(path.join(data.artifacts, 'events.jsonl'));
+  assert.equal(snapshotResearchLunaQueue({ root: data.root })[0].status, 'full-read');
+  assert.deepEqual(fs.readFileSync(path.join(data.artifacts, 'events.jsonl')), beforeSnapshot, 'snapshot is read-only');
   fs.writeFileSync(job.readAuditFile, JSON.stringify({ ...audit, requestBytes: audit.requestBytes - 1 }));
   assert.throws(() => verifyResearchLunaRead({ root: data.root, requestId: data.id, now: data.now, lifetimeMs: 10_000 }), /Complete-read audit/u);
   fs.writeFileSync(job.readAuditFile, `${JSON.stringify(audit)}\n`);
@@ -103,6 +111,12 @@ try {
     now: data.now + 100_000, lifetimeMs: 10_000 });
   assert.equal(completedRead.requestId, data.id,
     'a verified completion event before deadline remains verifiable after wall-clock expiry');
+  assert.equal(snapshotResearchLunaQueue({ root: data.root })[0].status, 'completed');
+
+  const abandoned = fixture();
+  fs.appendFileSync(path.join(abandoned.artifacts, 'events.jsonl'), `${JSON.stringify({ event: 'abandoned',
+    at: new Date(abandoned.now).toISOString(), id: abandoned.id, reason: 'fixture' })}\n`);
+  assert.equal(snapshotResearchLunaQueue({ root: abandoned.root })[0].status, 'abandoned');
 
   const multilingual = Buffer.from(JSON.stringify({ request: { messages: [{ role: 'user',
     content: 'Español, Ελληνικά, 日本語 🌍\n'.repeat(4000) }], response_format: { type: 'json_object' } } }), 'utf8');

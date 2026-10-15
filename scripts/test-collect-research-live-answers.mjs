@@ -8,6 +8,8 @@ import { validateIndexAuthorization, researchIdentityFingerprint } from './lib/r
 import { bindResearchLunaDispatch, prepareResearchLunaDispatch, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 import { createResearchTestRoot } from './research-isolation.mjs';
 import { startResearchLunaBridge, writeResearchLunaResponse } from './research-luna-bridge.mjs';
+import { buildResearchLiveShardAssignment, sourceHashesForProduction } from './lib/researchLiveAnswerShards.mjs';
+import { planResearchLiveCases } from './lib/researchLiveAnswerCampaignState.mjs';
 import { fileURLToPath } from 'node:url';
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -54,6 +56,45 @@ try {
     if (bridge) await bridge.close();
     fs.rmSync(bridgeRoot, { recursive: true, force: true });
   }
+  // An explicit, hash-bound forensic supplement can explain exactly one
+  // missing-hash administrative abandonment, while generic omissions remain invalid.
+  {
+    const forensicRoot = path.join(temp, 'forensic-binding-root'), artifacts = path.join(forensicRoot, 'artifacts');
+    const id = '3505941d-6660-43d8-b3f1-09684b80f841', request = Buffer.from('{"messages":[] }\n');
+    fs.mkdirSync(path.join(artifacts, 'requests'), { recursive: true });
+    fs.mkdirSync(path.join(artifacts, 'case-request-mappings'), { recursive: true });
+    fs.writeFileSync(path.join(artifacts, 'requests', `${id}.json`), request);
+    writeJson(path.join(artifacts, 'case-request-mappings', `${id}.json`), { requestId: id, caseId: 'R029' });
+    const originalEvents = `${JSON.stringify({ event: 'accepted', id, requestHash: sha(request), requestBytes: request.length })}\n`;
+    const snapshotPath = path.join(temp, 'forensic-original-events.jsonl'); fs.writeFileSync(snapshotPath, originalEvents);
+    const receiptPath = path.join(temp, 'forensic-loss-receipt.json');
+    const receipt = { format: 'nodus.qa-controller-loss-recovery/1', scope: { root: forensicRoot, caseId: 'R029', orphanRequestId: id },
+      classification: { status: 'protocol-failure', errorClassification: 'qa-controller-process-lost', success: false },
+      acceptedEvent: { requestHash: sha(request) }, originalHashes: { rootEvents: sha(Buffer.from(originalEvents)) } };
+    writeJson(receiptPath, receipt);
+    const currentEvents = [{ event: 'accepted', id, requestHash: sha(request), requestBytes: request.length },
+      { event: 'abandoned', id, reason: 'qa-controller-process-lost', provenance: { type: 'forensic-recovery', receipt: receiptPath } }];
+    fs.writeFileSync(path.join(artifacts, 'events.jsonl'), `${currentEvents.map(row => JSON.stringify(row)).join('\n')}\n`);
+    const campaignFixture = { root: forensicRoot, answers: [{ caseId: 'R029', attemptStatus: 'protocol-failure', bridgeRequestIds: [id], bridgeCompletionIds: [] }] };
+    const manifestFixture = { root: forensicRoot };
+    const binding = { format: 'nodus.qa-administrative-event-binding/1', event: 'abandoned', id, requestHash: sha(request),
+      forensicReceiptPath: receiptPath, forensicReceiptSha256: sha(Buffer.from(fs.readFileSync(receiptPath))),
+      originalEventsSnapshotPath: snapshotPath, originalEventsSnapshotSha256: sha(Buffer.from(originalEvents)),
+      reason: 'qa-controller-process-lost', concludedStatus: 'protocol-failure', completedBridgeEvent: false };
+    const bindingPath = path.join(temp, 'forensic-bindings.json'); writeJson(bindingPath, [binding]);
+    assert.equal(runtimeReceipts(forensicRoot, campaignFixture, manifestFixture, { administrativeBindings: bindingPath }).allTerminal, true);
+    for (const mutate of [row => ({ ...row, requestHash: '0'.repeat(64) }),
+      row => ({ ...row, forensicReceiptSha256: '0'.repeat(64) }), row => ({ ...row, reason: 'generic-abandoned' }),
+      row => ({ ...row, completedBridgeEvent: true })]) {
+      writeJson(bindingPath, [mutate(binding)]);
+      assert.throws(() => runtimeReceipts(forensicRoot, campaignFixture, manifestFixture, { administrativeBindings: bindingPath }),
+        /administrative|forensic|Abandoned/iu);
+    }
+    writeJson(bindingPath, []);
+    assert.throws(() => runtimeReceipts(forensicRoot, campaignFixture, manifestFixture), /Abandoned event does not bind/u);
+    fs.writeFileSync(path.join(artifacts, 'events.jsonl'), `${JSON.stringify({ event: 'abandoned', id: 'unaccepted', requestHash: sha(request) })}\n`);
+    assert.throws(() => runtimeReceipts(forensicRoot, campaignFixture, manifestFixture), /Abandoned event does not bind/u);
+  }
   const root = path.join(temp, 'root'), campaignDir = path.join(temp, 'campaign');
   fs.mkdirSync(path.join(root, 'artifacts'), { recursive: true }); fs.mkdirSync(campaignDir);
   writeJson(path.join(root, 'isolation.json'), { format: 'nodus.isolated-research-profile/1', root });
@@ -92,7 +133,8 @@ try {
     const sourceContextSha256 = sha(Buffer.from(sourceContext));
     const sourcesContextSha256 = hash(sourcesContext);
     const sourceCaseHash = hash({ id: q.id, question: q.question, language: 'en', sourceContextHash: sourceContextSha256, receiptsHash: sourcesContextSha256 });
-    return { id: q.id, question: q.question, language: 'en', isAnswerable: index < 60,
+    const kind = index < 10 ? 'complex-fixture' : index < 20 ? 'hard' : index < 60 ? 'core' : 'absence';
+    return { id: q.id, question: q.question, language: 'en', kind, isAnswerable: index < 60,
       sourceContext, sourceContextSha256, sourcesContext, sourcesContextSha256, sourceCaseHash };
   });
   const casesSha256 = hash(cases.map(row => ({ id: row.id, sourceCaseHash: row.sourceCaseHash })));
@@ -153,6 +195,51 @@ try {
     citationResolution: [], traces: [{ type: 'research-answer-grounding', status: 'complete', answer: `Answer ${row.id}`,
       sources: [{ id: '1', title: 'Source', text: 'Evidence text', citation: 'nodus://passage/1' }] }] }));
   writeJson(path.join(campaignDir, 'campaign.json'), { format: manifest.format, root, answers: attempts });
+
+  // A response returned by the bridge is still an invalid measurement when
+  // its read attestation has been overwritten after the original run.
+  {
+    const bridge = await startResearchLunaBridge({ root, maxRequests: 1 });
+    try {
+      const responsePromise = fetch(`${bridge.url}/chat/completions`, { method: 'POST',
+        headers: { authorization: 'Bearer local', 'content-type': 'application/json' },
+        body: JSON.stringify({ model: bridge.model, messages: [{ role: 'user', content: 'Synthetic audit integrity regression' }], max_tokens: 20 }) });
+      const accepted = await waitFor(() => fs.readFileSync(bridge.eventFile, 'utf8').split(/\r?\n/u).filter(Boolean)
+        .map(JSON.parse).find(row => row.event === 'accepted'));
+      const first = { ...attempts[0], status: 'returned', attemptStatus: 'answered', receiptsComplete: true,
+        bridgeRequestIds: [accepted.id], bridgeCompletionIds: [accepted.id] };
+      const mappingFile = path.join(root, 'artifacts/case-request-mappings', `${accepted.id}.json`);
+      writeJson(mappingFile, {
+        format: 'nodus.research-live-answer-case-request/1', requestId: accepted.id,
+        caseId: first.caseId, caseAttemptId: first.caseAttemptId, segmentId: first.segmentId,
+        sourceContextHash: first.sourceContextHash, receiptsHash: first.receiptsHash, sourceCaseHash: first.sourceCaseHash });
+      const prepared = prepareResearchLunaDispatch({ root, nodeBinary: process.execPath,
+        responseHelper: fileURLToPath(new URL('./research-luna-response.mjs', import.meta.url)),
+        mappingFile, mappingSha256: sha(fs.readFileSync(mappingFile)) });
+      bindResearchLunaDispatch({ root, requestId: accepted.id, task: '/root/synthetic_collector_integrity' });
+      const job = JSON.parse(fs.readFileSync(prepared.jobFile, 'utf8'));
+      writeJson(job.readAuditFile, { ...job.expectedReadAudit, readAt: new Date().toISOString() });
+      first.dispatchReadReceipts = [verifyResearchLunaRead({ root, requestId: accepted.id })];
+      fs.writeFileSync(job.rawFile, 'Synthetic deterministic completion.', { flag: 'wx' });
+      writeResearchLunaResponse(job.requestFile, job.rawFile);
+      assert.equal((await responsePromise).status, 200);
+      writeJson(path.join(campaignDir, 'campaign.json'), { format: manifest.format, root, answers: [first, ...attempts.slice(1)] });
+      const before = collectResearchLiveAnswers({ campaignDir, outputDir: path.join(root, 'artifacts/integrity-before') });
+      assert.equal(before.caseOutcomes[0].answered, true,
+        `a complete valid bridge/read chain can be reviewed: ${JSON.stringify(before.evidenceMetrics.dispatchReadProof)}`);
+      writeJson(job.readAuditFile, { unrelated: true });
+      const after = collectResearchLiveAnswers({ campaignDir, outputDir: path.join(root, 'artifacts/integrity-after') });
+      assert.equal(after.caseOutcomes[0].answered, false, 'a completed response cannot bypass a corrupted read proof');
+      assert.equal(after.reviewPacket.reviews[0].answer, '', 'invalid measurements never enter the factual review packet');
+      assert.equal(after.evidenceMetrics.dispatchReadProof.failed, 1);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(campaignDir, 'campaign.json'), 'utf8')).answers[0].answer,
+        first.answer, 'the original application answer remains preserved');
+    } finally {
+      await bridge.close();
+      fs.writeFileSync(path.join(root, 'artifacts/events.jsonl'), '');
+      writeJson(path.join(campaignDir, 'campaign.json'), { format: manifest.format, root, answers: attempts });
+    }
+  }
 
   const blind = exactCitationBlinding('refs nodus://passage/1 and nodus://passage/10; citation nodus://passage/1.', [
     { id: '1' }, { id: '10' },
@@ -238,6 +325,57 @@ try {
   assert.equal(first.evidenceMetrics.productCitationResolution, null,
     'missing answer-specific retrieval proof leaves citation and scope invariants pending');
   assert.equal(first.evidenceMetrics.productInvariantStatus, 'pending');
+  // A shard collector evaluates only the assigned 26 while retaining all 80
+  // frozen contexts and the original quality sample requirement.
+  const shardCampaignDir = path.join(temp, 'campaign-shard'); fs.mkdirSync(shardCampaignDir);
+  const closedDir = path.join(temp, 'closed-two-case'); fs.mkdirSync(closedDir);
+  const productionPin = { 'electron/ai/researchCorpusScope.ts': sha(fs.readFileSync('electron/ai/researchCorpusScope.ts')) };
+  const allSourceFiles = { ...sourceFiles, ...productionPin };
+  const shardSourceVersion = { ...sourceVersion, sourceFiles: allSourceFiles };
+  const shardSnapshotPath = path.join(root, 'artifacts/shard-source-context-snapshot.json');
+  writeJson(shardSnapshotPath, { format: 'nodus.research-live-answer-source-snapshot/1', sourceVersion: shardSourceVersion,
+    profileContract, scopeContract, cases });
+  const closedManifest = { format: manifest.format, root, sourceSnapshotSha256, preregistrationSha256, casesSha256,
+    sourceFiles: allSourceFiles, sourceSnapshot: shardSnapshotPath, profileContract, scopeContract };
+  const closedAnswers = ['R001', 'R002'].map((caseId, index) => ({ caseId,
+    sourceCaseHash: cases.find(row => row.id === caseId).sourceCaseHash, attempted: true,
+    attemptStatus: index === 0 ? 'answered' : 'protocol-failure', finishedAt: '2026-10-01T00:00:00.000Z' }));
+  const closedCampaign = { root, finishedAt: '2026-10-01T00:00:00.000Z', answers: closedAnswers };
+  writeJson(path.join(closedDir, 'manifest.json'), closedManifest);
+  writeJson(path.join(closedDir, 'campaign.json'), closedCampaign);
+  const closedManifestBytes = fs.readFileSync(path.join(closedDir, 'manifest.json'));
+  const closedCampaignBytes = fs.readFileSync(path.join(closedDir, 'campaign.json'));
+  const fullSnapshotBytes = fs.readFileSync(shardSnapshotPath);
+  const assignment = buildResearchLiveShardAssignment({ plan: planResearchLiveCases(cases), concludedAnswers: closedAnswers,
+    sourceSnapshotSha256, preregistrationSha256, casesSha256, profileContractSha256: hash(profileContract),
+    scopeContractSha256: hash(scopeContract), productionSourceFiles: sourceHashesForProduction(allSourceFiles),
+    closedCampaignManifestSha256: sha(closedManifestBytes), closedCampaignSha256: sha(closedCampaignBytes),
+    fullSourceSnapshotSha256: sha(fullSnapshotBytes), closedCampaignPath: closedDir, fullSourceSnapshotPath: shardSnapshotPath });
+  const assignmentFile = path.join(temp, 'assignment.json'); writeJson(assignmentFile, assignment);
+  const selectedShard = assignment.shards[0];
+  const shardManifest = { ...manifest, sourceSnapshot: shardSnapshotPath, sourceVersion: shardSourceVersion, sourceFiles: allSourceFiles,
+    profileContractSha256: hash(profileContract), scopeContractSha256: hash(scopeContract),
+    assignment: assignmentFile, assignmentSha256: sha(fs.readFileSync(assignmentFile)), shardId: selectedShard.id,
+    plannedCount: selectedShard.caseIds.length, assignedCaseIds: selectedShard.caseIds };
+  writeJson(path.join(shardCampaignDir, 'manifest.json'), shardManifest);
+  writeJson(path.join(shardCampaignDir, 'campaign.json'), { format: manifest.format, root, answers: [] });
+  const shardEvaluation = collectResearchLiveAnswers({ campaignDir: shardCampaignDir,
+    outputDir: path.join(root, 'artifacts/shard-evaluation'), preregistration: { minimumAnswerableSample: 60 } });
+  assert.equal(shardEvaluation.campaign.planned, 26);
+  assert.equal(shardEvaluation.campaign.fullSnapshotPlanned, 80);
+  assert.equal(shardEvaluation.caseOutcomes.length, 26);
+  assert.ok(shardEvaluation.caseOutcomes.every(row => selectedShard.caseIds.includes(row.caseId)));
+  assert.equal(shardEvaluation.answerQuality.answerQualityStatus, 'pending',
+    'an isolated shard cannot claim campaign-level quality before the global sample is assembled');
+  assert.equal(shardEvaluation.campaign.assignedCampaignFinished, false);
+  assert.equal(shardEvaluation.answerQuality.acceptance, null,
+    'a 26-case shard cannot lower the preregistered 60-answerable-case campaign threshold');
+  const outsideCase = cases.find(row => !selectedShard.caseIds.includes(row.id));
+  writeJson(path.join(shardCampaignDir, 'campaign.json'), { format: manifest.format, root,
+    answers: [{ ...attempts.find(row => row.caseId === outsideCase.id) }] });
+  assert.throws(() => collectResearchLiveAnswers({ campaignDir: shardCampaignDir,
+    outputDir: path.join(root, 'artifacts/shard-invalid-roster') }), /unknown or duplicate case ID/u,
+  'the collector rejects a known full-snapshot case that is not assigned to this shard');
   const keyFile = path.join(root, 'artifacts/evaluation-1/utility-key.json');
   assert.equal(fs.statSync(keyFile).mode & 0o777, 0o600);
   assert.doesNotMatch(fs.readFileSync(path.join(root, 'artifacts/evaluation-1/blind-review-pack.json'), 'utf8'), /annotationGold|expected-R/u);

@@ -12,6 +12,7 @@ import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases,
   summarizeResearchLiveTerminalEvents, validateResearchLiveAdmissionStop } from './lib/researchLiveAnswerCampaignState.mjs';
 import { prepareResearchLunaDispatch, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 import { verifyDerivedIndexAuthorization } from './lib/researchLiveIndexAuthorization.mjs';
+import { buildResearchLiveShardAssignment, sourceHashesForProduction, validateResearchLiveShardAssignment, validateResearchLiveShardSource } from './lib/researchLiveAnswerShards.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
@@ -29,14 +30,23 @@ const save = (file, value) => {
 };
 const append = (file, value) => fs.appendFileSync(file, `${JSON.stringify(value)}\n`, { mode: 0o600 });
 const now = () => new Date().toISOString();
-const eventsAfterOffset = (file, offset) => fs.readFileSync(file).subarray(offset).toString('utf8')
-  .split(/\r?\n/u).filter(Boolean).map(JSON.parse);
+const eventsAfterOffset = (file, offset) => {
+  // Before the first accepted request the bridge has no event file yet.
+  // A missing file after a recorded baseline still means evidence was lost.
+  if (!fs.existsSync(file)) {
+    if (offset !== 0) throw new Error('Bridge event history disappeared after the segment baseline');
+    return [];
+  }
+  return fs.readFileSync(file).subarray(offset).toString('utf8').split(/\r?\n/u).filter(Boolean).map(JSON.parse);
+};
 const PROFILE = 'embeddinggemma-2-text-q8-512-v1';
 const MAX_SEGMENT_CALLS = 150;
 const SOFT_PAUSE_CALLS = 118;
 const MAX_CAMPAIGN_CALLS = 1600;
+const MAX_SHARD_CALLS = 522; // floor((1,600 - 33 already accepted) / 3 shards)
 const MODEL = { provider: 'custom', model: researchLunaBridgeProtocol.model };
-const SOURCE_FILES = ['scripts/research-live-answer-campaign.mjs', 'scripts/lib/researchLiveIndexAuthorization.mjs',
+const SOURCE_FILES = ['scripts/research-live-answer-campaign.mjs', 'scripts/lib/researchLiveAnswerShards.mjs',
+  'scripts/test-research-live-answer-shards.mjs', 'scripts/lib/researchLiveIndexAuthorization.mjs',
   'scripts/test-research-live-index-authorization.mjs', 'scripts/research-luna-bridge.mjs',
   'scripts/research-luna-response.mjs', 'scripts/research-luna-dispatch.mjs', 'scripts/research-isolation.mjs',
   'scripts/lib/researchLunaCampaignState.mjs', 'scripts/lib/tsRuntimeHooks.mjs',
@@ -153,6 +163,71 @@ if (snapshots.some(row => {
 })) throw new Error('Persisted campaign snapshots differ from their audited source records');
 const dryRun = !process.argv.includes('--run');
 const currentSourceHashes = Object.fromEntries(SOURCE_FILES.map(file => [file, digest(fs.readFileSync(path.join(repo, file)))]));
+const currentProductionSourceHashes = sourceHashesForProduction(currentSourceHashes);
+const REQUIRED_PRODUCTION_COMMIT = '51ddac9de08c95fd0dd0475668c97fd40f06c868';
+const currentGitCommit = (await import('node:child_process')).execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+
+if (arg('create-assignment')) {
+  const closedDir = path.resolve(arg('closed-campaign') ?? '');
+  if (!arg('closed-campaign')) throw new Error('--create-assignment requires --closed-campaign=/path/to/closed-output');
+  const manifestBytes = safeRead(path.join(closedDir, 'manifest.json'), 32 * 1024 * 1024);
+  const campaignBytes = safeRead(path.join(closedDir, 'campaign.json'), 64 * 1024 * 1024);
+  const closedManifest = JSON.parse(manifestBytes.toString('utf8'));
+  const closedCampaign = JSON.parse(campaignBytes.toString('utf8'));
+  if (currentGitCommit !== REQUIRED_PRODUCTION_COMMIT) throw new Error(`Assignment source checkout must be pinned at ${REQUIRED_PRODUCTION_COMMIT}`);
+  if (closedManifest.format !== 'nodus.research-live-answer-campaign/1' || closedManifest.sourceSnapshotSha256 !== inputs.sourceHash
+      || closedManifest.preregistrationSha256 !== inputs.preregHash || closedManifest.casesSha256 !== inputs.casesHash) throw new Error('Closed campaign does not match the current full source/preregistration snapshot');
+  if (closedCampaign.finishedAt == null || closedCampaign.answers?.length !== 2 || closedCampaign.answers.some(row => !['R001', 'R002'].includes(row.caseId))) throw new Error('Expected the closed two-case campaign ledger');
+  const productionPin = sourceHashesForProduction(closedManifest.sourceFiles);
+  if (JSON.stringify(productionPin) !== JSON.stringify(currentProductionSourceHashes)) throw new Error('Production sources differ from the closed campaign pin');
+  const fullSnapshotBytes = safeRead(closedManifest.sourceSnapshot, 128 * 1024 * 1024);
+  const fullSnapshot = JSON.parse(fullSnapshotBytes.toString('utf8'));
+  if (fullSnapshot.cases?.length !== 80 || fullSnapshot.format !== 'nodus.research-live-answer-source-snapshot/1') throw new Error('Closed campaign full 80-case source snapshot is missing');
+  const snapshotCasesById = new Map(snapshots.map(row => [row.id, row]));
+  if (fullSnapshot.cases.some(row => row.sourceCaseHash !== snapshotCasesById.get(row.id)?.sourceCaseHash)
+      || digest(Buffer.from(JSON.stringify(fullSnapshot.profileContract), 'utf8')) !== inputs.source.profileContractSha256
+      || digest(Buffer.from(JSON.stringify(fullSnapshot.scopeContract), 'utf8')) !== inputs.source.scopeContractSha256) throw new Error('Closed source snapshot differs from the audited full case/context set or contracts');
+  const assignment = buildResearchLiveShardAssignment({ plan, concludedAnswers: closedCampaign.answers, sourceSnapshotSha256: inputs.sourceHash,
+    preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, profileContractSha256: inputs.source.profileContractSha256,
+    scopeContractSha256: inputs.source.scopeContractSha256, productionSourceFiles: productionPin,
+    closedCampaignManifestSha256: digest(manifestBytes), closedCampaignSha256: digest(campaignBytes),
+    fullSourceSnapshotSha256: digest(fullSnapshotBytes), closedCampaignPath: closedDir, fullSourceSnapshotPath: closedManifest.sourceSnapshot });
+  const assignmentPath = path.resolve(arg('create-assignment'));
+  save(assignmentPath, assignment);
+  console.log(JSON.stringify({ created: assignmentPath, frozenFullPlanCount: assignment.frozenFullPlanCount,
+    concludedCount: assignment.concludedCount, unattemptedCount: assignment.unattemptedCount,
+    shards: assignment.shards.map(({ id, caseIds }) => ({ id, plannedCount: caseIds.length, caseIds })) }));
+  process.exit(0);
+}
+
+const assignmentPath = arg('assignment') ? path.resolve(arg('assignment')) : null;
+const shardId = arg('shard');
+if (Boolean(assignmentPath) !== Boolean(shardId)) throw new Error('--assignment=/path and --shard=shard-NN must be supplied together');
+let assignment = null, assignedShard = null, runPlan = plan;
+if (assignmentPath) {
+  const assignmentBytes = safeRead(assignmentPath, 32 * 1024 * 1024);
+  assignment = JSON.parse(assignmentBytes.toString('utf8'));
+  const closedDir = path.resolve(assignment.closedCampaign?.path ?? '');
+  const closedManifestBytes = safeRead(path.join(closedDir, 'manifest.json'), 32 * 1024 * 1024);
+  const closedCampaignBytes = safeRead(path.join(closedDir, 'campaign.json'), 64 * 1024 * 1024);
+  const closedManifest = JSON.parse(closedManifestBytes.toString('utf8'));
+  const closedCampaign = JSON.parse(closedCampaignBytes.toString('utf8'));
+  const fullSnapshotBytes = safeRead(assignment.fullSourceSnapshot?.path, 128 * 1024 * 1024);
+  if (currentGitCommit !== REQUIRED_PRODUCTION_COMMIT || assignment.productionSourceCommit !== REQUIRED_PRODUCTION_COMMIT) throw new Error('Shard assignment is not pinned to the required production commit');
+  if (JSON.stringify(assignment.productionSourceFiles) !== JSON.stringify(currentProductionSourceHashes)) throw new Error('Production source hashes differ from the pinned 51ddac9d sources');
+  validateResearchLiveShardSource({ source: inputs.source, sourceHash: inputs.sourceHash, assignment,
+    closedCampaignRoot: closedManifest.root, cloneRoot: inputs.root });
+  assignedShard = validateResearchLiveShardAssignment({ assignment, shardId, plan, concludedAnswers: closedCampaign.answers,
+    sourceSnapshotSha256: assignment.sourceSnapshotSha256, preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash,
+    profileContractSha256: inputs.source.profileContractSha256, scopeContractSha256: inputs.source.scopeContractSha256,
+    productionSourceFiles: currentProductionSourceHashes, closedCampaignManifestSha256: digest(closedManifestBytes),
+    closedCampaignSha256: digest(closedCampaignBytes), fullSourceSnapshotSha256: digest(fullSnapshotBytes) });
+  if (closedManifest.sourceSnapshotSha256 !== assignment.sourceSnapshotSha256 || closedManifest.preregistrationSha256 !== inputs.preregHash
+      || closedManifest.casesSha256 !== inputs.casesHash) throw new Error('Shard assignment closed source snapshot does not match current inputs');
+  runPlan = plan.filter(row => assignedShard.caseIds.includes(row.caseId));
+  if (runPlan.length !== assignedShard.caseIds.length) throw new Error('Assigned shard references an unknown source case');
+  if (arg('continue-from') && !arg('output')) throw new Error('Assigned-shard continuation requires explicit --output and --continue-from paths');
+}
 
 if (dryRun) {
   const continuation = arg('continue-from') ? path.resolve(arg('continue-from')) : null;
@@ -161,11 +236,11 @@ if (dryRun) {
   if (continuation) {
     const state = JSON.parse(safeRead(stateFile, 32 * 1024 * 1024).toString('utf8'));
     const manifest = JSON.parse(safeRead(path.join(continuation, 'manifest.json'), 32 * 1024 * 1024).toString('utf8'));
-    validateContinuation({ continuation, state, manifest, inputs, currentSourceHashes });
+    validateContinuation({ continuation, state, manifest, inputs, currentSourceHashes, assignment, assignedShard, assignmentPath });
     alreadyAttempted = state.answers.map(row => row.caseId);
   }
-  console.log(JSON.stringify({ dryRun: true, mode: 'structured-only', cases: 80, alreadyAttempted: alreadyAttempted.length,
-    pending: plan.filter(row => !alreadyAttempted.includes(row.caseId)).length, sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash,
+  console.log(JSON.stringify({ dryRun: true, mode: 'structured-only', cases: runPlan.length, plannedFullSnapshotCases: 80, shardId: assignedShard?.id ?? null, alreadyAttempted: alreadyAttempted.length,
+    pending: runPlan.filter(row => !alreadyAttempted.includes(row.caseId)).length, sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash,
     preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceRoot: inputs.source.profileRoot,
     profileContract: inputs.source.profileContract, scopeContract: inputs.source.scopeContract,
     maxBridgeAcceptedCallsPerSegment: MAX_SEGMENT_CALLS,
@@ -173,7 +248,7 @@ if (dryRun) {
   process.exit(0);
 }
 
-function validateContinuation({ continuation, state, manifest, inputs: current, currentSourceHashes: hashes }) {
+function validateContinuation({ continuation, state, manifest, inputs: current, currentSourceHashes: hashes, assignment: selectedAssignment = null, assignedShard: selectedShard = null, assignmentPath: selectedAssignmentPath = null }) {
   const reject = why => { throw new Error(`Continuation rejected: ${why}`); };
   if (manifest?.format !== 'nodus.research-live-answer-campaign/1' || state?.format !== manifest.format) reject('format mismatch');
   if (manifest.mode !== 'structured-only' || manifest.sourceSnapshotSha256 !== current.sourceHash || manifest.preregistrationSha256 !== current.preregHash || manifest.casesSha256 !== current.casesHash) reject('source snapshot or preregistration changed');
@@ -181,9 +256,12 @@ function validateContinuation({ continuation, state, manifest, inputs: current, 
   if (state.root !== manifest.root || !state.root || fs.realpathSync(state.root) !== state.root) reject('root mismatch');
   markedRoot(state.root);
   if (manifest.maxBridgeAcceptedCallsPerSegment !== MAX_SEGMENT_CALLS || !Array.isArray(state.answers)) reject('segment cap or answer ledger malformed');
+  if (selectedAssignment && (manifest.assignmentSha256 !== digest(safeRead(selectedAssignmentPath)) || manifest.shardId !== selectedShard.id
+      || manifest.plannedCount !== selectedShard.caseIds.length || manifest.maxShardCalls !== MAX_SHARD_CALLS)) reject('assignment or shard pin changed');
   const seen = new Set();
   for (const answer of state.answers) {
-    if (!current.cases.some(row => row.id === answer.caseId && row.sourceCaseHash === answer.sourceCaseHash) || seen.has(answer.caseId)) reject(`case attempt mismatch or duplicate ${answer.caseId}`);
+    if (!current.cases.some(row => row.id === answer.caseId && row.sourceCaseHash === answer.sourceCaseHash) || seen.has(answer.caseId)
+        || (selectedShard && !selectedShard.caseIds.includes(answer.caseId))) reject(`case attempt mismatch or duplicate ${answer.caseId}`);
     seen.add(answer.caseId);
     const original = current.cases.find(row => row.id === answer.caseId);
     if (answer.sourceContextHash !== original.sourceContextHash || answer.receiptsHash !== original.receiptsHash
@@ -196,13 +274,15 @@ function validateContinuation({ continuation, state, manifest, inputs: current, 
 }
 
 const continueFrom = arg('continue-from') ? path.resolve(arg('continue-from')) : null;
+if (assignment && !continueFrom && arg('output') && fs.existsSync(path.join(path.resolve(arg('output')), 'campaign.json'))) throw new Error('Assigned output exists; continue its exact shard with --continue-from and the same assignment');
+if (assignment && continueFrom && continueFrom !== output) throw new Error('Assigned continuation --output must match --continue-from');
 if (continueFrom && continueFrom !== output) throw new Error('--continue-from must match --output');
 if (!continueFrom && (fs.existsSync(path.join(output, 'manifest.json')) || fs.existsSync(path.join(output, 'campaign.json')))) throw new Error('Output exists; use --continue-from for a verified resume');
 let prior = null;
 if (continueFrom) {
   const manifest = JSON.parse(safeRead(path.join(output, 'manifest.json'), 32 * 1024 * 1024).toString('utf8'));
   const state = JSON.parse(safeRead(path.join(output, 'campaign.json'), 64 * 1024 * 1024).toString('utf8'));
-  validateContinuation({ continuation: output, state, manifest, inputs, currentSourceHashes });
+  validateContinuation({ continuation: output, state, manifest, inputs, currentSourceHashes, assignment, assignedShard, assignmentPath });
   prior = { manifest, state };
 }
 
@@ -235,7 +315,10 @@ if (fs.existsSync(rootBridgeEventFile)) {
   if (accepted.size) throw new Error(`Unresolved historic Luna bridge requests prevent a safe continuation: ${[...accepted].join(',')}`);
 }
 const bridgeEventOffset = fs.existsSync(rootBridgeEventFile) ? fs.statSync(rootBridgeEventFile).size : 0;
-const bridge = await startResearchLunaBridge({ root, maxRequests: Math.min(MAX_SEGMENT_CALLS, MAX_CAMPAIGN_CALLS - priorAccepted) });
+const shardCallsUsed = prior?.state.network?.shardCallsAccepted ?? 0;
+const callCeiling = assignedShard ? MAX_SHARD_CALLS : MAX_CAMPAIGN_CALLS;
+if (shardCallsUsed >= callCeiling) throw new Error('Assigned shard hard request allocation is exhausted');
+const bridge = await startResearchLunaBridge({ root, maxRequests: Math.min(MAX_SEGMENT_CALLS, callCeiling - shardCallsUsed) });
 const bridgeNonceSha256 = digest(Buffer.from(bridge.nonce, 'utf8'));
 if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === bridgeNonceSha256)) {
   await bridge.close();
@@ -244,6 +327,8 @@ if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === 
 const sourceVersion = { sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash, preregistration: preregFile,
   preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceFiles: currentSourceHashes };
 const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campaign/1', mode: 'structured-only', root,
+  ...(assignedShard ? { assignment: assignmentPath, assignmentSha256: digest(safeRead(assignmentPath)), shardId: assignedShard.id,
+    plannedCount: assignedShard.caseIds.length, assignedCaseIds: assignedShard.caseIds, maxShardCalls: MAX_SHARD_CALLS, fullSnapshotPlannedCount: 80 } : {}),
   sourceVersion, sourceSnapshotSha256: inputs.sourceHash, preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash,
   sourceFiles: currentSourceHashes, profileContract: inputs.source.profileContract, scopeContract: inputs.source.scopeContract,
   profileContractSha256: inputs.source.profileContractSha256, scopeContractSha256: inputs.source.scopeContractSha256,
@@ -253,7 +338,9 @@ const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campai
   sourceSnapshot: path.join(artifacts, 'source-context-snapshot.json'), maxBridgeAcceptedCallsPerSegment: MAX_SEGMENT_CALLS,
   completionSemantics: 'A case is concluded after its one application attempt, including a verified answer, verification withheld, or protocol failure. No concluded case or bridge transport is retried in later segments.',
   networkPolicy: 'External outbound denied by OS sandbox; bridge is the sole permitted loopback HTTP service; external provider API keys are literal empty.' };
-const report = prior?.state ?? { format: manifest.format, root, startedAt: now(), completed: false, answers: [], segments: [] };
+const report = prior?.state ?? { format: manifest.format, root, startedAt: now(), completed: false, answers: [], segments: [],
+  ...(assignedShard ? { assignment: { shardId: assignedShard.id, plannedCount: assignedShard.caseIds.length,
+    fullSnapshotPlannedCount: 80, assignmentSha256: manifest.assignmentSha256, caseIds: assignedShard.caseIds } } : {}) };
 const networkBaseline = { external: report.network?.instrumentedExternalFetchCalls ?? 0,
   loopback: report.network?.instrumentedLoopbackFetchCalls ?? 0 };
 const ledgerFile = path.join(outputRoot, 'dispatch-ledger.jsonl');
@@ -301,6 +388,85 @@ try {
   }
   report.runtime = await app.evaluate(() => ({ versions: process.versions, platform: process.platform, arch: process.arch }));
   report.runtime.segmentId = segmentId;
+  const shardPreflight = await page.evaluate(async ({ notebookId, expectedProfile, expectedModel, expectedDocumentIds }) => {
+    let settings = await window.nodus.getSettings();
+    if (!settings.embeddingProvider || !settings.embeddingModel) {
+      await window.nodus.updateSettings({ embeddingProvider: expectedProfile, embeddingModel: expectedModel });
+      settings = await window.nodus.getSettings();
+    }
+    const localAi = await window.nodus.getNodusLocalAiStatus();
+    const activeVault = await window.nodus.getActiveVault();
+    const notebooks = await window.nodus.listResearchNotebooks();
+    const notebook = notebooks.find(row => row.id === notebookId);
+    const scope = await window.nodus.resolveResearchNotebook(notebookId);
+    const corpus = await window.nodus.getResearchCorpusSources();
+    const preparationInventory = await window.nodus.getResearchPreparationInventory();
+    const byId = new Map((preparationInventory.documents ?? []).map(row => [row.id, row]));
+    const notReadyIds = expectedDocumentIds.filter(id => {
+      const row = byId.get(id);
+      return !row || row.preparation?.status !== 'ready' || row.preparation?.lexical !== 'ready'
+        || row.preparation?.embeddings !== 'ready';
+    });
+    if (notReadyIds.length) throw new Error(`Clone preflight refuses to enqueue or rebuild sources; ${notReadyIds.length} indexed documents are not fully ready`);
+    // This read calls the public ensureNotebookPrepared route. All 40 documents
+    // were already shown ready above, so the route cannot queue any new work.
+    const notebookPreparation = await window.nodus.getResearchNotebookPreparation(notebookId);
+    return { settings, localAi, activeVault, notebook, scope, notebookPreparation, corpus, preparationInventory };
+  }, { notebookId: inputs.source.notebookId, expectedProfile: 'nodus', expectedModel: PROFILE,
+    expectedDocumentIds: inputs.source.scopeContract.resolvedDocumentIds });
+  const expectedVaultDatabase = path.join(root, 'profile/nodus.sqlite');
+  if (shardPreflight.activeVault?.id !== 'default' || shardPreflight.activeVault?.type !== 'academic'
+      || path.resolve(shardPreflight.activeVault.path) !== path.resolve(expectedVaultDatabase)) {
+    throw new Error('Clone active vault is not the contained academic default vault for this isolated profile');
+  }
+  if (shardPreflight.settings.embeddingProvider !== 'nodus' || shardPreflight.settings.embeddingModel !== PROFILE) {
+    throw new Error(`Clone embedding settings differ from pinned ${PROFILE}; refusing to change an existing profile implicitly`);
+  }
+  const readyModel = shardPreflight.localAi.models?.find(model => model.id === PROFILE);
+  if (!readyModel?.downloaded || readyModel.downloadedBytes !== readyModel.totalBytes) {
+    throw new Error(`Pinned embedding model ${PROFILE} is not fully available in the cloned profile`);
+  }
+  const expectedScope = inputs.source.scopeContract;
+  const expectedIds = [...expectedScope.resolvedDocumentIds].sort();
+  const liveIds = (shardPreflight.scope?.documents ?? []).map(row => row.id).sort();
+  if (!shardPreflight.notebook || shardPreflight.notebook.mode !== 'fixed'
+      || shardPreflight.scope?.notebookId !== inputs.source.notebookId
+      || shardPreflight.scope?.notebookRevision !== expectedScope.notebookRevision
+      || shardPreflight.scope?.id !== expectedScope.scopeId
+      || shardPreflight.scope?.permissionFingerprint !== expectedScope.permissionFingerprint
+      || JSON.stringify(liveIds) !== JSON.stringify(expectedIds)
+      || shardPreflight.notebookPreparation?.total !== 40 || shardPreflight.notebookPreparation?.ready !== 40
+      || shardPreflight.notebookPreparation?.pending !== 0
+      || shardPreflight.notebookPreparation?.failed?.length !== 0 || shardPreflight.notebookPreparation?.unprepared?.length !== 0) {
+    throw new Error('Cloned notebook scope or all-40-document preparation readiness differs from the frozen source contract');
+  }
+  const expectedDocuments = new Map(expectedScope.documents.map(row => [row.id, row]));
+  const liveDocuments = new Map(shardPreflight.scope.documents.map(row => [row.id, row]));
+  for (const id of expectedIds) {
+    const expected = expectedDocuments.get(id), live = liveDocuments.get(id);
+    const projection = row => ({ id: row.id, title: row.title, revision: row.revision, attachmentId: row.attachmentId,
+      attachments: row.attachments ?? [], coverage: row.coverage, indexedSource: row.indexedSource ?? null, origin: row.origin });
+    if (!expected || !live || JSON.stringify(projection(live)) !== JSON.stringify(projection(expected))) {
+      throw new Error(`Cloned notebook document/index identity differs from the frozen contract: ${id}`);
+    }
+  }
+  const corpusIds = new Set((shardPreflight.corpus?.documents ?? []).map(row => row.id));
+  if (expectedIds.some(id => !corpusIds.has(id))) throw new Error('Research corpus inventory is missing a frozen notebook document');
+  const indexedDocs = new Map((shardPreflight.preparationInventory?.documents ?? []).map(row => [row.id, row]));
+  for (const id of expectedIds) {
+    const row = indexedDocs.get(id);
+    if (!row || row.preparation?.status !== 'ready' || row.preparation?.lexical !== 'ready'
+        || row.preparation?.embeddings !== 'ready') throw new Error(`Cloned source is not fully prepared for research retrieval: ${id}`);
+  }
+  report.shardPreflight = { checkedBeforeGeneration: true, embeddingProvider: shardPreflight.settings.embeddingProvider,
+    embeddingModel: shardPreflight.settings.embeddingModel, localModelDownloaded: readyModel.downloaded,
+    localModelBytes: readyModel.downloadedBytes, localModelTotalBytes: readyModel.totalBytes,
+    notebookId: shardPreflight.scope.notebookId, notebookRevision: shardPreflight.scope.notebookRevision,
+    scopeId: shardPreflight.scope.id, permissionFingerprint: shardPreflight.scope.permissionFingerprint,
+    documentCount: liveIds.length, readyDocumentCount: shardPreflight.notebookPreparation.ready,
+    indexedDocumentsMatchFrozenContract: true, corpusInventoryContainsFullScope: true,
+    activeVault: { id: shardPreflight.activeVault.id, type: shardPreflight.activeVault.type,
+      pathContainedAt: shardPreflight.activeVault.path } };
   report.runtime.contextWindow = { catalogReadSucceeded: true, catalogStatus: catalog.status,
     model: listedModel.id, contextTokens: listedModel.contextLength, catalogReadDurationMs: Date.now() - catalogStartedAt,
     limitation: 'The public Luna API proxy may not enforce native model context or generation temperature.' };
@@ -310,7 +476,7 @@ try {
   const requestDir = bridge.requestDirectory, completionDir = bridge.completionDirectory;
   const priorIds = new Set(report.answers.map(row => row.caseId));
   const attemptedThisSegment = [];
-  for (const plannedCase of plan) {
+  for (const plannedCase of runPlan) {
     const input = inputs.cases.find(row => row.id === plannedCase.caseId);
     if (priorIds.has(input.id)) continue;
     // A controller can stop admission at a case boundary while allowing every
@@ -321,7 +487,7 @@ try {
       report.admissionStop = validateResearchLiveAdmissionStop(stopRequest, root);
       break;
     }
-    if (stopping || bridge.acceptedRequests() >= SOFT_PAUSE_CALLS) break;
+    if (stopping || bridge.acceptedRequests() >= SOFT_PAUSE_CALLS || shardCallsUsed + bridge.acceptedRequests() >= callCeiling) break;
     const caseAttemptId = randomUUID();
     const mapping = { format: 'nodus.research-live-answer-case-request/1', caseId: input.id, caseAttemptId, segmentId,
       sourceContextHash: input.sourceContextHash, receiptsHash: input.receiptsHash, sourceCaseHash: input.sourceCaseHash };
@@ -330,7 +496,7 @@ try {
       attempted: true, startedAt: now(), status: 'started', bridgeRequestIds: [], bridgeCompletionIds: [], attemptStatus: 'protocol-failure' };
     const answerIndex = report.answers.length;
     report.answers.push(attempt);
-    report.pending = pendingFor(plan, report.answers);
+    report.pending = pendingFor(runPlan, report.answers);
     save(path.join(outputRoot, 'campaign.json'), report);
     append(path.join(outputRoot, 'attempts.jsonl'), { stage: 'started', caseId: input.id, caseAttemptId, segmentId,
       sourceContextHash: input.sourceContextHash, receiptsHash: input.receiptsHash, startedAt: attempt.startedAt });
@@ -427,9 +593,10 @@ try {
       instrumentedLoopbackFetchCalls: networkBaseline.loopback + net.loopbackHttpCalls,
       fetchCounterCoverage: 'main-process global fetch requests; sandbox proof denies unapproved outbound connections',
       bridgeAccepted: priorAccepted + bridge.acceptedRequests(),
+      ...(assignedShard ? { shardCallsAccepted: shardCallsUsed + bridge.acceptedRequests(), shardCallsLimit: MAX_SHARD_CALLS } : {}),
       bridgeCompleted: (prior?.state.network?.bridgeCompleted ?? 0)
         + eventsAfterOffset(bridge.eventFile, bridgeEventOffset).filter(row => row.event === 'completed').length };
-    report.pending = pendingFor(plan, report.answers);
+    report.pending = pendingFor(runPlan, report.answers);
     save(path.join(outputRoot, 'campaign.json'), report);
     append(path.join(outputRoot, 'attempts.jsonl'), { stage: 'finished', caseId: input.id, caseAttemptId, segmentId, sourceContextHash: input.sourceContextHash,
       receiptsHash: input.receiptsHash, attemptStatus: attempt.attemptStatus, bridgeRequestIds: attempt.bridgeRequestIds,
@@ -438,16 +605,17 @@ try {
   }
   report.segments.push({ id: segmentId, ordinal: segmentOrdinal, bridgeNonceSha256, startedAt: segmentStartedAt,
     callsAccepted: bridge.acceptedRequests(), softPauseAt: SOFT_PAUSE_CALLS, requestLimit: MAX_SEGMENT_CALLS, attemptedCaseIds: attemptedThisSegment.map(row => row.caseId),
-    pendingAtEnd: pendingFor(plan, report.answers).notAttempted.length });
-  report.pending = pendingFor(plan, report.answers);
-  report.completed = report.pending.notAttempted.length === 0 && report.answers.length === 80
+    pendingAtEnd: pendingFor(runPlan, report.answers).notAttempted.length });
+  report.pending = pendingFor(runPlan, report.answers);
+  report.completed = report.pending.notAttempted.length === 0 && report.answers.length === runPlan.length
     && report.answers.every(row => ['answered','verification-withheld'].includes(row.attemptStatus) && row.receiptsComplete === true
       && completeness(inputs.cases.find(input => input.id === row.caseId)));
   report.segmentPaused = !report.completed;
-  report.nextSegment = report.segmentPaused ? { commandHint: `--continue-from=${outputRoot}`, pendingCaseIds: report.pending.notAttempted.map(row => row.caseId) } : null;
+  report.nextSegment = report.segmentPaused ? { commandHint: `--assignment=${assignmentPath ?? ''} --shard=${assignedShard?.id ?? ''} --continue-from=${outputRoot}`, pendingCaseIds: report.pending.notAttempted.map(row => row.caseId) } : null;
 } catch (error) {
   report.error = { message: String(error?.message ?? error).slice(0, 700), classification: 'campaign-paused' };
-  report.pending = pendingFor(plan, report.answers);
+  report.pending = pendingFor(runPlan, report.answers);
+  save(path.join(outputRoot, 'campaign.json'), report);
 } finally {
   if (app) {
     const net = await app.evaluate(() => global.__liveAnswerNetwork).catch(() => null);
@@ -468,6 +636,7 @@ try {
     fetchCounterCoverage: 'main-process global fetch requests only; no claim about all HTTP mechanisms' };
   Object.assign(report.network, summarizeResearchLiveTerminalEvents(freshEvents,
     { ...prior?.state.network, bridgeAccepted: priorAccepted }));
+  if (assignedShard) { report.network.shardCallsAccepted = shardCallsUsed + bridge.acceptedRequests(); report.network.shardCallsLimit = MAX_SHARD_CALLS; }
   report.segments ??= [];
   const currentSegment = report.segments.find(row => row.id === segmentId);
   const segmentCases = report.answers.filter(row => row.segmentId === segmentId).map(row => row.caseId);
@@ -475,7 +644,7 @@ try {
   else report.segments.push({ id: segmentId, ordinal: segmentOrdinal, bridgeNonceSha256, startedAt: segmentStartedAt, finishedAt: now(),
     callsAccepted: bridge.acceptedRequests(), requestLimit: MAX_SEGMENT_CALLS, attemptedCaseIds: segmentCases, pendingAtEnd: report.pending?.notAttempted?.length ?? 80 });
   report.finishedAt = now();
-  report.pending = pendingFor(plan, report.answers);
+  report.pending = pendingFor(runPlan, report.answers);
   const finalSourceHashes = Object.fromEntries(SOURCE_FILES.map(file => [file, digest(fs.readFileSync(path.join(repo, file)))]));
   report.sourceHashDrift = Object.keys(currentSourceHashes).filter(file => currentSourceHashes[file] !== finalSourceHashes[file]);
   report.sourceHashesVerified = report.sourceHashDrift.length === 0;
@@ -490,7 +659,7 @@ try {
   });
   report.databaseIsolation = { observedDatabaseOpens: databaseOpens.length, allContainedInIsolatedProfile: databasesContained,
     auditFile: databaseAccessFile };
-  report.completed = report.pending.notAttempted.length === 0 && report.answers.length === 80
+  report.completed = report.pending.notAttempted.length === 0 && report.answers.length === runPlan.length
     && report.answers.every(row => ['answered','verification-withheld'].includes(row.attemptStatus) && row.receiptsComplete === true)
     && report.sourceHashesVerified && databasesContained;
   report.segmentPaused = !report.completed;

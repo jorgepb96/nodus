@@ -51,7 +51,13 @@
     "negativeCriticDetectedOmission": true,
     "structuredFullQuestionProofGenericallyAddressedFacets": true,
     "fullQuestionProofAddedUnplannedOmission": false,
-    "cause": "Structured mode forced positive coverage even when the critic identified a specific missing source qualification; generic approved facet spans bypassed complaint adjudication. Repair had also deleted the supported qualification with its unlabelled inference."
+    "cause": "After an initial audit accepted the intelligence qualification but rejected two other statements, the first rewrite again combined that qualification with an unlabelled inference. Its fresh audit removed that compound. Structured mode then forced positive coverage despite a critic identifying the specific missing qualification; generic approved facet spans bypassed complaint adjudication.",
+    "qualificationPresentInInitialAuditedAnswer": true,
+    "initialRepairTrigger": [
+      "inference_without_supported_premises on the calculated percentage difference",
+      "inference_without_supported_premises on a broader interpretation-limit sentence"
+    ],
+    "qualificationRejectedStage": "First repair audit, not the initial audit"
   },
   "erratum": {
     "originalStopReceiptPreserved": true,

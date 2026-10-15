@@ -1,0 +1,85 @@
+{
+  "format": "nodus.closed-live-answer-campaign/1",
+  "closedAt": "2026-10-15T10:06:03Z",
+  "productionRevision": "51ddac9de08c95fd0dd0475668c97fd40f06c868",
+  "rawApplicationOutcomes": {
+    "answered": 52,
+    "verificationWithheld": 10,
+    "protocolFailure": 18
+  },
+  "qualifiedPublished": 48,
+  "rawAnsweredExcludedForInvalidExecutionProof": [
+    "R008",
+    "R013",
+    "R017",
+    "R035"
+  ],
+  "quality": {
+    "answerableCorrectAndComplete": {
+      "passed": 35,
+      "planned": 60,
+      "rate": 0.5833333333333334
+    },
+    "publishedAnswersWithoutMaterialUnsupportedClaims": {
+      "passed": 48,
+      "planned": 48,
+      "rate": 1
+    },
+    "insufficientEvidenceHandling": {
+      "passed": 13,
+      "planned": 20,
+      "rate": 0.65
+    }
+  },
+  "answerQualityAcceptance": false,
+  "productInvariantAcceptance": null,
+  "originalEvidence": [
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/automatic-batch-collection-004/evaluation-005.json",
+      "sha256": "bb7cb467e0a22c1f8bb485476c04a508db39a85cceb1d1cc9ec8dd2dcbf75ad6"
+    },
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/automatic-batch-collection-004/bundle-005.json",
+      "sha256": "5e9a4833368b50bd4f380a398d039f35c41b93ba836607c08af3d26ebc6dfa44"
+    },
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/evaluation-80-independent-001.json",
+      "sha256": "d25b99db8b3e582b4209e7fae10ff8bc83f39f4ae81e92ca318590e8b9555caa"
+    },
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/parallel-independent-reviews-published-80-001.json",
+      "sha256": "88ba27dc9dc03ed8f659015c7ab3887e4ab663ef3c18202bcbcc8e2a8237641e"
+    },
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/administrative-negative-reviews-80-001.json",
+      "sha256": "be4aee7e58de70807b566960c85e0b3f90a710a88f6cafbca331b655c2e2b4e6"
+    },
+    {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/parallel-reviews-with-negative-outcomes-80-001.json",
+      "sha256": "9063eff224001bcca592a0eefd17b7d2ef2817b97f6767266b1db24561fc3237"
+    }
+  ],
+  "corpus": {
+    "documents": 40,
+    "vectors": 787,
+    "semanticParticipatedInControlledRetrieval": 80,
+    "lexicalFallbackOnlyInControlledRetrieval": 0
+  },
+  "budgets": {
+    "deepSeekClosedCommittedUSD": 7.9559,
+    "deepSeekCeilingUSD": 8,
+    "openRouterSeparateCeilingUSD": 0.5,
+    "openRouterCommittedUSD": 0.09287637,
+    "additionalConditionalEUR": 0.5,
+    "additionalConditionalEURUsed": 0,
+    "newPaidCallsThisFollowup": 0
+  },
+  "limitations": [
+    "The 100% fidelity result is conditional on 48 execution-qualified published answers, not all planned questions or all raw returned responses.",
+    "Root and independent reviews are model-assisted, not external human reviews.",
+    "Protocol failures and verification-withheld answers retain zero utility credit; no resampling or favorable-case replacement.",
+    "Whole-cohort runtime citation/scope/contract invariant gate remains pending.",
+    "This fixed directed sample is not an untouched holdout or a population guarantee.",
+    "New source corrections and recorded-decision replays are a separate regression phase and do not revise baseline scores."
+  ]
+}

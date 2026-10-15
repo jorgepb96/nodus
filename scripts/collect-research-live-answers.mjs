@@ -5,6 +5,8 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { evaluateResearchAnswerQuality, RESEARCH_ANSWER_QUALITY_POLICY } from './lib/researchAnswerQualityPolicy.mjs';
+import { validateResearchLiveShardAssignment, sourceHashesForProduction } from './lib/researchLiveAnswerShards.mjs';
+import { planResearchLiveCases } from './lib/researchLiveAnswerCampaignState.mjs';
 import { verifyDerivedIndexAuthorization } from './lib/researchLiveIndexAuthorization.mjs';
 import { verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 
@@ -255,7 +257,7 @@ function collectProductInvariantEvidence({ attempts, manifest, planned, indexAut
     scopeContractIsolation: { checkedOutcomes: planned, observedScopeLeaks, observedContractLeaks, checksRun: true },
     evidenceSha256: jsonHash(evidencePayload), details: perAttempt.map((row, index) => ({ caseId: attempts[index].caseId, ...row })) };
 }
-function runtimeReceipts(root, campaign, manifest) {
+function runtimeReceipts(root, campaign, manifest, { administrativeBindings = null } = {}) {
   const eventsFile = path.join(root, 'artifacts/events.jsonl');
   if (!fs.existsSync(eventsFile)) return { accepted: [], completed: [], abandoned: [], allTerminal: false };
   const events = parseLines(eventsFile);
@@ -289,7 +291,47 @@ function runtimeReceipts(root, campaign, manifest) {
       fail(`Completed response envelope hash/byte count mismatch: ${event.id}`);
     }
   }
-  for (const event of abandoned) if (!acceptedById.has(event.id) || event.requestHash !== acceptedById.get(event.id).requestHash) fail('Abandoned event does not bind to one accepted request');
+  const bindings = administrativeBindings ? jsonFile(administrativeBindings, 2 * 1024 * 1024) : [];
+  if (!Array.isArray(bindings)) fail('Administrative event bindings must be an array');
+  const bindingById = new Map();
+  for (const binding of bindings) {
+    if (binding?.format !== 'nodus.qa-administrative-event-binding/1' || binding.event !== 'abandoned'
+        || !binding.id || bindingById.has(binding.id) || !/^[a-f0-9]{64}$/u.test(binding.requestHash ?? '')
+        || binding.reason !== 'qa-controller-process-lost' || binding.concludedStatus !== 'protocol-failure'
+        || binding.completedBridgeEvent !== false) fail('Malformed administrative event binding');
+    const forensicBytes = readFile(binding.forensicReceiptPath, 2 * 1024 * 1024);
+    const snapshotBytes = readFile(binding.originalEventsSnapshotPath, 16 * 1024 * 1024);
+    if (sha(forensicBytes) !== binding.forensicReceiptSha256 || sha(snapshotBytes) !== binding.originalEventsSnapshotSha256) fail('Administrative binding evidence hash mismatch');
+    const forensic = JSON.parse(forensicBytes.toString('utf8'));
+    const originalEvents = snapshotBytes.toString('utf8').split(/\r?\n/u).filter(Boolean).map(line => JSON.parse(line));
+    const originalAccepted = originalEvents.filter(row => row.event === 'accepted' && row.id === binding.id);
+    const mapping = jsonFile(path.join(root, 'artifacts/case-request-mappings', `${binding.id}.json`), 1024 * 1024);
+    const answer = (campaign.answers ?? []).find(row => row.caseId === mapping.caseId);
+    if (forensic.format !== 'nodus.qa-controller-loss-recovery/1' || forensic.scope?.root !== root
+        || forensic.scope?.orphanRequestId !== binding.id || forensic.classification?.status !== 'protocol-failure'
+        || forensic.classification?.errorClassification !== binding.reason || forensic.classification?.success !== false
+        || forensic.acceptedEvent?.requestHash !== binding.requestHash
+        || forensic.originalHashes?.rootEvents !== binding.originalEventsSnapshotSha256
+        || mapping.requestId !== binding.id || mapping.caseId !== forensic.scope.caseId
+        || !answer || answer.attemptStatus !== 'protocol-failure'
+        || !(answer.bridgeRequestIds ?? []).includes(binding.id) || (answer.bridgeCompletionIds ?? []).includes(binding.id)
+        || originalAccepted.length !== 1 || originalAccepted[0].requestHash !== binding.requestHash
+        || originalEvents.some(row => ['completed', 'abandoned'].includes(row.event) && row.id === binding.id)) fail('Administrative binding does not match forensic negative evidence');
+    bindingById.set(binding.id, binding);
+  }
+  for (const event of abandoned) {
+    const acceptedEvent = acceptedById.get(event.id), binding = bindingById.get(event.id);
+    if (!acceptedEvent) fail('Abandoned event does not bind to one accepted request');
+    if (event.requestHash === acceptedEvent.requestHash) continue;
+    if (event.requestHash || !binding || binding.requestHash !== acceptedEvent.requestHash
+        || event.reason !== binding.reason || event.provenance?.type !== 'forensic-recovery'
+        || event.provenance?.receipt !== binding.forensicReceiptPath) fail('Abandoned event does not bind to one accepted request');
+  }
+  for (const [id, binding] of bindingById) {
+    const event = abandoned.find(row => row.id === id), acceptedEvent = acceptedById.get(id);
+    if (!event || !acceptedEvent || event.requestHash || acceptedEvent.requestHash !== binding.requestHash
+        || completed.some(row => row.id === id)) fail('Administrative binding is not for the exact uncompleted missing-hash abandonment');
+  }
   const terminals = [...completed, ...abandoned];
   if (new Set(terminals.map(row => row.id)).size !== terminals.length) fail('Bridge request has multiple terminal events');
   const allTerminal = accepted.every(row => terminals.some(item => item.id === row.id));
@@ -336,18 +378,50 @@ function normalizeReviewRows(input) {
   if (input?.format === 'nodus.research-answer-blind-reviews/1' && Array.isArray(input.reviews)) return input.reviews;
   fail('Review file must contain a review array');
 }
-function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir, preregistration = { minimumAnswerableSample: 60 } } = {}) {
+function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir, administrativeBindings = null, preregistration = { minimumAnswerableSample: 60 } } = {}) {
   if (!campaignDir || !outputDir) fail('campaignDir and outputDir are required');
   const dir = path.resolve(campaignDir), root = rootPath(jsonFile(path.join(dir, 'manifest.json'), 32 * 1024 * 1024).root);
-  const manifest = jsonFile(path.join(dir, 'manifest.json'), 32 * 1024 * 1024);
-  const campaign = jsonFile(path.join(dir, 'campaign.json'), 128 * 1024 * 1024);
+  const manifestBytes = readFile(path.join(dir, 'manifest.json'), 32 * 1024 * 1024);
+  const campaignBytes = readFile(path.join(dir, 'campaign.json'), 128 * 1024 * 1024);
+  const manifest = JSON.parse(manifestBytes.toString('utf8'));
+  const campaign = JSON.parse(campaignBytes.toString('utf8'));
   if (manifest.format !== 'nodus.research-live-answer-campaign/1' || manifest.mode !== 'structured-only'
       || campaign.format !== manifest.format || campaign.mode && campaign.mode !== 'structured-only') fail('Unsupported campaign format; historical campaigns are not regraded');
   const bound = hashBoundSource(manifest);
-  const runtime = runtimeReceipts(root, campaign, manifest);
+  let evaluatedCases = bound.cases;
+  if (manifest.assignment) {
+    const assignmentBytes = readFile(manifest.assignment, 32 * 1024 * 1024);
+    if (sha(assignmentBytes) !== manifest.assignmentSha256) fail('Collector shard assignment digest mismatch');
+    const assignment = JSON.parse(assignmentBytes.toString('utf8'));
+    const closedDirectory = assignment.closedCampaign?.path;
+    const closedManifestBytes = readFile(path.join(closedDirectory, 'manifest.json'), 32 * 1024 * 1024);
+    const closedCampaignBytes = readFile(path.join(closedDirectory, 'campaign.json'), 128 * 1024 * 1024);
+    const closedManifest = JSON.parse(closedManifestBytes.toString('utf8'));
+    const closedCampaign = JSON.parse(closedCampaignBytes.toString('utf8'));
+    const frozenBytes = readFile(assignment.fullSourceSnapshot?.path);
+    const frozen = JSON.parse(frozenBytes.toString('utf8'));
+    // The clone has its own root and read-only identity receipt. Its logical
+    // evidence must still equal the frozen original, including every case byte.
+    if (stableJson(frozen.cases) !== stableJson(bound.cases)
+        || stableJson(closedManifest.profileContract) !== stableJson(manifest.profileContract)
+        || stableJson(closedManifest.scopeContract) !== stableJson(manifest.scopeContract)) fail('Shard logical source snapshot differs from the frozen original');
+    const shard = validateResearchLiveShardAssignment({ assignment, shardId: manifest.shardId,
+      plan: planResearchLiveCases(bound.cases), concludedAnswers: closedCampaign.answers,
+      sourceSnapshotSha256: closedManifest.sourceSnapshotSha256,
+      preregistrationSha256: manifest.sourceVersion.preregistrationSha256,
+      casesSha256: manifest.sourceVersion.casesSha256,
+      profileContractSha256: manifest.profileContractSha256, scopeContractSha256: manifest.scopeContractSha256,
+      productionSourceFiles: sourceHashesForProduction(manifest.sourceVersion.sourceFiles),
+      closedCampaignManifestSha256: sha(closedManifestBytes), closedCampaignSha256: sha(closedCampaignBytes),
+      fullSourceSnapshotSha256: sha(frozenBytes) });
+    if (stableJson(manifest.assignedCaseIds) !== stableJson(shard.caseIds)
+        || manifest.plannedCount !== shard.caseIds.length) fail('Collector shard roster differs from its assignment');
+    evaluatedCases = bound.cases.filter(row => shard.caseIds.includes(row.id));
+  }
+  const runtime = runtimeReceipts(root, campaign, manifest, { administrativeBindings });
   const byCase = new Map();
   for (const row of campaign.answers ?? []) {
-    if (!row || !bound.cases.some(item => item.id === row.caseId) || byCase.has(row.caseId)) fail('Campaign answer has unknown or duplicate case ID');
+    if (!row || !evaluatedCases.some(item => item.id === row.caseId) || byCase.has(row.caseId)) fail('Campaign answer has unknown or duplicate case ID');
     const sourceCase = bound.cases.find(item => item.id === row.caseId);
     if (row.sourceCaseHash !== sourceCase.sourceCaseHash || row.sourceContextHash !== sourceCase.sourceContextSha256
         || row.receiptsHash !== sourceCase.sourcesContextSha256 || row.question !== sourceCase.question) fail(`Answer/source binding mismatch: ${row.caseId}`);
@@ -373,20 +447,25 @@ function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir,
         if (dispatchJob.requestId !== id || dispatchJob.requestSha256 !== runtime.accepted.find(item => item.id === id)?.requestHash
             || dispatchJob.mapping?.mappingFile !== mapPath || dispatchJob.mapping?.mappingSha256 !== mappingSha256) {
           dispatchEvidenceById.set(id, { status: 'failed', error: 'Dispatch job request or case mapping mismatch.' });
+        } else if (!receipt && !answer.finishedAt) {
+          dispatchEvidenceById.set(id, { status: 'pending',
+            reason: 'The in-flight application attempt has not frozen its dispatch read receipts yet.' });
         } else dispatchEvidenceById.set(id, verifyDispatchReceipt(root, id, receipt));
       }
     }
   }
   const packetRows = [], outcomes = [], utilityKey = [];
-  for (const item of bound.cases) {
+  for (const item of evaluatedCases) {
     const attempt = byCase.get(item.id) ?? null;
     const plannedTerminal = Boolean(attempt && attempt.finishedAt && ['answered','verification-withheld','protocol-failure'].includes(attempt.attemptStatus));
     const trace = attempt ? traceFor(attempt) : null;
     const answer = attempt ? answerText(attempt) : '';
     const reviewId = `review-${sha(Buffer.from(`${manifest.sourceVersion.sourceSnapshotSha256}\0${item.id}`, 'utf8')).slice(0, 24)}`;
     const reviewSources = sourceForReview(trace, reviewId);
+    const dispatchQualified = (attempt?.bridgeRequestIds ?? []).length > 0
+      && attempt.bridgeRequestIds.every(id => dispatchEvidenceById.get(id)?.status === 'verified');
     const publishable = Boolean(attempt && answer && attempt.attemptStatus === 'answered' && attempt.receiptsComplete === true
-      && (attempt.bridgeRequestIds ?? []).length > 0 && (attempt.bridgeRequestIds ?? []).every(id => completedIds.has(id)));
+      && dispatchQualified && (attempt.bridgeRequestIds ?? []).every(id => completedIds.has(id)));
     const reviewAnswer = publishable ? answer : '';
     const answerSha256 = sha(Buffer.from(reviewAnswer, 'utf8'));
     const sourceHash = reviewSources.sourceHash;
@@ -400,15 +479,15 @@ function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir,
   }
   const reviewBytes = reviewFile ? readFile(reviewFile, 16 * 1024 * 1024) : null;
   const reviews = normalizeReviewRows(reviewBytes ? JSON.parse(reviewBytes.toString('utf8')) : undefined);
-  const campaignFinished = byCase.size === 80 && [...byCase.values()].every(row => row.finishedAt
+  const campaignFinished = byCase.size === evaluatedCases.length && [...byCase.values()].every(row => row.finishedAt
     && ['answered','verification-withheld','protocol-failure'].includes(row.attemptStatus));
-  const productInvariants = collectProductInvariantEvidence({ attempts: bound.cases.map(row => byCase.get(row.id)).filter(Boolean),
-    manifest, planned: bound.cases.length, indexAuthorization: bound.indexAuthorization });
+  const productInvariants = collectProductInvariantEvidence({ attempts: evaluatedCases.map(row => byCase.get(row.id)).filter(Boolean),
+    manifest, planned: evaluatedCases.length, indexAuthorization: bound.indexAuthorization });
   const dispatchEvidence = [...dispatchEvidenceById.entries()];
   const quality = evaluateResearchAnswerQuality({ outcomes, reviews, campaignFinished,
     productInvariantEvidence: productInvariants?.policyEvidence ?? null, preregistration });
   // Runtime citation resolution and scope isolation require explicit production evidence.
-  const knownCitationTargets = bound.cases.reduce((sum, item) => {
+  const knownCitationTargets = evaluatedCases.reduce((sum, item) => {
     const attempt = byCase.get(item.id);
     if (!attempt) return sum;
     let selected = [];
@@ -421,15 +500,22 @@ function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir,
     evaluationSource: { collectorSha256: sha(readFile(fileURLToPath(import.meta.url), 8 * 1024 * 1024)),
       qualityPolicySha256: sha(readFile(path.join(REPO, 'scripts/lib/researchAnswerQualityPolicy.mjs'))),
       indexAuthorizationHelperSha256: sha(readFile(path.join(REPO, 'scripts/lib/researchLiveIndexAuthorization.mjs'))) },
-    campaign: { format: manifest.format, manifestSha256: sha(readFile(path.join(dir, 'manifest.json'))), campaignSha256: sha(readFile(path.join(dir, 'campaign.json'))),
+    campaign: { format: manifest.format, manifestSha256: sha(manifestBytes), campaignSha256: sha(campaignBytes),
       sourceSnapshotSha256: manifest.sourceVersion.sourceSnapshotSha256, preregistrationSha256: manifest.sourceVersion.preregistrationSha256, casesSha256: manifest.sourceVersion.casesSha256,
-      sourceFiles: manifest.sourceFiles, planned: bound.cases.length, concluded: [...byCase.values()].filter(row => row.finishedAt && ['answered','verification-withheld','protocol-failure'].includes(row.attemptStatus)).length,
-      notExecuted: bound.cases.filter(row => !byCase.has(row.id)).length,
+      sourceFiles: manifest.sourceFiles, planned: evaluatedCases.length, fullSnapshotPlanned: bound.cases.length,
+      shardId: manifest.shardId ?? null, assignmentSha256: manifest.assignmentSha256 ?? null,
+      concluded: [...byCase.values()].filter(row => row.finishedAt && ['answered','verification-withheld','protocol-failure'].includes(row.attemptStatus)).length,
+      notExecuted: evaluatedCases.filter(row => !byCase.has(row.id)).length,
       unfinished: [...byCase.values()].filter(row => !(row.finishedAt && ['answered','verification-withheld','protocol-failure'].includes(row.attemptStatus))).length,
       campaignFinished80Concluded: byCase.size === 80 && [...byCase.values()].every(row => row.finishedAt && ['answered','verification-withheld','protocol-failure'].includes(row.attemptStatus)),
+      assignedCampaignFinished: campaignFinished,
       bridgeRequestsAccepted: runtime.accepted.length, bridgeRequestsCompleted: runtime.completed.length, bridgeRequestsAbandoned: runtime.abandoned.length,
       allAcceptedRequestsTerminal: runtime.allTerminal },
     answerQuality: quality,
+    // Root-only aggregation data. These fields are not in the blind packet.
+    caseOutcomes: outcomes.map((row, index) => ({ ...row, caseId: utilityKey[index].caseId,
+      finished: utilityKey[index].finished, outcome: utilityKey[index].outcome })),
+    productInvariantPolicyEvidence: productInvariants?.policyEvidence ?? null,
     evidenceMetrics: { knownManifestCitationTargets: knownCitationTargets,
       productCitationResolution: productInvariants?.citationResolution ?? null,
       scopeContractIsolation: productInvariants?.scopeContractIsolation ?? null,
@@ -470,6 +556,11 @@ function collectResearchLiveAnswers({ campaignDir, reviewFile = null, outputDir,
   if (!inside(root, output)) fail('Evaluation output must be a new directory inside the campaign QA root');
   if (fs.existsSync(output)) fail('Evaluation output directory already exists; use a fresh versioned path');
   fs.mkdirSync(output, { recursive: true, mode: 0o700 });
+  // A live campaign may advance while independent batch review is underway.
+  // Bind the report to the exact manifest/ledger bytes parsed above.
+  for (const [name, bytes] of [['manifest-snapshot.json', manifestBytes], ['campaign-snapshot.json', campaignBytes]]) {
+    fs.writeFileSync(path.join(output, name), bytes, { flag: 'wx', mode: 0o600 });
+  }
   for (const [name, value, mode] of [['evaluation.json', report, 0o600], ['blind-review-pack.json', report.reviewPacket, 0o600], ['utility-key.json', utilityKey, 0o600]]) {
     const target = path.join(output, name);
     const fd = fs.openSync(target, 'wx', mode);
@@ -484,6 +575,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     const args = argsOf(process.argv.slice(2));
     const result = collectResearchLiveAnswers({ campaignDir: args.campaign, reviewFile: args.reviews || null, outputDir: args.output,
+      administrativeBindings: args['administrative-bindings'] || null,
       preregistration: args['minimum-answerable-sample'] ? { minimumAnswerableSample: Number(args['minimum-answerable-sample']) } : undefined });
     console.log(JSON.stringify({ status: result.answerQuality.status, campaignFinished80Concluded: result.campaign.campaignFinished80Concluded,
       answerQualityAcceptance: result.answerQuality.answerQualityAcceptance, productInvariantStatus: result.evidenceMetrics.productInvariantStatus,

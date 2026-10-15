@@ -1,3 +1,4 @@
+import { requireMobileAudioMethod } from '@shared/mobileAudioBeta';
 import {LiveDocumentVisuals} from './liveDocumentVisuals';
 import {MobileLiveDocumentVisualEditor} from './MobileLiveDocumentVisualEditor';
 import {MobileDocumentVisualEditor} from './MobileDocumentVisualEditor';
@@ -100,6 +101,7 @@ function studyTables() {
   return localStudySnapshot;
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
+  requireMobileAudioMethod(method);
   if(method==='createNote'){if(args.length!==1)throw new Error('Nota no válida.');return native.nodusMobileCall(method,seedWorkspaceNote(args[0]));}
   if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='live'&&(native.nodusMobileConfig.pageDownloadedOnly||native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.initialResearchVisualReportId.startsWith('mobile-dr-')))return Promise.resolve({...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language});
   if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='autonomous')return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
@@ -253,7 +255,7 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
 const subscriptions = native.nodusMobileSubscriptions;
 const localVisualEditor=!!native.nodusMobileConfig.pageDownloadedOnly||!!native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.executionMode==='autonomous'||native.nodusMobileConfig.initialResearchVisualReportId?.startsWith('mobile-dr-');
 const liveVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&!localVisualEditor?new LiveDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,()=>window.dispatchEvent(new Event('nodus:live-visual-state'))):null;
-const documentVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&localVisualEditor?new AutonomousDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,native.nodusMobileConfig.vaultId??'',()=>{const target=documentVisualEditor?.checkpoint?.target;if(target)for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener(target);}):null;
+const documentVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&localVisualEditor?new AutonomousDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,native.nodusMobileConfig.vaultId??'',()=>{const target=documentVisualEditor?.checkpoint?.target;if(target)for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener(target);},native.nodusMobileConfig.executionMode==='live'):null;
 const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();
 const streamMethods = new Set(['generateImmersionSession', ...MOBILE_CHAT_STREAM_METHODS, 'improveStudyText']);
 const streamEvents: Record<string, string> = {

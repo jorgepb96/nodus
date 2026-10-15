@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import type {AudioClip, AudioEntityKind} from '@shared/types';
 import {t} from '../i18n';
+import {MOBILE_AUDIO_CAPABILITIES} from '@shared/mobileAudioBeta';
 
 /** Saved narration is consulted through Swift's verified private file download.
  * Desktop's downloadable synthesis runtimes stay outside this bundle. */
@@ -38,6 +39,7 @@ export function AudioPanel({entityKind, entityId, localOnly = false}: {
   const duration = (seconds:number) => `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2,'0')}`;
   return <section className="mobile-saved-audio" aria-label={t('Narración guardada')}>
     <h3>{t('Narración guardada')}</h3>
+    {!MOBILE_AUDIO_CAPABILITIES.audioGeneration && <p role="status" data-testid="mobile-audio-generation-deferred">{t('Generar audio')} · {t('Próximamente')}</p>}
     {loading && <p role="status">{t('Cargando…')}</p>}
     {issue && <div role="alert"><p>{issue}</p><button className="btn btn-ghost" onClick={() => setRevision(value => value + 1)}>{t('Reintentar')}</button></div>}
     {!loading && !issue && !clips.length && <p>{t('Este contenido no tiene pistas guardadas en el Mac.')}</p>}

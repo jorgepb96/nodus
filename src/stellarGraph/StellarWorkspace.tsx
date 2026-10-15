@@ -16,6 +16,7 @@ import {
   type DetailLoading,
 } from "../components/NodeDetailPanel";
 import { StellarProgress } from "./StellarProgress";
+import { StellarTabsHeader } from './StellarTabsHeader';
 import {useCompanionContentRefresh} from '../companionEvents';
 import { CorpusContextProgress, CorpusContextControls, useCorpusContext } from "./CorpusContext";
 import { StellarCanvas, ZOOM_STEP, type StellarCanvasApi } from "./StellarCanvas";
@@ -184,25 +185,9 @@ function StellarTabs(props: StellarWorkspaceProps) {
     if (active === id) setActive(remaining[Math.min(index, remaining.length - 1)].id);
   };
   return <div className="stellar-tabs-workspace" ref={host} data-testid="stellar-tabs-workspace">
-    <div className="stellar-tabs-header">
-      <div className="stellar-tabs" role="tablist" aria-label={t("Grafos abiertos")}>
-        {tabs.map(tab => <div className={`stellar-tab ${active === tab.id ? "active" : ""}`} key={tab.id}>
-          <button role="tab" id={`${tabsId}-tab-${tab.id}`} aria-controls={`${tabsId}-panel-${tab.id}`} aria-selected={active === tab.id}
-            tabIndex={active === tab.id ? 0 : -1} onClick={() => setActive(tab.id)} onKeyDown={event => {
-              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-              event.preventDefault();
-              const index = tabs.findIndex(item => item.id === tab.id);
-              const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
-              setActive(tabs[next].id); document.getElementById(`${tabsId}-tab-${tabs[next].id}`)?.focus();
-            }} title={tabName(tab)}><Icon name={tab.mode === "themes" ? "layers" : "map"} size={14} /><span>{tabName(tab)}</span></button>
-          {tab.id !== tabs[0].id && <button className="stellar-tab-close" aria-label={tx("Cerrar grafo {n}", { n: tab.id })} onClick={() => closeTab(tab.id)}>×</button>}
-        </div>)}
-      </div>
-      <button className="stellar-new-tab" onClick={addTab} title={t("Nuevo grafo")} aria-label={t("Nuevo grafo")}><Icon name="plus" size={18} /></button>
-      <button className="stellar-fullscreen" onClick={() => void toggleFullscreen()} aria-pressed={fullscreen} aria-label={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")} title={t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}>
-        <Icon name={fullscreen ? "minimize" : "maximize"} size={15} /><span>{t(fullscreen ? "Salir de pantalla completa" : "Pantalla completa")}</span>
-      </button>
-    </div>
+    <StellarTabsHeader tabs={tabs} active={active} tabsId={tabsId} tabName={tabName}
+      onActivate={setActive} onClose={closeTab} onAdd={addTab} fullscreen={fullscreen}
+      onFullscreen={() => void toggleFullscreen()} />
     {fullscreenError && <p role="alert">{t("No se pudo activar la pantalla completa.")}</p>}
     {tabs.map(tab => <div key={tab.id} role="tabpanel" id={`${tabsId}-panel-${tab.id}`} aria-labelledby={`${tabsId}-tab-${tab.id}`} className={active === tab.id ? "stellar-tab-panel" : "hidden"}>
       {tab.mode === "themes" && <div className="stellar-hub-panel">

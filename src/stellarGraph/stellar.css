@@ -619,6 +619,7 @@
 .stellar-tabs-workspace:fullscreen { width: 100vw; height: 100vh; }
 .stellar-tabs-header { display: flex; align-items: stretch; gap: 6px; padding: 10px 16px 0; border-bottom: 1px solid var(--stellar-line); background: var(--stellar-panel); }
 .stellar-tabs { display: flex; gap: 5px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.stellar-tab-picker { display: none; }
 /* Every tab is a tab: an inactive one is a recessed surface, not bare text. The active
    one rises out of the strip, tinted with the vault's accent. */
 .stellar-tab {

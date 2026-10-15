@@ -175,7 +175,16 @@
   overflow: hidden;
   border-width: 0;
 }
+.nodus-phone .mobile-surface .stellar-tab {
+  flex: 0 0 218px;
+}
+@media (max-width: 600px) {
+  .nodus-phone .mobile-surface .stellar-tab {
+    flex-basis: 100%;
+  }
+}
 .mobile-surface .stellar-tab [role="tab"] {
+  flex: 1 1 0;
   min-width: 0;
   min-height: 0;
   height: 100%;

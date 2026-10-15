@@ -7,12 +7,13 @@ import { createStudyRecording } from '../electron/db/studyRecordingsRepo';
 import { importMedia } from '../electron/db/testimonyMediaRepo';
 import { createArchiveFile, listArchiveFiles } from '../electron/db/archiveFilesRepo';
 import { createItem, getItem } from '../electron/db/archiveRepo';
+import { addAttachment, createColumn, createDatabase, createRow } from '../electron/db/databasesRepo';
 import { BRIDGE_FILE_KINDS } from '../electron/desktopBridge/files';
 
 export async function ensureAcceptanceFileFixtures(lab: string): Promise<void> {
   if (!fs.existsSync(path.join(lab, '.nodus-mobile-acceptance-lab'))) throw new Error('Isolated marker required');
   const marker = path.join(lab, 'private-file-fixtures.json');
-  if (fs.existsSync(marker) && JSON.parse(fs.readFileSync(marker, 'utf8')).formatVersion === 2) return;
+  if (fs.existsSync(marker) && JSON.parse(fs.readFileSync(marker, 'utf8')).formatVersion === 3) return;
   const vaults = listVaults();
   if (!vaults.every(vault => path.resolve(vault.path).startsWith(path.resolve(lab) + path.sep))) throw new Error('All file fixtures must be isolated');
   const study = vaults.find(vault => vault.type === 'estudio')!, testimony = vaults.find(vault => vault.type === 'testimonios')!, archive = vaults.find(vault => vault.type === 'primary_sources')!;
@@ -39,6 +40,16 @@ export async function ensureAcceptanceFileFixtures(lab: string): Promise<void> {
     const existing = getDb().prepare('SELECT item_id FROM archive_items WHERE title=?').get('Aceptación archivo original 0.1.0') as {item_id:string} | undefined;
     const item = (existing && getItem(existing.item_id)) || createItem({ title: 'Aceptación archivo original 0.1.0', kind: 'text', fileName: 'acceptance-original.md', mimeType: 'text/markdown', blob: fs.readFileSync(textFile) });
     if (!listArchiveFiles(item.itemId).some(file => file.originalFileName === 'acceptance-original.md')) createArchiveFile({ itemId: item.itemId, role: 'master', originalFileName: 'acceptance-original.md', mimeType: 'text/markdown', content: fs.readFileSync(textFile) });
+    // These routes were added after the original six file kinds. Use the real
+    // attachment repository so both the attachment and its content-addressed
+    // page asset exist; an empty catalogue must fail this acceptance setup.
+    if (!getDb().prepare('SELECT 1 FROM db_attachments WHERE blob_hash IS NOT NULL LIMIT 1').get()) {
+      const database = createDatabase('Aceptación archivos privados 0.1.0');
+      const column = createColumn(database.id, 'Archivos', 'files');
+      const row = createRow(database.id), bytes = fs.readFileSync(textFile);
+      addAttachment({rowId: row.id, columnId: column.id, fileName: 'acceptance-database.md',
+        mimeType: 'text/markdown', bytes: bytes.length, blob: bytes});
+    }
   });
   const records = [];
   for (const [kind, spec] of Object.entries(BRIDGE_FILE_KINDS)) {
@@ -48,5 +59,5 @@ export async function ensureAcceptanceFileFixtures(lab: string): Promise<void> {
     if (!row) throw new Error(`Missing executable file fixture: ${kind}`);
     records.push({kind, id:row.id, vaultId:vault.id, domain:spec.domain});
   }
-  fs.writeFileSync(marker, JSON.stringify({formatVersion:2, records, note:'Explicit active isolated fixtures; audio includes a two second 440Hz test tone.'}), {mode:0o600});
+  fs.writeFileSync(marker, JSON.stringify({formatVersion:3, records, note:'Explicit active isolated fixtures; audio includes a two second 440Hz test tone.'}), {mode:0o600});
 }

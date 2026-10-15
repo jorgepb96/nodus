@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { createResearchTestRoot } from './research-isolation.mjs';
 import { startResearchLunaBridge, writeResearchLunaResponse } from './research-luna-bridge.mjs';
-import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases,
+import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases, selectResearchLiveDiagnosticCases,
   summarizeResearchLiveTerminalEvents, validateResearchLiveAdmissionStop } from './lib/researchLiveAnswerCampaignState.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
@@ -37,6 +37,12 @@ assert.deepEqual(plan.slice(0, 10).map(row => row.kind), Array(10).fill('complex
 assert.deepEqual(plan.slice(10, 20).map(row => row.kind), Array(10).fill('hard'));
 assert.deepEqual(plan.slice(20, 60).map(row => row.kind), Array(40).fill('core'));
 assert.deepEqual(plan.slice(60).map(row => row.kind), Array(20).fill('absence'));
+assert.deepEqual(selectResearchLiveDiagnosticCases(plan, ['R014', 'R005', 'R009']), [plan[4], plan[8], plan[13]],
+  'a targeted diagnostic preserves the original frozen case order and identities');
+assert.equal(plan.length, 80, 'diagnostic selection does not rewrite the whole-cohort roster');
+for (const invalid of [[], ['R005', 'R005'], ['R999'], ['R5'], [null], plan.map(row => row.caseId)]) {
+  assert.throws(() => selectResearchLiveDiagnosticCases(plan, invalid), /diagnostic|Diagnostic/u);
+}
 
 const root = createResearchTestRoot();
 let bridge;

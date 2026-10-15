@@ -26,6 +26,17 @@ export function pendingResearchLiveCases(plan, answers) {
     .map(row => ({ caseId: row.caseId, ordinal: row.ordinal, sourceCaseHash: row.sourceCaseHash })) };
 }
 
+/** Explicit diagnostic subsets retain the full frozen order and cannot be
+ * presented as a new full-cohort quality measurement. */
+export function selectResearchLiveDiagnosticCases(plan, caseIds) {
+  if (!Array.isArray(caseIds) || caseIds.length === 0 || caseIds.length >= plan.length
+      || caseIds.some(id => typeof id !== 'string' || !/^R\d{3}$/u.test(id))
+      || new Set(caseIds).size !== caseIds.length) throw new Error('Invalid diagnostic case selection');
+  const selected = plan.filter(row => caseIds.includes(row.caseId));
+  if (selected.length !== caseIds.length) throw new Error('Diagnostic case is outside the frozen roster');
+  return selected;
+}
+
 /** Only accepted request IDs created after this case's baseline and still pending. */
 export function newLiveAcceptedEvents(events, requestIdsBefore, preparedIds = new Set()) {
   const completed = new Set(events.filter(event => ['completed', 'abandoned'].includes(event.event)).map(event => event.id));

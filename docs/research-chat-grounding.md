@@ -320,3 +320,11 @@ failure while retaining source and question-facet validation. The isolated
 Electron smoke passes without provider calls. These findings apply to all
 embedding models and require no index rebuild; they do not revise the previous
 answer-quality rate or reopen the closed paid campaign.
+
+For a new targeted regression run, `research-live-answer-campaign.mjs` accepts
+`--diagnostic-cases=R005,R007,R009,R012,R014` with the usual separately qualified
+QA clone, source snapshot and preregistration. The selection is frozen before
+generation, keeps the original roster order, and is immutable across resumptions.
+It cannot alter a historical shard assignment. Both manifest and report mark it
+ineligible for whole-cohort quality acceptance: previously inspected failures are
+regressions, not a new holdout, and never replace the closed eighty-case results.

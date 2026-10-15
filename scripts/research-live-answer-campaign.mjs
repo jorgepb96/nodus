@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { createResearchApp } from './lib/research-app-harness.mjs';
 import { startResearchLunaBridge, researchLunaBridgeProtocol } from './research-luna-bridge.mjs';
 import { classifyResearchLunaAttempt } from './lib/researchLunaCampaignState.mjs';
-import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases,
+import { newLiveAcceptedEvents, pendingResearchLiveCases, planResearchLiveCases, selectResearchLiveDiagnosticCases,
   summarizeResearchLiveTerminalEvents, validateResearchLiveAdmissionStop } from './lib/researchLiveAnswerCampaignState.mjs';
 import { prepareResearchLunaDispatch, verifyResearchLunaRead } from './research-luna-dispatch.mjs';
 import { verifyDerivedIndexAuthorization } from './lib/researchLiveIndexAuthorization.mjs';
@@ -204,6 +204,9 @@ const assignmentPath = arg('assignment') ? path.resolve(arg('assignment')) : nul
 const shardId = arg('shard');
 if (Boolean(assignmentPath) !== Boolean(shardId)) throw new Error('--assignment=/path and --shard=shard-NN must be supplied together');
 let assignment = null, assignedShard = null, runPlan = plan;
+const diagnosticCaseIds = arg('diagnostic-cases')?.split(',') ?? null;
+if (diagnosticCaseIds && assignmentPath) throw new Error('Diagnostic selection cannot alter a frozen shard assignment');
+if (diagnosticCaseIds) runPlan = selectResearchLiveDiagnosticCases(plan, diagnosticCaseIds);
 if (assignmentPath) {
   const assignmentBytes = safeRead(assignmentPath, 32 * 1024 * 1024);
   assignment = JSON.parse(assignmentBytes.toString('utf8'));
@@ -229,6 +232,9 @@ if (assignmentPath) {
   if (arg('continue-from') && !arg('output')) throw new Error('Assigned-shard continuation requires explicit --output and --continue-from paths');
 }
 
+const diagnosticSelection = diagnosticCaseIds ? { caseIds: runPlan.map(row => row.caseId), fullSnapshotPlannedCount: 80,
+  qualityAcceptanceEligible: false, purpose: 'Targeted regression on previously inspected failures; no holdout or whole-cohort quality credit.' } : null;
+
 if (dryRun) {
   const continuation = arg('continue-from') ? path.resolve(arg('continue-from')) : null;
   const stateFile = continuation && path.join(continuation, 'campaign.json');
@@ -240,6 +246,7 @@ if (dryRun) {
     alreadyAttempted = state.answers.map(row => row.caseId);
   }
   console.log(JSON.stringify({ dryRun: true, mode: 'structured-only', cases: runPlan.length, plannedFullSnapshotCases: 80, shardId: assignedShard?.id ?? null, alreadyAttempted: alreadyAttempted.length,
+    diagnosticCaseIds, qualityAcceptanceEligible: !diagnosticCaseIds,
     pending: runPlan.filter(row => !alreadyAttempted.includes(row.caseId)).length, sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash,
     preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceRoot: inputs.source.profileRoot,
     profileContract: inputs.source.profileContract, scopeContract: inputs.source.scopeContract,
@@ -253,6 +260,7 @@ function validateContinuation({ continuation, state, manifest, inputs: current, 
   if (manifest?.format !== 'nodus.research-live-answer-campaign/1' || state?.format !== manifest.format) reject('format mismatch');
   if (manifest.mode !== 'structured-only' || manifest.sourceSnapshotSha256 !== current.sourceHash || manifest.preregistrationSha256 !== current.preregHash || manifest.casesSha256 !== current.casesHash) reject('source snapshot or preregistration changed');
   if (JSON.stringify(manifest.sourceFiles) !== JSON.stringify(hashes)) reject('campaign implementation or production source changed');
+  if (JSON.stringify(manifest.diagnosticSelection ?? null) !== JSON.stringify(diagnosticSelection)) reject('diagnostic selection changed');
   if (state.root !== manifest.root || !state.root || fs.realpathSync(state.root) !== state.root) reject('root mismatch');
   markedRoot(state.root);
   if (manifest.maxBridgeAcceptedCallsPerSegment !== MAX_SEGMENT_CALLS || !Array.isArray(state.answers)) reject('segment cap or answer ledger malformed');
@@ -261,7 +269,8 @@ function validateContinuation({ continuation, state, manifest, inputs: current, 
   const seen = new Set();
   for (const answer of state.answers) {
     if (!current.cases.some(row => row.id === answer.caseId && row.sourceCaseHash === answer.sourceCaseHash) || seen.has(answer.caseId)
-        || (selectedShard && !selectedShard.caseIds.includes(answer.caseId))) reject(`case attempt mismatch or duplicate ${answer.caseId}`);
+        || (selectedShard && !selectedShard.caseIds.includes(answer.caseId))
+        || (diagnosticSelection && !diagnosticSelection.caseIds.includes(answer.caseId))) reject(`case attempt mismatch or duplicate ${answer.caseId}`);
     seen.add(answer.caseId);
     const original = current.cases.find(row => row.id === answer.caseId);
     if (answer.sourceContextHash !== original.sourceContextHash || answer.receiptsHash !== original.receiptsHash
@@ -327,6 +336,7 @@ if ((prior?.state.segments ?? []).some(segment => segment.bridgeNonceSha256 === 
 const sourceVersion = { sourceSnapshot: sourceFile, sourceSnapshotSha256: inputs.sourceHash, preregistration: preregFile,
   preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash, sourceFiles: currentSourceHashes };
 const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campaign/1', mode: 'structured-only', root,
+  ...(diagnosticSelection ? { diagnosticSelection } : {}),
   ...(assignedShard ? { assignment: assignmentPath, assignmentSha256: digest(safeRead(assignmentPath)), shardId: assignedShard.id,
     plannedCount: assignedShard.caseIds.length, assignedCaseIds: assignedShard.caseIds, maxShardCalls: MAX_SHARD_CALLS, fullSnapshotPlannedCount: 80 } : {}),
   sourceVersion, sourceSnapshotSha256: inputs.sourceHash, preregistrationSha256: inputs.preregHash, casesSha256: inputs.casesHash,
@@ -339,6 +349,7 @@ const manifest = prior?.manifest ?? { format: 'nodus.research-live-answer-campai
   completionSemantics: 'A case is concluded after its one application attempt, including a verified answer, verification withheld, or protocol failure. No concluded case or bridge transport is retried in later segments.',
   networkPolicy: 'External outbound denied by OS sandbox; bridge is the sole permitted loopback HTTP service; external provider API keys are literal empty.' };
 const report = prior?.state ?? { format: manifest.format, root, startedAt: now(), completed: false, answers: [], segments: [],
+  ...(diagnosticSelection ? { diagnosticSelection } : {}),
   ...(assignedShard ? { assignment: { shardId: assignedShard.id, plannedCount: assignedShard.caseIds.length,
     fullSnapshotPlannedCount: 80, assignmentSha256: manifest.assignmentSha256, caseIds: assignedShard.caseIds } } : {}) };
 const networkBaseline = { external: report.network?.instrumentedExternalFetchCalls ?? 0,

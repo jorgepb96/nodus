@@ -47,6 +47,9 @@ async function close(){if(app){await app.close();app=undefined;}}
 async function offer(){
  const button=page.getByRole('button',{name:/^(Generar código y QR|Renovar código)$/});
  await button.click();
+ await captureOffer();
+}
+async function captureOffer(){
  const qr=page.getByRole('img',{name:'Código QR para vincular Nodus',exact:true});await qr.waitFor();
  await page.getByRole('button',{name:'Copiar enlace',exact:true}).waitFor();
  const href=await page.getByRole('link',{name:'Abrir enlace de vinculación',exact:true}).getAttribute('href');
@@ -70,6 +73,16 @@ try{
   try{
    const input=JSON.parse(line);
    if(input.action==='offer')await offer();
+   else if(input.action==='renew'){
+    assert(typeof input.device==='string'&&input.device.startsWith('Nodus Connection QA '));
+    const controls=page.getByRole('button',{name:/^Renovar conexión de /}).filter({hasText:'Renovar conexión'});
+    const count=await controls.count();let target;
+    for(let index=0;index<count;index++){
+     const control=controls.nth(index),label=await control.getAttribute('aria-label');
+     if(label?.startsWith('Renovar conexión de '+input.device+' · ')){assert(!target,'Ambiguous isolated device');target=control;}
+    }
+    assert(target,'The linked isolated device must already exist');await target.click();await captureOffer();
+   }
    else if(input.action==='status')await status();
    else if(input.action==='createVault'){
     assert(typeof input.name==='string'&&input.name.startsWith('ConnectionQA-'));

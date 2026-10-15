@@ -1,5 +1,12 @@
 /** Closed operation vocabulary. Browser, tools, extraction and indexers have no mobile route. */
 export const MOBILE_OPERATIONS = {
+  getMobileDatabaseActionSource:['mobile:database:actionSource','corpus'],
+  generateMobileDatabaseText:['mobile:database:generateText','research-generation'],
+  generateMobileDatabaseImage:['mobile:database:generateImage','research-generation'],
+  saveMobileDatabaseGeneratedCell:['mobile:database:saveGeneratedCell','writing'],
+  runMobileDatabaseButton:['mobile:database:runButton','writing'],
+  recoverMobileDatabaseAction:['mobile:database:recoverAction','writing'],
+  saveMobileDatabaseButtonResult:['mobile:database:saveButtonResult','writing'],
   runMobileSpaceAction:['mobile:space:action','writing'],
   getWork: ['works:get', 'corpus'],
   getThemes: ['graph:themes', 'corpus'],
@@ -195,6 +202,7 @@ export const MOBILE_OPERATIONS = {
 } as const;
 export type MobileOperation = keyof typeof MOBILE_OPERATIONS;
 export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
+  'generateMobileDatabaseText','generateMobileDatabaseImage','saveMobileDatabaseGeneratedCell','runMobileDatabaseButton','recoverMobileDatabaseAction','saveMobileDatabaseButtonResult',
   'runMobileSpaceAction',
   'saveMobileAcademicResult',
   'streamMobileCompanionChat',

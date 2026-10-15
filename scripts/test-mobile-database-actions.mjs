@@ -21,11 +21,18 @@ try {
   repo.updateColumn(text.id,{config:{aiPrompt:'Summarize the actual row'}});repo.updateColumn(image.id,{config:{aiPrompt:'Illustrate the actual row'}});
   const request=(column,kind)=>({rowId:row.id,columnId:column.id,kind});
   const source=actions.getMobileDatabaseActionSource(request(text,'text'));
+  const dispatch=require('../electron/desktopBridge/databaseActionsOperation.ts'),{MOBILE_OPERATIONS,MOBILE_JOB_OPERATIONS}=require('../shared/mobileOperations.ts');
+  for(const method of dispatch.MOBILE_DATABASE_ACTION_METHODS){assert(MOBILE_OPERATIONS[method]);assert.equal(MOBILE_JOB_OPERATIONS.has(method),method!=='getMobileDatabaseActionSource');}
+  assert.deepEqual(await dispatch.executeMobileDatabaseAction(vault.id,['corpus'],'getMobileDatabaseActionSource',[request(text,'text')]),source);
+  await assert.rejects(()=>dispatch.executeMobileDatabaseAction(vault.id,[],'getMobileDatabaseActionSource',[request(text,'text')]),/permission_denied/);
+  await assert.rejects(()=>dispatch.executeMobileDatabaseAction(vault.id,['corpus'],'runMobileDatabaseButton',[request(button,'button')]),/job_required/);
+  await assert.rejects(()=>dispatch.executeMobileDatabaseAction(vault.id,['corpus','writing'],'generateMobileDatabaseText',[request(text,'text')],{deviceGrant:'fixture-grant',idempotencyKey:randomUUID()}),/permission_denied/);
   assert.equal(source.rowId,row.id);assert.equal(source.columnId,text.id);assert.match(source.revision,/^[a-f0-9]{64}$/);assert(source.prompt.includes('Summarize the actual row'));
   const other=repo.createDatabase('Foreign parent'),foreign=repo.createRow(other.id);
   assert.throws(()=>actions.getMobileDatabaseActionSource({...request(text,'text'),rowId:foreign.id}),/parent_unavailable/);
   const publication={requestId:randomUUID(),request:{...request(text,'text'),revision:source.revision},model:{provider:'openai',model:'fixture-device'},text:'Saved output'};
-  const saved=actions.saveMobileDatabaseGeneratedCell(publication,'fixture-grant',vault.id);assert.equal(saved.row.cells[text.id],'Saved output');
+  await assert.rejects(()=>dispatch.executeMobileDatabaseAction(vault.id,['corpus','writing'],'saveMobileDatabaseGeneratedCell',[publication],{deviceGrant:'fixture-grant',idempotencyKey:randomUUID()}),/identity_conflict/);
+  const saved=await dispatch.executeMobileDatabaseAction(vault.id,['corpus','writing'],'saveMobileDatabaseGeneratedCell',[publication],{deviceGrant:'fixture-grant',idempotencyKey:publication.requestId});assert.equal(saved.row.cells[text.id],'Saved output');
   assert.deepEqual(actions.saveMobileDatabaseGeneratedCell(publication,'fixture-grant',vault.id),saved,'Lost acknowledgement reuses exact receipt after source changes');
   assert.throws(()=>actions.saveMobileDatabaseGeneratedCell({...publication,text:'different'},'fixture-grant',vault.id),/identity_conflict/);
   assert.throws(()=>actions.saveMobileDatabaseGeneratedCell({...publication,requestId:randomUUID()},'fixture-grant',vault.id),/source_conflict/);

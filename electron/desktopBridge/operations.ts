@@ -1,3 +1,4 @@
+import {MOBILE_DATABASE_ACTION_METHODS,executeMobileDatabaseAction} from './databaseActionsOperation';
 import {mobileDeepResearchSource,saveMobileDeepResearchReport} from './mobileDeepResearch';
 import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
@@ -51,6 +52,10 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(MOBILE_DATABASE_ACTION_METHODS.has(method)) {
+    if(method!=='getMobileDatabaseActionSource'&&!bridgeJobId)throw new Error('job_required');
+    return executeMobileDatabaseAction(vaultId,domains,method,args,jobIdentity,signal,phase=>events?.('mobile:databaseAction:progress',{phase}));
+  }
   if(method==='getMobileDeepResearchSource'||method==='saveMobileDeepResearchReport') {
     if(args.length!==1||!domains.includes('corpus'))throw new Error('permission_denied');
     if(method==='saveMobileDeepResearchReport'&&(!bridgeJobId||!jobIdentity))throw new Error('job_required');

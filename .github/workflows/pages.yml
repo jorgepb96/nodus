@@ -1,26 +1,7 @@
 name: Website
 
+# Automatic validation is selected by CI; this entry point is explicitly manual.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'scripts/build-blog-pages.mjs'
-      - 'scripts/build-blog-feed.mjs'
-      - 'scripts/build-site-metadata.mjs'
-      - 'scripts/build-sitemap.mjs'
-      - 'scripts/build-pages-artifact.mjs'
-      # The counters the README and the site read are written by this script, so a
-      # change to it has to republish the deployed data instead of waiting for cron.
-      - 'scripts/github-release-downloads.mjs'
-      - 'scripts/lib/site-metadata.mjs'
-      - 'package.json'
-      - 'CITATION.cff'
-      - '.github/workflows/pages.yml'
-  schedule:
-    # Keep one shared download-count cache on the site instead of making every
-    # visitor fan out into individual GitHub API requests.
-    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:

@@ -7,6 +7,7 @@
     "nodejs_compat"
   ],
   "workers_dev": true,
+  "limits": { "cpu_ms": 5000 },
   "d1_databases": [
     {
       "binding": "DB",

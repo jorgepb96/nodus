@@ -1,5 +1,5 @@
 import type { ModelRef, ResearchChatMessage } from '@shared/types';
-import { completeJson } from './aiClient';
+import { completeJson, researchStepTimeoutMs } from './aiClient';
 import { researchActivityStep } from './researchActivity';
 
 /** What one Research Chat turn has to find, rewritten from the conversation. A follow-up
@@ -84,7 +84,7 @@ export async function planResearchTurn(messages: ResearchChatMessage[], model?: 
   const conversation = messages.slice(-6).map(message => ({ role: message.role, text: prose(message.content, message.role === 'user' ? 1000 : 600) })).filter(turn => turn.text);
   try {
     const plan = await researchActivityStep('tools', 'plan', () => completeJson({ system: SYSTEM, user: JSON.stringify({ conversation, latest: prose(latest, 1000) }),
-      maxTokens: 500, temperature: 0, noRetry: true, corpusContext: true, signal }, validPlan, model));
+      maxTokens: 500, temperature: 0, noRetry: true, corpusContext: true, signal, timeoutMs: researchStepTimeoutMs(model) }, validPlan, model));
     return {
       goal: plan.goal.trim(), queries: plan.queries.map(query => query.trim()).slice(0, 4),
       authors: (plan.authors ?? []).map(author => author.trim()), titles: (plan.titles ?? []).map(title => title.trim()),

@@ -1,12 +1,18 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -66,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -89,9 +96,11 @@ export const KO: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["ko"],
   'No se pudieron cargar los documentos guardados.': '저장된 문서를 불러올 수 없습니다.',
   'El catálogo de documentos guardados tiene un formato inválido.': '저장된 문서 목록의 형식이 잘못되었습니다.',
+  ...BACKUPS_TRANSLATIONS.ko,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,
   ...CALENDAR_SYNC_TRANSLATIONS["ko"],
+  ...AGENT_RUNTIME_TRANSLATIONS["ko"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["ko"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "웹을 탐색하고 연구 자료를 저장하세요.",
@@ -128,6 +137,8 @@ export const KO: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["ko"],
   ...STUDY_FOCUS_TRANSLATIONS["ko"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["ko"],
+  ...BOOKMARK_SORT_TRANSLATIONS["ko"],
+  ...SCRIPTOR_AI_TRANSLATIONS["ko"],
   ...STUDY_IMPROVE_TRANSLATIONS.ko,
   ...WORKSPACE_TRANSLATIONS.ko,
   ...WORLDBUILDING_TRANSLATIONS.ko,
@@ -164,6 +175,7 @@ export const KO: Record<string, string> = {
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.ko,
   ...DICTIONARY_TRANSLATIONS.ko,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.ko,
+  ...GALLERY_FILTER_TRANSLATIONS.ko,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.ko,
   ...STALE_MODEL_TRANSLATIONS.ko,
   ...SCHEME_DECLUTTER_TRANSLATIONS.ko,
@@ -802,7 +814,7 @@ export const KO: Record<string, string> = {
   "Resume las ideas esenciales y señala qué debería recordar.": "핵심 아이디어를 요약하고 기억해야 할 사항을 지적합니다.",
   "¿Qué contradicciones o puntos incompletos aparecen en el material?": "자료에 어떤 모순이나 격차가 나타나는가?",
   "Documento": "문서",
-  "En lectura": "독서",
+  "En lectura": "읽는 중",
   "Revisado": "검토됨",
   "Nuevo material": "신소재",
   "Causa": "원인",
@@ -879,7 +891,7 @@ export const KO: Record<string, string> = {
   "Tests": "테스트",
   "Exámenes": "시험",
   "Planificador": "입안자",
-  "Progreso": "진전",
+  "Progreso": "진행률",
   "Chat de estudio": "스터디 채팅",
   "Organiza cursos, asignaturas, temas y apuntes.": "코스, 과목, 주제 및 메모를 구성합니다.",
   "Reúne documentos, grabaciones y fuentes.": "문서, 녹음, 소스를 함께 가져오세요.",
@@ -1161,7 +1173,7 @@ export const KO: Record<string, string> = {
   "Ver en Debates": "토론에서 보기",
   "Esta sub-pregunta no está cubierta por mi biblioteca. Sugiere cómo abordarla y qué tipo de fuentes buscar.": "이 하위 질문은 내 라이브러리에서 다루지 않습니다. 이를 해결하는 방법과 찾을 소스의 종류를 제안하십시오.",
   "Sub-pregunta sin cubrir": "밝혀진 하위 질문",
-  "No leída": "읽히지 않는",
+  "No leída": "읽지 않음",
   "borrador": "초안",
   "descompuesta": "분해된",
   "mapeada": "매핑된",
@@ -1277,7 +1289,7 @@ export const KO: Record<string, string> = {
   "Nodus Compass": "Nodus 나침반",
   "Nodus Tools": "Nodus 도구",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Nodus에 내장된 파일 변환 및 문서 처리를 위한 편리한 로컬 우선 도구입니다.",
-  "Nodus PDF Presenter": "Nodus PDF 발표자",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "발표자 보기, 모바일 원격 제어, 발표자 노트, 실시간 주석 도구를 사용하여 PDF와 외부에서 제작한 프레젠테이션을 발표하세요.",
   "Nodus OCR Workspace": "Nodus OCR 작업 공간",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "페이지별 검토, 텍스트 정리, 재처리 및 Nodus 저장소와의 직접 통합을 통해 스캔한 PDF 및 이미지에 대한 AI 기반 OCR입니다.",
@@ -2048,7 +2060,7 @@ export const KO: Record<string, string> = {
   "Detener y eliminar de la cola": "중지하고 대기열에서 제거",
   "Eliminar de la cola": "대기열에서 제거",
   "Se quitarán de la cola los elementos pendientes y los ya terminados. El elemento en curso seguirá procesándose.": "보류 중인 항목과 이미 완료된 항목은 대기열에서 제거됩니다. 진행 중인 항목은 계속 처리됩니다.",
-  "Limpiar": "분명한",
+  "Limpiar": "지우기",
   "Se detendrá el escaneo en curso y se eliminarán todos los elementos de la cola. Esta acción no se puede deshacer.": "진행 중인 검사가 중지되고 모든 대기열 항목이 제거됩니다. 이 작업은 취소할 수 없습니다.",
   "Detener y vaciar": "멈추고 비워라",
   "Error": "오류",
@@ -2111,7 +2123,7 @@ export const KO: Record<string, string> = {
   "trabajos en cola": "대기 중인 작업",
   "trabajos registrados": "기록된 작업",
   "Ver obras": "작품보기",
-  "progreso": "진전",
+  "progreso": "진행 상황",
   "pausada": "일시중지됨",
   "activa": "활성",
   "{n} fallidos": "{n} 실패",
@@ -2126,7 +2138,7 @@ export const KO: Record<string, string> = {
   "huecos minados": "채굴된 격차",
   "Revisar": "검토",
   "contradicciones": "모순",
-  "por leer": "읽기",
+  "por leer": "읽지 않음",
   "lista": "준비가 된",
   "pendiente": "보류 중",
   "taller académico": "학술 워크숍",
@@ -2415,15 +2427,15 @@ export const KO: Record<string, string> = {
   "Incluir leídas": "읽은 내용 포함",
   "Describe tu investigación, preguntas principales, objetivos o prioridades actuales...": "연구, 주요 질문, 목표 또는 현재 우선순위를 설명하세요.",
   "Mostradas": "표시됨",
-  "Leídas": "읽다",
-  "Por leer": "읽으려면",
+  "Leídas": "읽음",
+  "Por leer": "읽지 않음",
   "Analizadas": "분석됨",
   "Pendientes": "보류 중",
   "Sin plan calculado.": "계산된 계획이 없습니다.",
   "Recalculando ruta...": "경로를 다시 계산하는 중...",
   "{n} fuera del bloque": "{n} 블록 외부",
   "No hay obras que cumplan los filtros actuales.": "현재 필터와 일치하는 작품이 없습니다.",
-  "leída": "읽다",
+  "leída": "읽음",
   "ideas analizadas": "분석된 아이디어",
   "ideas pendientes": "보류 중인 아이디어",
   "temas analizados": "분석된 주제",
@@ -2758,7 +2770,7 @@ export const KO: Record<string, string> = {
   "Abrir a pantalla completa": "전체 화면 열기",
   "Lectura a pantalla completa": "전체 화면 읽기",
   "Salir de pantalla completa": "전체 화면 나가기",
-  "Leer": "읽다",
+  "Leer": "읽기",
   "Reutilizar la idea para un informe nuevo": "새 보고서에 아이디어 재사용",
   "Volver a la galería": "갤러리로 돌아가기",
   "El informe desarrolla tu idea por completo, citando todo el corpus.": "보고서는 전체 자료를 인용하여 귀하의 아이디어를 전체적으로 전개합니다.",
@@ -2851,7 +2863,7 @@ export const KO: Record<string, string> = {
   "Toda la mesa": "테이블 전체",
   "Todas las ideas": "모든 아이디어",
   "Vaciar ideas": "명확한 아이디어",
-  "Vaciar": "분명한",
+  "Vaciar": "비우기",
   "Contrad.": "대조.",
   "Rutas": "노선",
   "{a}/{b} en esta pestaña": "이 탭의 {a}/{b}",
@@ -3237,7 +3249,7 @@ export const KO: Record<string, string> = {
   "temas comunes": "공유 테마",
   "Ideas del autor": "작가의 아이디어",
   "Este autor aún no tiene ideas extraídas. Analiza sus obras.": "이 작성자는 아직 추출된 아이디어가 없습니다. 그들의 작품을 분석해보세요.",
-  "Leído": "읽다",
+  "Leído": "읽음",
   "Construyendo la matriz…": "매트릭스 구축…",
   "Aún no hay suficientes autores y temas analizados para construir la matriz.": "분석된 작성자와 테마가 아직 충분하지 않아 매트릭스를 구축할 수 없습니다.",
   "Filas = autores, columnas = temas. Cada celda muestra cuántas ideas aporta ese autor al tema; haz clic para ver las ideas y generar una postura.": "행 = 작성자, 열 = 테마. 각 셀은 저자가 주제에 얼마나 많은 아이디어를 기여했는지 보여줍니다. 아이디어를 보고 입장을 생성하려면 클릭하세요.",
@@ -3306,7 +3318,7 @@ export const KO: Record<string, string> = {
   "Evaluando": "평가 중",
   "Evaluando...": "평가 중...",
   "Falta": "없어진",
-  "Leída": "읽다",
+  "Leída": "읽음",
   "principales": "기본",
   "pasajes": "구절",
   "Sin enlace Zotero": "Zotero 링크 없음",
@@ -8297,4 +8309,19 @@ export const KO: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Nodus를 열어 두고 두 기기를 같은 네트워크나 Tailscale 같은 VPN에 연결하세요. Live는 이 Mac의 모델을 사용합니다.",
   "Todo tu workspace": "전체 작업 공간",
   "Generar código y QR": "코드 및 QR 생성",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "마이크를 시작할 수 없습니다.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "대기 중인 오디오를 처리하기 위해 받아쓰기를 일시 중지했습니다. 완료되면 다시 시작하세요.",
+  "Preparando dictado…": "받아쓰기 준비 중…",
+  "Cancelar dictado": "받아쓰기 취소",
+  "Dictado en directo · Local": "실시간 받아쓰기 · 로컬",
+  "Escuchando…": "듣는 중…",
+  "El texto se inserta automáticamente en el cursor.": "텍스트가 커서 위치에 자동으로 삽입됩니다.",
+  "Opciones de dictado": "받아쓰기 옵션",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "받아쓰기를 사용하려면 설정 → AI 모델에서 로컬 전사 모델을 다운로드하세요.",
+  "Audio pendiente": "대기 중인 오디오",
+  "Modelo local": "로컬 모델",
+  "Detener dictado": "받아쓰기 중지",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["ko"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["ko"],
 };

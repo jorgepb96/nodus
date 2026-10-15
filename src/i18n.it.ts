@@ -1,12 +1,18 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -66,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -84,9 +91,11 @@ export const IT: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["it"],
   'No se pudieron cargar los documentos guardados.': 'Non è stato possibile caricare i documenti salvati.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Il catalogo dei documenti salvati ha un formato non valido.',
+  ...BACKUPS_TRANSLATIONS.it,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.it,
   ...CALENDAR_SYNC_TRANSLATIONS["it"],
+  ...AGENT_RUNTIME_TRANSLATIONS["it"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["it"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Naviga sul web e salva fonti per la tua ricerca.",
@@ -132,6 +141,7 @@ export const IT: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.it,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.it,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.it,
+  ...GALLERY_FILTER_TRANSLATIONS.it,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.it,
   ...STALE_MODEL_TRANSLATIONS.it,
   ...SCHEME_DECLUTTER_TRANSLATIONS.it,
@@ -169,6 +179,8 @@ export const IT: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["it"],
   ...STUDY_FOCUS_TRANSLATIONS["it"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["it"],
+  ...BOOKMARK_SORT_TRANSLATIONS["it"],
+  ...SCRIPTOR_AI_TRANSLATIONS["it"],
   ...STUDY_IMPROVE_TRANSLATIONS.it,
   ...WORKSPACE_TRANSLATIONS.it,
   "Lo que cuenta el mapa": "Cosa racconta la mappa",
@@ -1260,7 +1272,7 @@ export const IT: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Pratici strumenti locali per la conversione di file e l'elaborazione di documenti, integrati in Nodus.",
-  "Nodus PDF Presenter": "Presentatore PDF Nodus",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "Presenta PDF e presentazioni esterne con la visualizzazione presentatore, il telecomando mobile, le note del relatore e gli strumenti di annotazione in tempo reale.",
   "Nodus OCR Workspace": "Area di lavoro Nodus OCR",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "OCR basato sull'intelligenza artificiale per PDF e immagini scansionati, con revisione pagina per pagina, pulizia del testo, rielaborazione e integrazione diretta con i tuoi archivi Nodus.",
@@ -3340,7 +3352,7 @@ export const IT: Record<string, string> = {
   "Obras del autor": "Opere dell'autore",
   "sin DOI": "nessun DOI",
   "sin tipo": "nessun tipo",
-  "Tipo": "Digitare",
+  "Tipo": "Tipo",
   "Ver obras de este autor": "Visualizza le opere di questo autore",
   "Ver todas las ideas de esta obra": "Visualizza tutte le idee di questo lavoro",
   "Zotero key": "Chiave Zotero",
@@ -8341,4 +8353,19 @@ export const IT: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Mantieni Nodus aperto ed entrambi i dispositivi sulla stessa rete o VPN, come Tailscale. Live usa i modelli di questo Mac.",
   "Todo tu workspace": "Tutto il tuo spazio di lavoro",
   "Generar código y QR": "Genera codice e QR",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "Impossibile avviare il microfono.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "Dettatura in pausa per completare l’audio in attesa. Riprendi quando è pronto.",
+  "Preparando dictado…": "Preparazione della dettatura…",
+  "Cancelar dictado": "Annulla dettatura",
+  "Dictado en directo · Local": "Dettatura in diretta · Locale",
+  "Escuchando…": "In ascolto…",
+  "El texto se inserta automáticamente en el cursor.": "Il testo viene inserito automaticamente nella posizione del cursore.",
+  "Opciones de dictado": "Opzioni di dettatura",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "Scarica un modello locale di trascrizione in Impostazioni → Modelli IA per dettare.",
+  "Audio pendiente": "Audio in attesa",
+  "Modelo local": "Modello locale",
+  "Detener dictado": "Ferma dettatura",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["it"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["it"],
 };

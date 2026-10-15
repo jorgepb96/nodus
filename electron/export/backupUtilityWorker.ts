@@ -41,10 +41,14 @@ async function hashFile(file: string): Promise<string> {
 }
 
 async function sourceFingerprint(file: string): Promise<string> {
+  // The revision counter orders writes to ONE database file. A restore renames another file over
+  // the vault and a reset recreates it, each with a counter of its own that can reach the cached
+  // value again; the file's identity is what tells the two apart.
+  const { dev, ino } = await fs.promises.stat(file);
   const db = new Database(file, { readonly: true, fileMustExist: true });
   try {
     const tracked = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'backup_revision'").get();
-    if (tracked) return `revision:${backupVaultRevision(db)}`;
+    if (tracked) return `revision:${dev}:${ino}:${backupVaultRevision(db)}`;
   } finally {
     db.close();
   }

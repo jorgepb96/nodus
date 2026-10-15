@@ -13,6 +13,7 @@ export function worldMapGenerationRequest(raw: unknown): MapGenerationRequest {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('invalid_map_generation_request');
   const value = raw as Record<string, unknown>;
   if (Object.keys(value).some(key => !['mapId','mode','style','extra','edge','fraction'].includes(key)) ||
+      // eslint-disable-next-line no-control-regex -- Reject C0 and DEL characters in untrusted record identifiers.
       typeof value.mapId !== 'string' || !value.mapId || value.mapId.length > 256 || /[\u0000-\u001f\u007f]/.test(value.mapId) ||
       !['create','restyle','variant','expand'].includes(value.mode as string) ||
       value.style != null && !MAP_STYLES.some(style => style.id === value.style) ||

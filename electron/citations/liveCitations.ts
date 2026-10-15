@@ -169,6 +169,10 @@ export function resolveCitationLabel(kind: string, id: string, storedLabel = '')
       return null;
   }
   if (!facts) return null;
+  // With neither byline nor title the label is only the placeholder for an
+  // anonymous work, written in the report's own language. There is nothing to
+  // correct, and re-deriving it here would swap that language for the default.
+  if (!facts.authors[0]?.trim() && !facts.title?.trim()) return null;
   const label = authorYearLabel(facts.authors[0], facts.year, facts.title);
   return label || null;
 }

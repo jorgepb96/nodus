@@ -42,13 +42,26 @@ function normalizeConversation(value: NodiConversation): NodiConversation {
 }
 
 function read(): Store {
+  let raw: string;
   try {
-    const parsed = JSON.parse(fs.readFileSync(storePath(), 'utf8')) as Partial<Store>;
+    raw = fs.readFileSync(storePath(), 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { version: 1, conversations: [] };
+    // Unreadable is not empty: a save on top of an "empty" store would replace the history.
+    throw error;
+  }
+  try {
+    const parsed = JSON.parse(raw) as Partial<Store>;
     return {
       version: 1,
       conversations: Array.isArray(parsed.conversations) ? parsed.conversations.map(normalizeConversation) : [],
     };
   } catch {
+    // A torn or corrupt file is set aside rather than overwritten by the next save, so the
+    // conversations in it can still be recovered by hand.
+    const aside = `${storePath()}.corrupt-${Date.now()}`;
+    try { fs.renameSync(storePath(), aside); console.warn(`[nodi] chat history was unreadable; kept as ${aside}`); }
+    catch (error) { throw new Error(`Nodi chat history is corrupt and could not be set aside: ${error instanceof Error ? error.message : String(error)}`); }
     return { version: 1, conversations: [] };
   }
 }

@@ -12,7 +12,16 @@ import type {
   ModelRef,
 } from '../types';
 
+import type { BackupCatalog, BackupCatalogQuery, BackupCatalogPage, BackupPreset, OpenBackupOptions, OpenBackupPreview, OpenBackupProgress, OpenBackupResult } from '../backups';
+
 export interface ToolkitApi {
+  getBackupCatalog(vaultIds: string[]): Promise<BackupCatalog>;
+  getBackupCatalogRecords(query: BackupCatalogQuery): Promise<BackupCatalogPage>;
+  previewOpenBackup(options: OpenBackupOptions): Promise<OpenBackupPreview>;
+  runOpenBackup(jobId: string, options: OpenBackupOptions, outputDir: string, onProgress: (p: OpenBackupProgress) => void): Promise<OpenBackupResult>;
+  cancelOpenBackup(jobId: string): Promise<void>;
+  saveBackupPreset(preset: BackupPreset): Promise<BackupPreset[]>;
+  deleteBackupPreset(id: string): Promise<BackupPreset[]>;
   // Nodus Toolkit — local, deterministic file conversion. The job runs in main
   // and streams progress back; it survives navigation because the renderer's
   // background-jobs store re-subscribes. Cancellation is by jobId.

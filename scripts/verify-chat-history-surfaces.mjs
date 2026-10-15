@@ -24,7 +24,7 @@ try {
     await page.goto(`${url}?view=${view}&sources=2`);
     await page.evaluate(() => localStorage.clear());
     await page.reload();
-    await page.getByTestId('research-history-toggle').click();
+    if (!(await page.getByTestId('research-history-sidebar').isVisible())) await page.getByTestId('research-history-toggle').click();
     const history = page.getByTestId('research-history-sidebar');
     const input = page.locator('.research-composer-input');
     // A first chat.

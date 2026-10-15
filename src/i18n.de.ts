@@ -1,12 +1,18 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -72,6 +78,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -89,9 +96,11 @@ export const DE: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["de"],
   'No se pudieron cargar los documentos guardados.': 'Die gespeicherten Dokumente konnten nicht geladen werden.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Der Katalog gespeicherter Dokumente hat ein ungültiges Format.',
+  ...BACKUPS_TRANSLATIONS.de,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.de,
   ...CALENDAR_SYNC_TRANSLATIONS["de"],
+  ...AGENT_RUNTIME_TRANSLATIONS["de"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["de"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Durchsuche das Web und speichere Quellen für deine Forschung.",
@@ -134,6 +143,7 @@ export const DE: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.de,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.de,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.de,
+  ...GALLERY_FILTER_TRANSLATIONS.de,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.de,
   ...STALE_MODEL_TRANSLATIONS.de,
   ...SCHEME_DECLUTTER_TRANSLATIONS.de,
@@ -171,6 +181,8 @@ export const DE: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["de"],
   ...STUDY_FOCUS_TRANSLATIONS["de"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["de"],
+  ...BOOKMARK_SORT_TRANSLATIONS["de"],
+  ...SCRIPTOR_AI_TRANSLATIONS["de"],
   ...STUDY_IMPROVE_TRANSLATIONS.de,
   ...WORKSPACE_TRANSLATIONS.de,
   "Lo que cuenta el mapa": "Was die Karte erzählt",
@@ -1336,7 +1348,7 @@ export const DE: Record<string, string> = {
   'Nodus Tools': 'Nodus Tools',
   'Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.':
     'Praktische, lokal-first Werkzeuge zur Dateikonvertierung und Dokumentverarbeitung, integriert in Nodus.',
-  'Nodus PDF Presenter': 'Nodus PDF Presenter',
+  'Nodus Presenter': 'Nodus Presenter',
   'Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.':
     'PDFs und externe Präsentationen mit Präsentatoransicht, mobiler Fernsteuerung, Referentennotizen und Live-Annotationswerkzeugen präsentieren.',
   'Nodus OCR Workspace': 'Nodus OCR Workspace',
@@ -8935,4 +8947,19 @@ export const DE: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Lassen Sie Nodus geöffnet und verbinden Sie beide Geräte mit demselben Netzwerk oder VPN, etwa Tailscale. Live verwendet die Modelle dieses Mac.",
   "Todo tu workspace": "Ihr gesamter Arbeitsbereich",
   "Generar código y QR": "Code und QR-Code erzeugen",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "Das Mikrofon konnte nicht gestartet werden.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "Das Diktat wurde pausiert, um ausstehendes Audio zu verarbeiten. Setzen Sie es danach fort.",
+  "Preparando dictado…": "Diktat wird vorbereitet…",
+  "Cancelar dictado": "Diktat abbrechen",
+  "Dictado en directo · Local": "Live-Diktat · Lokal",
+  "Escuchando…": "Hört zu…",
+  "El texto se inserta automáticamente en el cursor.": "Text wird automatisch an der Cursorposition eingefügt.",
+  "Opciones de dictado": "Diktatoptionen",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "Laden Sie unter Einstellungen → KI-Modelle ein lokales Transkriptionsmodell zum Diktieren herunter.",
+  "Audio pendiente": "Ausstehendes Audio",
+  "Modelo local": "Lokales Modell",
+  "Detener dictado": "Diktat stoppen",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["de"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["de"],
 };

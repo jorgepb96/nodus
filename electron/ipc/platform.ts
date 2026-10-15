@@ -18,10 +18,12 @@ import { setApiKey, clearApiKey, getApiKey, getLocalServerAdminPassword } from '
 import { recoverLegacyApiKeys } from '../secrets/legacySecretRecovery';
 import { listEmbeddingModels, listModels, testCustomProvider, testLocalProvider } from '../ai/providers';
 import { getModelCatalog } from '../ai/modelCatalog';
-import { cancelChatGptSubscriptionLogin, getChatGptSubscriptionStatus, listChatGptSubscriptionModels, logoutChatGptSubscription, startChatGptSubscriptionLogin } from '../ai/codexSubscription';
-import { cancelGitHubCopilotSubscriptionLogin, getGitHubCopilotSubscriptionStatus, listGitHubCopilotSubscriptionModels, logoutGitHubCopilotSubscription, startGitHubCopilotSubscriptionLogin } from '../ai/githubCopilotSubscription';
+import { cancelChatGptSubscriptionLogin, getChatGptSubscriptionStatus, installChatGptSubscriptionRuntime, listChatGptSubscriptionModels, logoutChatGptSubscription, startChatGptSubscriptionLogin } from '../ai/codexSubscription';
+import { cancelGitHubCopilotSubscriptionLogin, getGitHubCopilotSubscriptionStatus, installGitHubCopilotSubscriptionRuntime, listGitHubCopilotSubscriptionModels, logoutGitHubCopilotSubscription, startGitHubCopilotSubscriptionLogin } from '../ai/githubCopilotSubscription';
 import { getOpenCodeGoUsageStatus } from '../ai/openCodeGoUsage';
 import { listImageModels } from '../ai/imageModels';
+import { generateEditorImage } from '../ai/editorImages';
+import type { EditorImageRequest } from '@shared/editorAiReview';
 import { deleteDecorativeImage, queueDecorativeImageGeneration, revertDecorativeImage, saveCustomDecorativeImage, streamDecorativeImageContext } from '../ai/decorativeImages';
 import { getDecorativeImage, getDecorativeImageData } from '../db/decorativeImagesRepo';
 import { clearEntityClips, deleteClip as deleteAudioClip, deleteEntityClips, getEntitySegments, audioClipPath, createStudyAudioBookmark, deleteStudyAudioBookmark, getStudyPronunciations, listStudyAudioBookmarks, listStudyAudioPlaylist, listEntityClips, readClipBytes, saveClip, setStudyPronunciations } from '../audio/audioService';
@@ -81,6 +83,18 @@ function originalImageFileName(label: string | null | undefined, mime: string): 
 }
 
 export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
+  const editorImages = new Map<string, AbortController>();
+  h('ai:editorImage:generate', async (event, request: EditorImageRequest) => {
+    const key = `${event.sender.id}:${request?.requestId}`;
+    if (editorImages.has(key)) throw new Error('La solicitud ya está en curso.');
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    event.sender.once('destroyed', abort);
+    editorImages.set(key, controller);
+    try { return await generateEditorImage(request, controller.signal); }
+    finally { editorImages.delete(key); event.sender.removeListener('destroyed', abort); }
+  });
+  h('ai:editorImage:cancel', async (event, requestId: string) => editorImages.get(`${event.sender.id}:${requestId}`)?.abort());
   h('mcp:status', async () => getMcpStatus());
   h('mcp:regenerateToken', async () => {
     await stopMcpTunnel();
@@ -215,12 +229,14 @@ export function registerPlatformIpc({ h, getWindow }: IpcContext): void {
   });
 
   h('ai:chatgptSubscription:status', async () => getChatGptSubscriptionStatus());
+  h('ai:chatgptSubscription:installRuntime', async () => installChatGptSubscriptionRuntime());
   h('ai:chatgptSubscription:login', async () => startChatGptSubscriptionLogin());
   h('ai:chatgptSubscription:cancelLogin', async (_event, loginId: string) =>
     cancelChatGptSubscriptionLogin(loginId)
   );
   h('ai:chatgptSubscription:logout', async () => logoutChatGptSubscription());
   h('ai:githubCopilotSubscription:status', async () => getGitHubCopilotSubscriptionStatus());
+  h('ai:githubCopilotSubscription:installRuntime', async () => installGitHubCopilotSubscriptionRuntime());
   h('ai:githubCopilotSubscription:login', async () => startGitHubCopilotSubscriptionLogin());
   h('ai:githubCopilotSubscription:cancelLogin', async () => cancelGitHubCopilotSubscriptionLogin());
   h('ai:githubCopilotSubscription:logout', async () => logoutGitHubCopilotSubscription());

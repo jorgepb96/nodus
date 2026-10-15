@@ -86,9 +86,9 @@ test('the choice is stored app-wide, so it survives creating and switching vault
   assert.match(defaults, /mascotStyleChosen: false/);
 });
 
-test('the one-time modal is gated on the flag and behind the startup guides', async () => {
+test('the one-time modal is gated on the flag and after release notes', async () => {
   const app = await read('src/App.tsx');
-  assert.match(app, /startupGuidesSettled &&[\s\S]{0,400}?!settings\.mascotStyleChosen &&[\s\S]{0,80}?<NodiStyleModal/);
+  assert.match(app, /whatsNewSettled &&[\s\S]{0,400}?!settings\.mascotStyleChosen &&[\s\S]{0,80}?<NodiStyleModal/);
   // Update progress is non-blocking and no longer owns the foreground.
   assert.doesNotMatch(app, /StartupUpdateModal|updateSettled/);
   // Users still in the tutorial pick there instead.

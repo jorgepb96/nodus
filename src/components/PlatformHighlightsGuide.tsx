@@ -1,15 +1,11 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AppLanguage } from '@shared/types';
+import type { ReactNode } from 'react';
 import type { TutorialLanguage } from '@shared/tutorialPreferences';
 import { TOOLKIT_TOOLS } from '../navigation';
 import zoteroLogo from '../assets/brands/zotero.svg';
 import { Icon } from './ui';
 import { t } from '../i18n';
-import { NodiAvatar } from './nodi/NodiAvatar';
 
 export const PLATFORM_HIGHLIGHTS_TUTORIAL_VERSION = 5;
-const SEEN_KEY = 'nodus.platformHighlightsSeen.2026-07';
 
 type PlatformSlideCopy = {
   eyebrow: string;
@@ -71,7 +67,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Herramientas prácticas',
         title: 'El Toolkit completo',
         summary: 'Seis espacios para crear miniapps y trabajar con documentos, traducción, privacidad, presentaciones y OCR.',
-        body: 'Nodus Apps se suma a Convert, Protect, Translate, PDF Presenter y OCR Workspace. Cada herramienta mantiene su propio flujo y deja claros los pasos que usan IA.',
+        body: 'Nodus Apps se suma a Convert, Protect, Translate, Nodus Presenter y OCR Workspace. Cada herramienta mantiene su propio flujo y deja claros los pasos que usan IA.',
         detailA: 'Nodus Apps crea herramientas adaptables para investigar, estudiar o enseñar y permite compartir sesiones por QR.',
         detailB: 'Presenter importa PDF y presentaciones; OCR reconstruye escaneados difíciles; Convert, Protect y Translate preparan copias nuevas sin tocar el original.',
         tip: 'Abre Herramientas en la barra lateral para ver el catálogo completo. El procesamiento es local salvo cuando una función indica que usa un proveedor de IA.',
@@ -111,7 +107,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Practical tools',
         title: 'The complete Toolkit',
         summary: 'Six workspaces for miniapps, document conversion, translation, privacy, presentations, and OCR.',
-        body: 'Nodus Apps joins Convert, Protect, Translate, PDF Presenter, and OCR Workspace. Each tool has a focused workflow and clearly identifies the steps that use AI.',
+        body: 'Nodus Apps joins Convert, Protect, Translate, Nodus Presenter, and OCR Workspace. Each tool has a focused workflow and clearly identifies the steps that use AI.',
         detailA: 'Nodus Apps creates adaptable research, study, or teaching tools and can share live sessions by QR.',
         detailB: 'Presenter imports PDFs and presentation files; OCR rebuilds difficult scans; Convert, Protect, and Translate create new outputs without touching originals.',
         tip: 'Open Tools in the sidebar for the full catalogue. Processing is local unless a feature explicitly says it uses an AI provider.',
@@ -144,7 +140,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Outils pratiques',
         title: 'Le Toolkit complet',
         summary: 'Six espaces pour les miniapps, les documents, la traduction, la confidentialité, les présentations et l’OCR.',
-        body: 'Nodus Apps rejoint Convert, Protect, Translate, PDF Presenter et OCR Workspace. Chaque outil possède un flux ciblé et signale clairement les étapes qui utilisent l’IA.',
+        body: 'Nodus Apps rejoint Convert, Protect, Translate, Nodus Presenter et OCR Workspace. Chaque outil possède un flux ciblé et signale clairement les étapes qui utilisent l’IA.',
         detailA: 'Nodus Apps crée des outils adaptables pour la recherche, les études ou l’enseignement et partage des sessions par QR.',
         detailB: 'Presenter importe PDF et présentations ; OCR reconstruit les scans difficiles ; Convert, Protect et Translate créent de nouveaux résultats sans modifier les originaux.',
         tip: 'Ouvrez Outils dans la barre latérale pour voir le catalogue complet. Le traitement est local sauf indication explicite d’un fournisseur d’IA.',
@@ -184,7 +180,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Praktische Werkzeuge',
         title: 'Das vollständige Toolkit',
         summary: 'Sechs Bereiche für Mini-Apps, Dokumente, Übersetzung, Datenschutz, Präsentationen und OCR.',
-        body: 'Nodus Apps ergänzt Convert, Protect, Translate, PDF Presenter und OCR Workspace. Jedes Werkzeug hat einen fokussierten Ablauf und kennzeichnet KI-Schritte klar.',
+        body: 'Nodus Apps ergänzt Convert, Protect, Translate, Nodus Presenter und OCR Workspace. Jedes Werkzeug hat einen fokussierten Ablauf und kennzeichnet KI-Schritte klar.',
         detailA: 'Nodus Apps erstellt anpassbare Werkzeuge für Forschung, Studium oder Lehre und teilt Sitzungen per QR.',
         detailB: 'Presenter importiert PDFs und Präsentationen; OCR rekonstruiert schwierige Scans; Convert, Protect und Translate erzeugen neue Ausgaben, ohne Originale zu verändern.',
         tip: 'Öffne Werkzeuge in der Seitenleiste für den ganzen Katalog. Die Verarbeitung ist lokal, sofern nicht ausdrücklich ein KI-Anbieter genannt wird.',
@@ -224,7 +220,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Strumenti pratici',
         title: 'Il Toolkit completo',
         summary: 'Sei spazi per miniapp, documenti, traduzione, privacy, presentazioni e OCR.',
-        body: 'Nodus Apps si unisce a Convert, Protect, Translate, PDF Presenter e OCR Workspace. Ogni strumento ha un flusso mirato e segnala chiaramente i passaggi che usano l’IA.',
+        body: 'Nodus Apps si unisce a Convert, Protect, Translate, Nodus Presenter e OCR Workspace. Ogni strumento ha un flusso mirato e segnala chiaramente i passaggi che usano l’IA.',
         detailA: 'Nodus Apps crea strumenti adattabili per ricerca, studio o insegnamento e condivide sessioni tramite QR.',
         detailB: 'Presenter importa PDF e presentazioni; OCR ricostruisce scansioni difficili; Convert, Protect e Translate creano nuovi risultati senza toccare gli originali.',
         tip: 'Apri Strumenti nella barra laterale per il catalogo completo. L’elaborazione è locale salvo quando viene indicato un provider IA.',
@@ -264,7 +260,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Ferramentas práticas',
         title: 'O Toolkit completo',
         summary: 'Seis espaços para miniapps, documentos, tradução, privacidade, apresentações e OCR.',
-        body: 'O Nodus Apps junta-se ao Convert, Protect, Translate, PDF Presenter e OCR Workspace. Cada ferramenta tem um fluxo próprio e identifica claramente os passos que usam IA.',
+        body: 'O Nodus Apps junta-se ao Convert, Protect, Translate, Nodus Presenter e OCR Workspace. Cada ferramenta tem um fluxo próprio e identifica claramente os passos que usam IA.',
         detailA: 'O Nodus Apps cria ferramentas adaptáveis para investigação, estudo ou ensino e partilha sessões por QR.',
         detailB: 'O Presenter importa PDF e apresentações; o OCR reconstrói digitalizações difíceis; Convert, Protect e Translate criam novos resultados sem alterar os originais.',
         tip: 'Abra Ferramentas na barra lateral para ver o catálogo completo. O processamento é local salvo indicação explícita de um fornecedor de IA.',
@@ -304,7 +300,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Ferramentas práticas',
         title: 'O Toolkit completo',
         summary: 'Seis espaços para miniapps, documentos, tradução, privacidade, apresentações e OCR.',
-        body: 'O Nodus Apps se junta ao Convert, Protect, Translate, PDF Presenter e OCR Workspace. Cada ferramenta tem um fluxo próprio e identifica claramente as etapas que usam IA.',
+        body: 'O Nodus Apps se junta ao Convert, Protect, Translate, Nodus Presenter e OCR Workspace. Cada ferramenta tem um fluxo próprio e identifica claramente as etapas que usam IA.',
         detailA: 'O Nodus Apps cria ferramentas adaptáveis para pesquisa, estudo ou ensino e compartilha sessões por QR.',
         detailB: 'O Presenter importa PDFs e apresentações; o OCR reconstrói digitalizações difíceis; Convert, Protect e Translate criam novos resultados sem alterar os originais.',
         tip: 'Abra Ferramentas na barra lateral para ver o catálogo completo. O processamento é local, salvo quando uma função indica que usa um provedor de IA.',
@@ -344,7 +340,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Pratik araçlar',
         title: 'Eksiksiz Toolkit',
         summary: 'Mini uygulamalar, belgeler, çeviri, gizlilik, sunumlar ve OCR için altı çalışma alanı.',
-        body: 'Nodus Apps; Convert, Protect, Translate, PDF Presenter ve OCR Workspace’e katılır. Her araç odaklı bir akış sunar ve yapay zekâ kullanan adımları açıkça belirtir.',
+        body: 'Nodus Apps; Convert, Protect, Translate, Nodus Presenter ve OCR Workspace’e katılır. Her araç odaklı bir akış sunar ve yapay zekâ kullanan adımları açıkça belirtir.',
         detailA: 'Nodus Apps araştırma, öğrenme veya öğretim için uyarlanabilir araçlar oluşturur ve oturumları QR ile paylaşır.',
         detailB: 'Presenter PDF ve sunumları içe aktarır; OCR zor taramaları yeniden kurar; diğer araçlar asıllara dokunmadan yeni çıktılar üretir.',
         tip: 'Tam katalog için kenar çubuğunda Araçlar’ı açın. Bir yapay zekâ sağlayıcısı açıkça belirtilmedikçe işlem yereldir.',
@@ -377,7 +373,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: '实用工具',
         title: '完整 Toolkit',
         summary: '六个工作区，覆盖迷你应用、文档、翻译、隐私、演示和 OCR。',
-        body: 'Nodus Apps 与 Convert、Protect、Translate、PDF Presenter 和 OCR Workspace 组成完整工具集。每项工具都有专用流程，并清楚标出使用 AI 的步骤。',
+        body: 'Nodus Apps 与 Convert、Protect、Translate、Nodus Presenter 和 OCR Workspace 组成完整工具集。每项工具都有专用流程，并清楚标出使用 AI 的步骤。',
         detailA: 'Nodus Apps 可创建适用于研究、学习或教学的工具，并通过二维码共享会话。',
         detailB: 'Presenter 导入 PDF 和演示文件；OCR 重建复杂扫描件；其余工具在不改动原件的情况下生成新输出。',
         tip: '在侧栏打开“工具”查看完整目录。除非明确说明使用 AI 服务商，否则处理均在本机完成。',
@@ -410,7 +406,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: '实用工具',
         title: '完整的Toolkit',
         summary: '六个工作区，涵盖迷你应用、文档、翻译、隐私、演示和OCR。',
-        body: 'Nodus Apps与Convert、Protect、Translate、PDF Presenter和OCR Workspace共同组成完整工具集。每项工具都有专注的流程，并清楚标出使用AI的步骤。',
+        body: 'Nodus Apps与Convert、Protect、Translate、Nodus Presenter和OCR Workspace共同组成完整工具集。每项工具都有专注的流程，并清楚标出使用AI的步骤。',
         detailA: 'Nodus Apps可创建适用于研究、学习或教学的可调整工具，并可通过二维码分享会话。',
         detailB: 'Presenter导入PDF和演示文件；OCR重建复杂的扫描件；Convert、Protect和Translate在不改动原件的情况下生成新输出。',
         tip: '在侧边栏打开「工具」查看完整目录。除非某项功能明确说明使用AI提供商，否则处理均在本机完成。',
@@ -450,7 +446,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: '實用工具',
         title: '完整的Toolkit',
         summary: '六個工作區，涵蓋迷你應用、文件、翻譯、隱私、演示和OCR。',
-        body: 'Nodus Apps與Convert、Protect、Translate、PDF Presenter和OCR Workspace共同組成完整工具集。每項工具都有專注的流程，並清楚標出使用AI的步驟。',
+        body: 'Nodus Apps與Convert、Protect、Translate、Nodus Presenter和OCR Workspace共同組成完整工具集。每項工具都有專注的流程，並清楚標出使用AI的步驟。',
         detailA: 'Nodus Apps可建立適用於研究、學習或教學的可調整工具，並可通過二維碼分享會話。',
         detailB: 'Presenter匯入PDF和演示檔案；OCR重建複雜的掃描件；Convert、Protect和Translate在不改動原件的情況下生成新輸出。',
         tip: '在側邊欄開啟「工具」檢視完整目錄。除非某項功能明確說明使用AI提供商，否則處理均在本機完成。',
@@ -490,7 +486,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: '実用ツール',
         title: '完全なToolkit',
         summary: 'ミニアプリ、文書、翻訳、プライバシー、プレゼン、OCRのための六つのワークスペースです。',
-        body: 'Nodus AppsがConvert、Protect、Translate、PDF Presenter、OCR Workspaceに加わりました。各ツールは用途別の流れを持ち、AIを使う工程を明示します。',
+        body: 'Nodus AppsがConvert、Protect、Translate、Nodus Presenter、OCR Workspaceに加わりました。各ツールは用途別の流れを持ち、AIを使う工程を明示します。',
         detailA: 'Nodus Appsは研究、学習、教育向けの調整可能なツールを作成し、QRでセッションを共有できます。',
         detailB: 'PresenterはPDFとプレゼンを読み込み、OCRは難しいスキャンを再構築し、ほかのツールは原本を変えずに新しい出力を作ります。',
         tip: 'サイドバーの「ツール」で全カタログを確認できます。AIプロバイダーの使用が明記されない限り、処理はローカルです。',
@@ -563,7 +559,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Практические инструменты',
         title: 'Полный Toolkit',
         summary: 'Шесть пространств для мини-приложений, документов, перевода, приватности, презентаций и OCR.',
-        body: 'Nodus Apps дополняет Convert, Protect, Translate, PDF Presenter и OCR Workspace. У каждого инструмента отдельный рабочий процесс и ясное обозначение шагов с ИИ.',
+        body: 'Nodus Apps дополняет Convert, Protect, Translate, Nodus Presenter и OCR Workspace. У каждого инструмента отдельный рабочий процесс и ясное обозначение шагов с ИИ.',
         detailA: 'Nodus Apps создаёт настраиваемые инструменты для исследований, учёбы и преподавания и делится сессиями по QR.',
         detailB: 'Presenter импортирует PDF и презентации; OCR восстанавливает сложные сканы; остальные инструменты создают новые результаты, не меняя оригиналы.',
         tip: 'Откройте «Инструменты» в боковой панели, чтобы увидеть весь каталог. Обработка локальна, если явно не указан поставщик ИИ.',
@@ -596,7 +592,7 @@ const COPY: Record<TutorialLanguage, PlatformCopy> = {
         eyebrow: 'Практичні інструменти',
         title: 'Повний Toolkit',
         summary: 'Шість просторів для мініпрограм, документів, перекладу, приватності, презентацій та OCR.',
-        body: 'Nodus Apps доповнює Convert, Protect, Translate, PDF Presenter і OCR Workspace. Кожен інструмент має окремий процес і чітко позначає кроки зі ШІ.',
+        body: 'Nodus Apps доповнює Convert, Protect, Translate, Nodus Presenter і OCR Workspace. Кожен інструмент має окремий процес і чітко позначає кроки зі ШІ.',
         detailA: 'Nodus Apps створює адаптивні інструменти для досліджень, навчання чи викладання та ділиться сесіями через QR.',
         detailB: 'Presenter імпортує PDF і презентації; OCR відновлює складні скани; інші інструменти створюють нові результати, не змінюючи оригінали.',
         tip: 'Відкрийте «Інструменти» на бічній панелі, щоб побачити весь каталог. Обробка локальна, якщо явно не вказано постачальника ШІ.',
@@ -668,83 +664,4 @@ export function platformHighlightSlides(language: TutorialLanguage): PlatformHig
     { ...zotero, icon: 'book', nodi: 'discovering', content: <ZoteroPanel language={language} /> },
     { ...toolkit, icon: 'tools', nodi: 'thinking', content: <ToolkitPanel language={language} /> },
   ];
-}
-
-function shouldPresent(previousTutorialVersion: number): boolean {
-  if (previousTutorialVersion <= 0 || previousTutorialVersion >= PLATFORM_HIGHLIGHTS_TUTORIAL_VERSION) return false;
-  try { return localStorage.getItem(SEEN_KEY) !== '1'; } catch { return true; }
-}
-
-function markSeen(): void {
-  try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* storage unavailable: show again next launch */ }
-}
-
-export function PlatformHighlightsUpdateTour({
-  uiLanguage,
-  previousTutorialVersion,
-  onSettled,
-}: {
-  uiLanguage: AppLanguage;
-  previousTutorialVersion: number;
-  onSettled: () => void;
-}) {
-  const [eligible] = useState(() => shouldPresent(previousTutorialVersion));
-  const [index, setIndex] = useState(0);
-  const copy = COPY[uiLanguage];
-  const slides = useMemo(() => platformHighlightSlides(uiLanguage), [uiLanguage]);
-
-  useEffect(() => { if (!eligible) onSettled(); }, [eligible, onSettled]);
-  if (!eligible) return null;
-
-  const slide = slides[index];
-  const last = index === slides.length - 1;
-  const finish = () => {
-    // Deliberately written only after the user completes this runtime tour. Merely
-    // installing or testing the build never pre-marks the announcement as seen.
-    markSeen();
-    onSettled();
-  };
-
-  return <motion.div className="toolkit-guide-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: .22 }}>
-    <motion.section
-      className="toolkit-guide-cinema platform-guide-cinema"
-      data-testid="platform-highlights-update-tour"
-      data-guide-step={index}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="platform-guide-title"
-      initial={{ opacity: 0, y: 28, scale: .96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: .46, ease: [0.2, 0.8, 0.2, 1] }}
-    >
-      <header className="toolkit-guide-hero platform-guide-hero">
-        <div className="toolkit-guide-aurora" aria-hidden="true" />
-        <div className="toolkit-guide-hero-copy">
-          <div className="toolkit-guide-kicker"><Icon name="sparkles" size={14} /> {copy.modalBadge}</div>
-          <h2>{copy.modalTitle}</h2>
-          <p>{copy.modalSummary}</p>
-        </div>
-        <div className="toolkit-guide-nodi"><NodiAvatar state={last ? 'celebrating' : slide.nodi} height={172} /></div>
-      </header>
-      <div className="toolkit-guide-progress" aria-label={`${index + 1}/${slides.length}`}>
-        {slides.map((_, itemIndex) => <button key={itemIndex} className={itemIndex <= index ? 'active' : ''} disabled={itemIndex > index} onClick={() => setIndex(itemIndex)} aria-label={`${copy.step} ${itemIndex + 1}`} />)}
-      </div>
-      <div className="toolkit-guide-stage">
-        <AnimatePresence mode="wait">
-          <motion.article key={index} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -22 }} transition={{ duration: .25 }}>
-            <div className="toolkit-guide-eyebrow"><Icon name={slide.icon} size={15} /> {copy.step} {index + 1} {copy.of} {slides.length} · {slide.eyebrow}</div>
-            <h3 id="platform-guide-title">{slide.title}</h3>
-            <p className="toolkit-guide-summary">{slide.summary}</p>
-            <div className="toolkit-guide-content">{slide.content}</div>
-          </motion.article>
-        </AnimatePresence>
-      </div>
-      <footer className="toolkit-guide-footer">
-        <button disabled={index === 0} onClick={() => setIndex((value) => Math.max(0, value - 1))}><Icon name="arrowLeft" size={14} /> {copy.previous}</button>
-        {last
-          ? <button className="primary" data-testid="platform-highlights-tour-complete" onClick={finish}>{copy.finish} <Icon name="check" size={14} /></button>
-          : <button className="primary" onClick={() => setIndex((value) => value + 1)}>{copy.next} <Icon name="chevronRight" size={14} /></button>}
-      </footer>
-    </motion.section>
-  </motion.div>;
 }

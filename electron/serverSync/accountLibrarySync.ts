@@ -15,6 +15,7 @@ import {
 } from '../library/libraryService';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
 import { fetchWithTimeout, normalizeUrl, type VaultServerConfig } from './serverSyncShared';
+import { advancingCloudflareCursor, CLOUDFLARE_MAX_PAGES_PER_PASS } from './cloudflareSyncSafety';
 
 type SyncPreferences = LibraryViewPreferences & {
   format: 'nodus.library-view-preferences'; formatVersion: 1; id: string; updatedAt: string;
@@ -102,14 +103,14 @@ async function uploadObjects(base: string, token: string, record: SyncRecord): P
   }
 }
 
-async function pushLocal(base: string, token: string, state: SyncState): Promise<void> {
+async function pushLocal(base: string, token: string, state: SyncState, checkpoint: () => void): Promise<void> {
   const snapshot = getGlobalLibrarySyncSnapshot();
   if (!snapshot) return;
   const current = [...snapshot.collections, ...snapshot.items, ...snapshot.savedSearches, snapshot.preferences];
   const changed = current.filter((record) => state.sent[record.id]?.contentHash !== contentHash(record));
   const missingSearches = Object.keys(state.sent).filter((id) => (id.startsWith('saved-search:') || id.startsWith('nodus:saved-search:'))
     && !snapshot.savedSearches.some((record) => record.id === id));
-  for (let offset = 0; offset < changed.length; offset += 12) {
+  for (let offset = 0; offset < Math.min(changed.length, 12 * CLOUDFLARE_MAX_PAGES_PER_PASS); offset += 12) {
     const records = changed.slice(offset, offset + 12);
     for (const record of records) await uploadObjects(base, token, record);
     const versions = records.map((record) => ({
@@ -131,8 +132,10 @@ async function pushLocal(base: string, token: string, state: SyncState): Promise
     for (let index = 0; index < records.length; index += 1) {
       if (committed.has(versions[index].versionId)) state.sent[records[index].id] = { contentHash: contentHash(records[index]), versionId: versions[index].versionId };
     }
+    checkpoint();
+    if (records.some((_, index) => !committed.has(versions[index].versionId))) throw new Error('Cloudflare no confirmó todas las versiones de la biblioteca.');
   }
-  for (const recordId of missingSearches) {
+  for (const recordId of missingSearches.slice(0, 12 * CLOUDFLARE_MAX_PAGES_PER_PASS)) {
     const sent = state.sent[recordId];
     const tombstoneId = `libv_${digest(`${recordId}\0deleted\0${sent.versionId}`)}`;
     const response = await fetchWithTimeout(`${base}/api/v1/library/records/batch`, {
@@ -140,7 +143,9 @@ async function pushLocal(base: string, token: string, state: SyncState): Promise
       body: JSON.stringify({ records: [{ recordId, versionId: tombstoneId, baseVersionId: sent.versionId,
         hlc: `${String(Date.now()).padStart(13, '0')}-000000-desktop-global`, deviceId: snapshot.deviceId, payload: null, deleted: true }] }),
     });
-    if (response.ok) delete state.sent[recordId];
+    if (!response.ok) throw new Error(`library_records_post_${response.status}`);
+    delete state.sent[recordId];
+    checkpoint();
   }
 }
 
@@ -158,12 +163,13 @@ async function downloadAttachment(base: string, token: string, item: LibraryItem
   fs.writeFileSync(temporary, bytes); fs.renameSync(temporary, destination);
 }
 
-async function pullRemote(base: string, token: string, state: SyncState): Promise<void> {
-  for (;;) {
+async function pullRemote(base: string, token: string, state: SyncState, checkpoint: () => void): Promise<boolean> {
+  for (let pageIndex = 0; pageIndex < CLOUDFLARE_MAX_PAGES_PER_PASS; pageIndex += 1) {
     const response = await fetchWithTimeout(`${base}/api/v1/library/changes?cursor=${state.cursor}&limit=100`, { headers: { authorization: `Bearer ${token}` } });
-    if (response.status === 404) return;
+    if (response.status === 404) return true;
     if (!response.ok) throw new Error(`library_changes_get_${response.status}`);
     const page = await response.json() as { changes?: CloudVersion[]; cursor?: number; hasMore?: boolean };
+    const nextCursor = advancingCloudflareCursor(state.cursor, page.cursor, Boolean(page.hasMore));
     for (const change of page.changes ?? []) {
       if (!change.winner) continue;
       if (change.deleted) mergeGlobalLibrarySyncTombstone(change.recordId);
@@ -177,9 +183,11 @@ async function pullRemote(base: string, token: string, state: SyncState): Promis
       const record = snapshot && [...snapshot.items, ...snapshot.collections, ...snapshot.savedSearches, snapshot.preferences].find((entry) => entry.id === change.recordId);
       if (record) state.sent[record.id] = { contentHash: contentHash(record), versionId: change.versionId };
     }
-    state.cursor = Number(page.cursor ?? state.cursor);
-    if (!page.hasMore) break;
+    state.cursor = nextCursor;
+    checkpoint();
+    if (!page.hasMore) return true;
   }
+  return false;
 }
 
 async function reportCommand(base: string, token: string, id: string, status: string, extra: Record<string, unknown> = {}): Promise<void> {
@@ -250,8 +258,8 @@ export async function drainAccountLibrary(config: VaultServerConfig): Promise<vo
     const accountId = await identifyAccount(base, token); if (!accountId) return;
     const file = stateFile(snapshot.root, accountId); const state = readState(file);
     // Pull first so a mobile edit becomes the base for any Desktop write observed this tick.
-    await pullRemote(base, token, state);
-    await pushLocal(base, token, state);
+    if (!await pullRemote(base, token, state, () => writeState(file, state))) return;
+    await pushLocal(base, token, state, () => writeState(file, state));
     await drainCommand(base, token);
     writeState(file, state);
   } finally { running = false; }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import type { DocumentFigure as Figure, DocumentVisualManifest, DocumentVisualTarget } from '@shared/documentSkills';
 import { documentBlocks } from '@shared/documentSkills';
 import { readyDocumentFigures } from '@shared/documentFigureExport';
@@ -13,6 +13,7 @@ export const DocumentFigureContext = createContext<{ manifest: DocumentVisualMan
 export function useDocumentFigures(content: string) {
   const context = useContext(DocumentFigureContext);
   const manifest = context?.manifest;
+  return useMemo(()=>{
   if (!manifest) return [];
   const canonical = documentBlocks({ text: content }).map(block => block.markdown).join('\n\n');
   const fields = [...new Set(manifest.blocks.map(block => block.field))];
@@ -20,6 +21,7 @@ export function useDocumentFigures(content: string) {
   if (!field) return [];
   const ready = readyDocumentFigures(manifest);
   return ready.filter(figure => manifest.blocks.some(block => block.id === figure.blockId && block.field === field)).map(figure => ({ figure, number: ready.indexOf(figure)+1, block: manifest.blocks.find(block => block.id === figure.blockId)! }));
+  },[manifest,content]);
 }
 
 export function DocumentVisualFigures({ field }: { field: string }) {

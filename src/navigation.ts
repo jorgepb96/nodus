@@ -174,6 +174,7 @@ export interface ToolkitToolDef {
 
 /** Single source of truth for the toolkit catalogue. */
 export const TOOLKIT_TOOLS = ([
+  { page: 'backups', name: 'Backups', description: 'Exporta tu trabajo en Markdown, CSV o JSON y crea copias completas de Nodus.', icon: 'download', state: 'wip', testid: 'backups' },
   {
     page: 'workspace',
     name: 'Nodus Scriptor',
@@ -252,7 +253,7 @@ export const TOOLKIT_TOOLS = ([
   },
   {
     page: 'presenter',
-    name: 'PDF Presenter',
+    name: 'Nodus Presenter',
     description: 'Presenta PDF y presentaciones externas como diapositivas, con vista del presentador, notas del orador y anotaciones en directo.',
     icon: 'presentation',
     state: 'wip',

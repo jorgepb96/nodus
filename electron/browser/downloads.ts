@@ -16,8 +16,10 @@
  */
 
 import { app, type DownloadItem, type Session } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import {
+  availableDownloadPath,
   classifyDownload,
   isImportable,
   isTooLarge,
@@ -121,7 +123,7 @@ export function installDownloadHandling(ses: Session, defaultFolder: () => strin
 
     const folder = defaultFolder();
     if (folder) {
-      item.setSavePath(path.join(folder, filename));
+      item.setSavePath(availableDownloadPath(folder, filename, (candidate) => fs.existsSync(candidate), path.join));
     } else {
       // No configured folder: let Electron show its own save dialog, seeded with
       // the platform's Downloads directory.

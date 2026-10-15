@@ -260,7 +260,8 @@ export const academicApi: AcademicApi = {
   updateStudyAnnotation: (id, patch) => ipcRenderer.invoke('study:annotation:update', id, patch),
   deleteStudyAnnotation: (id) => ipcRenderer.invoke('study:annotation:delete', id).then(() => undefined),
   transcribeStudyAudio: async (request, handlers = {}) => {
-    const requestId = `study-stt-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const explicitId = request.requestId && /^[\w-]{1,128}$/.test(request.requestId) ? request.requestId : null;
+    const requestId = explicitId || `study-stt-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const onProgress = (_event: unknown, id: string, fraction: number) => { if (id === requestId) handlers.onProgress?.(fraction); };
     const onPartial = (_event: unknown, id: string, text: string) => { if (id === requestId) handlers.onPartial?.(text); };
     let markStreamComplete: () => void = () => {};
@@ -269,7 +270,9 @@ export const academicApi: AcademicApi = {
     ipcRenderer.on('study:stt:progress', onProgress);
     ipcRenderer.on('study:stt:partial', onPartial);
     ipcRenderer.on('study:stt:complete', onComplete);
-    activeStudySttRequestId = requestId;
+    // Live dictation owns its request IDs and cancels them explicitly. It must
+    // not steal the default cancellation target of a recording in another view.
+    if (!explicitId) activeStudySttRequestId = requestId;
     try {
       const result = await ipcRenderer.invoke('study:stt:transcribe', { ...request, requestId });
       // The invoke reply and webContents.send events travel through separate IPC
@@ -284,8 +287,9 @@ export const academicApi: AcademicApi = {
       ipcRenderer.removeListener('study:stt:complete', onComplete);
     }
   },
-  cancelStudyTranscription: async () => {
-    if (activeStudySttRequestId) await ipcRenderer.invoke('study:stt:cancel', activeStudySttRequestId);
+  cancelStudyTranscription: async (requestId) => {
+    const target = requestId || activeStudySttRequestId;
+    if (target) await ipcRenderer.invoke('study:stt:cancel', target);
   },
   getWhisperCppStatus: () => ipcRenderer.invoke('study:stt:whisperCpp:status'),
   installWhisperCpp: () => ipcRenderer.invoke('study:stt:whisperCpp:install'),

@@ -22,17 +22,21 @@ globalThis.__ord = { provider: null, indexDir: null, invoke: null, calls: 0 };
 
 const STUBS = {
   '../capabilities/registry': `export const capabilityRegistry = () => ({ providers: new Map(globalThis.__ord.provider ? [['nodus:chemistry', globalThis.__ord.provider]] : []) });`,
-  '../reactionIndex': `export const reactionIndexService = () => ({ localDirectory: async () => globalThis.__ord.indexDir });`,
+  '../reactionIndex': `export const reactionIndexService = () => ({ localDirectory: async () => { if (globalThis.__ord.indexError) throw globalThis.__ord.indexError; return globalThis.__ord.indexDir; } });`,
   './moleculeInspection': `export const chemistryRunner = () => ({ runner: { invoke: async (request) => { globalThis.__ord.calls += 1; return globalThis.__ord.invoke(request); } }, dispose: async () => {} });`,
   './aiClient': `export const embed = async () => null;`,
   // No stock lists imported: disconnections are requested without a stock directory.
   './chemistryStock': `export const chemistryStockDirectory = () => null; export const chemistryStockLists = () => [];`,
+  // The monomer library resolves its directory through electron's app, which a bundle run under
+  // plain node cannot load; without this stub the whole file fails before a test runs.
+  './chemistryMonomers': 'export const monomerLibraryDirectory = () => null;',
   // No textbook-scheme index unless a scenario sets one.
   './textbookSchemes': `export const textbookSchemeDirectory = () => globalThis.__textbook?.dir ?? null; export const textbookCitations = (ids) => (globalThis.__textbook?.cite ?? (() => []))(ids); export const textbookTemplateCitations = (templates) => (globalThis.__textbook?.citeTemplates ?? (() => []))(templates);`,
   // No local reranker installed: the fused order stands.
   './localReranker': `export const rerankerAvailable = () => false; export const rerank = async () => null;`,
   '../db/database': `export const getDb = () => ({ prepare: () => ({ all: () => [{ nodus_id: 'w1', title: 'Klein Organic Chemistry 3rd Ed', collections: 'Chemistry' }] }) });`,
   '../db/passagesRepo': `export const findSimilarPassages = () => [];
+export const findSimilarPassagesPaged = async () => [];
 export const lexicalPassageSearch = (query) => [{ passage_id: 'w1#' + query.length, nodus_id: 'w1', text: 'Benzocaine is made by the Fischer esterification of a carboxylic acid with an alcohol under acid catalysis. The equilibrium is driven toward the ester by using the alcohol as the solvent and by removing the water that forms, and the nitro group is then reduced to the amine with tin and hydrochloric acid or by catalytic hydrogenation over palladium on carbon.', page_label: 'p. 862', source_ref: null, page_number: 862, similarity: 0.9, title: 'Klein Organic Chemistry 3rd Ed', authors_json: '[]', year: 2017, zotero_key: 'K' }];`,
 };
 
@@ -49,7 +53,12 @@ await build({
     },
   }],
 });
-const { gatherSynthesisEvidence } = await import(pathToFileURL(outfile).href);
+const { gatherSynthesisEvidence, clearSynthesisEvidenceCache } = await import(pathToFileURL(outfile).href);
+// Target-level evidence is remembered between a request and its corrections, so every test here
+// asks about the same target and would otherwise be served the FIRST test's stubbed answer. Each
+// case starts from an empty cache; without this the suite silently stops exercising the gather,
+// which is how the cache was first seen working.
+test.beforeEach(() => { clearSynthesisEvidenceCache(); delete globalThis.__ord.indexError; });
 const { synthesisEvidencePayload } = await import(pathToFileURL(await (async () => {
   const out = path.join(tmp, 'shared.mjs');
   await build({ entryPoints: [path.join(root, 'shared/synthesisEvidence.ts')], outfile: out, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
@@ -271,4 +280,212 @@ test('a route search that fails or times out never blocks the request', async ()
   assert.ok(evidence.passages.length > 0);
   assert.equal(evidence.candidateRoutes, undefined);
   assert.ok(!('candidate_routes' in synthesisEvidencePayload(evidence)));
+});
+
+test('a correction reuses the evidence its request gathered', async () => {
+  // Measured on a real two-turn run: the gather cost 394.4s and then 393.8s and printed identical
+  // counts both times, which is 43% of the clock spent twice on the same target.
+  const first = await scenario({ provider: TOOL, indexDir: '/idx', invoke: () => ({ disconnections: [] }) });
+  const calls = globalThis.__ord.calls;
+  assert.ok(first, 'the request gathers');
+
+  // The same target, reached through the text a correction turn carries. The gather's inputs are
+  // unchanged, so nothing is recomputed.
+  const second = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'the index is not asked a second time');
+  assert.equal(second.target, first.target);
+  assert.deepEqual(second.passages, first.passages);
+
+  // A DIFFERENT target must not be served the first one's evidence, which is the failure mode a
+  // cache keyed too loosely would have.
+  const other = 'Propose a step-by-step laboratory synthesis of aspirin (SMILES: CC(=O)Oc1ccccc1C(=O)O), starting from phenol (Oc1ccccc1).';
+  const third = await quiet(() => gatherSynthesisEvidence(other));
+  assert.equal(third.target, 'CC(=O)Oc1ccccc1C(=O)O');
+  assert.ok(globalThis.__ord.calls > calls, 'a new target does the work');
+
+  // And the same target in another vault is a different entry: every passage below is read from
+  // that vault's own database.
+  const before = globalThis.__ord.calls;
+  await quiet(() => gatherSynthesisEvidence(REQUEST, { vaultId: 'another-vault' }));
+  assert.ok(globalThis.__ord.calls > before, 'another vault does its own work');
+});
+
+test('clearing the cache makes the next request gather again', async () => {
+  await scenario({ provider: TOOL, indexDir: '/idx', invoke: () => ({ disconnections: [] }) });
+  const calls = globalThis.__ord.calls;
+  await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'still cached');
+  clearSynthesisEvidenceCache();
+  await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.ok(globalThis.__ord.calls > calls, 'and gathers again once cleared');
+});
+
+test('the route search is not asked about a target it has never answered for', async () => {
+  // Derived from every [synthesisEvidence] line on disk, grouped by distinct target: the largest
+  // target the search has ever returned a candidate for has 27 atom symbols, and from 35 upwards
+  // it returned zero for all twelve distinct targets measured while spending its full 60s budget
+  // each time. So above the threshold it is not asked; below it, nothing changes.
+  const long = 'Propose a step-by-step laboratory synthesis of'
+    + ' OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O'
+    + ' starting from natural acids.';
+  const source = await import('node:fs').then((fs) => fs.readFileSync(path.join(root, 'electron/ai/synthesisEvidence.ts'), 'utf8'));
+  assert.match(source, /const ROUTE_SEARCH_MAX_ATOM_SYMBOLS = 32;/);
+  assert.match(source, /if \(atomSymbols > ROUTE_SEARCH_MAX_ATOM_SYMBOLS\)/);
+  // The skip is reported, so a run that gathered no candidates says which of the two reasons it was.
+  assert.match(source, /route search skipped: the target has \$\{atomSymbols\} atom symbols/);
+
+  // And the evidence still arrives for that target: only the search is skipped.
+  clearSynthesisEvidenceCache();
+  Object.assign(globalThis.__ord, { provider: null, indexDir: null, invoke: null, calls: 0 });
+  const evidence = await quiet(() => gatherSynthesisEvidence(long));
+  assert.ok(evidence, 'the gather still returns evidence');
+  assert.equal(evidence.candidateRoutes, undefined, 'with no candidate routes');
+  assert.equal(evidence.target, 'OC([C@H](CC1=CC=C(OCCSC[C@@H](C(O)=O)N)C=C1)NC(OCC2C3=CC=CC=C3C4=C2C=CC=C4)=O)=O');
+});
+
+test('a correction answered by another model reuses the evidence gathered for the target', async () => {
+  // Nothing in the gather reads the chat model: the ORD, textbook, route-search and stock tools take
+  // the target, the starting materials and the scope. A model switch between a request and its
+  // correction used to gather the whole evidence again.
+  const found = { artifacts: [{ artifactType: 'reaction-disconnections', data: { disconnections: [{ input: 'CCOC(=O)c1ccc(N)cc1', target: 'CCOC(=O)c1ccc(N)cc1', madeBy: null, proposals: [{ precursors: 'CCO.Nc1ccc(C(=O)O)cc1', classes: ['Fischer esterification'], recorded: 3, available: true }] }] } }] };
+  Object.assign(globalThis.__ord, { provider: TOOL, indexDir: '/idx', invoke: async () => found, calls: 0 });
+  const info = console.info; console.info = () => {};
+  try {
+    const first = await quiet(() => gatherSynthesisEvidence(REQUEST, { model: { provider: 'openai', model: 'one' } }));
+    const calls = globalThis.__ord.calls;
+    const second = await quiet(() => gatherSynthesisEvidence(REQUEST, { model: { provider: 'anthropic', model: 'two' } }));
+    assert.equal(globalThis.__ord.calls, calls, 'the second model is served the gathered evidence');
+    assert.equal(second, first);
+  } finally { console.info = info; }
+});
+
+test('a gather in which a phase FAILED is not remembered for the corrections', async () => {
+  // The cache is for a completed gather. A disconnection search that threw (a runtime deadline, a
+  // worker that died) is not a completed gather: remembering it served the corrections an empty ORD
+  // brief for thirty minutes, while the same search, asked again, would have answered.
+  const found = { artifacts: [{ artifactType: 'reaction-disconnections', data: { disconnections: [{ input: 'CCOC(=O)c1ccc(N)cc1', target: 'CCOC(=O)c1ccc(N)cc1', madeBy: null, proposals: [{ precursors: 'CCO.Nc1ccc(C(=O)O)cc1', classes: ['Fischer esterification'], recorded: 3, available: true }] }] } }] };
+  let failing = true;
+  const invoke = async () => { if (failing) throw new Error('The disconnection search failed.'); return found; };
+  Object.assign(globalThis.__ord, { provider: TOOL, indexDir: '/idx', invoke, calls: 0 });
+  const first = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.deepEqual(first.disconnections, [], 'the failed search contributes nothing to this turn');
+  failing = false;
+  const info = console.info; console.info = () => {};
+  let second;
+  try { second = await quiet(() => gatherSynthesisEvidence(REQUEST)); } finally { console.info = info; }
+  assert.equal(second.disconnections[0]?.proposals[0]?.classes[0], 'Fischer esterification', 'the correction is gathered again, not served the failed gather');
+  // A gather that completed is still remembered.
+  const calls = globalThis.__ord.calls;
+  const third = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assert.equal(globalThis.__ord.calls, calls, 'a completed gather is served from memory');
+  assert.equal(third, second);
+});
+
+const LARGE_TARGET = 'C'.repeat(200);
+const LARGE_REQUEST = `Propose a laboratory synthesis (SMILES: ${LARGE_TARGET}).`;
+const DECOMPOSE_PROVIDER = { tools: [{ id: 'propose-disconnections' }, { id: 'decompose-target' }] };
+const decomposition = (changes = {}) => ({
+  input: LARGE_TARGET, target: LARGE_TARGET, atoms: 200, linkBonds: 18, covered: 0.9,
+  units: Array.from({ length: 17 }, (_, i) => ({ ids: [String(i)], smiles: 'C'.repeat(i + 2), capped: 'C'.repeat(i + 2) })),
+  unidentified: [{ ids: [], smiles: 'CCN', capped: 'CCN' }], hasLibrary: true, ...changes,
+});
+const decompositionArtifact = (one) => ({ artifacts: [{ artifactType: 'target-decomposition', data: { decompositions: [one] } }] });
+
+test('large-target decomposition searches every distinct fragment, including unnamed ones, with bounded concurrency', async () => {
+  const one = decomposition();
+  const expected = [...one.units, ...one.unidentified].map(unit => unit.capped);
+  const searched = [];
+  let active = 0;
+  let peak = 0;
+  Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: '/idx', calls: 0, invoke: async request => {
+    if (request.toolId === 'decompose-target') return decompositionArtifact(one);
+    active++;
+    peak = Math.max(peak, active);
+    await new Promise(resolve => setImmediate(resolve));
+    searched.push(...request.input.targets);
+    active--;
+    return { artifacts: [{ artifactType: 'reaction-disconnections', data: { disconnections: request.input.targets.map(target => ({
+      input: target, target, madeBy: null, proposals: [{ precursors: 'O', classes: ['hydrolysis'], recorded: 1, available: true }],
+    })) } }] };
+  } });
+  const evidence = await quiet(() => gatherSynthesisEvidence(LARGE_REQUEST));
+  assert.ok(expected.every(target => searched.includes(target)), 'units after the first 16 must still be searched');
+  assert.ok(expected.every(target => evidence.disconnections.some(entry => entry.target === target)), 'each fragment retains its evidence');
+  assert.ok(peak <= 4, `peak was ${peak}`);
+  assert.ok(!searched.includes(LARGE_TARGET), 'a complete decomposition replaces the whole-target pass');
+});
+
+test('older packages, missing artifacts, failed or incomplete decompositions keep whole-target searches', async () => {
+  for (const response of [
+    { artifacts: [] }, decompositionArtifact(decomposition({ atoms: 149 })),
+    decompositionArtifact(decomposition({ linkBonds: 1 })),
+    decompositionArtifact(decomposition({ units: null })),
+    decompositionArtifact(decomposition({ atoms: undefined })),
+    decompositionArtifact(decomposition({ input: 'a different target' })),
+    decompositionArtifact(decomposition({ unidentified: [{ ids: [], smiles: '*CC' }] })),
+    new Error('decomposition failed'),
+  ]) {
+    clearSynthesisEvidenceCache();
+    const searched = [];
+    Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: '/idx', calls: 0, invoke: async request => {
+      if (request.toolId === 'decompose-target') {
+        if (response instanceof Error) throw response;
+        return response;
+      }
+      searched.push(...request.input.targets);
+      return { artifacts: [] };
+    } });
+    await quiet(() => gatherSynthesisEvidence(LARGE_REQUEST));
+    assert.deepEqual(searched, [LARGE_TARGET]);
+  }
+  clearSynthesisEvidenceCache();
+  const calls = [];
+  Object.assign(globalThis.__ord, { provider: TOOL, indexDir: '/idx', calls: 0, invoke: async request => { calls.push(request); return { artifacts: [] }; } });
+  await quiet(() => gatherSynthesisEvidence(LARGE_REQUEST));
+  assert.deepEqual(calls.map(request => request.toolId), ['propose-disconnections']);
+  assert.deepEqual(calls[0].input.targets, [LARGE_TARGET]);
+});
+
+test('repeated building blocks are searched once without dropping distinct fragments', async () => {
+  const searched = [];
+  const unit = { ids: ['ethanol'], smiles: 'CCO', capped: 'CCO' };
+  Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: '/idx', calls: 0, invoke: async request => {
+    if (request.toolId === 'decompose-target') return decompositionArtifact(decomposition({ units: [unit, unit], unidentified: [] }));
+    searched.push(...request.input.targets);
+    return { artifacts: [] };
+  } });
+  await quiet(() => gatherSynthesisEvidence(LARGE_REQUEST));
+  assert.deepEqual(searched, ['CCO']);
+});
+
+test('cancellation during decomposition does not fall back to another chemistry request', async () => {
+  const controller = new AbortController();
+  const calls = [];
+  Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: '/idx', calls: 0, invoke: async request => {
+    calls.push(request.toolId);
+    controller.abort();
+    return decompositionArtifact(decomposition());
+  } });
+  await assert.rejects(quiet(() => gatherSynthesisEvidence(LARGE_REQUEST, { signal: controller.signal })), { name: 'AbortError' });
+  assert.deepEqual(calls, ['decompose-target']);
+});
+
+test('a package with decomposition does not invoke it when the ORD index is absent', async () => {
+  Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: null, calls: 0,
+    invoke: async request => {
+      if (request.toolId === 'decompose-target') return decompositionArtifact(decomposition());
+      return { artifacts: [] };
+    } });
+  const evidence = await quiet(() => gatherSynthesisEvidence(LARGE_REQUEST));
+  assert.ok(evidence);
+  assert.equal(globalThis.__ord.calls, 0, 'decomposition cannot provide ORD evidence without an index');
+});
+
+
+test('an unavailable index remains best-effort and does not block textbook evidence', async () => {
+  Object.assign(globalThis.__ord, { provider: DECOMPOSE_PROVIDER, indexDir: '/idx', calls: 0,
+    indexError: new Error('index unavailable'), invoke: async () => { throw new Error('must not run'); } });
+  const evidence = await quiet(() => gatherSynthesisEvidence(REQUEST));
+  assertTextbookOnly(evidence, 'unavailable index');
+  assert.equal(globalThis.__ord.calls, 0);
 });

@@ -10,7 +10,12 @@ import {fileURLToPath} from 'node:url';
 import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
 if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-whole-workspace'))process.exit(0);
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-whole-workspace-'));
-const runtime=installRuntimeHooks(root);runtime.app.on=()=>{};runtime.app.once=()=>{};runtime.safeStorage.isEncryptionAvailable=()=>true;
+// Exercise the renderer's real preload boundary too: dropping its fifth argument
+// silently turns the simple workspace link into a frozen list of current vaults.
+const runtime=installRuntimeHooks(root,{ipcRenderer:{invoke:async(channel,...args)=>{
+ assert.equal(channel,'desktopBridge:offer');
+ return bridge.createDesktopBridgeOffer(...args);
+}}});runtime.app.on=()=>{};runtime.app.once=()=>{};runtime.safeStorage.isEncryptionAvailable=()=>true;
 const require=createRequire(import.meta.url),cert=path.join(root,'test.crt'),key=path.join(root,'test.key');
 execFileSync('/usr/bin/openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost','-addext','subjectAltName=IP:127.0.0.1'],{stdio:'ignore'});
 function stub(module,exports){const id=require.resolve(module);require.cache[id]={id,filename:id,loaded:true,exports};}
@@ -24,7 +29,8 @@ const caps=async grant=>{const r=await request('/bridge/v2/capabilities','GET',u
 try{
  const initial=vaults.getActiveVault();database.withVaultDatabase(initial.id,()=>database.getDb().prepare('SELECT 1').get());const second=vaults.createVault('Existing second fixture');vaults.setActiveVault(initial.id);
  assert.ok(vaults.listVaults().every(v=>fs.realpathSync(v.path).startsWith(fs.realpathSync(root)+path.sep)));
- const wholeOffer=await bridge.createDesktopBridgeOffer([initial.id],['corpus'],undefined,'direct',{wholeWorkspace:true});origin=`https://127.0.0.1:${bridge.desktopBridgeStatus().port}`;
+ const {platformApi}=require('../electron/preload/platform.ts');
+ const wholeOffer=await platformApi.createDesktopBridgeOffer([initial.id],['corpus'],undefined,'direct',{wholeWorkspace:true});origin=`https://127.0.0.1:${bridge.desktopBridgeStatus().port}`;
  assert.equal(wholeOffer.wholeWorkspace,true);assert.ok(wholeOffer.vaultIds.includes(second.id));
  const envelope=JSON.parse(Buffer.from(new URL(wholeOffer.pairingURL).searchParams.get('offer'),'base64url'));assert.equal(envelope.wholeWorkspace,true);
  const whole=await pair(wholeOffer),legacy=await pair(await bridge.createDesktopBridgeOffer([initial.id],['corpus'],undefined,'direct')),explicitFalse=await pair(await bridge.createDesktopBridgeOffer([initial.id],['corpus'],undefined,'direct',{wholeWorkspace:false}));
@@ -47,5 +53,5 @@ try{
  assert.equal((await request(`/bridge/v2/vaults/${current.deviceId}/jobs`,'GET',undefined,whole.token)).status,403,'Mac installation ID is not a vault ID');
  await assert.rejects(bridge.createDesktopBridgeOffer([initial.id],['corpus'],undefined,'direct',{wholeWorkspace:'true'}),/invalid_pairing_scope/);
  const stored=JSON.parse(runtime.safeStorage.decryptString(fs.readFileSync(path.join(root,'desktop-bridge','pairings.bin'))));assert.equal(stored.find(p=>p.id===whole.id).wholeWorkspace,true);assert.equal(stored.find(p=>p.id===legacy.id).wholeWorkspace,undefined);assert.equal(stored.find(p=>p.id===explicitFalse.id).wholeWorkspace,false);
- console.log(JSON.stringify({suite:'mobile-pairing-whole-workspace',passed:true,transport:'real HTTPS trusted isolated CA',canonicalFutureVault:true,removedVaultWithRetainedFileDenied:true,legacyStatic:true,explicitFalseStatic:true,renewalNoEscalation:true,persistedRestart:true,domainNoEscalation:true,macIdentityNotVault:true,providerCalls:0}));
+ console.log(JSON.stringify({suite:'mobile-pairing-whole-workspace',passed:true,transport:'real HTTPS trusted isolated CA',productionPreloadScope:true,canonicalFutureVault:true,removedVaultWithRetainedFileDenied:true,legacyStatic:true,explicitFalseStatic:true,renewalNoEscalation:true,persistedRestart:true,domainNoEscalation:true,macIdentityNotVault:true,providerCalls:0}));
 }finally{agent.destroy();await bridge.stopDesktopBridge();database.closeDb();fs.rmSync(root,{recursive:true,force:true});}

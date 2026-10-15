@@ -12,34 +12,67 @@ export interface LocalWhisperResult {
   chunks: Array<{ text: string; timestamp: [number | null, number | null] | null }>;
 }
 
-let worker: Worker | null = null;
-const pending = new Map<string, Pending>();
+class WhisperClient {
+  private worker: Worker | null = null;
+  private pending = new Map<string, Pending>();
 
-function getWorker(): Worker {
-  if (worker) return worker;
-  worker = new Worker(new URL('./stt.worker.ts', import.meta.url), { type: 'module' });
-  worker.onmessage = (event: MessageEvent<{ id: string; type: 'progress' | 'partial' | 'result' | 'error'; fraction?: number; text?: string; result?: unknown; error?: string }>) => {
-    const current = pending.get(event.data.id);
-    if (!current) return;
-    if (event.data.type === 'progress') current.onProgress?.(event.data.fraction ?? 0);
-    if (event.data.type === 'partial') current.onPartial?.(event.data.text ?? '');
-    if (event.data.type === 'result') { pending.delete(event.data.id); current.resolve(event.data.result); }
-    if (event.data.type === 'error') { pending.delete(event.data.id); current.reject(new Error(event.data.error ?? 'Whisper local failed')); }
-  };
-  worker.onerror = (event) => {
-    const error = new Error(event.message || 'Whisper worker failed');
-    pending.forEach((current) => current.reject(error));
-    pending.clear();
-  };
-  return worker;
+  private getWorker(): Worker {
+    let worker = this.worker;
+    if (worker) return worker;
+    worker = new Worker(new URL('./stt.worker.ts', import.meta.url), { type: 'module' });
+    this.worker = worker;
+    const pending = this.pending;
+    worker.onmessage = (event: MessageEvent<{ id: string; type: 'progress' | 'partial' | 'result' | 'error'; fraction?: number; text?: string; result?: unknown; error?: string }>) => {
+      const current = pending.get(event.data.id);
+      if (!current) return;
+      if (event.data.type === 'progress') current.onProgress?.(event.data.fraction ?? 0);
+      if (event.data.type === 'partial') current.onPartial?.(event.data.text ?? '');
+      if (event.data.type === 'result') { pending.delete(event.data.id); current.resolve(event.data.result); }
+      if (event.data.type === 'error') { pending.delete(event.data.id); current.reject(new Error(event.data.error ?? 'Whisper local failed')); }
+    };
+    worker.onerror = (event) => {
+      const error = new Error(event.message || 'Whisper worker failed');
+      pending.forEach((current) => current.reject(error));
+      pending.clear();
+      worker?.terminate();
+      this.worker = null;
+    };
+    return worker;
+  }
+
+  request<T>(message: Record<string, unknown>, transfer: Transferable[] = [], onProgress?: (fraction: number) => void, onPartial?: (text: string) => void): Promise<T> {
+    const id = crypto.randomUUID();
+    return new Promise<T>((resolve, reject) => {
+      this.pending.set(id, { resolve: resolve as (value: unknown) => void, reject, onProgress, onPartial });
+      try { this.getWorker().postMessage({ ...message, id }, transfer); }
+      catch (error) { this.pending.delete(id); reject(error); }
+    });
+  }
+
+  cancel(): void {
+    this.pending.forEach(current => current.reject(new Error('Transcripción cancelada.')));
+    this.pending.clear();
+    this.worker?.terminate();
+    this.worker = null;
+  }
 }
 
-function request<T>(message: Record<string, unknown>, transfer: Transferable[] = [], onProgress?: (fraction: number) => void, onPartial?: (text: string) => void): Promise<T> {
-  const id = crypto.randomUUID();
-  return new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve: resolve as (value: unknown) => void, reject, onProgress, onPartial });
-    getWorker().postMessage({ ...message, id }, transfer);
-  });
+const client = new WhisperClient();
+const request = client.request.bind(client);
+
+/** A dedicated worker keeps the model warm between live phrases. Cancelling this
+ * session never kills transcription of a recording in another part of Nodus. */
+export function createLocalWhisperDictation(model: string, language: string) {
+  const dictation = new WhisperClient();
+  return {
+    prepare: () => dictation.request<void>({ type: 'ensure', model, localOnly: true }),
+    transcribe: async (samples: Float32Array, onPartial: (text: string) => void): Promise<string> => {
+      const copy = samples.slice();
+      const result = await dictation.request<LocalWhisperResult>({ type: 'transcribe', model, language, samples: copy, localOnly: true }, [copy.buffer], undefined, onPartial);
+      return result.text;
+    },
+    cancel: () => dictation.cancel(),
+  };
 }
 
 export async function ensureLocalWhisperModel(model: string, onProgress?: (fraction: number) => void): Promise<void> {
@@ -79,11 +112,7 @@ export async function audioBlobToWhisperWav(blob: Blob): Promise<Uint8Array> {
 }
 
 export function cancelLocalWhisper(): void {
-  const error = new Error('Transcripción cancelada.');
-  pending.forEach((current) => current.reject(error));
-  pending.clear();
-  worker?.terminate();
-  worker = null;
+  client.cancel();
 }
 
 export function isLocalWhisperModelReady(model: string): boolean {
@@ -102,8 +131,7 @@ export async function removeLocalWhisperModel(model: string): Promise<void> {
   } catch {
     // Cache APIs vary by Electron version; the model is still unregistered locally.
   }
-  worker?.terminate();
-  worker = null;
+  client.cancel();
 }
 
 export async function localWhisperStorageBytes(model: string): Promise<number> {

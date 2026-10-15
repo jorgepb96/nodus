@@ -1,14 +1,16 @@
-const pkg = require('../package.json');
+const base = require('./electron-builder.config.cjs');
 
 const channel = process.env.NODUS_RELEASE_CHANNEL;
 if (channel !== 'latest' && channel !== 'beta') {
   throw new Error(`NODUS_RELEASE_CHANNEL must be "latest" or "beta"; received ${JSON.stringify(channel)}`);
 }
 
-// Keep one packaging definition. The release workflow only overrides the feed
-// channel, which GitHub publishing cannot infer reliably from a prerelease tag.
+// Keep one packaging definition: package.json "build", which
+// build/electron-builder.config.cjs extends with the node_modules pruning. The
+// release workflow only overrides the feed channel, which GitHub publishing
+// cannot infer reliably from a prerelease tag.
 //
-// Two things about `pkg.build` that are easy to get wrong, and that this file is
+// Two things about package.json "build" that are easy to get wrong, and that this file is
 // the only sensible place to write down, because package.json is JSON and cannot
 // hold a comment:
 //
@@ -24,18 +26,18 @@ if (channel !== 'latest' && channel !== 'beta') {
 //     Held by scripts/test-release-artifact-names.mjs.
 //
 //  2. electron-builder validates this object against a STRICT schema that rejects
-//     unknown properties outright, so `pkg.build` cannot carry a documentation
+//     unknown properties outright, so package.json "build" cannot carry a documentation
 //     key either — a `_comment` there aborts every packaging run with "Invalid
 //     configuration object". That is why this note lives here. Held by
 //     scripts/test-electron-builder-config.mjs, which validates against
 //     app-builder-lib's own scheme.json rather than waiting for a release.
 module.exports = {
-  ...pkg.build,
+  ...base,
   // Release builds are intentionally stricter than local `npm run dist:mac`:
   // no identity, notarization credential, staple or verification means no
   // artifact. electron-builder 26 keeps these keys directly under `mac`.
   mac: {
-    ...pkg.build.mac,
+    ...base.mac,
     forceCodeSigning: true,
     hardenedRuntime: true,
     strictVerify: true,
@@ -46,5 +48,5 @@ module.exports = {
     notarize: true,
   },
   afterSign: 'build/afterSign.cjs',
-  publish: pkg.build.publish.map((target) => ({ ...target, channel })),
+  publish: base.publish.map((target) => ({ ...target, channel })),
 };

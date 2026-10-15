@@ -46,8 +46,10 @@ export class ResearchWebGrant {
   private steps = 0;
   readonly explicit: boolean;
   constructor(readonly mode: ResearchWebSearchMode, readonly depth: WebDepth, readonly question: string, readonly signal: AbortSignal | undefined,
-    readonly model: ModelRef | null | undefined, private readonly evidenceBytes: number, private readonly deps: Partial<WebResearchDeps> = {}) {
-    this.explicit = explicitWebRequest(question);
+    readonly model: ModelRef | null | undefined, private readonly evidenceBytes: number, private readonly deps: Partial<WebResearchDeps> = {},
+    /** The user's own words, when the search question is derived from them (a route's target and classes). */
+    asked = question) {
+    this.explicit = explicitWebRequest(asked);
   }
   get enabled(): boolean { return this.mode !== 'off'; }
   /** The supervisor may choose web at most once (fast/balanced) or twice (deep). */

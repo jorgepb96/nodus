@@ -52,6 +52,9 @@ for (const requiredPackage of [
   'libheif-js@1.19.8',
   'onnxruntime-node@1.21.0',
   `sharp@${json('package-lock.json').packages['node_modules/sharp'].version}`,
+  // Development dependencies of the desktop that ship anyway, in the bundled server's node_modules.
+  `esbuild@${json('package-lock.json').packages['node_modules/esbuild'].version}`,
+  `playwright-core@${json('package-lock.json').packages['node_modules/playwright-core'].version}`,
 ]) {
   assert.match(packageLicenses, new RegExp(`Package: ${requiredPackage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
 }

@@ -1,3 +1,4 @@
+import { useLearningArtifact } from '../learning/useLearningArtifact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   ResearchQuestion,
@@ -56,6 +57,7 @@ export function ResearchMapView({
     coverageQuestionQueue.snapshot()
   );
   const [detail, setDetail] = useState<ResearchQuestionDetail | null>(null);
+  useLearningArtifact('overview',detail?.rq.status==='mapped'?detail.rq.id:null,detail?.subQuestions.flatMap(q=>q.links.filter(l=>l.kind==='idea'||l.kind==='work').map(l=>({kind:l.kind as 'idea'|'work',id:l.refId})))??[]);
   const [newQuestion, setNewQuestion] = useState('');
   const [newNotes, setNewNotes] = useState('');
   const [subDraft, setSubDraft] = useState<SubDraft[]>([]);
@@ -317,7 +319,7 @@ export function ResearchMapView({
                 <button className="btn btn-ghost border border-neutral-700 text-xs gap-1.5" onClick={redecompose} disabled={busy === 'decompose'}>
                   <Icon name="refresh" size={13} /> {t('Re-descomponer')}
                 </button>
-                <button className="btn btn-primary text-xs gap-1.5" onClick={runMap} disabled={busy === 'map' || subDraft.length === 0}>
+                <button data-testid="coverage-map-action" className="btn btn-primary text-xs gap-1.5" onClick={runMap} disabled={busy === 'map' || subDraft.length === 0}>
                   <Icon name="strata" size={13} /> {t('Mapear cobertura')}
                 </button>
                 {detail.rq.status === 'mapped' && (

@@ -36,7 +36,7 @@ test('the home page presents the four main vaults, the rest, and the toolkit', (
     assert.ok(home.includes(`<h3>${name}</h3>`), `the remaining vaults include ${name}`);
   }
   // the six tools the desktop app actually ships (src/navigation.ts TOOLKIT_TOOLS)
-  for (const tool of ['PDF Presenter', 'Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'OCR Workspace']) {
+  for (const tool of ['Nodus Presenter', 'Nodus Apps', 'Nodus Convert', 'Nodus Protect', 'Nodus Translate', 'OCR Workspace']) {
     assert.ok(home.includes(`<h3>${tool}</h3>`), `the toolkit section includes ${tool}`);
   }
   // every vault mode ships today, so no page may still call one of them unreleased
@@ -465,7 +465,6 @@ test('the app page documents the current desktop builds and available vaults', (
   const app = read('app/index.html');
   for (const asset of [
     'Nodus-mac-arm64.dmg',
-    'Nodus-mac-x64.dmg',
     'Nodus-win-x64.exe',
     'Nodus-linux-x86_64.AppImage',
     'Nodus-linux-amd64.deb',
@@ -473,6 +472,7 @@ test('the app page documents the current desktop builds and available vaults', (
   ]) {
     assert.match(app, new RegExp(`https://github\\.com/jorgepb96/nodus/releases/latest/download/${asset.replaceAll('.', '\\.')}`), `${asset} uses the stable release URL`);
   }
+  assert.match(app, /https:\/\/github\.com\/jorgepb96\/nodus\/releases\/latest\/download\/Nodus-mac-x64\.dmg/, 'Intel downloads follow the latest release');
   for (const vault of ['Academic', 'Teaching', 'Study', 'Databases', 'Genealogy', 'Worldbuilding', 'Primary Sources', 'Testimony', 'Prosopography']) {
     assert.match(app, new RegExp(`\\b${vault}\\b`), `${vault} is represented on the app page`);
   }

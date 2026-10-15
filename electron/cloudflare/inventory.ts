@@ -4,11 +4,12 @@ import type Database from 'better-sqlite3';
 import { getDb } from '../db/database';
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { buildServerSnapshot } from '../serverSync/serverSnapshot';
-import { buildServerLibraryPublication } from '../serverSync/serverLibrary';
+import { buildServerLibraryPublicationAsync } from '../serverSync/serverLibrary';
 import { describeVectorSet, type VectorKind } from '../serverSync/serverVectors';
 import { readVaultConfig } from '../serverSync/serverSyncShared';
 import type { CloudflareDeployPreview, CloudflareVaultInventory } from '@shared/cloudflare';
 import { currentPricingCatalog, estimateCloudflareCost } from './pricing';
+import { CLOUDFLARE_SYNC_INTERVAL_MS } from '../serverSync/cloudflareSyncSafety';
 
 const gzipAsync = promisify(gzip);
 const INLINE_D1_ROW_BYTES = 512 * 1024;
@@ -59,7 +60,7 @@ export async function inspectActiveVaultForCloudflare(activity: Partial<Cloudfla
   const vault = getActiveVault();
   const db = getDb();
   const config = readVaultConfig(vault);
-  const library = config.includeLibraryDocuments ? buildServerLibraryPublication() : null;
+  const library = config.includeLibraryDocuments ? await buildServerLibraryPublicationAsync() : null;
   const snapshot = buildServerSnapshot(vault, {
     nodusServerIncludeUserContent: config.includeUserContent,
     nodusServerIncludePassages: config.includePassages,
@@ -74,10 +75,14 @@ export async function inspectActiveVaultForCloudflare(activity: Partial<Cloudfla
   const vectors = vectorInventory(db, config.includeVectors, config.includePassages);
   const exactVectorBytes = vectors.reduce((sum, entry) => sum + entry.bytes, 0);
   const publicationsPerMonth = Math.max(1, Math.round(activity.publicationsPerMonth ?? 30));
-  const apiReadsPerMonth = Math.max(0, Math.round(activity.apiReadsPerMonth ?? 3_000));
+  // Conservatively model a continuously running Desktop: action claim, account lookup,
+  // Library changes/command claim, owner inbox and Nodi notes. Each extra replica probes
+  // role, snapshot and preferences. 304 responses still invoke the Worker and D1.
+  const devices = Math.max(1, Math.round(activity.devices ?? 2));
+  const backgroundRequests = Math.ceil(30 * 86400_000 / CLOUDFLARE_SYNC_INTERVAL_MS) * (6 + 3 * (devices - 1));
+  const apiReadsPerMonth = Math.max(0, Math.round(activity.apiReadsPerMonth ?? 3_000)) + backgroundRequests;
   const semanticQueriesPerMonth = Math.max(0, Math.round(activity.semanticQueriesPerMonth ?? 300));
   const mutationRowsPerMonth = Math.max(0, Math.round(activity.mutationRowsPerMonth ?? 300));
-  const devices = Math.max(1, Math.round(activity.devices ?? 2));
   const exactDimensions = vectors.filter((entry) => entry.mode === 'r2-exact').reduce((sum, entry) => sum + entry.count * entry.dimensions, 0);
   const averageWorkerCpuMs = Math.max(1, Number(activity.averageWorkerCpuMs ?? Math.min(50, 4 + exactDimensions / 20_000_000)));
   const uploadRequests = publicationsPerMonth * (Math.ceil(structured.rows / 15) + assets.count + (library?.packages.length || 0) + 5);
@@ -102,7 +107,7 @@ export async function inspectActiveVaultForCloudflare(activity: Partial<Cloudfla
     vectors,
     activity: {
       devices, publicationsPerMonth, apiReadsPerMonth, semanticQueriesPerMonth, mutationRowsPerMonth,
-      estimatedWorkerRequestsPerMonth: Math.ceil(apiReadsPerMonth + semanticQueriesPerMonth + mutationRowsPerMonth * 2 + uploadRequests + devices * 24 * 30),
+      estimatedWorkerRequestsPerMonth: Math.ceil(apiReadsPerMonth + semanticQueriesPerMonth + mutationRowsPerMonth * 2 + uploadRequests),
       averageWorkerCpuMs, estimatedEgressBytesPerMonth,
     },
   };

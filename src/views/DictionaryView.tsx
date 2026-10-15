@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { createPortal } from "react-dom";
 import {
   useCallback,
@@ -513,7 +514,7 @@ function CreationDialog({
   onOpenExisting: (entry: DictionaryEntrySummary) => void;
   onQueued: (entries: Array<Pick<DictionaryEntry, "id" | "name">>) => void;
 }) {
-  const [input, setInput] = useState(emptyInput);
+  const [input, setInput] = useState(() => ({...emptyInput(), outputLanguage: settings.promptLanguage}));
   const [drafts, setDrafts] = useState<DictionaryCreationDraft[]>(() => [
     emptyCreationDraft(),
   ]);
@@ -1389,6 +1390,7 @@ export function DictionaryView({
           </button>
         </div>
         <WorkspaceTabStrip
+          className="workspace-tabs-in-header"
           homeLabel={tx("Diccionario ({n})", { n: total })}
           homeIcon="list"
           homeTestId="dictionary-tab-home"
@@ -1407,6 +1409,7 @@ export function DictionaryView({
       </header>
       {activeId ? (
         <DictionaryEntryView
+          settings={settings}
           key={activeId}
           mobile={mobile}
           entryId={activeId}
@@ -1433,7 +1436,6 @@ export function DictionaryView({
               return next;
             })
           }
-          settings={settings}
           model={model}
           research={research}
           catalog={catalog}
@@ -1868,13 +1870,13 @@ function DictionaryGenerationState({
 }
 
 function DictionaryEntryView({
+  settings,
   entryId,
   mobile = false,
   restoredTab,
   onTabChange,
   progress,
   onGenerationStarted,
-  settings,
   model,
   research,
   catalog,
@@ -1884,13 +1886,13 @@ function DictionaryEntryView({
   onOpenLibraryWork,
   onOpenEntry,
 }: {
+  settings: AppSettings;
   entryId: string;
   mobile?: boolean;
   restoredTab?: DictionaryDetailTab;
   onTabChange: (tab: DictionaryDetailTab) => void;
   progress?: DictionaryProgress;
   onGenerationStarted: (progress: DictionaryProgress) => void;
-  settings: AppSettings;
   model: ModelRef | null;
   research: DictionaryResearchOptions;
   catalog: CatalogData;
@@ -1909,6 +1911,7 @@ function DictionaryEntryView({
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [hideBackgroundFailure, setHideBackgroundFailure] = useState(false);
   const choseTab = useRef(restoredTab !== undefined);
+  useLearningArtifact('dictionary', detail?.currentVersion?.id, learningMarkdownRefs(detail?.currentVersion?.contentMarkdown ?? ''));
   const load = useCallback(
     async () => setDetail(await window.nodus.getDictionaryEntry(entryId)),
     [entryId],

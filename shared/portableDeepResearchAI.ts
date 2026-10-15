@@ -5,7 +5,7 @@ import {deepResearchQualityPromptPack} from './deepResearchQualityPromptPacks';
 import {deepResearchWritingPromptPack,deepResearchWritingRuntimeCopy} from './deepResearchWritingPromptPacks';
 import {deepResearchLengthPromptPack,isEmptyContinuation} from './deepResearchLengthPromptPacks';
 import {countDeepResearchWords,extendDeepResearchSection,planDeepResearchSectionLength,type DeepResearchSectionLengthPlan} from './deepResearchSectionLength';
-import {deepResearchNarrativeRules,normalizeSectionClaimAudit,MAX_COVERAGE_QUESTIONS,type DeepResearchPlan,type DeepResearchPlanSection,type CitationClaim,type CitationVerdict,type CoherenceIssue,type FinalizeInput,type FinalizeResult,type PlanInput,type PlanCoverageAuditInput,type ReportEditorialReview,type SectionInput,type SectionClaimAudit,type DeepResearchProofRole,type AtomicPassageRetrieval,type SectionEvidencePlan,type SectionRevisionInput} from '../electron/ai/deepResearchCore';
+import { deepResearchNarrativeRules, MAX_COVERAGE_QUESTIONS, type DeepResearchPlan, type DeepResearchPlanSection, type CitationClaim, type CitationVerdict, type CoherenceIssue, type FinalizeInput, type FinalizeResult, type PlanInput, type PlanCoverageAuditInput, type ReportEditorialReview, type SectionInput, type SectionClaimAudit, type DeepResearchProofRole, type SectionEvidencePlan, type SectionRevisionInput } from '../electron/ai/deepResearchCore';
 import type {DeepResearchApproach} from './deepResearchApproaches';
 import type {CallOpts} from '../electron/ai/aiClient';
 export interface AcademicApproachContext {

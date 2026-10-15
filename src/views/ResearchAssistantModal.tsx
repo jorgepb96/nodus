@@ -1,3 +1,10 @@
+import { composerDraftStore, rememberComposerDraft } from '../researchComposerDrafts';
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
+import { takeLearningPrompt } from '../learning/learningPrompt';
+import { learningAnswerReferences } from '../learning/learningEvidence';
+import { learningChatRecovery } from '@shared/academicLearning';
+import { useAcademicInterface } from '../components/AcademicInterfaceContext';
+import { AcademicSecondary } from '../components/AcademicSecondary';
 import { ProjectInstructionsDialog } from '../components/ProjectInstructionsDialog';
 import { ResearchActivityPanel } from '../components/ResearchActivityPanel';
 import { ResearchWebSearchControl } from '../components/ResearchWebSearchControl';
@@ -28,7 +35,7 @@ import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
 import { ChatSkillsControl } from '../components/ChatSkillsControl';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import type {
   AppSettings,
   ChatConversationSummary,
@@ -50,12 +57,12 @@ import type { AssistantNavigationTarget } from '../navigation';
 import { t, tx } from '../i18n';
 import { useFeatureModel } from '../hooks/useFeatureModel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
-import { researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
+import { localizeResearchCitationLabels, researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
 import './researchAssistant.css';
 import { isPhoneSurface } from '../mobileWeb/phoneLayout';
 import { MobileSheet } from '../components/MobileSheet';
 
-import {EMPTY_RESEARCH_CHAT_SELECTION as DEFAULT_SELECTION,DEFAULT_RESEARCH_CHAT_SELECTION as LAYERED_SELECTION} from '@shared/researchChatDefaults';
+import {DEFAULT_RESEARCH_CHAT_SELECTION as LAYERED_SELECTION} from '@shared/researchChatDefaults';
 
 /** The context balloon's layers, in the order the activity balloon lists what they read. */
 const CONTEXT_LAYERS = [
@@ -66,6 +73,7 @@ const CONTEXT_LAYERS = [
 // Starter prompts offered as clickable chips on an empty chat. They run against
 // whatever context is currently selected (every layer by default), so they read as
 // general research openers rather than mode switches.
+const SIMPLE_CHAT_SUGGESTIONS = ['Resume las fuentes de este vault.', 'Compara lo que dicen estas fuentes.', '¿Qué evidencia respalda esta afirmación?'];
 const CHAT_SUGGESTIONS = [
   '¿Cuáles son las ideas más centrales del corpus y por qué?',
   'Resume las principales contradicciones y tensiones.',
@@ -85,6 +93,25 @@ const GENEALOGY_SUGGESTIONS = [
 ];
 
 type UiMessage = ResearchUiMessage;
+
+/** How often a streaming answer is repainted: about 20 times a second, instead of once per
+ *  delta. Short enough to read as live typing. */
+const STREAM_PAINT_MS = 50;
+
+/** An adapter's answer (Study, World, Databases). `renderMessage` builds fresh callback props on
+ *  every call, which defeats the memo inside ChatMarkdown, so without this every streamed delta
+ *  re-parsed the Markdown of every earlier answer. A delta replaces only the streaming message
+ *  object; the others keep their identity and are skipped here. */
+const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, streaming }: { render: (message: UiMessage, streaming: boolean) => ReactNode; message: UiMessage; streaming: boolean }) {
+  return <>{render(message, streaming)}</>;
+});
+
+// Scrolling and opening chat controls must not replace completed citation buttons.
+// Keep the callback stable so Markdown retains its DOM and the guide's anchor.
+const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language}:{content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
+  const cite=useCallback((citation:MarkdownCitation)=>onCitation(citation,{conversationId,messageId}),[onCitation,conversationId,messageId]);
+  return <ChatMarkdown key={language} content={content} streaming={streaming} onCitation={cite}/>;
+});
 
 export function ResearchAssistantModal({
   settings,
@@ -118,18 +145,23 @@ export function ResearchAssistantModal({
 }) {
   const phone = isPhoneSurface();
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const simpleInterface = useAcademicInterface() === 'simple' && isAcademic && !adapter;
   const api = adapter ?? window.nodus;
   const apiRef = useRef(api);
   apiRef.current = api;
   const panelKey = adapter?.id ?? 'research';
-  const [historyOpen, setHistoryOpen] = useState(() => !phone && (!embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) === '1'));
+  const [historyOpen, setHistoryOpen] = useState(() => !phone && (!embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) !== '0'));
   const [contextOpen, setContextOpen] = useState(() => !phone && embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
   const toggleHistory = () => setHistoryOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatHistoryOpen`, open ? '0' : '1'); return !open; });
   const toggleContext = () => setContextOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatContextOpen`, open ? '0' : '1'); return !open; });
-  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(LAYERED_SELECTION));
+  const learning = useAcademicLearning();
+  const draftScope = isAcademic && embedded && !adapter ? learning.vaultId ?? null : null;
+  const draftSeed = useRef(composerDraftStore(draftScope));
+  const initialDraft = draftSeed.current.drafts[draftSeed.current.lastId ?? 'new'];
+  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ?? LAYERED_SELECTION));
   const [messages, setMessages] = useState<UiMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [attachments, setAttachments] = useState<ResearchAttachment[]>([]);
+  const [input, setInput] = useState(initialDraft?.input ?? '');
+  const [attachments, setAttachments] = useState<ResearchAttachment[]>(initialDraft?.attachments ?? []);
   const [attaching, setAttaching] = useState(false);
   const [attachmentError, setAttachmentError] = useState('');
   const attachmentBusyRef = useRef(false);
@@ -150,6 +182,10 @@ export function ResearchAssistantModal({
   const setWebSearch = (mode: ResearchWebSearchMode) => { setWebSearchState(mode); void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined); };
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const draftRestoring = useRef(Boolean(draftScope && draftSeed.current.lastId && !initialTarget && !initialConversationTarget));
+  useEffect(() => {
+    if(!draftRestoring.current)rememberComposerDraft(draftScope,activeId,{input,attachments,selection});
+  },[draftScope,activeId,input,attachments,selection]);
   const promptConversationKey = activeId ? `${adapter?.id ?? 'research'}:${activeId}` : null;
   const systemPrompts = useResearchSystemPrompts(promptConversationKey);
   const [showArchived, setShowArchived] = useState(false);
@@ -189,6 +225,7 @@ export function ResearchAssistantModal({
   // A notebook is read once its collections are indexed; until then it says so and waits.
   const notebookBlocked = !!activeNotebook && (!notebookPreparation || notebookPreparation.pending > 0);
   const [pendingDelete, setPendingDelete] = useState<ChatConversationSummary | null>(null);
+  const [citationOrigin, setCitationOrigin] = useState<{conversationId?:string;messageId?:string}>({});
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [noteTarget, setNoteTarget] = useState<{ content: string; title: string; source: NoteSource } | null>(null);
   const [conversationNotice, setConversationNotice] = useState<string | null>(null);
@@ -202,6 +239,9 @@ export function ResearchAssistantModal({
   // Id of the assistant message currently streaming — drives the live caret and
   // the "stop" affordance. Null when nothing is in flight.
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  // Set once the main process repaints the turn with its own finished text (skills run, route
+  // checks pending): its drawings are complete blocks and render instead of "Loading…".
+  const [repaintedId, setRepaintedId] = useState<string | null>(null);
   // Id of the last assistant message the user stopped. Its partial text stays and
   // the red notice renders under it instead of replacing the whole answer.
   const [stoppedMessageId, setStoppedMessageId] = useState<string | null>(null);
@@ -222,6 +262,9 @@ export function ResearchAssistantModal({
   // without the stream overwriting the conversation they switched to.
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
+  // Bumped by every conversation load and by "new chat": a load whose answer arrives after a
+  // newer one started (two chats clicked in quick succession) must not replace it.
+  const loadSequenceRef = useRef(0);
 
   const availableModels = useMemo(() => {
     const models: ModelRef[] = [];
@@ -327,6 +370,7 @@ export function ResearchAssistantModal({
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
+    loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
     setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return rest; });
@@ -346,6 +390,7 @@ export function ResearchAssistantModal({
   useEffect(() => {
     if (!initialTarget || initialTarget.nonce === lastInitialTargetRef.current) return;
     lastInitialTargetRef.current = initialTarget.nonce;
+    loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
     setActiveId(null);
@@ -358,15 +403,18 @@ export function ResearchAssistantModal({
     setCopiedMessageId(null);
   }, [initialTarget]);
 
-  const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null): Promise<boolean> => {
+  const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null, restoringDraft = false): Promise<boolean> => {
     if (attachmentBusyRef.current) return false;
+    const sequence = ++loadSequenceRef.current;
     const conversation = await api.getConversation(id);
+    if (sequence !== loadSequenceRef.current) return false;
     if (!conversation) {
       await refreshConversations();
       setConversationNotice(t('La conversación original ya no está disponible.'));
       return false;
     }
     const storedAttachments = await window.nodus.listResearchAttachments({ surface: attachmentSurface, conversationId: id });
+    if (sequence !== loadSequenceRef.current) return false;
     const referenced = new Set(conversation.messages.flatMap(message => message.attachments?.map(file => file.id) ?? []));
     setAttachments((storedAttachments ?? []).filter(file => !referenced.has(file.id)));
     setAttachmentError('');
@@ -378,9 +426,12 @@ export function ResearchAssistantModal({
     setStoppedMessageId(null);
     setSelection(cloneSelection(conversation.selection ?? LAYERED_SELECTION));
     setActiveNotebookId(conversation.selection?.notebookId ?? conversation.notebookId ?? null);
-    if (conversation.model) setSelectedModel(conversation.model);
+    if (conversation.model && !restoringDraft) setSelectedModel(conversation.model);
     setContextTitle(conversation.title || null);
-    setInput('');
+    const draft = composerDraftStore(draftScope).drafts[id];
+    setInput(draft?.input ?? '');
+    if(draft?.attachments.length)setAttachments(draft.attachments);
+    draftRestoring.current=false;
     setConversationNotice(null);
     const resolvedMessageId = loadedMessages.some((message) => message.id === messageId)
       ? messageId
@@ -536,13 +587,13 @@ export function ResearchAssistantModal({
         stats: m.stats ?? null,
         error: m.error ?? false,
       }));
-      await api.saveConversationMessages(conversationId, records, { model: selectedModel, selection });
-      if (shouldTitle) {
+      await api.saveConversationMessages(conversationId, records, { model: selectedModel, selection, ...(!adapter && draftScope ? {vaultId:draftScope} : {}) });
+      if (shouldTitle && (!draftScope || (await window.nodus.getActiveVault()).id === draftScope)) {
         await api.generateConversationTitle?.(conversationId, selectedModel)?.catch(() => '');
       }
       await refreshConversations();
     },
-    [api, refreshConversations, selectedModel, selection]
+    [api, adapter, draftScope, refreshConversations, selectedModel, selection]
   );
 
   // Runs one assistant turn against `priorMessages` + a fresh user turn. Shared by
@@ -573,8 +624,26 @@ export function ResearchAssistantModal({
 
     let streamed = '';
     let councilResult: ConciliumResult | undefined;
+    // Deltas arrive one IPC message at a time, often faster than the screen refreshes, and
+    // each one used to re-render the timeline and re-parse the growing answer's Markdown.
+    // They are gathered and painted together at most every STREAM_PAINT_MS.
+    let unpainted = '';
+    let paintTimer: number | null = null;
+    const paint = () => {
+      paintTimer = null;
+      const chunk = unpainted;
+      unpainted = '';
+      if (!chunk || activeIdRef.current !== conversationId) return; // user switched away
+      setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: message.content + chunk } : message));
+      window.setTimeout(updateJumpIndicator, 0);
+    };
+    const dropUnpainted = () => {
+      if (paintTimer != null) window.clearTimeout(paintTimer);
+      paintTimer = null;
+      unpainted = '';
+    };
     try {
-      if (requestMessages.some(message => message.attachments?.length)) await persist(conversationId, [...priorMessages, userMessage], false);
+      await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
         { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
@@ -587,20 +656,18 @@ export function ResearchAssistantModal({
             setMessages(current => current.map(message => message.id === assistantId ? { ...message, concilium: result } : message));
           },
           onReplace: (text) => {
+            // The repaint is the whole turn so far: deltas still waiting to be painted are in it.
+            dropUnpainted();
             streamed = text;
+            setRepaintedId(text ? assistantId : null);
             if (activeIdRef.current !== conversationId) return;
             setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: text } : message));
             window.setTimeout(updateJumpIndicator, 0);
           },
           onDelta: (delta) => {
             streamed += delta;
-            if (activeIdRef.current !== conversationId) return; // user switched away
-            setMessages((current) =>
-              current.map((message) =>
-                message.id === assistantId ? { ...message, content: message.content + delta } : message
-              )
-            );
-            window.setTimeout(updateJumpIndicator, 0);
+            unpainted += delta;
+            if (paintTimer == null) paintTimer = window.setTimeout(paint, STREAM_PAINT_MS);
           },
           onReasoning: (delta) => {
             if (activeIdRef.current !== conversationId) return;
@@ -612,6 +679,9 @@ export function ResearchAssistantModal({
           },
         }
       );
+      // The settled answer below replaces the streamed text; a paint still pending would
+      // append its deltas to it a second time.
+      dropUnpainted();
       // A user-triggered stop resolves with the partial answer; treat an empty
       // partial as "nothing generated" and drop the placeholder bubble.
       const aborted = stopRequestedRef.current || Boolean(response.aborted);
@@ -631,7 +701,17 @@ export function ResearchAssistantModal({
         window.setTimeout(updateJumpIndicator, 0);
       }
       await persist(conversationId, finalMessages, isFirstExchange);
+      if (!adapter && learning.session && ['first-answer','research-question'].includes(learning.session.lessonId)) {
+        if (aborted) learning.emit({ kind: 'recovery', recovery: 'cancelled' });
+        else {
+          const refs = await learningAnswerReferences(answer, learning.session.documentId, learning.session.documentRevision);
+          if (refs.citationIds.length) learning.emit({ kind: 'answer', ...refs, conversationId, messageId: assistantId, valid: true });
+          else learning.emit({ kind: 'recovery', recovery: 'no-citation', conversationId, messageId: assistantId });
+        }
+      }
     } catch (e) {
+      if (!adapter) learning.emit({ kind: 'recovery', recovery: learningChatRecovery(e, stopRequestedRef.current), conversationId, messageId: assistantId });
+      dropUnpainted();
       setActivityRun(current => current?.turnId === assistantId ? { ...current, activities: settleResearchActivities(current.activities, stopRequestedRef.current ? 'cancelled' : 'failed'), outcome: stopRequestedRef.current ? 'cancelled' : 'failed' } : current);
       if (stopRequestedRef.current) {
         // The user stopped the stream: keep the text that already arrived and mark
@@ -665,10 +745,32 @@ export function ResearchAssistantModal({
         await persist(conversationId, finalMessages, false);
       }
     } finally {
+      dropUnpainted();
       setSending(false);
       setStreamingId(null);
+      setRepaintedId(null);
     }
   };
+
+  useEffect(() => {
+    if (adapter) return;
+    const prepare = () => {
+      const value = takeLearningPrompt(learning.vaultId, learning.session?.id);
+      if (!value) return;
+      if(selection.notebookId && activeId){rememberComposerDraft(draftScope,activeId,{input,attachments,selection});startNewConversation();}
+      loadSequenceRef.current++; draftRestoring.current=false;
+      setInput(current => current.includes(value.prompt) ? current : current.trim() ? `${current}\n\n${value.prompt}` : value.prompt);
+      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ideas: false, documents: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
+      inputRef.current?.focus();
+    };
+    prepare(); window.addEventListener('nodus:learning-prompt', prepare);
+    return () => window.removeEventListener('nodus:learning-prompt', prepare);
+  }, [adapter, learning.vaultId, learning.session?.id, selection.notebookId, activeId]);
+
+  useEffect(() => {
+    if(!draftRestoring.current || !draftSeed.current.lastId)return;
+    void loadConversation(draftSeed.current.lastId,undefined,undefined,true).finally(()=>{draftRestoring.current=false;});
+  },[]);
 
   const pendingCaretRef = useRef<number | null>(null);
   useLayoutEffect(() => {
@@ -813,7 +915,8 @@ export function ResearchAssistantModal({
   const archivedCount = conversations.filter((c) => c.archived).length;
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
   // Citations open their evidence workspace without replacing the conversation.
-  const handleCitation = useCallback((c: MarkdownCitation) => {
+  const handleCitation = useCallback((c: MarkdownCitation, origin?: {conversationId?:string;messageId?:string}) => {
+    setCitationOrigin(origin ?? {});
     // A web source opens where it lives: a new tab of Nodus' Browser, landing on the
     // quoted passage. Library sources keep their citation workspace.
     if (c.kind === 'passage' && c.id.startsWith('web:')) {
@@ -826,6 +929,20 @@ export function ResearchAssistantModal({
     setCitation({ kind: c.kind, id: c.id });
   }, []);
 
+  const chatModelControl = (<select
+            className="input text-xs py-1 max-w-xs"
+            title={concilium ? t('Chairman') : t('Modelo del chat')}
+            disabled={sending || !!concilium}
+            value={serializedModel}
+            onChange={(e) => setSelectedModel(e.target.value ? parseModel(e.target.value) : null)}
+          >
+            {!selectedModel && <option value="">{t('Sin modelo seleccionado')}</option>}
+            {availableModels.map((model) => (
+              <option key={serializeModel(model)} value={serializeModel(model)}>
+                {modelLabel(model)}
+              </option>
+            ))}
+          </select>);
   const chatActions = (
     <div className="research-assistant-actions">
           {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
@@ -847,11 +964,13 @@ export function ResearchAssistantModal({
               onClick={() => setShowContext((value) => !value)}
             >
               <Icon name="layers" size={15} />
-              <span className="hidden min-w-0 truncate sm:inline">{t('Contexto')}</span>
+              <span className="hidden min-w-0 truncate sm:inline">{t(simpleInterface ? 'Fuentes' : 'Contexto')}</span>
               {sourceFilterOn && <Icon name="library" size={12} aria-label={t('Biblioteca filtrada')} />}
               <span className="chat-skills-count">{selectedCount}</span>
             </button>
           )}
+          <AcademicSecondary compact={simpleInterface} label="Opciones">
+            {simpleInterface && chatModelControl}
           <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={sending || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
           <ChatSkillsControl surface="assistant" disabled={sending} />
           {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending} onChange={next => {
@@ -859,6 +978,9 @@ export function ResearchAssistantModal({
             if (next) setSelectedModel(next.models[next.chairman]);
           }} />}
 
+            {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
+          </AcademicSecondary>
+          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[contextLayers.ideas ? t('Ideas') : null, contextLayers.documents ? t('Documentos') : null, webSearch !== 'off' ? t('Búsqueda web') : null].filter(Boolean).join(' · ')}</span>}
           </div>);
   const activityPanel = !adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={webSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.documents ? [] : ['profiles', 'nodus', 'zotero', 'context'] as const)]} />;
   const historyPanel = (<aside hidden={!phone && !historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
@@ -921,25 +1043,12 @@ export function ResearchAssistantModal({
           <div className="research-file-drop-label"><Icon name="plus" size={28} /><strong>{t('Suelta los archivos para adjuntarlos')}</strong></div>
         </div>}
         <header className="research-assistant-header px-4 py-3 border-b border-neutral-800 flex items-center gap-3">
-          {embedded && <button className="btn btn-ghost" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
+          {embedded && <button type="button" className="btn btn-ghost border border-neutral-700" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
           <div className="flex items-center gap-2 font-semibold">
             <Icon name="chat" className="research-accent-text" />
             {embedded ? 'Research chat' : t('Asistente de investigación')}
           </div>
-          <select
-            className="input text-xs py-1 max-w-xs"
-            title={concilium ? t('Chairman') : t('Modelo del chat')}
-            disabled={sending || !!concilium}
-            value={serializedModel}
-            onChange={(e) => setSelectedModel(e.target.value ? parseModel(e.target.value) : null)}
-          >
-            {!selectedModel && <option value="">{t('Sin modelo seleccionado')}</option>}
-            {availableModels.map((model) => (
-              <option key={serializeModel(model)} value={serializeModel(model)}>
-                {modelLabel(model)}
-              </option>
-            ))}
-          </select>
+          {!simpleInterface && chatModelControl}
           {phone ? <><button className="btn btn-ghost" aria-label={t('Opciones')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(true)}><Icon name="settings" size={18} /></button>
             <MobileSheet open={optionsOpen} title={t('Opciones')} onClose={() => setOptionsOpen(false)}>{chatActions}</MobileSheet></> : chatActions}
 
@@ -993,11 +1102,11 @@ export function ResearchAssistantModal({
                       <p className="max-w-md text-sm text-neutral-400">
                         {adapter ? t(adapter.subtitle) : isGenealogy
                           ? t('Pregunta sobre personas, parentescos, eventos, documentos y evidencia de la familia.')
-                          : t('Pregunta sobre ideas, autores, temas, contradicciones o documentos.')}
+                          : simpleInterface ? t('Pregunta sobre tus fuentes y comprueba las citas de las respuestas.') : t('Pregunta sobre ideas, autores, temas, contradicciones o documentos.')}
                       </p>
                     </div>
                     <div className="flex max-w-xl flex-wrap justify-center gap-2">
-                      {(adapter?.suggestions ?? (isGenealogy ? GENEALOGY_SUGGESTIONS : CHAT_SUGGESTIONS)).map((suggestion) => (
+                      {(adapter?.suggestions ?? (isGenealogy ? GENEALOGY_SUGGESTIONS : simpleInterface ? SIMPLE_CHAT_SUGGESTIONS : CHAT_SUGGESTIONS)).map((suggestion) => (
                         <button
                           key={suggestion}
                           className="suggestion-chip"
@@ -1053,7 +1162,7 @@ export function ResearchAssistantModal({
                               const fallbackTitle = messages.find((candidate) => candidate.role === 'user' && candidate.content.trim())?.content.trim().slice(0, 80);
                               const conversationTitle = summary?.title || contextTitle || fallbackTitle || t('Research chat');
                               setNoteTarget({
-                                content: message.content,
+                                content: isAcademic ? localizeResearchCitationLabels(message.content,t('Fuente')) : message.content,
                                 title: deriveNoteTitle(message.content, conversationTitle),
                                 source: researchNoteSource({
                                   surface: attachmentSurface,
@@ -1084,7 +1193,7 @@ export function ResearchAssistantModal({
                       </div>
                       {message.attachments?.length ? renderAttachments(message.attachments) : null}
                       {message.skills?.length ? <InvokedSkillPills skills={message.skills} /> : null}
-                      {message.concilium && <ConciliumResponses result={message.concilium} onCitation={handleCitation} />}
+                      {message.concilium && <ConciliumResponses result={message.concilium} onCitation={c => handleCitation(c, {conversationId: activeId ?? undefined, messageId: message.id})} />}
                       {message.role === 'assistant' && message.reasoning?.trim() && (
                         <details className="mb-2 rounded border border-neutral-800 bg-neutral-950/60">
                           <summary className="cursor-pointer select-none px-2 py-1 text-[11px] text-neutral-400 hover:text-neutral-200">
@@ -1098,7 +1207,7 @@ export function ResearchAssistantModal({
                       {message.role === 'assistant' && !message.error ? (
                         message.content ? (
                           <div className={message.id === streamingId ? 'stream-body' : undefined}>
-                            {adapter ? adapter.renderMessage(message, message.id === streamingId) : <ChatMarkdown content={message.content} onCitation={handleCitation} streaming={message.id === streamingId} />}
+                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ResearchMessageBody language={settings.uiLanguage ?? 'es'} content={message.content} conversationId={activeId ?? undefined} messageId={message.id} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
                             {message.id === streamingId && <span aria-hidden className="stream-caret" />}
                           </div>
                         ) : message.id === streamingId ? (
@@ -1189,7 +1298,7 @@ export function ResearchAssistantModal({
                   }}
                 />
                 {!adapter && !isGenealogy && <ResearchWebSearchControl value={webSearch} onChange={setWebSearch} disabled={sending} />}
-                <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />
+                {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
                 {sending ? (
                   <button
                     className="research-composer-send research-composer-stop"
@@ -1311,7 +1420,7 @@ export function ResearchAssistantModal({
       )}
 
       {citation && (
-        <SourceCitationModal
+        <SourceCitationModal learningOrigin={citationOrigin}
           target={citation}
           onClose={() => setCitation(null)}
         />

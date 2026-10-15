@@ -83,6 +83,12 @@ export function registerLibraryProtocol(): void {
       }
       const start = range?.start ?? 0;
       const end = range?.end ?? Math.max(0, stat.size - 1);
+      // An empty file has no byte 0: without this it was announced as one byte long with an
+      // empty body, a length mismatch the renderer reports as a failed load.
+      if (stat.size === 0) {
+        headers.set('Content-Length', '0');
+        return new Response(request.method === 'HEAD' ? null : new Uint8Array(0), { status: 200, headers });
+      }
       headers.set('Content-Length', String(Math.max(0, end - start + 1)));
       if (range) headers.set('Content-Range', `bytes ${start}-${end}/${stat.size}`);
       if (request.method === 'HEAD') return new Response(null, { status: range ? 206 : 200, headers });

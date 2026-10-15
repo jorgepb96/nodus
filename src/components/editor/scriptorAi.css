@@ -1,0 +1,58 @@
+.scriptor-ai-panel { position:absolute; z-index:25; bottom:16px; left:var(--scriptor-ai-inset); right:calc(var(--scriptor-ai-context-width) + var(--scriptor-ai-inset)); display:flex; flex-direction:column; width:auto; max-width:820px; margin:0 auto; border:1px solid var(--ew-line); border-radius:14px; background:var(--ew-paper); box-shadow:0 3px 20px #0002; font:12px system-ui,sans-serif; color:var(--ew-text); max-height:48%; overflow:auto; }
+.scriptor-ai-panel>:is(header,.scriptor-ai-controls,.scriptor-ai-decisions,form) { flex-shrink:0; }
+.scriptor-ai-panel header { display:flex; align-items:center; gap:9px; padding:10px 14px; }
+.scriptor-ai-panel header>svg { color:var(--ew-accent); flex-shrink:0; }
+.scriptor-ai-panel header>button { margin-left:auto; }
+.scriptor-ai-status { color:var(--ew-muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scriptor-ai-panel button { border-radius:6px; padding:6px 8px; min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+.scriptor-ai-panel button:hover:not(:disabled) { background:var(--ew-tint); color:var(--ew-accent); }
+.scriptor-ai-panel button:disabled { opacity:.45; cursor:default; }
+.scriptor-ai-panel :is(button,input,textarea):focus-visible { outline:2px solid var(--ew-accent); outline-offset:2px; }
+.scriptor-ai-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px; padding:0 12px 10px; }
+.scriptor-ai-select { position:relative; min-width:0; max-width:100%; }
+.scriptor-ai-select>button { border:1px solid var(--ew-line); max-width:100%; }
+.scriptor-ai-select>button>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+.scriptor-ai-quick { color:var(--ew-muted); }
+.scriptor-ai-quick[aria-pressed=true] { color:var(--ew-accent); background:var(--ew-tint); }
+.scriptor-ai-panel form { display:flex; align-items:center; gap:8px; border-top:1px solid var(--ew-line); padding:10px 12px; }
+.scriptor-ai-panel textarea { background:transparent; min-width:0; flex:1; resize:none; max-height:72px; line-height:1.6; outline:none; padding:5px 2px; color:inherit; }
+.scriptor-ai-tools { position:relative; }
+.scriptor-ai-tools-menu { position:absolute; bottom:calc(100% + 10px); left:0; padding:6px; width:max-content; max-width:240px; border:1px solid var(--ew-line); background:var(--ew-paper); border-radius:8px; box-shadow:0 6px 20px #0002; z-index:45; }
+.scriptor-ai-panel .scriptor-ai-send,.scriptor-ai-panel .scriptor-ai-primary { background:var(--ew-accent-fill); color:var(--ew-accent-on-fill); }
+.scriptor-ai-send { border-radius:50%!important; width:32px; flex-shrink:0; }
+.scriptor-ai-decisions { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; padding:0 12px 10px; }
+.scriptor-ai-error,.scriptor-ai-warnings { padding:0 14px 10px; color:#a32556; overflow-wrap:anywhere; min-height:0; overflow:auto; }
+html.dark .scriptor-ai-error,html.dark .scriptor-ai-warnings { color:#f6a1c2; }
+.scriptor-ai-options { padding:0!important; background:var(--ew-paper)!important; color:var(--ew-text)!important; border-color:var(--ew-line)!important; }
+.scriptor-ai-option-search { display:flex; align-items:center; gap:8px; padding:10px; border-bottom:1px solid var(--ew-line); }
+.scriptor-ai-option-search input { background:transparent; outline:none; min-width:0; width:100%; }
+.scriptor-ai-option-list { overflow:auto; min-height:0; }
+.scriptor-ai-option-list>button { display:flex; flex-wrap:wrap; width:100%; text-align:left; padding:9px 12px; position:relative; }
+.scriptor-ai-option-list>button>span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.scriptor-ai-option-list small { flex-basis:100%; color:var(--ew-muted); }
+.scriptor-ai-option-list>button[data-active=true] { background:var(--ew-tint); }
+.scriptor-ai-option-list>p { padding:12px; }
+.scriptor-ai-removed { background:#fce2ee; color:#a21c59; text-decoration:line-through; text-decoration-thickness:1.4px; }
+.scriptor-ai-added { background:#d9f1fc; color:#075779; text-decoration:none; white-space:pre-wrap; }
+html.dark .scriptor-ai-removed { background:#522b42; color:#ffb2d2; }
+html.dark .scriptor-ai-added { background:#173f50; color:#a5e5ff; }
+.scriptor-ai-raw-review { white-space:pre-wrap; overflow-wrap:anywhere; padding:24px; min-height:300px; font:14px/1.7 monospace; }
+.scriptor-ai-image-preview { display:flex; flex-direction:column; align-items:center; flex:0 1 auto; min-height:0; padding:0 14px 10px; margin:0; }
+.scriptor-ai-image-preview img { display:block; flex:1 1 auto; min-height:0; max-height:180px; max-width:100%; object-fit:contain; border-radius:8px; }
+.scriptor-ai-image-preview figcaption { flex-shrink:0; text-align:center; padding-top:5px; color:var(--ew-muted); font-size:10px; }
+.editorial-writing-column { --scriptor-ai-inset:20px; --scriptor-ai-context-width:0px; }
+.editorial-writing-column:has(.scriptor-ai-panel)>.editorial-document-scroll { padding-bottom:calc(110px + var(--scriptor-ai-height, 160px)); scroll-padding-bottom:calc(var(--scriptor-ai-height, 160px) + 32px); }
+@container workspace (max-width:700px) { .editorial-writing-column { --scriptor-ai-inset:8px; } .scriptor-ai-panel header { padding:8px 10px; } .scriptor-ai-status { font-size:10px; } .scriptor-ai-quick { display:none!important; } .scriptor-ai-controls { gap:4px; } }
+@media print { .scriptor-ai-panel { display:none; } }
+
+.scriptor-raw-polish { display:flex; gap:6px; align-items:center; padding:8px 12px; border:1px solid var(--ew-line); border-radius:8px; background:var(--ew-paper); color:var(--ew-accent); box-shadow:0 3px 12px #0002; }
+.scriptor-ai-controls .model-picker-menu { width:auto; flex:0 1 auto; max-width:100%; min-width:120px; }
+.editorial-editor .scriptor-ai-removed { background:#fce2ee; color:#a21c59; text-decoration:line-through; }
+.editorial-editor .scriptor-ai-added { background:#d9f1fc; color:#075779; text-decoration:none; }
+html.dark .editorial-editor .scriptor-ai-removed { background:#522b42; color:#ffb2d2; }
+html.dark .editorial-editor .scriptor-ai-added { background:#173f50; color:#a5e5ff; }
+/* Keep the floating composer clear of the contextual drawer. */
+@container workspace (max-width:1099px) {
+  .editorial-editor-body:has(.scriptor-ai-panel):has(.editorial-inspector) .editorial-writing-column { --scriptor-ai-context-width:min(320px,45cqw); padding-right:var(--scriptor-ai-context-width); }
+  .editorial-editor-body:has(.scriptor-ai-panel) .editorial-inspector { width:min(320px,45cqw); max-width:45%; }
+}

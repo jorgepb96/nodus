@@ -78,11 +78,14 @@ try {
   fs.cpSync(source, staged, { recursive: true, verbatimSymlinks: true });
   assert.deepEqual(inventory(staged), original);
   const old = path.join(root, 'private-program/previous');
-  fs.renameSync(runtime, old); fs.renameSync(staged, runtime); fs.rmSync(old, { recursive: true });
+  fs.renameSync(runtime, old); fs.renameSync(staged, runtime);
+  // Windows may briefly retain filesystem handles after the children exit.
+  // Retry removal without hiding a persistent failure or relaxing ownership.
+  fs.rmSync(old, { recursive: true, maxRetries: 10, retryDelay: 100 });
   await connect(roots[0], 2);
   await Promise.all(clients.splice(0).map(client => client.close()));
   for (const processRecord of processes) assert.throws(() => process.kill(processRecord.pid, 0), error => error.code === 'ESRCH', 'owned child exited before removing executable resources');
-  fs.rmSync(path.join(root, 'private-program'), { recursive: true });
+  fs.rmSync(path.join(root, 'private-program'), { recursive: true, maxRetries: 10, retryDelay: 100 });
   assert.equal(fs.existsSync(runtime), false);
   assert.deepEqual(inventory(foreign), unrelated, 'removal preserves unrelated executables/configuration');
   for (const profile of roots) assert.equal(JSON.parse(fs.readFileSync(path.join(profile, 'profile/retained.json'))).retain, true);

@@ -32,7 +32,7 @@ test('essential tutorial is global, seen-once, skippable with confirmation and r
   assert.match(startup, /settings\.basicsTutorialVersion === 0/);
   assert.doesNotMatch(startup, /settings\.basicsTutorialVersion < BASICS_TUTORIAL_VERSION/);
   assert.match(startup, /preferencesForTutorialLanguage\(language\)/);
-  assert.match(startup, /updateSettings\(\{ basicsTutorialVersion: BASICS_TUTORIAL_VERSION \}\)/);
+  assert.match(startup, /updateSettings\(\{ basicsTutorialVersion: BASICS_TUTORIAL_VERSION/);
   assert.match(settings, /Guía esencial de Nodus e IA/);
   assert.match(settings, /patch\(\{ basicsTutorialVersion: 0 \}\)/);
   assert.match(tutorial, /ConfirmModal zIndex=\{220\}/);

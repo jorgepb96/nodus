@@ -1,5 +1,8 @@
+import { BACKUPS_RUNTIME_ERRORS, BACKUPS_RUNTIME_ERROR_PATTERNS } from './backupsErrors';
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
+import { CLOUDFLARE_SYNC_ERRORS, CLOUDFLARE_SYNC_ERROR_PATTERNS } from './cloudflareSyncErrors';
+import { STT_RUNTIME_ERRORS, STT_RUNTIME_ERROR_PATTERNS } from './sttErrors';
 
 /**
  * Main-process error sentences that reached non-Spanish readers in Spanish.
@@ -31,6 +34,26 @@ export type MainErrorTranslations = Partial<Record<AppLanguage, string>> & { en:
 
 /** Messages whose text is fixed, matched exactly. */
 export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
+  'Directorio ZIP64 dañado.': { en: 'The ZIP64 directory is damaged.', fr: 'Le répertoire ZIP64 est endommagé.', de: 'Das ZIP64-Verzeichnis ist beschädigt.', pt: 'O diretório ZIP64 está danificado.', 'pt-BR': 'O diretório ZIP64 está danificado.', it: 'La directory ZIP64 è danneggiata.', tr: 'ZIP64 dizini bozuk.' , "zh-CN": "ZIP64 目录已损坏。" ,
+  'zh-TW': "ZIP64 目錄已損壞。",
+  ko: "ZIP64 디렉터리가 손상되었습니다.",
+  ja: "ZIP64 ディレクトリが破損しています。", },
+  'Directorio ZIP64 inválido.': { en: 'The ZIP64 directory is invalid.', fr: 'Le répertoire ZIP64 n’est pas valide.', de: 'Das ZIP64-Verzeichnis ist ungültig.', pt: 'O diretório ZIP64 é inválido.', 'pt-BR': 'O diretório ZIP64 é inválido.', it: 'La directory ZIP64 non è valida.', tr: 'ZIP64 dizini geçersiz.' , "zh-CN": "ZIP64 目录无效。" ,
+  'zh-TW': "ZIP64 目錄無效。",
+  ko: "ZIP64 디렉터리가 잘못되었습니다.",
+  ja: "ZIP64 ディレクトリが無効です。", },
+  'Directorio ZIP64 no encontrado.': { en: 'The ZIP64 directory was not found.', fr: 'Le répertoire ZIP64 est introuvable.', de: 'Das ZIP64-Verzeichnis wurde nicht gefunden.', pt: 'O diretório ZIP64 não foi encontrado.', 'pt-BR': 'O diretório ZIP64 não foi encontrado.', it: 'La directory ZIP64 non è stata trovata.', tr: 'ZIP64 dizini bulunamadı.' , "zh-CN": "未找到 ZIP64 目录。" ,
+  'zh-TW': "找不到 ZIP64 目錄。",
+  ko: "ZIP64 디렉터리를 찾을 수 없습니다.",
+  ja: "ZIP64 ディレクトリが見つかりません。", },
+  'Entrada ZIP64 sin datos de tamaño.': { en: 'A ZIP64 entry has no size data.', fr: 'Une entrée ZIP64 n’a pas de données de taille.', de: 'Einem ZIP64-Eintrag fehlen die Größenangaben.', pt: 'Uma entrada ZIP64 não tem dados de tamanho.', 'pt-BR': 'Uma entrada ZIP64 não tem dados de tamanho.', it: 'Una voce ZIP64 non ha dati di dimensione.', tr: 'Bir ZIP64 girdisinde boyut verisi yok.' , "zh-CN": "ZIP64 条目缺少大小数据。" ,
+  'zh-TW': "ZIP64 項目缺少大小資料。",
+  ko: "ZIP64 항목에 크기 데이터가 없습니다.",
+  ja: "ZIP64 エントリにサイズ情報がありません。", },
+  'El vault está en uso por otra conexión y no se puede copiar antes de migrar. No se ha modificado nada; vuelve a abrirlo en unos segundos.': { en: 'The vault is in use by another connection and cannot be copied before migrating. Nothing was changed; open it again in a few seconds.', fr: 'Le coffre est utilisé par une autre connexion et ne peut pas être copié avant la migration. Rien n’a été modifié ; rouvrez-le dans quelques secondes.', de: 'Der Tresor wird von einer anderen Verbindung verwendet und kann vor der Migration nicht kopiert werden. Es wurde nichts geändert; öffnen Sie ihn in einigen Sekunden erneut.', pt: 'O cofre está a ser usado por outra ligação e não pode ser copiado antes de migrar. Nada foi alterado; volte a abri-lo dentro de alguns segundos.', 'pt-BR': 'O cofre está em uso por outra conexão e não pode ser copiado antes de migrar. Nada foi alterado; abra-o novamente em alguns segundos.', it: 'Il vault è in uso da un’altra connessione e non può essere copiato prima della migrazione. Non è stato modificato nulla; riaprilo tra qualche secondo.', tr: 'Kasa başka bir bağlantı tarafından kullanılıyor ve taşımadan önce kopyalanamıyor. Hiçbir şey değiştirilmedi; birkaç saniye sonra yeniden açın.' , "zh-CN": "该库正被另一个连接使用，迁移前无法复制。未做任何更改；请几秒钟后重新打开。" ,
+  'zh-TW': "該庫正被另一個連線使用，遷移前無法複製。未做任何變更；請幾秒鐘後重新開啟。",
+  ko: "볼트가 다른 연결에서 사용 중이어서 마이그레이션 전에 복사할 수 없습니다. 아무것도 변경되지 않았습니다. 몇 초 후 다시 여세요.",
+  ja: "ボールトは別の接続で使用中のため、移行前にコピーできません。何も変更されていません。数秒後にもう一度開いてください。", },
   ...SCRIPTOR_RUNTIME_ERRORS,
   "El llavero del sistema está bloqueado; no se pueden leer los dispositivos vinculados.": {"en": "The system keychain is locked; linked devices cannot be read.", "fr": "Le trousseau système est verrouillé ; les appareils associés ne peuvent pas être lus.", "de": "Der Systemschlüsselbund ist gesperrt; verbundene Geräte können nicht gelesen werden.", "pt": "O porta-chaves do sistema está bloqueado; não é possível ler os dispositivos vinculados.", "pt-BR": "O chaveiro do sistema está bloqueado; não é possível ler os dispositivos vinculados.", "it": "Il portachiavi di sistema è bloccato; impossibile leggere i dispositivi collegati.", "tr": "Sistem anahtar zinciri kilitli; bağlı cihazlar okunamıyor.", "zh-CN": "系统钥匙串已锁定，无法读取已关联的设备。", "zh-TW": "系統鑰匙圈已鎖定，無法讀取已連結的裝置。", "ja": "システムのキーチェーンがロックされているため、連携したデバイスを読み込めません。", "ko": "시스템 키체인이 잠겨 연결된 기기를 읽을 수 없습니다."},
   "No se pueden descifrar los dispositivos vinculados. Sus credenciales se conservan; desbloquea el llavero o restaura su copia de seguridad.": {"en": "Linked devices cannot be decrypted. Their credentials are retained; unlock the keychain or restore its backup.", "fr": "Impossible de déchiffrer les appareils associés. Leurs identifiants sont conservés ; déverrouillez le trousseau ou restaurez sa sauvegarde.", "de": "Verbundene Geräte können nicht entschlüsselt werden. Ihre Zugangsdaten bleiben erhalten; entsperren Sie den Schlüsselbund oder stellen Sie seine Sicherung wieder her.", "pt": "Não é possível decifrar os dispositivos vinculados. As credenciais são conservadas; desbloqueie o porta-chaves ou restaure a sua cópia de segurança.", "pt-BR": "Não é possível descriptografar os dispositivos vinculados. As credenciais são preservadas; desbloqueie o chaveiro ou restaure o backup.", "it": "Impossibile decifrare i dispositivi collegati. Le credenziali sono conservate; sblocca il portachiavi o ripristina il suo backup.", "tr": "Bağlı cihazların şifresi çözülemiyor. Kimlik bilgileri korunuyor; anahtar zincirini açın veya yedeğini geri yükleyin.", "zh-CN": "无法解密已关联的设备。其凭据已保留；请解锁钥匙串或恢复其备份。", "zh-TW": "無法解密已連結的裝置。其憑證已保留；請解鎖鑰匙圈或還原其備份。", "ja": "連携したデバイスを復号できません。認証情報は保持されています。キーチェーンを解除するか、そのバックアップを復元してください。", "ko": "연결된 기기를 복호화할 수 없습니다. 인증 정보는 보존됩니다. 키체인 잠금을 해제하거나 백업을 복원하세요."},
@@ -40,6 +63,9 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   "La página de ideas solicitada no es válida.": {"en": "The requested page of ideas is invalid.", "fr": "La page d’idées demandée n’est pas valide.", "de": "Die angeforderte Ideenseite ist ungültig.", "pt": "A página de ideias pedida não é válida.", "pt-BR": "A página de ideias solicitada não é válida.", "it": "La pagina di idee richiesta non è valida.", "tr": "İstenen fikir sayfası geçersiz.", "zh-CN": "请求的想法页面无效。", "zh-TW": "請求的想法頁面無效。", "ja": "要求されたアイデアのページは無効です。", "ko": "요청한 아이디어 페이지가 올바르지 않습니다."},
   "La mejora no devolvió texto. El original no se ha modificado.": {"en": "The improvement returned no text. The original has not been changed.", "fr": "L’amélioration n’a renvoyé aucun texte. L’original n’a pas été modifié.", "de": "Die Überarbeitung lieferte keinen Text. Das Original wurde nicht verändert.", "pt": "A melhoria não devolveu texto. O original não foi alterado.", "pt-BR": "A melhoria não retornou texto. O original não foi alterado.", "it": "Il miglioramento non ha restituito testo. L’originale non è stato modificato.", "tr": "İyileştirme metin döndürmedi. Özgün metin değiştirilmedi.", "zh-CN": "改进操作未返回文本，原文未被修改。", "zh-TW": "改進操作未傳回文字，原文未被修改。", "ja": "改善結果にテキストがありません。原文は変更されていません。", "ko": "개선 결과에 텍스트가 없습니다. 원문은 변경되지 않았습니다."},
 
+  ...CLOUDFLARE_SYNC_ERRORS,
+  ...STT_RUNTIME_ERRORS,
+  ...BACKUPS_RUNTIME_ERRORS,
   'La copia de Focus está dañada.': {
     en: 'The Focus backup is corrupted.',
     fr: 'La sauvegarde de Focus est endommagée.',
@@ -865,6 +891,10 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   'zh-TW': "GitHub Copilot 嘗試使用已停用的工具，Nodus 已中斷請求。",
   ko: "GitHub Copilot이 비활성화된 도구를 사용하려고 했습니다. Nodus가 요청을 중단했습니다.",
   ja: "GitHub Copilot が無効化されたツールを使用しようとしました。Nodusはリクエストを中止しました。", },
+  'No se pudo descargar el motor oficial. Comprueba la conexión y vuelve a intentarlo.': { en: "The official engine could not be downloaded. Check your connection and try again.", fr: "Impossible de télécharger le moteur officiel. Vérifiez la connexion et réessayez.", de: "Die offizielle Engine konnte nicht heruntergeladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.", pt: "Não foi possível transferir o motor oficial. Verifica a ligação e tenta novamente.", 'pt-BR': "Não foi possível baixar o motor oficial. Verifique a conexão e tente novamente.", it: "Impossibile scaricare il motore ufficiale. Controlla la connessione e riprova.", tr: "Resmi motor indirilemedi. Bağlantıyı kontrol edip yeniden deneyin.", 'zh-CN': "无法下载官方引擎。请检查网络连接后重试。", 'zh-TW': "無法下載官方引擎。請檢查網路連線後再試一次。", ko: "공식 엔진을 다운로드할 수 없습니다. 연결을 확인하고 다시 시도하세요.", ja: "公式エンジンをダウンロードできませんでした。接続を確認して、もう一度お試しください。" },
+  'El motor descargado no coincide con su huella publicada y se ha descartado.': { en: "The downloaded engine does not match its published fingerprint and was discarded.", fr: "Le moteur téléchargé ne correspond pas à son empreinte publiée et a été écarté.", de: "Die heruntergeladene Engine stimmt nicht mit ihrem veröffentlichten Fingerabdruck überein und wurde verworfen.", pt: "O motor transferido não corresponde à impressão digital publicada e foi descartado.", 'pt-BR': "O motor baixado não corresponde à impressão digital publicada e foi descartado.", it: "Il motore scaricato non corrisponde alla sua impronta pubblicata ed è stato scartato.", tr: "İndirilen motor yayımlanan parmak iziyle eşleşmiyor ve atıldı.", 'zh-CN': "下载的引擎与其公布的指纹不符，已被丢弃。", 'zh-TW': "下載的引擎與其公布的指紋不符，已被捨棄。", ko: "다운로드한 엔진이 게시된 지문과 일치하지 않아 폐기했습니다.", ja: "ダウンロードしたエンジンが公開されているフィンガープリントと一致しないため、破棄しました。" },
+  'Esta instalación de Nodus no indica de dónde descargar el motor oficial.': { en: "This Nodus installation does not say where to download the official engine from.", fr: "Cette installation de Nodus n’indique pas où télécharger le moteur officiel.", de: "Diese Nodus-Installation gibt nicht an, woher die offizielle Engine heruntergeladen wird.", pt: "Esta instalação do Nodus não indica de onde transferir o motor oficial.", 'pt-BR': "Esta instalação do Nodus não indica de onde baixar o motor oficial.", it: "Questa installazione di Nodus non indica da dove scaricare il motore ufficiale.", tr: "Bu Nodus kurulumu resmi motorun nereden indirileceğini belirtmiyor.", 'zh-CN': "此 Nodus 安装未指明从何处下载官方引擎。", 'zh-TW': "此 Nodus 安裝未指明從何處下載官方引擎。", ko: "이 Nodus 설치에는 공식 엔진을 다운로드할 위치가 지정되어 있지 않습니다.", ja: "この Nodus のインストールには、公式エンジンのダウンロード元が示されていません。" },
+  'El paquete descargado no contiene el ejecutable esperado.': { en: "The downloaded package does not contain the expected executable.", fr: "Le paquet téléchargé ne contient pas l’exécutable attendu.", de: "Das heruntergeladene Paket enthält nicht die erwartete ausführbare Datei.", pt: "O pacote transferido não contém o executável esperado.", 'pt-BR': "O pacote baixado não contém o executável esperado.", it: "Il pacchetto scaricato non contiene l’eseguibile previsto.", tr: "İndirilen paket beklenen yürütülebilir dosyayı içermiyor.", 'zh-CN': "下载的软件包不包含预期的可执行文件。", 'zh-TW': "下載的套件不包含預期的可執行檔。", ko: "다운로드한 패키지에 예상한 실행 파일이 없습니다.", ja: "ダウンロードしたパッケージに想定された実行ファイルが含まれていません。" },
   'No se encontró el runtime oficial de Codex incluido con Nodus.': { en: 'The official Codex runtime bundled with Nodus was not found.', fr: 'Le runtime officiel de Codex fourni avec Nodus est introuvable.', de: 'Die mit Nodus gelieferte offizielle Codex-Laufzeit wurde nicht gefunden.', pt: 'Não foi encontrado o runtime oficial do Codex incluído no Nodus.', 'pt-BR': 'Não foi encontrado o runtime oficial do Codex incluído no Nodus.', it: 'Il runtime ufficiale di Codex incluso in Nodus non è stato trovato.', tr: 'Nodus ile birlikte gelen resmi Codex çalışma zamanı bulunamadı.' , "zh-CN": "未找到 Nodus 随附的官方 Codex 运行时。" ,
   'zh-TW': "未找到 Nodus 隨附的官方 Codex 執行時。",
   ko: "Nodus와 함께 번들로 제공되는 공식 Codex 런타임을 찾을 수 없습니다.",
@@ -2975,6 +3005,10 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   'zh-TW': "後臺向量搜尋超時。",
   ko: "배경 벡터 검색 시간이 초과되었습니다.",
   ja: "背景ベクトル検索がタイムアウトしました。", },
+  'La búsqueda vectorial se detuvo para sustituir la base de datos.': { en: 'The vector search stopped so the database could be replaced.', fr: 'La recherche vectorielle s’est arrêtée pour remplacer la base de données.', de: 'Die Vektorsuche wurde angehalten, um die Datenbank zu ersetzen.', pt: 'A pesquisa vetorial parou para substituir a base de dados.', 'pt-BR': 'A busca vetorial parou para substituir o banco de dados.', it: 'La ricerca vettoriale si è fermata per sostituire il database.', tr: 'Vektör araması veritabanının değiştirilmesi için durduruldu.' , "zh-CN": "向量搜索已停止，以便替换数据库。" ,
+  'zh-TW': "向量搜尋已停止，以便替換資料庫。",
+  ko: "데이터베이스를 교체하기 위해 벡터 검색이 중지되었습니다.",
+  ja: "データベースを置き換えるため、ベクトル検索を停止しました。", },
   'El artículo necesita un título.': { en: 'The article needs a title.', fr: 'L’article doit avoir un titre.', de: 'Der Artikel braucht einen Titel.', pt: 'O artigo precisa de um título.', 'pt-BR': 'O artigo precisa de um título.', it: 'L’articolo ha bisogno di un titolo.', tr: 'Makalenin bir başlığı olmalı.' , "zh-CN": "文章需要标题。" ,
   'zh-TW': "文章需要標題。",
   ko: "기사에는 제목이 필요합니다.",
@@ -4679,6 +4713,10 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   'zh-TW': "找不到科目。",
   ko: "과목을 찾을 수 없습니다.",
   ja: "科目が見つかりません。", },
+  'El servidor MCP local no está activo.': { en: 'The local MCP server is not running.', fr: 'Le serveur MCP local n’est pas actif.', de: 'Der lokale MCP-Server läuft nicht.', pt: 'O servidor MCP local não está ativo.', 'pt-BR': 'O servidor MCP local não está ativo.', it: 'Il server MCP locale non è attivo.', tr: 'Yerel MCP sunucusu çalışmıyor.' , "zh-CN": "本地 MCP 服务器未运行。" ,
+  'zh-TW': "本機 MCP 伺服器未執行。",
+  ko: "로컬 MCP 서버가 실행 중이 아닙니다.",
+  ja: "ローカル MCP サーバーが起動していません。", },
 };
 
 /**
@@ -4709,7 +4747,10 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
   { pattern: /^La copia publicada no incluye la tabla (.+)\. Descarga una publicación compatible\.$/, translate: table => ({ "en": "The published copy lacks table {table}. Download a compatible publication.".replace('{table}', table), "fr": "La copie publiée ne contient pas la table {table}. Téléchargez une publication compatible.".replace('{table}', table), "de": "Die veröffentlichte Kopie enthält die Tabelle {table} nicht. Laden Sie eine kompatible Veröffentlichung herunter.".replace('{table}', table), "pt": "A cópia publicada não inclui a tabela {table}. Descarregue uma publicação compatível.".replace('{table}', table), "pt-BR": "A cópia publicada não inclui a tabela {table}. Baixe uma publicação compatível.".replace('{table}', table), "it": "La copia pubblicata non include la tabella {table}. Scarica una pubblicazione compatibile.".replace('{table}', table), "tr": "Yayımlanan kopyada {table} tablosu yok. Uyumlu bir yayın indirin.".replace('{table}', table), "zh-CN": "已发布的副本不包含表 {table}，请下载兼容的发布内容。".replace('{table}', table), "zh-TW": "已發佈的副本不包含資料表 {table}，請下載相容的發佈內容。".replace('{table}', table), "ja": "公開済みのコピーにテーブル {table} がありません。互換性のある公開内容をダウンロードしてください。".replace('{table}', table), "ko": "게시된 사본에 {table} 테이블이 없습니다. 호환되는 게시 내용을 다운로드하세요.".replace('{table}', table) }) },
+  ...STT_RUNTIME_ERROR_PATTERNS,
+  ...BACKUPS_RUNTIME_ERROR_PATTERNS,
   ...SCRIPTOR_RUNTIME_ERROR_PATTERNS,
+  ...CLOUDFLARE_SYNC_ERROR_PATTERNS,
   // ── Local providers: the failure this whole table was opened for ─────────────
   {
     pattern: /^No se pudo conectar con (Ollama|LM Studio) en (.+?)\. (.+)$/,

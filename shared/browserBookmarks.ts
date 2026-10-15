@@ -25,6 +25,8 @@ export interface BrowserBookmark {
   description: string;
   parentId: string | null;
   order: number;
+  /** Starred on the Bookmarks page. Absent in stores written before favourites. */
+  favorite: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,6 +54,7 @@ export interface BrowserBookmarkDraft {
   description?: string;
   faviconDataUrl?: string | null;
   parentId?: string | null;
+  favorite?: boolean;
 }
 
 export interface BrowserBookmarkFolderDraft {
@@ -298,6 +301,7 @@ export function normalizeBrowserBookmarkStore(raw: unknown, now = new Date().toI
       description: cleanBookmarkDescription(row.description),
       parentId: safeId(row.parentId) && folderIds.has(String(row.parentId)) ? String(row.parentId) : null,
       order: safeOrder(row.order),
+      favorite: row.favorite === true,
       createdAt: iso(row.createdAt, now),
       updatedAt: iso(row.updatedAt, now),
     });
@@ -336,6 +340,7 @@ export function insertBrowserBookmark(
     description: cleanBookmarkDescription(draft.description),
     parentId,
     order: nextOrder(next, parentId),
+    favorite: draft.favorite === true,
     createdAt: now,
     updatedAt: now,
   };
@@ -362,6 +367,7 @@ export function updateBrowserBookmark(
   if (patch.title !== undefined) bookmark.title = cleanBookmarkTitle(patch.title) || new URL(bookmark.url).hostname;
   if (patch.description !== undefined) bookmark.description = cleanBookmarkDescription(patch.description);
   if (patch.faviconDataUrl !== undefined) bookmark.faviconDataUrl = sanitizeFaviconDataUrl(patch.faviconDataUrl);
+  if (patch.favorite !== undefined) bookmark.favorite = patch.favorite === true;
   if (patch.parentId !== undefined) bookmark.parentId = patch.parentId && next.folders.some((folder) => folder.id === patch.parentId) ? patch.parentId : null;
   bookmark.updatedAt = now;
   normalizeOrders(next);
@@ -501,6 +507,65 @@ export function searchBrowserBookmarks(store: BrowserBookmarkStore, query: strin
   });
 }
 
+/**
+ * How the Bookmarks page lays out what it shows. Display only: the manual
+ * `order` the manager and drag-and-drop keep is never rewritten by a sort.
+ */
+export const BROWSER_BOOKMARK_SORTS = [
+  'recent', 'oldest',
+  'alpha', 'alpha-desc',
+  'folders-alpha', 'folders-alpha-desc',
+  'favorites-first', 'favorites-only',
+] as const;
+export type BrowserBookmarkSort = (typeof BROWSER_BOOKMARK_SORTS)[number];
+export const DEFAULT_BROWSER_BOOKMARK_SORT: BrowserBookmarkSort = 'recent';
+
+export function isBrowserBookmarkSort(value: unknown): value is BrowserBookmarkSort {
+  return (BROWSER_BOOKMARK_SORTS as readonly unknown[]).includes(value);
+}
+
+const bookmarkCollator = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
+
+/**
+ * The folders and bookmarks the Bookmarks page shows inside `parentId`, in the
+ * chosen order. Folders and bookmarks share one list, so a date or an
+ * alphabetical sort interleaves them; only the "folders first" sorts keep them
+ * apart. "Favorites only" is a view of the whole collection, not of one folder:
+ * a starred page is wanted wherever it was filed.
+ */
+export function sortBrowserBookmarkItems(
+  store: BrowserBookmarkStore,
+  parentId: string | null,
+  sort: BrowserBookmarkSort,
+): BrowserBookmarkNodeRef[] {
+  type Row = { kind: 'folder' | 'bookmark'; id: string; label: string; time: number; favorite: boolean };
+  const rows: Row[] = [];
+  if (sort !== 'favorites-only') {
+    for (const folder of store.folders) {
+      if (folder.parentId === parentId) rows.push({ kind: 'folder', id: folder.id, label: folder.name, time: Date.parse(folder.createdAt) || 0, favorite: false });
+    }
+  }
+  for (const bookmark of store.bookmarks) {
+    if (sort === 'favorites-only' ? !bookmark.favorite : bookmark.parentId !== parentId) continue;
+    rows.push({ kind: 'bookmark', id: bookmark.id, label: bookmark.title, time: Date.parse(bookmark.createdAt) || 0, favorite: bookmark.favorite });
+  }
+  const alpha = (a: Row, b: Row) => bookmarkCollator.compare(a.label, b.label) || a.id.localeCompare(b.id);
+  const newest = (a: Row, b: Row) => b.time - a.time || alpha(a, b);
+  const foldersFirst = (a: Row, b: Row) => (a.kind === b.kind ? 0 : a.kind === 'folder' ? -1 : 1);
+  const compare: Record<BrowserBookmarkSort, (a: Row, b: Row) => number> = {
+    recent: newest,
+    oldest: (a, b) => a.time - b.time || alpha(a, b),
+    alpha,
+    'alpha-desc': (a, b) => alpha(b, a),
+    'folders-alpha': (a, b) => foldersFirst(a, b) || alpha(a, b),
+    'folders-alpha-desc': (a, b) => foldersFirst(a, b) || alpha(b, a),
+    // Favourites A-Z on top; everything else keeps the default, newest first.
+    'favorites-first': (a, b) => Number(b.favorite) - Number(a.favorite) || (a.favorite ? alpha(a, b) : newest(a, b)),
+    'favorites-only': alpha,
+  };
+  return rows.sort(compare[sort]).map(({ kind, id }) => ({ kind, id }));
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -631,6 +696,7 @@ export function parseBrowserBookmarksHtml(
         faviconDataUrl: sanitizeFaviconDataUrl(htmlAttribute(attrs, 'ICON')),
         description: '', parentId: stack.at(-1) ?? null,
         order: browserBookmarkChildren(store, stack.at(-1) ?? null).length,
+        favorite: false,
         createdAt: now, updatedAt: now,
       };
       store.bookmarks.push(bookmark);

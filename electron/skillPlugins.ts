@@ -1,5 +1,6 @@
 import { verifyPluginAsset } from './pluginAssets';
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from './secrets/safeStorageGate';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';

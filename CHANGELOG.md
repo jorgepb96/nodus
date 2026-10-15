@@ -1,5 +1,95 @@
 # Changelog
 
+## 5.10.0 — 2026-10-14
+
+### New features
+
+- Academic vaults offer Simple, Intermediate, Advanced and Custom interface profiles. Choose which sidebar sections and header buttons appear, and change the profile, theme, language and Nodi options from the Interface selector. New local academic vaults start in Simple. Existing vaults keep their layout, and switching profiles preserves your saved custom layout and research.
+
+- Academic vaults include 12 resumable lessons in the real workspace. Prepare sources, ask questions and check citations, extract ideas and inspect their evidence, or practice research tools and Scriptor. Each lesson checks the results of your actions. Initial setup configures chat and embeddings separately from idea analysis.
+
+- Bookmarks is the default home page in Nodus Browser. Mark favorites, show only favorites, sort by date or name, put folders first, and switch between cards and a list. Custom home addresses and blank-page settings are preserved.
+
+### Enhancements
+
+- Report galleries support several values in each filter, show option counts and let you clear all filters at once. Deep Research adds approach and language filters where applicable. Immersion adds progress and language filters.
+
+- Research, writing and browser workspaces use consistent tabs with visible close buttons and horizontal scrolling. Scriptor tabs sit above the formatting toolbar, and the active tab stays in view.
+
+- Desktop installation packages are smaller. Codex and GitHub Copilot engines download when first needed, with progress and retry controls in the queue. Existing users of these providers receive the engines automatically after updating.
+
+- Startup no longer shows the old Presenter, mobile preview, integrations, Toolkit beta or tutorial catalogue announcements. Current tutorials remain available.
+
+- Reaction index preparation supports forward reaction templates and externally supplied atom mappings. For large synthesis targets, compatible Chemistry Studio versions can search evidence for individual building blocks. If decomposition is unavailable or incomplete, searches use the whole target.
+
+- Research answers can use the full output limits of GPT-6.1 Sol and Claude Fable 5.1, allowing longer responses.
+
+- Deep Research keeps reader actions in fixed positions when you hover or use the keyboard. Audio narration opens from the reader toolbar, with generation, cancellation and playback controls in a dialog.
+
+### Fixes
+
+- New citations and generated reports use the content language. Report and exam exports and portable backup text use the interface language. Previously saved content keeps its original text.
+
+- Japanese and Korean labels now distinguish read status, reading progress and actions correctly in the desktop app and Server web.
+
+- Research retries a truncated answer with a lower supported reasoning level when available. It also allows more time for models that think without streaming text before treating the response as stalled.
+
+- Synthesis route checks compare molecular connectivity instead of the order of atoms in SMILES text. Equivalent structures no longer cause false errors, while connectivity and regiochemistry errors still fail the check.
+
+- Nodus Server in basic mode starts correctly from the installed desktop app. Its web interface, shared vaults and published links are available.
+
+- Nodus Scriptor’s 13 built-in improvement styles show translated names, descriptions and instructions in every interface language. Selection and advanced formatting controls have consistent sizes.
+
+- Dictionary entries use the model, reasoning and web search settings from the main toolbar. Duplicate controls and empty progress rows have been removed.
+
+- The sidebar scrollbar and header logo follow the selected color palette in light and dark modes, including custom themes and system theme changes.
+
+## 5.9.1 — 2026-10-13
+
+### Fixes
+
+- Nodus Scriptor now uses the latest text selected while the Polish panel is open. Changing the selection clears the previous proposal and cancels any pending request, preserving the correct replacement range, formatting and undo.
+
+### Enhancements
+
+- PDF Presenter is now named Nodus Presenter throughout the current interface, web remote and documentation. The in-app What’s New modal reuses the 5.9.0 highlights in all twelve languages.
+
+## 5.9.0 — 2026-10-12
+
+### New features
+
+- Backups, in Tools, exports the content you choose from one or more vaults as Markdown, CSV or JSON, to a folder or a ZIP file. You can select individual records, include the library documents linked to those vaults or the whole library, and save the selection for later use. Research can be organized by works, authors or ideas. The complete .nodus backup remains available in the same tool. Available on Desktop.
+
+- Nodus Scriptor supports dictation with installed local transcription models. Words appear in the document as you speak, as ordinary text you can edit and undo. You can pause, resume or stop dictation. Audio is not sent to any external service. Available on Desktop.
+
+- When you select text in Nodus Scriptor, you can ask the AI to improve it using a style from your prompt library, the model you choose and optional instructions. The proposal appears in the text as it is generated, with added and removed words marked. The document changes only if you accept the whole proposal, and you can undo it in one step. Available on Desktop.
+
+- Nodus Scriptor can create images with AI from a description. Choose the image model, review the preview and insert the image at the cursor position. You can cancel generation and save favorite models. Available on Desktop.
+
+### Enhancements
+
+- Research Chat is faster in large libraries. Searching documents, collecting evidence for ideas and syntheses, and checking the Zotero scope take less time. Long conversations stay responsive while an answer is being written.
+
+- The graph loads the complete map of large libraries much faster. Ideas and their connections appear in seconds instead of minutes.
+
+- Nodus Scriptor uses the colors of the active vault or the selected theme in light and dark modes. Dictation settings and additional formatting options open in separate menus, and the formatting bar no longer needs scrolling.
+
+- Nodus Cloud deployments on Cloudflare limit daily and monthly synchronization usage. When a limit is reached, synchronization pauses and Nodus shows a notice. Importing large vault copies no longer blocks the app, and connected copies can synchronize with each other while the publishing device is offline. Requires updating the service on Cloudflare.
+
+### Fixes
+
+- Opening an attachment or preserved source that is an executable file shows it in the file manager instead of running it. The local network PIN for PDF Presenter and shared apps limits attempts. Browser downloads no longer overwrite existing files. The HTML of imported publications is cleaned before it is displayed and keeps mathematical formulas.
+
+- Backups larger than 4 GiB are created correctly. Synchronization keeps changes made during an upload, does not restore items deleted in another copy and includes all Nodi notes. If the first download of a connected vault fails, the connection is undone.
+
+- Changes typed just before leaving a page are saved. Closing a recording while microphone permission is being requested releases the microphone. Notion imports with links to files outside the ZIP complete with a notice. GEDCOM export keeps both parents when neither is recorded as male.
+
+- In synthesis route checks, each step shows a result consistent with the route verdict, including continuity errors. Stopping the check keeps the answer you were viewing, and requests to search the web are followed.
+
+- Cancelling a call to a plugin tool stops the processes it started. A timeout in one call no longer makes other calls fail, and removing or updating a plugin stops its running processes.
+
+- Works whose document index completes after an error no longer appear under “With errors”. An unreadable page no longer cancels OCR or causes a whole PDF to be rejected. Duplicate detection checks every record, not only the first 5,000, and ISBNs separated by spaces are read individually.
+
 ## 5.8.1 — 2026-10-09
 
 ### New features

@@ -1,13 +1,41 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { parentPort } from './backgroundParentPort';
 import { DocumentaryStore } from '../db/documentaryStore';
+import { DocumentaryVectorCache } from '../db/documentaryVectorCache';
 import { ResearchRetrievalBudget } from '@shared/researchRetrievalBudget';
 import { validateResearchDocumentRead, type ResearchDocumentRead, type RetrievalSettings } from '@shared/researchCorpus';
 
-parentPort?.once('message', (input: { filename: string; query: string; lexicalKeys: string[]; vectorKeys: string[]; vector: number[] | null; settings: RetrievalSettings; threshold: number; activity?: boolean; read?: ResearchDocumentRead }) => {
-  const store = new DocumentaryStore(input.filename, true);
+/** One process serves every retrieval of the session (documentaryPreparation.ts keeps it), so the
+ *  read-only store stays open and its vectors stay cached between searches. It was a new process,
+ *  a new connection and a scan of every vector in scope per search: ~1 s per search on a real
+ *  store, several searches per research turn. */
+const opened = new Map<string, { store: DocumentaryStore; vectors: DocumentaryVectorCache; identity: string }>();
+
+/** Which file is at `filename` now: a restore or reset replaces the store under an open connection. */
+function fileIdentity(filename: string): string {
+  const stat = fs.statSync(filename);
+  return `${stat.dev}:${stat.ino}`;
+}
+
+function storeFor(filename: string): { store: DocumentaryStore; vectors: DocumentaryVectorCache } {
+  const resolved = path.resolve(filename);
+  const identity = fileIdentity(resolved);
+  const existing = opened.get(resolved);
+  if (existing?.store.db.open && existing.identity === identity) return existing;
+  if (existing) { existing.vectors.clear(); try { existing.store.close(); } catch { /* already closed */ } opened.delete(resolved); }
+  const store = new DocumentaryStore(resolved, true);
+  const entry = { store, vectors: new DocumentaryVectorCache(store), identity };
+  opened.set(resolved, entry);
+  return entry;
+}
+
+parentPort?.on('message', (input: { id?: number; filename: string; query: string; lexicalKeys: string[]; vectorKeys: string[]; vector: number[] | null; settings: RetrievalSettings; threshold: number; activity?: boolean; read?: ResearchDocumentRead }) => {
+  const id = input.id;
   try {
+    const { store, vectors } = storeFor(input.filename);
     const activity = (key: string, operation: 'lexical' | 'semantic' | 'expand' | 'pages' | 'references', status: 'active' | 'completed', count?: number) => {
-      if (input.activity) parentPort!.postMessage({ type: 'activity', key, operation, status, count });
+      if (input.activity) parentPort!.postMessage({ id, type: 'activity', key, operation, status, count });
     };
     const budget = new ResearchRetrievalBudget(input.settings);
     budget.nextRound();
@@ -19,7 +47,7 @@ parentPort?.once('message', (input: { filename: string; query: string; lexicalKe
       : store.lexicalSearch(input.query, input.lexicalKeys, input.settings.candidates);
     activity('lexical', operation, 'completed', lexical.length);
     if (input.vector) activity('semantic', 'semantic', 'active');
-    const semantic = input.vector ? store.semanticSearch(input.vector, input.vectorKeys, input.settings.candidates, input.threshold) : [];
+    const semantic = input.vector ? vectors.semanticSearch(input.vector, input.vectorKeys, input.settings.candidates, input.threshold) : [];
     if (input.vector) activity('semantic', 'semantic', 'completed', semantic.length);
     const fused = new Map<string, { score: number; passage: typeof lexical[number] }>();
     for (const lane of [lexical, semantic]) lane.forEach((passage, index) => {
@@ -53,9 +81,8 @@ parentPort?.once('message', (input: { filename: string; query: string; lexicalKe
       chosen.push(...next);
       frontier = next;
     }
-    parentPort!.postMessage({ passages: chosen, traversal: { rounds: budget.rounds, candidates: budget.candidates, evidenceTokens: budget.usedEvidenceTokens,
+    parentPort!.postMessage({ id, passages: chosen, traversal: { rounds: budget.rounds, candidates: budget.candidates, evidenceTokens: budget.usedEvidenceTokens,
       partial: budget.partial || chosen.length < ranked.length || lexical.length >= input.settings.candidates || semantic.length >= input.settings.candidates,
       visited: [...budget.visited] } });
-  } catch (error) { parentPort!.postMessage({ error: error instanceof Error ? error.message : 'documentary_retrieval_failed' }); }
-  finally { store.close(); }
+  } catch (error) { parentPort!.postMessage({ id, error: error instanceof Error ? error.message : 'documentary_retrieval_failed' }); }
 });

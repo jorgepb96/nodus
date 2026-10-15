@@ -77,7 +77,7 @@ function imageMarkdown(source:string){let fence:string|null=null;return source.s
     const attr=(name:string)=>new RegExp('(?:^|\\s)'+name+'\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\'|([^\\s"\'=<>`]+))','i').exec(attributes);
     const src=attr('src'),alt=attr('alt');if(!src)return '';
     const decode=(text:string)=>text.replace(/&(?:amp|quot|apos|lt|gt);/g,entity=>({'&amp;':'&','&quot;':'"','&apos;':"'",'&lt;':'<','&gt;':'>'}[entity]!));
-    const target=decode(src[1]??src[2]??src[3]??'');if(/[<>\n\r]/.test(target))return '';return '!['+decode(alt?.[1]??alt?.[2]??alt?.[3]??'').replace(/[\\\[\]]/g,'\\$&')+'](<'+target+'>)';
+    const target=decode(src[1]??src[2]??src[3]??'');if(/[<>\n\r]/.test(target))return '';return '!['+decode(alt?.[1]??alt?.[2]??alt?.[3]??'').replace(/[\\[\]]/g,'\\$&')+'](<'+target+'>)';
   });
 }).join('\n');}
 function Document({input}:{input:Input}){

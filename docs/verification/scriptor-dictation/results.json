@@ -1,0 +1,59 @@
+{
+  "verifiedOn": "2026-10-11",
+  "environment": {
+    "version": "5.8.1",
+    "platform": "macOS",
+    "localModel": "Whisper Base"
+  },
+  "dictationFixture": {
+    "checks": [
+      "live words in the ordinary editor, no premature full stop, no music captions, no remount/fade/layout jump or stolen focus",
+      "final punctuation, single utterance undo/redo and normal document persistence",
+      "pause/resume, final word draining, and microphone release",
+      "cancellation releases model session and prevents late document edits",
+      "document switching drains and saves the originating editor only",
+      "typing outside the dictated range remains intact during later hypotheses",
+      "native rolling text insertion is ordinary editable text",
+      "raw rolling text insertion is ordinary editable text",
+      "floating settings stay inside all four viewport sizes in light/dark themes",
+      "optional local audio preservation/reprocessing/deletion never duplicates document text",
+      "no-model, denied microphone and failed model paths do not change the document"
+    ]
+  },
+  "desktopDictation": {
+    "passed": true,
+    "checks": [
+      "real Spanish words grow in the editor through resident local Whisper, with animations enabled and no remount, fade, page jump or music captions",
+      "keyboard pause and immediate resume, local fallback with OpenAI selected, narrow desktop settings",
+      "readable primary button text in both themes with at least 4.5:1 contrast",
+      "toolbar stop drains real speech, native undo/redo and persisted document",
+      "reload retains text and does not restart microphone"
+    ],
+    "errors": []
+  },
+  "syntheticLongSpeech": {
+    "updates": 52,
+    "wordErrorRate": 0.009708737864077669,
+    "silenceTranscript": "",
+    "toneTranscript": "",
+    "releasedSessions": 1
+  },
+  "visualStability": {
+    "frames": 225,
+    "stable": true
+  },
+  "formatting": {
+    "passed": true,
+    "viewportThemeCombinations": 8,
+    "keyboardAndAlignment": true,
+    "errors": []
+  },
+  "accents": {
+    "passed": true,
+    "themeModeVaultCombinations": 48,
+    "minimumPrimaryContrast": 4.846494167257538,
+    "minimumAccentContrast": 4.566122128931018,
+    "minimumDocumentAndPopupTextContrast": 8.781252281885283,
+    "errors": []
+  }
+}

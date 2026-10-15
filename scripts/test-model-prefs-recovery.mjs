@@ -114,6 +114,7 @@ assert.equal(prefs.v23ModelPrefsRecoveryVersion, 1, 'the repair is marked as one
 settingsRepo.updateSettings({ embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small' });
 assert.equal(settingsRepo.getSettings().embeddingProvider, 'openai', 'a later intentional change is not reverted');
 settingsRepo.updateSettings({ codexReasoningEfforts: { 'gpt-test': 'xhigh', 'stale-model': '../turbo' } });
+settingsRepo.updateSettings({ studyImproveLastStyleId: 'builtin:formal', imageFavorites: [{ provider: 'codex', model: 'image-a' }] });
 assert.deepEqual(
   settingsRepo.getSettings().codexReasoningEfforts,
   { 'gpt-test': 'xhigh' },
@@ -129,6 +130,9 @@ db.prepare(`INSERT INTO ideas (
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
   .run('openai-idea', 'claim', 'OpenAI', 'Indexed with OpenAI', Buffer.from([5, 6, 7, 8]), new Date().toISOString(), 'openai', 'text-embedding-3-small', 1536, 'hash-2');
 const secondarySettings = settingsRepo.getSettings();
+assert.equal(secondarySettings.studyImproveLastStyleId, 'builtin:clear', 'each vault starts with its own last writing style');
+assert.deepEqual(secondarySettings.imageFavorites, [{ provider: 'codex', model: 'image-a' }], 'image favorites are shared separately from text favorites');
+settingsRepo.updateSettings({ studyImproveLastStyleId: 'builtin:academic' });
 assert.equal(secondarySettings.embeddingProvider, 'openai', 'each vault recovers against its own independent index');
 assert.equal(secondarySettings.embeddingModel, 'text-embedding-3-small');
 assert.deepEqual(secondarySettings.codexReasoningEfforts, { 'gpt-test': 'xhigh' }, 'Codex reasoning preferences are shared across vaults');
@@ -138,6 +142,7 @@ settingsRepo.updateSettings({ favorites: favoritesPinnedInSecondary });
 database.closeDb();
 registry.setActiveVault(primary.id);
 db = database.getDb();
+assert.equal(settingsRepo.getSettings().studyImproveLastStyleId, 'builtin:formal', 'changing the style in another vault preserves the original vault preference');
 assert.deepEqual(settingsRepo.getSettings().favorites, favoritesPinnedInSecondary, 'models pinned in one vault appear in every other vault');
 
 settingsRepo.updateSettings({ favorites: [integrated] });

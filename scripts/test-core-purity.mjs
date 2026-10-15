@@ -49,11 +49,11 @@ async function bundleOf(entry, platform) {
     define: { 'process.env.NODE_ENV': '"production"' },
     jsx: 'automatic',
     plugins: [{
-      // Vite's `?url` and `?raw` asset imports are not esbuild syntax; they carry no code,
-      // so they stand in as empty modules here.
+      // Vite's asset queries, including `?url&no-inline`, are not esbuild syntax;
+      // they carry no code, so they stand in as empty modules here.
       name: 'vite-asset-queries',
       setup(api) {
-        api.onResolve({ filter: /\?(url|raw|worker)$/ }, ({ path: value }) => ({ path: value, namespace: 'asset-query' }));
+        api.onResolve({ filter: /\?(url|raw|worker)(?:&|$)/ }, ({ path: value }) => ({ path: value, namespace: 'asset-query' }));
         api.onLoad({ filter: /.*/, namespace: 'asset-query' }, () => ({ contents: 'export default ""; export const url = "";', loader: 'js' }));
       },
     }],

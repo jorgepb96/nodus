@@ -60,7 +60,11 @@ export function sanitizeModelMarkdown(value: string): string {
     .replace(/\[(?:[ADGKW]\d+(?:\.\d+)?(?:\s*[,;·]\s*[^\]]{0,30})?)\]\([^)]*\)/g, '')
     .replace(/\[([^\]]*)\]\(https?:[^)]*\)/gi, '$1')
     .replace(/\bhttps?:\/\/\S+/gi, '')
-    .replace(/^\s*>?\s*\[!\w[\w-]*\][^\n]*$/gim, '')
+    // A callout marker line. Only horizontal blanks before it: with `\s*` the blanks could run
+    // across line breaks, and every line start in a run of blank lines rescanned the run twice
+    // over, so 2,000 blank lines in a model's block took 8 s of main-process time (cubic). The
+    // blank lines it used to absorb are folded by the `\n{3,}` step and the trim below.
+    .replace(/^[^\S\r\n\u2028\u2029]*(?:>[^\S\r\n\u2028\u2029]*)?\[!\w[\w-]*\][^\n]*$/gim, '')
     .replace(/^\s{0,3}#{1,6}\s+(.+)$/gm, '**$1**')
     .replace(/\[(?:[ADGKW]\d+(?:\.\d+)?(?:\s*[,;·]\s*[^\]]{0,30})?)\]/g, '')
     .replace(/\((?:K\d{4}(?:\s*,\s*K\d{4})*)\)/g, '')

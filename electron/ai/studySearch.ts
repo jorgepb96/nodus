@@ -11,7 +11,7 @@ import type {
   StudySearchProgress,
   StudySearchResponse,
 } from '@shared/studySearch';
-import { normalizeStudySearchText, rankStudySearchEntries, suggestStudySearchCorrections } from '@shared/studySearch';
+import { rankStudySearchEntries, suggestStudySearchCorrections } from '@shared/studySearch';
 import type { StudyAssistantSourceOption } from '@shared/studyAssistant';
 import { studyAssistantSourceKey } from '@shared/studyAssistant';
 import {studyChatCandidates,orderStudyChatEntries,assistantFragmentKey} from '@shared/studyChatRetrieval';

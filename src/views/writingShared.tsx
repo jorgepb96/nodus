@@ -21,8 +21,7 @@ export const KIND_LABELS: Record<WritingWorkshopBrief['kind'], string> = {
   deep_research: 'Deep Research',
 };
 
-/** One action of the bar. `compact` swaps the labelled button for an icon that opens
- *  its label on hover — the same treatment the titlebar's action rail uses. */
+/** One action of the bar. `compact` uses a fixed icon with a tooltip. */
 function BarAction({
   compact,
   icon,
@@ -49,7 +48,7 @@ function BarAction({
         onClick={onClick}
         disabled={disabled}
         spinning={spinning}
-        showLabel={spinning}
+        iconOnly
         className="btn-ghost h-9 min-h-9 border border-neutral-700"
       />
     );
@@ -78,7 +77,7 @@ export function DraftActionBar({
   exporting: boolean;
   savingDraft: boolean;
   draftSaved?: boolean;
-  /** Icons only, labels on hover — for the reader header, where space is tight. */
+  /** Fixed icons with tooltips — for the reader header, where space is tight. */
   compact?: boolean;
   onCopy: () => void;
   /** Offered where the artefact is a finished report meant to be listened to. */
@@ -228,9 +227,10 @@ function ExportMenu({ exporting, compact = false, onExport }: { exporting: boole
           onClick={() => setOpen((value) => !value)}
           disabled={exporting}
           spinning={exporting}
-          showLabel={exporting || open}
+          iconOnly
+          aria-expanded={open}
+          aria-haspopup="menu"
           className="btn-primary h-9 min-h-9"
-          trailing={<Icon name="chevronDown" size={14} className="ml-1" />}
         />
       ) : (
       <button className="btn btn-primary gap-1.5" onClick={() => setOpen((value) => !value)} disabled={exporting}>

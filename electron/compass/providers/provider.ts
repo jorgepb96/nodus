@@ -400,6 +400,11 @@ export function decodeXml(value: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
+    // Numeric references (&#241; &#x2013;) are how most XML feeds escape non-ASCII titles.
+    .replace(/&#(?:x([0-9a-f]+)|(\d+));/gi, (whole, hex: string | undefined, dec: string | undefined) => {
+      const code = hex ? Number.parseInt(hex, 16) : Number(dec);
+      return Number.isInteger(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+    })
     .replace(/&amp;/g, "&")
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")

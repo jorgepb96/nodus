@@ -36,7 +36,7 @@ function analysisWorker(controller:AbortController):DatabaseResearchHost['analyz
       const abort=()=>{close();reject(new DOMException('Investigación cancelada.','AbortError'));};
       controller.signal.addEventListener('abort',abort,{once:true});
       worker.onerror=event=>{close();reject(new Error(event.message||'No se pudo ejecutar el cálculo local.'));};
-      worker.onmessage=event=>{if(event.data.progress)return;close();event.data.error?reject(new Error(event.data.error)):resolve(event.data.result);};
+      worker.onmessage=event=>{if(event.data.progress)return;close();if(event.data.error)reject(new Error(event.data.error));else resolve(event.data.result);};
       worker.postMessage({request,snapshot,columns});
     });
   };

@@ -1,0 +1,196 @@
+{
+  "pngOriginals": {
+    "character-aurel-gallery": "ebdabe6288e4b8a788dd6df61f72ac092bc6a1f2205be316d99fb228877cc8c9",
+    "character-aurel": "bf838fd29cf2c41920a1344deeabcc2479b0f61e1ae4062026f22f6d0c48adbe",
+    "character-cael-gallery": "e6bd1644eb053820626c019b65a2e9bc1ca70096e1d4649d4bf0f63a6a35c49d",
+    "character-cael": "a7b695b571b2fe53792040c9d433d741770b652057cb86a938762e7ff8e8679d",
+    "character-elan-gallery": "776e910a4ed2a17134d2ffab361d8ce576b925ea41d02483ab721c5ed028a38b",
+    "character-elan": "8582143f0501382593d3e06694f9b27d29ae35ce003bc761e493b90ed5db93d7",
+    "character-ilyra-gallery": "661110979736d35c54108c5d8bc026e675ed10ec04af8ed76454be96f3dd0fa6",
+    "character-ilyra": "8326310a97373a828d82b5cab27c332fd67746010684ff7e6212be2c878f9fd1",
+    "character-maelor-gallery": "a336955756679ff9555d6d5b46e400ce04ac2c85eefb4672e92f7d0191851879",
+    "character-maelor": "fb9e059cbf4aaf38ea60b67a38625e063fe25b2a254c6551be57422d0e929744",
+    "character-nara-gallery": "888a326f522744e5d0cc02a5801cf787f31df54d096d235147b8cd4999cec3dc",
+    "character-nara": "a42b954eecdb8343fe053e1f8672c69e687d9788ba06b6e0e40e0c9a3431c756",
+    "character-odran-gallery": "5243824f6c51cf7c94582b7fa3605ce1df73c5b0599f8a35035d72e647bdab09",
+    "character-odran": "55aebce656661010e5d2ec88d3affd2ca984e300d3914157f744f1d3f6797cd9",
+    "character-sena-gallery": "41b560dd7374e4ebe7ffe4dacca457376a370806ca995c23035321000c24bd98",
+    "character-sena": "1b9465ea2e861b3fb0d88d930aa7529854e4c6fd25f3d6763890b011dd205e8b",
+    "character-tarek-gallery": "6d05203a7b375e65bfe0d7297ac4a88a28da54176a2e95f0b781f007786de1e9",
+    "character-tarek": "44e900954c2a267c93402e80855579d3da0d7c2ca1794fffa0c4ac91aada33e1",
+    "character-vesh-gallery": "87d49702d0e040cdb913a9829ac09ad3409cc6dea7c193aec1972591f083106c",
+    "character-vesh": "8c60d37c28678c3bfb34624ab8577056a9474e99cd375d6e38960597ad0fe206",
+    "dynasty-mir": "4d5484b743beef6af76587790af90de634a6ad0a5a7a64b71b7cfefa056f6212",
+    "dynasty-sarn": "3a45227cba5ca92e20bb9c0821186f244063006d065e2a23b557238a7ee480ed",
+    "dynasty-venn": "8ef9b280d286499a9a89fb29b7fd48e89373ff842f3b62371c3b31f391c6bbc9",
+    "lore-archive": "8d0d82d9a0abbf5afc235576d46bd9d536dfc6ab517e435d55684b83fe4c7aca",
+    "lore-black-tide": "4d3489b6f6e767506c2aeb87aca5facca6911fe03dc90c6792100c070376b7e0",
+    "lore-compass": "4e124f51328dfc721e4584cadfada522367c00e174540f3afafb9ae05ad55566",
+    "lore-council": "d6feede308bf12c6c25b5b3f42aceede260101df0a2f3b0469d3b6b2ade08869",
+    "lore-coup": "d96af41092251ba0ef13baadc10271c1e679a97c0261e150b0d3cbf4ae980326",
+    "lore-epilogue": "f0211beba02a0977fd069106c89e4b53954706227b54bf68cd6b4901c5176a67",
+    "lore-gate": "a0b681f7df7ab4ffa3c4669cbff7b3802d1ea53cf1057df28e63c47d8bf335f8",
+    "lore-heart": "9b8cb6c1a1a609e92d742f665ab815c087747362c96d3258e5e76274cb798ebc",
+    "lore-letter": "2158c9526903bd80f2ab064130ff70cdfc035084937de0a32e448e7d4528837a",
+    "lore-lighthouse": "edee1c452180f0c147b63d2e1b34b4a3a2044390d2d31830d3730eeb6229298f",
+    "lore-orchid": "cee6910d3527d7bd8eac9ca655e36366157d3fc8e9259aeb6a3dafe0c0d6878d",
+    "lore-sails": "3de0466535b9cb640a30a836854ae31e52e89f4f1ee23dd194641594b73448fd",
+    "lore-shared-map": "b2060339cf15b99571ad93051bea4d47ff509f8fb5a0b330052b807b88d5f167",
+    "lore-third-moon": "8d9b13c221e05ed17b28f5d9069987d865fda87d1f35fd8adc7a2e9ece096444",
+    "lore-tide-culture": "8ccc2262d46adfe0dc8a069737d2f95678964e7661c47e2739f86c7cc463696c",
+    "lore-weavers": "c4f819a4b3aec039366c478dee984b02ddec457ef4f87c8c5e37e77fbb39b11f",
+    "map-lumina": "128ed5d91e39c286e984b0982496e297c9407128c65befa2a2f9c734990ecd72",
+    "map-old": "6bbeb93e32634c05bcecbe0d90f005a52fe3f4e47f4f4ac682be5cf3e2dcde1b",
+    "map-orthea": "ce88dba247d273ca4e487f0267a053c0fa1ea1dc1d562e5b264933f804087e3c",
+    "map-world": "b0409893a10f2a7671fc35cd9084ec84e80338b43a49f3144b3bad03ca78623f",
+    "place-archivo": "24156520e9e1583f4364441aaad79dccc9693b571537042a0d96636d8112b789",
+    "place-aster": "357b5cbb64614aae019652227744c479b1c21a3d7cb1753d6c81a7eea2b80468",
+    "place-ceniza": "4a1ea2fa7653dd1946801f88c99050c2ebad1ea4902989dca00df3021e03709d",
+    "place-elyndra": "62b8153af92e8211666f3ba893484064b8318ab26d41118c9618624436a8a7b9",
+    "place-faro": "3281d9258dad76dd0e118a06ae7e61acd9d501bdd6248fc0cf4eaf3816dd5e13",
+    "place-hundido": "21453fe8f6ab032e9bad78f0a4e1f7fab7fcceb5b85b511fdb3c7ac00f7b265a",
+    "place-lumina": "108326cc7bea4c75e75f94ffe074566a7986f54bd5a8c385a04ca6632bb50337",
+    "place-nacre": "10484a8ab59c875b95fcceed3d1511e6209af8ee2d634d9eb74f626dd0547c52",
+    "place-orla": "6b046955deab9ad8aab7ae28f5342def13b0ebd370aff3934d8ad04c5ab47d10",
+    "place-orthea": "760979766a191a046514c9b01e262d3ff07132be784a6ac19e000d36985f7569",
+    "place-sal": "ba8b37e72d59f5a2d99ba25d6e02b402a512f1b9856281b200f485acbf2f58b5",
+    "place-vidrio": "a420763c7139ffd313c8c17bbcceb2e2c7fb22d31369439ce93538d16aac2cb6"
+  },
+  "webpCrops": {
+    "character-aurel": [
+      "216d345c191a5c5ac0e0442c6184fa8602453ad2006763c1deb93e192bbe9ba3"
+    ],
+    "character-cael": [
+      "5af9c51ec92cfaee2b34fc2d0a7401b4ee8b004f492ea822a85a9c6449dbca26"
+    ],
+    "character-elan": [
+      "a275a9225621aaddbd0d570999d253246b726c0601e0d17ac0b8424df8d90f52"
+    ],
+    "character-ilyra": [
+      "2d1af85a50ed77307dc902f43c3f7f76b137342eb2a0e3206b1d31edec83b2ed"
+    ],
+    "character-maelor": [
+      "6a89506fe03ec86a39f99ab6391898597fcc84b4a2312b66f21b256229e11d49"
+    ],
+    "character-nara": [
+      "b917c1e9447ba5adcf4686d24fcc1352fa103c262ad3709c0283e772f4a173c7"
+    ],
+    "character-odran": [
+      "8c0f8feb2e329bc767b62fadf7e7bf785a53c4f5e5a25eb17006941ceec24c4c"
+    ],
+    "character-sena": [
+      "b65427834a4e3b6052a6a197ee8b4ad1752fbf593fcdad8a2434643cebee13fd"
+    ],
+    "character-tarek": [
+      "ed00123aaf5feb3a264aed6e7535c493003ac899a90a71e0e7c501fbaf704ff4"
+    ],
+    "character-vesh": [
+      "e9f1954a19e4bb1606a3f31d3ea871521145f2ce60b91f9f95ccc1b439665392"
+    ],
+    "dynasty-mir": [
+      "be834022fb88165854d056c8e6218b9ff8beb235961e46536d36084c22fcca41"
+    ],
+    "dynasty-sarn": [
+      "b9f695e30d619a9e054f358a06480737861df37ce627eb916e89ac06f8228275"
+    ],
+    "dynasty-venn": [
+      "b5e4ce5cc72cfbe31edd56e4051a0aa99b0f12baf8bcaf4cbb184bd1940325a0"
+    ],
+    "lore-archive": [
+      "af92941c0f9c28bd0b192d5b6c311bf9373128582f325e5bb99841cd5af64e7c"
+    ],
+    "lore-black-tide": [
+      "1c474181b7f7957d81a7f48c5d363f12e68cee1bb8f02971b506dc911c78a2bb"
+    ],
+    "lore-compass": [
+      "4cc5728f7ae407dc296142d5f902a85644c1672fe4167efb8eea17db28e4448d"
+    ],
+    "lore-council": [
+      "f07a68a5d570af56904101a5f483d0797d7f124d3a77118e0f4e093e0782fff9"
+    ],
+    "lore-coup": [
+      "53b38053c5c441819407f3a9bae247393119cbbe70d43f98b0e3ad39bee68811"
+    ],
+    "lore-epilogue": [
+      "6d6a72b100aa1831cd7da7b87308d0f5cf928e1f9c3f70241c76b359e045d054"
+    ],
+    "lore-gate": [
+      "385bbe1602fc4118bb6ee0f64e257cce88c6501ae2444a1a9df855f35ac768e8"
+    ],
+    "lore-heart": [
+      "ed497b1c2956deddd08b87914a8cf71f3744ea03822d0713d8f7cc849cdf69fd"
+    ],
+    "lore-letter": [
+      "6275f71b17907c4f37aede77f374d87b11986d2e4aa5059256749c3c466653ff"
+    ],
+    "lore-lighthouse": [
+      "f0f1a876a9b20eba391c2572e5f13a71b3c3f782182b4f99f4df1d7fe4897968"
+    ],
+    "lore-orchid": [
+      "4de76fdb741829d22365fa2b2bcee6b497dc7d2451fb5def4beae8ae1b6692e8"
+    ],
+    "lore-sails": [
+      "1061139a4228fb0a4e83b59757c6b43444b3938737226462360e31ea3d1ce5ea"
+    ],
+    "lore-shared-map": [
+      "742475849101cd574cd2a700c5cee73e8b133a46002ce6d0372dda9ab756846c"
+    ],
+    "lore-third-moon": [
+      "850645f95763a0705d2fbcd815819928eb7765acf0c353553181da910149a3fd"
+    ],
+    "lore-tide-culture": [
+      "36beeb4efd63406fe7baab53edb02e14adc068c09670579e61fc6d67c2f6cd70"
+    ],
+    "lore-weavers": [
+      "24e0877bda8ed1440cda2d7d6c62e2abdc6917e4ddcc1bb57a06f191021d3152"
+    ],
+    "map-lumina": [
+      "2d667abfeed7f1f074c7030028b7b0ec4ad3e504df72307a232db77a31df0c45"
+    ],
+    "map-old": [
+      "a1c04d0df87f338fa152054b77179ab54082fa4a061f05235f85d1bb8465ae21"
+    ],
+    "map-orthea": [
+      "5460ad59dcef13bc0ac7a7409c0845f583f365b85141e7b1dba34e1be5228afd"
+    ],
+    "map-world": [
+      "1597f53130f86db1fa222eccb75d291908e4b67f8a6ac6020e08bb4685043928"
+    ],
+    "place-archivo": [
+      "14caa18eb5f3bbd9371be238efc1d8f1f88ca280c2797103f9e3b9114c4eb166"
+    ],
+    "place-aster": [
+      "72634a0982a70a18e7e2304467c944979b30af4fed467cab3094f58333b6e369"
+    ],
+    "place-ceniza": [
+      "736b411ef910a0ebdafaeea23a0780ecf20895ce342e975cf63452b4fb315c2e"
+    ],
+    "place-elyndra": [
+      "414f746a7710ad32958ae4b1d20e3fd7df831b9b6d3bfc7b213f9d7acf722fed"
+    ],
+    "place-faro": [
+      "08d4f1f0460d7fac666f5ff41cddd316a195fb4d80b65a5dc07559f119ed3afe"
+    ],
+    "place-hundido": [
+      "319949eadfeb159564a18fcdde8b5fa1c87194ef602cbbf29b7c643fde9e3089"
+    ],
+    "place-lumina": [
+      "e6cfaad8291f1f0d8e3b0f9e96db69eb8d83a602e9bcb53a59311ae8ee889746"
+    ],
+    "place-nacre": [
+      "6c6ce4c2b5de6a7d219d08bffac136d07f8e93de9f03d849ca9b8fdb8774943c"
+    ],
+    "place-orla": [
+      "ed141cac68fc094b913beaa93ef96388d52eff2184a4fffeaf07050f601532f3"
+    ],
+    "place-orthea": [
+      "87cb87395d38a86e4ee5be12b0acf33bc00c0a79d5323b4101935024e4f3fac3"
+    ],
+    "place-sal": [
+      "39f22572f40c0f97d11e627d98144aeddd73c7d46e4972f464946436fba82bd4"
+    ],
+    "place-vidrio": [
+      "45a09899b23a7c0578dcd61a1df354fbdf76301866ab133729defa6cc066de55"
+    ]
+  }
+}

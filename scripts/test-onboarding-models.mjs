@@ -120,7 +120,7 @@ test('the searchbox narrows by model, name and provider together', () => {
   assert.deepEqual(filterModelChoices(choices, 'anthropic gpt').map((c) => c.model), [], 'terms are ANDed, not ORed');
 });
 
-test('the wizard preselects no model for either role', async () => {
+test('new roles stay empty and configured simple roles are retained', async () => {
   // There is no "default choice" helper any more, and there must not be one again: every
   // invented default handed a vault a model nobody chose for it. `choices[0]` is the
   // bundled local Gemma (the built-in provider is queried first), a favorite was starred
@@ -129,8 +129,8 @@ test('the wizard preselects no model for either role', async () => {
   assert.equal('pickDefaultChoice' in onboardingModels, false);
   // The two selections start empty…
   const onboarding = await readFile(new URL('../src/views/Onboarding.tsx', import.meta.url), 'utf8');
-  assert.match(onboarding, /const \[aiModel, setAiModel\] = useState<ModelRef \| null>\(null\)/);
-  assert.match(onboarding, /const \[embeddingModel, setEmbeddingModel\] = useState<ModelRef \| null>\(null\)/);
+  assert.match(onboarding, /const \[aiModel, setAiModel\] = useState<ModelRef \| null>\(settings\.academicInterfaceProfile === 'simple' \? settings\.chatModel \?\? settings\.synthesisModel : null\)/);
+  assert.match(onboarding, /const \[embeddingModel, setEmbeddingModel\] = useState<ModelRef \| null>\(settings\.academicInterfaceProfile === 'simple' && \(settings\.chatModel \|\| settings\.synthesisModel\)/);
   // …and the step seeds neither picker from the settings, the favorites or the listing.
   const step = await readFile(new URL('../src/components/OnboardingModelStep.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(step, /settings\.favorites|settings\.synthesisModel|settings\.embedding/);

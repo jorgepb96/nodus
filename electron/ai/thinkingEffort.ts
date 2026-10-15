@@ -9,7 +9,7 @@ import {
   researchReasoningProfile,
   type ResearchEffort,
 } from '@shared/researchReasoning';
-import { listModels } from './providers';
+import { listModels, openAiCompatBase } from './providers';
 import { getApiKey } from '../secrets/secretStore';
 
 /** The live catalogue entry for providers whose thinking levels come with it. Known
@@ -17,13 +17,25 @@ import { getApiKey } from '../secrets/secretStore';
 export async function thinkingCatalogInfo(model: ModelRef, signal?: AbortSignal): Promise<ModelInfo | undefined> {
   if (hasMobileCompletionReplay()) return undefined;
   if (!['anthropic', 'deepseek', 'openai', 'custom', 'groq', 'cerebras', 'xiaomi', 'openrouter', 'lmstudio'].includes(model.provider)) return undefined;
+  const key = `${model.provider}:${openAiCompatBase(model.provider) ?? ''}:${model.model}`;
+  const remembered = catalogEntries.get(key);
+  if (remembered && Date.now() - remembered.at < CATALOG_ENTRY_TTL_MS) return remembered.info;
   try {
     const deadline = AbortSignal.timeout(5000);
-    return (await listModels(model.provider, getApiKey(model.provider), signal ? AbortSignal.any([signal, deadline]) : deadline)).find(entry => entry.id === model.model);
+    const info = (await listModels(model.provider, getApiKey(model.provider), signal ? AbortSignal.any([signal, deadline]) : deadline)).find(entry => entry.id === model.model);
+    catalogEntries.set(key, { at: Date.now(), info });
+    return info;
   } catch {
     return undefined;
   }
 }
+
+/** Each turn read the provider's whole catalogue to find this one entry: a request on the path of
+ *  every answer, before retrieval and before the model is asked, bounded only by the deadline
+ *  above. The entry does not change between the turns of a conversation, so a completed read is
+ *  kept for a while; a failed one is not, and the next turn asks again. */
+const CATALOG_ENTRY_TTL_MS = 10 * 60 * 1000;
+const catalogEntries = new Map<string, { at: number; info: ModelInfo | undefined }>();
 
 /**
  * A long job's thinking level: the level chosen in the Deep Research or Immersion form, for

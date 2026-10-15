@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import type { LibraryAnalysisReuseComponent } from '@shared/libraryTypes';
 import type { AppSettings, VaultAnalysisReuseKind, VaultAnalysisReuseResult, VaultAnalysisReuseWorkResult, Work } from '@shared/types';
 import { getDb } from '../db/database';
-import { runMigrations } from '../db/migrations';
+import { runMigrations, SCHEMA_VERSION } from '../db/migrations';
+import { migrateDatabaseSafely } from '../db/migrationSafety';
+import { scheduleMigrationRecoveryRetention } from '../db/migrationRecoveryUtilityHost';
 import { sleepIdeasWithoutWorks, wakeIdeasWithWorks } from '../db/ideaDormancy';
 import { pruneOrphanThemesIn } from '../db/graphIntegrity';
 import { getActiveVault, getVault, listVaults } from './vaultRegistry';
@@ -70,14 +72,30 @@ function tableChange(db: Database.Database, tableRows: Record<string, number>, t
   return count;
 }
 
+/**
+ * Another vault, opened to look for analysis to reuse. One already on the current schema is only
+ * read. One still behind (not opened since an update) is migrated exactly as opening it would:
+ * through migrateDatabaseSafely, so its verified pre-migration copy and report exist. Bare
+ * runMigrations here upgraded it with neither, and did a read-write open, a migration pass and a
+ * checkpointing close (~11 ms on a 2.8 GB vault) for every work looked up.
+ */
 function openSourceDb(file: string): Database.Database | null {
   if (!fs.existsSync(file)) return null;
-  const db = new Database(file);
+  const probe = new Database(file, { readonly: true, fileMustExist: true });
   try {
-    runMigrations(db);
+    if (Number(probe.pragma('user_version', { simple: true })) >= SCHEMA_VERSION) return probe;
+  } catch (error) {
+    probe.close();
+    throw error;
+  }
+  probe.close();
+  let db = new Database(file);
+  try {
+    db = migrateDatabaseSafely(db, file, SCHEMA_VERSION, runMigrations);
+    scheduleMigrationRecoveryRetention(file);
     return db;
   } catch (error) {
-    db.close();
+    if (db.open) db.close();
     throw error;
   }
 }

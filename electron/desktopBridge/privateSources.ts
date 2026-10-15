@@ -98,6 +98,7 @@ export class PrivateSourceReadError extends Error {
 function planFor(domain: string, kind: string, id: string): Plan {
   const plan = Object.hasOwn(plans, kind) ? plans[kind] : undefined;
   if (!plan || plan.domain !== domain) throw new PrivateSourceReadError(403, 'source_forbidden');
+  // eslint-disable-next-line no-control-regex -- Reject C0 and DEL characters in untrusted record identifiers.
   if (!id || id.length > 256 || id === '.' || id === '..' || /[\u0000-\u001f\u007f]/.test(id)) {
     throw new PrivateSourceReadError(400, 'invalid_source');
   }

@@ -466,7 +466,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   updateStudyAnnotation(id: string, patch: Partial<StudyAnnotationInput> & { resolved?: boolean }): Promise<StudyAnnotation | null>;
   deleteStudyAnnotation(id: string): Promise<void>;
   transcribeStudyAudio(request: StudySttRequest, handlers?: StudySttStreamHandlers): Promise<StudySttResult>;
-  cancelStudyTranscription(): Promise<void>;
+  cancelStudyTranscription(requestId?: string): Promise<void>;
   getWhisperCppStatus(): Promise<WhisperCppStatus>;
   installWhisperCpp(): Promise<WhisperCppStatus>;
   uninstallWhisperCpp(): Promise<WhisperCppStatus>;
@@ -837,7 +837,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   saveConversationMessages(
     id: string,
     messages: ChatMessageRecord[],
-    meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null }
+    meta?: { model?: ModelRef | null; selection?: ResearchContextSelection | null; vaultId?: string }
   ): Promise<void>;
   /** Ask the model for a short title from the conversation so far; persists + returns it. */
   generateConversationTitle(id: string, model?: ModelRef | null): Promise<string>;

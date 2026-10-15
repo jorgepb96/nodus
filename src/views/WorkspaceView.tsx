@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { normalizeAcademicMetadata, cloneAcademicDocument } from '@shared/academicDocument';
 import { EditorialCards, EditorialNavigator, CatalogViewControl, EditorialCreateTrigger, EditorialCatalogRow } from '../components/workspace/EditorialChrome';
 import '../components/workspace/editorialWorkspace.css';
@@ -707,6 +708,7 @@ export function WorkspaceView({
     [openIds, tree.notes]
   );
   const active = openTabs.find((note) => note.id === activeId) ?? null;
+  const learning = useLearningArtifact('scriptor',active?.id,learningMarkdownRefs(active?.content ?? ''));
 
   const openNote = async (id: string) => {
     if (activeId && !await flushRef.current()) return;
@@ -873,7 +875,7 @@ export function WorkspaceView({
               return false;
             }}
             onRegisterFlush={flush => { flushRef.current = flush; }}
-            headerContent={<><button className="editorial-header-action" aria-label={t('Navegador de documentos')} aria-pressed={layout === 'navigator'} onClick={() => setLayout(layout === 'navigator' ? 'editorial' : 'navigator')}><Icon name="list" size={14} /></button>{workspaceTabs}</>}
+            headerContent={<button className="editorial-header-action" aria-label={t('Navegador de documentos')} aria-pressed={layout === 'navigator'} onClick={() => setLayout(layout === 'navigator' ? 'editorial' : 'navigator')}><Icon name="list" size={14} /></button>}
             contextDetails={<>
         <div className="px-3 py-3">
           <b className="text-[10px] uppercase tracking-wider text-neutral-500">{t('Detalles')}</b>
@@ -939,6 +941,7 @@ export function WorkspaceView({
             onActivate={openNote}
             onClose={closeNote}
             onSaved={(updated) => {
+              if(learning.session?.lessonId==='scriptor'&&learning.session.artifactId===updated.id){const citationIds=learningMarkdownRefs(updated.contentMarkdown).map(ref=>`${ref.kind}:${ref.id}`).filter(id=>learning.session?.citationIds?.includes(id));if(citationIds.length)learning.emit({kind:'artifact-evidence',artifactId:updated.id,citationIds,valid:true});}
               if (settings.academicMode === 'manual') notifyDataChanged();
               setTree((current) => ({
                 ...current,
@@ -1221,7 +1224,7 @@ export function WorkspaceView({
   return (
     <div className="library-theme editorial-workspace relative flex h-full min-h-0 flex-col">
       {mobileCommandIssue && <div role="alert" className="flex items-start gap-3 border-b border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"><span className="flex-1">{mobileCommandIssue}</span><button aria-label={t('Cerrar')} className="grid min-h-11 min-w-11 shrink-0 place-items-center" onClick={() => setMobileCommandIssue(null)}><Icon name="x" size={16} /></button></div>}
-      {!active && <div className="editorial-editor-header"><button className="editorial-header-action" disabled aria-label={t('Navegador de documentos')}><Icon name="list" size={14} /></button><div className="editorial-header-leading">{workspaceTabs}</div></div>}
+      {workspaceTabs}
 
       <div className={`min-h-0 flex-1 overflow-hidden ${active ? 'hidden' : ''}`} aria-hidden={active ? true : undefined}>
         {browser}

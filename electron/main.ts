@@ -1,4 +1,5 @@
 import { initializeChatSkillDefaults } from './chatSkills';
+import {initializeLearningWorkspace,isLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { flushWindowEditors, installEditorCloseGuard } from './editorFlush';
 import { claimIsolatedProfile } from './qa/isolatedProfile';
 import { initializePluginStore } from './skillPlugins';
@@ -63,7 +64,9 @@ import { recoverLegacyApiKeys } from './secrets/legacySecretRecovery';
 import { hasBackupPassword } from './secrets/secretStore';
 import type { UpdateCheckResponse, UpdateProgressEvent } from '@shared/types';
 import { installMediaRequestHeaders } from './mediaRequestHeaders';
+import { installDefaultWindowGuards } from './windowGuards';
 import { killChatGptSubscriptionServer } from './ai/codexSubscription';
+import { prefetchAgentRuntimesInUse } from './ai/agentRuntime';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
@@ -576,6 +579,7 @@ function createWindow(): void {
   });
   protectMainWindowNavigation(mainWindow);
   installEditorCloseGuard(mainWindow, () => quitting);
+  if(isLearningWorkspace())mainWindow.on('close',()=>closeLearningWorkspace());
 
   // Right-clicking any text field in Nodus — the browser's address bar above all
   // — offers Cut, Copy and Paste. Views that draw their own HTML context menu
@@ -1016,6 +1020,9 @@ app.whenReady().then(async () => {
   // its handshake and is torn down in the same millisecond — reported either way as a
   // capability that would not start, for a worker that comes up in about 100 ms on a free
   // loop. Nothing here is urgent, and 5.4.0 shipped this in the contended window.
+  // A profile that already used Codex or Copilot gets its CLI back in the background
+  // after updating to an installer that no longer carries it (./ai/agentRuntime).
+  void afterFirstPaint(() => prefetchAgentRuntimesInUse(getSettings()));
   if (!process.env.NODUS_ISOLATED_ROOT) void afterFirstPaint(() => {
     void settleInstalledPluginMigrations()
       .then(settled => { if (settled.length) rebuildCapabilityRegistry(); })
@@ -1039,6 +1046,10 @@ app.whenReady().then(async () => {
   // OpenStreetMap also needs an identified client. A single scoped listener keeps
   // both rules active: registering another listener would replace the first one.
   installMediaRequestHeaders(session.defaultSession.webRequest, app.getVersion());
+  // Every window without its own guard (Nodi, the presenter windows) denies window.open and
+  // sends the link to the system browser; pages that are not Nodus's own get no device,
+  // location or external-protocol permission on this session.
+  installDefaultWindowGuards({ app, session: session.defaultSession, openExternal: openExternalSafely, devServerUrl: VITE_DEV_SERVER_URL });
   // Nodus Toolkit OCR caches its Tesseract language traineddata here (the one
   // opt-in network call), so downloads persist across sessions in userData.
   if (!process.env.NODUS_TESSDATA_CACHE) {
@@ -1053,12 +1064,16 @@ app.whenReady().then(async () => {
   });
   if (preV4.snapshotPath) console.log(`[recovery] pre-v4 snapshot: ${preV4.snapshotPath}`);
   getDb(); // open + migrate before anything touches data
+  initializeLearningWorkspace();
   const startupVault = getActiveVault();
   if (startupVault.type === 'databases') ensureDatabaseDeepResearchLane(startupVault.id);
   // Do this before creating either the main window or a browser tab: Chromium
   // then exposes the same effective preference to pages from their first frame.
   setBrowserTheme(getSettings().theme);
-  if (!process.env.NODUS_ISOLATED_ROOT && process.env.NODUS_STELLAR_PREVIEW !== '1') await startDatabaseFormServer(Number.parseInt(process.env.NODUS_DATABASE_FORM_PORT ?? '0', 10) || 0);
+  // A form server that cannot listen is a missing feature, not a failed launch: this await
+  // sits before the window exists, and a rejection here quit the app with a startup error.
+  if (!process.env.NODUS_ISOLATED_ROOT && process.env.NODUS_STELLAR_PREVIEW !== '1') await startDatabaseFormServer(Number.parseInt(process.env.NODUS_DATABASE_FORM_PORT ?? '0', 10) || 0)
+    .catch((error) => console.error(`[database-forms] server did not start: ${error instanceof Error ? error.message : String(error)}`));
   upgradeWorldbuildingDemoDynasties();
   upgradeWorldbuildingDemoImageQuality();
   upgradeWorldbuildingDemoNarrativeDepth();

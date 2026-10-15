@@ -6,6 +6,7 @@ export function mobileDatabaseActionRequest(raw: unknown, requireRevision = fals
   const value = raw as Record<string, unknown>;
   if (Object.keys(value).some(key => !['rowId','columnId','kind','revision'].includes(key)) ||
       !['text','image','button'].includes(String(value.kind)) ||
+      // eslint-disable-next-line no-control-regex -- Reject C0 and DEL characters in untrusted record identifiers.
       [value.rowId,value.columnId].some(id => typeof id !== 'string' || !id || id.length > 256 || /[\u0000-\u001f\u007f]/.test(id)) ||
       (requireRevision || value.revision !== undefined) && (typeof value.revision !== 'string' || !/^[a-f0-9]{64}$/.test(value.revision))) throw new Error('invalid_database_action');
   return value as unknown as MobileDatabaseActionRequest;

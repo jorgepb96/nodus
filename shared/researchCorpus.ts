@@ -162,6 +162,8 @@ export interface DocumentaryIndexIdentity {
   textFingerprint: string;
   chunkerVersion: string;
   processingVersion: string;
+  /** Scheme layouts applied to the chunks (electron/ai/schemeCleaning.ts); absent when none. */
+  layout?: string;
   embedding: null | { provider: string; model: string; dimensions: number; metric: 'cosine'; parameters: Record<string, string | number | boolean> };
 }
 

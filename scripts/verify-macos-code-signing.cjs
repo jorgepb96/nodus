@@ -57,6 +57,37 @@ function combined(file, args) {
   return `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
 }
 
+const TICKET_LOOKUP_ATTEMPTS = 6;
+const NETWORK_FAILURE = /NSURLErrorDomain|network connection was lost|could not connect to the server|timed out|not connected to the internet/i;
+
+function pause(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+// `stapler validate` asks Apple's CloudKit ticket service about the app, and a
+// dropped connection fails it with the same Error 68 as a missing ticket. The
+// v5.9.0 Intel build lost that connection three times in a row after Apple had
+// already notarized it. Only a network failure is retried: a ticket that is
+// genuinely absent or invalid still fails on the first answer.
+function validateStapledTicket(appPath, {
+  validate = (target) => spawnSync('/usr/bin/xcrun', ['stapler', 'validate', target], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  }),
+  wait = pause,
+} = {}) {
+  let output = '';
+  for (let attempt = 1; attempt <= TICKET_LOOKUP_ATTEMPTS; attempt += 1) {
+    const result = validate(appPath);
+    output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+    if (result.status === 0) return output;
+    if (!NETWORK_FAILURE.test(output) || attempt === TICKET_LOOKUP_ATTEMPTS) break;
+    console.warn(`[macOS release verification] stapler validate lost the network (attempt ${attempt}); retrying`);
+    wait(15_000 * attempt);
+  }
+  fail(`/usr/bin/xcrun stapler validate ${appPath} failed\n${output}`.trim());
+}
+
 function extractValue(output, label) {
   const match = output.match(new RegExp(`^${label}=(.+)$`, 'm'));
   return match?.[1]?.trim() ?? null;
@@ -199,7 +230,7 @@ function verifyMacApp(appPath, { verifyEveryComponent = true } = {}) {
     componentCount = components.length;
   }
 
-  combined('/usr/bin/xcrun', ['stapler', 'validate', resolvedApp]);
+  validateStapledTicket(resolvedApp);
   combined('/usr/sbin/spctl', ['--assess', '--type', 'execute', '--verbose=4', resolvedApp]);
   return { ...root, appPath: resolvedApp, componentCount };
 }
@@ -208,5 +239,6 @@ module.exports = {
   CHILD_ENTITLEMENTS,
   ROOT_ENTITLEMENTS,
   signatureInfo,
+  validateStapledTicket,
   verifyMacApp,
 };

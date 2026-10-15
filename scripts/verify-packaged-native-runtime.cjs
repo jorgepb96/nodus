@@ -15,20 +15,17 @@ const SUPPORTED_ARCHITECTURES = ['arm64', 'x64'];
 // `lipo -archs` names the Intel slice x86_64; electron-builder names it x64.
 const LIPO_ARCHITECTURES = { arm64: 'arm64', x64: 'x86_64' };
 
+// The Codex and Copilot CLIs are not here on purpose: installers no longer carry them,
+// and electron/ai/agentRuntime.ts downloads the one this architecture needs at first
+// use. scripts/verify-packaged-node-modules.cjs proves they are absent and downloadable.
 const REQUIRED_BINARIES = {
   arm64: [
     ['Canvas', '@napi-rs/canvas-darwin-arm64/skia.darwin-arm64.node'],
     ['Koffi', '@koromix/koffi-darwin-arm64/darwin_arm64/koffi.node'],
-    ['Codex', '@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex'],
-    ['Copilot', '@github/copilot-darwin-arm64/copilot'],
-    ['Copilot native runtime', '@github/copilot-darwin-arm64/prebuilds/darwin-arm64/runtime.node'],
   ],
   x64: [
     ['Canvas', '@napi-rs/canvas-darwin-x64/skia.darwin-x64.node'],
     ['Koffi', '@koromix/koffi-darwin-x64/darwin_x64/koffi.node'],
-    ['Codex', '@openai/codex-darwin-x64/vendor/x86_64-apple-darwin/bin/codex'],
-    ['Copilot', '@github/copilot-darwin-x64/copilot'],
-    ['Copilot native runtime', '@github/copilot-darwin-x64/prebuilds/darwin-x64/runtime.node'],
   ],
 };
 
@@ -148,7 +145,7 @@ function verifyPackagedNativeRuntime(appPath, architecture, options = {}) {
     assertBinaryArchitecture(label, filename, architecture, options.getArchitectures);
   }
   console.log(
-    `[native-runtime] Verified ${architecture} Electron, Canvas, Sharp, Koffi, Codex and Copilot in ${appPath}`,
+    `[native-runtime] Verified ${architecture} Electron, Canvas, Sharp and Koffi in ${appPath}`,
   );
 }
 

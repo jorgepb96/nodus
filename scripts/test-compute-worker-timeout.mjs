@@ -108,16 +108,21 @@ try {
       `spinning (${(ratio * 100).toFixed(0)}% — a terminated thread should be near zero)`
   );
 
-  // --- A later request must not wait out another full timeout --------------
-  // Two consecutive timeouts flip the host to the in-process path, so this
-  // should return promptly instead of queueing behind a stuck thread.
-  const secondStart = Date.now();
+  // --- After MAX_CONSECUTIVE_TIMEOUTS (2), requests stop queueing ------------
+  // One timeout only replaces the worker: the next request gets a fresh thread,
+  // which (this stand-in being a spinner) times out too. That second consecutive
+  // timeout flips the host to the in-process path, so the third request must
+  // return promptly instead of waiting behind a stuck thread.
   const second = await host.computeThemeMatches(centroids, candidates, 0.0, 4);
-  const secondElapsed = Date.now() - secondStart;
   assert.ok(Array.isArray(second) && second.length > 0, 'the follow-up request must still work');
+  await wait(300);
+  const thirdStart = Date.now();
+  const third = await host.computeThemeMatches(centroids, candidates, 0.0, 4);
+  const thirdElapsed = Date.now() - thirdStart;
+  assert.ok(Array.isArray(third) && third.length > 0, 'a request after two timeouts must still work');
   assert.ok(
-    secondElapsed < 1200,
-    `a later request must not queue behind the dead worker (took ${secondElapsed}ms)`
+    thirdElapsed < 1200,
+    `after two consecutive timeouts a request must not queue behind a worker (took ${thirdElapsed}ms)`
   );
 
   // --- And the process must stay quiet afterwards --------------------------

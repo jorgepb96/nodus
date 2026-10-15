@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { selectorPanelMotion } from './selectorMotion';
 import type { AppSettings, CustomAppTheme, RemoteSignIn, VaultSummary, VaultType } from '@shared/types';
 import { isPreviewVaultType } from '@shared/vaultTypes';
 import { errorText, t, tr, tx } from '../i18n';
@@ -52,6 +53,7 @@ function generateFourDigitCode(): string {
 
 export function VaultSwitcher({ anchorEl, onClose, vaults, onVaultsChanged, onActiveVaultChanged }: VaultSwitcherProps) {
   const open = anchorEl != null;
+  const reducedMotion = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -417,12 +419,10 @@ export function VaultSwitcher({ anchorEl, onClose, vaults, onVaultsChanged, onAc
           {open && pos && (
             <motion.div
               ref={panelRef}
+              data-testid="vault-switcher-panel"
               data-browser-native-overlay="true"
               key="vault-panel"
-              initial={{ opacity: 0, scaleY: 0.8, y: -8 }}
-              animate={{ opacity: 1, scaleY: 1, y: 0 }}
-              exit={{ opacity: 0, scaleY: 0.85, y: -8 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              {...selectorPanelMotion(Boolean(reducedMotion) || document.documentElement.classList.contains('reduce-motion'))}
               style={{
                 position: 'fixed',
                 left: pos.left,

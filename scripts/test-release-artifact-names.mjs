@@ -97,8 +97,11 @@ test('the uploader expects the names the builder produces', () => {
 
 test('the release workflow verifies the same names before publishing', () => {
   const workflow = read('.github/workflows/release-build.yml');
-  for (const name of PUBLISHED.filter((target) => target.ext !== 'zip').map((target) => target.name)) {
-    assert.ok(workflow.includes(name), `the release workflow must verify ${name}`);
+  // Intel is appended after publication, so its own workflow verifies it.
+  const intel = read('.github/workflows/release-macos-intel.yml');
+  for (const target of PUBLISHED.filter((target) => target.ext !== 'zip')) {
+    const isIntel = target.os === 'mac' && target.arch === 'x64';
+    assert.ok((isIntel ? intel : workflow).includes(target.name), `the release workflow must verify ${target.name}`);
   }
 });
 

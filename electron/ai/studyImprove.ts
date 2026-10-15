@@ -37,6 +37,8 @@ export async function improveStudyText(
   onDelta: (delta: string) => void,
   signal?: AbortSignal,
 ): Promise<StudyImproveResult> {
+  signal?.throwIfAborted();
+  if (request.additionalInstructions !== undefined && (typeof request.additionalInstructions !== 'string' || request.additionalInstructions.length > 4000)) throw new Error('Las instrucciones superan el límite de 4.000 caracteres.');
   const style = getStudyStyle(request.styleId);
   if (!style) throw new Error('El estilo seleccionado no está disponible.');
   const aiSettings = getSettings();
@@ -80,6 +82,7 @@ export async function improveStudyText(
     }, model, signal);
   });
   const raw = completed.value; const model = completed.model;
+  signal?.throwIfAborted();
   const finished = finishStudyImprovement(request, style, raw || streamed, promptLanguage, normalizePromptLanguage(aiSettings.uiLanguage));
   const {text, warnings} = finished;
   if (text.startsWith(visibleStreamed)) {

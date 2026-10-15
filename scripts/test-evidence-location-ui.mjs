@@ -18,7 +18,7 @@ assert.match(
 );
 assert.match(
   source,
-  /openEvidenceAtPage\(nodusId, \{ location, sourceRef, pageNumber: page \}\)/,
+  /openEvidenceAtPage\(nodusId,\s*\{\s*location,\s*sourceRef,\s*pageNumber:\s*page\s*\}\)/,
   'academic navigation transports the structured attachment locator without requiring a page',
 );
 

@@ -75,7 +75,7 @@ export class MobileDatabaseResearchRepository implements DatabaseResearchReposit
   getDatabaseResearchRunDetail:DatabaseResearchRepository['getDatabaseResearchRunDetail']=id=>id===this.detail.run.id?this.detail:null;
   updateDatabaseResearchRun:DatabaseResearchRepository['updateDatabaseResearchRun']=(id,patch)=>{
     const run=this.own(id);if(patch.expectedRevision!=null&&patch.expectedRevision!==run.revision)throw new Error('database_run_conflict');
-    const {expectedRevision,...values}=patch;Object.assign(run,values,{revision:run.revision+1,updatedAt:this.now()});return run;
+    const {expectedRevision:_expectedRevision,...values}=patch;Object.assign(run,values,{revision:run.revision+1,updatedAt:this.now()});return run;
   };
   updateDatabaseResearchProgress:DatabaseResearchRepository['updateDatabaseResearchProgress']=(id,patch)=>{
     const run=this.own(id);if(!['cancelled','cancelling'].includes(run.status))Object.assign(run,{status:patch.status??run.status,phase:patch.phase??patch.step??run.phase,currentStep:patch.step??run.currentStep,progress:Math.max(0,Math.min(1,patch.progress??run.progress)),error:patch.error??run.error,updatedAt:this.now(),revision:run.revision+1});

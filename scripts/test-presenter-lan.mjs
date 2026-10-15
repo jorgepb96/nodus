@@ -48,6 +48,8 @@ class Client {
     this.socket.write(Buffer.concat([prefix, data]));
   }
   next(predicate, timeout = 10000) {
+    // Capture the waiting call site before entering the timer callback.
+    const deadlineError = new Error('Message deadline exceeded');
     return new Promise((resolve, reject) => {
       let timer;
       const check = () => {
@@ -55,7 +57,11 @@ class Client {
         if (index < 0) return;
         clearTimeout(timer); this.waiters = this.waiters.filter(fn => fn !== check); resolve(this.messages.splice(index, 1)[0]);
       };
-      timer = setTimeout(() => { this.waiters = this.waiters.filter(fn => fn !== check); reject(new Error('Message deadline exceeded')); }, timeout);
+      timer = setTimeout(() => {
+        this.waiters = this.waiters.filter(fn => fn !== check);
+        deadlineError.message += ` (queued kinds: ${this.messages.map(message => message.kind).join(', ') || 'none'}; socket closed: ${this.socket.destroyed})`;
+        reject(deadlineError);
+      }, timeout);
       this.waiters.push(check); check();
     });
   }
@@ -144,7 +150,11 @@ test('JPEG preview, complete PDF/hash, resumed transfer and asset guards work in
     assets = await Client.open(f.info, 'assets');
     const version = deck.assetVersion;
     assets.send({ kind: 'image', page: 1, width: 1280, assetVersion: version });
-    const image = Buffer.from((await assets.next(m => m.kind === 'image')).data, 'base64');
+    // First native PDF render includes a cold renderer startup on hosted Windows.
+    // Keep protocol/control deadlines short, but wait for this render or its actual error.
+    const preview = await assets.next(m => m.kind === 'image' || m.kind === 'assetError', 30000);
+    assert.equal(preview.kind, 'image', 'the native renderer must produce a preview, not an asset error');
+    const image = Buffer.from(preview.data, 'base64');
     assert.deepEqual([...image.subarray(0, 2)], [0xff, 0xd8]); assert.ok(image.length > 2000);
     for (const start of [0, Math.floor(f.bytes.length / 2)]) {
       assets.send({ kind: 'pdf', offset: start, assetVersion: version });

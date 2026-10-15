@@ -103,13 +103,13 @@ Teaching tools cover private student rosters, gradebooks, reusable rubrics and e
 
 ## Nodus Toolkit
 
-The Toolkit brings practical document tools together in every vault. Convert changes files between common formats, Protect combines files and adds permanent redactions, watermarks and traceable copies, and Translate works with text, files and Zotero attachments while preserving DOCX and EPUB structure. PDF Presenter and OCR Workspace complete the set. Nodus Drift, still in development, mixes ambient sounds while you read or study; it works offline and never uses the network.
+The Toolkit brings practical document tools together in every vault. Convert changes files between common formats, Protect combines files and adds permanent redactions, watermarks and traceable copies, and Translate works with text, files and Zotero attachments while preserving DOCX and EPUB structure. Nodus Presenter and OCR Workspace complete the set. Nodus Drift, still in development, mixes ambient sounds while you read or study; it works offline and never uses the network.
 
 Drift defaults to its recommended catalogue order. The sorting menu also offers alphabetical order, category followed by name, and most used first, with alphabetical ties and unused sounds at the end. The chosen order and use counts stay local. Sounds count a use when playback starts successfully; saved presets count their explicit loads and use their associated icon when sorting by type.
 
 You can open material from disk or from compatible vault sources, then save the result, share it or return it to the vault. Nodus Protect processes documents entirely on your computer and never sends them to an AI provider. Translate only uses the model you choose when you ask it to.
 
-![Nodus Toolkit showing Apps, Convert, Protect, Translate, PDF Presenter and OCR Workspace](docs/screenshots/readme-toolkit-demo.png)
+![Nodus Toolkit showing Apps, Convert, Protect, Translate, Nodus Presenter and OCR Workspace](docs/screenshots/readme-toolkit-demo.png)
 
 ## Skill marketplace
 

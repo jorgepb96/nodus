@@ -1,6 +1,6 @@
 {
   "name": "nodus-server",
-  "version": "5.8.1",
+  "version": "5.10.0",
   "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
@@ -17,6 +17,7 @@
     "pdf-lib": "^1.17.1",
     "playwright-core": "1.61.1",
     "subset-font": "^2.7.0",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "yjs": "^13.6.27"
   }
 }

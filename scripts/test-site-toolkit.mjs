@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
 SPDX-License-Identifier: AGPL-3.0-only
 
-The Toolkit section: the PDF Presenter hero, the projected slide the stage shows,
+The Toolkit section: the Nodus Presenter hero, the projected slide the stage shows,
 and the row of tools under it. These checks pin the three things a reader gets —
 an entry with the same badge as the rest, a slide that looks like a Nodus deck
 instead of a placeholder, and a single row that scrolls instead of wrapping.
@@ -22,11 +22,11 @@ const script = read('site/assets/js/home.js');
 
 const toolkit = home.slice(home.indexOf('<section id="tools"'), home.indexOf('</section>', home.indexOf('<section id="tools"')));
 
-test('the PDF Presenter wears the same badge as the tools under it', () => {
+test('the Nodus Presenter wears the same badge as the tools under it', () => {
   const hero = toolkit.slice(toolkit.indexOf('<article class="tool-hero'));
   assert.match(hero, /<span class="pic"><svg viewBox="0 0 24 24">/, 'the hero carries an icon');
   assert.match(hero, /<span class="pic">[\s\S]{0,220}?<\/svg><\/span>\s*<span class="kicker">Presenting<\/span>/, 'the icon sits above its kicker');
-  assert.match(hero, /<h3>PDF Presenter<\/h3>/);
+  assert.match(hero, /<h3>Nodus Presenter<\/h3>/);
   // The tools under it are the reference: same badge, same glyph weight.
   assert.equal(toolkit.match(/<span class="pic">/g).length, 6, 'the hero and the five tool cards all carry one');
   assert.match(css, /\.tool-hero \.pic \{[^}]*width: 44px; height: 44px;/, 'the hero badge is the bigger one');

@@ -102,10 +102,13 @@ export async function record(deck) {
 
   // ── the profile ──────────────────────────────────────────────────────────
   // Always a throwaway copy. The installed Nodus is never touched.
-  const userData = await mkdtemp(path.join(os.tmpdir(), `nodus-${deck.name}-`));
-  if (deck.masterProfile) {
+  // A continuation can reopen an owned recording profile. Keeping its source
+  // paths and timestamps also keeps previously issued citation revisions valid.
+  if(deck.existingProfile&&(!path.resolve(deck.existingProfile).startsWith(path.resolve(os.tmpdir())+path.sep)||!path.basename(deck.existingProfile).startsWith('nodus-learning-')))throw new Error('Continuation requires an owned temporary learning profile');
+  const userData = deck.existingProfile ?? await mkdtemp(path.join(os.tmpdir(), `nodus-${deck.name}-`));
+  if (deck.masterProfile&&!deck.existingProfile) {
     await rm(userData, { recursive: true, force: true });
-    await cp(deck.masterProfile, userData, { recursive: true });
+    await cp(deck.masterProfile, userData, { recursive: true, preserveTimestamps:true });
     // vaults.json stores an ABSOLUTE path to the vault database, so copying the
     // profile alone leaves every run reading and writing the SAME vault — the
     // isolation is an illusion and state leaks between takes. Copy the vault too
@@ -165,6 +168,7 @@ export async function record(deck) {
     await page.addInitScript((v) => {
       localStorage.setItem('nodus.lastSeenVersion', v);
       sessionStorage.setItem('nodus.startupUpdateChecked', '1');
+      for (const key of ['nodus.mobileTeaserSeen.3.2.4', 'nodus.platformHighlightsSeen.2026-07', 'nodus.tutorialVideosAnnouncementSeen.2026-07', 'nodus.pdfPresenterTutorialSeen.e2js_u-05OA', 'nodus.toolkitBetaGuideSeen.2.4.0']) localStorage.setItem(key, '1');
     }, appVersion);
     await page.evaluate((settings) => window.nodus.updateSettings(settings), { ...BASE_SETTINGS, ...(deck.settings ?? {}) });
     await page.reload();
@@ -275,11 +279,14 @@ export async function record(deck) {
 
     /** Draw the ring. Accepts a list of candidates and uses the first that exists. */
     const highlight = async (selector) => {
+      // In-situ guides already identify their real control. A second, static ring
+      // around an entire workspace distracts from that control and can go stale.
+      if (await page.locator('[data-learning-guide="true"]').isVisible().catch(()=>false)) return true;
       const candidates = Array.isArray(selector) ? selector : [selector];
       for (const c of candidates) {
-        const box = await page.locator(c).first().boundingBox({ timeout: 1500 }).catch(() => null);
-        if (box) {
-          await page.evaluate((r) => window.__tutorialCursor?.highlight(r), box);
+        const target=page.locator(c).first();
+        if (await target.isVisible().catch(()=>false)) {
+          await target.evaluate(element=>window.__tutorialCursor?.highlightElement(element));
           return true;
         }
       }
@@ -303,7 +310,7 @@ export async function record(deck) {
 
     const ctx = {
       page, app, settle, warn, highlight, pointAndClick, closeAnyDialog, searchSettings,
-      repoRoot, userData, diagDir: DIAG, dryRun,
+      repoRoot, userData, diagDir: DIAG, dryRun, deckName: deck.name,
       /** Screenshot plus a summary of what IS on screen, for when something is not. */
       diagnose: async (label) => {
         await page.screenshot({ path: path.join(DIAG, `${label}.png`) }).catch(() => {});
@@ -371,11 +378,11 @@ export async function record(deck) {
       const holdUntil = started + cue.duration;
       let focusRect = null;
       if (shot.act && shot.focus && !shot.focusBeforeAct) {
-        await shot.act(helpers).catch((e) => warn(`act failed in ${shot.id}: ${e.message}`));
+        await shot.act(helpers).catch((e) => { warn(`act failed in ${shot.id}: ${e.message}`); if (deck.failFast) throw e; });
         focusRect = await measureFocus();
       } else {
         focusRect = await measureFocus();
-        if (shot.act) await shot.act(helpers).catch((e) => warn(`act failed in ${shot.id}: ${e.message}`));
+        if (shot.act) await shot.act(helpers).catch((e) => { warn(`act failed in ${shot.id}: ${e.message}`); if (deck.failFast) throw e; });
       }
 
       if (shot.highlight) await highlight(shot.highlight);
@@ -398,6 +405,11 @@ export async function record(deck) {
         id: shot.id, start: started, end: ended,
         narration: cue.duration, focus: focusRect, timelapse: Boolean(shot.timelapse), say: shot.say,
       });
+      await writeFile(path.join(OUT, 'progress.json'), JSON.stringify({
+        window: WIN, frameSize: { width: WIN.width * SCALE, height: WIN.height * SCALE },
+        cssToFrame: SCALE, duration: frames.length ? frames.at(-1).t : 0,
+        shots: timeline, frames, warnings,
+      }, null, 2), 'utf8');
       console.log(`${tag} ${shot.id.padEnd(22)} ${(ended - started).toFixed(2)}s${focusRect ? ' · zoom' : ''}${shot.timelapse ? ' · timelapse' : ''}`);
     }
 
@@ -413,7 +425,7 @@ export async function record(deck) {
     if (warnings.length) console.log(`${tag} review the warnings before assembling — a take with warnings usually shows them on screen`);
   } finally {
     await app.close().catch(() => {});
-    if (process.argv.includes('--keep-profile')) {
+    if (deck.existingProfile||process.argv.includes('--keep-profile')) {
       console.log(`${tag} profile kept at ${userData}`);
     } else {
       await rm(userData, { recursive: true, force: true }).catch(() => {});

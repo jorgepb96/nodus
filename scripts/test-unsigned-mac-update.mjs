@@ -12,6 +12,7 @@
 //
 // This exercises the REAL helper script the app generates, against fake bundles.
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -44,6 +45,7 @@ const waitFor = async (predicate, timeoutMs, label) => {
   assert.fail(`timed out waiting for: ${label}`);
 };
 
+test('unsigned macOS updates survive force quit and report interrupted installation', { skip: process.platform !== 'darwin' }, async () => {
 const root = await mkdtemp(path.join(os.tmpdir(), 'nodus-unsigned-update-'));
 try {
   const script = helperScript();
@@ -135,3 +137,4 @@ try {
   await rm(root, { recursive: true, force: true });
   await execFileAsync('/bin/sh', ['-c', 'true']).catch(() => {});
 }
+});

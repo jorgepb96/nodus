@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {canonicalJson} from '../../shared/canonicalJson';
-import {mobileDatabaseActionRequest,compileMobileDatabaseButton,type MobileButtonContext, type MobileDatabaseActionRequest} from '../../shared/mobileDatabaseActions';
+import { mobileDatabaseActionRequest, compileMobileDatabaseButton, type MobileButtonContext } from '../../shared/mobileDatabaseActions';
 import {aiColumnSystem,buildAiCellPrompt,buildAiImagePrompt,buildAiRowContext} from '../../shared/databaseAi';
 import {attachmentKind} from '../../shared/databases';
 import {isVisionMime} from '../../shared/imageAnalysis';

@@ -56,6 +56,32 @@ export function safeBrowserDownloadName(value: unknown): string {
   return clean.slice(0, 240) || 'download';
 }
 
+/**
+ * Where a download with this (already cleaned) name goes inside `folder`: never onto a file that
+ * is already there, and never as a hidden dot-file. A page chooses the name, and with a
+ * configured folder there is no dialog — so `paper.pdf` silently replaced the paper the user
+ * downloaded yesterday, and `.zshrc` would have replaced a shell profile in a folder that is
+ * also home to one. The next free `name (n).ext` is used instead, as browsers do.
+ *
+ * `join` and `exists` are passed in so this stays free of Node in the shared bundle.
+ */
+export function availableDownloadPath(
+  folder: string,
+  filename: string,
+  exists: (candidate: string) => boolean,
+  join: (folder: string, name: string) => string,
+): string {
+  const visible = filename.replace(/^\.+/, '') || 'download';
+  const dot = visible.lastIndexOf('.');
+  const stem = dot > 0 ? visible.slice(0, dot) : visible;
+  const extension = dot > 0 ? visible.slice(dot) : '';
+  for (let n = 0; n < 10_000; n++) {
+    const candidate = join(folder, n === 0 ? visible : `${stem} (${n})${extension}`);
+    if (!exists(candidate)) return candidate;
+  }
+  return join(folder, `${stem} (${Date.now()})${extension}`);
+}
+
 function extensionOf(filename: string): string {
   const match = /\.([A-Za-z0-9]+)$/.exec(filename.trim());
   return match ? match[1].toLowerCase() : '';

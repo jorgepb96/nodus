@@ -6,6 +6,18 @@ import { webUtils } from 'electron';
 import type { ToolkitApi } from '@shared/api/toolkit';
 
 export const toolkitApi: ToolkitApi = {
+  getBackupCatalog: ids => ipcRenderer.invoke('backups:catalog', ids),
+  getBackupCatalogRecords: query => ipcRenderer.invoke('backups:records', query),
+  previewOpenBackup: options => ipcRenderer.invoke('backups:preview', options),
+  runOpenBackup: async (jobId, options, outputDir, onProgress) => {
+    const listener = (_e: unknown, id: string, progress: Parameters<typeof onProgress>[0]) => { if (id === jobId) onProgress(progress); };
+    ipcRenderer.on('backups:progress', listener);
+    try { return await ipcRenderer.invoke('backups:run', jobId, options, outputDir); }
+    finally { ipcRenderer.removeListener('backups:progress', listener); }
+  },
+  cancelOpenBackup: id => ipcRenderer.invoke('backups:cancel', id),
+  saveBackupPreset: preset => ipcRenderer.invoke('backups:presets:save', preset),
+  deleteBackupPreset: id => ipcRenderer.invoke('backups:presets:delete', id),
   // Nodus Toolkit (Convert). Progress is pushed on 'toolkit:job:event' filtered
   // by a per-run jobId, mirroring the Nodi chat-stream pattern.
   runToolkitJob: async (request, handlers) => {

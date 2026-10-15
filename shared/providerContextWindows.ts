@@ -146,6 +146,8 @@ const DOCUMENTED_MAX_OUTPUT: Readonly<Record<string, Readonly<Record<string, num
   // https://developers.openai.com/api/docs/models/gpt-4o
   // The older 2024-05-13 snapshot has a different ceiling; do not match by prefix.
   openai: {
+    // https://developers.openai.com/api/docs/models/gpt-6.1-sol — 128K output, reasoning included.
+    'gpt-6.1-sol': 128_000,
     'gpt-4o': 16_384,
     'gpt-4o-2024-08-06': 16_384,
     'gpt-4o-2024-11-20': 16_384,
@@ -154,6 +156,7 @@ const DOCUMENTED_MAX_OUTPUT: Readonly<Record<string, Readonly<Record<string, num
   // Values this large require a streaming request; a non-streaming call hits the HTTP timeout
   // first. Research Chat streams, so it can use them.
   anthropic: {
+    'claude-fable-5-1': 128_000,
     'claude-opus-5-5': 128_000,
     'claude-opus-5': 128_000,
     'claude-opus-4-8': 128_000,
@@ -162,6 +165,18 @@ const DOCUMENTED_MAX_OUTPUT: Readonly<Record<string, Readonly<Record<string, num
     'claude-sonnet-5-5': 128_000,
     'claude-sonnet-5': 128_000,
     'claude-sonnet-4-6': 128_000,
+  },
+  // https://api-docs.deepseek.com/quick_start/pricing/ — 1M context with a 384K output ceiling.
+  // Recorded because an ABSENT ceiling is not neutral: researchAnswerTokens falls back to the flat
+  // figure, which pinned every non-Claude provider at 10,000 output tokens however large its
+  // window. deepseek-flash was then cut off mid-answer at 18,192 (10,000 + a low reasoning
+  // reserve) while holding a million-token context, and the scaling added for Claude never
+  // applied to it at all.
+  deepseek: {
+    'deepseek-flash': 384_000,
+    'deepseek-v4-flash': 384_000,
+    'deepseek-v4-pro': 384_000,
+    'deepseek-pro': 384_000,
   },
 };
 

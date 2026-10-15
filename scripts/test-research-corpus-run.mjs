@@ -240,3 +240,8 @@ try {
   load('electron/db/database.ts').closeDb();
   fs.rmSync(scratch, { recursive: true, force: true });
 }
+// Electron-as-Node on Windows can crash in its implicit IOCP/V8 teardown after
+// this long transpiled fixture completes (PostQueuedCompletionStatus, exit
+// 0x80000003). Finish the CLI explicitly, only after ALL assertions and awaited
+// cleanup succeeded. Assertion/cleanup exceptions never reach this exit.
+if (process.platform === 'win32') process.exit(0);

@@ -73,6 +73,13 @@ Only these exact tool identity combinations are recognized (case-insensitive):
 | --- | --- |
 | `Claude`, or `Claude Opus`, `Claude Sonnet`, `Claude Haiku`, optionally followed by a numeric version such as `Claude Sonnet 5` | `noreply@anthropic.com` |
 | `Codex` | `codex@openai.com` or `noreply@openai.com` |
+| `copilot-swe-agent[bot]` | `198982749+Copilot@users.noreply.github.com`, linked to GitHub's `Copilot` account with stable node ID `BOT_kgDOC9w8XQ` |
+
+GitHub exposes that Copilot account as a GraphQL `User` even though its stable
+ID identifies a bot. Its commit attribution requires the exact account ID,
+login, name and email above. A similar name or login on another account does
+not qualify. Copilot cannot provide an acceptance signature or replace the
+human PR author; every human author and coauthor remains subject to the gate.
 
 These are tool attributions, not human signatures or proof of authorship. The
 human PR author is always checked even if every commit is attributed to a tool.

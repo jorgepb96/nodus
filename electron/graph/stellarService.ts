@@ -118,6 +118,31 @@ function nodes(ids: string[]): GraphNode[] {
     };
   });
 }
+/**
+ * The corpus, enumerated once per database state rather than once per page.
+ *
+ * The renderer pages the whole corpus 200 at a time (src/stellarGraph/context.ts). Each page
+ * used to re-run both corpus COUNTs (the edge one pushes every visible edge through the
+ * eligibility filter: ~0.5 s on a 115k-edge library) and an OFFSET query that re-filters
+ * every row before the page (~0.8 s at offset 100k), for ~580 pages. The id lists only
+ * change when the data does, so they are keyed on this connection's total_changes() and
+ * SQLite's data_version, which moves when another connection commits.
+ */
+type CorpusDb = { prepare(sql: string): { get(...args: unknown[]): unknown; all(...args: unknown[]): unknown[] }; pragma(sql: string, options: { simple: true }): unknown };
+type CorpusIndex = { nodeIds: string[]; edgeIds: unknown[] };
+const corpusIndexes = new WeakMap<object, { key: string; index: CorpusIndex }>();
+function corpusIndex(db: CorpusDb, nodeScope: string, links: string): CorpusIndex {
+  const changes = (db.prepare("SELECT total_changes() AS n").get() as { n: number }).n;
+  const key = `${changes}:${String(db.pragma("data_version", { simple: true }))}`;
+  const cached = corpusIndexes.get(db);
+  if (cached?.key === key) return cached.index;
+  const index: CorpusIndex = {
+    nodeIds: (db.prepare(`SELECT i.global_id AS id FROM ideas i WHERE ${nodeScope} ORDER BY i.global_id`).all() as { id: string }[]).map(row => row.id),
+    edgeIds: (db.prepare(`SELECT e.id FROM visible_edges e WHERE ${links} ORDER BY e.id`).all() as { id: unknown }[]).map(row => row.id),
+  };
+  corpusIndexes.set(db, { key, index });
+  return index;
+}
 export function stellarPage(req: StellarPageRequest): StellarPage {
   const db = getDb(),
     offset = Math.max(0, Math.floor(req.cursor || 0)),
@@ -147,13 +172,13 @@ export function stellarPage(req: StellarPageRequest): StellarPage {
   } else if (req.kind === "corpus") {
     const nodeScope = `i.orphaned_at IS NULL AND ${eligible("i.global_id")}`;
     const links = `${edgeScope} AND EXISTS (SELECT 1 FROM ideas i WHERE i.global_id=e.from_id AND i.orphaned_at IS NULL) AND EXISTS (SELECT 1 FROM ideas i WHERE i.global_id=e.to_id AND i.orphaned_at IS NULL)`;
-    ids = (db.prepare(`SELECT i.global_id AS id FROM ideas i WHERE ${nodeScope} ORDER BY i.global_id LIMIT ? OFFSET ?`)
-      .all(limit, offset) as { id: string }[]).map(row => row.id);
-    edges = db.prepare(`${edgeSelect} WHERE ${links} ORDER BY e.id LIMIT ? OFFSET ?`).all(limit, offset) as GraphEdge[];
-    total = Math.max(
-      (db.prepare(`SELECT COUNT(*) AS n FROM ideas i WHERE ${nodeScope}`).get() as { n: number }).n,
-      (db.prepare(`SELECT COUNT(*) AS n FROM visible_edges e WHERE ${links}`).get() as { n: number }).n,
-    );
+    const index = corpusIndex(db, nodeScope, links);
+    ids = index.nodeIds.slice(offset, offset + limit);
+    const pageEdges = index.edgeIds.slice(offset, offset + limit);
+    edges = pageEdges.length
+      ? db.prepare(`${edgeSelect} WHERE e.id IN (SELECT value FROM json_each(?)) ORDER BY e.id`).all(JSON.stringify(pageEdges)) as GraphEdge[]
+      : [];
+    total = Math.max(index.nodeIds.length, index.edgeIds.length);
   } else if (req.kind === "theme") {
     if (!req.id) return { nodes: [], edges: [], total: 0, next: null };
     // Named parameters throughout: the membership subquery binds the theme twice and

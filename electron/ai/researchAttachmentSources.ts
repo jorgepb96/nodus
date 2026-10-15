@@ -26,9 +26,13 @@ export function readResearchAttachmentSource(conversationId: string, attachmentI
 export function listResearchAttachmentSources(): Array<{ conversationId: string; attachmentId: string; source: NonNullable<ReturnType<typeof readResearchAttachmentSource>> }> {
   const sources: ReturnType<typeof listResearchAttachmentSources> = [];
   const conversations = getDb().prepare('SELECT id FROM chat_conversations').all() as { id: string }[];
+  // Resolved once: it reads and normalizes the vault registry file on every call, and this ran it
+  // once per conversation of the vault on every corpus inventory (0.67 s of the main thread per
+  // research turn with 678 conversations, profile of 2026-10-09).
+  const root = path.join(activeVaultDir(), 'research-attachments', 'research');
   for (const { id: conversationId } of conversations) {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(conversationId)) continue;
-    const folder = path.join(activeVaultDir(), 'research-attachments', 'research', conversationId);
+    const folder = path.join(root, conversationId);
     let ids: string[];
     try { ids = fs.readdirSync(folder); } catch { continue; }
     for (const attachmentId of ids) {

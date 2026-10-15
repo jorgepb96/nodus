@@ -19,7 +19,7 @@ const SHOTS = [
 ];
 
 test('the teaser belongs to 3.2.4, shows once, and is gated on nothing else', async () => {
-  const [guide, pkg] = await Promise.all([read('src/components/MobileTeaserGuide.tsx'), read('package.json')]);
+  const [guide, pkg] = await Promise.all([read('archive/startup-announcements/MobileTeaserGuide.tsx'), read('package.json')]);
   assert.match(guide, /MOBILE_TEASER_RELEASE = '3\.2\.4'/);
   // It presents on the version it names and on no other, so shipping 3.2.5 retires it
   // rather than showing it a second time. Pin that instead of pinning the app to 3.2.4:
@@ -44,19 +44,13 @@ test('the teaser belongs to 3.2.4, shows once, and is gated on nothing else', as
   assert.match(guide, /useEffect\(\(\) => \{ if \(!eligible\) onSettled\(\); \}, \[eligible, onSettled\]\);/);
 });
 
-test('it sits behind the PDF Presenter announcement and holds the rest of the chain', async () => {
+test('the mobile teaser is archived and no longer participates in startup', async () => {
   const app = await read('src/App.tsx');
-  assert.match(app, /<MobileTeaserGuide/);
-  assert.match(app, /\{whatsNewSettled && pdfPresenterTutorialSettled && !mobileTeaserSettled && !manualWhatsNewOpen && \(/);
-  assert.ok(app.indexOf('<WhatsNewModal') < app.indexOf('<PdfPresenterTutorialAnnouncement'));
-  assert.ok(app.indexOf('<PdfPresenterTutorialAnnouncement') < app.indexOf('<MobileTeaserGuide'));
-  assert.ok(app.indexOf('<MobileTeaserGuide') < app.indexOf('<PlatformHighlightsUpdateTour'));
-  // Reopening release notes by hand must not drag the teaser back onto the screen.
-  assert.match(app, /!mobileTeaserSettled && !manualWhatsNewOpen/);
+  assert.doesNotMatch(app, /MobileTeaserGuide|mobileTeaserSettled/);
 });
 
 test('the carousel carries all nine shipped screenshots', async () => {
-  const guide = await read('src/components/MobileTeaserGuide.tsx');
+  const guide = await read('archive/startup-announcements/MobileTeaserGuide.tsx');
   for (const shot of SHOTS) {
     assert.match(guide, new RegExp(`mobile-teaser/${shot}\\.webp`), `missing slide: ${shot}`);
     const asset = await stat(path.join(root, `src/assets/mobile-teaser/${shot}.webp`));
@@ -82,7 +76,7 @@ test('the carousel carries all nine shipped screenshots', async () => {
 });
 
 test('the survey is the one outbound link, opened in the real browser', async () => {
-  const guide = await read('src/components/MobileTeaserGuide.tsx');
+  const guide = await read('archive/startup-announcements/MobileTeaserGuide.tsx');
   // The canonical destination, never the forms.gle short link: that domain is a retired
   // Firebase Dynamic Links host, and a short link that fails to resolve shows Google's
   // "Invalid Dynamic Link" page instead of the form.
@@ -98,7 +92,7 @@ test('the survey is the one outbound link, opened in the real browser', async ()
 });
 
 test('every interface language is translated, and says the images are not', async () => {
-  const guide = await read('src/components/MobileTeaserGuide.tsx');
+  const guide = await read('archive/startup-announcements/MobileTeaserGuide.tsx');
   const types = await read('shared/types.ts');
   const languages = [...types.slice(types.indexOf('export type AppLanguage')).slice(0, 120).matchAll(/'([a-zA-Z-]+)'/g)].map((m) => m[1]);
   assert.ok(languages.length >= 8, `the language union looks truncated: ${languages}`);

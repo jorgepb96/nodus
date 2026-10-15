@@ -1,8 +1,8 @@
-import {orchestrateDeepResearch,type DeepResearchDeps,type SectionRetrievalInput} from '../../electron/ai/deepResearchCore';
+import {orchestrateDeepResearch,type DeepResearchDeps} from '../../electron/ai/deepResearchCore';
 import {durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource} from '@shared/mobileDeepResearch';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {structuredPrompt} from './structuredPrompt';
-import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord,WritingWorkshopSnapshot} from '@shared/types';
+import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord} from '@shared/types';
 
 type Call=(method:string,...args:any[])=>Promise<any>;
 const active=new Map<string,{controller:AbortController;task:Promise<void>;checkpoint:MobileDeepResearchCheckpoint}>();

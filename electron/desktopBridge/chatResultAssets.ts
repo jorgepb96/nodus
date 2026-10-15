@@ -52,7 +52,7 @@ export async function getMobileChatReadResource(raw:unknown,locale='en') {
   const {owner,data,requiredDomains}=mobileChatAssetOwner(value.kind,value.conversationId,['corpus','study-recordings'].filter(mobileDomainAllowed));
   const legacyFences=[...capabilityRegistry().fences].filter(([,claim])=>claim.kind==='legacy').map(([fence])=>fence);
   if(value.action==='metadata')return bounded({owner,legacyFences,requiredDomains});
-  const messages=Array.isArray(data.messages)?data.messages:[];
+  const _messages=Array.isArray(data.messages)?data.messages:[];
   if(value.action==='imageMetadata') {
     const {request}=validateChatAssetRequest({kind:value.kind,conversationId:value.conversationId,source:value.source},['corpus','study-recordings'].filter(mobileDomainAllowed),'nodus-image');
     if(!originalTexts(data).some(text=>text.includes(request.source)))throw new MobileChatFailure(403,'chat_result_not_referenced');

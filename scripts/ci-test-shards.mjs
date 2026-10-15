@@ -9,16 +9,28 @@ import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
 import { pipeline } from 'node:stream/promises';
 
-export const shardCount = 3;
+export const shardCount = 6;
 export const fileConcurrency = 2;
-export const e2eShard = 3;
-// Reserve five minutes of real-app work in the last group. At two file
-// processes per runner, this is ten minutes in the placement weight.
-export const e2eReservationMs = 300_000;
 const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
 ]);
+// These nine native macOS cases run as mandatory release checks on Apple
+// silicon. Linux still runs their files and every platform-independent case.
+const macOnlySkips = new Map([
+  ['unsigned macOS updates survive force quit and report interrupted installation', 'scripts/test-unsigned-mac-update.mjs'],
+  ['macOS Multipeer transport completes the native peer protocol', 'scripts/test-presenter-multipeer.mjs'],
+  ['macOS service keeps vaults isolated, persists opt-in, preserves events on disable and retries on restart', 'scripts/test-calendar-integrations.mjs'],
+  ['THE USER-VISIBLE BUG: the released helper cannot install a renamed bundle', 'scripts/test-mac-bundle-name.mjs'],
+  ['the current helper installs a renamed bundle, so this cannot recur after 4.2.4', 'scripts/test-mac-bundle-name.mjs'],
+  ['a released helper installs the bundle name we are about to ship', 'scripts/test-mac-bundle-name.mjs'],
+  ['the update does not leave a second application behind', 'scripts/test-mac-bundle-name.mjs'],
+  ['macOS denies outside writes, descendant writes and forbidden network connections', 'scripts/test-research-isolation.mjs'],
+  ['explicit disposable endpoints are reachable while all other network destinations are denied', 'scripts/test-research-isolation.mjs'],
+]);
+export const isAllowedSkip = (skip, platform = process.platform) =>
+  (allowedSkips.has(skip.name) && allowedSkips.get(skip.name) === skip.reason) ||
+  (platform === 'linux' && skip.reason === true && macOnlySkips.get(skip.name) === skip.file);
 export const commitAt = (root) => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
 export const discoverTests = (root) => fs.readdirSync(path.join(root, 'scripts'), { withFileTypes: true })
   .filter(entry => entry.isFile() && /^test-.*\.mjs$/.test(entry.name))
@@ -36,7 +48,9 @@ export function createPlan(files, commit, durations = {}, count = shardCount, br
   const browserSet = new Set(browsers);
   const weight = file => (Number.isFinite(durations[file]) && durations[file] > 0 ? durations[file] : 1000)
     * (browserSet.has(file) ? fileConcurrency : 1);
-  const shards = Array.from({ length: count }, (_, index) => ({ index: index + 1, files: [], estimatedMs: index + 1 === e2eShard ? fileConcurrency * e2eReservationMs : 0 }));
+  // E2E has its own runner. Balance only the complete unit/integration suite;
+  // reserving app time in the last shard would leave that runner underused.
+  const shards = Array.from({ length: count }, (_, index) => ({ index: index + 1, files: [], estimatedMs: 0 }));
   // Longest files first, on the lightest group. Hints only affect placement;
   // unknown/new files always run and actual process durations are reported.
   for (const file of [...files].sort((a, b) => weight(b) - weight(a) || a.localeCompare(b))) {
@@ -54,7 +68,8 @@ export function validatePlan(plan, files, commit) {
   assert.equal(plan.commit, commit, 'Plan belongs to a different commit');
   assert.deepEqual(plan.files, [...files].sort(), 'Test discovery changed');
   assert.equal(plan.shards.length, shardCount, 'Missing shard');
-  assert.deepEqual(plan.shards.map(s => s.index).sort(), [1, 2, 3], 'Duplicate shard index');
+  assert.deepEqual(plan.shards.map(s => s.index).sort((a, b) => a - b),
+    Array.from({ length: shardCount }, (_, index) => index + 1), 'Duplicate shard index');
   const assigned = plan.shards.flatMap(shard => {
     assert.ok(shard.files.length > 0, 'Empty shard');
     return shard.files;
@@ -63,7 +78,7 @@ export function validatePlan(plan, files, commit) {
   assert.deepEqual(assigned.sort(), [...files].sort(), 'A test file was omitted');
 }
 
-export function validateReports(plan, reports) {
+export function validateReports(plan, reports, platform = process.platform) {
   assert.equal(reports.length, plan.shards.length, 'Missing shard report');
   assert.equal(new Set(reports.map(r => r.index)).size, reports.length, 'Duplicate shard report');
   for (const shard of plan.shards) {
@@ -81,7 +96,7 @@ export function validateReports(plan, reports) {
     assert.equal(report.summary.counts.todo, 0);
     assert.equal(report.summary.counts.skipped, report.skips.length, 'Unaccounted skipped tests');
     for (const skip of report.skips) {
-      assert.equal(allowedSkips.get(skip.name), skip.reason, `New skipped check: ${skip.file}: ${skip.name}`);
+      assert.ok(isAllowedSkip(skip, platform), `New skipped check: ${skip.file}: ${skip.name}`);
     }
   }
 }
@@ -124,7 +139,7 @@ export async function executeShard(plan, index, root, destination, output = proc
     report.success = Boolean(report.summary?.success) && report.completed.length === shard.files.length
       && report.completed.every(file => file.passed) && report.summary.counts.todo === 0
       && report.summary.counts.skipped === report.skips.length
-      && report.skips.every(skip => allowedSkips.get(skip.name) === skip.reason);
+      && report.skips.every(skip => isAllowedSkip(skip));
   } finally {
     writeJson(destination, report);
   }

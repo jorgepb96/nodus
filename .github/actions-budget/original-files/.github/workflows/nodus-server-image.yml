@@ -1,0 +1,385 @@
+name: Nodus Server image (experimental)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.server-web.config.ts'
+      - 'src/serverWeb/**'
+      - 'server/**'
+      - 'scripts/test-nodus-server.mjs'
+      - 'scripts/test-nodus-server-deployment.mjs'
+      - 'scripts/test-nodus-server-roles.mjs'
+      - 'scripts/test-nodus-server-api.mjs'
+      - 'scripts/test-nodus-server-assets.mjs'
+      - 'scripts/test-nodus-server-mutations.mjs'
+      - 'scripts/test-server-vectors.mjs'
+      - 'scripts/lib/nodusServerHarness.mjs'
+      - 'scripts/lib/nodusServerFixtures.mjs'
+      - '.github/workflows/nodus-server-image.yml'
+  # The image only ever built after a merge, so a server change that stops the
+  # container booting reached main before anyone saw it. Pull requests now build
+  # and smoke the same image; they never publish it.
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.server-web.config.ts'
+      - 'src/serverWeb/**'
+      - 'server/**'
+      - '.github/workflows/nodus-server-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  # One group for every event let a merge to main cancel the pull-request smoke that
+  # exists to catch a broken server before it lands, and it cancelled arm64 image
+  # builds that were already running. Group per pull request and per pushed ref.
+  group: nodus-server-image-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/jorgepb96/nodus-server
+
+jobs:
+  # Build and boot the image without publishing it. The image's dependencies are
+  # server/package.json alone, so a module the server imports at startup but does
+  # not declare there only shows up here, never in the main CI workflow.
+  smoke-pull-request:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build smoke-test image
+        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.1 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
+
+      - name: Run image health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name nodus-server-ci \
+            -p 127.0.0.1:17443:7443 \
+            -e NODUS_PUBLIC_URL=http://localhost:17443 \
+            -e NODUS_ADMIN_EMAIL=ci-admin@example.test \
+            -e NODUS_ADMIN_PASSWORD=ci-only-admin-password-123456 \
+            nodus-server:ci
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:17443/healthz | grep --quiet '"ok":true'; then
+              curl --silent --head http://127.0.0.1:17443/ | grep --ignore-case --quiet '^location: /login'
+              docker rm -f nodus-server-ci >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs nodus-server-ci
+          docker rm -f nodus-server-ci >/dev/null
+          exit 1
+
+  # Each architecture is built and pushed on a runner of that architecture, and the
+  # two digests are joined into the published manifest list by publish-main.
+  #
+  # Both architectures used to run on this amd64 runner with arm64 under QEMU, until
+  # the emulated `npm install` died with "qemu: uncaught target signal 4 (Illegal
+  # instruction)" and left the build hung with no further output. The job then hit its
+  # twenty-minute timeout, GitHub reported the run as cancelled, and the `main` tag
+  # stayed on the previous merge — a stale image that looks exactly like a fresh one.
+  # An emulator cannot be trusted to run npm reliably, so it is gone from this path.
+  build-amd64:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Test server and deployment contract
+        # Every suite that exercises the server, not just the two that predate the client
+        # API. A published image that fails a role check or an asset rejection is exactly
+        # what this job exists to stop.
+        run: >-
+          node --test
+          scripts/test-nodus-server.mjs
+          scripts/test-nodus-server-deployment.mjs
+          scripts/test-nodus-server-roles.mjs
+          scripts/test-nodus-server-api.mjs
+          scripts/test-nodus-server-assets.mjs
+          scripts/test-nodus-server-mutations.mjs
+          scripts/test-server-vectors.mjs
+
+      - name: Build smoke-test image
+        run: docker build -f server/Dockerfile --build-arg NODUS_VERSION=5.8.1 --build-arg NODUS_REVISION="$GITHUB_SHA" --tag nodus-server:ci .
+
+      - name: Run image health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name nodus-server-ci \
+            -p 127.0.0.1:17443:7443 \
+            -e NODUS_PUBLIC_URL=http://localhost:17443 \
+            -e NODUS_ADMIN_EMAIL=ci-admin@example.test \
+            -e NODUS_ADMIN_PASSWORD=ci-only-admin-password-123456 \
+            nodus-server:ci
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:17443/healthz | grep --quiet '"ok":true'; then
+              curl --silent --head http://127.0.0.1:17443/ | grep --ignore-case --quiet '^location: /login'
+              docker rm -f nodus-server-ci >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs nodus-server-ci
+          docker rm -f nodus-server-ci >/dev/null
+          exit 1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          # Labels only: the tags belong to publish-main, the one job allowed to move them.
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.title=Nodus Server
+            org.opencontainers.image.description=Experimental self-hosted Nodus MCP server
+            org.opencontainers.image.source=https://github.com/jorgepb96/nodus
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.version=5.8.1
+            org.opencontainers.image.revision=${{ github.sha }}
+            app.nodus.stability=experimental
+
+      - name: Build and push the amd64 image by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: server/Dockerfile
+          platforms: linux/amd64
+          # A digest, never a tag: a tagged reference cannot be pushed by digest, and
+          # only publish-main may move `main`, once both legs are in.
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,push=true
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=nodus-server-amd64
+          cache-to: type=gha,mode=max,scope=nodus-server-amd64
+
+      - name: Record the digest for the manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          digest='${{ steps.build.outputs.digest }}'
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload the digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-amd64
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  build-arm64:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          # Labels only: the tags belong to publish-main, the one job allowed to move them.
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.title=Nodus Server
+            org.opencontainers.image.description=Experimental self-hosted Nodus MCP server
+            org.opencontainers.image.source=https://github.com/jorgepb96/nodus
+            org.opencontainers.image.licenses=AGPL-3.0-only
+            org.opencontainers.image.version=5.8.1
+            org.opencontainers.image.revision=${{ github.sha }}
+            app.nodus.stability=experimental
+
+      # Copying the amd64 job's suites here would test the same source twice through an
+      # emulator, which is what this split removes. Booting the arm64 image natively is
+      # the part QEMU could never confirm — a missing prebuilt for this architecture
+      # fails here — and it happens before any digest is pushed.
+      - name: Build arm64 smoke-test image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: server/Dockerfile
+          platforms: linux/arm64
+          load: true
+          tags: nodus-server:ci
+          cache-from: type=gha,scope=nodus-server-arm64
+
+      - name: Run image health smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name nodus-server-ci \
+            -p 127.0.0.1:17443:7443 \
+            -e NODUS_PUBLIC_URL=http://localhost:17443 \
+            -e NODUS_ADMIN_EMAIL=ci-admin@example.test \
+            -e NODUS_ADMIN_PASSWORD=ci-only-admin-password-123456 \
+            nodus-server:ci
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:17443/healthz | grep --quiet '"ok":true'; then
+              curl --silent --head http://127.0.0.1:17443/ | grep --ignore-case --quiet '^location: /login'
+              docker rm -f nodus-server-ci >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs nodus-server-ci
+          docker rm -f nodus-server-ci >/dev/null
+          exit 1
+
+      - name: Build and push the arm64 image by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: server/Dockerfile
+          platforms: linux/arm64
+          # A digest, never a tag: a tagged reference cannot be pushed by digest, and
+          # only publish-main may move `main`, once both legs are in.
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,push=true
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=nodus-server-arm64
+          cache-to: type=gha,mode=max,scope=nodus-server-arm64
+
+      - name: Record the digest for the manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          digest='${{ steps.build.outputs.digest }}'
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload the digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-arm64
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-main:
+    # The tag moves only here, only on main, and only once both architecture runners
+    # have pushed their digests. A manual run from another branch must never replace
+    # the image consumed by production-like Portainer tests: it builds both legs and
+    # leaves nothing behind but untagged digests.
+    needs: [build-amd64, build-arm64]
+    if: >-
+      always()
+      && github.ref == 'refs/heads/main'
+      && needs.build-amd64.result == 'success'
+      && needs.build-arm64.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download the per-architecture digests
+        uses: actions/download-artifact@v8
+        with:
+          pattern: digests-*
+          merge-multiple: true
+          path: /tmp/digests
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          # Tags only: the labels already sit in each architecture's own config, put
+          # there by the legs that built them.
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=main
+            type=sha,prefix=main-
+
+      - name: Create the multi-platform manifest
+        working-directory: /tmp/digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf "${IMAGE}@sha256:%s " *)
+
+      - name: Verify Portainer can pull main anonymously
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker logout ghcr.io
+          manifest=''
+          for _ in {1..10}; do
+            if manifest="$(docker buildx imagetools inspect --raw "${IMAGE}:main" 2>/dev/null)"; then
+              break
+            fi
+            sleep 3
+          done
+          test -n "$manifest"
+          jq -e '
+            [.manifests[].platform.architecture] as $architectures
+            | ($architectures | index("amd64")) != null
+              and ($architectures | index("arm64")) != null
+          ' <<< "$manifest"
+          # Both architectures reaching the tag is not enough. The tag must name the
+          # commit that produced it: a publish that never ran, or one that pushed the
+          # digests of another run, leaves a stale tag that is indistinguishable from a
+          # fresh one by looking at it. This is the check that fails when that happens.
+          digest="$(jq -r '
+            .manifests[]
+            | select(.platform.os == "linux" and .platform.architecture == "amd64")
+            | .digest
+          ' <<< "$manifest")"
+          docker buildx imagetools inspect "${IMAGE}@${digest}" --format '{{json .Image}}' \
+            | jq -e --arg revision "$GITHUB_SHA" \
+                '.config.Labels["org.opencontainers.image.revision"] == $revision'

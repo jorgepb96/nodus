@@ -1,3 +1,7 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
+import { learningText } from '@shared/academicLearningCopy';
+import { useAcademicInterface } from '../components/AcademicInterfaceContext';
+import { AcademicSecondary } from '../components/AcademicSecondary';
 import type { DocumentPreparationState } from '@shared/researchCorpus';
 import { openResearchPreparationQueue } from '../components/ResearchPreparationWelcome';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -36,7 +40,7 @@ import {
   type PendingAssistantNavigationTarget,
   type PendingGraphNavigationTarget,
 } from '../navigation';
-import { t, tx } from '../i18n';
+import { getActiveLang, t, tx } from '../i18n';
 import { getVaultQueryCache, invalidateVaultQueryCache, setVaultQueryCache } from '../vaultQueryCache';
 import { vaultTypeColor } from '@shared/vaultTypes';
 
@@ -351,6 +355,10 @@ export function Library({
   /** Reopens the Library guide. The header's «?» is the only way back to it. */
   onOpenTutorial: () => void;
 }) {
+  const interfaceProfile = useAcademicInterface();
+  const compact = interfaceProfile === 'simple' || interfaceProfile === 'intermediate';
+  const simple = interfaceProfile === 'simple';
+  const addFilesRef = useRef<HTMLInputElement>(null);
   // In records vaults the Library holds SECONDARY / published sources (books,
   // published genealogies, transcribed record collections) that can also be mined
   // for records; primary documents live in the Archive.
@@ -393,6 +401,7 @@ export function Library({
   const [collectionFilterOpen, setCollectionFilterOpen] = useState(false);
   const [collectionSearch, setCollectionSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const learning = useAcademicLearning();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [embeddingStatuses, setEmbeddingStatuses] = useState<Map<string, WorkEmbeddingStatus>>(new Map());
   const [passageStatuses, setPassageStatuses] = useState<Map<string, WorkPassageStatus>>(new Map());
@@ -656,11 +665,13 @@ export function Library({
   };
 
   const analyzeIdeas = async (w: WorkView) => {
+    if (extractionIsDeferred([w.nodus_id])) return;
     if (w.deep_status === 'done') {
       await window.nodus.rescan(w.nodus_id, 'deep');
     } else {
       await window.nodus.setManualDeep(w.nodus_id, true);
     }
+    await reportExtraction(w.nodus_id);
     await load();
   };
 
@@ -701,8 +712,20 @@ export function Library({
     );
   };
 
+  const reportExtraction = async (documentId:string) => {
+    const queue=await window.nodus.getQueue();
+    const task=queue.items.filter(item=>item.nodus_id===documentId&&item.kind==='deep').sort((a,b)=>b.enqueued_at.localeCompare(a.enqueued_at))[0];
+    learning.emit({kind:'extraction',documentId,taskId:task?.id});
+  };
+  const extractionIsDeferred = (ids: string[]) => {
+    if (learning.session?.lessonId === 'first-idea' && !learning.session.paused && (ids.length !== 1 || learning.session.documentId && ids[0] !== learning.session.documentId)) {
+      toast(learningText('chooseBody', getActiveLang()), { tone: 'info' }); return true;
+    }
+    return learning.requestExtraction?.(ids) ?? false;
+  };
   // Full chain for a single work: themes → ideas → summary → index → relationships.
   const processFullWork = async (w: WorkView) => {
+    if (extractionIsDeferred([w.nodus_id])) return;
     const refresh = w.deep_status === 'done';
     if (refresh) {
       const ok = await confirm({
@@ -713,6 +736,7 @@ export function Library({
       if (!ok) return;
     }
     await window.nodus.processFull(w.nodus_id, undefined, { mode: refresh ? 'refresh' : 'if-stale' });
+    await reportExtraction(w.nodus_id);
     await load();
   };
 
@@ -727,7 +751,7 @@ export function Library({
   // Full chain: themes → ideas → summary → index (ideas + passages) → discover relationships.
   const processFullSelected = async () => {
     const ids = selectedVisibleIds;
-    if (ids.length === 0) return;
+    if (ids.length === 0 || extractionIsDeferred(ids)) return;
     const processedIds = works
       .filter((work) => ids.includes(work.nodus_id) && work.deep_status === 'done')
       .map((work) => work.nodus_id);
@@ -748,6 +772,7 @@ export function Library({
     if (pendingNewIds.length > 0) {
       await window.nodus.processFullBulk(pendingNewIds, undefined, { mode: 'if-stale' });
     }
+    for (const documentId of ids) await reportExtraction(documentId);
     setSelected(new Set());
     await load();
   };
@@ -760,7 +785,7 @@ export function Library({
       ids.push(...page.items.map((work) => work.nodus_id));
       processed += page.items.filter((work) => work.deep_status === 'done').length;
     }
-    if (ids.length === 0) return;
+    if (ids.length === 0 || extractionIsDeferred(ids)) return;
     const ok = await confirm({
       title: t('Procesar toda la biblioteca'),
       message: tx(
@@ -771,6 +796,7 @@ export function Library({
     });
     if (!ok) return;
     await window.nodus.processFullBulk(ids, undefined, { mode: processed > 0 ? 'refresh' : 'if-stale' });
+    for (const documentId of ids) await reportExtraction(documentId);
     setSelected(new Set());
     await load();
     toast(tx('Procesado completo en cola para {n} obra(s). Verás el progreso en la cola.', { n: ids.length }));
@@ -918,6 +944,15 @@ export function Library({
       return changed ? new Set(selectedVisibleIds) : current;
     });
   }, [selectedVisibleIds, works]);
+
+  useEffect(() => {
+    if (selectedVisibleIds.length === 1) learning.emit({ kind: 'source', documentId: selectedVisibleIds[0] });
+  }, [selectedVisibleIds, learning.emit]);
+  useEffect(() => {
+    const session=learning.session;
+    if (!session || session.paused || !['first-answer','first-idea'].includes(session.lessonId) || !session.documentId || !works.some(work=>work.nodus_id===session.documentId)) return;
+    setSelected(current=>current.size===0?new Set([session.documentId!]):current);
+  }, [learning.session?.id,learning.session?.documentId,learning.session?.paused,works]);
 
   const allVisibleSelected = works.length > 0 && selectedVisibleIds.length === works.length;
   const selectAllVisible = () => {
@@ -1083,6 +1118,8 @@ export function Library({
   // Indexing is one click: documents that are not indexed yet are queued for text and
   // embeddings at once. Only a request for more than 100 documents asks first.
   const indexWorks = async (workIds?: string[]) => {
+    if (learning.session?.lessonId === 'first-answer' && !learning.session.paused && (!workIds || workIds.length !== 1 || workIds[0] !== learning.session.documentId)) { toast(learningText('chooseBody', getActiveLang()), { tone: 'info' }); return; }
+    if (learning.session?.lessonId === 'first-answer' && !learning.session.paused && learning.requireModels?.('chat')) return;
     try {
       let result = await window.nodus.indexResearchWorks({ workIds });
       if (result.confirmationRequired) {
@@ -1109,6 +1146,7 @@ export function Library({
       .filter((entry): entry is string => !!entry))];
     if (!filePaths.length) return;
     try {
+      if (await learning.prepareAddition?.()) return;
       const targetVaultId = vaultId ?? (await window.nodus.getActiveVault()).id;
       const report = await window.nodus.importDroppedFilesIntoVault(filePaths, targetVaultId);
       if (report.linked) {
@@ -1149,10 +1187,14 @@ export function Library({
         </div>
         {scopeControls}
         <div className="library-header-actions">
+          {vaultType === 'academic' && <><input ref={addFilesRef} type="file" multiple hidden onChange={event => { if (event.target.files?.length) void importDroppedIntoVault(event.target.files); event.target.value = ''; }} /><button className="btn btn-primary" data-testid="library-vault-add-files" onClick={() => addFilesRef.current?.click()}><Icon name="plus" size={14} />{t('Añadir archivos')}</button></>}
+
           {vaultType === 'academic' && <>
             <button className="btn btn-ghost border border-neutral-700" data-testid="library-prepare-sources" data-scope={selectedVisibleIds.length > 0 ? 'selection' : 'library'} onClick={() => void indexWorks(selectedVisibleIds.length > 0 ? selectedVisibleIds : undefined)}>{t(selectedVisibleIds.length > 0 ? 'Indexar selección' : 'Indexar biblioteca')}</button>
             <button className="btn btn-ghost" onClick={openResearchPreparationQueue}>{t('Ver en Queue')}</button>
           </>}
+          <AcademicSecondary compact={compact}>
+          {simple && academicMode !== 'manual' && <button className="btn btn-ghost" onClick={() => void (selectedVisibleIds.length ? processFullSelected() : processFullLibrary())}>{t('Extraer ideas')}</button>}
           {academicMode !== 'manual' && DOCUMENT_INDEX_MANAGER_VISIBLE && vaultType === 'academic' && <button
             data-testid="document-index-manager-button"
             className="btn btn-ghost border border-neutral-700 gap-1.5"
@@ -1210,6 +1252,7 @@ export function Library({
               </div>
             )}
           </div>
+          </AcademicSecondary>
           {/* The only unlabelled button in the row, so it wears the vault's own accent
               rather than the neutral outline the others share: a help affordance
               nobody can find is the same as no help at all. */}
@@ -1593,7 +1636,7 @@ export function Library({
         )}
       </div>
 
-      {!loading && works.length > 0 && (
+      {!simple && !loading && works.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
           <span>{tx('{n} resultados con los filtros actuales', { n: totalWorks })}</span>
           <button
@@ -1610,6 +1653,7 @@ export function Library({
               library otherwise. */}
           <button
             className="btn btn-primary px-2 py-1 text-xs"
+            disabled={academicMode === 'manual'}
             data-testid="library-extract-ideas"
             data-scope={selectedVisibleIds.length > 0 ? 'selection' : 'library'}
             onClick={() => void (selectedVisibleIds.length > 0 ? processFullSelected() : processFullLibrary())}
@@ -1617,7 +1661,7 @@ export function Library({
               ? t('Encadena temas, ideas, resumen, indexado (ideas y pasajes) y descubrimiento de relaciones.')
               : t('Encadena temas, ideas, resumen, indexado (ideas y pasajes) y descubrimiento de relaciones para toda la biblioteca filtrada.')}
           >
-            <Icon name="compass" size={13} /> {t(vaultType === 'academic' ? 'Extraer ideas' : 'Procesar biblioteca')}
+            <Icon name="compass" size={13} /> {t(academicMode === 'manual' ? 'Modo Manual' : vaultType === 'academic' ? 'Extraer ideas' : 'Procesar biblioteca')}
             {selectedVisibleIds.length > 0 && <span className="tabular-nums opacity-80">· {selectedVisibleIds.length}</span>}
           </button>
           {selectedVisibleIds.length > 0 && <>
@@ -1675,7 +1719,7 @@ export function Library({
       <div className="card flex-1 flex flex-col min-h-0 overflow-hidden text-sm">
         <div
           className="grid items-center bg-neutral-900 text-neutral-400 border-b border-neutral-800 px-2 py-2 text-left text-xs"
-          style={{ gridTemplateColumns: LIBRARY_GRID_TEMPLATE }}
+          style={{ gridTemplateColumns: simple ? '32px minmax(160px, 2fr) minmax(100px, 1fr) 60px minmax(100px, 1fr) 110px' : LIBRARY_GRID_TEMPLATE }}
         >
           <div className="font-medium">
               <input
@@ -1692,8 +1736,8 @@ export function Library({
           <SortHeader label={t('Título')} sortKey="title" sort={sort} onSort={cycleSort} />
           <SortHeader label={t('Autores')} sortKey="authors" sort={sort} onSort={cycleSort} />
           <SortHeader label={t('Año')} sortKey="year" sort={sort} onSort={cycleSort} />
-          <SortHeader label={t('Tema(s)')} sortKey="themes" sort={sort} onSort={cycleSort} />
-          <SortHeader label={t('Ideas')} sortKey="ideas" sort={sort} onSort={cycleSort} />
+          {!simple && <><SortHeader label={t('Tema(s)')} sortKey="themes" sort={sort} onSort={cycleSort} />
+          <SortHeader label={t('Ideas')} sortKey="ideas" sort={sort} onSort={cycleSort} /></>}
           <div className="font-medium">{t('Estado')}</div>
           <div className="font-medium" data-tour="library-actions">{t('Acciones')}</div>
         </div>
@@ -1717,10 +1761,10 @@ export function Library({
               <div
                 data-testid={`vault-library-item-${w.nodus_id}`}
                 className="grid h-full cursor-pointer items-center border-b border-neutral-800/70 px-2 hover:bg-neutral-900/50"
-                style={{ gridTemplateColumns: LIBRARY_GRID_TEMPLATE }}
+                style={{ gridTemplateColumns: simple ? '32px minmax(160px, 2fr) minmax(100px, 1fr) 60px minmax(100px, 1fr) 110px' : LIBRARY_GRID_TEMPLATE }}
                 onClick={(event) => {
                   if ((event.target as HTMLElement).closest('button, input, select, a')) return;
-                  openVaultWorkAnalysis(w);
+                  if (simple) openReader(w); else openVaultWorkAnalysis(w);
                 }}
               >
                 <div className="p-1">
@@ -1734,8 +1778,8 @@ export function Library({
                   <button
                     data-testid={`vault-library-title-${w.nodus_id}`}
                     className="block w-full truncate text-left hover:text-indigo-300 hover:underline"
-                    title={t('Ver las ideas de esta obra')}
-                    onClick={() => openVaultWorkAnalysis(w)}
+                    title={t(simple ? 'Leer documento' : 'Ver las ideas de esta obra')}
+                    onClick={() => simple ? openReader(w) : openVaultWorkAnalysis(w)}
                   >
                     {w.title}
                   </button>
@@ -1745,7 +1789,7 @@ export function Library({
                   {w.authors.length > 1 ? ' et al.' : ''}
                 </div>
                 <div className="p-1 text-neutral-400">{w.year ?? '—'}</div>
-                <div className="p-1 text-neutral-400 truncate">{w.themes.join(', ')}</div>
+                {!simple && <><div className="p-1 text-neutral-400 truncate">{w.themes.join(', ')}</div>
                 <div className="p-1">
                   {w.ideaCount > 0 ? (
                     <button
@@ -1759,9 +1803,10 @@ export function Library({
                     <span className="text-neutral-600">—</span>
                   )}
                 </div>
+                </>}
                 <div className="min-w-0 p-1">
-                  {academicMode === 'manual' ? <span className="text-xs text-neutral-500">{t('Modo Manual')}</span> : status && <StatusPill status={status} work={w} onClick={() => setStatusWork(w)} />}
-                  {academicMode !== 'manual' && vaultType === 'academic' && <button
+                  {simple ? (() => { const index = libraryIndexAction(preparationByWork.get(w.nodus_id)); return <button className={`text-xs ${index.tone === 'green' ? 'text-green-500' : index.tone === 'red' ? 'text-red-500' : 'text-amber-500'}`} disabled={index.busy} onClick={() => index.tone === 'green' ? openReader(w) : void indexWorks([w.nodus_id])}>{t(index.tone === 'green' ? 'Listo' : index.label)}</button>; })() : academicMode === 'manual' ? <span className="text-xs text-neutral-500">{t('Modo Manual')}</span> : status && <StatusPill status={status} work={w} onClick={() => setStatusWork(w)} />}
+                  {!compact && academicMode !== 'manual' && vaultType === 'academic' && <button
                     className={`mt-1 block max-w-full truncate text-[10px] ${documentStatuses.get(w.nodus_id) === 'current' ? 'text-cyan-400' : documentStatuses.get(w.nodus_id) === 'failed' ? 'text-red-400' : 'text-neutral-600'}`}
                     onClick={() => setDocumentWork(w)}
                     title={t('Abrir la ficha documental completa')}
@@ -1779,7 +1824,7 @@ export function Library({
                 </div>
                 <div className="p-1 whitespace-nowrap">
                   <div className="flex items-center gap-1">
-                    {academicMode !== 'manual' && <RowIconButton
+                    {!simple && academicMode !== 'manual' && <RowIconButton
                       title={t(vaultType === 'academic' ? 'Extraer ideas' : 'Analizar')}
                       icon="bulb"
                       tone="violet"

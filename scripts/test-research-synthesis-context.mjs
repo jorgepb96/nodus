@@ -18,7 +18,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
   require.extensions['.ts'] = (mod, file) => {
     if (file === path.join(repoRoot, 'electron/ai/researchAssistant.ts')) {
       const compile = mod._compile;
-      mod._compile = (code, name) => compile.call(mod, code + '\nexports.testBuildPrompt = buildResearchChatPrompt;\nexports.testExecution = skillExecution;\n', name);
+      mod._compile = (code, name) => compile.call(mod, code + '\nexports.testBuildPrompt = buildResearchChatPrompt;\nexports.testExecution = skillExecution;\nexports.testFinalizeWithAudit = finalizeWithAudit;\n', name);
     }
     originalTs(mod, file);
   };
@@ -47,6 +47,11 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     optionsSeen = options; questionSeen = question;
     return realGather(question, options);
   };
+  // Target-level evidence is remembered between a request and its corrections, and every case here
+  // asks about the same target. Without this, each test after the first is served the previous
+  // one's result and stops exercising the gather at all — which is how the cache was first seen
+  // working, and would otherwise read as these tests passing for the wrong reason.
+  test.beforeEach(() => evidence.clearSynthesisEvidenceCache());
   const selection = { ideas: false, themes: false, contradictions: false, gaps: false, readingPath: false, authors: false, documents: true, passages: true, graph: false, graphParts: {}, layers: { ideas: false, documents: true }, sourceFilter: { enabled: true, authorIds: [], workIds: ['selected'] } };
   const request = { model: { provider: 'openai', model: 'test' }, messages: [{ role: 'user', content: 'Propose a synthesis of benzocaine (SMILES: CCOC(=O)c1ccc(N)cc1).' }], selection, webSearch: 'off' };
   const skill = { id: 'chemistry-test', name: 'Chemistry', instructions: '', enabled: { assistant: true, nodi: false }, capabilities: ['nodus:chemistry'] };
@@ -120,6 +125,116 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     } finally { ai.localModelContextWindow = async () => null; }
   });
 
+  test('retrieval starts once ORD has answered, beside the rest of the gather', async () => {
+    // Retrieval reads only ORD's disconnections. The gather's slower phases (the route search's
+    // budget, the textbook schemes' second level) used to hold it back for their whole length.
+    let retrievalStarted;
+    const embedMany = ai.embedMany;
+    ai.embed = async () => { retrievalStarted?.(); return null; };
+    ai.embedMany = async (texts) => { retrievalStarted?.(); return texts.map(() => null); };
+    const recorded = evidence.gatherSynthesisEvidence;
+    evidence.gatherSynthesisEvidence = async (question, options) => {
+      const retrieving = new Promise(resolve => { retrievalStarted = resolve; });
+      options.onDisconnections?.({ target: 'CCOC(=O)c1ccc(N)cc1', startingMaterials: [], disconnections: [], passages: [] });
+      let timer;
+      await Promise.race([retrieving, new Promise((_, reject) => { timer = setTimeout(() => reject(Error('retrieval waited for the whole gather')), 2000); })])
+        .finally(() => clearTimeout(timer));
+      retrievalStarted = undefined;
+      return recorded(question, options);
+    };
+    const service = load('electron/ai/researchNotebookService.ts');
+    const researchWindow = ai.researchModelContextWindow;
+    try {
+      const payload = await build(request);
+      assert.ok(payload.evidencia_para_la_ruta.textbook_passages.some(p => p.text.includes('SELECTED_ONLY')), 'the whole evidence still reaches the prompt');
+      // The academic library's own path: an authorized scope, the corpus run and its window fit,
+      // with a window large enough that retrieval has a budget at all.
+      ai.researchModelContextWindow = async () => ({ tokens: 400_000, known: true });
+      const scoped = await build(service.authorizeNotebookRequest({ ...request, selection: { ...selection, sourceFilter: { enabled: false } } }));
+      assert.ok(scoped.evidencia_para_la_ruta.textbook_passages.length, 'the whole evidence reaches the scoped prompt too');
+    } finally { evidence.gatherSynthesisEvidence = recorded; ai.embed = async () => null; ai.embedMany = embedMany; ai.researchModelContextWindow = researchWindow; }
+  });
+
+  test('a run of corrections keeps the route request in the replayed conversation', async () => {
+    // The history window is twelve messages; six correction rounds used to push the request (and
+    // every constraint the chips do not repeat: starting materials, scale, stereochemistry) out of it.
+    const fix = { role: 'user', content: 'Correction needed for the synthesis route above. Fix the rejected step.' };
+    const messages = [request.messages[0]];
+    for (let i = 0; i < 8; i++) messages.push({ role: 'assistant', content: 'Step 1 draft' }, fix);
+    const payload = await build({ ...request, messages });
+    assert.equal(payload.conversacion[0].content, request.messages[0].content);
+    assert.equal(payload.conversacion.at(-1).content, fix.content);
+  });
+
+  test('a stop during the route check keeps the answer the reader was shown', async () => {
+    const original = molecule.resolveNamedRoute;
+    const controller = new AbortController();
+    molecule.resolveNamedRoute = async (_a, _b, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true });
+      queueMicrotask(() => controller.abort());
+    });
+    const execution = { ...research.testExecution(request), skills: [skill], routeTurn: true };
+    const raw = 'Step 1 prose.\n\n```chemistry-plan\n{"version":2,"kind":"structure","species":[]}\n```\n';
+    const shown = [];
+    const error = console.error; console.error = () => {};
+    try {
+      const final = await research.testFinalizeWithAudit(raw, execution, controller.signal, text => shown.push(text));
+      assert.ok(shown.length, 'the answer was repainted before the stop');
+      assert.equal(final, shown.at(-1), 'the stop keeps the repainted answer, not the raw draft');
+      assert.doesNotMatch(final, /```chemistry-plan/);
+    } finally { molecule.resolveNamedRoute = original; console.error = error; }
+  });
+
+  test('a route request that asks for the web is an explicit web request', async () => {
+    // The grant's search question on a route turn is the target and its reaction classes; whether
+    // the user asked for the web is read from their own words, or a request with the web switched
+    // off is never told so.
+    const service = load('electron/ai/researchNotebookService.ts');
+    const researchWindow = ai.researchModelContextWindow;
+    ai.researchModelContextWindow = async () => ({ tokens: 400_000, known: true });
+    try {
+      const asked = { ...request, webSearch: 'off', messages: [{ role: 'user', content: `${request.messages[0].content} Search the web for recent industrial routes.` }] };
+      const payload = await build(service.authorizeNotebookRequest({ ...asked, selection: { ...selection, sourceFilter: { enabled: false } } }));
+      assert.equal(payload.contexto_modular_seleccionado.web_search, 'disabled_by_user');
+    } finally { ai.researchModelContextWindow = researchWindow; }
+  });
+
+  test('a route correction searches its request again without planning or supervising the chip', async () => {
+    // The correction's retrieval question is its request's: the target and its reaction classes.
+    // Planning the chip's text and running the supervisor again bought the same evidence for a
+    // model call per decision, on every correction round.
+    const service = load('electron/ai/researchNotebookService.ts');
+    const researchWindow = ai.researchModelContextWindow;
+    const json = ai.completeJson;
+    let calls = 0;
+    ai.researchModelContextWindow = async () => ({ tokens: 400_000, known: true });
+    ai.completeJson = async () => { calls++; throw Error('no model in this test'); };
+    const warn = console.warn; console.warn = () => {};
+    try {
+      const fix = { role: 'user', content: 'Correction needed for the synthesis route above. Fix the rejected step.' };
+      const messages = [request.messages[0], { role: 'assistant', content: 'Step 1 draft' }, fix];
+      // The history an earlier answer's provenance would have authorized.
+      const payload = await build({ ...service.authorizeNotebookRequest({ ...request, selection: { ...selection, sourceFilter: { enabled: false } } }), messages });
+      assert.ok(payload.evidencia_para_la_ruta, 'the route evidence is still there');
+      assert.equal(calls, 0, `${calls} planning or supervisor call(s) on a correction`);
+    } finally { ai.researchModelContextWindow = researchWindow; ai.completeJson = json; console.warn = warn; }
+  });
+
+  test('a correction round inspects no molecules', async () => {
+    // The chip's only SMILES-like tokens come from the shared rules text, so inspecting it opens a
+    // chemistry worker for nothing on every correction round.
+    const shared = load('shared/moleculeInspection.ts');
+    const chip = JSON.parse(shared.formatMissingSpeciesPrompt('CCOC(=O)c1ccc(N)cc1').replace(/^```nodus-route-fix\n/, '').replace(/\n```$/, '')).prompt;
+    assert.ok(shared.findSmilesCandidates(chip).length, 'the chip does carry SMILES-like tokens');
+    let inspected = 0;
+    const original = molecule.inspectResearchMolecules;
+    molecule.inspectResearchMolecules = async () => { inspected++; return []; };
+    try {
+      await build({ ...request, messages: [request.messages[0], { role: 'assistant', content: 'Step 1 draft' }, { role: 'user', content: chip }] });
+      assert.equal(inspected, 0);
+    } finally { molecule.inspectResearchMolecules = original; }
+  });
+
   test('cancelling a prompt interrupts the evidence embedding instead of finishing retrieval', async () => {
     const controller = new AbortController();
     let started;
@@ -143,33 +258,44 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     } finally { ai.embed = async () => null; }
   });
 
-  test('cancellation reaches concurrent route tools and disposes every runner', async () => {
+  test('cancellation reaches concurrent route tools, and one gather opens one runner', async () => {
     const registry = load('electron/capabilities/registry.ts');
     const reactions = load('electron/reactionIndex/index.ts');
     const originalRunner = molecule.chemistryRunner;
     const originalRegistry = registry.capabilityRegistry;
     const originalService = reactions.reactionIndexService;
     const controller = new AbortController();
-    let running = 0, disposed = 0, started;
+    let running = 0, disposed = 0, opened = 0, started;
     const ready = new Promise(resolve => { started = resolve; });
     registry.capabilityRegistry = () => ({ providers: new Map([['nodus:chemistry', { tools: [{ id: 'search-routes' }, { id: 'propose-disconnections' }] }]]) });
     reactions.reactionIndexService = () => ({ localDirectory: async () => '/isolated-ord' });
-    molecule.chemistryRunner = options => ({
-      runner: { invoke: async () => {
-        assert.equal(options.signal, controller.signal);
-        running++;
-        if (running === 2) started();
-        return new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true }));
-      } },
-      dispose: async () => { disposed++; },
-    });
+    molecule.chemistryRunner = options => {
+      // The real contract, mirrored: a supplied runner is handed back with a no-op dispose, so
+      // one gather opens ONE worker however many phases ask for it. The stub has to honour that
+      // or it counts a reuse as a fresh worker and this stops measuring anything.
+      if (options.runner) return { runner: options.runner, dispose: async () => {} };
+      opened++;
+      return {
+        runner: { invoke: async () => {
+          assert.equal(options.signal, controller.signal);
+          running++;
+          if (running === 2) started();
+          return new Promise((_resolve, reject) => options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true }));
+        } },
+        dispose: async () => { disposed++; },
+      };
+    };
     try {
       const pending = realGather(request.messages[0].content, { signal: controller.signal });
       pending.catch(() => {});
       await ready;
       controller.abort();
       await assert.rejects(pending, { name: 'AbortError' });
-      assert.equal(disposed, 2);
+      // Two tools ran concurrently on one worker: the phases reuse what the gather opened, and an
+      // abort still disposes it. A phase that goes back to opening its own raises both counts.
+      assert.equal(running, 2, 'both route tools were reached');
+      assert.equal(opened, 1, 'one worker for the whole gather');
+      assert.equal(disposed, 1, 'and the gather closes the one it opened');
     } finally {
       molecule.chemistryRunner = originalRunner;
       registry.capabilityRegistry = originalRegistry;
@@ -201,8 +327,10 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
       const grant = { workIds: new Set(), external: false, web: false };
       const answer = await molecule.appendRouteReportAndDrawings(prose, prose, { runner, evidenceScope: grant }, { steps, labels });
       assert.match(answer, /Route check/);
-      assert.deepEqual(calls.map(call => call.toolId), ['verify-route', 'check-compatibility']);
-      assert.equal(calls[1].input.textbookDir, undefined);
+      // The compatibility check reads the labels, not the audit, so it runs beside it: which tools
+      // ran is the contract here, not their order.
+      assert.deepEqual(calls.map(call => call.toolId).sort(), ['check-compatibility', 'verify-route']);
+      assert.equal(calls.find(call => call.toolId === 'check-compatibility').input.textbookDir, undefined);
       calls.length = 0;
       await molecule.appendRouteReportAndDrawings(prose, prose, { runner }, { steps, labels });
       assert.ok(calls.some(call => call.toolId === 'known-reactions'), 'ORD still runs with an unrestricted grant');

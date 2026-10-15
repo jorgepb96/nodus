@@ -1,6 +1,5 @@
 import {hasMobileCompletionReplay} from './mobileCompletionReplay';
 import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
-import { verdictEntries, isAiVerdicts, normalizeCitationVerdict, type AiVerdictsResponse } from '@shared/citationVerdicts';
 import { withJobThinkingEffort } from './thinkingEffort';
 import { registerNotebookRun } from './researchNotebookService';
 import { bindAcademicCorpusRun } from './researchCorpusRun';
@@ -8,19 +7,8 @@ import { withDocumentVisualPlanning } from './documentVisualContext';
 import { documentSkillCatalog } from '../../shared/documentSkills';
 import { listDocumentSkills } from '../capabilities/documentCatalog';
 import { prepareDocumentVisualHints } from './documentVisuals';
-import type { DeepResearchProgress, DeepResearchReport, DeepResearchRequest, ModelRef, PromptLanguage } from '@shared/types';
-import { deepResearchPlanningPromptPack } from '@shared/deepResearchPlanningPromptPacks';
-import { deepResearchQualityPromptPack } from '@shared/deepResearchQualityPromptPacks';
-import { deepResearchWritingPromptPack, deepResearchWritingRuntimeCopy } from '@shared/deepResearchWritingPromptPacks';
-import { deepResearchLengthPromptPack, isEmptyContinuation } from '@shared/deepResearchLengthPromptPacks';
-import {
-  countDeepResearchWords,
-  extendDeepResearchSection,
-  normalizeDeepResearchSectionLength,
-  planDeepResearchSectionLength,
-  type DeepResearchSectionLength,
-  type DeepResearchSectionLengthPlan,
-} from '@shared/deepResearchSectionLength';
+import type { DeepResearchProgress, DeepResearchReport, DeepResearchRequest, ModelRef } from '@shared/types';
+import { normalizeDeepResearchSectionLength, type DeepResearchSectionLength } from '@shared/deepResearchSectionLength';
 import type { DeepResearchApproach } from '@shared/deepResearchApproaches';
 import { normalizeDeepResearchApproach } from '@shared/deepResearchApproaches';
 import {
@@ -55,15 +43,6 @@ import {
   orchestrateDeepResearch,
   type DeepResearchDeps,
   type DeepResearchPlan,
-  type DeepResearchPlanSection,
-  type CitationClaim,
-  type CitationVerdict,
-  type CoherenceIssue,
-  deepResearchNarrativeRules,
-  type FinalizeInput,
-  type FinalizeResult,
-  type PlanInput,
-  type PlanCoverageAuditInput,
   buildPlanInput,
   normalizePlan,
   fallbackPlan,
@@ -82,32 +61,13 @@ import {
   MAX_COVERAGE_QUESTIONS,
   MAX_SECTION_IDEAS,
   SECTION_RETRIEVAL_LIMITS,
-  type ReportEditorialReview,
   type SectionInput,
-  type SectionClaimAudit,
-  type DeepResearchProofRole,
   type AtomicPassageRetrieval,
-  type SectionEvidencePlan,
-  type SectionRevisionInput,
 } from './deepResearchCore';
 
 /** A post-plan query may prepare a small high-value nucleus; the opt-in background
  * campaign owns exhaustive vault indexing. */
 const ON_DEMAND_DOCUMENT_PROFILE_LIMIT = 8;
-
-const DEEP_RESEARCH_PROOF_ROLES = new Set<DeepResearchProofRole>([
-  'fact', 'actor_time', 'mechanism', 'causality', 'comparison_side',
-  'agreement', 'contradiction', 'effect', 'reception', 'limit', 'method',
-]);
-
-function parseProofRole(value: unknown): DeepResearchProofRole {
-  const normalized = String(value ?? '').trim().toLocaleLowerCase() as DeepResearchProofRole;
-  return DEEP_RESEARCH_PROOF_ROLES.has(normalized) ? normalized : 'fact';
-}
-
-function sectionClaimsForWriting(section: DeepResearchPlanSection): string[] {
-  return [...section.keyClaims, ...(section.coverageClaims ?? [])];
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AI + DB wiring for Deep Research. The control flow (planning, coverage,

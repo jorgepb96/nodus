@@ -1,6 +1,7 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
 import { openWebSource } from '../researchWebSources';
 import { webPassageLink } from '@shared/webResearchRanking';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   AuthorDossier,
   AuthorSummary,
@@ -25,6 +26,7 @@ import { evidenceLocator, openEvidenceAtPage, requestLibraryDocumentOpen } from 
 import { parsePageNumber } from '@shared/pageLocation';
 import { t, tx } from '../i18n';
 
+const LearningCitationOrigin = createContext<{conversationId?:string;messageId?:string}|null>(null);
 export type CitationTarget =
   | { kind: 'idea'; id: string }
   | { kind: 'work'; id: string }
@@ -126,14 +128,15 @@ function targetIcon(target: NonNullCitationTarget): string {
 export function SourceCitationModal({
   target,
   onClose,
-  onOpenLibraryWork,
+  onOpenLibraryWork, learningOrigin,
 }: {
+  learningOrigin?: {conversationId?:string;messageId?:string};
   target: CitationTarget;
   onClose: () => void;
   onOpenLibraryWork?: OpenCitationLibraryWork;
 }) {
   if (!target) return null;
-  return <CitationWorkspace initialTarget={target} onClose={onClose} onOpenLibraryWork={onOpenLibraryWork} />;
+  return <LearningCitationOrigin.Provider value={learningOrigin ?? null}><CitationWorkspace initialTarget={target} onClose={onClose} onOpenLibraryWork={onOpenLibraryWork} /></LearningCitationOrigin.Provider>;
 }
 
 function CitationWorkspace({
@@ -351,6 +354,7 @@ function SourceError({ message, retry }: { message: string; retry: () => void })
 }
 
 function IdeaPanel({ globalId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { globalId: string }) {
+  const learning = useAcademicLearning();
   const [detail, setDetail] = useState<IdeaDetail | null>(null);
   const [edges, setEdges] = useState<EdgeDetail[]>([]);
   const [missing, setMissing] = useState(false);
@@ -366,6 +370,12 @@ function IdeaPanel({ globalId, onOpenTarget, onTitle, authors, onOpenLibraryWork
     }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
   }, [globalId, onTitle, failure.attempt, failure.fail, failure.reset]);
+
+  useEffect(() => {
+    const evidence = detail?.evidence.find(e => e.nodus_id === learning.session?.documentId && e.quote.trim());
+    if (evidence && detail) learning.emit({kind:'idea-evidence',documentId:evidence.nodus_id,ideaId:detail.idea.global_id,valid:true});
+    if (detail?.evidence.some(e=>e.quote.trim()) && learning.session?.artifactId) learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`idea:${detail.idea.global_id}`],valid:true});
+  }, [detail, learning.emit, learning.session?.documentId]);
 
   if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró la idea citada en el corpus actual.')}</MissingPanel>;
@@ -405,6 +415,7 @@ function IdeaPanel({ globalId, onOpenTarget, onTitle, authors, onOpenLibraryWork
 }
 
 function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { nodusId: string }) {
+  const learning=useAcademicLearning();
   const [work, setWork] = useState<WorkView | null>(null);
   const [meta, setMeta] = useState<WorkMeta | null>(null);
   const [summary, setSummary] = useState<WorkSummary | null>(null);
@@ -431,6 +442,8 @@ function WorkPanel({ nodusId, onOpenTarget, onTitle, authors, onOpenLibraryWork 
     }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
   }, [nodusId, onTitle, failure.attempt, failure.fail, failure.reset]);
+
+  useEffect(()=>{if(work&&learning.session?.artifactId) learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`work:${nodusId}`],valid:true});},[work,learning.emit,nodusId]);
 
   const loadMoreIdeas = async () => {
     if (!ideas || loadingIdeas) return;
@@ -581,6 +594,8 @@ function ContradictionPanel({ edgeId, onOpenTarget, onTitle, authors, onOpenLibr
 }
 
 function PassagePanel({ passageId, onOpenTarget, onTitle, authors, onOpenLibraryWork }: CitationPanelProps & { passageId: string }) {
+  const origin = useContext(LearningCitationOrigin);
+  const learning = useAcademicLearning();
   const [detail, setDetail] = useState<PassageDetail | null>(null);
   const [missing, setMissing] = useState(false);
   const failure = useSourceFailure();
@@ -590,6 +605,13 @@ function PassagePanel({ passageId, onOpenTarget, onTitle, authors, onOpenLibrary
     void window.nodus.getPassage(passageId).then((next) => { if (!active) return; if (!next) { setMissing(true); return; } setDetail(next); onTitle(next.work.title); }).catch(error => { if (active) failure.fail(error); });
     return () => { active = false; };
   }, [passageId, onTitle, failure.attempt, failure.fail, failure.reset]);
+  useEffect(() => {
+    if (detail && !detail.web && !detail.historical && (!learning.session?.documentRevision || detail.revision===learning.session.documentRevision) && detail.text.trim()) {
+      learning.emit({ ...origin, kind: 'citation', documentId: detail.nodus_id, citationIds: [`passage:${detail.passage_id}`], valid: true });
+      if(learning.session?.artifactId) learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`passage:${detail.passage_id}`],valid:true});
+    }
+  }, [detail, learning.emit, origin]);
+  useEffect(()=>{if(missing&&origin?.messageId===learning.session?.messageId)learning.emit({...origin,kind:'recovery',recovery:'no-citation'});},[missing,origin,learning.emit,learning.session?.messageId]);
   if (failure.error) return <SourceError message={failure.error} retry={failure.retry} />;
   if (missing) return <MissingPanel>{t('No se encontró el pasaje citado. Puede haberse reindexado.')}</MissingPanel>;
   if (!detail) return <LoadingPanel />;

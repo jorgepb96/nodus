@@ -415,7 +415,7 @@ async function fetchModels(provider: AiProvider, key: string | null, signal?: Ab
     case 'opencode-go':
       return listOpenCodeGo(signal, fullCatalog);
     case 'deepseek':
-      return listOpenAiStyle(`${researchTestProviderBase(provider) ?? 'https://api.deepseek.com'}/models`, key, false, { signal, fullCatalog });
+      return withDeepSeekThinkingOff(await listOpenAiStyle(`${researchTestProviderBase(provider) ?? 'https://api.deepseek.com'}/models`, key, false, { signal, fullCatalog }));
     case 'openrouter':
       return listOpenRouter(signal, fullCatalog);
     case 'groq':
@@ -602,6 +602,21 @@ async function listAnthropic(key: string | null, signal?: AbortSignal, fullCatal
  * likewise, so a mistyped host fails fast instead of hanging the Settings button
  * the way an untimed fetch against a black-holed IP would.
  */
+/**
+ * DeepSeek publishes `effort.supported_levels` (low/high/max for Flash) but leaves out the
+ * separate switch that turns thinking off (`thinking.type: disabled`), which its API accepts
+ * and the rest of Nodus already sends. A model that publishes levels gets an Off stop first,
+ * so the research composer can run it without thinking.
+ */
+function withDeepSeekThinkingOff(models: ModelInfo[]): ModelInfo[] {
+  return models.map((model) => {
+    const levels = model.researchReasoningLevels ?? [];
+    return levels.length && !levels.includes('none') && !levels.includes('off')
+      ? { ...model, researchReasoningLevels: ['none', ...levels] }
+      : model;
+  });
+}
+
 async function listOpenAiStyle(
   url: string,
   key: string | null,

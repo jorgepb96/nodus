@@ -28,7 +28,7 @@ export function mobileWorkspaceOrganizationTree(){
  const tree=getNotesTree(true);
  return {mobileOrganizationComplete:true,folders:tree.folders.map(f=>({id:f.id,parentId:f.parentId,name:f.name,summary:f.summary,orderIdx:f.orderIdx,createdAt:f.createdAt,updatedAt:f.updatedAt})),notes:tree.notes.map(n=>({id:n.id,title:n.title,kind:n.kind,folderId:n.folderId,tags:n.tags,trashedAt:n.trashedAt,orderIdx:n.orderIdx,createdAt:n.createdAt,updatedAt:n.updatedAt}))};
 }
-function exact(a:unknown,b:unknown,remote:unknown){if(canonicalJson(a)!==canonicalJson(b))throw new WorkspaceOrganizationFailure('organization_conflict',mobileWorkspaceOrganizationTree());}
+function exact(a:unknown,b:unknown,_remote:unknown){if(canonicalJson(a)!==canonicalJson(b))throw new WorkspaceOrganizationFailure('organization_conflict',mobileWorkspaceOrganizationTree());}
 /** Metadata-only commands never enter the full/native editor save path. */
 export async function applyWorkspaceOrganization(vaultId:string,grantId:string,raw:unknown):Promise<unknown>{
  if(Buffer.byteLength(JSON.stringify(raw),'utf8')>32*1024*1024)throw new WorkspaceOrganizationFailure('workspace_edit_too_large');

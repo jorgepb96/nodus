@@ -20,3 +20,17 @@ export function yieldToEventLoop(): Promise<void> {
  * large enough that the yield overhead is negligible.
  */
 export const YIELD_EVERY = 16;
+
+/** `task` for every item, at most `limit` at a time, results in the items' order. A failed item is
+ *  null rather than failing the rest: one molecule's tool failure used to lose its whole batch. */
+export async function eachBounded<T, R>(items: T[], limit: number, task: (item: T) => Promise<R>): Promise<Array<R | null>> {
+  const out: Array<R | null> = new Array(items.length).fill(null);
+  let next = 0;
+  const lane = async () => {
+    for (let index = next++; index < items.length; index = next++) {
+      try { out[index] = await task(items[index]); } catch { out[index] = null; }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.max(0, Math.min(limit, items.length)) }, lane));
+  return out;
+}

@@ -85,7 +85,10 @@ export async function scanSimilar<T extends ScoredRow>(scan: VectorScan): Promis
   if (!query) return [];
 
   const db = getDb();
+  const workerStarted = Date.now();
   const background = await scanSimilarInWorker<T>(db.name, scan);
+  const workerMs = Date.now() - workerStarted;
+  if (workerMs >= 1000) console.info(`${new Date().toISOString()} [vectorScan] ${scan.table} worker ${background ? 'answered' : 'unavailable'} in ${(workerMs / 1000).toFixed(1)}s`);
   if (background) return background;
   const highest = (db.prepare(`SELECT MAX(rowid) AS top FROM ${scan.table}`).get() as { top: number | null }).top ?? 0;
   if (highest === 0) return [];

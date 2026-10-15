@@ -5,6 +5,7 @@ import { buildServerPersonalImport, buildServerSnapshot } from './serverSnapshot
 import type { ServerPublishWorkerRequest, ServerPublishWorkerResponse } from './serverPublishWorkerTypes';
 import { publishVaultToCloudflare } from './cloudflarePublisher';
 import { buildVectorSet } from './serverVectors';
+import { ServerHttpError } from './serverNetwork';
 
 const gzipAsync = promisify(gzip);
 
@@ -62,6 +63,7 @@ process.parentPort?.on('message', (event) => {
       kind: 'error',
       id: request.id,
       error: error instanceof Error ? error.message : String(error),
+      status: error instanceof ServerHttpError ? error.status : undefined,
     } satisfies ServerPublishWorkerResponse),
   );
 });

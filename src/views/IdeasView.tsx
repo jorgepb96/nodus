@@ -1,3 +1,4 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GraphEdge, IdeaConnection, IdeaDetail, IdeaListItem, IdeaType, EdgeDetail } from '@shared/types';
 import { ManualIdeaEditor } from './ManualIdeaEditor';
@@ -368,7 +369,7 @@ export function IdeasView({
 
         {openIdeas.map((idea) => (
           <div key={idea.id} className={surface === 'idea' && activeIdeaId === idea.id ? 'h-full' : 'hidden'}>
-            {manual ? <ManualIdeaTab globalId={idea.id} onOpenGraph={onOpenGraph} onSaved={(label) => { updateIdeaLabel(idea.id, label); notifyDataChanged(); reload(true); }} /> : <IdeaDetailTab
+            {manual ? <ManualIdeaTab globalId={idea.id} reviewRequest={target?.ideaId===idea.id ? target.nonce : undefined} onOpenGraph={onOpenGraph} onSaved={(label) => { updateIdeaLabel(idea.id, label); notifyDataChanged(); reload(true); }} /> : <IdeaDetailTab
               idea={idea}
               summary={ideas.find((candidate) => candidate.id === idea.id) ?? null}
               vaultId={vaultId}
@@ -391,13 +392,24 @@ export function IdeasView({
   );
 }
 
-function ManualIdeaTab({ globalId, onOpenGraph, onSaved }: {
+function ManualIdeaTab({ globalId, reviewRequest, onOpenGraph, onSaved }: {
   globalId: string;
+  reviewRequest?: number;
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onSaved: (label: string) => void;
 }) {
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
+  const learning=useAcademicLearning();
+  useEffect(()=>{
+    if(!reviewRequest || !note || learning.session?.lessonId!=='first-idea' || learning.session.step!==3)return;
+    let active=true;
+    void window.nodus.getIdeaDetail(globalId).then(detail=>{
+      const evidence=detail?.evidence.find(e=>e.nodus_id===learning.session?.documentId&&e.quote.trim());
+      if(active&&evidence)learning.emit({kind:'idea-evidence',ideaId:globalId,documentId:evidence.nodus_id,valid:true});
+    });
+    return()=>{active=false;};
+  },[reviewRequest,note,globalId,learning.emit]);
   useEffect(() => {
     let active = true;
     void window.nodus.getNotesTree().then(tree => {
@@ -440,6 +452,7 @@ function IdeaDetailTab({
   onDeleted: () => void;
   testId?: string;
 }) {
+  const learning = useAcademicLearning();
   const [detail, setDetail] = useState<IdeaDetail | null>(null);
   const [connections, setConnections] = useState<IdeaConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -472,6 +485,11 @@ function IdeaDetailTab({
       mounted = false;
     };
   }, [dataSource, idea.id, onLabelChange, vaultId]);
+
+  useEffect(() => {
+    const evidence = detail?.evidence.find(e => e.nodus_id === learning.session?.documentId && e.quote.trim());
+    if (evidence && detail) learning.emit({kind:'idea-evidence',documentId:evidence.nodus_id,ideaId:detail.idea.global_id,valid:true});
+  }, [detail, learning.emit, learning.session?.documentId]);
 
   const deleteIdea = async () => {
     if (deleting) return;

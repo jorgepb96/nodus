@@ -7,15 +7,18 @@ import { uploadEditorFile } from './editorAttachments';
 import { academicCitationSequence, academicInlines, academicTargets, type AcademicMetadata, type AcademicCitation } from '@shared/academicDocument';
 import { formatAcademicSnapshot, singleAcademicSnapshot } from '@shared/academicCsl';
 import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
-import { BlockNoteSchema, COLORS_DEFAULT, createHeadingBlockSpec, createStyleSpec, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSpecs, type PartialBlock } from '@blocknote/core';
+import { BlockNoteSchema, createExtension, COLORS_DEFAULT, createHeadingBlockSpec, createStyleSpec, defaultBlockSpecs, defaultInlineContentSpecs, defaultStyleSpecs, type ExtensionOptions, type PartialBlock } from '@blocknote/core';
 import { en, es } from '@blocknote/core/locales';
 import { BlockNoteView } from '@blocknote/ariakit';
-import { createReactBlockSpec, createReactInlineContentSpec, FilePanelController, FormattingToolbar, FormattingToolbarController, getFormattingToolbarItems, SideMenuController, SuggestionMenuController, useCreateBlockNote, type SideMenuProps } from '@blocknote/react';
+import { createReactBlockSpec, createReactInlineContentSpec, FilePanelController, FormattingToolbar, FormattingToolbarController, GenericPopover, getFormattingToolbarItems, SideMenuController, SuggestionMenuController, useComponentsContext, useCreateBlockNote, type SideMenuProps } from '@blocknote/react';
+import { flip, offset, shift } from '@floating-ui/react';
 import { editorSideMenuOptions } from './editorSideMenu';
 import { insertOrUpdateBlockForSlashMenu, SuggestionMenu as SuggestionMenuExtension } from '@blocknote/core/extensions';
 import { editorLinkAllowed, searchEditorReferences, type EditorReference } from '@shared/editorReferences';
 import { ReferenceSuggestionMenu, type ReferenceSuggestion } from './EditorReferences';
 import { TextSelection } from '@tiptap/pm/state';
+import { createEditorReviewPlugin, editorReviewKey, reviewTextMap, type EditorReview } from './editorAiDecorations';
+import { editorReviewDiff } from '@shared/editorAiReview';
 import { closeHistory, redoDepth, undoDepth } from '@tiptap/pm/history';
 import '@blocknote/ariakit/style.css';
 import { blockNoteToMarkdown, markdownToBlockNote, nativeBlockMarkdown, nativeDocumentText, nativePlainText, type BlockNoteDocument, type NativeBlock } from '@shared/blockNoteDocument';
@@ -74,6 +77,7 @@ function colorStyle<T extends 'textColor' | 'backgroundColor'>(type: T) {
   };
   return createStyleSpec({type,propSchema:'string'}, {render: value => render(value),toExternalHTML: value => render(value,true),parse: element => element.tagName === 'SPAN' && element.style[property] ? element.style[property] : undefined});
 }
+const AiReviewExtension = createExtension(({ options }: ExtensionOptions<{ getReview: () => EditorReview | null | undefined }>) => ({ key: 'nodusAiReview', prosemirrorPlugins: [createEditorReviewPlugin(options.getReview)] }));
 const schema = BlockNoteSchema.create({
   blockSpecs: { ...defaultBlockSpecs, heading: createHeadingBlockSpec({ levels: [1, 2, 3, 4, 5, 6] }), nodusMarkdown: compatibility },
   inlineContentSpecs: { ...defaultInlineContentSpecs, nodusWiki: wiki, nodusFormula: formula, nodusCitation: academicCitation, nodusFootnote: academicFootnote, nodusCrossReference: academicCrossReference },
@@ -108,7 +112,9 @@ function fromEditor(document: BlockNoteDocument, originals: Map<string, NativeBl
 }
 
 export interface BlockNoteCanvasHandle {
-  insertText(text: string, replaceSelection: boolean): void;
+  insertText(text: string, replaceSelection: boolean, spaceAround?: boolean): void;
+  updateDictation(text: string, id: string, final: boolean, replaceSelection: boolean): void;
+  endDictation(): void;
   insertMarkdown(markdown: string): void;
   preserveSelection(): void;
   restoreSelection(): boolean;
@@ -120,6 +126,10 @@ export interface BlockNoteCanvasHandle {
   redo(): void;
   replaceAllMarkdown(markdown: string, options?: { addToHistory?: boolean; closeHistory?: boolean }): void;
   replaceSelectionMarkdown(range: { from: number; to: number }, markdown: string): void;
+  validateAiSelection(range: { from: number; to: number }): void;
+  revealAiSelection(range: { from: number; to: number }): void;
+  imageAnchor(): string;
+  insertGeneratedImage(anchor: string, url: string, caption: string): boolean;
   openReferenceMenu(): void;
   insertAcademicInline(inline: import('@shared/blockNoteDocument').NativeInline, range?: {from:number;to:number}): void;
   jumpToBlock(id:string): void;
@@ -142,11 +152,14 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   onNavigateLink?(href: string): void;
   onWikiLink?(reference: string): void;
   onToolbarElement?(element: HTMLElement | null): void;
+  aiReview?: EditorReview | null;
+  onCreateImage?(): void;
   listReferences?(): Promise<EditorReference[]>;
   resolveFileUrl?(url:string):Promise<string>;
   onDownloadFile?(url:string,name:string):Promise<void>;
   renderCompatibility?(markdown:string):ReactNode|null;
-}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences,resolveFileUrl,onDownloadFile,renderCompatibility }, ref) => {
+}>(({ documentId, value, academicMetadata, onAcademicAction, academicActions, nativeDocument, editable = true, spellcheck = true, language = 'es-ES', onChange, onHistoryChange, onOpenRecording, onNavigateLink, onWikiLink, onToolbarElement, listReferences, resolveFileUrl, onDownloadFile, renderCompatibility, aiReview, onCreateImage }, ref) => {
+  const aiReviewRef = useRef(aiReview); aiReviewRef.current = aiReview;
   const initial = useMemo(() => nativeDocument ?? markdownToBlockNote(value), [documentId]);
   const originals = useMemo(() => {
     const result = new Map<string, NativeBlock>();
@@ -154,8 +167,23 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     visit(initial); return result;
   }, [initial]);
   const initialContent = useMemo(() => forEditor(initial), [initial]);
-  const editor = useCreateBlockNote({ schema, initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, resolveFileUrl, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
+  const editor = useCreateBlockNote({ schema, extensions: [AiReviewExtension({ getReview: () => aiReviewRef.current })], initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, resolveFileUrl, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
   const root = useRef<HTMLDivElement>(null);
+  const dictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; time: number; detached?: boolean } | null>(null);
+  useEffect(() => {
+    const mapRange = ({ transaction: tr }: { transaction: import('@tiptap/pm/state').Transaction }) => {
+      const range = dictation.current;
+      if (!range || !tr.docChanged || tr.getMeta('nodusDictation')) return;
+      // Map around ordinary typing elsewhere. If the writer edits these words,
+      // relinquish them instead of overwriting their edit with a later result.
+      tr.mapping.maps.forEach(map => {
+        map.forEach((from, to) => { if (from < range.to && to > range.from || from === to && from > range.from && from < range.to) range.detached = true; });
+        range.from = map.map(range.from, 1); range.to = map.map(range.to, -1);
+      });
+    };
+    editor._tiptapEditor.on('transaction', mapRange);
+    return () => { editor._tiptapEditor.off('transaction', mapRange); dictation.current = null; };
+  }, [editor]);
   const insertController = useRef<EditorInsertHandle>(null);
   const InsertSideMenu = useMemo(() => function NodusSideMenu(props: SideMenuProps) {
     return <EditorSideMenu {...props} onAddBlock={blockId => insertController.current?.openAtBlock(blockId)} />;
@@ -202,6 +230,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       {key:'nodus_quiz',title:t('Insertar pregunta de test'),subtext:t('Plantilla editable'),aliases:['quiz','test','pregunta'],group:t('Inserción'),icon:<Icon name="help" size={18}/>,onItemClick:()=>{
         insertOrUpdateBlockForSlashMenu(editor,{type:'paragraph',content:t('Pregunta'),children:[{type:'checkListItem',content:'A. …'},{type:'checkListItem',content:'B. …'},{type:'checkListItem',content:'C. …'}]});editor.focus();
       }});
+    if (onCreateImage) items.push({ key: 'nodus_ai_image', title: t('Crear imagen con IA'), aliases: ['imagen ia', 'generate image'], group: t('Inserción'), icon: <Icon name="image" size={18} />, onItemClick: onCreateImage });
     if (listReferences) items.push({key:'nodus_link',title:t('Enlazar con Nodus'),aliases:['link','enlace','idea','autor','obra','[['],group:t('Académico'),icon:<Icon name="link" size={18}/>,onItemClick:()=>{editor.focus();editor.getExtension(SuggestionMenuExtension)?.openSuggestionMenu('[[');}});
     if (onAcademicAction) for (const [key,title,action,aliases,icon] of [
       ['nodus_cite','Citar fuente','cite',['cite','cita bibliografica'],'quote'],
@@ -209,9 +238,12 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       ['nodus_crossref','Referencia cruzada','crossref',['reference','figura','tabla'],'link'],
     ] as const) { if (academicActions && !academicActions.includes(action)) continue; items.push({key,title:t(title),aliases:[...aliases],group:t('Académico'),icon:<Icon name={icon} size={18}/>,onItemClick:()=>academicActionRef.current?.(action)}); }
     return items;
-  }, [editor, Boolean(listReferences), Boolean(onAcademicAction), academicActions?.join(',')]);
+  }, [editor, Boolean(listReferences), Boolean(onAcademicAction), academicActions?.join(','), onCreateImage]);
   const [theme,setTheme] = useState<'light'|'dark'>(()=>document.documentElement.classList.contains('dark')?'dark':'light');
   useEffect(()=>{ const update=()=>setTheme(document.documentElement.classList.contains('dark')?'dark':'light'); const observer=new MutationObserver(update);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class']});return ()=>observer.disconnect(); },[]);
+  useEffect(() => {
+    editor._tiptapEditor.view.dispatch(editor.prosemirrorState.tr.setMeta(editorReviewKey, aiReview ?? null).setMeta('addToHistory', false));
+  }, [editor, aiReview, theme]);
   const read = () => fromEditor(editor.document as unknown as BlockNoteDocument, originals);
   useEffect(()=>{try{const jump=JSON.parse(sessionStorage.getItem('nodus.academicJump')??'null');if(jump&&documentId.startsWith(jump.documentId)){requestAnimationFrame(()=>requestAnimationFrame(()=>{root.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(jump.blockId)}"]`)?.scrollIntoView({block:'center'});}));sessionStorage.removeItem('nodus.academicJump');}}catch{}},[documentId]);
   const notifyHistory = () => queueMicrotask(() => { const state = editor.prosemirrorState; onHistoryChange?.({ canUndo: undoDepth(state) > 0, canRedo: redoDepth(state) > 0 }); });
@@ -220,9 +252,33 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
   // endless unmount/setState/remount cycle while text is selected.
   const SelectionToolbar = useMemo(() => function NodusSelectionToolbar() {
     const [more, setMore] = useState(false);
+    const moreAnchor = useRef<HTMLButtonElement>(null);
+    const Components = useComponentsContext()!;
     const advanced = new Set(['strikeStyleButton', 'textAlignLeftButton', 'textAlignCenterButton', 'textAlignRightButton', 'nestBlockButton', 'unnestBlockButton']);
     const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} onDownload={onDownloadFile} /> : item);
-    return <FormattingToolbar>{items.filter(item => !advanced.has(String(item.key)))}{onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}>❞</button>}<span ref={mountToolbar} className="study-selection-tools-host" /><div className="editorial-selection-more"><button type="button" className="bn-button" aria-label={t('Más formato')} title={t('Más formato')} aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(!more)}>···</button>{more && <div className="editorial-selection-more-menu">{items.filter(item => advanced.has(String(item.key)))}<button type="button" className="bn-button" title={t('Fórmula en línea')} onClick={() => editor.insertInlineContent([{ type: 'nodusFormula', props: { formula: editor.getSelectedText() || 'x^2' } }])}>ƒx</button></div>}</div></FormattingToolbar>;
+    return <FormattingToolbar>
+      {items.filter(item => !advanced.has(String(item.key)))}
+      {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}><Icon name="quote" size={18} /></button>}
+      <span ref={mountToolbar} className="study-selection-tools-host" />
+      <button ref={moreAnchor} type="button" className="bn-button editorial-selection-more" aria-label={t('Más formato')} title={t('Más formato')} aria-haspopup="dialog" aria-expanded={more} onMouseDown={event => event.preventDefault()} onClick={() => setMore(open => !open)}><Icon name="moreVertical" size={18} className="rotate-90" /></button>
+      {/* Escape the toolbar's layout and clipping while retaining BlockNote's
+          themed, registered editor UI so keyboard focus keeps the selection. */}
+        <GenericPopover reference={moreAnchor.current ? { element: moreAnchor.current, getBoundingClientRect: () => {
+          const button = moreAnchor.current!, anchor = button.getBoundingClientRect();
+          const bar = button.closest('.bn-formatting-toolbar')?.getBoundingClientRect() ?? anchor;
+          // Align with the trigger horizontally, but clear the whole toolbar
+          // vertically, including its padding and taller neighbouring controls.
+          return new DOMRect(anchor.x, bar.y, anchor.width, bar.height);
+        } } : undefined}
+          useFloatingOptions={{ open: more, onOpenChange: setMore, strategy: 'fixed', placement: 'bottom-end', middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12 })] }}
+          focusManagerProps={{ modal: false, returnFocus: true }}
+          elementProps={{ className: 'editorial-selection-more-popover', role: 'dialog', 'aria-label': t('Más formato'), style: { zIndex: 120 }, onMouseDown: event => event.preventDefault() }}>
+          <Components.FormattingToolbar.Root className="bn-toolbar editorial-selection-more-menu">
+            {items.filter(item => advanced.has(String(item.key)))}
+            <Components.FormattingToolbar.Button className="bn-button" label={t('Fórmula en línea')} mainTooltip={t('Fórmula en línea')} icon={<span aria-hidden="true">ƒx</span>} onClick={() => { editor.focus(); editor.insertInlineContent([{ type: 'nodusFormula', props: { formula: editor.getSelectedText() || 'x^2' } }]); setMore(false); }} />
+          </Components.FormattingToolbar.Root>
+        </GenericPopover>
+    </FormattingToolbar>;
   }, [editor,mountToolbar,onDownloadFile]);
   useEffect(() => {
     const content = root.current?.querySelector<HTMLElement>('.bn-editor');
@@ -278,9 +334,52 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     },
     jumpToBlock(id) {const element=root.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`);element?.scrollIntoView({block:'center',behavior:'smooth'});if(editor.getBlock(id)){editor.setTextCursorPosition(id,'start');editor.focus();}},
     openReferenceMenu() { editor.focus(); editor.getExtension(SuggestionMenuExtension)?.openSuggestionMenu('[['); },
-    insertText(text, replaceSelection) {
-      editor.transact(tr => { if (!replaceSelection) tr.setSelection(TextSelection.near(tr.doc.resolve(tr.selection.from))); editor.insertInlineContent(text); });
+    insertText(text, replaceSelection, spaceAround) {
+      editor.transact(tr => {
+        if (!replaceSelection) tr.setSelection(TextSelection.near(tr.doc.resolve(tr.selection.from)));
+        if (spaceAround) {
+          const { $from, $to } = tr.selection;
+          const before = $from.parent.textBetween(0, $from.parentOffset, '', '\ufffc');
+          const after = $to.parent.textBetween($to.parentOffset, $to.parent.content.size, '', '\ufffc');
+          const prefix = before && !/\s$/.test(before) && !/^[\s,.;:!?]/.test(text) ? ' ' : '';
+          const suffix = after && !/^[\s,.;:!?]/.test(after) && !/\s$/.test(text) ? ' ' : '';
+          text = `${prefix}${text}${suffix}`;
+        }
+        editor.insertInlineContent(text);
+      });
       editor.focus();
+    },
+    updateDictation(text, id, final, replaceSelection) {
+      let range = dictation.current;
+      if (range?.id === id && range.detached) { if (final) dictation.current = null; return; }
+      if (!text && range?.id !== id) return;
+      editor.transact(tr => {
+        if (!range || range.id !== id) {
+          closeHistory(tr);
+          const from = tr.selection.from, to = replaceSelection ? tr.selection.to : from;
+          const before = tr.doc.resolve(from).nodeBefore?.textContent ?? '';
+          const after = tr.doc.resolve(to).nodeAfter?.textContent ?? '';
+          range = { id, from, to, text: '', time: Date.now(), prefix: before && !/\s$/.test(before) && !/^[\s,.;:!?]/.test(text) ? ' ' : '', suffix: after && !/^[\s,.;:!?]/.test(after) ? ' ' : '' };
+          dictation.current = range;
+        }
+        const next = text ? `${range.prefix}${text}${range.suffix}` : '';
+        const previous = range.text;
+        // Modify only the changed tail: leave existing DOM, formatting, focus
+        // and scroll alone. All hypotheses of an utterance share one undo step.
+        let common = 0;
+        while (common < previous.length && common < next.length && previous[common] === next[common]) common++;
+        tr.setMeta('nodusDictation', true); tr.setTime(range.time);
+        if (next !== previous || range.to > range.from && !previous) tr.insertText(next.slice(common), range.from + common, range.to);
+        range.to = range.from + next.length; range.text = next;
+      });
+      if (final) {
+        dictation.current = null;
+        editor.transact(tr => { closeHistory(tr); tr.setMeta('addToHistory', false); });
+      }
+    },
+    endDictation() {
+      dictation.current = null;
+      editor.transact(tr => { closeHistory(tr); tr.setMeta('addToHistory', false); });
     },
     insertMarkdown(markdown) {
       const cursor = editor.getTextCursorPosition().block;
@@ -290,7 +389,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       editor.focus();
     },
     selectionSnapshot() {
-      const text = editor.getSelectedText();
+      const text = reviewTextMap(editor.prosemirrorState.doc, editor.prosemirrorState.selection).text;
       const cut = editor.getSelectionCutBlocks();
       const blockId = cut.blocks[0]?.id ?? editor.getTextCursorPosition().block.id;
       const state = editor.prosemirrorState;
@@ -314,6 +413,30 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       let protectedAcademic=false;editor.prosemirrorState.doc.nodesBetween(range.from,range.to,node=>{if(['nodusCitation','nodusFootnote','nodusCrossReference'].includes(node.type.name))protectedAcademic=true;});
       if(protectedAcademic)throw new Error(t('Selecciona el texto entre las citas para conservar sus referencias al mejorar con IA.'));
       const blocks = forEditor(markdownToBlockNote(markdown));
+      const source = reviewTextMap(editor.prosemirrorState.doc, range);
+      // Applying ordinary prose per paragraph retains block IDs and marks on
+      // unchanged words, including selections that cross paragraph boundaries.
+      const plain = blocks.every(block => block.type === 'paragraph' && Array.isArray(block.content) && block.content.every(item => typeof item !== 'string' && item.type === 'text' && !Object.keys(item.styles ?? {}).length));
+      const oldLines = source.text.split('\n');
+      if (plain && blocks.length === oldLines.length) {
+        const edits: Array<{ from: number; to: number; text: string }> = []; let lineOffset = 0;
+        oldLines.forEach((line, index) => {
+          const proposed = nativePlainText(blocks[index].content);
+          const pieces = editorReviewDiff(line, proposed, true); let offset = 0;
+          for (let i = 0; i < pieces.length; i++) {
+            const piece = pieces[i]; if (piece.kind === 'same') { offset += piece.value.length; continue; }
+            const start = offset; let inserted = '';
+            while (i < pieces.length && pieces[i].kind !== 'same') { const part = pieces[i]; if (part.kind === 'removed') offset += part.value.length; else inserted += part.value; i++; } i--;
+            const from = start === line.length && start > 0 ? source.positions[lineOffset + start - 1] + 1 : source.positions[lineOffset + start];
+            const to = offset > start ? source.positions[lineOffset + offset - 1] + 1 : from;
+            edits.push({ from, to, text: inserted });
+          }
+          lineOffset += line.length + 1;
+        });
+        editor.transact(tr => { closeHistory(tr); for (const edit of edits.reverse()) tr.insertText(edit.text, edit.from, edit.to); });
+        editor.transact(tr => { closeHistory(tr); tr.setMeta('addToHistory', false); });
+        editor.focus(); notifyHistory(); return;
+      }
       editor.transact(tr => {
         closeHistory(tr);
         tr.setSelection(TextSelection.create(tr.doc, range.from, range.to));
@@ -322,6 +445,32 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       });
       editor.focus();
       notifyHistory();
+    },
+    validateAiSelection(range) {
+      editor.prosemirrorState.doc.nodesBetween(range.from, range.to, node => {
+        if (node.isAtom && !node.isText) throw new Error(t('Selecciona el texto entre las citas para conservar sus referencias al mejorar con IA.'));
+      });
+    },
+    revealAiSelection(range) {
+      const scroll = root.current?.closest<HTMLElement>('.editorial-document-scroll');
+      if (!scroll || range.to > editor.prosemirrorState.doc.content.size) return;
+      const cursor = editor.prosemirrorView.coordsAtPos(range.to), box = scroll.getBoundingClientRect();
+      const panel = scroll.parentElement?.querySelector('.scriptor-ai-panel')?.getBoundingClientRect();
+      const bottom = panel ? Math.min(box.bottom, panel.top) : box.bottom;
+      const scale = box.height / scroll.clientHeight || 1;
+      if (cursor.bottom > bottom - 16) scroll.scrollTop += (cursor.bottom - bottom + 24) / scale;
+      else if (cursor.top < box.top + 8) scroll.scrollTop -= (box.top - cursor.top + 24) / scale;
+    },
+    imageAnchor() { return editor.getTextCursorPosition().block.id; },
+    insertGeneratedImage(anchor, url, caption) {
+      const block = editor.getBlock(anchor); if (!block) return false;
+      editor.transact(tr => {
+        closeHistory(tr);
+        const image = { type: 'image' as const, props: { url, caption } };
+        if (block.type === 'paragraph' && !nativeDocumentText([block as unknown as NativeBlock])) editor.replaceBlocks([block], [image]);
+        else editor.insertBlocks([image], block, 'after');
+      });
+      editor.focus(); notifyHistory(); return true;
     },
   }));
   return <div ref={root} className="nodus-blocknote" data-document-id={documentId} onTouchEnd={event => {
@@ -354,7 +503,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     <AcademicRender.Provider value={academicRender}><CompatibilityRender.Provider value={renderCompatibility}><BlockNoteView editor={editor} editable={editable} formattingToolbar={false} sideMenu={false} slashMenu={false} filePanel={false} theme={theme} onChange={() => {
       const next = read(); onChange(blockNoteToMarkdown(next), next); notifyHistory();
     }}>
-      <FormattingToolbarController formattingToolbar={SelectionToolbar} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } } }} />
+      <FormattingToolbarController formattingToolbar={SelectionToolbar} portalElement={document.body} floatingUIOptions={{ elementProps: { style: { zIndex: 40, paddingInline: 12 } }, useDismissProps: { outsidePress: event => !(event.target instanceof Element && event.target.closest('.editorial-selection-more-popover')) } }} />
       {editable && <FilePanelController filePanel={EditorFilePanel} floatingUIOptions={editorInsertMenuOptions} />}
       {editable && <SideMenuController sideMenu={InsertSideMenu} floatingUIOptions={editorSideMenuOptions} />}
       {listReferences && editable && <SuggestionMenuController triggerCharacter="[[" getItems={getReferences} suggestionMenuComponent={ReferenceSuggestionMenu} shouldOpen={tr => !tr.selection.$from.parent.type.spec.code} onItemClick={item => {

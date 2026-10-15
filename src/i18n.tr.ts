@@ -1,12 +1,18 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -66,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -84,9 +91,11 @@ export const TR: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["tr"],
   'No se pudieron cargar los documentos guardados.': 'Kaydedilen belgeler yüklenemedi.',
   'El catálogo de documentos guardados tiene un formato inválido.': 'Kaydedilen belge kataloğunun biçimi geçersiz.',
+  ...BACKUPS_TRANSLATIONS.tr,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.tr,
   ...CALENDAR_SYNC_TRANSLATIONS["tr"],
+  ...AGENT_RUNTIME_TRANSLATIONS["tr"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["tr"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Web’de gezinin ve araştırmanız için kaynakları kaydedin.",
@@ -132,6 +141,7 @@ export const TR: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.tr,
+  ...GALLERY_FILTER_TRANSLATIONS.tr,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.tr,
   ...STALE_MODEL_TRANSLATIONS.tr,
   ...SCHEME_DECLUTTER_TRANSLATIONS.tr,
@@ -169,6 +179,8 @@ export const TR: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["tr"],
   ...STUDY_FOCUS_TRANSLATIONS["tr"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["tr"],
+  ...BOOKMARK_SORT_TRANSLATIONS["tr"],
+  ...SCRIPTOR_AI_TRANSLATIONS["tr"],
   ...STUDY_IMPROVE_TRANSLATIONS.tr,
   ...WORKSPACE_TRANSLATIONS.tr,
   "Lo que cuenta el mapa": "Haritanın anlattıkları",
@@ -1651,7 +1663,7 @@ export const TR: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "Dosyaları dönüştürmek ve belgeleri işlemek için Nodus'ta yerleşik, kullanışlı, yerel öncelikli araçlar.",
-  "Nodus PDF Presenter": "Nodus PDF Sunucusu",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "Sunum yapan kişi görünümü, mobil uzaktan kumanda, konuşmacı notları ve canlı açıklama ekleme araçlarıyla PDF'ler ve harici sunumlar sunun.",
   "Nodus OCR Workspace": "Nodus OCR Çalışma Alanı",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "Taranan PDF'ler ve görüntüler için sayfa sayfa inceleme, metin temizleme, yeniden işleme ve Nodus kasalarıyla doğrudan entegrasyon özellikleriyle yapay zeka destekli OCR.",
@@ -2425,7 +2437,7 @@ export const TR: Record<string, string> = {
   "Detener y eliminar de la cola": "Durdurun ve kuyruktan kaldırın",
   "Eliminar de la cola": "Sıradan kaldır",
   "Se quitarán de la cola los elementos pendientes y los ya terminados. El elemento en curso seguirá procesándose.": "Bekleyen ve tamamlanan öğeler kuyruktan kaldırılacaktır. Devam eden öğe işlenmeye devam edecek.",
-  "Limpiar": "Temiz",
+  "Limpiar": "Temizle",
   "Se detendrá el escaneo en curso y se eliminarán todos los elementos de la cola. Esta acción no se puede deshacer.": "Devam eden tarama durdurulacak ve kuyruktaki tüm öğeler silinecek. Bu eylem geri alınamaz.",
   "Detener y vaciar": "Dur ve boşalt",
   "Obra": "iş",
@@ -8686,4 +8698,19 @@ export const TR: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "Nodus’u açık tutun ve iki cihazı aynı ağa veya Tailscale gibi bir VPN’e bağlayın. Live, bu Mac’in modellerini kullanır.",
   "Todo tu workspace": "Tüm çalışma alanınız",
   "Generar código y QR": "Kod ve QR oluştur",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "Mikrofon başlatılamadı.",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "Bekleyen sesi tamamlamak için dikte duraklatıldı. Hazır olduğunda devam edin.",
+  "Preparando dictado…": "Dikte hazırlanıyor…",
+  "Cancelar dictado": "Dikteyi iptal et",
+  "Dictado en directo · Local": "Canlı dikte · Yerel",
+  "Escuchando…": "Dinleniyor…",
+  "El texto se inserta automáticamente en el cursor.": "Metin imleç konumuna otomatik olarak eklenir.",
+  "Opciones de dictado": "Dikte seçenekleri",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "Dikte için Ayarlar → Yapay zekâ modelleri bölümünden yerel bir transkripsiyon modeli indirin.",
+  "Audio pendiente": "Bekleyen ses",
+  "Modelo local": "Yerel model",
+  "Detener dictado": "Dikteyi durdur",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["tr"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["tr"],
 };

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from '../secrets/safeStorageGate';
 import type { ChatSkill } from '@shared/chatSkills';
 import { listChatSkills, profilePredatesSkillLibrary, replaceChatSkills } from '../chatSkills';
 import { migrationBaseline } from './migrationBaselines';

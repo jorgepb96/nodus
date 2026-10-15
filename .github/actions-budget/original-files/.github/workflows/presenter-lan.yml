@@ -1,0 +1,30 @@
+name: Presenter native controller — Windows and Linux
+on:
+  pull_request:
+    paths:
+      - 'electron/toolkit/presenter/**'
+      - 'electron/extraction/pdfjsLoader.ts'
+      - 'shared/presenter*.ts'
+      - 'scripts/test-presenter-lan.mjs'
+      - 'scripts/verify-presenter-lan.cjs'
+      - 'package*.json'
+      - '.github/workflows/presenter-lan.yml'
+  workflow_dispatch:
+jobs:
+  native-controller:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install controller test dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify encrypted native controller and PDF previews in Electron
+        run: node scripts/verify-presenter-lan.cjs

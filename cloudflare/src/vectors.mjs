@@ -1,3 +1,4 @@
+import { stageObject } from './objectLifecycle.mjs';
 import { lexicalSearch } from './corpus.mjs';
 import {
   HttpError,
@@ -14,7 +15,7 @@ import {
 
 const VECTOR_KINDS = new Set(['ideas', 'documents', 'passages']);
 const VECTOR_FORMAT = 'nodus.vectors';
-const VECTOR_MAX_DIRECT_BYTES = 96 * 1024 * 1024;
+const VECTOR_MAX_DIRECT_BYTES = 32 * 1024 * 1024;
 
 function bindingForDimensions(dimensions) {
   return `VECTORS_${dimensions}`;
@@ -53,7 +54,7 @@ export async function uploadExactVectorSet(env, auth, request, publicationId, ki
   const decoded = decodeHeader(bytes);
   if (String(decoded.header.kind) !== kind) throw new HttpError(400, 'kind_mismatch', 'The vector header and route name different kinds.');
   const hash = await sha256Hex(bytes);
-  const key = `spaces/${auth.space_id}/vectors/${hash}.bin`;
+  const key = await stageObject(env, `spaces/${auth.space_id}/vectors/${hash}.bin`);
   await env.OBJECTS.put(key, bytes, {
     httpMetadata: { contentType: 'application/vnd.nodus.vectors', contentDisposition: 'attachment' },
     customMetadata: { sha256: hash, kind, provider: String(decoded.header.provider || ''), model: String(decoded.header.model || '') },
@@ -66,13 +67,14 @@ export async function uploadExactVectorSet(env, auth, request, publicationId, ki
       ),
     env.DB.prepare(`INSERT INTO vector_sets
       (space_id, generation, kind, provider, model, dimensions, vector_count, mode, object_key, index_binding, created_at)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'r2-exact', ?8, NULL, ?9)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'r2-exact', (SELECT object_key FROM objects WHERE space_id=?1 AND kind='vector' AND hash=?10), NULL, ?9)
       ON CONFLICT(space_id, generation, kind) DO UPDATE SET provider = excluded.provider, model = excluded.model,
         dimensions = excluded.dimensions, vector_count = excluded.vector_count, mode = excluded.mode, object_key = excluded.object_key, index_binding = NULL`).bind(
         auth.space_id, publication.generation, kind, String(decoded.header.provider || ''), String(decoded.header.model || ''),
-        decoded.dimensions, decoded.count, key, nowIso(),
+        decoded.dimensions, decoded.count, key, nowIso(), hash,
       ),
   ]);
+  await env.DB.prepare(`DELETE FROM r2_delete_queue WHERE object_key=?1 AND EXISTS(SELECT 1 FROM objects WHERE object_key=?1)`).bind(key).run();
   return { ok: true, kind, mode: 'r2-exact', provider: decoded.header.provider, model: decoded.header.model, dim: decoded.dimensions, count: decoded.count, hash, bytes: bytes.byteLength };
 }
 

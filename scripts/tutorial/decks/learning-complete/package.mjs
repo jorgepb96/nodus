@@ -1,0 +1,26 @@
+import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {execFile} from 'node:child_process';import {promisify} from 'node:util';import path from 'node:path';import os from 'node:os';
+import {SHOTS} from './shots.mjs';
+const run=promisify(execFile),root=path.resolve(import.meta.dirname,'../../../..'),deck='learning-complete',source=path.join(root,'.tutorial-out',deck);
+const timeline=JSON.parse(await readFile(path.join(source,'timeline.json'))),narration=JSON.parse(await readFile(path.join(source,'narration.json')));
+if(timeline.warnings.length||timeline.shots.length!==SHOTS.length||SHOTS.some(s=>!timeline.shots.some(t=>t.id===s.id)))throw new Error('Only a complete recording without warnings can be delivered');
+await writeFile(path.join(source,'capture-timeline.json'),JSON.stringify(timeline,null,2));
+for(const shot of timeline.shots){const duration=narration.cues.find(c=>c.id===shot.id).duration;shot.focus=null;shot.narration=duration;if(shot.end-shot.start<duration*.99||shot.end-shot.start>duration*1.1)shot.timelapse=true;}
+await writeFile(path.join(source,'timeline.json'),JSON.stringify(timeline,null,2));
+const env={...process.env,NODUS_TUTORIAL_MUSIC:path.join(os.homedir(),'Desktop/nodus_visual_identity/Quiet Dashboard Glow.mp3')};
+const phases=process.argv.includes('--finish-cards')?['cards']:['subtitles','assemble','cards'];
+for(const phase of phases){console.log('PROCESSING',phase);const result=await run(process.execPath,[path.join(root,'scripts/tutorial/engine',phase+'.mjs'),'--deck='+deck],{env,maxBuffer:4000000});console.log(result.stdout);}
+const output=path.join(os.homedir(),'Desktop/Nodus_Academic_Walkthrough_EN_2026-10-14');await mkdir(output,{recursive:true});
+const video=path.join(output,'Nodus_Academic_Walkthrough_EN.mp4');await copyFile(path.join(source,`nodus-tutorial-${deck}-en-final-subtitled.mp4`),video);
+await copyFile(path.join(source,`subtitles/youtube/nodus-tutorial-${deck}.en.srt`),path.join(output,'Nodus_Academic_Walkthrough_EN.srt'));
+await run('ffmpeg',['-y','-loglevel','error','-i',path.join(source,'narration.wav'),'-c:a','libmp3lame','-q:a','2',path.join(output,'Nodus_Academic_Walkthrough_EN-narration.mp3')]);
+await run('ffmpeg',['-y','-loglevel','error','-ss','8','-i',video,'-frames:v','1',path.join(output,'Nodus_Academic_Walkthrough_EN.png')]);
+const chapters=SHOTS.filter(s=>s.chapter).map(s=>({title:s.chapter,at:5+narration.cues.find(c=>c.id===s.id).start}));
+const meta=[';FFMETADATA1',...chapters.flatMap((c,i)=>['[CHAPTER]','TIMEBASE=1/1000',`START=${Math.round(c.at*1000)}`,`END=${Math.round((chapters[i+1]?.at??narration.total+5)*1000)}`,`title=${c.title}`])].join('\n');await writeFile(path.join(source,'chapters.ffmetadata'),meta);
+const chaptered=path.join(output,'chaptered.mp4');await run('ffmpeg',['-y','-loglevel','error','-i',video,'-i',path.join(source,'chapters.ffmetadata'),'-map','0','-map_metadata','1','-map_chapters','1','-c','copy','-movflags','+faststart',chaptered]);await copyFile(chaptered,video);const {unlink}=await import('node:fs/promises');await unlink(chaptered);
+const info=JSON.parse((await run('ffprobe',['-v','error','-show_format','-show_streams','-show_chapters','-of','json',video])).stdout);
+if(Math.abs(+info.format.duration-narration.total-13)>.3||!info.streams.some(s=>s.codec_type==='audio')||!info.streams.some(s=>s.codec_type==='subtitle'))throw new Error('Incomplete audio, picture, or subtitle track');
+await writeFile(path.join(output,'verification.json'),JSON.stringify({complete:true,duration:+info.format.duration,narrationSeconds:narration.total,shots:timeline.shots.length,warnings:timeline.warnings,voice:narration.voice,chapters,video},null,2));
+const stamp=seconds=>`${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
+await writeFile(path.join(output,'README.md'),`# Nodus academic learning — continuous walkthrough\n\nOne continuous recording of the real desktop application, in English, with English narration and switchable subtitles. It uses one introductory card and one closing card. The interface selector displays the four supplied illustrations.\n\n${chapters.map(c=>'- '+stamp(c.at)+' — '+c.title).join('\n')}\n\nThe recording uses one short public paper: Carey, Steiner, and Petri, “Ten simple rules for reading a scientific paper” (2020), CC BY, DOI 10.1371/journal.pcbi.1008032. The imported TXT is the text extracted from that same paper; the PDF parser previously omitted material beside a table.\n\nPreparation, chat, extraction, definitions, coverage, hypotheses, and the report are actual provider operations. Waiting periods are shortened. Evidence coverage and limitations remain visible; opening a citation verifies that source rather than proving the whole report. No provider responses are simulated.\n\nText: OpenRouter openai/gpt-oss-20b, pinned to AkashML, whose verified input/output prices are below $0.20 per million tokens. Embeddings: baai/bge-m3. Narration: deepgram/aura-2, aura-2-thalia-en; speech is billed per character. Credentials and recording profiles are excluded from delivery.\n\nThe separate videos in the earlier delivery folder are superseded by this continuous walkthrough.\n`);
+console.log('DELIVERED',video);

@@ -53,7 +53,8 @@ await build({
             // The ladder itself is verified against real Electron elsewhere; here what
             // matters is that an update runs it before the new version is announced.
             ? `export const runPluginDataMigrations = async (id) => { globalThis.__migrated.push(id); globalThis.__recordDataVersion(id); };`
-            : `export const stopCapabilityWorkers = async (match) => { globalThis.__stopped.push(String(match)); };`,
+            : `export const stopCapabilityWorkers = async (match) => { globalThis.__stopped.push(String(match)); };
+               export const stopPluginWorkers = async (pluginId) => { globalThis.__stopped.push(pluginId); };`,
         loader: 'js',
       }));
       api.onResolve({ filter: /trustedKeys\.json$/ }, () => ({ path: 'trusted-keys', namespace: 'keys' }));
@@ -190,7 +191,8 @@ test('an update is fetched, verified, migrated and announced', async () => {
   assert.equal(state.active.version, '2.1.0');
   assert.equal(state.previous.version, '2.0.0', 'the version it came from is kept, so going back is one click');
   assert.equal(state.rollbackAvailable, true);
-  assert.ok(globalThis.__stopped.length, 'the process running the old bytes is stopped before the new ones are used');
+  // By plugin id: a predicate over worker keys that never matched satisfied a check for "anything".
+  assert.deepEqual(globalThis.__stopped, ['legalize'], 'the process running the old bytes is stopped before the new ones are used');
   assert.ok(globalThis.__migrated.includes('legalize'), 'the new version climbs its ladder before it is announced');
   assert.equal(lib.capabilityIsAvailable('nodus:legal'), true);
   assert.equal(lib.listChatSkills().find(skill => skill.plugin?.id === 'legalize').version, '2.1.0', 'updating also installs the bundled workflow');

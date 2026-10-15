@@ -3,10 +3,13 @@ import { BrowserWindow, clipboard, dialog, shell } from 'electron';
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { openDocumentPath } from '../util/openDocument';
 import { promisify } from 'node:util';
 import { uiText, type UiTranslations } from '@shared/uiLanguage';
 import { showImportOpenDialog } from '../privacy';
 import { getSettings } from '../db/settingsRepo';
+import { academicLearningSample } from '@shared/academicLearningSample';
+import os from 'node:os';
 import {
   getGlobalLibraryStatus,
   listGlobalLibraryItemsResponsive,
@@ -186,6 +189,18 @@ export function registerLibraryIpc({ h }: IpcContext): void {
     }
     return importGlobalLibraryFilesIntoVault(filePaths, vaultId);
   });
+  h('library:importAcademicLearningSample', async (_event, vaultId) => {
+    if(process.env.NODUS_LEARNING_WORKSPACE!=='1')throw new Error('The example is available only in the isolated learning workspace.');
+    if (typeof vaultId !== 'string' || vaultId.length > 256) throw new Error('Invalid vault.');
+    const sample = academicLearningSample(getSettings().uiLanguage);
+    const folder = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'nodus-learning-'));
+    try {
+      const file = path.join(folder, `${sample.title.replace(/[\\/:*?"<>|]/g, '-')}.txt`);
+      await fs.promises.writeFile(file, sample.text, 'utf8');
+      // Ordinary import owns identifiers, duplicate handling, consent and preparation policy.
+      return await importGlobalLibraryFilesIntoVault([file], vaultId);
+    } finally { await fs.promises.rm(folder, { recursive: true, force: true }); }
+  });
   h('library:importBibliography', async (event, collectionId) => {
     const owner = BrowserWindow.fromWebContents(event.sender) ?? undefined;
     const options = {
@@ -231,7 +246,7 @@ export function registerLibraryIpc({ h }: IpcContext): void {
     return selected.canceled ? existingItem(itemId) : replaceGlobalLibraryAttachment(itemId, attachmentId, selected.filePaths[0]);
   });
   h('library:removeAttachment', async (_event, itemId, attachmentId) => removeGlobalLibraryAttachment(itemId, attachmentId));
-  h('library:openAttachment', async (_event, itemId, attachmentId) => (await shell.openPath(globalLibraryAttachmentPath(itemId, attachmentId))) === '');
+  h('library:openAttachment', async (_event, itemId, attachmentId) => (await openDocumentPath(globalLibraryAttachmentPath(itemId, attachmentId))) === '');
   h('library:revealAttachment', async (_event, itemId, attachmentId) => revealAttachmentInFolder(globalLibraryAttachmentPath(itemId, attachmentId)));
   h('library:upsertNote', async (_event, itemId, note) => upsertGlobalLibraryNote(itemId, note));
   h('library:deleteNote', async (_event, itemId, noteId) => deleteGlobalLibraryNote(itemId, noteId));

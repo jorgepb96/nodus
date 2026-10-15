@@ -26,7 +26,7 @@ try {
   const { LibraryDiskStore } = require(path.join(repoRoot, 'electron/library/libraryStorage.ts'));
   const library = require(path.join(repoRoot, 'electron/library/libraryService.ts'));
   const reader = require(path.join(repoRoot, 'electron/libraryReader/libraryReaderStore.ts'));
-  const { buildServerLibraryPublication } = require(path.join(repoRoot, 'electron/serverSync/serverLibrary.ts'));
+  const { buildServerLibraryPublication, buildServerLibraryPublicationAsync } = require(path.join(repoRoot, 'electron/serverSync/serverLibrary.ts'));
 
   writeGlobalPrefsRaw({ autoBackupFolder: backupRoot });
   const store = new LibraryDiskStore(libraryRoot, 'publication-device-0001');
@@ -97,6 +97,11 @@ try {
   assert.equal(publication.manifest.collections.length, 1);
   assert.equal(publication.manifest.documents.length, 1);
   assert.equal(publication.packages.length, 1);
+  let yielded = false;
+  setImmediate(() => { yielded = true; });
+  const asynchronous = await buildServerLibraryPublicationAsync('2026-08-13T12:00:00.000Z');
+  assert.equal(yielded, true, 'publication yields the main event loop');
+  assert.deepEqual(asynchronous, publication, 'async I/O/compression preserves exact package hashes and manifests');
   const document = publication.manifest.documents[0];
   assert.equal(document.id, 'nodus:published-item');
   assert.deepEqual(document.collectionIds, ['collection:history']);

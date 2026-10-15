@@ -33,6 +33,7 @@ ${free
 - ${copy.conflictInstruction}
 ${style.systemPrompt ? `\n${copy.styleHeader}\n${style.systemPrompt}` : ''}`;
   const user = `${styleInstruction}
+${request.additionalInstructions?.trim() ? `\n${request.additionalInstructions.trim()}\n` : ''}
 
 ${copy.scopeLabel}: ${request.scope}.
 ${copy.outputLanguage}: ${request.variables?.language || style.language || copy.sameOriginal}.
@@ -46,6 +47,7 @@ NODUS_SELECTION>>>`;
 
 
 export function prepareStudyImprovement(request: StudyImproveRequest, style: StudyStyle, language: PromptLanguage) {
+  if (request.additionalInstructions !== undefined && (typeof request.additionalInstructions !== 'string' || request.additionalInstructions.length > 4000)) throw new Error('Las instrucciones superan el límite de 4.000 caracteres.');
   const original = request.text.replace(/\r\n/g, '\n');
   if (!original.trim()) throw new Error('Selecciona texto para mejorarlo.');
   if (original.length > MAX_STUDY_SELECTION_CHARS) throw new Error(`La selección supera el límite de ${MAX_STUDY_SELECTION_CHARS.toLocaleString('es-ES')} caracteres.`);

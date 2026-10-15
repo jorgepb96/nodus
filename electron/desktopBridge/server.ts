@@ -5,7 +5,8 @@ import { createServer, request as httpsRequest, type Server as HttpsServer } fro
 import path from 'node:path';
 import { hostname } from 'node:os';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { app, safeStorage } from 'electron';
+import { app } from 'electron';
+import { safeStorage } from '../secrets/safeStorageGate';
 import { getDb, withVaultDatabase } from '../db/database';
 import { ensureLanCert, lanAddresses } from '../localServer/lanCert';
 import { getVault, listVaults } from '../vaults/vaultRegistry';
@@ -33,6 +34,7 @@ import { listVaultConfigs } from '../serverSync/serverSyncShared';
 import { getNodusServerTokenFor } from '../secrets/secretStore';
 import {desktopPairingQR} from '../../shared/desktopPairingQR';
 import {desktopBridgeOrigins} from '../../shared/desktopBridgeOrigins';
+import {desktopBridgeDiscoveryTXT} from '../../shared/desktopBridgeDiscovery';
 
 export const DESKTOP_BRIDGE_PROTOCOL = '/bridge/v1' as const;
 // A bounded 20 MB image becomes up to 28 MB of base64 plus its publication
@@ -144,6 +146,9 @@ let port: number | null = null;
 let origins: string[] = [];
 let fingerprint: string | null = null;
 let lastError: string | null = null;
+let discoveryAdvertisement: ChildProcess | undefined;
+let discoverySignature = '';
+let originsTimer: ReturnType<typeof setInterval> | undefined;
 const offers = new Map<string, PairingOffer>();
 const advertisements = new Map<string, ChildProcess>();
 const pairingAttempts = new Map<string, { started: number; count: number }>();
@@ -714,6 +719,10 @@ async function startServer(): Promise<void> {
   port = (candidate.address() as import('node:net').AddressInfo).port;
   writeFileSync(path.join(directory, 'port'), String(port), { mode: 0o600 });
   refreshOrigins();
+  // A laptop can move networks while Settings is closed. Refresh public hints
+  // independently of its UI and preserve the existing TLS identity and grants.
+  originsTimer = setInterval(refreshOrigins, 10_000);
+  originsTimer.unref();
   lastError = null;
 }
 
@@ -792,11 +801,30 @@ export function desktopBridgeStatus(): DesktopBridgeStatus {
 
 function refreshOrigins(): void {
   origins = port === null ? [] : desktopBridgeOrigins(port, lanAddresses(), hostname());
+  if (process.platform !== 'darwin' || port === null) return;
+  const txt = desktopBridgeDiscoveryTXT(macIdentity(), origins);
+  const signature = JSON.stringify([port, txt]);
+  if (discoveryAdvertisement && signature === discoverySignature) return;
+  discoveryAdvertisement?.kill();
+  discoverySignature = signature;
+  const advertisement = spawn('/usr/bin/dns-sd', ['-R', `Nodus Mac ${macIdentity().slice(0, 8)}`, '_nodus-mobile._tcp', 'local', String(port), ...txt], { stdio: 'ignore' });
+  discoveryAdvertisement = advertisement;
+  const released = () => {
+    if (discoveryAdvertisement === advertisement) {
+      discoveryAdvertisement = undefined;
+      discoverySignature = '';
+    }
+  };
+  advertisement.once('error', released);
+  advertisement.once('exit', released);
 }
 
 export async function stopDesktopBridge(): Promise<void> {
   await Promise.allSettled([serverStarting, relayStarting].filter((pending): pending is Promise<void> => Boolean(pending)));
   relayHost?.stop(); relayHost = undefined; relayState = 'disconnected';
+  if (originsTimer) clearInterval(originsTimer);
+  originsTimer = undefined;
+  discoveryAdvertisement?.kill(); discoveryAdvertisement = undefined; discoverySignature = '';
   offers.clear();
   for (const advertisement of advertisements.values()) advertisement.kill(); advertisements.clear();
   const current = server; server = null; port = null; origins = []; fingerprint = null;

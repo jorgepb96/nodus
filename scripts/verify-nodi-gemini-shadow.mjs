@@ -204,7 +204,7 @@ try {
     'toolkit',
     '¿Qué herramientas incluye Toolkit y cómo vuelvo a su pantalla principal desde una herramienta?',
   );
-  for (const expected of [/Convert/i, /Protect/i, /Translate/i, /PDF Presenter/i, /OCR Workspace/i, /izquierda/i]) assert.match(toolkit, expected);
+  for (const expected of [/Convert/i, /Protect/i, /Translate/i, /Nodus Presenter/i, /OCR Workspace/i, /izquierda/i]) assert.match(toolkit, expected);
 
   const connectivity = await ask(
     'connectivity',

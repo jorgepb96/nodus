@@ -4,7 +4,7 @@
  */
 const rows = [
   ['Filtros', 'Filters', 'Filtres', 'Filter', 'Filtros', 'Filtri', 'Filtreler', "フィルター", "필터"],
-  ['Limpiar', 'Clear', 'Effacer', 'Zurücksetzen', 'Limpar', 'Cancella', 'Temizle', "クリア", "분명한"],
+  ['Limpiar', 'Clear', 'Effacer', 'Zurücksetzen', 'Limpar', 'Cancella', 'Temizle', "クリア", "지우기"],
   ['Tipo de resultado', 'Result type', 'Type de résultat', 'Ergebnistyp', 'Tipo de resultado', 'Tipo di risultato', 'Sonuç türü', "結果の種類", "결과 유형"],
   ['Nivel descriptivo', 'Description level', 'Niveau de description', 'Erschließungsstufe', 'Nível de descrição', 'Livello descrittivo', 'Tanımlama düzeyi', "説明レベル", "설명 수준"],
   ['Formato', 'Format', 'Format', 'Format', 'Formato', 'Formato', 'Biçim', "形式", "체재"],
@@ -391,7 +391,7 @@ export const PRIMARY_SOURCES_RESEARCH_TRANSLATIONS = {
   'zh-TW': zhTW,
   ko: {
     "Filtros": "필터",
-    "Limpiar": "분명한",
+    "Limpiar": "지우기",
     "Tipo de resultado": "결과 유형",
     "Nivel descriptivo": "설명 수준",
     "Formato": "체재",

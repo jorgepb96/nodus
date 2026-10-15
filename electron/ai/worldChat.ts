@@ -4,7 +4,7 @@ import { withResearchSystemPrompt } from './researchSystemPrompt';
 import { researchGenerationOptions } from './researchGenerationOptions';
 import { skillHasCapability } from '@shared/chatSkills';
 import { enabledChatSkills } from '../chatSkills';
-import { buildChatSkillsPrompt, chatProseForHistory, chatSkillsOutputContract, transformChatProse } from '@shared/chatSkills';
+import { buildChatSkillsPrompt, chatSkillsOutputContract, transformChatProse } from '@shared/chatSkills';
 import { executeChatSkills } from './chatSkillExecution';
 import { chatAssetOwner, chatAssetVersion } from '../chatAssets';
 import { getWorldChatConversation } from '../db/worldChatRepo';

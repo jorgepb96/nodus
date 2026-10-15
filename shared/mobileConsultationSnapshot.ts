@@ -27,7 +27,7 @@ export function mobileConsultationSnapshot(document: Record<string, unknown>, pr
     for (const name of ['dictionary_entries', 'dictionary_versions']) {
       for (const row of tables[name] ?? []) {
         if (typeof row.content_markdown !== 'string') continue;
-        for (const match of row.content_markdown.matchAll(/nodus:\/\/(idea|passage|work|gap|contradiction)\/([^\s\)\]<>"\?#]+(?:#[^\s\)\]<>"\?]+)?)/g)) {
+        for (const match of row.content_markdown.matchAll(/nodus:\/\/(idea|passage|work|gap|contradiction)\/([^\s)\]<>"?#]+(?:#[^\s)\]<>"?]+)?)/g)) {
           let id = match[2];
           try { id = decodeURIComponent(id); } catch { /* Legacy literal identifiers remain queryable. */ }
           add(match[1], id);

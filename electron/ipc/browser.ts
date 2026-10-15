@@ -310,12 +310,18 @@ export function registerBrowserIpc({ h, getWindow }: IpcContext): void {
   // atlas WebContentsView is still visible (see screenshot).
   ipcMain.on('browser:setSectionVisibleSync', (event, visible: unknown) => {
     try {
+      // The check used to be swallowed and the view toggled anyway, so any other renderer
+      // could show or hide the Browser over the main window.
       assertUiSender(event as unknown as Electron.IpcMainInvokeEvent, getWindow);
-    } catch {}
-    ensureWired();
-    setSectionVisible(Boolean(visible));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `returnValue` is the sync IPC contract
-    (event as any).returnValue = null;
+      ensureWired();
+      setSectionVisible(Boolean(visible));
+    } catch {
+      // Refused without crashing the main process.
+    } finally {
+      // Always release sendSync, including untrusted requests.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `returnValue` is the sync IPC contract
+      (event as any).returnValue = null;
+    }
   });
 
   h('browser:state', async (event) => {
@@ -339,8 +345,11 @@ export function registerBrowserIpc({ h, getWindow }: IpcContext): void {
         if (resolved.kind === 'navigate' || resolved.kind === 'search') return resolved.url;
       }
     }
-    if (settings.browserHomeMode === 'bookmarks') return NODUS_BOOKMARKS_URL;
-    return settings.browserHomeMode === 'start' ? NODUS_RESEARCH_ATLAS_START_URL : 'about:blank';
+    if (settings.browserHomeMode === 'start') return NODUS_RESEARCH_ATLAS_START_URL;
+    if (settings.browserHomeMode === 'blank') return 'about:blank';
+    // Bookmarks, and a custom home whose address is empty or unusable: without a
+    // site of the user's own, Home lands on their bookmarks rather than a blank page.
+    return NODUS_BOOKMARKS_URL;
   };
 
   let restartInFlight: Promise<BrowserRestartResult> | null = null;

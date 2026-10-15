@@ -6,6 +6,7 @@ export function reportImageRequest(raw: unknown): { entityId: string; style: Dec
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('invalid_report_image_request');
   const value = raw as Record<string, unknown>;
   if (Object.keys(value).some(key => !['entityId', 'style', 'visualContext'].includes(key)) ||
+      // eslint-disable-next-line no-control-regex -- Reject C0 and DEL characters in untrusted record identifiers.
       typeof value.entityId !== 'string' || !value.entityId || value.entityId.length > 256 || /[\u0000-\u001f\u007f]/.test(value.entityId) ||
       !DECORATIVE_IMAGE_STYLES.some(style => style.id === value.style) ||
       value.visualContext != null && (typeof value.visualContext !== 'string' || value.visualContext.length > 4000)) {

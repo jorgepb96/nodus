@@ -394,7 +394,3 @@ export async function drainPersistedDatabaseResearchQueue(
   }
   return completed;
 }
-
-type DatabaseResearchRunDetailLike = NonNullable<
-  ReturnType<typeof researchRepo.getDatabaseResearchRunDetail>
->;

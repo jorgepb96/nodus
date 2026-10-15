@@ -15,6 +15,15 @@ import { mergeIncoming, selectLiveNotes, selectNote, upsertNote, type StoredNodi
 
 const MAX_NOTES = 500;
 
+/**
+ * The stamp for a local write. Sync merges newest-wins, so an edit has to be newer than the
+ * copy it replaces even when that copy came from a device whose clock runs ahead; a plain
+ * Date.now() would lose the edit to the server's older text on the next pull.
+ */
+function nextStamp(existing: StoredNodiNote | null): number {
+  return Math.max(Date.now(), (existing?.updatedAt ?? 0) + 1);
+}
+
 function normalize(note: StoredNodiNote): NodiNote {
   return {
     id: note.id,
@@ -32,7 +41,7 @@ export function listNodiNotes(): NodiNote[] {
 
 export function saveNodiNote(input: NodiNoteInput): NodiNote {
   const existing = input.id ? selectNote(input.id) : null;
-  const now = Date.now();
+  const now = nextStamp(existing);
   const content = typeof input.content === 'string' ? input.content : '';
   const explicitTitle = String(input.title || '').trim();
   const note: StoredNodiNote = {
@@ -59,7 +68,7 @@ export function saveNodiNote(input: NodiNoteInput): NodiNote {
 export function deleteNodiNote(id: string): void {
   const existing = selectNote(id);
   if (!existing) return;
-  const now = Date.now();
+  const now = nextStamp(existing);
   upsertNote({ ...existing, title: '', content: '', updatedAt: now, deletedAt: now });
 }
 

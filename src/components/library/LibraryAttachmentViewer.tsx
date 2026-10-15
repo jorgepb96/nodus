@@ -13,6 +13,7 @@ import { FindInPage, type FindTextSegment } from '../FindInPage';
 import { ReaderSelectionActions } from '../ReaderSelectionActions';
 import { Icon, Spinner } from '../ui';
 import { confirm } from '../feedback';
+import { sanitizePublicationHtml } from '../../lib/publicationHtml';
 import { t, tx } from '../../i18n';
 
 GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -249,6 +250,8 @@ function RichTextViewer(props: ViewerProps) {
     const next = content.chapters.findIndex((chapter) => chapter.id === id);
     if (next >= 0) setChapterIndex(next);
   }, [content]);
+  // Sanitised once per chapter, not on every render (find, selection and annotations re-render it).
+  const safeHtml = useMemo(() => content ? sanitizePublicationHtml(content.chapters[chapterIndex]?.html || content.html || '') : '', [content, chapterIndex]);
   if (error) return <UnavailableTextViewer message={error} />;
   if (!content) return <div className="grid flex-1 place-items-center"><Spinner label={t('Preparando el adjunto…')} /></div>;
   const chapter = content.chapters[chapterIndex]; const isEpub = content.viewer === 'epub'; const scope = isEpub ? `attachment:${props.attachment.id}:chapter:${chapter?.id}` : `attachment:${props.attachment.id}`;
@@ -258,7 +261,7 @@ function RichTextViewer(props: ViewerProps) {
       <button data-testid="library-reader-open-external" className="btn btn-ghost ml-auto h-8" onClick={props.onOpenExternal} title={t('Abrir fuera de Nodus')}><Icon name="external" /><span className="max-md:hidden">{t('Abrir fuera de Nodus')}</span></button>
     </div>
     <TextSurface scope={scope} contextId={`${props.documentId}:${scope}`} annotations={props.annotations} highlighterColor={props.highlighterColor} onCreate={(nextScope, input) => props.onCreate(nextScope, { ...input, target: { type: 'text', attachmentId: props.attachment.id, ...(chapter ? { chapterId: chapter.id } : {}) } })} onUpdateComment={props.onUpdateComment} onDelete={props.onDelete} onError={props.onError} testId={content.viewer === 'html' ? 'library-reader-html-viewer' : isEpub ? 'library-reader-epub-content' : 'library-reader-text-content'} findSegments={findSegments} activeFindSegmentId={isEpub ? chapter?.id ?? '' : 'document'} onActivateFindSegment={activateFindSegment}>
-      {(chapter?.html || content.html) ? <article className="prose prose-neutral max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: chapter?.html || content.html || '' }} /> : <pre className="whitespace-pre-wrap font-serif text-base leading-8">{chapter?.text || content.text}</pre>}
+      {(chapter?.html || content.html) ? <article className="prose prose-neutral max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: safeHtml }} /> : <pre className="whitespace-pre-wrap font-serif text-base leading-8">{chapter?.text || content.text}</pre>}
     </TextSurface>
   </section>;
 }

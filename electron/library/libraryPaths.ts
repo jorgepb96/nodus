@@ -17,6 +17,7 @@ export {
 } from './libraryFileUtils';
 
 export function configuredLibraryRoot(): string | null {
+  if(process.env.NODUS_LEARNING_WORKSPACE==='1')return path.join(app.getPath('userData'),'storage','nodus-library');
   const configured = readGlobalPrefsRaw().autoBackupFolder;
   if (typeof configured !== 'string' || !configured.trim()) return null;
   return path.join(path.resolve(configured.trim()), 'nodus-library');

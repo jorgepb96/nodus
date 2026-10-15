@@ -28,7 +28,7 @@ import {
   type View,
 } from "../navigation";
 import { HoverLabelButton, Icon } from "../components/ui";
-import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, isBuiltInTheme } from "../theme/themeBoot";
+import { APP_THEME_DEFINITIONS_STORAGE_KEY, APP_THEME_STORAGE_KEY, applyAppTheme as applyRuntimeAppTheme, applyVaultAccent, isBuiltInTheme } from "../theme/themeBoot";
 import { vaultTypeIcon, vaultTypeLabel } from "../components/vaultTypeUi";
 import { WorldbuildingSidebar } from "../components/WorldbuildingSidebar";
 import { ProsopographySidebar } from "../components/ProsopographySidebar";
@@ -43,6 +43,7 @@ import nodusLogoTeal from "../assets/nodus-logo-teal.svg";
 import nodusLogoOrange from "../assets/nodus-logo-orange.svg";
 import nodusLogoViolet from "../assets/nodus-logo-violet.svg";
 import nodusLogoCyan from "../assets/nodus-logo-cyan.svg";
+import { NodusHeaderLogo } from "../components/NodusHeaderLogo";
 import { api, ApiError } from "./api";
 import { flushServerEditors } from "./editorNavigation";
 import {
@@ -1931,6 +1932,7 @@ export default function App() {
     [spaces, activeId],
   );
   const type = normalizeVaultType(active?.vaultType || active?.vault?.type);
+  useEffect(() => applyVaultAccent(type), [type]);
   const activeView = route.view;
   useEffect(() => {
     if (graphSnapshot.current?.spaceId !== active?.id) graphSnapshot.current = undefined;
@@ -2620,9 +2622,8 @@ export default function App() {
             data-testid="sidebar-header-brand"
             className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap"
           >
-            <img
+            <NodusHeaderLogo
               src={logoFor(type)}
-              alt=""
               className="h-6 w-6"
               data-testid="nodus-logo"
               data-vault-logo={type}

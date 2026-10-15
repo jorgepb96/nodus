@@ -8,6 +8,7 @@ import { EditorialActionBar, EditorialActionMenu, type EditorialAction } from '.
 import { readWorkspacePreferences } from '../../app/workspacePreferences';
 import { patchViewSnapshot } from '../../app/viewSnapshots';
 import { EditorialHeader, EditorialTitle, EditorialInspector } from '../workspace/EditorialChrome';
+import { WorkspaceTabStrip } from '../library/LibraryWorkspaceTabs';
 import { useEditorialFocus } from '../workspace/editorialFocus';
 import '../workspace/editorialWorkspace.css';
 import { useStudyFocusReduced } from '../focus/StudyFocusContext';
@@ -17,7 +18,7 @@ import { createPortal } from 'react-dom';
 import { documentReferences, parseEditorReference } from '@shared/editorReferences';
 import { EditorialReferences } from './EditorReferences';
 import { BlockNoteCanvas, type BlockNoteCanvasHandle } from './BlockNoteCanvas';
-import { markdownToBlockNote, type BlockNoteDocument } from '@shared/blockNoteDocument';
+import { markdownToBlockNote, nativeBlockMarkdown, type BlockNoteDocument } from '@shared/blockNoteDocument';
 import TurndownService from 'turndown';
 import { diffWordsWithSpace } from 'diff';
 import type {
@@ -30,31 +31,35 @@ import type {
   StudyOutlineItem,
 } from '@shared/studyEditor';
 import { DEFAULT_STUDY_DOC_STYLE, studyCommandMarkdown, studyDocumentStats } from '@shared/studyEditor';
-import { deleteLastStudySentence } from '@shared/sttModels';
 import type { StudyDocumentKind, StudyTag } from '@shared/studyOrg';
 import { STUDY_DOCUMENT_KINDS } from '@shared/studyOrg';
 import type { EditorDocument, EditorDocumentPort } from './documentPort';
 import { studyDocumentPort } from './documentPort';
 import { refreshSavedEditor, type EditorRefreshSnapshot } from './remoteEditorRefresh';
 import type { StudyImproveScope, StudyStyle } from '@shared/studyImprove';
-import { pendingStudyImprovementRequestId, studyStyleIcon } from '@shared/studyImprove';
+import { pendingStudyImprovementRequestId } from '@shared/studyImprove';
 import type { StudySentenceContext, StudySynonymAlternative } from '@shared/studySynonyms';
 import { studySentenceContext } from '@shared/studySynonyms';
 import type { AppSettings } from '@shared/types';
 import { Markdown } from '../Markdown';
 import { parseTestimonyLink, type TestimonyDeepLink } from '@shared/testimonyDeepLinks';
 import { ModelPicker } from '../ModelPicker';
-import { Icon, ICON_NAMES, Spinner } from '../ui';
+import { Icon, Spinner } from '../ui';
 import { TextInputModal } from '../TextInputModal';
 import { t } from '../../i18n';
 import { DocOutline } from './DocOutline';
-import { StudyDictation } from './StudyDictation';
+import { StudyDictation, type StudyDictationHandle } from './StudyDictation';
 import { StudyImproveDialog } from './StudyImproveDialog';
+import { studyStyleDisplay } from './studyStyleLocalization';
+import { ScriptorAiPanel, type AiChoice } from './ScriptorAiPanel';
+import { editorReviewDiff, savedEditorImageModels, type EditorImageModel, type EditorImageResult } from '@shared/editorAiReview';
+import type { StudyImproveResult } from '@shared/studyImprove';
 import { AudioPanel } from '../AudioPanel';
 import { ConfirmModal } from '../ConfirmModal';
 import { useFeatureModel } from '../../hooks/useFeatureModel';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
+const aiErrorMessage = (cause: unknown) => (cause instanceof Error ? cause.message : String(cause)).replace(/^Error invoking remote method '[^']+':\s*(?:Error:\s*)?/, '');
 
 // Match Nodi quick notes: changes feel immediate without writing once per
 // keystroke, and a navigation flush below guarantees the last edit is durable.
@@ -70,6 +75,13 @@ interface ImproveTarget {
   range?: { from: number; to: number };
 }
 
+function sameImproveTarget(previous: ImproveTarget, next: ImproveTarget) {
+  // The same phrase can appear twice, so compare its positions too.
+  return previous.text === next.text && previous.scope === next.scope && previous.visual === next.visual
+    && previous.from === next.from && previous.to === next.to
+    && previous.range?.from === next.range?.from && previous.range?.to === next.range?.to;
+}
+
 interface SynonymPanelState {
   sessionId: number;
   x: number;
@@ -82,37 +94,10 @@ interface SynonymPanelState {
   error: string;
 }
 
-function ImproveStyleMark({ style, size = 16 }: { style: Pick<StudyStyle, 'icon'>; size?: number }) {
-  const icon = studyStyleIcon(style.icon);
-  return <Icon name={(ICON_NAMES as readonly string[]).includes(icon) ? icon : 'sparkles'} size={size} />;
-}
-
 const STUDY_KIND_LABEL: Record<StudyDocumentKind, string> = {
   apunte: 'Apunte', manual: 'Manual', libro: 'Libro', articulo: 'Artículo', presentacion: 'Presentación',
   grabacion: 'Grabación', transcripcion: 'Transcripción', banco: 'Banco de preguntas', test: 'Test', examen: 'Examen',
 };
-
-const BUILT_IN_STUDY_STYLE_TOOLTIPS: Record<string, string> = {
-  'builtin:academic': 'Académico · Registro académico preciso y argumentación ordenada.',
-  'builtin:formal': 'Formal · Tono formal sin volver el texto artificial.',
-  'builtin:clear': 'Claro · Aclara frases densas y ambigüedades.',
-  'builtin:concise': 'Conciso · Elimina redundancias conservando contenido.',
-  'builtin:developed': 'Desarrollado · Explicita conexiones ya presentes, sin aportar información nueva.',
-  'builtin:outline': 'Esquemático · Convierte el contenido en una estructura jerárquica.',
-  'builtin:proofread': 'Ortografía · Corrige ortografía, gramática y puntuación.',
-  'builtin:cohesion': 'Cohesión · Mejora continuidad y transiciones.',
-  'builtin:neutral': 'Neutralizar · Reduce lenguaje valorativo no sustentado.',
-  'builtin:popular': 'Divulgativo · Hace accesible el texto a público general.',
-  'builtin:adapt-level': 'Adaptar nivel · Ajusta el texto al nivel académico indicado.',
-  'builtin:summary': 'Resumen · Resume sin introducir afirmaciones.',
-  'builtin:notes': 'Apuntes · Convierte prosa en apuntes de estudio.',
-};
-
-function studyStyleTooltip(style: StudyStyle): string {
-  const builtIn = BUILT_IN_STUDY_STYLE_TOOLTIPS[style.id];
-  if (builtIn) return t(builtIn);
-  return [style.name, style.description].filter(Boolean).join(' · ');
-}
 
 interface EditorHistoryState { canUndo: boolean; canRedo: boolean }
 
@@ -146,10 +131,10 @@ function SynonymAlternativeList({
         type="button"
         key={`${alternative.from}:${alternative.to}:${alternative.replacement}:${index}`}
         data-testid={historical ? 'study-synonyms-history-option' : 'study-synonyms-option'}
-        className={`group w-full rounded-lg border px-2.5 py-2 text-left transition ${historical ? 'border-transparent bg-stone-50 hover:border-teal-200 hover:bg-teal-50 dark:bg-neutral-900/60 dark:hover:border-teal-900 dark:hover:bg-teal-950/30' : 'border-stone-200 bg-white hover:border-teal-300 hover:bg-teal-50 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-teal-800 dark:hover:bg-teal-950/30'}`}
+        className={`study-synonym-alternative w-full rounded-lg border px-2.5 py-2 text-left transition ${historical ? 'is-historical' : ''}`}
         onClick={() => onSelect(alternative)}
       >
-        <span className="block text-sm text-stone-800 group-hover:text-teal-900 dark:text-neutral-100 dark:group-hover:text-teal-100">{alternative.replacement}</span>
+        <span className="block text-sm">{alternative.replacement}</span>
         {alternative.target !== selectedText && <span className="mt-0.5 block truncate text-[10px] text-neutral-500">{t('Sustituye')} «{alternative.target}»</span>}
       </button>
     ))}
@@ -239,11 +224,35 @@ export function StudyEditor({
   const [recoveredDraft, setRecoveredDraft] = useState(false);
   const hydratedIdRef = useRef('');
   const draftScope = port.dragType;
-  const setDraft: typeof setDraftState = (value) => setDraftState(current => {
+  const rawHistory = useRef<{ undo: Array<{ before: string; after: string; beforeNative?: BlockNoteDocument | null; afterNative?: BlockNoteDocument | null; group?: string; time: number }>; redo: Array<{ before: string; after: string; beforeNative?: BlockNoteDocument | null; afterNative?: BlockNoteDocument | null; group?: string; time: number }> }>({ undo: [], redo: [] });
+  const setDraft = (value: Parameters<typeof setDraftState>[0], group?: string) => {
+    let recorded = false;
+    setDraftState(current => {
     const next = typeof value === 'function' ? value(current) : value;
-    let native:BlockNoteDocument;try{assertAcademicSupplement(current,next);native=markdownToBlockNote(next,nativeRef.current);}catch(error){setSaveError(error instanceof Error?error.message:String(error));return current;}
+    const beforeNative = nativeRef.current;
+    let native:BlockNoteDocument;try{assertAcademicSupplement(current,next);native=markdownToBlockNote(next,beforeNative);
+      if (group?.startsWith('ai:') && beforeNative) {
+        // Empty native paragraphs have no unambiguous Markdown projection. A
+        // selected AI replacement must preserve these unrelated anchors.
+        beforeNative.forEach((block, index) => {
+          if (block.type !== 'paragraph' || nativeBlockMarkdown(block).trim() || block.children?.length || native.some(item => item.id === block.id)) return;
+          const nextId = beforeNative.slice(index + 1).find(item => native.some(candidate => candidate.id === item.id))?.id;
+          const at = nextId ? native.findIndex(item => item.id === nextId) : native.length;
+          native.splice(at, 0, block);
+        });
+      }
+    }catch(error){setSaveError(error instanceof Error?error.message:String(error));return current;}
+    if (!recorded && rawRef.current && current !== next && group !== 'history') {
+      recorded = true;
+      const history = rawHistory.current, previous = history.undo.at(-1), time = Date.now();
+      if (group && previous?.group === group && previous.after === current && (group.startsWith('dictation:') || time - previous.time < 600)) { previous.after = next; previous.afterNative = native; previous.time = time; }
+      else history.undo.push({ before: current, after: next, beforeNative, afterNative: native, group, time });
+      if (history.undo.length > 200) history.undo.shift();
+      history.redo = [];
+    }
     nativeRef.current = native; setNativeDocument(native); return next;
-  });
+    });
+  };
   const [style, setStyle] = useState<StudyDocStyle>(DEFAULT_STUDY_DOC_STYLE);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [raw, setRaw] = useState(false);
@@ -260,8 +269,10 @@ export function StudyEditor({
   const [showSearch, setShowSearch] = useState(false);
   const [showStyle, setShowStyle] = useState(false);
   const [showDictation, setShowDictation] = useState(false);
+  const [dictationActive, setDictationActive] = useState(false);
+  const dictationRef = useRef<StudyDictationHandle>(null);
+  useEffect(() => { setShowDictation(false); setDictationActive(false); }, [active?.id]);
   const [showAudio, setShowAudio] = useState(false);
-  const [editingTitle, setEditingTitle] = useState(false);
   const [pendingCloseId, setPendingCloseId] = useState<string | null>(null);
   const [tableDialogOpen, setTableDialogOpen] = useState(false);
   const [tableRows, setTableRows] = useState(3);
@@ -287,6 +298,23 @@ export function StudyEditor({
   const improveCancelled = useRef(false);
   const improvementRunning = useRef(false);
   const improveTargetRef = useRef<ImproveTarget | null>(null);
+  const [aiPanel, setAiPanel] = useState<'polish' | 'image' | null>(null);
+  const [allImproveStyles, setAllImproveStyles] = useState<StudyStyle[]>([]);
+  const [aiStyleId, setAiStyleId] = useState(settings.studyImproveLastStyleId ?? 'builtin:clear');
+  const [aiInstructions, setAiInstructions] = useState('');
+  const [aiResult, setAiResult] = useState<StudyImproveResult | null>(null);
+  const resultRef = useRef<StudyImproveResult | null>(null);
+  const aiGeneration = useRef(0);
+  const closeAiRef = useRef<() => void>(() => {});
+  const aiSource = useRef<{ id: string; base: string; native: string; target: ImproveTarget } | null>(null);
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [imageModel, setImageModel] = useState<EditorImageModel>({ provider: settings.imageProvider, model: settings.imageModel });
+  const [imageChoices, setImageChoices] = useState<AiChoice[]>([]);
+  const [imageResult, setImageResult] = useState<EditorImageResult | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
+  const imageRequest = useRef<string | null>(null);
+  const imageSource = useRef<{ id: string; anchor?: string; raw?: { base: string; at: number } } | null>(null);
+  const imageNeedsCursor = useRef(false);
   useEffect(() => () => {
     if (improvementRunning.current) { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); }
   }, []);
@@ -301,9 +329,11 @@ export function StudyEditor({
   const savedSignaturesRef = useRef(new Map<string,string>());
   const saveLatestRef = useRef<(reason: 'autosave' | 'manual' | 'command') => Promise<boolean>>(async () => true);
   const rawRef = useRef(raw);
+  useEffect(() => { rawHistory.current = { undo: [], redo: [] }; }, [raw, active?.id]);
   const canvasRef = useRef<BlockNoteCanvasHandle>(null);
   const rawTextareaRef = useRef<HTMLTextAreaElement>(null);
   const rawSelection = useRef<{ id: string; content: string; from: number; to: number } | null>(null);
+  const rawDictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; document: string } | null>(null);
   const [localPins, setLocalPins] = useState<string[]>([]);
   const preferenceVault = useRef<string | null>(null);
   useEffect(() => {
@@ -327,6 +357,10 @@ export function StudyEditor({
       rawTextareaRef.current?.focus(); rawTextareaRef.current?.setSelectionRange(checkpoint.from, checkpoint.to);
     } else if (!raw) canvasRef.current?.restoreSelection();
   };
+  const focusRawAt = (id: string, at: number) => requestAnimationFrame(() => {
+    if (activeIdRef.current !== id || !rawRef.current) return;
+    rawTextareaRef.current?.focus({ preventScroll: true }); rawTextareaRef.current?.setSelectionRange(at, at);
+  });
   const synonymPanelRef = useRef<HTMLDivElement>(null);
   const synonymSessionRef = useRef(0);
   const turndown = useMemo(() => new TurndownService({ headingStyle: 'atx', bulletListMarker: '-', codeBlockStyle: 'fenced' }), []);
@@ -345,6 +379,8 @@ export function StudyEditor({
       const [settings, styles] = await Promise.all([window.nodus.getSettings(), window.nodus.listStudyStyles()]);
       const byId = new Map(styles.filter((item) => item.active && !item.archivedAt).map((item) => [item.id, item]));
       setQuickImproveStyles(settings.studyImproveToolbarStyleIds.slice(0, 4).map((id) => byId.get(id)).filter((item): item is StudyStyle => Boolean(item)));
+      setAllImproveStyles([...byId.values()]);
+      setAiStyleId(byId.has(settings.studyImproveLastStyleId ?? '') ? settings.studyImproveLastStyleId! : 'builtin:clear');
       setQuickImproveIssue('');
     } catch (error) {
       setQuickImproveStyles([]);
@@ -361,7 +397,6 @@ export function StudyEditor({
     setNativeDocument(null); nativeRef.current = null; hydratedIdRef.current = ''; setSaveError(''); setRecoveredDraft(false);
     baselineRef.current = JSON.stringify({ title: active.title, content: active.contentMarkdown, style: DEFAULT_STUDY_DOC_STYLE, language: 'es-ES', dictionary: [] });
     setSaveState('saved');
-    setEditingTitle(false);
     setSelectedVersion(null);
     setHistoryState({ canUndo: false, canRedo: false });
     setEditorRevision((value) => value + 1);
@@ -415,16 +450,29 @@ export function StudyEditor({
     return { from: 0, to: draft.length, text: draft, scope: 'document' };
   };
 
-  const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number }) => {
+  const showSelectionImproveShortcuts = (event?: { clientX?: number; clientY?: number; target?: EventTarget | null }) => {
+    const editorSelection = event?.target instanceof Element && Boolean(event.target.closest('.bn-editor, [data-testid="study-markdown-editor"]'));
     window.setTimeout(() => {
-      if (improveStreamingStyleId) return;
+      if (active.id !== activeIdRef.current) return;
       const target = resolveImproveSelection(false);
+      const source = aiSource.current;
+      if (editorSelection && aiPanel === 'polish' && source?.id === activeIdRef.current && target) {
+        const changed = source.base !== draft || source.native !== JSON.stringify(nativeRef.current)
+          || !sameImproveTarget(source.target, target);
+        if (changed) {
+          cancelAi(); discardProposal(); capturePolishSource(target);
+        }
+      }
+      if (improvementRunning.current || resultRef.current) return;
       if (!target) { setSelectionImprove(null); return; }
       const selection = window.getSelection();
       const rect = selection?.rangeCount ? selection.getRangeAt(0).getBoundingClientRect() : null;
       const fallback = rawTextareaRef.current?.getBoundingClientRect();
-      const x = rect?.width ? rect.left + rect.width / 2 : event?.clientX ?? (fallback ? fallback.right - 120 : window.innerWidth / 2);
-      const y = rect?.height ? rect.top - 12 : event?.clientY ?? (fallback ? fallback.top + 16 : 80);
+      const pointerX = event?.clientX && event.clientX > 0 ? event.clientX : undefined;
+      const pointerY = event?.clientY && event.clientY > 0 ? event.clientY : undefined;
+      const rawLine = rawTextareaRef.current ? rawTextareaRef.current.value.slice(0, rawTextareaRef.current.selectionStart).split('\n').length - 1 : 0;
+      const x = raw && fallback ? fallback.left + 28 : rect?.width ? rect.left + rect.width / 2 : pointerX ?? (fallback ? fallback.right - 120 : window.innerWidth / 2);
+      const y = raw && fallback ? Math.min(window.innerHeight - 48, fallback.top + 8 + rawLine * 24 - (rawTextareaRef.current?.scrollTop ?? 0)) : rect?.height ? rect.top - 12 : pointerY ?? (fallback ? fallback.top + 16 : 80);
       setSelectionImprove({ x: Math.max(110, Math.min(window.innerWidth - 110, x)), y: Math.max(54, y), target });
       setImproveStreamError('');
     });
@@ -437,47 +485,153 @@ export function StudyEditor({
       return;
     }
     const next = `${base.slice(0, target.from)}${text}${base.slice(target.to)}`;
-    setDraft(next);
+    if (raw && commitToHistory) { assertAcademicSupplement(base, next); markdownToBlockNote(next, nativeRef.current); }
+    setDraft(next, commitToHistory ? `ai:${crypto.randomUUID()}` : undefined);
     if (!raw) canvasRef.current?.replaceAllMarkdown(next, { addToHistory: commitToHistory, closeHistory: commitToHistory });
     setSaveState('dirty');
   };
 
-  const runQuickImprovement = async (style: StudyStyle, target = selectionImprove?.target ?? resolveImproveSelection(false)) => {
-    if (!target || improveStreamingStyleId || !active || !data) return;
-    const base = draft;
-    const sourceId = active.id;
+  const chooseAiStyle = (id: string) => { setAiStyleId(id); void window.nodus.updateSettings({ studyImproveLastStyleId: id }).catch(cause => setImproveStreamError(aiErrorMessage(cause))); };
+  const discardProposal = () => {
+    if (resultRef.current) void window.nodus.updateStudyImprovementAction(resultRef.current.logId, 'rejected').catch(() => undefined);
+    resultRef.current = null; setAiResult(null); setImprovePreview(''); setImageResult(null);
+  };
+  const cancelAi = () => {
+    aiGeneration.current++; improveCancelled.current = true;
+    if (improvementRunning.current) void window.nodus.cancelStudyImprove();
+    if (imageRequest.current) void window.nodus.cancelEditorImage(imageRequest.current);
+    improvementRunning.current = false; imageRequest.current = null;
+    setImproveStreamingStyleId(null); setImageBusy(false); setImprovePreview('');
+  };
+  const capturePolishSource = (target: ImproveTarget) => {
+    const source = { id: active.id, base: draft, native: JSON.stringify(nativeRef.current), target };
+    aiSource.current = source;
+    preserveSelection(); setLastImprovement(null); setImproveStreamError('');
+    return source;
+  };
+  const closeAiPanel = () => { cancelAi(); discardProposal(); setAiPanel(null); setSelectionImprove(null); setImproveStreamError(''); aiSource.current = null; imageSource.current = null; requestAnimationFrame(restoreSelection); };
+  closeAiRef.current = closeAiPanel;
+  useEffect(() => { closeAiPanel(); return () => { aiGeneration.current++; if (imageRequest.current) void window.nodus.cancelEditorImage(imageRequest.current); if (improvementRunning.current) { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); } if (resultRef.current) void window.nodus.updateStudyImprovementAction(resultRef.current.logId, 'rejected').catch(() => undefined); }; }, [active?.id]);
+
+  const openPolish = async (target = resolveImproveSelection(false), style?: StudyStyle) => {
+    if (!target || !active || improvementRunning.current || aiResult) { if (!target) setImproveStreamError(t('Selecciona texto para mejorarlo.')); return; }
+    const originalNative = JSON.stringify(nativeRef.current);
+    try { await dictationRef.current?.stop(); } catch (cause) { setImproveStreamError(aiErrorMessage(cause)); return; }
+    if (active.id !== activeIdRef.current || originalNative !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    setShowSearch(false); closeSynonymPanel();
+    cancelAi(); setImageResult(null);
+    capturePolishSource(target); setSelectionImprove(null); setAiPanel('polish');
+    const generation = aiGeneration.current;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (generation === aiGeneration.current && target.range && originalNative === JSON.stringify(nativeRef.current)) canvasRef.current?.revealAiSelection(target.range);
+    }));
+    if (style) chooseAiStyle(style.id);
+  };
+  const runQuickImprovement = (style: StudyStyle, target = selectionImprove?.target ?? resolveImproveSelection(false)) => openPolish(target, style);
+  const runPolish = async () => {
+    let source = aiSource.current;
+    const style = allImproveStyles.find(item => item.id === aiStyleId);
+    if (!source || !style || !active || !data || improvementRunning.current) return;
+    if (source.id !== active.id || active.id !== activeIdRef.current) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    // Native menus or a mouseup outside the editor may not reach its handlers.
+    const selected = resolveImproveSelection(false);
+    if (selected && !sameImproveTarget(source.target, selected)) {
+      cancelAi(); discardProposal(); source = capturePolishSource(selected);
+    }
+    if (source.base !== draft || source.native !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    const target = source.target;
+    try {
+      if (target.visual && target.range) canvasRef.current?.validateAiSelection(target.range);
+      else { const withoutSelection = `${source.base.slice(0, target.from)}${source.base.slice(target.to)}`; assertAcademicSupplement(source.base, withoutSelection); markdownToBlockNote(withoutSelection, nativeRef.current); }
+    }
+    catch (cause) { setImproveStreamError(aiErrorMessage(cause)); return; }
+    discardProposal(); const generation = ++aiGeneration.current;
     let streamed = '';
     let frame = 0;
-    const flush = () => { frame = 0; setImprovePreview(streamed); };
+    const flush = () => { frame = 0; if (generation === aiGeneration.current) setImprovePreview(streamed); };
     improveCancelled.current = false;
     improvementRunning.current = true;
     setImproveStreamingStyleId(style.id); setImprovePreview(''); setLastImprovement(null); setImproveStreamError(''); setPendingImprovement(null); setSelectionImprove(null);
     try {
       const result = await window.nodus.improveStudyText({
         ...port.improveTarget(active.id), subjectId, text: target.text, styleId: style.id, scope: target.scope,
+        additionalInstructions: aiInstructions,
         level: style.level, length: style.length, mode: 'preserve',
         promptLanguage: settings.promptLanguage,
         variables: { language: style.language, documentType: active.kind ?? 'nota', selectedText: target.text },
         protectedTerms: [active.title, ...data.customDictionary], model: aiModel,
       }, { onDelta: (delta) => {
+        if (generation !== aiGeneration.current) return;
         streamed += delta;
         if (!frame) frame = window.requestAnimationFrame(flush);
       } });
       if (frame) window.cancelAnimationFrame(frame);
-      if (improveCancelled.current) return;
-      // Preview is separate from the native document: cancellation never mutates
-      // the original, and the complete selection replacement is one undo step.
-      replaceImprovedSelection(base, target, result.text, true);
-      setLastImprovement(style.name);
-      await window.nodus.updateStudyImprovementAction(result.logId, 'replace');
+      if (generation !== aiGeneration.current || improveCancelled.current || source.id !== activeIdRef.current) { void window.nodus.updateStudyImprovementAction(result.logId, 'rejected').catch(() => undefined); return; }
+      if (!result.text.trim()) throw new Error(t('La IA no devolvió texto. El original no se ha modificado.'));
+      resultRef.current = result; setAiResult(result); setImprovePreview(result.text);
     } catch (cause) {
       if (frame) window.cancelAnimationFrame(frame);
-      if (!improveCancelled.current) {
+      if (generation === aiGeneration.current && !improveCancelled.current) {
         const requestId = pendingStudyImprovementRequestId(cause);
-        if (requestId) setPendingImprovement({ requestId, sourceId });
-        else setImproveStreamError(cause instanceof Error ? cause.message : String(cause));
+        if (requestId) setPendingImprovement({ requestId, sourceId: source.id });
+        else setImproveStreamError(aiErrorMessage(cause));
+        setImprovePreview('');
       }
-    } finally { improvementRunning.current = false; setImproveStreamingStyleId(null); setImprovePreview(''); }
+    } finally { if (generation === aiGeneration.current) { improvementRunning.current = false; setImproveStreamingStyleId(null); } }
+  };
+
+  const acceptProposal = () => {
+    const source = aiSource.current, result = resultRef.current;
+    if (!source || !result || source.id !== activeIdRef.current || source.base !== draft || source.native !== JSON.stringify(nativeRef.current)) { setImproveStreamError(t('El texto ha cambiado. Selecciónalo de nuevo para pulirlo.')); return; }
+    try {
+      replaceImprovedSelection(source.base, source.target, result.text, true);
+      resultRef.current = null; setAiResult(null); setImprovePreview(''); setAiPanel(null);
+      if (raw) focusRawAt(source.id, source.target.from + result.text.length);
+      const style = allImproveStyles.find(style => style.id === result.styleId);
+      setLastImprovement(style ? studyStyleDisplay(style).name : t('Pulir'));
+      void window.nodus.updateStudyImprovementAction(result.logId, 'replace').catch(cause => setImproveStreamError(aiErrorMessage(cause)));
+    } catch (cause) { setImproveStreamError(aiErrorMessage(cause)); }
+  };
+  useEffect(() => { if (raw && (improveStreamingStyleId || aiResult)) document.querySelector('[data-testid="scriptor-ai-raw-target"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [raw, improveStreamingStyleId, aiResult]);
+
+  const openImagePanel = () => {
+    if (!active || improvementRunning.current || aiResult) return;
+    cancelAi();
+    preserveSelection(); imageSource.current = { id: active.id, anchor: raw ? undefined : canvasRef.current?.imageAnchor(), raw: raw ? { base: draft, at: rawTextareaRef.current?.selectionEnd ?? draft.length } : undefined };
+    imageNeedsCursor.current = false;
+    setLastImprovement(null); setAiPanel('image'); setImageChoices([]); setImageResult(null); setSelectionImprove(null); setImproveStreamError('');
+    const generation = aiGeneration.current;
+    void Promise.all([window.nodus.getSettings(), window.nodus.listImageModels(), window.nodus.getNodusLocalImageStatus()]).then(([fresh, catalog, local]) => {
+      if (generation !== aiGeneration.current) return;
+      const configuredImageModel = { provider: fresh.imageProvider, model: fresh.imageModel }; setImageModel(configuredImageModel);
+      const choices = savedEditorImageModels(catalog, fresh.imageFavorites ?? [], configuredImageModel).map(entry => ({ id: `${entry.provider}:${entry.id}`, label: `${entry.provider === 'google' ? 'Google' : entry.provider} · ${entry.name}`, disabled: entry.provider === 'nodus' ? !(local.runtime.ready && local.model.downloaded) : entry.provider === 'codex' ? false : !fresh.providerKeys[entry.provider === 'google' ? 'gemini' : entry.provider] }));
+      if (!choices.some(choice => choice.id === `${configuredImageModel.provider}:${configuredImageModel.model}`)) choices.unshift({ id: `${configuredImageModel.provider}:${configuredImageModel.model}`, label: `${configuredImageModel.provider} · ${configuredImageModel.model}`, disabled: true });
+      setImageChoices(choices);
+    }).catch(cause => { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); });
+  };
+  const runImage = async () => {
+    if (!imagePrompt.trim() || imageBusy || !imageSource.current || !imageChoices.some(choice => choice.id === `${imageModel.provider}:${imageModel.model}` && !choice.disabled)) return;
+    const generation = ++aiGeneration.current, requestId = crypto.randomUUID(); imageRequest.current = requestId;
+    setImageBusy(true); setImageResult(null); setImproveStreamError('');
+    try { const result = await window.nodus.generateEditorImage({ requestId, prompt: imagePrompt, model: imageModel }); if (generation === aiGeneration.current && imageSource.current?.id === activeIdRef.current) setImageResult(result); }
+    catch (cause) { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); }
+    finally { if (generation === aiGeneration.current) { setImageBusy(false); imageRequest.current = null; } }
+  };
+  const insertImage = () => {
+    const source = imageSource.current; if (!source || !imageResult || source.id !== activeIdRef.current) return;
+    let rawCursor: number | undefined;
+    if (imageNeedsCursor.current) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); return; }
+    if (raw && source.raw) {
+      if (source.raw.base !== draft) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
+      const at = source.raw.at, snippet = `\n\n![${imagePrompt.replace(/[\]\n[]/g, ' ')}](${imageResult.dataUrl})\n\n`; setDraft(`${draft.slice(0, at)}${snippet}${draft.slice(at)}`); rawCursor = at + snippet.length;
+    } else if (!source.anchor || !canvasRef.current?.insertGeneratedImage(source.anchor, imageResult.dataUrl, imagePrompt)) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
+    setSaveState('dirty'); closeAiPanel();
+    if (rawCursor !== undefined) focusRawAt(source.id, rawCursor);
+  };
+  const captureImageCursor = () => {
+    if (aiPanel !== 'image' || !imageNeedsCursor.current || imageSource.current?.id !== activeIdRef.current) return;
+    imageSource.current = { id: activeIdRef.current, anchor: raw ? undefined : canvasRef.current?.imageAnchor(), raw: raw ? { base: draft, at: rawTextareaRef.current?.selectionEnd ?? draft.length } : undefined };
+    imageNeedsCursor.current = false; setImproveStreamError('');
   };
 
   const openImprovePrompts = (target = resolveImproveSelection(false)) => {
@@ -596,7 +750,7 @@ export function StudyEditor({
     documentId: active?.id ?? '', revision: revisionRef.current.get(active?.id ?? '') ?? 0,
     signature: currentSignature, baseline: baselineRef.current,
     ready: Boolean(active && data && hydratedIdRef.current === active.id),
-    blocked: saveState !== 'saved' || Boolean(saveError) || recoveredDraft || editingTitle,
+    blocked: saveState !== 'saved' || Boolean(saveError) || recoveredDraft || document.activeElement?.getAttribute('data-testid') === 'editor-title',
   };
   useEffect(() => {
     let alive = true, reading = false;
@@ -608,7 +762,7 @@ export function StudyEditor({
           () => ({ ...remoteRefreshRef.current, documentId: activeIdRef.current,
             revision: revisionRef.current.get(activeIdRef.current) ?? 0,
             signature: latestSignatureRef.current, baseline: baselineRef.current,
-            blocked: !alive || remoteRefreshRef.current.blocked || improvementRunning.current }),
+            blocked: !alive || remoteRefreshRef.current.blocked || improvementRunning.current || document.activeElement?.getAttribute('data-testid') === 'editor-title' }),
           id => port.loadEditorData(id),
           next => {
             if (typeof next.documentTitle !== 'string' || typeof next.contentMarkdown !== 'string') return;
@@ -659,7 +813,7 @@ export function StudyEditor({
     // Never persist a partial AI stream. Its complete result marks the editor
     // dirty and enters this same autosave path when streaming finishes.
     if (!active || !data || hydratedIdRef.current !== active.id || currentSignature === baselineRef.current) return true;
-    if (improveStreamingStyleId) return false;
+
     const snapshot = {
       id: active.id,
       signature: currentSignature,
@@ -707,7 +861,11 @@ export function StudyEditor({
     return await operation;
   };
   saveLatestRef.current = save;
-  const flushLatest = useCallback(() => flushEditorialDraft(() => saveLatestRef.current('autosave'), () => !hydratedIdRef.current || latestSignatureRef.current === baselineRef.current), []);
+  const flushLatest = useCallback(async () => {
+    if (improvementRunning.current || resultRef.current || imageSource.current) closeAiRef.current();
+    await dictationRef.current?.stop();
+    return flushEditorialDraft(() => saveLatestRef.current('autosave'), () => !hydratedIdRef.current || latestSignatureRef.current === baselineRef.current);
+  }, []);
   useEffect(() => { onRegisterFlush?.(flushLatest); }, [onRegisterFlush,flushLatest]);
   useEffect(() => window.nodus.onBeforeEditorLeave(flushLatest), [flushLatest]);
 
@@ -718,7 +876,7 @@ export function StudyEditor({
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') { event.preventDefault(); void save('manual'); }
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') { event.preventDefault(); setShowSearch(true); }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f' && !improvementRunning.current && !resultRef.current) { event.preventDefault(); setShowSearch(true); }
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'i') { event.preventDefault(); openImprovePrompts(); }
     };
     window.addEventListener('keydown', keydown);
@@ -760,7 +918,8 @@ export function StudyEditor({
     });
   };
   const runEditorHistory = (direction: 'undo' | 'redo') => {
-    setImproveStreamError('');
+    if (improvementRunning.current || resultRef.current) return;
+    setLastImprovement(null); setImproveStreamError('');
     if (!raw) {
       canvasRef.current?.[direction]();
       return;
@@ -768,8 +927,15 @@ export function StudyEditor({
     const textarea = rawTextareaRef.current;
     if (!textarea) return;
     textarea.focus();
-    document.execCommand(direction);
-    setDraft(textarea.value);
+    const history = rawHistory.current;
+    const entry = (direction === 'undo' ? history.undo : history.redo).pop();
+    if (!entry) return;
+    (direction === 'undo' ? history.redo : history.undo).push(entry);
+    const value = direction === 'undo' ? entry.before : entry.after;
+    textarea.value = value;
+    const native = direction === 'undo' ? entry.beforeNative : entry.afterNative;
+    if (native !== undefined) { setDraftState(value); nativeRef.current = native; setNativeDocument(native); }
+    else setDraft(value, 'history');
   };
   const insertCommand = (command: StudyEditorCommand) => insertMarkdown(studyCommandMarkdown(command));
   const insertHeading = (level: number) => insertMarkdown(`${'#'.repeat(level)} ${t('Título')}`);
@@ -784,10 +950,12 @@ export function StudyEditor({
   };
   const activateDocument = async (documentId: string) => {
     if (documentId === active.id) return;
+    closeAiPanel();
     if (!await flushLatest()) return;
     onActivate(documentId);
   };
   const openLinkedDocument = async (documentId: string) => {
+    closeAiPanel();
     if (!await flushLatest()) return;
     onOpenLinkedDocument(documentId);
   };
@@ -864,7 +1032,7 @@ export function StudyEditor({
   const handleEditorDrop = async (event: DragEvent<HTMLDivElement>) => {
     const documentId = event.dataTransfer.getData(port.dragType);
     const uri = event.dataTransfer.getData('text/uri-list');
-    if (!documentId && !uri) return;
+    if (improvementRunning.current || resultRef.current || (!documentId && !uri)) return;
     event.preventDefault();
     let snippet = '';
     if (documentId) {
@@ -880,7 +1048,7 @@ export function StudyEditor({
     }
   };
 
-  const locked = Boolean(improveStreamingStyleId);
+  const locked = Boolean(improveStreamingStyleId || aiResult);
   const actions: EditorialAction[] = [
     { id: 'undo', label: t('Deshacer'), icon: 'undo', group: t('Edición'), essential: true, testId: 'study-editor-undo', disabled: locked || (!raw && !historyState.canUndo), shortcut: 'Ctrl/⌘+Z', keyShortcuts: 'Control+Z Meta+Z', onSelect: () => runEditorHistory('undo') },
     { id: 'redo', label: t('Rehacer'), icon: 'redo', group: t('Edición'), essential: true, testId: 'study-editor-redo', disabled: locked || (!raw && !historyState.canRedo), shortcut: 'Ctrl+Y / Ctrl/⌘+Shift+Z', keyShortcuts: 'Control+Y Control+Shift+Z Meta+Shift+Z', onSelect: () => runEditorHistory('redo') },
@@ -897,14 +1065,16 @@ export function StudyEditor({
     { id: 'evidence', label: t('Vincular evidencia'), icon: 'link', group: t('Escritura académica'), disabled: raw || locked, onSelect: () => academicTools.current?.open('evidence') },
     { id: 'manuscript', label: t('Manuscrito y citas'), icon: 'settings', group: t('Escritura académica'), onSelect: () => academicTools.current?.open('settings') },
     { id: 'delivery', label: t('Preparar entrega'), icon: 'external', group: t('Escritura académica'), testId: 'academic-delivery', onSelect: () => academicTools.current?.open('delivery') },
-    { id: 'dictation', label: t('Dictado por voz'), icon: 'microphone', group: t('Voz'), testId: 'study-dictation-toggle', pressed: showDictation, onSelect: () => setShowDictation(!showDictation) },
+    { id: 'dictation', label: t(dictationActive ? 'Detener dictado' : 'Dictado por voz'), icon: 'microphone', group: t('Voz'), essential: true, testId: 'study-dictation-toggle', disabled: locked && !dictationActive, pressed: dictationActive, onSelect: () => { if (dictationActive) void dictationRef.current?.stop(); else if (showDictation) void dictationRef.current?.start(); else setShowDictation(true); } },
     { id: 'read', label: t('Lectura por voz'), icon: 'play', group: t('Voz'), testId: 'study-audio-toggle', pressed: showAudio, onSelect: () => { const target = resolveImproveSelection(false); setAudioSelection(target?.text ?? ''); setAudioCursor(rawTextareaRef.current?.selectionStart ?? target?.from ?? 0); setShowAudio(value => !value); } },
-    { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => { if (raw) setEditorRevision(value => value + 1); setRaw(!raw); } },
+    { id: 'markdown', label: t('Markdown crudo'), icon: 'code', group: t('Vistas'), pressed: raw, onSelect: () => void (async () => { closeAiPanel(); await dictationRef.current?.stop(); if (raw) setEditorRevision(value => value + 1); setRaw(!raw); })() },
     { id: 'split', label: t('Dividir vista'), icon: 'columns', group: t('Vistas'), pressed: split, onSelect: () => setSplit(!split) },
     { id: 'style', label: t('Apariencia y metadatos'), icon: 'palette', group: t('Vistas'), testId: 'study-doc-style', pressed: showStyle, onSelect: () => { setShowStyle(!showStyle); setContextOpen(true); setContextTab('details'); } },
     { id: 'history', label: t('Historial de versiones'), icon: 'clock', group: t('Vistas'), onSelect: () => { setContextOpen(true); setContextTab('history'); } },
     { id: 'table', label: t('Insertar tabla'), icon: 'table', group: t('Inserción'), onSelect: () => setTableDialogOpen(true) },
     { id: 'quote', label: t('Insertar cita'), icon: 'quote', group: t('Inserción'), onSelect: () => insertCommand('cita') },
+    { id: 'ai-image', label: t('Crear imagen con IA'), icon: 'image', group: t('Inserción'), disabled: locked, onSelect: openImagePanel },
+    { id: 'polish', label: t('Pulir'), icon: 'aiPolish', group: t('Revisión'), disabled: locked || !selectionImprove, onSelect: () => openPolish() },
     { id: 'image', label: t('Insertar imagen'), icon: 'image', group: t('Inserción'), onSelect: () => insertCommand('imagen') },
     { id: 'audio', label: t('Insertar bloque de audio'), icon: 'play', group: t('Inserción'), onSelect: () => insertCommand('audio') },
     { id: 'quiz', label: t('Insertar pregunta de test'), icon: 'help', group: t('Inserción'), onSelect: () => insertCommand('test') },
@@ -914,36 +1084,33 @@ export function StudyEditor({
     { id: 'duplicate', label: t('Duplicar'), icon: 'copy', group: t('Gestión'), onSelect: () => void onDuplicate() },
     { id: 'trash', label: t('Mover a la papelera'), icon: 'trash', group: t('Gestión'), pinnable: false, onSelect: () => void onTrash() },
   ];
+  if (locked) for (const action of actions) if (!['close', 'save', 'read'].includes(action.id)) action.disabled = true;
 
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
 {nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
-      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={<>
-        {headerContent}
       {showTabs ? (
-        <div className="study-editor-tabs flex min-h-10 items-end gap-1 overflow-x-auto border-b border-stone-200 bg-stone-50 px-2 pt-1 dark:border-neutral-800 dark:bg-neutral-950">
-          {documents.map((document) => (
-            <div key={document.id} role="tab" tabIndex={0} aria-selected={document.id === active.id} onClick={() => void activateDocument(document.id)}
-              onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) void activateDocument(document.id); }}
-              className={`group flex max-w-64 items-center gap-1.5 rounded-t-lg border border-b-0 px-2.5 py-2 text-xs ${document.id === active.id ? 'border-stone-300 bg-white text-stone-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200' : 'border-transparent text-stone-500 hover:text-stone-800 dark:text-neutral-600 dark:hover:text-neutral-300'}`}>
-              <Icon name={documentIcon} size={12} />
-              {document.id === active.id && editingTitle ? (
-                <input autoFocus aria-label={t('Título del apunte')} className="min-w-24 max-w-44 bg-transparent font-semibold outline-none ring-0" value={title}
-                  onClick={(event) => event.stopPropagation()} onChange={(event) => setTitle(event.target.value)}
-                  onBlur={() => setEditingTitle(false)} onKeyDown={(event) => {
-                    if (event.key === 'Enter') { event.preventDefault(); setEditingTitle(false); void save('manual'); }
-                    if (event.key === 'Escape') { event.preventDefault(); setTitle(active.title); setEditingTitle(false); }
-                  }} />
-              ) : <span className="min-w-0 flex-1 truncate">{document.id === active.id ? title : document.title}</span>}
-              {document.id === active.id && !editingTitle && <button type="button" title={t('Renombrar apunte')} aria-label={t('Renombrar apunte')}
-                onClick={(event) => { event.stopPropagation(); setEditingTitle(true); }} className="rounded p-0.5 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-200"><Icon name="edit" size={11} /></button>}
-              <button type="button" title={t('Cerrar apunte')} aria-label={t('Cerrar apunte')}
-                onClick={(event) => { event.stopPropagation(); requestClose(document.id); }} className="rounded p-0.5 text-neutral-700 group-hover:text-neutral-400 hover:bg-neutral-800 hover:!text-red-300"><Icon name="x" size={11} /></button>
-            </div>
-          ))}
-        </div>
+        <WorkspaceTabStrip
+          className="study-editor-tabs"
+          showHome={false}
+          homeLabel={t('Apuntes')}
+          homeIcon={documentIcon}
+          homeTestId="study-editor-tab-home"
+          tabTestId={(tab) => `study-editor-tab-${tab.key}`}
+          closeTestId={(tab) => `study-editor-close-${tab.key}`}
+          tabs={documents.map((document) => ({ key: document.id, title: document.id === active.id ? title : document.title, icon: documentIcon }))}
+          activeKey={active.id}
+          onActivateHome={() => undefined}
+          onActivateTab={(id) => { void activateDocument(id); }}
+          onCloseTab={requestClose}
+          onRenameTab={locked ? undefined : () => {
+            const input = document.querySelector<HTMLTextAreaElement>('[data-testid="editor-title"]');
+            input?.focus();
+            input?.select();
+          }}
+        />
       ) : null}
-</>} onPreserveSelection={preserveSelection} options={<>
+      <EditorialHeader title={title} location={location} status={t(saveState === 'saved' ? data?.mobileSyncState === 'pending' ? 'Guardado en este dispositivo · pendiente de sincronizar' : data?.mobileSyncState ? 'Guardado en este dispositivo · revisar sincronización' : 'Guardado' : saveState === 'saving' ? 'Guardando…' : saveState === 'dirty' ? 'Sin guardar' : 'Error al guardar')} contextOpen={contextOpen} focus={focusMode} onContext={() => setContextOpen(!contextOpen)} onFocus={() => void editorialFocus.toggleFocus()} navigationOpen={editorialFocus.navigationOpen} onNavigation={editorialFocus.toggleNavigation} leading={headerContent} onPreserveSelection={preserveSelection} options={<>
         <EditorialActionMenu actions={actions} pins={pinnedActionIds} onPinsChange={setPinnedActionIds} beforeAction={restoreSelection} />
         <div className="study-insert-toolbar" data-testid="study-insert-toolbar">
           <label htmlFor="study-heading-level">{t('Nivel de título')}</label>
@@ -985,7 +1152,7 @@ export function StudyEditor({
         savedSignaturesRef.current.set(active.id,baselineRef.current);
         clearEditorialDraft(draftScope,active.id); setRecoveredDraft(false); setSaveError(''); setSaveState('saved'); setEditorRevision(value => value+1);
       })()}>{t('Cargar versión actual')}</button></div>}
-      {improveStreamError && <div data-testid="study-improve-stream-error" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"><Icon name="alert" size={13} /><span className="min-w-0 flex-1">{improveStreamError}</span><span>{t('El original permanece intacto.')}</span><button onClick={() => setImproveStreamError('')} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {improveStreamError && !aiPanel && <div data-testid="study-improve-stream-error" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"><Icon name="alert" size={13} /><span className="min-w-0 flex-1">{improveStreamError}</span><span>{t('El original permanece intacto.')}</span><button onClick={() => setImproveStreamError('')} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
       {pendingImprovement && pendingImprovement.sourceId === active?.id && <div data-testid="study-improvement-pending" className="flex flex-wrap items-center gap-2 border-b border-stone-200 bg-stone-50 px-3 py-2 text-xs dark:border-neutral-800 dark:bg-neutral-900">
         <span className="min-w-0 flex-1">{t('Mejora guardada en este dispositivo. Se sincronizará al volver a conectar. El original permanece intacto.')}</span>
         <button type="button" className="btn min-h-[44px]" onClick={() => {
@@ -1005,42 +1172,67 @@ export function StudyEditor({
         </div>
       )}
       {showDictation && <StudyDictation
+        key={active.id}
+        ref={dictationRef}
         documentId={active.id}
+        settings={settings}
         language={data.spellcheckLanguage}
         vocabulary={[active.title, ...documents.map((document) => document.title), ...draft.match(/\b[A-ZÁÉÍÓÚÑ][\p{L}-]{3,}\b/gu) ?? []]}
         customDictionary={data.customDictionary}
-        onInsert={(text, scope) => {
+        onStateChange={setDictationActive}
+        onClose={() => void (async () => { await dictationRef.current?.stop(); setShowDictation(false); })()}
+        onEnd={() => { canvasRef.current?.endDictation(); rawDictation.current = null; }}
+        onUpdate={(text, id, final, scope) => {
           if (!raw) {
-            canvasRef.current?.insertText(text, scope === 'selection');
+            canvasRef.current?.updateDictation(text, id, final, scope === 'selection');
             return;
           }
           const textarea = rawTextareaRef.current;
-          const cursor = textarea?.selectionStart ?? draft.length;
-          let from = cursor;
-          let to = cursor;
-          if (scope === 'selection') {
+          const current = textarea?.value ?? draft;
+          let range = rawDictation.current;
+          if (range?.id === id && range.document !== current) {
+            // Follow edits outside the dictated range, but never overwrite a
+            // writer's correction inside it.
+            let start = 0, end = 0;
+            while (start < current.length && start < range.document.length && current[start] === range.document[start]) start++;
+            while (end < current.length - start && end < range.document.length - start && current[current.length - end - 1] === range.document[range.document.length - end - 1]) end++;
+            const oldEnd = range.document.length - end;
+            if (oldEnd <= range.from) { const delta = current.length - range.document.length; range.from += delta; range.to += delta; }
+            else if (start < range.to) { if (final) rawDictation.current = null; return; }
+          }
+          if (!text && range?.id !== id) return;
+          const cursor = textarea?.selectionStart ?? current.length;
+          let from = range?.id === id ? range.from : cursor;
+          let to = range?.id === id ? range.to : cursor;
+          if (range?.id !== id && scope === 'selection') {
             from = textarea?.selectionStart ?? cursor;
             to = textarea?.selectionEnd ?? cursor;
             if (from === to) {
-              from = draft.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
-              const nextLine = draft.indexOf('\n', cursor);
-              to = nextLine === -1 ? draft.length : nextLine;
+              from = current.lastIndexOf('\n', Math.max(0, cursor - 1)) + 1;
+              const nextLine = current.indexOf('\n', cursor);
+              to = nextLine === -1 ? current.length : nextLine;
             }
           }
-          const prefix = from > 0 && !/\s/.test(draft[from - 1]) && !/^[,.;:!?]/.test(text) ? ' ' : '';
-          const suffix = to < draft.length && !/\s/.test(draft[to]) && !/[\s\n]$/.test(text) ? ' ' : '';
-          setDraft(`${draft.slice(0, from)}${prefix}${text}${suffix}${draft.slice(to)}`);
-          window.setTimeout(() => {
-            const nextCursor = from + prefix.length + text.length + suffix.length;
-            rawTextareaRef.current?.setSelectionRange(nextCursor, nextCursor);
-            rawTextareaRef.current?.focus();
-          });
-          return { from: from + prefix.length, to: from + prefix.length + text.length };
-        }}
-        onAction={(action) => {
-          if (action === 'undo') document.execCommand('undo');
-          if (action === 'delete_last_sentence') { setDraft(deleteLastStudySentence(draft)); setRaw(true); }
-          if (action === 'finish') setShowDictation(false);
+          if (!range || range.id !== id) {
+            range = { id, from, to, text: '', document: current, prefix: from > 0 && !/\s/.test(current[from - 1]) && !/^[,.;:!?\s]/.test(text) ? ' ' : '', suffix: to < current.length && !/[\s,.;:!?]/.test(current[to]) ? ' ' : '' };
+            rawDictation.current = range;
+          }
+          const next = text ? `${range.prefix}${text}${range.suffix}` : '';
+          let common = 0;
+          while (common < range.text.length && common < next.length && range.text[common] === next[common]) common++;
+          from += common;
+          // Explicit history is needed for unfocused textarea updates:
+          // setRangeText does not enter the browser's native undo stack.
+          if (textarea) {
+            const focused = document.activeElement === textarea;
+            const selection = [textarea.selectionStart, textarea.selectionEnd];
+            if (focused) textarea.setSelectionRange(from, to);
+            textarea.setRangeText(next.slice(common), from, to, focused ? 'end' : 'preserve');
+            if (focused && selection[0] < range.from) textarea.setSelectionRange(selection[0], selection[1]);
+            setDraft(textarea.value, `dictation:${id}`);
+          } else setDraft(`${current.slice(0, from)}${next.slice(common)}${current.slice(to)}`, `dictation:${id}`);
+          range.to = range.from + next.length; range.text = next; range.document = textarea?.value ?? `${current.slice(0, from)}${next.slice(common)}${current.slice(to)}`;
+          if (final) rawDictation.current = null;
         }}
       />}
       {showAudio && <div className="border-b border-neutral-800 bg-neutral-900/30 p-3" data-testid="study-audio-panel"><AudioPanel
@@ -1055,21 +1247,27 @@ export function StudyEditor({
         compact
       /></div>}
 
-      <div className="editorial-editor-body flex min-h-0 flex-1" onInputCapture={() => setLastImprovement(null)} onMouseUp={(event) => showSelectionImproveShortcuts(event)} onKeyUp={() => showSelectionImproveShortcuts()} onDragOver={(event) => {
+      <div className="editorial-editor-body flex min-h-0 flex-1" onKeyDownCapture={event => { if (locked && (event.target as Element).closest('.nodus-blocknote') && (event.metaKey || event.ctrlKey) && !['a', 'c'].includes(event.key.toLowerCase())) { event.preventDefault(); event.stopPropagation(); } }} onInputCapture={() => setLastImprovement(null)} onMouseUp={(event) => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(event); } }} onKeyUp={event => { if (!(event.target as Element).closest('.scriptor-ai-panel')) { if ((event.target as Element).closest('.editorial-document-scroll')) captureImageCursor(); showSelectionImproveShortcuts(event); } }} onDragOver={(event) => {
         if (event.dataTransfer.types.includes(port.dragType) || event.dataTransfer.types.includes('text/uri-list')) event.preventDefault();
       }} onDrop={(event) => void handleEditorDrop(event)}>
 
         {navigatorContent}
         <div className={`editorial-writing-column relative min-w-0 flex-1 overflow-hidden ${split ? 'grid grid-cols-2 divide-x divide-neutral-800' : ''}`}>
           <div className="editorial-improvement-feedback">
-      {improveStreamingStyleId && <section data-testid="study-improve-streaming" className="editorial-improvement-preview" aria-label={t('Mejorando texto…')}><header><Spinner label={t('Mejorando texto…')} /><span>{quickImproveStyles.find((style) => style.id === improveStreamingStyleId)?.name}</span><button data-testid="study-improve-cancel" onClick={() => { improveCancelled.current = true; void window.nodus.cancelStudyImprove(); }}>{t('Cancelar')}</button></header><p data-testid="study-improve-preview" aria-live="off">{improvePreview || t('Preparando…')}</p></section>}
-      {lastImprovement && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
+      {lastImprovement && !aiPanel && <div data-testid="study-improve-complete" className="editorial-improvement-complete"><Icon name="sparkles" size={14} /><span>{lastImprovement}</span><button data-testid="study-improve-undo" aria-label={t('Deshacer mejora')} onClick={() => { runEditorHistory('undo'); setLastImprovement(null); }}>{t('Deshacer')}</button><button onClick={() => setLastImprovement(null)} aria-label={t('Cerrar')}><Icon name="x" size={12} /></button></div>}
           </div>
           <div className="editorial-document-scroll h-full min-h-0 overflow-y-auto">
-            <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={Boolean(improveStreamingStyleId)} />
-            {raw ? (
-              <textarea ref={rawTextareaRef} data-testid="study-markdown-editor" aria-label={t('Editor Markdown')} disabled={Boolean(improveStreamingStyleId)} className="h-full min-h-[560px] w-full resize-none bg-white p-6 font-mono text-sm leading-6 text-stone-800 outline-none dark:bg-neutral-950 dark:text-neutral-300"
-                spellCheck lang={data.spellcheckLanguage} value={draft} onChange={(event) => setDraft(event.target.value)}
+            <EditorialTitle testId="editor-title" value={title} onChange={setTitle} readOnly={locked} />
+            {raw && (improveStreamingStyleId || aiResult) && aiSource.current ? (
+              <div className="scriptor-ai-raw-review" data-testid="scriptor-ai-raw-review">{aiSource.current.base.slice(0,aiSource.current.target.from)}<span data-testid="scriptor-ai-raw-target">{editorReviewDiff(aiSource.current.target.text, improvePreview, Boolean(aiResult)).map((piece,index) => <span key={index} className={piece.kind === 'same' ? undefined : `scriptor-ai-${piece.kind}`}>{piece.value}</span>)}</span>{aiSource.current.base.slice(aiSource.current.target.to)}</div>
+            ) : raw ? (
+              <textarea ref={rawTextareaRef} data-testid="study-markdown-editor" aria-label={t('Editor Markdown')} disabled={locked} className="h-full min-h-[560px] w-full resize-none bg-white p-6 font-mono text-sm leading-6 text-stone-800 outline-none dark:bg-neutral-950 dark:text-neutral-300"
+                spellCheck lang={data.spellcheckLanguage} value={draft} onChange={(event) => setDraft(event.target.value, 'typing')}
+                onKeyDown={event => {
+                  if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+                  const key = event.key.toLowerCase();
+                  if (key === 'z' || key === 'y') { event.preventDefault(); runEditorHistory(key === 'y' || event.shiftKey ? 'redo' : 'undo'); }
+                }}
                 onPaste={(event) => {
                   const html = event.clipboardData.getData('text/html');
                   if (!html) return;
@@ -1079,11 +1277,13 @@ export function StudyEditor({
                   setDraft(`${draft.slice(0, start)}${markdown}${draft.slice(end)}`);
                 }} />
             ) : (
-              nativeDocument && <BlockNoteCanvas ref={canvasRef} key={`${active.id}-${editorRevision}`} documentId={`${active.id}-${editorRevision}`} value={draft} nativeDocument={nativeDocument} academicMetadata={academicMetadata} onAcademicAction={(action,payload)=>academicTools.current?.open(action,payload)} editable={!improveStreamingStyleId}
+              nativeDocument && <BlockNoteCanvas ref={canvasRef} key={`${active.id}-${editorRevision}`} documentId={`${active.id}-${editorRevision}`} value={draft} nativeDocument={nativeDocument} academicMetadata={academicMetadata} onAcademicAction={(action,payload)=>academicTools.current?.open(action,payload)} editable={!locked} onCreateImage={openImagePanel} aiReview={!raw && aiSource.current?.target.range && (improveStreamingStyleId || aiResult) ? { range: aiSource.current.target.range, original: aiSource.current.target.text, proposed: improvePreview, complete: Boolean(aiResult) } : null}
                 spellcheck language={data.spellcheckLanguage} onChange={(value, native) => { if (!rawRef.current) { setDraftState(value); nativeRef.current = native; setNativeDocument(native); } }} onHistoryChange={setHistoryState} onOpenRecording={onOpenRecording} listReferences={port.listReferences} onNavigateLink={href => void navigateReference(href)} onWikiLink={reference => void port.listLinkTargets().then(targets => { const target=targets.find(item=>item.id===reference || item.title===reference); if(target) void openLinkedDocument(target.id); })} onToolbarElement={setSelectionToolbar} />
             )}
           </div>
           {split && <div className="min-h-full overflow-y-auto bg-stone-50 p-8 text-stone-900 dark:bg-neutral-900/20 dark:text-neutral-100"><Markdown content={draft} verify={false} onStudyDocument={(documentId) => void openLinkedDocument(documentId)} onStudyRecording={onOpenRecording} onTestimonyLink={onTestimonyLink} /></div>}
+          {aiPanel && <ScriptorAiPanel mode={aiPanel} settings={settings} model={aiModel} onModelChange={setAiModel} styles={allImproveStyles} quickStyles={quickImproveStyles} styleId={aiStyleId} onStyleChange={chooseAiStyle} instructions={aiInstructions} onInstructionsChange={setAiInstructions} imagePrompt={imagePrompt} onImagePromptChange={setImagePrompt} imageModel={imageModel} imageChoices={imageChoices} onImageModelChange={setImageModel} status={improveStreamingStyleId ? 'streaming' : aiResult ? 'review' : imageBusy ? 'generating' : imageResult ? 'image-ready' : 'compose'} error={improveStreamError} warnings={aiResult?.warnings ?? []} image={imageResult} onSubmit={() => void (aiPanel === 'image' ? runImage() : runPolish())} onCancel={cancelAi} onAccept={acceptProposal} onReject={() => { discardProposal(); setImproveStreamError(''); }} onImage={openImagePanel} onPolish={() => openPolish(resolveImproveSelection(false))} onInsert={insertImage} onClose={closeAiPanel} onLayout={() => { if (aiPanel !== 'polish') return; const range = aiSource.current?.target.range; if (range && !raw) canvasRef.current?.revealAiSelection(range); else if (raw) document.querySelector('[data-testid="scriptor-ai-raw-target"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }} />}
+
         </div>
 
         {!globalFocus && contextOpen && (
@@ -1093,7 +1293,7 @@ export function StudyEditor({
             {(contextTab==='checks'||contextTab==='structure')&&<AcademicPanel document={nativeDocument??[]} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef.current} view={contextTab} unresolvedComments={data.annotations.filter(a=>!a.resolvedAt).length} onOpenSource={(href,evidence)=>void navigateReference(href,evidence)} onSettings={()=>academicTools.current?.open('settings')} />}
             {contextTab === 'details' && contextDetails}
             {contextTab === 'outline' && <DocOutline markdown={draft} onJump={jumpToHeading} />}
-            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveIssue && <p role="status" className="text-sm mt-3">{t('No se han podido cargar los prompts de mejora.')} {quickImproveIssue}</p>}{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{prompt.name}</button>)}</div>}
+            {contextTab === 'assistant' && <div className="p-4"><div data-testid="study-editor-model-picker"><ModelPicker settings={settings} value={aiModel} onChange={setAiModel} compact menu allowEmpty={false} triggerModelOnly /></div><button className="btn mt-3" onClick={() => openImprovePrompts()}>{t('Prompts de mejora')}</button>{quickImproveIssue && <p role="status" className="text-sm mt-3">{t('No se han podido cargar los prompts de mejora.')} {quickImproveIssue}</p>}{quickImproveStyles.map(prompt => <button data-testid={`study-toolbar-quick-improve-${prompt.id.replace(':', '-')}`} className="btn w-full mt-2" key={prompt.id} onClick={() => void runQuickImprovement(prompt)}>{studyStyleDisplay(prompt).name}</button>)}</div>}
       {contextTab === 'details' && (
         <div className="grid grid-cols-2 gap-3 p-4">
           {onUpdateMetadata && <label className="text-[10px] text-neutral-500">{t('Tipo de material')}<select data-testid="study-doc-kind" className="input mt-1 w-full" value={active.kind} onChange={(event) => void onUpdateMetadata({ kind: event.target.value as StudyDocumentKind })}>{STUDY_DOCUMENT_KINDS.map((kind) => <option key={kind} value={kind}>{t(STUDY_KIND_LABEL[kind])}</option>)}</select></label>}
@@ -1171,15 +1371,13 @@ export function StudyEditor({
             )}
           </EditorialInspector>
         )}
-        {selectionImprove && selectionToolbar && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool" onPointerDown={event => { event.preventDefault(); openImprovePrompts(selectionImprove.target); }}><Icon name="sparkles" size={16} />{t('Mejorar con IA')}</button>{quickImproveStyles.map((prompt) => {
-          const label = studyStyleTooltip(prompt);
-          return <button type="button" key={prompt.id} data-testid={`study-quick-improve-${prompt.id.replace(':', '-')}`} className="toolbar-item study-selection-tool" title={label} aria-label={label} disabled={Boolean(improveStreamingStyleId)} onPointerDown={(event) => { event.preventDefault(); void runQuickImprovement(prompt, selectionImprove.target); }}><ImproveStyleMark style={prompt} /></button>;
-        })}{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={Boolean(improveStreamingStyleId)} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
+        {selectionImprove && selectionToolbar && !locked && createPortal(<><div className="divider" data-testid="study-selection-tools-divider" /><button type="button" data-testid="study-selection-improve" className="toolbar-item study-selection-tool study-selection-polish" aria-label={t('Pulir')} onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }}><Icon name="aiPolish" size={16} />{t('Pulir')}</button>{settings.academicMode !== 'manual' && <button type="button" data-testid="study-synonyms-toggle" className="toolbar-item study-selection-tool study-synonyms-trigger" title={t('Sinónimos con IA')} aria-label={t('Sinónimos con IA')} disabled={locked} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); openSynonymPanel(event.currentTarget, selectionImprove.target); }}><Icon name="aiSynonyms" size={16} /></button>}<label className="toolbar-item study-selection-color" title={t('Color del texto')} aria-label={t('Color del texto')}><Icon name="palette" size={16} /><input data-testid="study-selection-text-color" aria-label={t('Color del texto')} type="color" defaultValue="#0f766e" onInput={(event) => canvasRef.current?.setTextColor((event.target as HTMLInputElement).value)} /></label><span title={t('Nivel de título')}><select data-testid="study-selection-heading" className="study-selection-heading" defaultValue="" aria-label={t('Nivel de título')} onPointerDown={(event) => event.stopPropagation()} onChange={(event) => { canvasRef.current?.setHeading(Number(event.target.value)); event.target.value = ''; }}><option value="" disabled>H</option><option value="0">{t('Párrafo')}</option>{[1, 2, 3, 4, 5, 6].map((level) => <option key={level} value={level}>H{level}</option>)}</select></span></>, selectionToolbar)}
       </div>
+      {raw && selectionImprove && !locked && createPortal(<button type="button" className="scriptor-raw-polish" data-testid="study-selection-improve" onPointerDown={event => { event.preventDefault(); openPolish(selectionImprove.target); }} style={{ position:'fixed',left:selectionImprove.x,top:selectionImprove.y,zIndex:40 }}><Icon name="aiPolish" size={15} />{t('Pulir')}</button>, document.body)}
       {synonymPanel && createPortal(
         <div ref={synonymPanelRef} data-testid="study-synonyms-panel" role="dialog" aria-label={t('Alternativas de sinónimos')} className="study-synonyms-panel" style={{ left: synonymPanel.x, top: synonymPanel.y }}>
           <div className="study-synonyms-header">
-            <span className="flex min-w-0 items-center gap-2"><Icon name="aiSynonyms" size={16} className="text-teal-600 dark:text-teal-300" /><span className="truncate font-semibold">{t('Sinónimos y reformulaciones')}</span></span>
+            <span className="flex min-w-0 items-center gap-2"><Icon name="aiSynonyms" size={16} className="scriptor-accent-text" /><span className="truncate font-semibold">{t('Sinónimos y reformulaciones')}</span></span>
             <button type="button" className="rounded-md p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-100" onClick={closeSynonymPanel} aria-label={t('Cerrar')}><Icon name="x" size={13} /></button>
           </div>
           <p className="px-3 pb-2 text-[11px] leading-4 text-neutral-500">{t('Cinco alternativas en el idioma original, elegidas con el contexto de la frase.')}</p>
@@ -1195,7 +1393,7 @@ export function StudyEditor({
           {synonymPanel.error && <div data-testid="study-synonyms-error" className="mx-3 mb-2 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{synonymPanel.error}</div>}
           <div className="flex items-center justify-between border-t border-stone-200 px-3 py-2 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500">{synonymPanel.rounds.length > 1 ? `${synonymPanel.rounds.length * 5} ${t('alternativas en memoria')}` : ''}</span>
-            <button type="button" data-testid="study-synonyms-regenerate" className="btn btn-ghost h-8 gap-1.5 px-2 text-xs text-teal-700 dark:text-teal-300" disabled={synonymPanel.loading} onClick={regenerateSynonyms}><Icon name="refresh" size={13} className={synonymPanel.loading ? 'animate-spin' : ''} />{t('Regenerar alternativas')}</button>
+            <button type="button" data-testid="study-synonyms-regenerate" className="btn btn-ghost scriptor-accent-text h-8 gap-1.5 px-2 text-xs" disabled={synonymPanel.loading} onClick={regenerateSynonyms}><Icon name="refresh" size={13} className={synonymPanel.loading ? 'animate-spin' : ''} />{t('Regenerar alternativas')}</button>
           </div>
         </div>,
         document.body,
@@ -1241,9 +1439,10 @@ export function StudyEditor({
           onCancel={() => setTextDialog(null)}
         />
       )}
-      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => setShowImprovePrompts(false)} onToolbarChanged={setQuickImproveStyles} onApply={prompt => {
+      {showImprovePrompts && createPortal(<StudyImproveDialog onClose={() => { setShowImprovePrompts(false); void loadQuickImproveStyles(); }} onToolbarChanged={setQuickImproveStyles} onApply={prompt => {
         const target = improveTargetRef.current ?? resolveImproveSelection(true);
         setShowImprovePrompts(false);
+        setAllImproveStyles(current => current.some(style => style.id === prompt.id) ? current.map(style => style.id === prompt.id ? prompt : style) : [...current, prompt]);
         if (!target) return;
         // Keep the original selection and text while the dialog closes. Native
         // WKWebView confirmations can be suppressed during that focus change.

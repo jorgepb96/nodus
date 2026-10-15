@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3';
 import { identityColumns, quoteIdentifier } from '../db/rowIdentity';
-import { SCHEMA_VERSION } from '../db/migrations';
+import { SYNC_SCHEMA_VERSION } from '../db/syncSchemaVersion';
 import { MUTABLE_TABLES, type MutableTable } from './generatedMutableTables';
 
 /**
@@ -55,9 +55,14 @@ function enqueueStatement(table: string, op: 'upsert' | 'delete', keySql: string
     `INSERT INTO server_outbox (id, seq, table_name, row_key, op, schema_version, created_at, state, attempts, last_error, actor_id, device_id, hlc) ` +
     `VALUES (lower(hex(randomblob(16))), ` +
     `COALESCE((SELECT MAX(seq) FROM server_outbox), 0) + 1, ` +
-    `${literal}, ${keySql}, '${op}', ${SCHEMA_VERSION}, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 'pending', 0, NULL, ${actor}, ${device}, ${hlc}) ` +
+    `${literal}, ${keySql}, '${op}', ${SYNC_SCHEMA_VERSION}, strftime('%Y-%m-%dT%H:%M:%fZ','now'), 'pending', 0, NULL, ${actor}, ${device}, ${hlc}) ` +
+    // A folded edit takes a NEW id. drainOutbox reads the live row, sends it, and marks the
+    // entry sent by id once the server answers; an edit landing while that request is in
+    // flight would otherwise be marked sent with it without ever having been read. The
+    // server also deduplicates by id, so a re-send under the old id would be dropped as a
+    // duplicate. A fresh id makes the newer state a mutation of its own.
     `ON CONFLICT(table_name, row_key) WHERE state = 'pending' DO UPDATE SET ` +
-    `op = excluded.op, created_at = excluded.created_at, schema_version = excluded.schema_version, ` +
+    `id = lower(hex(randomblob(16))), op = excluded.op,created_at = excluded.created_at, schema_version = excluded.schema_version, ` +
     `actor_id = excluded.actor_id, device_id = excluded.device_id, hlc = excluded.hlc, ` +
     `attempts = 0, last_error = NULL; ` +
     `UPDATE workspace_devices SET last_hlc = COALESCE((SELECT hlc FROM server_outbox ORDER BY seq DESC LIMIT 1), last_hlc), revision = revision + 1, ` +
@@ -151,22 +156,7 @@ export function ensureOutboxTriggers(db: Database.Database, enabled: boolean): v
  * The states of existing entries are untouched, which is why this is not simply
  * `ensureOutboxTriggers(db, false)`: that one deliberately rejects what is pending.
  */
-export function withOutboxSuppressed<T>(db: Database.Database, work: () => T): T {
-  const existing = db
-    .prepare(`SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND ${TRIGGER_LIKE}`)
-    .all() as { name: string; sql: string | null }[];
-  if (existing.length === 0) return work();
-  for (const trigger of existing) db.exec(`DROP TRIGGER IF EXISTS ${quoteIdentifier(trigger.name)}`);
-  try {
-    return work();
-  } finally {
-    for (const trigger of existing) {
-      if (trigger.sql) {
-        try { db.exec(trigger.sql); } catch { /* re-created on the next open */ }
-      }
-    }
-  }
-}
+export { withOutboxSuppressed } from './outboxSuppression';
 
 export interface OutboxEntry {
   id: string;

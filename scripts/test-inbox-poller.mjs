@@ -277,6 +277,90 @@ test('a sync error goes away when the sync works again', { timeout: 120_000 }, a
   });
 });
 
+test('Cloudflare inbox persists its cursor and timer ticks cannot poll it every two seconds', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalNow = Date.now;
+  let now = 1800000000000;
+  let reads = 0;
+  let acknowledgements = 0;
+  let lastAcknowledged = 0;
+  setNodusServerToken('offline-cloudflare-inbox-token');
+  updateSettings({ nodusServerKind: 'cloudflare', nodusServerUrl: 'https://offline-inbox.example',
+    nodusServerSpaceId: 'cloud-inbox', nodusServerEnabled: true, nodusServerAutoSync: false });
+  Date.now = () => now;
+  globalThis.fetch = async (url, init) => {
+    const target = new URL(url);
+    assert.equal(target.hostname, 'offline-inbox.example', 'no request may escape the mock');
+    if (target.pathname.endsWith('/capabilities')) return Response.json({features:{ syncBudget: true, durableObjectCleanup: true, binarySync: true, mutationRelay: true }});
+    if (target.pathname.endsWith('/mutations/ack')) { acknowledgements += 1; lastAcknowledged=JSON.parse(init.body).cursor; return Response.json({ ok: true }); }
+    if (target.pathname.endsWith('/mutations')) {
+      reads += 1;
+      const since = Number(target.searchParams.get('since'));
+      if (since === 0) return Response.json({ mutations: [{ seq: 1, ...reportMutation('cloud-inbox-1', reportRow('cloud-report-1', 'Cloud', 'Offline fault injection')) }], cursor: 2, hasMore: false });
+      assert.equal(since, 2);
+      return Response.json({ mutations: [], cursor: 2, hasMore: false });
+    }
+    if (target.pathname.endsWith('/me')) return Response.json({ user: { id: 'offline-cloud-user' } });
+    if (target.pathname.endsWith('/changes')) return Response.json({ changes: [], cursor: 0, hasMore: false });
+    if (target.pathname.endsWith('/records/batch')) return Response.json({ accepted: [], duplicate: [], conflicts: [] });
+    if (target.pathname.endsWith('/claim')) return Response.json({ action: null, command: null });
+    assert.fail(`Unexpected mocked request: ${target.pathname}`);
+  };
+  try {
+    await drainServerInboxNow();
+    for (let index = 0; index < 29; index += 1) { now += 2000; await drainServerInboxNow(); }
+    assert.equal(reads, 1);
+    now += 2000;
+    await drainServerInboxNow();
+    assert.equal(reads, 2);
+    assert.equal(acknowledgements, 1, 'a confirmed mutation must never create another apply/ack cycle');
+    assert.equal(getDb().prepare("SELECT cursor FROM sync_snapshot_cursors WHERE stream_id LIKE 'cloudflare-inbox:%'").get().cursor, 2);
+    assert.equal(lastAcknowledged,2,'hidden private rows after a visible row must also release pending quota');
+  } finally { globalThis.fetch = originalFetch; Date.now = originalNow; }
+});
+
+test('Cloudflare pending Nodi notes cannot overlap or bypass the five-failure breaker', async () => {
+  const service = require(path.join(repoRoot, 'electron/serverSync/serverSyncService.ts'));
+  const notes = require(path.join(repoRoot, 'electron/nodiNotes.ts'));
+  const originalFetch = globalThis.fetch;
+  const originalNow = Date.now;
+  const originalInterval = globalThis.setInterval;
+  let now = 1800001000000;
+  let tick;
+  let calls = 0;
+  let completeFirst;
+  setNodusServerToken('offline-cloudflare-notes-token');
+  updateSettings({ nodusServerKind: 'cloudflare', nodusServerUrl: 'https://offline-notes.example',
+    nodusServerSpaceId: 'cloud-notes', nodusServerEnabled: true, nodusServerAutoSync: false });
+  notes.saveNodiNote({ title: 'Unsent', content: 'An offline note must not trigger unbounded requests.' });
+  Date.now = () => now;
+  globalThis.fetch = async (url) => {
+    assert.equal(new URL(url).hostname, 'offline-notes.example');
+    if (new URL(url).pathname.endsWith('/capabilities')) return Response.json({features:{ syncBudget: true, durableObjectCleanup: true, binarySync: true, mutationRelay: true }});
+    assert.ok(new URL(url).pathname.endsWith('/nodi/notes'));
+    calls += 1;
+    if (calls === 1) return new Promise((resolve) => { completeFirst = () => resolve(Response.json({}, { status: 503 })); });
+    return Response.json({}, { status: 503 });
+  };
+  globalThis.setInterval = (callback) => { tick = callback; return { unref() {} }; };
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+  try {
+    service.startNodusServerSync();
+    globalThis.setInterval = originalInterval;
+    tick();
+    await flush();
+    for (let index = 0; index < 10; index += 1) { now += 2000; tick(); await flush(); }
+    assert.equal(calls, 1, 'slow notes requests must never overlap');
+    completeFirst();
+    await flush();
+    for (let index = 0; index < 1440; index += 1) { now += 60_000; tick(); await flush(); }
+    assert.equal(calls, 5, 'one day of pending notes stops after five failed passes');
+  } finally {
+    service.stopNodusServerSync();
+    globalThis.fetch = originalFetch; Date.now = originalNow; globalThis.setInterval = originalInterval;
+  }
+});
+
 test.after(async () => {
   delete process.env.NODUS_SERVER_PUBLISH_WORKER_FILE;
   await rm(userData, { recursive: true, force: true });

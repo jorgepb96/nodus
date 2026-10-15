@@ -183,6 +183,75 @@ test('official verification gates cover signing, Hardened Runtime, stapling and 
   assert.match(artifacts, /assertSameApp/);
 });
 
+// v5.9.0's Intel build was notarized and then lost the connection to Apple's
+// ticket service three times running; each loss failed the whole build.
+test('stapler validate retries a lost network, never a missing ticket', () => {
+  const { validateStapledTicket } = require('./verify-macos-code-signing.cjs');
+  const lost = { status: 68, stdout: 'Processing: Nodus.app\n', stderr: 'error is Error Domain=NSURLErrorDomain Code=-1005 "The network connection was lost."\nThe validate action failed! Error 68.' };
+  const valid = { status: 0, stdout: 'The validate action worked!\n', stderr: '' };
+  const missing = { status: 65, stdout: 'Nodus.app does not have a ticket stapled to it.\n', stderr: '' };
+  const harness = (answers) => {
+    const waits = [];
+    let calls = 0;
+    const attempt = () => validateStapledTicket('/tmp/Nodus.app', {
+      validate: () => { calls += 1; return answers.shift(); },
+      wait: (milliseconds) => waits.push(milliseconds),
+    });
+    return { attempt, calls: () => calls, waits };
+  };
+
+  const recovers = harness([lost, lost, valid]);
+  assert.match(recovers.attempt(), /validate action worked/);
+  assert.equal(recovers.calls(), 3);
+  assert.deepEqual(recovers.waits, [15_000, 30_000]);
+
+  const absent = harness([missing, valid]);
+  assert.throws(absent.attempt, /does not have a ticket stapled/);
+  assert.equal(absent.calls(), 1, 'a missing ticket is never retried');
+
+  const offline = harness(Array.from({ length: 6 }, () => lost));
+  assert.throws(offline.attempt, /network connection was lost/);
+  assert.equal(offline.calls(), 6, 'a lasting outage still fails the build');
+});
+
+// v5.9.0's first Apple silicon build passed every signing check and then died
+// cleaning up: the plain detach reported failure while the volume was already
+// going away, and the -force retry found nothing to detach.
+test('detaching the verified DMG trusts the mount table, not hdiutil exit codes', () => {
+  const { detachDiskImage } = require('./verify-macos-release.cjs');
+  const harness = (outcomes) => {
+    const calls = [];
+    let mounted = true;
+    const result = detachDiskImage('/tmp/dmg', {
+      detach: (args) => {
+        calls.push(args.join(' '));
+        const outcome = outcomes.shift();
+        if (outcome.unmounts) mounted = false;
+        if (outcome.throws) throw new Error(outcome.throws);
+      },
+      mounted: () => mounted,
+      wait: () => {},
+    });
+    return { result, calls };
+  };
+
+  const v590 = harness([{ throws: 'hdiutil: couldn\'t unmount "disk4" - Resource busy', unmounts: true }]);
+  assert.equal(v590.result.detached, true, 'a detach that failed but unmounted the volume is a success');
+  assert.deepEqual(v590.calls, ['detach /tmp/dmg'], 'there is no -force retry against a volume that is gone');
+
+  const busy = harness([{ throws: 'busy' }, { throws: 'busy' }, { unmounts: true }]);
+  assert.equal(busy.result.detached, true);
+  assert.deepEqual(busy.calls, ['detach /tmp/dmg', 'detach /tmp/dmg', 'detach -force /tmp/dmg']);
+
+  const stuck = harness(Array.from({ length: 5 }, () => ({ throws: 'busy' })));
+  assert.equal(stuck.result.detached, false, 'a volume that never goes away is reported, not hidden');
+  assert.equal(stuck.calls.length, 5);
+  assert.equal(stuck.result.errors.length, 5);
+
+  const source = read('scripts/verify-macos-release.cjs');
+  assert.match(source, /if \(verificationError\) throw verificationError;/, 'cleanup never replaces the verification verdict');
+});
+
 // The notary service opens archives it finds inside a submitted application and refuses
 // the whole thing over unsigned code in them. v5.4.0's first attempt died exactly there:
 // fifteen `.bare` prebuilds vendored into a bundled capability package, for macOS and iOS

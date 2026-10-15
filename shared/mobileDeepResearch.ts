@@ -69,7 +69,7 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
   if(output.snapshot&&typeof output.snapshot==='object')containers.push({value:output.snapshot as Record<string,unknown>,path:['snapshot']});
   if(Array.isArray(output.sources))output.sources.forEach((row,position)=>{
    if(!row||typeof row!=='object')return;
-   let citation=typeof row.url==='string'?row.url:typeof row.refId==='string'&&['document','work'].includes(row.kind)?`nodus://${row.kind==='document'?'archive':'work'}/${encodeURIComponent(row.refId)}`:undefined;
+   const citation=typeof row.url==='string'?row.url:typeof row.refId==='string'&&['document','work'].includes(row.kind)?`nodus://${row.kind==='document'?'archive':'work'}/${encodeURIComponent(row.refId)}`:undefined;
    if(!citation)return;
    try {const url=new URL(citation);if(url.protocol!=='nodus:')return;const identity=decodeURIComponent(url.pathname.split('/').filter(Boolean).at(-1)??'');if(!identity)return;index[`${url.hostname}:${identity}`]??={callKey,path:['sources',position],citation};}catch{/* An invalid source locator is never indexed. */}
   });

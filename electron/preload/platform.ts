@@ -40,7 +40,7 @@ export const platformApi: PlatformApi = {
   setLocalServerKeepAwake: (enable) => ipcRenderer.invoke('localServer:setKeepAwake', enable),
   setLocalServerLidServing: (enable) => ipcRenderer.invoke('localServer:setLidServing', enable),
   getDesktopBridgeStatus: () => ipcRenderer.invoke('desktopBridge:status'),
-  createDesktopBridgeOffer: (vaultIds, domains, renewalPairingId, transport) => ipcRenderer.invoke('desktopBridge:offer', vaultIds, domains, renewalPairingId, transport),
+  createDesktopBridgeOffer: (vaultIds, domains, renewalPairingId, transport, options) => ipcRenderer.invoke('desktopBridge:offer', vaultIds, domains, renewalPairingId, transport, options),
   revokeDesktopBridgePairing: (id) => ipcRenderer.invoke('desktopBridge:revoke', id),
   getCopilotStatus: () => ipcRenderer.invoke('copilot:status'),
   regenerateCopilotToken: () => ipcRenderer.invoke('copilot:regenerateToken'),
@@ -82,6 +82,7 @@ export const platformApi: PlatformApi = {
   },
 
   getChatGptSubscriptionStatus: () => ipcRenderer.invoke('ai:chatgptSubscription:status'),
+  installChatGptSubscriptionRuntime: () => ipcRenderer.invoke('ai:chatgptSubscription:installRuntime'),
   startChatGptSubscriptionLogin: () => ipcRenderer.invoke('ai:chatgptSubscription:login'),
   cancelChatGptSubscriptionLogin: (loginId) => ipcRenderer.invoke('ai:chatgptSubscription:cancelLogin', loginId),
   logoutChatGptSubscription: () => ipcRenderer.invoke('ai:chatgptSubscription:logout'),
@@ -91,6 +92,7 @@ export const platformApi: PlatformApi = {
     return () => ipcRenderer.removeListener('ai:chatgptSubscription:statusChanged', listener);
   },
   getGitHubCopilotSubscriptionStatus: () => ipcRenderer.invoke('ai:githubCopilotSubscription:status'),
+  installGitHubCopilotSubscriptionRuntime: () => ipcRenderer.invoke('ai:githubCopilotSubscription:installRuntime'),
   startGitHubCopilotSubscriptionLogin: () => ipcRenderer.invoke('ai:githubCopilotSubscription:login'),
   cancelGitHubCopilotSubscriptionLogin: () => ipcRenderer.invoke('ai:githubCopilotSubscription:cancelLogin'),
   logoutGitHubCopilotSubscription: () => ipcRenderer.invoke('ai:githubCopilotSubscription:logout'),
@@ -113,6 +115,8 @@ export const platformApi: PlatformApi = {
   testCustomProvider: () => ipcRenderer.invoke('ai:testCustomProvider'),
   getLocalAiDiagnostics: () => ipcRenderer.invoke('ai:localDiagnostics'),
   listImageModels: () => ipcRenderer.invoke('ai:listImageModels'),
+  generateEditorImage: (request) => ipcRenderer.invoke('ai:editorImage:generate', request),
+  cancelEditorImage: (requestId) => ipcRenderer.invoke('ai:editorImage:cancel', requestId).then(() => undefined),
   getNodusLocalAiStatus: () => ipcRenderer.invoke('ai:nodusLocal:status'),
   installNodusLocalRuntime: async (onProgress) => {
     const requestId = `nodus-local-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}`;

@@ -79,6 +79,9 @@ test('the label of a work is its first author, surname and initial, with the yea
   assert.equal(authorYearLabel('Miguel Ángel del Arco Blanco', 2024), 'Blanco, M. (2024)');
   assert.equal(authorYearLabel(undefined, 2024, 'Los niños de Franco'), 'Los niños de Franco (2024)');
   assert.equal(authorYearLabel(undefined, null, ''), 'Obra sin autor');
+  // An anonymous untitled work is named in the report's language, not always Spanish.
+  assert.equal(authorYearLabel(undefined, 1978, '', 'en'), 'Untitled work (1978)');
+  assert.equal(authorYearLabel(undefined, null, '', 'de'), 'Werk ohne Autor');
 });
 
 test('an editor marked in the byline is named as one, never silently as an author', () => {

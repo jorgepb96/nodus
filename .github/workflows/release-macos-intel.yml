@@ -1,0 +1,298 @@
+name: macOS Intel release
+
+# The Intel product is appended to a release after it has been published, so
+# the slower Intel runner never holds back Apple silicon, Windows and Linux.
+# release-build.yml dispatches this as a separate run after publication. It can also be
+# dispatched by hand to retry a failed run or to add Intel to a release that was
+# published without it.
+#
+# The build comes from the release tag itself, so the Intel product is the same
+# application as the one already published. Nothing published is rebuilt or
+# moved: the arm64 artifacts stay as they are and the update manifest keeps its
+# arm64 entries first and its compatibility pointer on the arm64 ZIP. Until this
+# finishes, Intel installs see no update for themselves and stay where they are.
+on:
+  workflow_call:
+    inputs:
+      channel:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Release channel
+        required: true
+        default: latest
+        type: choice
+        options:
+          - latest
+          - beta
+      tag:
+        description: Published release tag (vX.Y.Z or vX.Y.Z-beta.N)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# Distinct from release-build.yml's group: a called workflow sharing its
+# caller's group would wait on the caller forever.
+concurrency:
+  group: nodus-release-macos-intel-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release-macos-intel:
+    # npm resolves the native optional dependencies from the host architecture,
+    # so the Intel product can only be packed on an Intel host. macos-15-intel
+    # is the last x86_64 image GitHub hosts.
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    env:
+      NODUS_RELEASE_CHANNEL: ${{ inputs.channel }}
+      CHANNEL: ${{ inputs.channel }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      # The application comes from the tag. Signing tooling comes from this
+      # workflow's commit and stays outside the bundle, so a tooling fix can
+      # recover the Intel build of an already published tag.
+      - name: Checkout this workflow's macOS build tooling
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: |
+            scripts/verify-macos-code-signing.cjs
+            scripts/verify-macos-release.cjs
+            scripts/macos-stapler-retry.cjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Apply this workflow's macOS build tooling
+        run: cp .release-tools/scripts/verify-macos-code-signing.cjs .release-tools/scripts/verify-macos-release.cjs .release-tools/scripts/macos-stapler-retry.cjs scripts/
+
+      - name: Verify the release is one this may touch
+        run: |
+          set -euo pipefail
+          node scripts/verify-release-channel.mjs "$CHANNEL" "$RELEASE_TAG"
+          # A draft has not passed its own publication gate yet, so there is
+          # nothing to append to.
+          if [[ "$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" != false ]]; then
+            echo "::error::$RELEASE_TAG is not published; Intel is only appended to a published release"
+            exit 1
+          fi
+          assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          for required in Nodus-mac-arm64.dmg Nodus-mac-arm64.zip "${CHANNEL}-mac.yml"; do
+            if ! grep -Fxq "$required" <<< "$assets"; then
+              echo "::error::$RELEASE_TAG is missing $required"
+              exit 1
+            fi
+          done
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify adaptive concurrency contracts
+        run: npm run test:adaptive-concurrency
+
+      # Electron 43 exposes its runtime downloader as a CLI instead of running
+      # it during npm install. beforePack inventories LICENSES.chromium.html
+      # from that verified distribution on every packaging platform.
+      - name: Install Electron runtime
+        run: node node_modules/electron/install.js
+
+      - name: Build renderer + main
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build
+
+      # Same requirement as every other release build: an Intel install that
+      # upgrades from 5.3.1 must be able to adopt its disciplines offline.
+      - name: Bundle the capability bootstrap
+        env:
+          NODUS_REQUIRE_BOOTSTRAP: '1'
+        run: npm run capabilities:bootstrap
+
+      - name: Prepare temporary macOS signing keychain
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          set -euo pipefail
+          required=(
+            MACOS_CERTIFICATE_BASE64
+            MACOS_CERTIFICATE_PASSWORD
+            APPLE_API_KEY_BASE64
+            APPLE_API_KEY_ID
+            APPLE_API_ISSUER
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required macOS release secret is not configured: $name"
+              exit 1
+            fi
+          done
+
+          certificate_path="$RUNNER_TEMP/nodus-signing-certificate.p12"
+          api_key_path="$RUNNER_TEMP/nodus-notary-api-key.p8"
+          keychain_path="$RUNNER_TEMP/nodus-signing.keychain-db"
+          keychain_password="$(openssl rand -base64 32)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"
+          chmod 600 "$certificate_path" "$api_key_path"
+          openssl pkey -in "$api_key_path" -noout
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path" >/dev/null
+
+          # codesign only resolves identities from the user's keychain search
+          # list, even when --keychain is also supplied. Preserve the runner's
+          # existing keychains while making this isolated one discoverable.
+          search_keychains=("$keychain_path")
+          while IFS= read -r existing_keychain; do
+            if [[ -n "$existing_keychain" && "$existing_keychain" != "$keychain_path" ]]; then
+              search_keychains+=("$existing_keychain")
+            fi
+          done < <(security list-keychains -d user | sed -E 's/^[[:space:]]*"([^"]+)".*/\1/')
+          security list-keychains -d user -s "${search_keychains[@]}"
+
+          signing_identities="$(security find-identity -v -p codesigning "$keychain_path")"
+          if [[ "$signing_identities" != *'"Developer ID Application:'* ]]; then
+            echo "::error::The imported .p12 does not contain a valid Developer ID Application identity and private key"
+            exit 1
+          fi
+
+          # Fail before the expensive app build if codesign cannot use the
+          # imported private key in this non-interactive runner session.
+          identity_hash="$(awk '/"Developer ID Application:/ { print $2; exit }' <<< "$signing_identities")"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          cp /usr/bin/true "$signing_probe"
+          codesign --force \
+            --sign "$identity_hash" \
+            --keychain "$keychain_path" \
+            --timestamp \
+            --options runtime \
+            "$signing_probe"
+          codesign --verify --strict "$signing_probe"
+          rm -f "$signing_probe"
+
+          {
+            echo "CSC_KEYCHAIN=$keychain_path"
+            echo "APPLE_API_KEY=$api_key_path"
+            echo "NODUS_MACOS_CERTIFICATE_PATH=$certificate_path"
+            echo "NODUS_NOTARY_KEY_PATH=$api_key_path"
+          } >> "$GITHUB_ENV"
+
+      - name: Build, sign and notarize the Intel artifacts
+        env:
+          NODUS_RETRY_MACOS_STAPLING: '1'
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          NODUS_REQUIRE_MACOS_SIGNING: true
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        # Native rebuild workers inherit Node's execArgv and change cwd. The
+        # preload must stay resolvable from those workers too.
+        run: node --require "$GITHUB_WORKSPACE/scripts/macos-stapler-retry.cjs" node_modules/.bin/electron-builder --mac --x64 --publish never --config build/electron-builder.release.cjs
+
+      - name: Verify signed and notarized Intel artifacts
+        run: node scripts/verify-macos-release.cjs release x64
+
+      - name: Remove temporary macOS credentials
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          keychain_path="${CSC_KEYCHAIN:-$RUNNER_TEMP/nodus-signing.keychain-db}"
+          certificate_path="${NODUS_MACOS_CERTIFICATE_PATH:-$RUNNER_TEMP/nodus-signing-certificate.p12}"
+          api_key_path="${NODUS_NOTARY_KEY_PATH:-$RUNNER_TEMP/nodus-notary-api-key.p8}"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          security lock-keychain "$keychain_path" >/dev/null 2>&1
+          security delete-keychain "$keychain_path" >/dev/null 2>&1
+          rm -f "$certificate_path" "$api_key_path" "$keychain_path" "$signing_probe"
+
+      - name: Upload the Intel artifacts to the published release
+        run: node scripts/upload-release-assets.mjs mac-x64
+
+      - name: Add the Intel entries to the published update manifest
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "${CHANNEL}-mac.yml" \
+            --dir "$work"
+          mv "$work/${CHANNEL}-mac.yml" "$work/published-mac.yml"
+          # The fresh Intel manifest goes first: the merger keeps the first
+          # entry it meets for each URL, so a retried run replaces the Intel
+          # hashes of an earlier attempt instead of keeping them. The arm64
+          # entries, the compatibility pointer and its release date exist only
+          # in the published manifest and come through untouched.
+          node scripts/merge-mac-update-manifest.mjs \
+            "$work/${CHANNEL}-mac.yml" \
+            "release/${CHANNEL}-mac.yml" \
+            "$work/published-mac.yml"
+          gh release upload "$RELEASE_TAG" \
+            "$work/${CHANNEL}-mac.yml" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+      - name: Verify the published release now serves both architectures
+        run: |
+          set -euo pipefail
+          assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          for asset in Nodus-mac-arm64.dmg Nodus-mac-arm64.zip Nodus-mac-x64.dmg Nodus-mac-x64.zip; do
+            if ! grep -Fxq "$asset" <<< "$assets"; then
+              echo "::error::$RELEASE_TAG is missing $asset"
+              exit 1
+            fi
+          done
+          verify_dir="$(mktemp -d)"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "${CHANNEL}-mac.yml" \
+            --dir "$verify_dir"
+          manifest="$verify_dir/${CHANNEL}-mac.yml"
+          for arch in arm64 x64; do
+            if ! grep -q "Nodus-mac-${arch}.zip" "$manifest"; then
+              echo "::error::The published macOS manifest does not list Nodus-mac-${arch}.zip"
+              exit 1
+            fi
+          done
+          # Unchanged from what was published: an Apple silicon install that
+          # ignores `files` must still be sent to its own build.
+          if ! grep -qx "path: Nodus-mac-arm64.zip" "$manifest"; then
+            echo "::error::The macOS compatibility pointer moved off the arm64 ZIP"
+            exit 1
+          fi

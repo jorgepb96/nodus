@@ -53,6 +53,7 @@ function load(file) {
 
 const { localizeRuntimeError, localizeIpcPayload } = load('shared/uiLanguage.ts');
 const { MAIN_PROCESS_ERRORS, MAIN_PROCESS_ERROR_PATTERNS } = load('shared/mainProcessErrors.ts');
+const { CLOUDFLARE_SYNC_ERRORS } = load('shared/cloudflareSyncErrors.ts');
 
 /** Every language the interface offers, minus Spanish (the source). */
 const LANGUAGES = ['en', 'fr', 'de', 'pt', 'pt-BR', 'it', 'tr', 'zh-CN'];
@@ -191,6 +192,43 @@ test('every parameterized pattern keeps its runtime values and translates around
   }
 });
 
+test('Cloudflare safety errors preserve their cause and recovery instruction through IPC in every UI language', () => {
+  const languages = [...LANGUAGES, 'zh-TW', 'ja', 'ko'];
+  for (const [message, translations] of Object.entries(CLOUDFLARE_SYNC_ERRORS)) {
+    for (const language of languages) {
+      assert.ok(translations[language], `${message} needs a ${language} translation`);
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.equal(localized.error, translations[language]);
+      assert.ok(!GENERIC.has(localized.error));
+    }
+  }
+  const cause = 'La publicación alcanzó el límite de seguridad de llamadas a Cloudflare.';
+  const suffixes = [
+    'La sincronización automática se ha detenido para evitar llamadas repetidas.',
+    'La sincronización automática se ha detenido para evitar llamadas repetidas. Vuelve a conectar o sincroniza manualmente tras resolver el error.',
+  ];
+  for (const language of languages) {
+    for (const suffix of suffixes) {
+      const message = `${cause} ${suffix}`;
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.equal(localized.error, `${CLOUDFLARE_SYNC_ERRORS[cause][language]} ${CLOUDFLARE_SYNC_ERRORS[suffix][language]}`);
+      assert.equal(localizeRuntimeError(message, 'es'), message);
+      assert.equal(localizeRuntimeError(`HTTP 429 ${suffix}`, language), `HTTP 429 ${CLOUDFLARE_SYNC_ERRORS[suffix][language]}`);
+    }
+    for (const [message, value] of [
+      ['El índice ideas-768 supera el límite seguro de búsqueda exacta de Cloudflare.', 'ideas-768'],
+      ['El proceso auxiliar de réplica terminó sin completar la importación (SIGKILL).', 'SIGKILL'],
+      ['No se pudieron verificar las protecciones de Cloudflare (HTTP 503).', '503'],
+      ['Cloudflare no devolvió el relay (HTTP 429).', '429'],
+    ]) {
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.ok(localized.error.includes(value), `${language} preserves ${value}`);
+      assert.notEqual(localized.error, message);
+      assert.ok(!GENERIC.has(localized.error));
+    }
+  }
+});
+
 test('Scriptor errors preserve recovery codes and unsupported formula elements through IPC', () => {
   const messages = [
     'REVISION_CONFLICT: La nota ha cambiado en otra sesión. El borrador se conserva.',
@@ -208,6 +246,25 @@ test('Scriptor errors preserve recovery codes and unsupported formula elements t
     assert.ok(formula.endsWith(' merror'), 'the rejected element stays available to diagnose the export');
     assert.notEqual(formula, 'La fórmula contiene un elemento no compatible con Word: merror');
     assert.ok(!GENERIC.has(formula));
+  }
+});
+
+test('live dictation errors preserve installation guidance and failure codes through IPC', () => {
+  const messages = [
+    ['El dictado en directo necesita whisper-server, incluido en whisper.cpp. Actualiza la instalación desde Ajustes → Modelos IA.', 'whisper-server'],
+    ['Whisper no pudo transcribir el audio (503).', '503'],
+    ['whisper-server terminó (null).', 'null'],
+    ['Whisper no terminó de preparar el modelo local.', 'Whisper'],
+  ];
+  for (const language of [...LANGUAGES, 'zh-TW', 'ja', 'ko']) {
+    for (const [message, detail] of messages) {
+      const localized = localizeIpcPayload({ ok: false, error: message }, language);
+      assert.equal(localized.ok, false);
+      assert.notEqual(localized.error, message, `${language} translates ${message}`);
+      assert.ok(localized.error.includes(detail), `${language} preserves ${detail}`);
+      assert.ok(!GENERIC.has(localized.error), `${language} preserves the dictation failure's cause`);
+      assert.equal(localizeIpcPayload({ ok: false, error: message }, 'es').error, message);
+    }
   }
 });
 

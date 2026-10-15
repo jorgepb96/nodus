@@ -1,6 +1,6 @@
 import type { ModelRef } from '@shared/types';
 import { validResearchAction, type ResearchAction } from '@shared/researchActions';
-import { completeJson } from './aiClient';
+import { completeJson, researchStepTimeoutMs } from './aiClient';
 import { researchActivityStep } from './researchActivity';
 import type { ResearchCorpusRun } from './researchCorpusRun';
 
@@ -153,7 +153,7 @@ async function superviseResearch(run: ResearchCorpusRun, question: string, unind
     let decision;
     try {
       decision = await researchActivityStep('tools', 'resolve', () => completeJson({ system: SYSTEM, user, maxTokens: 384,
-        temperature: 0, noRetry: true, corpusContext: true, signal: run.signal }, (value): value is ResearchAction => validResearchAction(value, web, !!run.agent), model));
+        temperature: 0, noRetry: true, corpusContext: true, signal: run.signal, timeoutMs: researchStepTimeoutMs(model) }, (value): value is ResearchAction => validResearchAction(value, web, !!run.agent), model));
     } catch {
       run.validate(); run.budget.partial = true; run.limitations.add('research_decision_unavailable'); return;
     }

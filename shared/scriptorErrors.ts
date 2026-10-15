@@ -46,11 +46,59 @@ const rows: ErrorRow[] = [
   ['ACADEMIC_PROJECTION_CONFLICT: Esta edición eliminaría citas o notas estructuradas. Abre Scriptor para resolverla; el borrador se conserva.', 'ACADEMIC_PROJECTION_CONFLICT: This edit would remove structured citations or notes. Open Scriptor to resolve it; your draft is preserved.', 'ACADEMIC_PROJECTION_CONFLICT: Cette modification supprimerait des citations ou notes structurées. Ouvrez Scriptor pour la résoudre ; votre brouillon est conservé.', 'ACADEMIC_PROJECTION_CONFLICT: Diese Änderung würde strukturierte Zitate oder Notizen entfernen. Öffnen Sie Scriptor, um sie zu klären; Ihr Entwurf bleibt erhalten.', 'ACADEMIC_PROJECTION_CONFLICT: Esta edição eliminaria citações ou notas estruturadas. Abra o Scriptor para a resolver; o rascunho é preservado.', 'ACADEMIC_PROJECTION_CONFLICT: Questa modifica eliminerebbe citazioni o note strutturate. Apri Scriptor per risolverla; la bozza è conservata.', 'ACADEMIC_PROJECTION_CONFLICT: Bu düzenleme yapılandırılmış atıfları veya notları silecektir. Çözmek için Scriptor’u açın; taslağınız korunuyor.', 'ACADEMIC_PROJECTION_CONFLICT: 此编辑会删除结构化引文或注释。请打开 Scriptor 解决；草稿已保留。'],
 ];
 
-export const SCRIPTOR_RUNTIME_ERRORS: Record<string, Translations> = Object.fromEntries(rows.map(([source, ...values]) => {
-  const translations = Object.fromEntries(languages.map((language, index) => [language, values[index]])) as Translations;
-  translations['pt-BR'] = translations.pt;
-  return [source, translations];
-}));
+export const SCRIPTOR_RUNTIME_ERRORS: Record<string, Translations> = {
+  ...Object.fromEntries(rows.map(([source, ...values]) => {
+    const translations = Object.fromEntries(languages.map((language, index) => [language, values[index]])) as Translations;
+    translations['pt-BR'] = translations.pt;
+    return [source, translations];
+  })),
+  'Solicitud de imagen inválida.': {
+    en: 'Invalid image request.', fr: 'Demande d’image invalide.', de: 'Ungültige Bildanfrage.',
+    pt: 'Pedido de imagem inválido.', 'pt-BR': 'Solicitação de imagem inválida.',
+    it: 'Richiesta di immagine non valida.', tr: 'Geçersiz görsel isteği.',
+    'zh-CN': '图像请求无效。', 'zh-TW': '圖像請求無效。', ja: '画像リクエストが無効です。', ko: '이미지 요청이 잘못되었습니다.',
+  },
+  'Describe la imagen con un máximo de 8.000 caracteres.': {
+    en: 'Describe the image using no more than 8,000 characters.',
+    fr: 'Décrivez l’image en 8 000 caractères maximum.', de: 'Beschreiben Sie das Bild mit höchstens 8.000 Zeichen.',
+    pt: 'Descreva a imagem com um máximo de 8.000 caracteres.', 'pt-BR': 'Descreva a imagem com no máximo 8.000 caracteres.',
+    it: 'Descrivi l’immagine con un massimo di 8.000 caratteri.', tr: 'Görseli en fazla 8.000 karakterle açıklayın.',
+    'zh-CN': '请用不超过 8,000 个字符描述图像。', 'zh-TW': '請用不超過 8,000 個字元描述圖像。',
+    ja: '画像の説明は8,000文字以内で入力してください。', ko: '이미지 설명은 8,000자 이내로 입력하세요.',
+  },
+  'Elige un modelo de imagen disponible.': {
+    en: 'Choose an available image model.', fr: 'Choisissez un modèle d’image disponible.', de: 'Wählen Sie ein verfügbares Bildmodell.',
+    pt: 'Escolha um modelo de imagem disponível.', 'pt-BR': 'Escolha um modelo de imagem disponível.',
+    it: 'Scegli un modello di immagine disponibile.', tr: 'Kullanılabilir bir görsel modeli seçin.',
+    'zh-CN': '请选择可用的图像模型。', 'zh-TW': '請選擇可用的圖像模型。', ja: '利用可能な画像モデルを選択してください。', ko: '사용 가능한 이미지 모델을 선택하세요.',
+  },
+  'La imagen supera 20 MB.': {
+    en: 'The image exceeds 20 MB.', fr: 'L’image dépasse 20 Mo.', de: 'Das Bild überschreitet 20 MB.',
+    pt: 'A imagem excede 20 MB.', 'pt-BR': 'A imagem excede 20 MB.', it: 'L’immagine supera 20 MB.', tr: 'Görsel 20 MB sınırını aşıyor.',
+    'zh-CN': '图像超过 20 MB。', 'zh-TW': '圖像超過 20 MB。', ja: '画像が20 MBを超えています。', ko: '이미지가 20 MB를 초과합니다.',
+  },
+  'Las instrucciones superan el límite de 4.000 caracteres.': {
+    en: 'The instructions exceed the 4,000-character limit.', fr: 'Les instructions dépassent la limite de 4 000 caractères.',
+    de: 'Die Anweisungen überschreiten das Limit von 4.000 Zeichen.',
+    pt: 'As instruções excedem o limite de 4.000 caracteres.', 'pt-BR': 'As instruções excedem o limite de 4.000 caracteres.',
+    it: 'Le istruzioni superano il limite di 4.000 caratteri.', tr: 'Talimatlar 4.000 karakter sınırını aşıyor.',
+    'zh-CN': '指令超过 4,000 个字符的限制。', 'zh-TW': '指令超過 4,000 個字元的限制。',
+    ja: '指示が4,000文字の上限を超えています。', ko: '지시가 4,000자 제한을 초과합니다.',
+  },
+  'La IA no devolvió texto. El original no se ha modificado.': {
+    en: 'AI returned no text. The original has not been modified.',
+    fr: 'L’IA n’a renvoyé aucun texte. L’original n’a pas été modifié.', de: 'Die KI hat keinen Text zurückgegeben. Das Original wurde nicht geändert.',
+    pt: 'A IA não devolveu texto. O original não foi alterado.', 'pt-BR': 'A IA não retornou texto. O original não foi alterado.',
+    it: 'L’IA non ha restituito testo. L’originale non è stato modificato.', tr: 'Yapay zekâ metin döndürmedi. Orijinal metin değiştirilmedi.',
+    'zh-CN': 'AI 未返回文本。原文未被修改。', 'zh-TW': 'AI 未傳回文字。原文未被修改。',
+    ja: 'AIからテキストが返されませんでした。原文は変更されていません。', ko: 'AI가 텍스트를 반환하지 않았습니다. 원문은 변경되지 않았습니다.',
+  },
+  'La solicitud ya está en curso.': {
+    en: 'The request is already in progress.', fr: 'La demande est déjà en cours.', de: 'Die Anfrage wird bereits bearbeitet.',
+    pt: 'O pedido já está em curso.', 'pt-BR': 'A solicitação já está em andamento.', it: 'La richiesta è già in corso.', tr: 'İstek zaten devam ediyor.',
+    'zh-CN': '请求已在进行中。', 'zh-TW': '請求已在進行中。', ja: 'リクエストはすでに処理中です。', ko: '요청이 이미 진행 중입니다.',
+  },
+};
 
 export const SCRIPTOR_RUNTIME_ERROR_PATTERNS = [{
   pattern: /^La fórmula contiene un elemento no compatible con Word: (.+)$/,

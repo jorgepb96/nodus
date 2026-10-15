@@ -106,11 +106,24 @@ function cropFor(focus) {
 }
 
 /** An ffconcat list reproducing the real frame timing inside one shot. */
-async function concatListFor(start, end, dest) {
+async function concatListFor(start, end, dest, maxFrames = Infinity) {
   const inRange = frames.filter((f) => f.t >= start && f.t < end);
   // A completely static shot emits no new frames; hold the last one before it.
   const before = [...frames].reverse().find((f) => f.t <= start) ?? frames[0];
-  const seq = inRange.length ? [before, ...inRange] : [before];
+  let seq = inRange.length ? [before, ...inRange] : [before];
+  // Time-compressed waits only need the frames that can reach the output.
+  // Sample before decoding, retaining both boundaries and real frame timestamps.
+  if(seq.length>maxFrames){
+    const sampled=[seq[0]];let cursor=0;
+    for(let tick=1;tick<maxFrames-1;tick++){
+      const at=start+(end-start)*tick/(maxFrames-1);
+      while(cursor+1<seq.length&&seq[cursor+1].t<=at)cursor++;
+      if(sampled.at(-1)!==seq[cursor])sampled.push(seq[cursor]);
+    }
+    if(sampled.at(-1)!==seq.at(-1))sampled.push(seq.at(-1));
+    console.log(`[assemble] compressed wait: ${seq.length} real frames sampled to ${sampled.length}`);
+    seq=sampled;
+  }
 
   const lines = ['ffconcat version 1.0'];
   // Hold the final frame so the list always spans the full window asked for. If the
@@ -150,7 +163,7 @@ for (const shot of shots) {
   const span = shot.end - shot.start;
   const useFor = shot.timelapse ? span : Math.min(cue.duration, span);
   const speedUp = shot.timelapse ? span / cue.duration : 1;
-  const frameCount = await concatListFor(shot.start, shot.start + useFor, listFile);
+  const frameCount = await concatListFor(shot.start, shot.start + useFor, listFile,shot.timelapse&&speedUp>2?Math.ceil(cue.duration*FPS*2)+2:Infinity);
   if (shot.timelapse) {
     console.log(`[assemble] ${shot.id}: ${span.toFixed(0)}s of real work → ${cue.duration.toFixed(1)}s (${speedUp.toFixed(1)}× faster)`);
   }

@@ -411,6 +411,106 @@ test('bookmarks use Nodus auxiliary persistence and never Chromium storage', () 
   assert.doesNotMatch(lifecycle, /browserBookmarks|browser-bookmarks\.json/);
 });
 
+/**
+ * A root folder with two subfolders and four bookmarks saved on different days,
+ * plus one starred bookmark filed inside a subfolder. Titles mix case and accents
+ * so the alphabetical sorts cannot pass on byte order alone.
+ */
+function datedStore() {
+  let store = model.emptyBrowserBookmarkStore();
+  const day = (n) => `2026-08-${String(n).padStart(2, '0')}T12:00:00.000Z`;
+  const folder = (name, parentId, n) => { const made = model.insertBrowserBookmarkFolder(store, { name, parentId }, id(), day(n)); store = made.store; return made.folder; };
+  const save = (title, host, n, extra = {}) => { const made = model.insertBrowserBookmark(store, { title, url: `https://${host}.example/`, ...extra }, id(), day(n)); store = made.store; return made.bookmark; };
+  const zebra = folder('Zebra folder', null, 3);
+  const archive = folder('archivo', null, 6);
+  const europeana = save('Europeana', 'europeana', 1, { favorite: true });
+  const arxiv = save('arXiv', 'arxiv', 5);
+  const eloy = save('Éloy', 'eloy', 2);
+  const brepols = save('Brepols', 'brepols', 4, { favorite: true });
+  const hidden = save('Gallica', 'gallica', 7, { parentId: zebra.id, favorite: true });
+  return { store, zebra, archive, europeana, arxiv, eloy, brepols, hidden };
+}
+
+const labels = (store, refs) => refs.map((ref) => (ref.kind === 'folder'
+  ? `[${store.folders.find((entry) => entry.id === ref.id).name}]`
+  : store.bookmarks.find((entry) => entry.id === ref.id).title));
+
+test('favourites are stored, toggled, kept through JSON, and absent means not starred', () => {
+  const value = datedStore();
+  assert.equal(value.europeana.favorite, true);
+  assert.equal(value.arxiv.favorite, false);
+  const unstarred = model.updateBrowserBookmark(value.store, value.europeana.id, { favorite: false }, now);
+  assert.equal(unstarred.bookmarks.find((entry) => entry.id === value.europeana.id).favorite, false);
+  const starred = model.updateBrowserBookmark(unstarred, value.arxiv.id, { favorite: true }, now);
+  assert.equal(starred.bookmarks.find((entry) => entry.id === value.arxiv.id).favorite, true);
+  // An edit that does not mention the star leaves it alone.
+  const renamed = model.updateBrowserBookmark(starred, value.arxiv.id, { title: 'arXiv.org' }, now);
+  assert.equal(renamed.bookmarks.find((entry) => entry.id === value.arxiv.id).favorite, true);
+
+  const roundTrip = model.parseBrowserBookmarksJson(model.exportBrowserBookmarksJson(renamed));
+  assert.deepEqual(roundTrip.bookmarks.filter((entry) => entry.favorite).map((entry) => entry.title).sort(), ['Brepols', 'Gallica', 'arXiv.org']);
+
+  // Stores written before favourites existed have no field; a hand-edited one may hold junk.
+  const legacy = JSON.parse(JSON.stringify(value.store));
+  delete legacy.bookmarks[0].favorite;
+  legacy.bookmarks[1].favorite = 'yes';
+  const normalized = model.normalizeBrowserBookmarkStore(legacy, now);
+  assert.equal(normalized.bookmarks[0].favorite, false);
+  assert.equal(normalized.bookmarks[1].favorite, false);
+});
+
+test('the Bookmarks page sorts by date, by name, folders first, and by favourites', () => {
+  const { store } = datedStore();
+  const sorted = (sort) => labels(store, model.sortBrowserBookmarkItems(store, null, sort));
+  assert.equal(model.DEFAULT_BROWSER_BOOKMARK_SORT, 'recent');
+  assert.deepEqual(sorted('recent'), ['[archivo]', 'arXiv', 'Brepols', '[Zebra folder]', 'Éloy', 'Europeana']);
+  assert.deepEqual(sorted('oldest'), ['Europeana', 'Éloy', '[Zebra folder]', 'Brepols', 'arXiv', '[archivo]']);
+  assert.deepEqual(sorted('alpha'), ['[archivo]', 'arXiv', 'Brepols', 'Éloy', 'Europeana', '[Zebra folder]']);
+  assert.deepEqual(sorted('alpha-desc'), ['[Zebra folder]', 'Europeana', 'Éloy', 'Brepols', 'arXiv', '[archivo]']);
+  assert.deepEqual(sorted('folders-alpha'), ['[archivo]', '[Zebra folder]', 'arXiv', 'Brepols', 'Éloy', 'Europeana']);
+  assert.deepEqual(sorted('folders-alpha-desc'), ['[Zebra folder]', '[archivo]', 'Europeana', 'Éloy', 'Brepols', 'arXiv']);
+  // Favourites A-Z on top; the rest of the folder stays newest first.
+  assert.deepEqual(sorted('favorites-first'), ['Brepols', 'Europeana', '[archivo]', 'arXiv', '[Zebra folder]', 'Éloy']);
+  // Only favourites: the whole collection, including one filed in a subfolder, and no folders.
+  assert.deepEqual(sorted('favorites-only'), ['Brepols', 'Europeana', 'Gallica']);
+  assert.deepEqual(labels(store, model.sortBrowserBookmarkItems(store, store.folders[0].id, 'favorites-only')), ['Brepols', 'Europeana', 'Gallica']);
+});
+
+test('sorting is display only and never rewrites the manual order', () => {
+  const { store } = datedStore();
+  const before = JSON.stringify(store);
+  for (const sort of model.BROWSER_BOOKMARK_SORTS) model.sortBrowserBookmarkItems(store, null, sort);
+  assert.equal(JSON.stringify(store), before);
+  assert.equal(model.isBrowserBookmarkSort('recent'), true);
+  assert.equal(model.isBrowserBookmarkSort('newest'), false, 'an unknown stored value falls back to the default');
+});
+
+test('the Bookmarks page offers the sort popover and a favourite star instead of the Saved tag', () => {
+  const pages = readFileSync(path.join(repoRoot, 'src/components/browser/NodusStartPages.tsx'), 'utf8');
+  const styles = readFileSync(path.join(repoRoot, 'src/components/browser/NodusBookmarks.css'), 'utf8');
+  const bookmarksPage = pages.slice(pages.indexOf('export function NodusBookmarksPage('), pages.indexOf('type AtlasFacetKey'));
+  const filterbar = bookmarksPage.slice(bookmarksPage.indexOf('<div className="atlas-filterbar">'), bookmarksPage.indexOf('data-testid="browser-bookmarks-import-html"'));
+  assert.match(filterbar, /<BookmarkSortMenu sort=\{sort\} onSort=\{setSort\} \/>\s*<BookmarkViewToggle view=\{view\} onView=\{setView\} \/>/,
+    'the sort pill and the view toggle sit in the action row');
+  assert.doesNotMatch(filterbar, /Research Atlas/, 'the Atlas is in the site header, so the action row does not repeat it');
+  assert.match(styles, /\.bookmarks-main \.atlas-filterbar \{ flex-wrap:wrap; \}/,
+    'the Bookmarks action row wraps instead of squeezing its pills');
+  assert.match(pages, /localStorage\.getItem\(BOOKMARK_VIEW_STORAGE_KEY\) === 'list' \? 'list' : 'cards'/, 'cards is the default view');
+  assert.match(pages, /<div className="bookmark-list" data-testid="browser-bookmarks-list">/);
+  assert.match(styles, /\.bookmark-list \.bookmark-card \.atlas-description \{ display:none; \}/);
+  assert.match(pages, /role="menuitemradio"/);
+  for (const sort of ['recent', 'oldest', 'alpha', 'alpha-desc', 'folders-alpha', 'folders-alpha-desc', 'favorites-first', 'favorites-only']) {
+    assert.match(pages, new RegExp(`\\{ sort: '${sort}', label: `), `the menu offers ${sort}`);
+  }
+  assert.match(pages, /sortBrowserBookmarkItems\(store, folderId, sort\)/);
+  assert.match(pages, /localStorage\.getItem\(BOOKMARK_SORT_STORAGE_KEY\)/, 'the chosen order survives reopening the page');
+  assert.doesNotMatch(bookmarksPage, /t\('Guardado'\)/, 'bookmark cards no longer carry the Saved tag');
+  assert.match(bookmarksPage, /data-testid="browser-bookmark-favorite"[\s\S]{0,200}aria-pressed=\{entry\.favorite\}/);
+  assert.match(bookmarksPage, /updateBrowserBookmark\(entry\.id, \{ favorite: !entry\.favorite \}\)/);
+  assert.match(styles, /\.bookmark-star\.is-favorite \{ color:#facc15; \}/, 'a starred bookmark turns yellow');
+  assert.match(styles, /\.bookmark-star\.is-favorite svg \{ fill:currentColor; \}/);
+});
+
 test('trusted Bookmarks UI reuses Atlas styling and avoids native prompt dialogs', () => {
   const styles = readFileSync(path.join(repoRoot, 'src/components/browser/NodusBookmarks.css'), 'utf8');
   const pages = readFileSync(path.join(repoRoot, 'src/components/browser/NodusStartPages.tsx'), 'utf8');

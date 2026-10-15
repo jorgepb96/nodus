@@ -5,18 +5,18 @@ import {resolveAcademicRunScope} from '../ai/researchCorpusRun';
 import {createHash} from 'node:crypto';
 import {getDb} from '../db/database';
 import {getActiveVault} from '../vaults/vaultRegistry';
-import {buildIdeaFirstWritingWorkshopSnapshot,buildHistoricalWritingWorkshopSnapshot,retrieveSectionMaterial,retrieveSectionMaterialLegacy} from '../ai/writingWorkshop';
+
 import {academicRelationshipContext} from '../ai/deepResearchApproaches';
 import {companionCanonicalDeepResearchDeps,generateDeepResearchReport} from '../ai/deepResearch';
 import {withJobOutputLanguage} from '../ai/jobOutputLanguage';
 import {withJobThinkingEffort} from '../ai/thinkingEffort';
 import {withMobileCompletionReplay} from '../ai/mobileCompletionReplay';
-import {prepareRelevantDocumentProfiles} from '../ai/documentPreparation';
+
 import {getWritingWorkshopDraft,saveWritingWorkshopDraft} from '../db/writingDraftsRepo';
 import {canonicalJson} from '../../shared/canonicalJson';
-import {normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchProof,type MobileDeepResearchSource} from '../../shared/mobileDeepResearch';
+import { normalizeMobileDeepResearchRequest, type MobileDeepResearchProof, type MobileDeepResearchSource } from '../../shared/mobileDeepResearch';
 import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepResearchProgress} from '../../shared/types';
-import type {SectionRetrievalInput,PlanEvidencePreparationInput} from '../ai/deepResearchCore';
+import type { SectionRetrievalInput } from '../ai/deepResearchCore';
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
 /** Corpus source revision excludes derived indexes/profiles and their status.
  * It includes actual authored graph content and authoritative work text identity. */

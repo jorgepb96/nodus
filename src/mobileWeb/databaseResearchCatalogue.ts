@@ -4,7 +4,8 @@ import {isDatabaseDeepResearchReportType} from '@shared/databaseDeepResearch';
 export async function loadMobileDatabaseResearchReports(call: (method:string,...args:unknown[])=>Promise<unknown>): Promise<DatabaseResearchReportSummary[]> {
   const items: DatabaseResearchReportSummary[] = [], seen = new Set<string>();
   let revision: string | undefined, total: number | undefined;
-  while (true) {
+  let hasMore = true;
+  while (hasMore) {
     const value = await call('listMobileDatabaseDeepResearchReports',{limit:100,offset:items.length}) as {
       version:number;revision:string;total:number;offset:number;hasMore:boolean;items:DatabaseResearchReportSummary[];
     };
@@ -19,9 +20,8 @@ export async function loadMobileDatabaseResearchReports(call: (method:string,...
       seen.add(item.id); items.push(item);
     }
     if (items.length > total) throw new Error('El catálogo de informes de datos está incompleto.');
-    if (!value.hasMore) {
-      if (items.length !== total) throw new Error('El catálogo de informes de datos está incompleto.');
-      return items;
-    }
+    hasMore = value.hasMore;
+    if (!hasMore && items.length !== total) throw new Error('El catálogo de informes de datos está incompleto.');
   }
+  return items;
 }

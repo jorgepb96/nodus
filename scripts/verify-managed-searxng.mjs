@@ -147,7 +147,10 @@ try {
 } catch (error) {
   check('the runtime verification ran to the end', false, error instanceof Error ? error.message : String(error));
 } finally {
-  fs.rmSync(sessionRoot, { recursive: true, force: true });
+  // Windows can briefly retain cache/directory handles after process exit.
+  // Retry only transient filesystem failures, and still fail if cleanup cannot
+  // complete. Awaiting removal keeps success tied to a fully cleaned session.
+  await fs.promises.rm(sessionRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
 assert.equal(failures.length, 0, `${failures.length} check(s) failed: ${failures.join(', ')}`);
 console.log('\nthe managed runtime behaves as the web step expects');

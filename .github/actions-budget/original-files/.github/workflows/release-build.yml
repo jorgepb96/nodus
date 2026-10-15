@@ -1,0 +1,583 @@
+name: Release build
+
+# Shared implementation for Stable and Beta. The two public entry points select
+# a channel explicitly; this workflow owns the common build/upload logic.
+on:
+  workflow_call:
+    inputs:
+      channel:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Verify requested channel and version
+        run: node scripts/verify-release-channel.mjs "${{ inputs.channel }}" "${{ inputs.tag }}"
+
+      - name: Verify citation version
+        run: npm run citation:check && npm run release:verify-source
+
+  prepare-release:
+    needs: validate-release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node for release notes
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Generate required English modal notes
+        run: |
+          npm ci --ignore-scripts
+          node scripts/generate-release-notes.mjs "$RELEASE_TAG" "$RUNNER_TEMP/nodus-release-notes.md"
+
+      - name: Create or reuse the single draft release
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            draft="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
+            if [[ "$draft" != true ]]; then
+              echo "::error::Release $RELEASE_TAG already exists and is not a draft"
+              exit 1
+            fi
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
+          else
+            gh release create "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --draft \
+              --title "${RELEASE_TAG#v}" \
+              --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
+          fi
+
+  release:
+    needs: prepare-release
+    env:
+      NODUS_RELEASE_CHANNEL: ${{ inputs.channel }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS ships one single-architecture product per slice. npm selects
+          # native optional dependencies from the host architecture, so each
+          # slice must be packed on a host of that same architecture: there is
+          # no runner that can honestly produce both. macos-15-intel is the last
+          # x86_64 image GitHub offers, available until August 2027.
+          #
+          # The arch flag is what picks the slice: build.mac.target deliberately
+          # carries no `arch` key, because an explicit one there is NOT narrowed
+          # by the CLI flag (computeArchToTargetNamesMap only falls back to the
+          # requested arch when the target omits it) and each runner would try
+          # to pack the architecture it has no dependencies for.
+          - os: macos-latest
+            platform: '--mac --arm64'
+            asset-platform: mac-arm64
+            mac_arch: arm64
+          - os: macos-15-intel
+            platform: '--mac --x64'
+            asset-platform: mac-x64
+            mac_arch: x64
+          - os: windows-latest
+            platform: '--win'
+            asset-platform: win
+          # Linux ships against the host's C library, so the runner's glibc is
+          # the oldest glibc the app can start on. Build on the oldest Ubuntu
+          # LTS GitHub still hosts, never ubuntu-latest: 5.7.1 came off 24.04
+          # and needed glibc 2.38, so it died at launch on Ubuntu 22.04 and
+          # Debian 12. Move this forward only when 22.04 leaves GitHub's
+          # runners (standard support ends April 2027), together with FLOOR in
+          # scripts/verify-linux-glibc.mjs.
+          - os: ubuntu-22.04
+            platform: '--linux'
+            asset-platform: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      # v5.7.3's build-only Drift verifier passed POSIX paths to Windows ASAR.
+      # Recover the immutable tag with the corrected verifier from this exact
+      # workflow commit. Neither this script nor the checkout enters the app.
+      - name: Checkout v5.7.3 Windows packaging verifier
+        if: matrix.asset-platform == 'win' && inputs.tag == 'v5.7.3'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/verify-drift-assets.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Apply v5.7.3 Windows packaging verifier
+        if: matrix.asset-platform == 'win' && inputs.tag == 'v5.7.3'
+        run: node -e "require('node:fs').copyFileSync('.release-tools/scripts/verify-drift-assets.mjs', 'scripts/verify-drift-assets.mjs')"
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify requested channel and version
+        run: node scripts/verify-release-channel.mjs "${{ inputs.channel }}" "${{ inputs.tag }}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify adaptive concurrency contracts
+        run: npm run test:adaptive-concurrency
+
+      # Electron 43 exposes its runtime downloader as a CLI instead of running
+      # it during npm install. beforePack inventories LICENSES.chromium.html
+      # from that verified distribution on every packaging platform.
+      - name: Install Electron runtime
+        run: node node_modules/electron/install.js
+
+      - name: Build renderer + main
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build
+
+      # The signed capability packages that travel inside the build, so a profile
+      # upgrading from 5.3.1 can adopt its three disciplines with no network at all. They
+      # are inert until a migration asks for one, and verified then exactly like a
+      # download. Required here, so a release that cannot migrate offline fails to build
+      # rather than shipping.
+      - name: Bundle the capability bootstrap
+        env:
+          NODUS_REQUIRE_BOOTSTRAP: '1'
+        run: npm run capabilities:bootstrap
+
+      - name: Prepare temporary macOS signing keychain
+        if: startsWith(matrix.os, 'macos')
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          set -euo pipefail
+          required=(
+            MACOS_CERTIFICATE_BASE64
+            MACOS_CERTIFICATE_PASSWORD
+            APPLE_API_KEY_BASE64
+            APPLE_API_KEY_ID
+            APPLE_API_ISSUER
+          )
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required macOS release secret is not configured: $name"
+              exit 1
+            fi
+          done
+
+          certificate_path="$RUNNER_TEMP/nodus-signing-certificate.p12"
+          api_key_path="$RUNNER_TEMP/nodus-notary-api-key.p8"
+          keychain_path="$RUNNER_TEMP/nodus-signing.keychain-db"
+          keychain_password="$(openssl rand -base64 32)"
+          echo "::add-mask::$keychain_password"
+
+          printf '%s' "$MACOS_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$APPLE_API_KEY_BASE64" | base64 --decode > "$api_key_path"
+          chmod 600 "$certificate_path" "$api_key_path"
+          openssl pkey -in "$api_key_path" -noout
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path" >/dev/null
+
+          # codesign only resolves identities from the user's keychain search
+          # list, even when --keychain is also supplied. Preserve the runner's
+          # existing keychains while making this isolated one discoverable.
+          search_keychains=("$keychain_path")
+          while IFS= read -r existing_keychain; do
+            if [[ -n "$existing_keychain" && "$existing_keychain" != "$keychain_path" ]]; then
+              search_keychains+=("$existing_keychain")
+            fi
+          done < <(security list-keychains -d user | sed -E 's/^[[:space:]]*"([^"]+)".*/\1/')
+          security list-keychains -d user -s "${search_keychains[@]}"
+
+          signing_identities="$(security find-identity -v -p codesigning "$keychain_path")"
+          if [[ "$signing_identities" != *'"Developer ID Application:'* ]]; then
+            echo "::error::The imported .p12 does not contain a valid Developer ID Application identity and private key"
+            exit 1
+          fi
+
+          # Fail before the expensive app build if codesign cannot use the
+          # imported private key in this non-interactive runner session.
+          identity_hash="$(awk '/"Developer ID Application:/ { print $2; exit }' <<< "$signing_identities")"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          cp /usr/bin/true "$signing_probe"
+          codesign --force \
+            --sign "$identity_hash" \
+            --keychain "$keychain_path" \
+            --timestamp \
+            --options runtime \
+            "$signing_probe"
+          codesign --verify --strict "$signing_probe"
+          rm -f "$signing_probe"
+
+          {
+            echo "CSC_KEYCHAIN=$keychain_path"
+            echo "APPLE_API_KEY=$api_key_path"
+            echo "NODUS_MACOS_CERTIFICATE_PATH=$certificate_path"
+            echo "NODUS_NOTARY_KEY_PATH=$api_key_path"
+          } >> "$GITHUB_ENV"
+
+      - name: Build Windows installer
+        if: matrix.os == 'windows-latest'
+        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.release.cjs
+
+      - name: Build, sign and notarize macOS artifacts
+        if: startsWith(matrix.os, 'macos')
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: true
+          NODUS_REQUIRE_MACOS_SIGNING: true
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.release.cjs
+
+      - name: Verify signed and notarized macOS release artifacts
+        if: startsWith(matrix.os, 'macos')
+        run: node scripts/verify-macos-release.cjs release ${{ matrix.mac_arch }}
+
+      # better-sqlite3 has no prebuilt binary for Electron 43, so it compiles
+      # here. Electron 43's V8 headers are rejected by GCC 11 and 12, the
+      # compilers 22.04 carries; clang 15 accepts them and still links against
+      # the stock glibc and libstdc++, which is the point of this runner.
+      - name: Build Linux installer
+        if: runner.os == 'Linux'
+        env:
+          CC: clang-15
+          CXX: clang++-15
+        run: npx electron-builder ${{ matrix.platform }} --publish never --config build/electron-builder.release.cjs
+
+      - name: Verify the Linux build starts on the oldest supported Ubuntu LTS
+        if: runner.os == 'Linux'
+        run: node scripts/verify-linux-glibc.mjs release/linux-unpacked
+
+      - name: Add and verify AppImageUpdate metadata
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y zsync
+          node scripts/finalize-linux-appimage.mjs release
+          test "$(release/Nodus-x86_64.AppImage --appimage-updateinformation)" = "$(node --input-type=module -e 'import { updateInformation } from "./scripts/finalize-linux-appimage.mjs"; console.log(updateInformation(process.env.NODUS_RELEASE_CHANNEL))')"
+          cmp release/Nodus-x86_64.AppImage release/Nodus-linux-x86_64.AppImage
+
+      - name: Remove temporary macOS credentials
+        if: always() && startsWith(matrix.os, 'macos')
+        shell: bash
+        run: |
+          set +e
+          keychain_path="${CSC_KEYCHAIN:-$RUNNER_TEMP/nodus-signing.keychain-db}"
+          certificate_path="${NODUS_MACOS_CERTIFICATE_PATH:-$RUNNER_TEMP/nodus-signing-certificate.p12}"
+          api_key_path="${NODUS_NOTARY_KEY_PATH:-$RUNNER_TEMP/nodus-notary-api-key.p8}"
+          signing_probe="$RUNNER_TEMP/nodus-codesign-probe"
+          security lock-keychain "$keychain_path" >/dev/null 2>&1
+          security delete-keychain "$keychain_path" >/dev/null 2>&1
+          rm -f "$certificate_path" "$api_key_path" "$keychain_path" "$signing_probe"
+
+      - name: Upload platform assets to the single draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/upload-release-assets.mjs ${{ matrix.asset-platform }}
+
+      # upload-release-assets.mjs deliberately does not publish the macOS
+      # manifest: both runners write a <channel>-mac.yml naming only their own
+      # files, so uploading them would leave whichever job finished last and
+      # break updates for the other architecture. Park them under distinct
+      # names for merge-mac-manifest, which removes them again.
+      - name: Park this architecture's update manifest for the merge job
+        if: startsWith(matrix.os, 'macos')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANNEL: ${{ inputs.channel }}
+          MAC_ARCH: ${{ matrix.mac_arch }}
+        run: |
+          set -euo pipefail
+          cp "release/${CHANNEL}-mac.yml" "release/${CHANNEL}-mac-${MAC_ARCH}.yml"
+          gh release upload "$RELEASE_TAG" \
+            "release/${CHANNEL}-mac-${MAC_ARCH}.yml" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+  merge-mac-manifest:
+    # electron-updater reads exactly one <channel>-mac.yml per release and picks
+    # its file from the `files` list by architecture. Two runners each produced
+    # a manifest listing only their own half, so combine them here instead of
+    # letting the second upload overwrite the first. Both halves are required:
+    # publishing a manifest that names only one architecture would leave the
+    # other one either unable to update or silently updating to the wrong build.
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      CHANNEL: ${{ inputs.channel }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Merge both macOS update manifests into the published one
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          for arch in arm64 x64; do
+            gh release download "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern "${CHANNEL}-mac-${arch}.yml" \
+              --dir "$work"
+          done
+          node scripts/merge-mac-update-manifest.mjs \
+            "$work/${CHANNEL}-mac.yml" \
+            "$work/${CHANNEL}-mac-arm64.yml" \
+            "$work/${CHANNEL}-mac-x64.yml"
+          gh release upload "$RELEASE_TAG" \
+            "$work/${CHANNEL}-mac.yml" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+      - name: Remove the per-architecture manifests from the release
+        run: |
+          set -euo pipefail
+          for arch in arm64 x64; do
+            gh release delete-asset "$RELEASE_TAG" "${CHANNEL}-mac-${arch}.yml" \
+              --repo "$GITHUB_REPOSITORY" --yes
+          done
+
+  build-zotero-plugin:
+    # The fixed-name plugin assets remain stable-only: installed plugins resolve
+    # updates through /releases/latest and must never be pointed at a prerelease.
+    if: inputs.channel == 'latest'
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      # The immutable v5.7.3 tag still has a packaging test expecting v5.7.2.
+      # Use the corrected test from this workflow commit; plugin source and
+      # source-offer contents continue to come from the release tag.
+      - name: Checkout v5.7.3 Zotero packaging test
+        if: inputs.tag == 'v5.7.3'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: .release-tools
+          sparse-checkout: scripts/test-zotero-plugin.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Apply v5.7.3 Zotero packaging test
+        if: inputs.tag == 'v5.7.3'
+        run: node -e "require('node:fs').copyFileSync('.release-tools/scripts/test-zotero-plugin.mjs', 'scripts/test-zotero-plugin.mjs')"
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify plugin
+        run: node --test scripts/test-zotero-plugin.mjs
+
+      - name: Build fixed-name XPI and update manifest
+        env:
+          ZOTERO_XPI_BASE: https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/
+        run: npm run zotero:xpi
+
+      - name: Upload plugin assets to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+            dist-zotero/nodus-zotero.xpi \
+            dist-zotero/updates.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+  verify-and-publish:
+    if: >-
+      always() &&
+      needs.release.result == 'success' &&
+      needs.merge-mac-manifest.result == 'success' &&
+      (inputs.channel == 'beta' || needs.build-zotero-plugin.result == 'success')
+    needs:
+      - release
+      - merge-mac-manifest
+      - build-zotero-plugin
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_CHANNEL: ${{ inputs.channel }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Verify channel-specific release assets
+        run: |
+          assets="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+          expected=(
+            Nodus-mac-arm64.dmg
+            Nodus-mac-x64.dmg
+            Nodus-win-x64.exe
+            Nodus-linux-amd64.deb
+            Nodus-x86_64.AppImage
+            Nodus-x86_64.AppImage.zsync
+            Nodus-linux-x86_64.AppImage
+            Nodus-linux-x86_64.rpm
+          )
+          if [[ "$RELEASE_CHANNEL" == latest ]]; then
+            # GitHub stable releases keep their existing latest manifests. A beta
+            # client selects the stable tag from the feed and electron-updater
+            # falls back from beta*.yml to these latest*.yml manifests.
+            expected+=(
+              latest-mac.yml latest.yml latest-linux.yml
+              nodus-zotero.xpi updates.json
+            )
+          else
+            expected+=(beta-mac.yml beta.yml beta-linux.yml)
+          fi
+          for asset in "${expected[@]}"; do
+            if ! grep -Fxq "$asset" <<< "$assets"; then
+              echo "::error::Missing $RELEASE_CHANNEL release asset: $asset"
+              exit 1
+            fi
+          done
+          if [[ "$RELEASE_CHANNEL" == beta ]]; then
+            for forbidden in latest-mac.yml latest.yml latest-linux.yml; do
+              if grep -Fxq "$forbidden" <<< "$assets"; then
+                echo "::error::Beta release contains stable update manifest: $forbidden"
+                exit 1
+              fi
+            done
+          fi
+
+      - name: Verify the published macOS manifest serves both architectures
+        run: |
+          set -euo pipefail
+          verify_dir="$(mktemp -d)"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "${RELEASE_CHANNEL}-mac.yml" \
+            --dir "$verify_dir"
+          manifest="$verify_dir/${RELEASE_CHANNEL}-mac.yml"
+          for arch in arm64 x64; do
+            if ! grep -q "Nodus-mac-${arch}.zip" "$manifest"; then
+              echo "::error::The published macOS update manifest does not list Nodus-mac-${arch}.zip"
+              exit 1
+            fi
+          done
+          # The deprecated top-level pointer is what a client reads when it
+          # ignores `files` entirely. It must stay on arm64 or every Apple
+          # silicon install would quietly move itself to the Intel build.
+          if ! grep -qx "path: Nodus-mac-arm64.zip" "$manifest"; then
+            echo "::error::The macOS compatibility pointer must stay on the arm64 ZIP"
+            exit 1
+          fi
+          for arch in arm64 x64; do
+            if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets \
+              --jq '.assets[].name' | grep -Fxq "${RELEASE_CHANNEL}-mac-${arch}.yml"; then
+              echo "::error::The per-architecture manifest ${RELEASE_CHANNEL}-mac-${arch}.yml was left on the release"
+              exit 1
+            fi
+          done
+
+      - name: Verify published Zotero integrity chain
+        if: env.RELEASE_CHANNEL == 'latest'
+        run: |
+          verify_dir="$(mktemp -d)"
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern nodus-zotero.xpi \
+            --pattern updates.json \
+            --dir "$verify_dir"
+          expected="$(jq -r '.addons["nodus-zotero@nodus.app"].updates[0].update_hash' "$verify_dir/updates.json")"
+          link="$(jq -r '.addons["nodus-zotero@nodus.app"].updates[0].update_link' "$verify_dir/updates.json")"
+          actual="sha256:$(sha256sum "$verify_dir/nodus-zotero.xpi" | awk '{print $1}')"
+          if [[ "$expected" != "$actual" ]]; then
+            echo "::error::Downloaded Zotero XPI hash does not match updates.json"
+            exit 1
+          fi
+          if [[ "$link" != "https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/nodus-zotero.xpi" ]]; then
+            echo "::error::updates.json does not point at this immutable release tag"
+            exit 1
+          fi
+          unzip -t "$verify_dir/nodus-zotero.xpi" >/dev/null
+
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Set up Node for release notes
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Generate required English modal notes
+        run: |
+          npm ci --ignore-scripts
+          node scripts/generate-release-notes.mjs "$RELEASE_TAG" "$RUNNER_TEMP/nodus-release-notes.md"
+
+      - name: Publish stable release
+        if: inputs.channel == 'latest'
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest --notes-file "$RUNNER_TEMP/nodus-release-notes.md"
+
+      - name: Publish beta prerelease
+        if: inputs.channel == 'beta'
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false --notes-file "$RUNNER_TEMP/nodus-release-notes.md"

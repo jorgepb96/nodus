@@ -4,10 +4,18 @@ import { whisperLanguageName } from '@shared/sttModels';
 
 env.allowLocalModels = false;
 env.useBrowserCache = true;
+// Ship the inference runtime with Nodus as well: an installed model must work
+// offline, including the first dictation after restarting the application.
+if (env.backends.onnx.wasm) {
+  env.backends.onnx.wasm.wasmPaths = {
+    wasm: new URL('../../../node_modules/@huggingface/transformers/dist/ort-wasm-simd-threaded.jsep.wasm', import.meta.url).href,
+    mjs: new URL('../../../node_modules/@huggingface/transformers/dist/ort-wasm-simd-threaded.jsep.mjs', import.meta.url).href,
+  };
+}
 
 type WorkerRequest =
-  | { id: string; type: 'ensure'; model: string }
-  | { id: string; type: 'transcribe'; model: string; samples: Float32Array; language?: string | null };
+  | { id: string; type: 'ensure'; model: string; localOnly?: boolean }
+  | { id: string; type: 'transcribe'; model: string; samples: Float32Array; language?: string | null; localOnly?: boolean };
 
 type AsrPipeline = ((samples: Float32Array, options: Record<string, unknown>) => Promise<{
   text?: string;
@@ -15,12 +23,15 @@ type AsrPipeline = ((samples: Float32Array, options: Record<string, unknown>) =>
 }>) & { tokenizer: ConstructorParameters<typeof WhisperTextStreamer>[0] };
 const pipelines = new Map<string, AsrPipeline>();
 
-async function getPipeline(id: string, model: string) {
+async function getPipeline(id: string, model: string, localOnly = false) {
   const existing = pipelines.get(model);
   if (existing) return existing;
+  env.allowLocalModels = localOnly;
+  env.allowRemoteModels = !localOnly;
   const created = await pipeline('automatic-speech-recognition', model, {
     device: 'wasm',
     dtype: 'q8',
+    local_files_only: localOnly,
     progress_callback: (progress: { status?: string; progress?: number; loaded?: number; total?: number }) => {
       const fraction = typeof progress.progress === 'number'
         ? progress.progress / 100
@@ -33,10 +44,9 @@ async function getPipeline(id: string, model: string) {
   return transcriber;
 }
 
-self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
-  const request = event.data;
+async function handleRequest(request: WorkerRequest) {
   try {
-    const transcriber = await getPipeline(request.id, request.model);
+    const transcriber = await getPipeline(request.id, request.model, request.localOnly);
     if (request.type === 'ensure') {
       self.postMessage({ id: request.id, type: 'result', result: true });
       return;
@@ -75,6 +85,12 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   } catch (error) {
     self.postMessage({ id: request.id, type: 'error', error: error instanceof Error ? error.message : String(error) });
   }
+}
+
+// The pipeline and its environment are mutable; never run two requests at once.
+let queue = Promise.resolve();
+self.onmessage = (event: MessageEvent<WorkerRequest>) => {
+  queue = queue.then(() => handleRequest(event.data));
 };
 
 export {};

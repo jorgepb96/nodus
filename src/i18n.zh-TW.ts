@@ -1,12 +1,18 @@
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
+import { BACKUPS_TRANSLATIONS } from './i18n.backups';
+import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -66,6 +72,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -90,9 +97,11 @@ export const ZH_TW: Record<string, string> = {
   ...MOBILE_PARITY_TRANSLATIONS["zh-TW"],
   'No se pudieron cargar los documentos guardados.': '無法載入已儲存的文件。',
   'El catálogo de documentos guardados tiene un formato inválido.': '已儲存文件目錄的格式無效。',
+  ...BACKUPS_TRANSLATIONS['zh-TW'],
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-TW'],
   ...CALENDAR_SYNC_TRANSLATIONS["zh-TW"],
+  ...AGENT_RUNTIME_TRANSLATIONS["zh-TW"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["zh-TW"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "瀏覽網頁並儲存研究資料。",
@@ -130,6 +139,7 @@ export const ZH_TW: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS['zh-TW'],
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS['zh-TW'],
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS['zh-TW'],
+  ...GALLERY_FILTER_TRANSLATIONS['zh-TW'],
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS['zh-TW'],
   ...STALE_MODEL_TRANSLATIONS['zh-TW'],
   ...SCHEME_DECLUTTER_TRANSLATIONS['zh-TW'],
@@ -167,6 +177,8 @@ export const ZH_TW: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["zh-TW"],
   ...STUDY_FOCUS_TRANSLATIONS["zh-TW"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["zh-TW"],
+  ...BOOKMARK_SORT_TRANSLATIONS["zh-TW"],
+  ...SCRIPTOR_AI_TRANSLATIONS["zh-TW"],
   ...STUDY_IMPROVE_TRANSLATIONS['zh-TW'],
   ...WORKSPACE_TRANSLATIONS['zh-TW'],
   ...AI_OCR_TRANSLATIONS['zh-TW'],
@@ -1219,7 +1231,7 @@ export const ZH_TW: Record<string, string> = {
   "Nodus Compass": "Nodus Compass",
   "Nodus Tools": "Nodus Tools",
   "Herramientas prácticas y local-first para convertir archivos y procesar documentos, integradas en Nodus.": "實用的本地優先工具，用於轉換檔案和處理文件，內置於Nodus。",
-  "Nodus PDF Presenter": "Nodus PDF Presenter",
+  'Nodus Presenter': 'Nodus Presenter',
   "Presentar archivos PDF y presentaciones externas con vista del presentador, control remoto desde el móvil, notas del orador y herramientas de anotación en directo.": "演示PDF檔案和外部製作的簡報，支援演講者檢視、手機遙控、演講者備註和即時註釋工具。",
   "Nodus OCR Workspace": "Nodus OCR Workspace",
   "OCR asistido por IA para PDF escaneados e imágenes, con revisión página a página, limpieza de texto, reprocesamiento e integración directa con las bóvedas de Nodus.": "面向掃描版PDF和影像的AI輔助OCR，支援逐頁審閱、文本清理、重新處理，並與Nodus知識庫直接整合。",
@@ -7942,4 +7954,19 @@ export const ZH_TW: Record<string, string> = {
   "Mantén Nodus abierto y ambos dispositivos en la misma red o VPN, como Tailscale. En live se usan los modelos de este Mac.": "保持 Nodus 開啟，並讓兩台裝置使用相同網路或 Tailscale 等 VPN。Live 使用此 Mac 上的模型。",
   "Todo tu workspace": "整個工作區",
   "Generar código y QR": "產生代碼及 QR 碼",
+  // Live local dictation in Scriptor.
+  "No se pudo iniciar el micrófono.": "無法啟動麥克風。",
+  "Dictado pausado para terminar el audio pendiente. Reanuda cuando esté listo.": "聽寫已暫停，以完成待處理的音訊。處理完成後可繼續。",
+  "Preparando dictado…": "正在準備聽寫…",
+  "Cancelar dictado": "取消聽寫",
+  "Dictado en directo · Local": "即時聽寫 · 本機",
+  "Escuchando…": "正在聆聽…",
+  "El texto se inserta automáticamente en el cursor.": "文字將自動插入游標位置。",
+  "Opciones de dictado": "聽寫選項",
+  "Descarga un modelo local de transcripción en Ajustes → Modelos IA para dictar.": "請在設定 → AI 模型中下載本機轉錄模型以使用聽寫。",
+  "Audio pendiente": "待處理音訊",
+  "Modelo local": "本機模型",
+  "Detener dictado": "停止聽寫",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["zh-TW"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["zh-TW"],
 };

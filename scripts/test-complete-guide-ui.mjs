@@ -64,7 +64,7 @@ test('the Deep Research view offers the guide mode only in Study vaults and wire
   assert.match(view, /completeGuide: \{\n\s+version: 1,\n\s+runId: `cg-\$\{crypto\.randomUUID\(\)\}`/);
   assert.match(view, /aiExamples: guideState\.aiExamples/);
   assert.match(view, /guide && isStudy && !isTeaching[\s\S]{0,200}setStudyReportMode\('complete_guide'\)/, '"Crear otra versión" restores the guide');
-  assert.match(view, /data-testid="deep-research-kind-filter"/);
+  assert.match(view, /testId="deep-research-kind-filter"/);
   assert.match(view, /CompleteGuideCoveragePanel meta=\{saved\.draft\.completeGuide\}/);
   assert.match(view, /CompleteGuideEvidenceDialog/);
   const study = fs.readFileSync('src/app/views/study.tsx', 'utf8');

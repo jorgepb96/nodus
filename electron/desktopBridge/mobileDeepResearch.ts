@@ -1,3 +1,4 @@
+import {getWebPassage,recordWebPassage,type WebPassageRecord} from '../db/researchWebRepo';
 import {saveCompleteGuideArtifacts} from '../db/completeGuideRepo';
 import {seedCompleteGuideFigures} from '../ai/completeGuide/figures';
 import {captureMobileCompleteGuide} from './mobileCompleteGuide';
@@ -114,10 +115,19 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
   if(receipt){if(receipt.payload_hash!==fingerprint)throw new Error('idempotency_conflict');return JSON.parse(receipt.result_json);}
   signal?.throwIfAborted();if(input.source.vaultId!==getActiveVault().id||input.source.vaultType!==getActiveVault().type)throw new Error('deep_research_source_scope_conflict');
   if(input.source.revision!==mobileDeepResearchCorpusRevision(request))throw new Error('deep_research_source_conflict');
+  const webPassages=(report.completeGuideArtifacts as {webPassages?:unknown}|undefined)?.webPassages;
+  if(webPassages!==undefined){
+   if(!request.completeGuide?.webText||!Array.isArray(webPassages)||webPassages.length>1000)throw new Error('invalid_complete_guide_web_evidence');
+   for(const raw of webPassages){
+    const row=raw as WebPassageRecord;
+    if(!row||typeof row.text!=='string'||!row.text.trim()||row.text.length>100_000||typeof row.title!=='string'||typeof row.domain!=='string'||typeof row.retrievedAt!=='string'||!['html','pdf'].includes(row.kind)||!(row.pageNumber===null||Number.isSafeInteger(row.pageNumber)&&row.pageNumber!>0)||![row.url,row.finalUrl].every(url=>{try{const value=new URL(url);return value.protocol==='https:'&&!value.username&&!value.password;}catch{return false;}}))throw new Error('invalid_complete_guide_web_evidence');
+    recordWebPassage(row);
+   }
+  }
   for(const match of report.draft.draftMarkdown.matchAll(/\(nodus:\/\/(idea|work|passage)\/([^\s)]+)\)/g)) {
     let id:string;try{id=decodeURIComponent(match[2]);}catch{throw new Error('invalid_deep_research_citation');}
     const table=match[1]==='idea'?'ideas':match[1]==='work'?'works':'passages',column=match[1]==='idea'?'global_id':match[1]==='work'?'nodus_id':'passage_id';
-    const scoped=match[1]==='passage'&&(id.startsWith('documentary:')?getDocumentaryPassageDetail(id):id.startsWith('scoped:')?getScopedLegacyPassageDetail(id):null);
+    const scoped=match[1]==='passage'&&(id.startsWith('web:')?getWebPassage(id):id.startsWith('documentary:')?getDocumentaryPassageDetail(id):id.startsWith('scoped:')?getScopedLegacyPassageDetail(id):null);
     const globalWork=getActiveVault().type==='academic'&&match[1]==='work'&&resolveAcademicRunScope(request.notebookId).documents.some(document=>document.workId===id);
     if(!scoped&&!globalWork&&!db.prepare(`SELECT 1 FROM ${table} WHERE ${column}=?`).get(id))throw new Error('deep_research_citation_source_missing');
   }

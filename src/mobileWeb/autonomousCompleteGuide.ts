@@ -1,3 +1,4 @@
+import {mobileCompleteGuideWebText} from './completeGuideWebText';
 import {mobileCompleteGuideWebImages} from './completeGuideWebImages';
 import {runCompleteGuide,type CompleteGuideDeps} from '../../electron/ai/completeGuide/core';
 import {COMPLETE_GUIDE_PROMPT_VERSION} from '../../electron/ai/completeGuide/prompts';
@@ -26,8 +27,7 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
  if(!source){source=selectMobileCompleteGuideSources(await call('mobileCompleteGuideSource',request),config.selection);assertMobileCompleteGuideSource(source,config.selection);checkpoint.calls[sourceKey]={input:JSON.stringify(config.selection),output:source};checkpoint.context=source.context;await persist();}
  assertMobileCompleteGuideSource(source,config.selection);
  const embedding=checkpoint.embeddingConfiguration;
- // These options require a device-owned web retrieval host; no silent Mac relay.
- if(config.webText)throw new Error('Configura la búsqueda web del móvil antes de incluir fuentes o imágenes web en la guía.');
+ if(config.webText&&!checkpoint.webSearchEndpoint){const endpoint=await call('mobileWebSearchConfiguration');if(typeof endpoint!=='string'||!endpoint)throw new Error('Configura la búsqueda web del móvil antes de incluir fuentes web en la guía.');checkpoint.webSearchEndpoint=endpoint;await persist();}
  let writes=Promise.resolve();
  const flush=async()=>{await writes;signal.throwIfAborted();};
  const store=()=>{writes=writes.then(persist);};
@@ -72,9 +72,13 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
   hash:value=>bytesToHex(sha256(new TextEncoder().encode(value))),checkpoint:()=>signal.throwIfAborted(),
   progress:event=>{const progress:DeepResearchProgress={phase:event.stage==='write'?'section':event.stage==='verify'?'coverage':event.stage==='finalize'?'assembling':event.stage==='plan'?'planning':'document_preparation',message:event.detail??event.stage};checkpoint.progress=progress;notify(progress);store();},
  };
+ if(config.webText)deps.web=async input=>{const key=`source:guide-web:${sha256Snapshot(input)}`;const result=await durableDeepResearchCall(checkpoint,key,input,()=>mobileCompleteGuideWebText(call,checkpoint.webSearchEndpoint!,input,prompt=>jsonWithAttempts(prompt,1),deps.embed,signal),persist);return result.passages;};
  try{
   const result=await runCompleteGuide({config,snapshot:source.frozen.snapshot,organization:source.frozen.organization,language:request.language??'es',modelKey:`${model.provider}/${model.model}`,promptVersion:COMPLETE_GUIDE_PROMPT_VERSION,instructions:config.instructions},deps);
   await flush();
-  return buildCompleteGuideReport(request,config,source.frozen,result,request.language??'es',usage());
+  const report=buildCompleteGuideReport(request,config,source.frozen,result,request.language??'es',usage());
+  const webPassages=Object.entries(checkpoint.calls).filter(([key])=>key.startsWith('source:guide-web:')).flatMap(([,value])=>(value.output as {passages:Array<{record:unknown}>}).passages.map(passage=>passage.record));
+  if(webPassages.length)report.completeGuideArtifacts={...report.completeGuideArtifacts as object,webPassages};
+  return report;
  }finally{await writes;}
 }

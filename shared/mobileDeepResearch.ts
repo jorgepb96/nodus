@@ -15,6 +15,7 @@ export interface MobileDeepResearchSource {
 }
 export type MobileDeepResearchProof = Pick<MobileDeepResearchSource,"version"|"vaultId"|"vaultType"|"revision"|"sourceScope"|"queryEmbeddingModel"|"preparedSourcesOnly">;
 export interface MobileDeepResearchCheckpoint {
+ webSearchEndpoint?:string;
  embeddingConfiguration?:{provider:string;model:string;dim:number};
  id:string;entityKey:string;request:DeepResearchRequest;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';createdAt:string;
  completionTranscript?:string[];

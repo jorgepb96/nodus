@@ -95,9 +95,36 @@ try{
   const request={kind:'prose',sceneId,language:'es',draft:currentDraft},template=prose.portableProseReviewTemplate('es');
   const {canonicalJson}=require('../shared/canonicalJson.ts');
   const sha=value=>createHash('sha256').update(value).digest('hex');
-  const packaged=JSON.parse(fs.readFileSync(new URL('../../nodus-mobile/ios/Packages/NodusKit/Sources/NodusKit/Resources/prose-draft-templates.json',import.meta.url),'utf8'));
-  assert.deepEqual(Object.keys(packaged.templates).sort(),[...PROMPT_LANGUAGES].sort());
-  for(const language of PROMPT_LANGUAGES){const source=prose.portableProseReviewTemplate(language);assert.deepEqual(packaged.templates[language].source,source);assert.equal(packaged.templates[language].templateRevision,sha(canonicalJson(source)));}
+  // Companion resource from nodus-mobile commit 9022327, Git blob
+  // 2c306b5b7c479027c8e0692205f5e09736594d0c (version 1). This Desktop-only CI
+  // checkout must still detect contract drift without requiring a sibling repo.
+  const shippedTemplateRevisions={
+    "es": "0108763022ccca0fac52a5332a601655fbc9c28b2358318b3d56d3b39a00d247",
+    "en": "8a2314522103604cdb61325e3371109cd96d43880f2493dee02a62e44486799e",
+    "fr": "3066f5bd634d51fa0098a49d63cc5d17df5855f943c78ba56c5c1430ceac533a",
+    "tr": "a2ed79ebbb69422f9e4ddb9c6430724e26e237f6a3c52686a8a010ece1282ffd",
+    "de": "0cdee284a48d514336e48447ae9f1ac31c4fb97a4f17cb0baefa48d514f0b497",
+    "pt": "b86e71556c0e37d23611e94ff8ee85e55df6f71aa07f950b0b127eb150da6d87",
+    "pt-BR": "f774f38d4d17693b1442577c9f73290fb00e335fce5aa4512652dbd92e555eaf",
+    "it": "800be51aa68e1221746a29937c6414e4184f6a5fb2679545df126649bd90bdbb",
+    "zh-Hans": "2d1a6747d514e0bec82174e3f85d26e5bd82defde73fc11410cbabd3a9676497",
+    "zh-Hant": "b05f5c72e6e2f847e0333322e62054f4ebbdcd9560b985c0a45f0b9b58a9ad48",
+    "vi": "233958512bb8f7cee9f1fc1a1445754901215902f4022de926eba1e02263ac06",
+    "ja": "781aded528c454693735686b6da94a90da9a0f30dc078fce968220279c2337dc",
+    "ru": "b21e37258503ec2a052296d5c998e56206d6280b623c1adcfeea786e17fd864b",
+    "uk": "3fe9ec2857a925891d79574ca2bfb5272702e62b27be8976f12f328a72e0baa8",
+    "ko": "603ac789a7f4d35ffceb540f65c07ffaa0ac3bad8470c2ce8d87b2d2261da440"
+};
+  assert.deepEqual(Object.keys(shippedTemplateRevisions).sort(),[...PROMPT_LANGUAGES].sort());
+  for(const language of PROMPT_LANGUAGES)assert.equal(sha(canonicalJson(prose.portableProseReviewTemplate(language))),shippedTemplateRevisions[language],`${language}: the shipped mobile template must remain compatible`);
+  // A combined checkout additionally checks the full actual packaged sources.
+  const packagedURL=new URL('../../nodus-mobile/ios/Packages/NodusKit/Sources/NodusKit/Resources/prose-draft-templates.json',import.meta.url);
+  if(fs.existsSync(packagedURL)){
+    const packaged=JSON.parse(fs.readFileSync(packagedURL,'utf8'));
+    assert.equal(packaged.version,1);
+    assert.deepEqual(Object.keys(packaged.templates).sort(),[...PROMPT_LANGUAGES].sort());
+    for(const language of PROMPT_LANGUAGES){const source=prose.portableProseReviewTemplate(language);assert.deepEqual(packaged.templates[language].source,source);assert.equal(packaged.templates[language].templateRevision,shippedTemplateRevisions[language]);}
+  }
   const seed=sha(prose.localSceneBaselineRevisionInput(sceneId,'es',creationMutationId,sha(canonicalJson(template))));
   const input={request,revision:sha(prose.proseDraftRevisionInput(sha(prose.proseDraftRevisionInput(seed,baselineDraft)),currentDraft)),
     localScene:{creationMutationId,baselineDraft},raw:'LATIDO: sí — Se paga.',model:{provider:'phone',model:'model'},requestId:randomUUID(),generatedAt:new Date().toISOString()};

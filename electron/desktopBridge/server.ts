@@ -1,3 +1,4 @@
+import {mobileResearchFigureUpload,ResearchFigureUploadError,RESEARCH_FIGURE_CHUNK_BYTES} from './researchFigureUploads';
 import {mobileDatabaseFileUpload,DatabaseFileUploadError,MOBILE_DATABASE_FILE_CHUNK_BYTES} from './databaseAttachmentUploads';
 import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual, X509Certificate } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
@@ -393,6 +394,14 @@ async function handle(request: import('node:http').IncomingMessage, response: im
   }
   const pairing = authorize(request);
   if (!pairing) { reply(response, 401, { error: 'invalid_token' }); return; }
+  const researchFigureUpload=/^\/bridge\/v2\/vaults\/([^/]+)\/research-figure-assets\/([^/]+)\/(begin|status|chunk|commit|cancel)$/.exec(url.pathname);
+  if(request.method==='POST'&&researchFigureUpload){
+    const vaultId=decodeURIComponent(researchFigureUpload[1]),id=decodeURIComponent(researchFigureUpload[2]),action=researchFigureUpload[3];
+    const stillAuthorized=()=>{const current=authorize(request);if(!current)throw new ResearchFigureUploadError(401,'invalid_token');return current.id===pairing.id&&current.domains.includes('writing')&&current.domains.includes('corpus')&&effectiveVaultIds(current).includes(vaultId);};
+    try{if(!stillAuthorized()){reply(response,403,{error:'permission_denied'});return;}reply(response,200,await mobileResearchFigureUpload(vaultId,pairing.id,id,action,await body(request,RESEARCH_FIGURE_CHUNK_BYTES*2),stillAuthorized));}
+    catch(error){if(error instanceof ResearchFigureUploadError)reply(response,error.status,{error:error.code});else throw error;}
+    return;
+  }
   const databaseFileUpload=/^\/bridge\/v2\/vaults\/([^/]+)\/database-files\/([^/]+)\/(begin|status|chunk|commit|cancel)$/.exec(url.pathname);
   if(request.method==='POST'&&databaseFileUpload){
     const vaultId=decodeURIComponent(databaseFileUpload[1]),id=decodeURIComponent(databaseFileUpload[2]),action=databaseFileUpload[3];
@@ -435,6 +444,7 @@ async function handle(request: import('node:http').IncomingMessage, response: im
       vaultIds, domains: pairing.domains, ...(pairing.wholeWorkspace !== undefined ? {wholeWorkspace:pairing.wholeWorkspace} : {}),
       vaults: vaultIds.map(id => getVault(id)).filter(Boolean).map(vault => ({ id: vault!.id, name: vault!.name, type: vault!.type })),
       operations: Object.entries(MOBILE_OPERATIONS).filter(([, [, permission]]) => pairing.domains.includes(permission)).map(([method]) => method),
+      researchFigureAssets: pairing.domains.includes('writing')&&pairing.domains.includes('corpus') ? {version:1,chunkBytes:RESEARCH_FIGURE_CHUNK_BYTES,maxAssetBytes:8*1024*1024,idempotent:true} : undefined,
       workspaceEdits: pairing.domains.includes('writing') ? { version: 2, structured: true, maxRequestBytes: MOBILE_WORKSPACE_EDIT_MAX_BYTES, creation: ['markdown', 'idea'] } : undefined,
       databaseResearchReading: pairing.domains.includes('writing') ? {version:1,maxRequestBytes:2*1024*1024,conflicts:true,idempotent:true} : undefined,
       worldContentEdits: {version:1,vaults:vaultIds.map(id=>({vaultId:id,tables:mobileWorldContentMutationTables(id,pairing.domains)})).filter(item=>item.tables.length>0)},

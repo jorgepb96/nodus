@@ -1,3 +1,4 @@
+import {validateMobileResearchVisuals,publishMobileResearchVisuals} from './mobileResearchVisuals';
 import {captureAcademicResearchSource} from './mobileAcademicResearch';
 import {captureMobileAcademicResearchSource} from '../../shared/mobileAcademicResearch';
 import {captureGenealogyResearchSource} from '../ai/genealogyDeepResearch';
@@ -131,6 +132,7 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
     if(!scoped&&!globalWork&&!db.prepare(`SELECT 1 FROM ${table} WHERE ${column}=?`).get(id))throw new Error('deep_research_citation_source_missing');
   }
   if(getWritingWorkshopDraft(input.requestId))throw new Error('deep_research_identity_conflict');
+  const visuals=validateMobileResearchVisuals((report as MobileDeepResearchReport & {mobileVisuals?:unknown}).mobileVisuals,request,report.draft,input.source.vaultId,input.requestId,deviceGrant);
   const draft={...report.draft,generationModel:request.model,mobileGenerationReceipt:{requestId:input.requestId,inputHash:fingerprint,sourceScope:input.source.sourceScope}};
   const result=saveWritingWorkshopDraft({draft,model:request.model},input.requestId);
   if(cover){
@@ -146,6 +148,7 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
    // land. Replaying a lost ACK returns that same receipt before corpus CAS.
    if(report.completeGuideFigures){const {figures,siblings}=report.completeGuideFigures;seedCompleteGuideFigures(result.id,figures,itemId=>siblings[itemId]??[]);}
   }
+  publishMobileResearchVisuals(visuals);
   db.prepare('INSERT INTO mobile_deep_research_publications VALUES(?,?,?,?)').run(deviceGrant,input.requestId,fingerprint,JSON.stringify(result));return result;
  })();
 }

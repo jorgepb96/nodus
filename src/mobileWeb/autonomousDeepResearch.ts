@@ -1,3 +1,4 @@
+import {enrichAutonomousResearchVisuals,publishAutonomousResearchVisualAssets} from './autonomousResearchVisuals';
 import {hasLegacyResearchTranscript,legacyBridgeResearch} from './legacyBridgeResearch';
 import {autonomousAcademicResearch} from './autonomousAcademicResearch';
 import {autonomousGenealogyResearch} from './autonomousGenealogyResearch';
@@ -49,8 +50,9 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
    await persist();
   }
   if(request.decorativeImage?.enabled&&!(checkpoint.report as MobileDeepResearchReport).mobileCover){checkpoint.state='running';await persist();(checkpoint.report as MobileDeepResearchReport).mobileCover=await mobileDeepResearchCover(call,checkpoint,persist,signal);}
+  await enrichAutonomousResearchVisuals(call,checkpoint,persist,controller);
   checkpoint.state='saved';await persist();
-  try {const result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});
+  try {await publishAutonomousResearchVisualAssets(call,checkpoint,persist);const result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});
    if(!result||result.id!==checkpoint.id)throw new Error('invalid_deep_research_publication_receipt');
    checkpoint.result=result;checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await persist();}
   catch(error){checkpoint.publicationPending=true;checkpoint.error=String(error);await persist();}
@@ -65,13 +67,13 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
 }
 export async function autonomousDeepResearchCheckpoints(call:Call,summaries=false):Promise<MobileDeepResearchCheckpoint[]> {const values=await call('mobileDeepResearchCheckpoints',...(summaries?['summaries']:[]));if(!Array.isArray(values))throw new Error('invalid_deep_research_checkpoints');return values;}
 export async function cancelAutonomousDeepResearch(call:Call,id:string):Promise<boolean>{
- const checkpoint=(await autonomousDeepResearchCheckpoints(call)).find(item=>item.id===id);if(!checkpoint||checkpoint.report)return false;
- const running=active.get(checkpoint.entityKey);if(running){running.checkpoint.state='cancelled';checkpoint.state='cancelled';await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);running.controller.abort();await call('cancelAutonomousGeneration',id);await running.task.catch(()=>{});return true;}
+ const checkpoint=(await autonomousDeepResearchCheckpoints(call)).find(item=>item.id===id);if(!checkpoint)return false;
+ const running=active.get(checkpoint.entityKey);if(checkpoint.report&&!running)return false;if(running){running.checkpoint.state='cancelled';checkpoint.state='cancelled';await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);running.controller.abort();await call('cancelAutonomousGeneration',id);await running.task.catch(()=>{});return true;}
  checkpoint.state='cancelled';delete checkpoint.error;await call('mobileGenerationCheckpoint','save','deepResearch',checkpoint.entityKey,checkpoint);return true;
 }
 
 export async function localDeepResearchJobs(call:Call):Promise<Array<DeepResearchJobRecord&{retryable:boolean}>> {
- return (await autonomousDeepResearchCheckpoints(call,true)).filter(item=>!item.hiddenFromQueue).map(item=>({id:item.id,origin:'mobile',vaultId:item.context?.vaultId??'',vaultName:'Este dispositivo',objective:item.request.objective,title:item.report?.draft.title??item.request.objective.slice(0,120),deepResearchApproach:item.request.approach,deepResearchVersion:item.request.deepResearchVersion,structure:item.request.sectionLimit==='single'?'single':'sectioned',sectionLength:item.request.sectionLength,model:item.request.model,status:item.report?'completed':item.state==='cancelled'?'cancelled':active.has(item.entityKey)?'running':'failed',retryable:!active.has(item.entityKey)&&item.state!=='cancelled'&&!item.recoveryReviewRequired,progress:item.progress??null,error:item.error??(!item.report&&!active.has(item.entityKey)&&item.state!=='cancelled'?'Investigación pausada en este dispositivo. Puedes continuar con sus respuestas guardadas.':null),savedDraftId:item.report?`mobile-dr-${item.id}`:null,saveError:item.publicationPending?item.error??'Pendiente de guardar en el Mac':null,ahead:null,enqueuedAt:item.createdAt,startedAt:item.state==='accepted'?null:item.createdAt,finishedAt:item.report?item.report.draft.generatedAt:null}));
+ return (await autonomousDeepResearchCheckpoints(call,true)).filter(item=>!item.hiddenFromQueue).map(item=>({id:item.id,origin:'mobile',vaultId:item.context?.vaultId??'',vaultName:'Este dispositivo',objective:item.request.objective,title:item.report?.draft.title??item.request.objective.slice(0,120),deepResearchApproach:item.request.approach,deepResearchVersion:item.request.deepResearchVersion,structure:item.request.sectionLimit==='single'?'single':'sectioned',sectionLength:item.request.sectionLength,model:item.request.model,status:item.state==='cancelled'?'cancelled':active.has(item.entityKey)?'running':item.report?'completed':'failed',retryable:!active.has(item.entityKey)&&item.state!=='cancelled'&&!item.recoveryReviewRequired,progress:item.progress??null,error:item.error??(!item.report&&!active.has(item.entityKey)&&item.state!=='cancelled'?'Investigación pausada en este dispositivo. Puedes continuar con sus respuestas guardadas.':null),savedDraftId:item.report?`mobile-dr-${item.id}`:null,saveError:item.publicationPending?item.error??'Pendiente de guardar en el Mac':null,ahead:null,enqueuedAt:item.createdAt,startedAt:item.state==='accepted'?null:item.createdAt,finishedAt:item.report?item.report.draft.generatedAt:null}));
 }
 export async function localDeepResearchReports(call:Call) {
  const checkpoints=await call('mobileDeepResearchCheckpoints','reports') as MobileDeepResearchCheckpoint[];

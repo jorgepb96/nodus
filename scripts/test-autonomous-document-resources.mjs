@@ -25,6 +25,8 @@ try {
  const execution={skills:[{id:'builtin-svg',instructions:'Draw faithfully',capabilities:['nodus:svg']}],question:'Explain documented evidence',model,owner,version:0,isCurrent:()=>true,locale:'en',pins:{},registry:{providers:new Map(),fences:new Map(),chatOrder:[],problems:[],revision:1},beforeInvoke:()=>trace.push('invoke'),beforePaidCall:()=>trace.push('paid'),beforeRepair:()=>trace.push('repair'),maxSvgRepairs:1,flushPersist:async()=>{flushes++;trace.push('flush');}};
  const quality=portableChatSvgQuality({...host,evaluateInSvgSandbox:evaluate});
  assert.deepEqual(await quality.inspectChatSvg(valid),[]);assert.ok((await quality.inspectChatSvg(clipped)).some(x=>x.startsWith('Clipped label:')));assertions+=2;
+ const svgOnly=autonomousDocumentResources({...host,imageProvider:null,imageModel:null,generateImage:async()=>{throw new Error('SVG must not invoke an unconfigured image provider');}});
+ const svgOnlyResult=await svgOnly.executeResources('```svg\n'+valid+'\n```',execution);assert.equal(svgOnlyResult.view.nodes[0].kind,'svg');assert.equal(paid,0);assertions+=2;
  const resources=autonomousDocumentResources(host);
  const svg=await resources.executeResources('```svg\n'+clipped+'\n```',execution);assert.equal(repairs,1);assert.equal(svg.view.nodes[0].svg.includes('Documented relation'),true);assert.equal(paid,0);assertions+=3;
  const dangerous=await resources.executeResources('```svg\n'+valid.replace('</svg>','<script>alert(1)</script><image href="https://example.invalid/a.png"/></svg>')+'\n```',execution);assert.doesNotMatch(dangerous.view.nodes[0].svg,/<script|https:\/\//);assertions++;

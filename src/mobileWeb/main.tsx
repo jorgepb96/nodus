@@ -1,3 +1,4 @@
+import {autonomousDocumentSkillCatalog} from './autonomousResearchVisuals';
 import {previewMobileCompleteGuide,type MobileCompleteGuideActions} from '@shared/mobileCompleteGuide';
 import {mergeMobileDeepResearchReports} from '@shared/mobileDeepResearchCatalogue';
 import {enqueueAutonomousDeepResearch,localDeepResearchJobs,localDeepResearchReports,cancelAutonomousDeepResearch,clearLocalDeepResearchJobs,retryLocalDeepResearch} from './autonomousDeepResearch';
@@ -285,6 +286,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
     const bucket = subscriptions.get(method) ?? new Set(); bucket.add(listener); subscriptions.set(method, bucket);
     return () => bucket.delete(listener);
   };
+  if(method==='listDocumentSkills'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>autonomousDocumentSkillCatalog(call);
   if(method==='enqueueDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous') return (request:Parameters<typeof enqueueAutonomousDeepResearch>[1])=>enqueueAutonomousDeepResearch(call,request,progress=>{for(const listener of subscriptions.get('onDeepResearchProgress')??[])listener(progress);for(const listener of subscriptions.get('onWritingDraftsChanged')??[])listener(null);});
   if(method==='listDeepResearchJobs'&&native.nodusMobileConfig.executionMode==='autonomous')return ()=>localDeepResearchJobs(call);
   if(method==='cancelDeepResearchJob'&&native.nodusMobileConfig.executionMode==='autonomous')return (id:string)=>cancelAutonomousDeepResearch(call,id);

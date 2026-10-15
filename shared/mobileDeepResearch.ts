@@ -27,7 +27,7 @@ export interface MobileDeepResearchCheckpoint {
  context?:MobileDeepResearchProof;calls:Record<string,{input:string;output:unknown}>;report?:DeepResearchReport;
  inflight?:{key:string;input:string;request?:unknown;createdAt:string};
  uncertainAttempts?:Array<{key:string;input:string;request?:unknown;createdAt:string}>;completionAttempt?:string;
- history?:Array<{stage:string;input:unknown}>;recoveryReviewRequired?:boolean;progress?:DeepResearchProgress;error?:string;result?:unknown;publicationPending?:boolean;hiddenFromQueue?:boolean;
+ history?:Array<{stage:string;input:unknown}>;recoveryReviewRequired?:boolean;progress?:DeepResearchProgress;error?:string;result?:unknown;publicationPending?:boolean;visualAssetsPublished?:boolean;hiddenFromQueue?:boolean;
 }
 /** Keep every requested option. Unsupported corpus pipelines must be routed by
  * their own adapter before invoking the academic core. */

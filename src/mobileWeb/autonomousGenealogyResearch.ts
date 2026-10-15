@@ -1,3 +1,4 @@
+import {prepareAutonomousResearchVisuals,autonomousResearchPlanningPrompt} from './autonomousResearchVisuals';
 import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
 import {prepareDeepResearchVariantRequest} from '@shared/prepareDeepResearchVariantRequest';
 import {portableGenealogyDeepResearch,type PortableGenealogyDeepResearchHost} from '@shared/portableGenealogyDeepResearch';
@@ -20,10 +21,11 @@ export async function autonomousGenealogyResearch(call:Call,checkpoint:MobileDee
  validateMobileGenealogyResearchSource(source!);const captured=source!;
  if(checkpoint.context&&['vaultId','vaultType','revision','sourceScope'].some(key=>checkpoint.context![key as keyof typeof checkpoint.context]!==captured.context[key as keyof typeof captured.context]))throw new Error('genealogy_research_source_conflict');
  if(!saved){checkpoint.calls['source:genealogy']={input:sourceInput,output:structuredClone(captured)};checkpoint.context=structuredClone(captured.context);await persist();}
+ await prepareAutonomousResearchVisuals(call,checkpoint,persist,controller);
  if((request.focusPersonId??null)!==(captured.focusPerson?.id??null))throw new Error('genealogy_research_focus_conflict');
  const complete=async(opts:Parameters<PortableGenealogyDeepResearchHost['completeText']>[0],chosen:Parameters<PortableGenealogyDeepResearchHost['completeText']>[1],format:'json'|'text',attempt=0)=>{
   signal.throwIfAborted();if(chosen&&(chosen.provider!==model.provider||chosen.model!==model.model))throw new Error('mobile_model_fallback_forbidden');
-  const input={...structuredPrompt({system:opts.system,user:opts.user,maxTokens:opts.maxTokens??8000,temperature:opts.temperature??0.2},model,request.thinkingEffort),format,generationId:checkpoint.id,completionKey:`genealogy:${sha256Snapshot([format,opts.system,opts.user])}:${attempt}`};
+  const input={...structuredPrompt({system:autonomousResearchPlanningPrompt(checkpoint,opts.system),user:opts.user,maxTokens:opts.maxTokens??8000,temperature:opts.temperature??0.2},model,request.thinkingEffort),format,generationId:checkpoint.id,completionKey:`genealogy:${sha256Snapshot([format,opts.system,opts.user])}:${attempt}`};
   try{const value=await durableDeepResearchCall(checkpoint,`local:genealogy:${sha256Snapshot(input)}`,input,()=>call('mobileStructuredCompletion',input),persist,{paid:true,request:input,recover:async()=>{const value=await call('mobileSavedStructuredCompletion',checkpoint.inflight?.request??input);return value===null?undefined:value;}});if(typeof value!=='string')throw new Error('invalid_mobile_genealogy_completion');return value;}catch(error){controller.abort(error);throw error;}
  };
  const text:PortableGenealogyDeepResearchHost['completeText']=(opts,chosen)=>complete(opts,chosen,'text');

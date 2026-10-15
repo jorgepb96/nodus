@@ -38,6 +38,15 @@ export function storeChatImage(owner: string, image: { bytes: Buffer; mimeType: 
   }
   return `nodus-image://chat/${owner}/${id}`;
 }
+/** Import an authenticated mobile figure under its already-persisted identity.
+ * Both canonical protocols share these bytes; a lost ACK cannot allocate a new id. */
+export function importDocumentFigureAsset(owner: string, id: string, image: { bytes: Buffer; mimeType: string }, metadata: Record<string, string>): void {
+  if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(id) || !image.bytes.length || image.bytes.length > 8 * 1024 * 1024 || !['image/png','image/jpeg','image/webp'].includes(image.mimeType)) throw new Error('Invalid document figure asset.');
+  const dir=directory(owner);fs.mkdirSync(dir,{recursive:true,mode:0o700});
+  const files: Array<[string,Buffer]> = [[`${id}.image`,image.bytes],[`${id}.capability`,image.bytes],[`${id}.json`,Buffer.from(JSON.stringify({...metadata,mimeType:image.mimeType}))],[`${id}.capability.json`,Buffer.from(JSON.stringify({mimeType:image.mimeType,name:'figure.png',title:metadata.title??'figure'}))]];
+  for(const [name,bytes] of files){const file=path.join(dir,name);if(fs.existsSync(file)){const stat=fs.lstatSync(file);if(!stat.isFile()||stat.isSymbolicLink()||!fs.readFileSync(file).equals(bytes))throw new Error('Document figure asset identity conflict.');}}
+  for(const [name,bytes] of files){const file=path.join(dir,name);if(!fs.existsSync(file)){fs.writeFileSync(file+'.tmp',bytes,{mode:0o600});fs.renameSync(file+'.tmp',file);}}
+}
 export function getChatImage(id: string): { blob: Buffer; mime: string } | null {
   if (!/^[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(id)) return null;
   try {

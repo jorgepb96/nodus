@@ -1,3 +1,4 @@
+import {prepareAutonomousResearchVisuals,autonomousResearchPlanningPrompt} from './autonomousResearchVisuals';
 import {prepareDeepResearchVariantRequest} from '@shared/prepareDeepResearchVariantRequest';
 import {portableDeepResearchAI} from '@shared/portableDeepResearchAI';
 import {portableStudyDeepResearch,type PortableStudyDeepResearchHost} from '@shared/portableStudyDeepResearch';
@@ -13,9 +14,10 @@ export async function autonomousStudyResearch(call:Call,checkpoint:MobileDeepRes
  let source=checkpoint.calls['source:study']?.output as MobileStudyResearchSource|undefined;
  if(!source){const captured=await call('mobileStudyResearchSource',request);source=captureMobileStudyResearchSources(captured.packs,captured.sourceScope);if(checkpoint.context&&(checkpoint.context.vaultId!==source.context.vaultId||checkpoint.context.vaultType!==source.context.vaultType||checkpoint.context.revision!==source.context.revision||checkpoint.context.sourceScope!==source.context.sourceScope))throw new Error('mobile_study_source_revision_changed');checkpoint.context=source.context;checkpoint.calls['source:study']={input:JSON.stringify({packIds:source.packIds}),output:source};await persist();}
  const copied=source;
+ await prepareAutonomousResearchVisuals(call,checkpoint,persist,controller);
  const complete=async(opts:Parameters<PortableStudyDeepResearchHost['completeText']>[0],chosen:Parameters<PortableStudyDeepResearchHost['completeText']>[1],format:'json'|'text',attempt=0)=>{
   signal.throwIfAborted();if(chosen&&(chosen.provider!==model.provider||chosen.model!==model.model))throw new Error('mobile_model_fallback_forbidden');
-  const input={...structuredPrompt({system:opts.system,user:opts.user,maxTokens:opts.maxTokens??8000,temperature:opts.temperature??0.2},model,request.thinkingEffort),format,generationId:checkpoint.id,completionKey:`study:${sha256Snapshot([format,opts.system,opts.user])}:${attempt}`};
+  const input={...structuredPrompt({system:autonomousResearchPlanningPrompt(checkpoint,opts.system),user:opts.user,maxTokens:opts.maxTokens??8000,temperature:opts.temperature??0.2},model,request.thinkingEffort),format,generationId:checkpoint.id,completionKey:`study:${sha256Snapshot([format,opts.system,opts.user])}:${attempt}`};
   try{const value=await durableDeepResearchCall(checkpoint,`local:study:${sha256Snapshot(input)}`,input,()=>call('mobileStructuredCompletion',input),persist,{paid:true,request:input,recover:async()=>{const value=await call('mobileSavedStructuredCompletion',checkpoint.inflight?.request??input);return value===null?undefined:value;}});if(typeof value!=='string')throw new Error('invalid_mobile_study_completion');return value;}catch(error){controller.abort(error);throw error;}
  };
  const text:PortableStudyDeepResearchHost['completeText']=(opts,chosen)=>complete(opts,chosen,'text');

@@ -1,3 +1,4 @@
+import {prepareAutonomousResearchVisuals,autonomousResearchPlanningPrompt} from './autonomousResearchVisuals';
 import {mobileCompleteGuideWebText} from './completeGuideWebText';
 import {mobileCompleteGuideWebImages} from './completeGuideWebImages';
 import {runCompleteGuide,type CompleteGuideDeps} from '../../electron/ai/completeGuide/core';
@@ -27,6 +28,7 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
  if(!source){source=selectMobileCompleteGuideSources(await call('mobileCompleteGuideSource',request),config.selection);assertMobileCompleteGuideSource(source,config.selection);checkpoint.calls[sourceKey]={input:JSON.stringify(config.selection),output:source};checkpoint.context=source.context;await persist();}
  assertMobileCompleteGuideSource(source,config.selection);
  const embedding=checkpoint.embeddingConfiguration;
+ await prepareAutonomousResearchVisuals(call,checkpoint,persist,controller);
  if(config.webText&&!checkpoint.webSearchEndpoint){const endpoint=await call('mobileWebSearchConfiguration');if(typeof endpoint!=='string'||!endpoint)throw new Error('Configura la búsqueda web del móvil antes de incluir fuentes web en la guía.');checkpoint.webSearchEndpoint=endpoint;await persist();}
  let writes=Promise.resolve();
  const flush=async()=>{await writes;signal.throwIfAborted();};
@@ -48,14 +50,14 @@ export async function autonomousCompleteGuide(call:Call,checkpoint:MobileDeepRes
   if(config.maxCostUsd&&spent!==null&&spent>=config.maxCostUsd)throw new Error(`Se ha alcanzado el presupuesto de la guía (${config.maxCostUsd} USD). Las respuestas se conservan.`);
   let failure:unknown;
   for(let attempt=0;attempt<attempts;attempt++){
-   const body=structuredPrompt({system:prompt.system,user:prompt.user,maxTokens:prompt.maxTokens,temperature:prompt.temperature??0},model,prompt.mechanical?'standard':request.thinkingEffort);
+   const body=structuredPrompt({system:autonomousResearchPlanningPrompt(checkpoint,prompt.system),user:prompt.user,maxTokens:prompt.maxTokens,temperature:prompt.temperature??0},model,prompt.mechanical?'standard':request.thinkingEffort);
    const raw=await paid({...body,format:'json',generationId:checkpoint.id,completionKey:`guide:${sha256Snapshot([prompt.stage,prompt.system,prompt.user])}:${attempt}`});
    try{const value=typeof raw==='string'?JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,'')):raw;if(prompt.validate(value))return value;throw new Error('invalid_complete_guide_model_response');}catch(error){failure=error;}
   }
   throw failure;
  };
  const json:CompleteGuideDeps['json']=prompt=>jsonWithAttempts(prompt,3);
- const audit=portableResearchClaimAudit({completeJson:(opts,guard)=>jsonWithAttempts({stage:'verify',system:opts.system,user:opts.user,maxTokens:opts.maxTokens??6000,temperature:opts.temperature,mechanical:true,validate:guard},opts.noRetry?1:3),currentJobThinkingEffort:()=> 'standard',isOutputTruncated:error=>(error as {code?:string})?.code==='output_truncated'});
+ const audit=portableResearchClaimAudit({completeJson:(opts,guard)=>jsonWithAttempts({stage:'verify',system:autonomousResearchPlanningPrompt(checkpoint,opts.system),user:opts.user,maxTokens:opts.maxTokens??6000,temperature:opts.temperature,mechanical:true,validate:guard},opts.noRetry?1:3),currentJobThinkingEffort:()=> 'standard',isOutputTruncated:error=>(error as {code?:string})?.code==='output_truncated'});
  const auditor=audit.createResearchProseAuditor(model,signal);
  checkpoint.guideCache??={};checkpoint.guideCheckpoints??={};
  const deps:CompleteGuideDeps={

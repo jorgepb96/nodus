@@ -10,7 +10,7 @@ export interface DocumentResourceAsset {
 }
 export interface AutonomousDocumentResourceHost {
  generationId:string;owner:string;version:number;
- imageProvider:ImageProvider;imageModel:string;
+ imageProvider:ImageProvider|null;imageModel:string|null;
  completeText:PortableChatSvgQualityHost['completeText'];
  resolveModelRef(model?:ModelRef|null):ModelRef;
  evaluate<T>(script:string):Promise<T>;

@@ -2,7 +2,7 @@ import {CHAT_IMAGE_ASPECT_RATIOS,skillHasCapability,type ChatImageAspectRatio} f
 import type {AppSettings} from './types';
 import type {PortableSkillResourceExecution} from './portableResourceExecution';
 export interface PortableImageRequestHost<Generated,Bytes> {
- getSettings():Pick<AppSettings,'imageProvider'|'imageModel'>;
+ getSettings():{imageProvider:AppSettings['imageProvider']|null;imageModel:AppSettings['imageModel']|null};
  chatAssetVersion(owner:string):number;
  callImageProvider(provider:NonNullable<AppSettings['imageProvider']>,model:string,prompt:string,signal?:AbortSignal,aspectRatio?:ChatImageAspectRatio):Promise<Generated>;
  prepareGeneratedImage(value:Generated):{image:Bytes;mimeType:string};

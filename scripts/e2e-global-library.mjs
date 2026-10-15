@@ -183,9 +183,11 @@ try {
     await updateModal.waitFor({ state: 'detached' });
   }
   await page.locator('[data-tour="nav-library"]').click();
-  // Everyone meets the Library guide the first time they open Library, and its
-  // backdrop swallows every pointer event aimed at the view behind it.
+  // The academic Library walkthrough remains available explicitly; its backdrop
+  // owns pointer events only after the user opens help.
   const libraryTutorial = page.getByTestId('library-tutorial-modal');
+  assert.equal(await libraryTutorial.count(), 0, 'academic library walkthrough is opt-in');
+  await page.getByTestId('library-open-tutorial').click();
   await libraryTutorial.waitFor({ state: 'visible' });
   await page.getByTestId('library-tutorial-close').click();
   await libraryTutorial.waitFor({ state: 'detached' });

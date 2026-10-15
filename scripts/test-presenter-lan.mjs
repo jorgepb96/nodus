@@ -150,7 +150,11 @@ test('JPEG preview, complete PDF/hash, resumed transfer and asset guards work in
     assets = await Client.open(f.info, 'assets');
     const version = deck.assetVersion;
     assets.send({ kind: 'image', page: 1, width: 1280, assetVersion: version });
-    const image = Buffer.from((await assets.next(m => m.kind === 'image')).data, 'base64');
+    // First native PDF render includes a cold renderer startup on hosted Windows.
+    // Keep protocol/control deadlines short, but wait for this render or its actual error.
+    const preview = await assets.next(m => m.kind === 'image' || m.kind === 'assetError', 30000);
+    assert.equal(preview.kind, 'image', 'the native renderer must produce a preview, not an asset error');
+    const image = Buffer.from(preview.data, 'base64');
     assert.deepEqual([...image.subarray(0, 2)], [0xff, 0xd8]); assert.ok(image.length > 2000);
     for (const start of [0, Math.floor(f.bytes.length / 2)]) {
       assets.send({ kind: 'pdf', offset: start, assetVersion: version });

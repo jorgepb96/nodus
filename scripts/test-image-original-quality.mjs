@@ -57,22 +57,23 @@ test('the shared storage pipeline preserves exact source bytes and derives only 
   }
 });
 
-test('every worldbuilding demo visual has a larger lossless original beside its thumbnail', async () => {
+// The demo originals are lossy WebP since 5.9.2 (quality 75): the lossless PNGs were
+// 118 MB of every installer. They keep the generated resolution, which is what a
+// dossier or the map viewer zooms into; the card thumbnail stays a separate file.
+test('every worldbuilding demo visual has a larger full-resolution original beside its thumbnail', async () => {
   const assetDir = path.join(root, 'electron/assets/worldbuilding-demo');
-  const originals = fs.readdirSync(assetDir).filter((file) => file.endsWith('.png')).sort();
+  const originals = fs.readdirSync(assetDir).filter((file) => file.endsWith('.original.webp')).sort();
   assert.equal(originals.length, 55);
 
   for (const originalName of originals) {
-    const thumbnailName = originalName.replace(/\.png$/, '.webp');
+    const thumbnailName = originalName.replace(/\.original\.webp$/, '.webp');
     const originalPath = path.join(assetDir, originalName);
     const thumbnailPath = path.join(assetDir, thumbnailName);
     assert.ok(fs.existsSync(thumbnailPath), `${thumbnailName} exists`);
 
-    const originalBytes = fs.readFileSync(originalPath);
     const thumbnail = new Image();
     thumbnail.src = fs.readFileSync(thumbnailPath);
-    const originalWidth = originalBytes.readUInt32BE(16);
-    const originalHeight = originalBytes.readUInt32BE(20);
+    const { width: originalWidth, height: originalHeight } = await sharp(originalPath).metadata();
 
     assert.ok(
       originalWidth * originalHeight > thumbnail.width * thumbnail.height * 2.4,
@@ -85,13 +86,13 @@ test('every worldbuilding demo visual has a larger lossless original beside its 
 test('every character card thumbnail is derived from the same image its dossier opens', async () => {
   const assetDir = path.join(root, 'electron/assets/worldbuilding-demo');
   const originals = fs.readdirSync(assetDir)
-    .filter((file) => /^character-[a-z]+\.png$/.test(file))
+    .filter((file) => /^character-[a-z]+\.original\.webp$/.test(file))
     .sort();
   assert.equal(originals.length, 10);
 
   for (const originalName of originals) {
     const originalPath = path.join(assetDir, originalName);
-    const thumbnailPath = originalPath.replace(/\.png$/, '.webp');
+    const thumbnailPath = originalPath.replace(/\.original\.webp$/, '.webp');
     const [original, thumbnail] = await Promise.all([
       sharp(originalPath).resize(90, 120, { fit: 'fill' }).removeAlpha().raw().toBuffer(),
       sharp(thumbnailPath).resize(90, 120, { fit: 'fill' }).removeAlpha().raw().toBuffer(),
@@ -111,13 +112,13 @@ test('every character card thumbnail is derived from the same image its dossier 
 test('every character gallery thumbnail is derived from its own high-resolution scene', async () => {
   const assetDir = path.join(root, 'electron/assets/worldbuilding-demo');
   const originals = fs.readdirSync(assetDir)
-    .filter((file) => /^character-[a-z]+-gallery\.png$/.test(file))
+    .filter((file) => /^character-[a-z]+-gallery\.original\.webp$/.test(file))
     .sort();
   assert.equal(originals.length, 10);
 
   for (const originalName of originals) {
     const originalPath = path.join(assetDir, originalName);
-    const thumbnailPath = originalPath.replace(/\.png$/, '.webp');
+    const thumbnailPath = originalPath.replace(/\.original\.webp$/, '.webp');
     const metadata = await sharp(originalPath).metadata();
     assert.deepEqual(
       [metadata.width, metadata.height],

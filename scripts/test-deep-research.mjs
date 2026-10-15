@@ -350,6 +350,25 @@ try {
     assert.equal((markdown.match(/nodus:\/\//g) ?? []).length, md.match(/nodus:\/\//g).length, 'every catalog token survives the citation policy');
   }
 
+  // ── 2e. A report in another language never names a citation in Spanish ──
+  {
+    const snapshot = makeSnapshot(3);
+    snapshot.brief = { ...snapshot.brief, language: 'en' };
+    // A gap with no work and a contradiction with no sides fall back to a noun,
+    // and an anonymous untitled work to a placeholder: all of them in English.
+    snapshot.gaps = [{ ...snapshot.gaps[0], work: null }];
+    snapshot.works = [...snapshot.works, { ...snapshot.works[0], id: 'w-anon', title: '', authors: [], year: 2001 }];
+    const maps = buildSnapshotMaps(snapshot);
+    const md = 'Gap [x](nodus://gap/gap-1). Tension [y](nodus://contradiction/edge-1). Work [fuente](nodus://work/w-anon).';
+    const { markdown } = applyCitationPolicy(md, maps);
+    assert.match(markdown, /\[gap\]\(nodus:\/\/gap\/gap-1\)/);
+    assert.match(markdown, /\[contradiction\]\(nodus:\/\/contradiction\/edge-1\)/);
+    assert.match(markdown, /\[Untitled work \(2001\)\]\(nodus:\/\/work\/w-anon\)/);
+    const catalog = buildCitationCatalog(snapshot);
+    const tokens = [...catalog.gaps, ...catalog.contradictions].map((item) => item.token).join(' ');
+    assert.doesNotMatch(tokens, /hueco|contradicción|fuente|Obra sin autor/i, 'English catalog tokens carry no Spanish label');
+  }
+
   // ── 3. Full report: evidence coverage, clean citations, references ──
   {
     const snapshot = makeSnapshot(40);

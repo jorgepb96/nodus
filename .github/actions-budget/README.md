@@ -12,9 +12,12 @@ lint/TypeScript, todos los archivos descubiertos, cinco E2E, contratos
 del marketplace, procesos nativos y migraciones. No se cachean resultados de tests
 ni se seleccionan pruebas individuales por los archivos modificados.
 
-Desde el 13 de octubre de 2026 se prioriza también el tiempo de espera: los tres
-grupos de tests se ejecutan en runners Linux independientes y los E2E y controles
-de integración en un cuarto runner, en paralelo con ellos. Cada consumidor instala
+Desde el 14 de octubre de 2026 los tests se reparten en seis runners Linux
+independientes, con tiempos recientes para equilibrar los grupos. Otros tres
+runners ejecutan por separado arranque y grafos, backups e integración. Lint y
+TypeScript se ejecutan junto al build y siguen siendo obligatorios en la puerta
+final, pero ya no retrasan el inicio de los tests. Los hosts nativos conservan
+su comprobación de tipos y añaden cachés incrementales. Cada consumidor instala
 sus dependencias bloqueadas y verifica por SHA-256 la compilación de esta ejecución,
 su commit y el runtime/ABI nativo exacto de Electron. Todos usan la misma revisión
 del marketplace. La puerta final vuelve a comprobar el inventario completo: cada
@@ -73,9 +76,23 @@ y Linux, firma/notarización, procesos nativos, migraciones, runtime Research,
 integridad y el gate final: cualquier fallo impide publicar. Los controles nativos
 rechazan skips y se ejecutan aunque ese código no haya cambiado.
 
+Linux se prepara una sola vez en Ubuntu 22.04, incluyendo sus hooks nativos y el
+control de glibc. DEB, RPM y AppImage se generan después en tres runners aislados,
+en paralelo, desde el mismo archivo tar. Cada consumidor comprueba commit,
+lockfile, versión, canal, hashes, permisos y enlaces. Solo permite los metadatos
+de actualización y AppArmor propios del formato. La subida exige los tres
+informes y todos sus assets; el AppImage conserva sus verificaciones y alias.
+El plugin Zotero empieza junto al empaquetado nativo. Las notas se generan una
+sola vez y se verifican por ID inmutable y SHA-256 antes de publicar. Las cachés
+solo reutilizan descargas e información incremental, nunca una app compilada.
+La medición y la prueba de instaladores están en
+[Release execution and measurement](../../docs/release-performance.md).
+
 macOS Intel queda fuera de la matriz que condiciona la publicación, a petición
 del propietario, para que su runner más lento no retrase la release. Se publica
-después: cuando `verify-and-publish` termina, `release-macos-intel.yml` compila
+después: cuando `verify-and-publish` termina, un dispatch inicia una ejecución
+independiente de `release-macos-intel.yml` y el workflow principal finaliza sin
+esperarla. Esa ejecución compila
 Intel desde el mismo tag, lo firma y notariza, lo añade a la release ya publicada
 y fusiona sus entradas en el manifiesto con el merger auditado, sin tocar las de
 arm64 ni el puntero de compatibilidad. Si falla, la release publicada queda

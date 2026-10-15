@@ -106,6 +106,70 @@
 /* Export raises the native save dialog, which owns the window until it closes. */
 .nodus-start-page.bookmarks-main .atlas-facet-button:disabled { opacity:.6; cursor:default; }
 .nodus-start-page.bookmarks-main .atlas-facet-button:disabled:hover { color:var(--ink-2); border-color:var(--membrane); background:rgba(16,13,28,.62); }
+/* Favourite star: outlined until starred, then filled yellow. It takes the corner
+   the "Saved" tag used to hold, so the card keeps its height. */
+.nodus-start-page .bookmark-star {
+  flex:0 0 auto; display:grid; place-items:center; width:30px; height:30px; margin:-4px -6px 0 0;
+  border:0; border-radius:999px; background:transparent; color:var(--ink-3); cursor:pointer;
+  transition:color .15s ease, background .15s ease, transform .15s ease;
+}
+.nodus-start-page .bookmark-star:hover { color:#fde68a; background:var(--skin); }
+.nodus-start-page .bookmark-star:focus-visible { outline:2px solid var(--violet-2); outline-offset:1px; }
+.nodus-start-page .bookmark-star.is-favorite { color:#facc15; }
+.nodus-start-page .bookmark-star.is-favorite svg { fill:currentColor; }
+.nodus-start-page .bookmark-star:active { transform:scale(.9); }
+/* The Atlas keeps its facets on one unwrapped row whose pills share the width out
+   evenly. Bookmarks has actions, not facets, and a share of that row squeezed the
+   sort pill to "Or… M…": here every control keeps its own width and the row wraps. */
+.nodus-start-page.bookmarks-main .atlas-filterbar { flex-wrap:wrap; }
+.nodus-start-page.bookmarks-main .atlas-filterbar .atlas-facet-button { width:auto; max-width:none; white-space:nowrap; }
+.nodus-start-page .bookmark-sort { flex:0 0 auto; min-width:0; }
+.nodus-start-page .bookmark-view-toggle {
+  display:inline-flex; flex:0 0 auto; align-items:center; gap:2px; height:38px; padding:3px;
+  border:1px solid var(--membrane); border-radius:999px; background:rgba(16,13,28,.62);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.nodus-start-page .bookmark-view-toggle button {
+  display:grid; place-items:center; width:36px; height:30px; border:0; border-radius:999px;
+  background:transparent; color:var(--ink-3); cursor:pointer; transition:color .15s ease, background .15s ease;
+}
+.nodus-start-page .bookmark-view-toggle button:hover { color:var(--ink); }
+.nodus-start-page .bookmark-view-toggle button[aria-pressed='true'] { color:var(--violet-3); background:rgba(139,92,246,.18); }
+.nodus-start-page .bookmark-view-toggle button:focus-visible { outline:2px solid var(--violet-2); outline-offset:1px; }
+/* List view: the same cards, one per row. The rows share the list's columns
+   through subgrid, so titles, addresses and actions line up down the page even
+   though a folder has fewer actions than a website. The description is left to
+   the card view. */
+.nodus-start-page .bookmark-list {
+  grid-column:1/-1; display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;
+  column-gap:20px; row-gap:8px;
+}
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-card {
+  grid-column:1/-1; display:grid; grid-template-columns:subgrid; align-items:center;
+  height:auto; min-height:0; padding:10px 14px 10px 18px; border-radius:14px;
+}
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-card:hover { transform:translateY(-1px); }
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-card .atlas-description { display:none; }
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-card .atlas-geo { margin-top:0; }
+.nodus-start-page.bookmarks-main .bookmark-list .atlas-card-top { align-items:center; min-width:0; }
+.nodus-start-page.bookmarks-main .bookmark-list .atlas-card-actions { flex-wrap:nowrap; justify-content:flex-end; margin-top:0; }
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-card h2 { font-size:15px; }
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-folder-icon { width:28px; height:28px; border-radius:9px; }
+.nodus-start-page.bookmarks-main .bookmark-list .bookmark-star { margin:0; }
+/* Narrower: one row is still one item, but the address column gives way first. */
+@media (max-width:900px) {
+  .nodus-start-page .bookmark-list { grid-template-columns:minmax(0,1fr) auto; }
+  .nodus-start-page.bookmarks-main .bookmark-list .bookmark-card .atlas-geo { display:none; }
+}
+@media (max-width:600px) {
+  .nodus-start-page .bookmark-list { grid-template-columns:minmax(0,1fr); }
+  .nodus-start-page.bookmarks-main .bookmark-list .atlas-card-actions { flex-wrap:wrap; justify-content:flex-start; }
+}
+
+.nodus-start-page .bookmark-sort .atlas-facet-button > svg { color:var(--ink-3); }
+.nodus-start-page .bookmark-sort .atlas-facet-button.is-active > svg { color:inherit; }
+.nodus-start-page .bookmark-sort-panel { width:min(250px, calc(100vw - 30px)); padding:6px; }
+.nodus-start-page .bookmark-sort-group + .bookmark-sort-group { margin-top:5px; padding-top:5px; border-top:1px solid var(--membrane); }
 .nodus-start-page .bookmark-favicon { width:22px; height:22px; object-fit:contain; border-radius:5px; }
 .nodus-start-page .bookmark-folder-icon { display:grid; place-items:center; width:36px; height:36px; border:1px solid rgba(167,139,250,.25); border-radius:11px; background:rgba(139,92,246,.12); color:var(--violet-3); }
 .nodus-start-page .bookmark-favicon,

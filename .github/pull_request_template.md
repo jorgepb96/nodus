@@ -4,7 +4,7 @@
 
 ## Related issue
 
-<!-- Required: every pull request must reference an existing issue. Open one first if none exists, and use "Closes #123" when this pull request should close it. -->
+<!-- Required: link an existing issue from Development, or use "Closes #123" / "Fixes #123" below when targeting the default branch. A plain issue mention does not create the link checked by "Issue linked". Open an issue first if none exists. -->
 
 ## Type of change
 

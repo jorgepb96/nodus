@@ -1,17 +1,20 @@
 # CI execution and measurement
 
-CI builds each commit once on `macos-latest`. Three independent macOS jobs run
+CI builds each commit once on `ubuntu-22.04`. Six independent Linux jobs run
 every `scripts/test-*.mjs` file, with the same Node 22 runtime, Electron native
 module checks, full Git history, and at most two-file process concurrency.
 Files with a static Playwright import run in a first phase at concurrency one;
 other files run afterward at concurrency two, retaining process isolation.
-This reduces competing browser processes on the 7 GB hosted runners. The
+This reduces competing browser processes on each hosted runner. The
 classification changes scheduling only: both phases together execute every
 assigned file, and summaries add the real counts while retaining any failure,
 cancellation or skip from either phase. Browser durations receive twice the
-placement weight to account for their sequential execution. The four existing
-Electron E2E scripts run after the smaller third group,
-against the same build. Cross-repository capability checks retain all three platforms.
+placement weight to account for their sequential execution. Three additional
+isolated Linux jobs share the same verified build: smoke plus the three graph
+E2Es, backups export/restore, and marketplace/native integration checks.
+The build, lint/TypeScript checks and selected native hosts start together.
+Tests wait for the build, but not for static analysis; the final gate requires
+both. Cross-repository capability checks retain all three platforms.
 
 Component browser fixtures own a Playwright browser server bound to loopback.
 Cleanup allows ten seconds for Chrome to exit gracefully, then terminates only
@@ -32,18 +35,21 @@ and after the parent's exit; live browser streams are never closed this way.
 durations in `scripts/ci-test-durations.json` balance placement, never inclusion:
 new files without hints also run. Each group runs longer files first and reports
 the runner's actual file-process completions, durations, result counts and skips.
-The third group reserves five minutes of E2E work in its placement weights;
-this changes assignment, never test inclusion. Every group is seeded with at least
-one file. Three downstream macOS runners replace four, leaving room for the two
-concurrent macOS Research native jobs within the standard five-job allowance.
-The `e2e` check verifies the matrix result: failure/cancellation in any group or
-real-app step fails it. Existing E2E assertions and individual timeouts remain.
+Every group is seeded with at least one file. Hints were refreshed from all 960
+successfully executed files in
+[run 38539770257](https://github.com/jorgepb96/nodus/actions/runs/38539770257).
+E2E work has its own runners and is not reserved in unit-test placement.
+All six unit groups and all three real-app groups run with `fail-fast: false`:
+one failure cannot cancel another group's coverage. The aggregate matrix result
+rejects failure/cancellation in any group. Existing assertions and individual
+timeouts remain, and diagnostics use distinct artifact names for each E2E group.
 
-The final `test` check requires successful build, all groups, E2E and capability
+The final `test` check requires successful lint/TypeScript, build, all groups, E2E and capability
 jobs, and checks that every discovered file completed exactly once. Missing,
 duplicate, cancelled, failed or stale reports fail the gate. New skipped tests
-also fail; only the two exact skip names/reasons present in the baseline run are
-accepted. Existing assertions and E2E timeouts are unchanged.
+also fail; only the existing exact skip names/reasons and nine explicitly named
+macOS cases on Linux are accepted. Those native cases must still pass without
+skips on macOS. Existing assertions and E2E timeouts are unchanged.
 
 Build outputs and the contract sources generated during preparation travel in a
 tar archive to retain native helper permissions. Source-driven tests therefore
@@ -53,8 +59,13 @@ tests start. Artifacts are scoped to the current workflow run. A failed-job reru
 reuses the successful build's artifact ID and replaces only retried group reports;
 successful groups remain valid for the same commit. Builds are not restored from
 another commit. TypeScript incremental state and ESLint's
-content cache accelerate checks, but both tools still run against current sources
-on every build; cache misses perform full checks.
+content cache accelerate the separate required quality job, but both tools still
+run against current sources on every code change; cache misses perform full checks.
+That job generates the current contract sources before checking types and installs
+dependencies without native lifecycle scripts because static checks do not use
+Electron. Native hosts retain `build:ci` with their own typecheck and incremental
+caches. The Linux builder uses `build:ci:bundle`, preserving native prebuild hooks
+and compiling the current sources while the required quality job runs separately.
 
 The builder also shares its rebuilt native binaries and Electron rebuild metadata
 in a small, separate archive. Consumers install the locked dependencies with
@@ -71,8 +82,8 @@ build hash manifest. Consumers use that verified file and fail if it is missing
 or empty, avoiding duplicate compilation at parallel test startup. All browser
 assertions still inspect the real generated stylesheet. Local tests retain their
 existing stylesheet preparation unless the CI artifact path is explicitly set.
-The group assigned the Drift audio fixture verifies working `ffmpeg` and `ffprobe` binaries, installing or
-repairing the Homebrew formula only when necessary. This keeps the Drift audio
+Each Linux consumer installs and verifies working `ffmpeg` and `ffprobe` binaries.
+This keeps the Drift audio
 fixture's duration, channels, sample rate and loop-seam assertions active; a
 missing tool is not accepted as an additional skip.
 
@@ -83,12 +94,11 @@ the checks finish. The planner and transports retain their dedicated test suites
 
 ## Validate on a pull request
 
-1. Compare with baseline run
-   [36668262640](https://github.com/jorgepb96/nodus/actions/runs/36668262640):
-   main job 32m16s, unit/integration step 19m18s, main build 5m25s, E2E steps
-   approximately 4 minutes. The original runner reported 4,027 tests, 4,025
-   passed, zero failures, and the two documented skips. Added orchestration
-   regression tests increase the new total.
+1. Compare with the current full Linux baseline
+   [38539770257](https://github.com/jorgepb96/nodus/actions/runs/38539770257):
+   total 20m19s, builder 8m07s, slowest unit job 11m20s and E2E job 9m06s.
+   Its 960 test files all passed; the new orchestration still discovers every
+   current file rather than freezing that baseline inventory.
 2. Confirm all build, group, E2E and capability jobs pass. Read the final `test`
    job summary and download the `ci-tests-*` JSON reports. Their combined file
    inventory must match discovery; result counts alone are not sufficient.
@@ -98,9 +108,10 @@ the checks finish. The planner and transports retain their dedicated test suites
    total runner consumption; faster feedback does not imply fewer runner minutes.
 4. A first execution measures a cold check cache. A later commit with small changes
    can measure restored incremental caches; do not combine the two benchmarks.
-5. Aim for 14–16 minutes and compare measured results before
-   claiming an improvement. Three downstream macOS jobs can compete with other PRs
-   for the account's macOS concurrency allowance. Queue time is not guaranteed.
+5. Aim for less than 15 minutes and compare measured results before claiming
+   an improvement. Six Linux test runners plus three real-app runners trade
+   additional dependency setup for shorter feedback. Native hosts can become
+   the slowest path, and queue time or cold caches can still exceed the target.
 
 Application code and the local `npm test`, `npm run test:ci`, `npm run build`,
 `npm run lint` and `npm run typecheck` commands retain their original behavior.
@@ -117,8 +128,8 @@ npm run build:server-web
 node scripts/ci-test-shards.mjs plan
 node scripts/ci-build-artifact.mjs pack
 node scripts/ci-build-artifact.mjs verify
-npm run test:ci:shard -- 1
-npm run test:ci:shard -- 2
-npm run test:ci:shard -- 3
+for shard in 1 2 3 4 5 6; do
+  npm run test:ci:shard -- "$shard"
+done
 node scripts/ci-test-shards.mjs verify
 ```

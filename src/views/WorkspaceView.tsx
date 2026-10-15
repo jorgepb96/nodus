@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { normalizeAcademicMetadata, cloneAcademicDocument } from '@shared/academicDocument';
 import { EditorialCards, EditorialNavigator, CatalogViewControl, EditorialCreateTrigger, EditorialCatalogRow } from '../components/workspace/EditorialChrome';
 import '../components/workspace/editorialWorkspace.css';
@@ -704,6 +705,7 @@ export function WorkspaceView({
     [openIds, tree.notes]
   );
   const active = openTabs.find((note) => note.id === activeId) ?? null;
+  const learning = useLearningArtifact('scriptor',active?.id,learningMarkdownRefs(active?.content ?? ''));
 
   const openNote = async (id: string) => {
     if (activeId && !await flushRef.current()) return;
@@ -915,6 +917,7 @@ export function WorkspaceView({
             onActivate={openNote}
             onClose={closeNote}
             onSaved={(updated) => {
+              if(learning.session?.lessonId==='scriptor'&&learning.session.artifactId===updated.id){const citationIds=learningMarkdownRefs(updated.contentMarkdown).map(ref=>`${ref.kind}:${ref.id}`).filter(id=>learning.session?.citationIds?.includes(id));if(citationIds.length)learning.emit({kind:'artifact-evidence',artifactId:updated.id,citationIds,valid:true});}
               if (settings.academicMode === 'manual') notifyDataChanged();
               setTree((current) => ({
                 ...current,

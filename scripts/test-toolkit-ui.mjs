@@ -128,7 +128,11 @@ test('the Toolkit hub, real sidebar and Settings editor share the pin contract',
   assert.match(app, /settings\?\.toolkitPinnedPages \?\? \[\]/, 'the real sidebar resolves the saved pins');
   assert.match(app, /setToolkitPage\(n\.toolkitPage\)[\s\S]*?setView\('toolkit'\)/, 'a shortcut opens its nested Toolkit page');
   assert.match(settings, /groupedNav\(sidebarOrder, \[\], toolkitPinnedPages\)/, 'Settings uses the real Tools group');
-  assert.match(settings, /toolkitPinnedPages=\{settings\.toolkitPinnedPages\}/, 'Settings receives the persistent pin set');
+  assert.match(settings, /toolkitPinnedPages=\{activeVault\?\.type === 'academic' \? academicToolkitPages\(settings\.toolkitPinnedPages\) : settings\.toolkitPinnedPages\}/, 'Settings combines the academic shared tools with the persistent pin set');
+  const profiles = loadModule('src/academicInterfaceProfiles.ts');
+  const savedPins = ['translate'];
+  assert.deepEqual(profiles.academicToolkitPages(savedPins), ['drift', 'presenter', 'translate']);
+  assert.deepEqual(savedPins, ['translate'], 'the academic defaults do not overwrite global pins');
   assert.match(defaults, /toolkitPinnedPages: \['drift'\]/, 'a new profile starts with Nodus Drift pinned, as Nodus Browser is in the sidebar; a saved profile keeps its own pins');
   assert.match(appPrefs, /'toolkitPinnedPages'/, 'pins follow the user when switching vaults');
 });

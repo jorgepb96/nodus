@@ -23,6 +23,13 @@ import { buildTextPdf } from './toolkit-fixtures.mjs';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const appVersion = require(path.join(repoRoot, 'package.json')).version;
+const RETIRED_STARTUP_ANNOUNCEMENTS = [
+  { testId: 'pdf-presenter-tutorial-announcement', seenKey: 'nodus.pdfPresenterTutorialSeen.e2js_u-05OA' },
+  { testId: 'mobile-teaser-guide', seenKey: 'nodus.mobileTeaserSeen.3.2.4' },
+  { testId: 'platform-highlights-update-tour', seenKey: 'nodus.platformHighlightsSeen.2026-07' },
+  { testId: 'toolkit-beta-update-tour', seenKey: 'nodus.toolkitBetaGuideSeen.2.4.0' },
+  { testId: 'tutorial-videos-update-tour', seenKey: 'nodus.tutorialVideosAnnouncementSeen.2026-07' },
+];
 // Mesa provides real WebGL on CPU; retain software UI compositing and sandboxing.
 const ciGpuArgs = process.env.CI && process.platform === 'linux'
   ? ['--use-gl=angle', '--use-angle=gl', '--ignore-gpu-blocklist', '--disable-gpu-compositing'] : [];
@@ -193,9 +200,6 @@ try {
   // across the reloads below (same origin).
   await page.evaluate((version) => {
     localStorage.setItem('nodus.lastSeenVersion', version);
-    localStorage.setItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA', '1');
-    // The mobile teaser sits between release notes and everything behind it.
-    localStorage.setItem(`nodus.mobileTeaserSeen.${version}`, '1');
   }, appVersion);
 
   // ── Preload bridge ──────────────────────────────────────────────────────────
@@ -257,9 +261,19 @@ try {
   assert.equal(signedOutChatGpt.available, true, `official Codex runtime is available: ${signedOutChatGpt.error ?? 'ok'}`);
   assert.equal(signedOutChatGpt.connected, false, 'throwaway profile starts without a ChatGPT account');
   assert.equal(signedOutChatGpt.loginPending, false, 'throwaway profile has no pending OAuth flow');
+  // Installers no longer carry the Codex and Copilot CLIs: a packaged app downloads them at
+  // first use, and reading the status must never be that use (every visit to Providers reads it).
+  if (process.env.NODUS_E2E_EXECUTABLE) {
+    assert.equal(signedOutChatGpt.runtime?.state, 'missing', 'a packaged app does not carry the Codex CLI and reading the status does not fetch it');
+    const signedOutCopilot = await page.evaluate(() => window.nodus.getGitHubCopilotSubscriptionStatus());
+    assert.equal(signedOutCopilot.runtime?.state, 'missing', 'a packaged app does not carry the Copilot CLI and reading the status does not fetch it');
+  }
   console.log('[e2e] preload bridge ok');
 
-  // ── Essential tutorial: first screen, language preferences, seen-once gate ──
+  // Fresh academic setup is covered by e2e-academic-learning. Exercise the optional
+  // full essential guide here, as an existing vault replay, without recreating it.
+  await page.evaluate(() => window.nodus.updateSettings({firstVaultVersion:1,academicInterfaceProfile:'advanced'}));
+  // ── Essential tutorial: language preferences, seen-once gate ──
   await page.getByTestId('basics-tutorial-language').waitFor({ timeout: 30_000 });
   const languageButtonSizes = await page.locator('.tutorial-language-option').evaluateAll((buttons) =>
     buttons.map((button) => { const box = button.getBoundingClientRect(); return `${Math.round(box.width)}x${Math.round(box.height)}`; }));
@@ -331,7 +345,7 @@ try {
     const settings = await window.nodus.getSettings();
     return settings.uiLanguage === 'fr' && settings.promptLanguage === 'fr';
   }));
-  assert.equal(await page.locator('.tutorial-progress button').count(), 19, 'essential guide exposes thirteen core chapters plus three model-guidance and three connected-workflow chapters');
+  assert.equal(await page.locator('.tutorial-progress button').count(), 20, 'essential guide includes the interface profiles chapter alongside the existing chapters');
   await page.locator('.tutorial-topbar button').click();
   // The skip dialog follows the (now French) UI language, proving the French table
   // is actually wired into a real render.
@@ -367,21 +381,23 @@ try {
   }
   console.log(`[e2e] ${Object.keys(SIDEBAR_BY_LANGUAGE).length} translated UIs render on the real shell (sidebar + document lang)`);
 
-  // Existing users (tutorial v4) receive the new three-part connected-workflows
-  // summary immediately after release notes. This profile is throwaway, so the
-  // seen key exercised here never touches the developer's real Nodus profile.
-  await page.evaluate(async (version) => {
+  async function assertRetiredAnnouncementsAbsent(profile) {
+    for (const { testId } of RETIRED_STARTUP_ANNOUNCEMENTS) {
+      assert.equal(await page.getByTestId(testId).count(), 0, `${profile}: ${testId} stays retired`);
+    }
+    const markers = await page.evaluate((keys) => keys.map((key) => localStorage.getItem(key)),
+      RETIRED_STARTUP_ANNOUNCEMENTS.map(({ seenKey }) => seenKey));
+    assert.deepEqual(markers, Array(RETIRED_STARTUP_ANNOUNCEMENTS.length).fill(null), `${profile}: obsolete seen markers are not written`);
+  }
+  await assertRetiredAnnouncementsAbsent('fresh installation');
+
+  // Existing users with an older tutorial and no historical seen markers still get
+  // release notes, but none of the retired feature announcements can follow them.
+  await page.evaluate(async (seenKeys) => {
     localStorage.removeItem('nodus.lastSeenVersion');
-    localStorage.removeItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA');
-    localStorage.removeItem('nodus.platformHighlightsSeen.2026-07');
-    // Walking the tutorial above marked the videos announcement seen, exactly as it
-    // does for a real first run. Clear it here so the announcement this existing user
-    // never got is exercised too — it must be cleared BEFORE the render, since
-    // eligibility is read once, when the modal mounts.
-    localStorage.removeItem('nodus.tutorialVideosAnnouncementSeen.2026-07');
-    localStorage.removeItem(`nodus.mobileTeaserSeen.${version}`);
+    for (const key of seenKeys) localStorage.removeItem(key);
     await window.nodus.updateSettings({ uiLanguage: 'es', promptLanguage: 'es', basicsTutorialVersion: 4 });
-  }, appVersion);
+  }, RETIRED_STARTUP_ANNOUNCEMENTS.map(({ seenKey }) => seenKey));
   await page.reload();
   const whatsNewForExistingUser = page.getByTestId('whats-new-cinematic-modal');
   await whatsNewForExistingUser.waitFor();
@@ -418,57 +434,9 @@ try {
   await page.evaluate((className) => { document.documentElement.className = className; }, releaseOriginalClasses);
   await whatsNewForExistingUser.getByRole('button', { name: 'Explorar las novedades', exact: true }).click();
 
-  const pdfPresenterAnnouncement = page.getByTestId('pdf-presenter-tutorial-announcement');
-  await pdfPresenterAnnouncement.waitFor();
-  assert.match(await pdfPresenterAnnouncement.locator('iframe').getAttribute('src'), /e2js_u-05OA/);
-  await pdfPresenterAnnouncement.getByRole('button', { name: 'Cerrar', exact: true }).click();
-  await pdfPresenterAnnouncement.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.pdfPresenterTutorialSeen.e2js_u-05OA')), '1');
-
-  // First behind release notes sat the look at the mobile app, and it was a 3.2.4
-  // one-off: it presents only on the version it names, and its seen-key carries that
-  // version, so pointing the constant at a later release would show the gallery again to
-  // everyone who already met it. Past 3.2.4 the step must retire WITHOUT stalling the
-  // chain it holds — it sits between release notes and the connected-workflows summary,
-  // so a retired modal that forgets to settle strands everything behind it. Reaching the
-  // summary at all is the proof; the carousel itself is covered by
-  // scripts/test-mobile-teaser-guide.mjs, which still pins all nine shipped screenshots.
-  const platformTour = page.getByTestId('platform-highlights-update-tour');
-  await platformTour.waitFor();
-  assert.equal(
-    await page.getByTestId('mobile-teaser-guide').count(),
-    0,
-    'the 3.2.4 teaser must not come back on a later release',
-  );
-  console.log('[e2e] the retired mobile teaser hands the chain straight to the summary');
-
-  assert.equal(await platformTour.locator('.toolkit-guide-progress button').count(), 3, 'existing-user summary has three ordered chapters');
-  await platformTour.getByRole('heading', { name: 'MCP local y Nodus Server', exact: true }).waitFor();
-  await platformTour.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await platformTour.getByRole('heading', { name: 'Nodus para Zotero', exact: true }).waitFor();
-  assert.equal(await platformTour.locator('img[alt="Zotero"]').count(), 1, 'the Zotero chapter renders the official Zotero mark');
-  await platformTour.getByRole('button', { name: 'Siguiente', exact: true }).click();
-  await platformTour.getByRole('heading', { name: 'El Toolkit completo', exact: true }).waitFor();
-  await platformTour.getByTestId('platform-highlights-tour-complete').click();
-  await platformTour.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.platformHighlightsSeen.2026-07')), '1', 'the summary is marked seen only after its final action');
-  console.log('[e2e] release notes hand off to the translated three-part connected-workflows summary');
-
-  // …and behind that, the videos announcement: the one modal that embeds the catalogue
-  // instead of describing it, for users who completed the guide when it was text-only.
-  const videosTour = page.getByTestId('tutorial-videos-update-tour');
-  await videosTour.waitFor();
-  await videosTour.getByRole('heading', { name: 'Tutoriales en vídeo', exact: true }).waitFor();
-  // The WHOLE catalogue, arranged on its shelves — the announcement's claim is that it
-  // shows the tutorials rather than describing them. Asserted by shape, not by a count
-  // that has to be edited every time a tutorial is published.
-  assert.ok(await videosTour.locator('.tutorial-video-card').count() >= 4, 'the announcement embeds the published catalogue');
-  assert.equal(await videosTour.locator('.tutorial-videos-shelf-title').count(), 4, 'introduction, vaults, features, integrations');
-  assert.equal(await videosTour.locator('iframe').count(), 0, 'nothing is framed until a card is opened');
-  await videosTour.getByTestId('tutorial-videos-tour-complete').click();
-  await videosTour.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => localStorage.getItem('nodus.tutorialVideosAnnouncementSeen.2026-07')), '1', 'the announcement is marked seen only when dismissed');
-  console.log('[e2e] the video tutorials announcement shows the catalogue in-modal, once');
+  await whatsNewForExistingUser.waitFor({ state: 'detached' });
+  await assertRetiredAnnouncementsAbsent('existing installation after release notes');
+  console.log('[e2e] all five retired startup announcements stay absent without seen markers');
 
   // Back to Spanish for the rest of the suite, which asserts on Spanish copy. The
   // reload above already consumed the once-per-session startup update check, so reset
@@ -486,6 +454,7 @@ try {
   ));
   await page.getByTestId('update-ready-notice').waitFor({ state: 'detached' });
   assert.equal(await page.getByTestId('startup-update-modal').count(), 0);
+  await assertRetiredAnnouncementsAbsent('existing installation after restart');
   console.log('[e2e] essential tutorial language preferences + persistent seen-once gate ok');
 
   // No startup dialog offers document understanding any more: it is opted into from
@@ -601,6 +570,10 @@ try {
     assert.ok(!/nodus|ollama|lm studio/i.test(triggerText), `${role} does not open on a local model (shows "${triggerText.trim()}")`);
   }
   assert.equal(await startButton.isEnabled(), false, 'nothing is preselected, so starting stays disabled');
+  // Simple recommends cloud first. This offline fixture deliberately enables the
+  // advanced local choices instead of expecting them in the initial discovery.
+  const localChoice=modelStep.getByRole('button',{name:'Local: opción avanzada',exact:true});
+  if(await localChoice.count())await localChoice.click();
 
   // Choosing one per role is what enables it.
   for (const role of ['onboarding-ai-model', 'onboarding-embedding-model']) {
@@ -672,6 +645,12 @@ try {
   await chatGptProvider.waitFor();
   await chatGptProvider.locator('button').first().click();
   await chatGptProvider.getByRole('button', { name: 'Conectar suscripción de ChatGPT', exact: true }).waitFor();
+  // Until the Codex CLI is on this machine, the card says that connecting downloads it first.
+  assert.equal(
+    await chatGptProvider.getByTestId('agent-runtime-download').count(),
+    process.env.NODUS_E2E_EXECUTABLE ? 1 : 0,
+    'the first-download notice shows exactly when the CLI is missing',
+  );
   await chatGptProvider.getByText('El uso consume la cuota o los créditos de Codex incluidos en tu plan de ChatGPT; no consume saldo de la API de OpenAI.', { exact: true }).waitFor();
   const githubCopilotProvider = page.getByTestId('github-copilot-subscription-provider');
   await githubCopilotProvider.waitFor();
@@ -3020,7 +2999,7 @@ try {
   const primarySourcesTour = page.getByTestId('tour-card');
   await primarySourcesTour.getByText('Recorrido de fuentes primarias · 1/6', { exact: true }).waitFor({ timeout: 30_000 });
   await page.getByTestId('primary-sources-home').waitFor({ timeout: 30_000 });
-  assert.equal(await page.getByTestId('tour-spotlight').count(), 0, 'la invitación inicial no apunta ni navega antes del consentimiento');
+  assert.equal(await page.getByTestId('learning-control-highlight').count(), 0, 'la invitación inicial no apunta ni navega antes del consentimiento');
   const unavailablePrimarySourcesVideo = primarySourcesTour.getByRole('button', {
     name: 'Ver el tutorial en vídeo (Próximamente)',
     exact: true,
@@ -3041,12 +3020,11 @@ try {
     await primarySourcesTour.getByText(`Recorrido de fuentes primarias · ${step.number}/6`, { exact: true }).waitFor({ timeout: 30_000 });
     const target = page.locator(`[data-tour="${step.target}"]`);
     await target.waitFor({ state: 'visible', timeout: 30_000 });
-    // The spotlight deliberately animates between anchors. The step copy updates at
-    // the start of that 200 ms transition, so measuring immediately can observe the
-    // rectangle halfway between the previous and current targets on a busy runner.
+    // Shared guide highlights track the visible control without animating across
+    // unrelated anchors. Wait until this step's highlight has settled.
     await page.waitForFunction((targetName) => {
       const anchor = document.querySelector(`[data-tour="${targetName}"]`);
-      const focus = document.querySelector('[data-testid="tour-spotlight"]');
+      const focus = document.querySelector('[data-testid="learning-control-highlight"]');
       if (!(anchor instanceof HTMLElement) || !(focus instanceof HTMLElement)) return false;
       const targetRect = anchor.getBoundingClientRect();
       const focusRect = focus.getBoundingClientRect();
@@ -3057,7 +3035,7 @@ try {
     }, step.target, { timeout: 5_000 });
     const [targetBox, spotlightBox] = await Promise.all([
       target.boundingBox(),
-      page.getByTestId('tour-spotlight').boundingBox(),
+      page.getByTestId('learning-control-highlight').boundingBox(),
     ]);
     assert.ok(targetBox && spotlightBox, `el paso ${step.number}/6 conserva un ancla y un foco visibles`);
     assert.ok(
@@ -3268,10 +3246,10 @@ try {
   await teachingTourLabel.waitFor({ timeout: 30_000 });
   // Step 1 is target-less and centres; step 2 spotlights the courses nav entry.
   await tourCard.getByRole('button', { name: 'Sí, enséñame', exact: true }).click();
-  const spotlight = page.getByTestId('tour-spotlight');
+  const spotlight = page.getByTestId('learning-control-highlight');
   await spotlight.waitFor({ timeout: 30_000 });
   assert.equal(
-    await spotlight.evaluate((node) => getComputedStyle(node).outlineColor),
+    await spotlight.evaluate((node) => getComputedStyle(node).borderTopColor),
     'rgb(234, 88, 12)',
     'the teaching tutorial spotlights in the vault accent (orange), not the default indigo',
   );

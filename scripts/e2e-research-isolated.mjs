@@ -168,6 +168,16 @@ try {
   const completedAudit = fs.readFileSync(path.join(root, 'profile/database-access.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
   for (const row of completedAudit) assert.ok(row.path.startsWith(`${root}/profile/`), 'every database open remains in the QA profile');
   Object.assign(report, { completed: true, paths, databaseOpens: completedAudit.length, initialDatabaseOpens: audit.length });
+} catch (error) {
+  report.failure = { message: String(error?.message ?? error), stack: error?.stack };
+  if (app) {
+    const page = await app.firstWindow().catch(() => null);
+    if (page) {
+      await fs.promises.writeFile(path.join(root, 'artifacts/failure.txt'), await page.locator('body').innerText().catch(() => 'Page unavailable'));
+      await page.screenshot({ path: path.join(root, 'artifacts/failure.png'), timeout: 10000 }).catch(() => undefined);
+    }
+  }
+  throw error;
 } finally {
   if (app) await app.close();
   report.finishedAt = new Date().toISOString();

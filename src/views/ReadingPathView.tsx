@@ -1,4 +1,7 @@
+import { useAcademicLearning } from '../learning/AcademicLearningContext';
+import { SourceCitationModal, type CitationTarget } from '../components/SourceCitationModal';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { ReadingPathEntry, ReadingPathPlan, ReadingPathStrategy } from '@shared/types';
 import { Badge, Icon, Spinner } from '../components/ui';
 import { VirtualList } from '../components/VirtualList';
@@ -67,7 +70,7 @@ export function ReadingPathView({
   const phases = plan?.phases ?? [];
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div data-testid="reading-path-view" className="h-full overflow-y-auto p-6">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div>
           <h1 className="text-xl font-semibold mb-1">{t('Ruta de lectura')}</h1>
@@ -76,7 +79,7 @@ export function ReadingPathView({
           </p>
         </div>
         <div className="flex-1" />
-        <button className="btn btn-primary gap-1.5" onClick={() => void reload()} disabled={loading}>
+        <button data-testid="reading-refresh" className="btn btn-primary gap-1.5" onClick={() => void reload()} disabled={loading}>
           <Icon name="wand" /> {t('Analizar ruta')}
         </button>
       </div>
@@ -196,9 +199,14 @@ function ReadingEntryCard({
   onOpenGraph: (target: PendingGraphNavigationTarget) => void;
   onOpenAssistant: (target?: PendingAssistantNavigationTarget) => void;
 }) {
+  const learning=useAcademicLearning();
+  const [citation,setCitation]=useState<CitationTarget>(null);
   const openInZotero = async () => {
     const work = await window.nodus.getWork(entry.nodus_id);
-    if (work) await window.nodus.openInZotero(work.zotero_key);
+    if (work && learning.session?.lessonId==='reading'&&!learning.session.paused) {
+      learning.emit({kind:'artifact',artifactId:entry.nodus_id,citationIds:[`work:${entry.nodus_id}`],valid:true});
+      setCitation({kind:'work',id:work.nodus_id});
+    } else if (work) await window.nodus.openInZotero(work.zotero_key);
   };
   const openInGraph = async () => {
     const work = await window.nodus.getWork(entry.nodus_id);
@@ -267,11 +275,12 @@ function ReadingEntryCard({
           >
             <Icon name="chat" size={13} /> {t('Asistente')}
           </button>
-          <button className="btn btn-ghost border border-neutral-700 text-xs gap-1.5" onClick={() => void openInZotero()}>
-            <Icon name="external" size={13} /> Zotero
+          <button data-testid="reading-source" className="btn btn-ghost border border-neutral-700 text-xs gap-1.5" onClick={() => void openInZotero()}>
+            <Icon name="external" size={13} /> {learning.session?.lessonId==='reading'&&!learning.session.paused?t('Abrir fuente'):'Zotero'}
           </button>
         </div>
       </div>
+      {createPortal(<SourceCitationModal target={citation} onClose={()=>setCitation(null)} />,document.body)}
     </div>
   );
 }

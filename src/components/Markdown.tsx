@@ -1,8 +1,8 @@
 import { DocumentFigure, useDocumentFigures } from './DocumentFigures';
 import { documentBlocks } from '@shared/documentSkills';
 import { ChatVisual } from './ChatVisual';
-import { memo, useEffect, useRef, useState, type ReactNode } from 'react';
-import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
+import { Children, memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import ReactMarkdown, { defaultUrlTransform, type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -15,6 +15,11 @@ import { t } from '../i18n';
 import { VERIFY_DEBOUNCE_MS, decodeCitationId, planCitationVerification } from '../citationVerification';
 import { parsePrimarySourceExcerptDeepLink } from '@shared/primarySourceDeepLink';
 import { rehypeGroupParenthesizedCitations } from '../markdownCitationGroups';
+
+function citationChildren(children: ReactNode): ReactNode {
+  const parts = Children.toArray(children);
+  return parts.every(part => typeof part === 'string') && /^fuente$/i.test(parts.join('').trim()) ? t('Fuente') : children;
+}
 
 const nodusUrlTransform = (value: string) => {
   if (value.startsWith('nodus://')) return value;
@@ -170,17 +175,7 @@ function MarkdownComponent({
     };
   }, [content, verify]);
 
-  return (
-    <div className={`md ${className}`}>
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath, remarkGuideCallouts]}
-        rehypePlugins={[rehypeKatex, rehypeGroupParenthesizedCitations, insertDocumentFigures]}
-        urlTransform={(value, key) => {
-          if (chatVisuals && key === 'src' && /^nodus-image:\/\/chat\/[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(value)) return value;
-          if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i.test(value)) return value;
-          return nodusUrlTransform(value);
-        }}
-        components={{
+  const components=useMemo<Components>(()=>({
           figure: ({ node }) => {
             const id = (node as any)?.properties?.dataDocumentFigure;
             const index = documentFigures.findIndex(item => item.figure.id === id);
@@ -230,7 +225,7 @@ function MarkdownComponent({
                   ...(target === 'section' && value ? { sectionId: value } : {}),
                   ...(target === 'page' && value && Number.isFinite(Number(value)) ? { page: Number(value) } : {}),
                 })}
-              >{children}</button>;
+                >{citationChildren(children)}</button>;
             }
             const studyMaterial = href?.match(/^nodus:\/\/study\/material\/([^?]+)(?:\?(.*))?$/);
             if (studyMaterial && onStudyMaterial) {
@@ -340,7 +335,19 @@ function MarkdownComponent({
               </a>
             );
           },
+  }),[documentFigures,onCitation,onReaderCitation,onStudyDocument,onStudyMaterial,onStudyRecording,onStudyEvidence,onGuideEvidence,onWorldEntry,onTestimonyLink,verify,validity,chatVisuals]);
+
+  return (
+    <div className={`md ${className}`}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath, remarkGuideCallouts]}
+        rehypePlugins={[rehypeKatex, rehypeGroupParenthesizedCitations, insertDocumentFigures]}
+        urlTransform={(value, key) => {
+          if (chatVisuals && key === 'src' && /^nodus-image:\/\/chat\/[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(value)) return value;
+          if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i.test(value)) return value;
+          return nodusUrlTransform(value);
         }}
+        components={components}
       >
         {content}
       </ReactMarkdown>
@@ -432,6 +439,7 @@ function CitationLink({
         type="button"
         className="citation-link"
         data-citation-kind={citation.kind}
+        data-citation-id={citation.id}
         data-web-source={citation.kind === 'passage' && citation.id.startsWith('web:') ? 'true' : undefined}
         data-verified={unverified ? 'false' : undefined}
         title={
@@ -445,7 +453,7 @@ function CitationLink({
           onCitation(citation);
         }}
       >
-        {children}
+        {citationChildren(children)}
         {unverified && (
           <span aria-hidden className="citation-warn">
             ⚠

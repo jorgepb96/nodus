@@ -2,6 +2,7 @@ const { execFileSync } = require('node:child_process');
 const { cpSync, mkdirSync, rmSync } = require('node:fs');
 const path = require('node:path');
 const { Arch } = require('electron-builder');
+const { buildServerWeb } = require('../scripts/packaged-server-web.cjs');
 
 // clang names the Intel slice x86_64; electron-builder names it x64.
 const CLANG_ARCHITECTURES = { arm64: 'arm64', x64: 'x86_64' };
@@ -29,6 +30,13 @@ exports.default = async function beforePack(context) {
     stdio: 'inherit',
   });
   console.log('[beforePack] Built the canonical Chrome connector ZIP');
+
+  // Basic mode serves the Nodus Server's web app from nodus-server/dist/web, which the `server`
+  // extra resource copies from server/dist/web. It is a build output, never versioned, so it is
+  // rebuilt for every packed app rather than trusting whatever an earlier checkout left there.
+  // afterPack refuses an app that does not carry it.
+  buildServerWeb(root);
+  console.log('[beforePack] Built the Nodus Server web app');
 
   // Nodus Drift's recordings are not versioned in Git. They come from their pinned upstream commit,
   // each checked against its catalogued size and SHA-256, and one that is already in place and intact

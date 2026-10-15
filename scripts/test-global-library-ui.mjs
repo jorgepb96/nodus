@@ -156,7 +156,7 @@ test('the Library UI exposes hierarchy, search, bulk operations, imports and bac
   assert.match(view, /column === 'title'[\s\S]*onDoubleClick=\{\(event\)[\s\S]*void openReader\(item\.id\)/, 'double-clicking the global title follows the same reader path');
   assert.match(vaultLibrary, /const openVaultWorkAnalysis = \(work: WorkView\) => setIdeasWork/, 'the vault scope keeps its historical work-analysis entry point');
   assert.match(vaultLibrary, /data-testid=\{`vault-library-item-[\s\S]*onClick=\{\(event\)[\s\S]*openVaultWorkAnalysis\(w\)/, 'clicking a non-interactive part of a vault row opens its analysis modal');
-  assert.match(vaultLibrary, /data-testid=\{`vault-library-title-[\s\S]*onClick=\{\(\) => openVaultWorkAnalysis\(w\)\}/, 'clicking a vault work title opens its analysis modal');
+  assert.match(vaultLibrary, /data-testid=\{`vault-library-title-[\s\S]*onClick=\{\(\) => simple \? openReader\(w\) : openVaultWorkAnalysis\(w\)\}/, 'Simple opens the source reader; other profiles retain work analysis');
   assert.doesNotMatch(vaultLibrary, /data-testid=\{`vault-library-item-[\s\S]*onDoubleClick=\{\(event\)[\s\S]*openReader\(w\)/, 'vault rows never reuse the Global reader gesture');
   assert.match(vaultLibrary, /<RowIconButton[\s\S]{0,240}title=\{t\('Abrir lector limpio'\)\}[\s\S]{0,240}onClick=\{\(\) => openReader\(w\)\}/, 'the clean reader remains available from the vault action column');
   assert.match(view, /data-testid="library-workspace-tabs"/, 'open documents share one compact workspace tab strip');

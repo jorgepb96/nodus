@@ -117,6 +117,9 @@ export function sanitizeBrowserCaptureRequest(
   return {
     pageUrl,
     metadataSource,
+    metadataReviewed: input.metadataReviewed === true,
+    ...(/^[a-f0-9-]{36}:\d{1,2}$/.test(String(input.captureRequestId || '')) ? { captureRequestId: String(input.captureRequestId) } : {}),
+    sourceIsResultPage: input.sourceIsResultPage === true,
     metadata: sanitizedMetadata(input.metadata, pageUrl),
     ...(clean(input.collectionId, 200) ? { collectionId: clean(input.collectionId, 200) } : {}),
     tags: (Array.isArray(input.tags) ? input.tags : []).slice(0, 256).map((entry) => clean(entry, 200)).filter(Boolean),

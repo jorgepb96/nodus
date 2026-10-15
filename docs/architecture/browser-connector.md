@@ -72,3 +72,41 @@ The integrated dialog belongs to the trusted Nodus renderer. Arbitrary pages rem
 sandboxed Browser WebContents, receive no Nodus preload API and cannot open, populate or submit the
 dialog. Page metadata is still treated as hostile and passes through the same bounded sanitizer in
 the main process before preview and again before saving.
+
+## Reviewed captures and durable jobs
+
+Both adapters use `lib/capture-review.js` for per-reference metadata, tags, files and
+snapshot choices, and `lib/capture-jobs.js` for durable progress. Reviewed values skip
+provider enrichment on save. The shared metadata form preserves creator roles, including
+editors, while names are edited. Multi-record detection marks listing URLs so the Library
+never treats a shared search URL as document identity. A persisted job/entry request id
+makes an uncertain save acknowledgement safe to replay, even without bibliographic identifiers.
+
+Chrome persists each job under its own storage key before starting any network work. The
+worker also owns pairing and token persistence. A bounded keepalive runs only during active
+user-requested work; startup and a recovery alarm resume interrupted jobs. Failed records
+and files wait for an explicit retry; successful records are not re-submitted. Only newly
+requested optional hosts are revoked, once no active transfer needs them. Permission requests
+run synchronously in a new “Authorize and download” click, after pending hosts have been
+computed. This avoids losing Chromium's user gesture during slow public-download attempts.
+
+The built-in Browser uses the same queue in the main process, with atomic per-job files in
+`userData/browser-capture-jobs` and the Browser session for authenticated attachments. Its
+list/enqueue/retry IPC routes require the trusted main-frame sender. Both histories keep the
+latest 20 completed jobs; incomplete work remains available for recovery and retry.
+
+Verification includes `test-browser-capture-jobs.mjs`, `test-browser-extension-worker.mjs`,
+`test-library-browser-dedup.mjs`, `verify-browser-capture-jobs.mjs` and the three scripts behind
+`npm run test:e2e:browser-connector`. The native recovery suite loads the actual extension
+in an isolated Chromium profile, uses native runtime/storage/permission APIs, closes the
+popup during pairing and saving, and restarts Chrome with an unfinished download. Its visible
+mode also checks native host approval and revocation. All Library integration tests use
+synthetic records and disposable backup/profile directories.
+
+The following screenshots use only synthetic references. The integrated review keeps
+the second reference's title, tags and selected file independent of the first; the
+Chrome history shows completed work after closing the popup and restarting Chromium.
+
+![Integrated capture review in light mode](../images/browser-capture-review-light.png)
+![Integrated capture review in dark mode](../images/browser-capture-review-dark.png)
+![Recovered Chrome capture history](../images/browser-capture-recovered-jobs.png)

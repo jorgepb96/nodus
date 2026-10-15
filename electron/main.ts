@@ -1,4 +1,5 @@
 import { initializeChatSkillDefaults } from './chatSkills';
+import {initializeLearningWorkspace,isLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { flushWindowEditors, installEditorCloseGuard } from './editorFlush';
 import { claimIsolatedProfile } from './qa/isolatedProfile';
 import { initializePluginStore } from './skillPlugins';
@@ -65,6 +66,7 @@ import type { UpdateCheckResponse, UpdateProgressEvent } from '@shared/types';
 import { installMediaRequestHeaders } from './mediaRequestHeaders';
 import { installDefaultWindowGuards } from './windowGuards';
 import { killChatGptSubscriptionServer } from './ai/codexSubscription';
+import { prefetchAgentRuntimesInUse } from './ai/agentRuntime';
 import { killGitHubCopilotSubscriptionServer } from './ai/githubCopilotSubscription';
 import { killNodusLocalServerSync } from './ai/nodusLocalAi';
 import { killSearxngSync } from './websearch/searxngService';
@@ -577,6 +579,7 @@ function createWindow(): void {
   });
   protectMainWindowNavigation(mainWindow);
   installEditorCloseGuard(mainWindow, () => quitting);
+  if(isLearningWorkspace())mainWindow.on('close',()=>closeLearningWorkspace());
 
   // Right-clicking any text field in Nodus — the browser's address bar above all
   // — offers Cut, Copy and Paste. Views that draw their own HTML context menu
@@ -1017,6 +1020,9 @@ app.whenReady().then(async () => {
   // its handshake and is torn down in the same millisecond — reported either way as a
   // capability that would not start, for a worker that comes up in about 100 ms on a free
   // loop. Nothing here is urgent, and 5.4.0 shipped this in the contended window.
+  // A profile that already used Codex or Copilot gets its CLI back in the background
+  // after updating to an installer that no longer carries it (./ai/agentRuntime).
+  void afterFirstPaint(() => prefetchAgentRuntimesInUse(getSettings()));
   if (!process.env.NODUS_ISOLATED_ROOT) void afterFirstPaint(() => {
     void settleInstalledPluginMigrations()
       .then(settled => { if (settled.length) rebuildCapabilityRegistry(); })
@@ -1058,6 +1064,7 @@ app.whenReady().then(async () => {
   });
   if (preV4.snapshotPath) console.log(`[recovery] pre-v4 snapshot: ${preV4.snapshotPath}`);
   getDb(); // open + migrate before anything touches data
+  initializeLearningWorkspace();
   const startupVault = getActiveVault();
   if (startupVault.type === 'databases') ensureDatabaseDeepResearchLane(startupVault.id);
   // Do this before creating either the main window or a browser tab: Chromium

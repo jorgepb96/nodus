@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../ui';
 import { getActiveLang, t } from '../../i18n';
-import type { BrowserConnectorCapturePreviewItem, BrowserConnectorCaptureRequest, BrowserConnectorSaveResult } from '@shared/browserConnector';
+import type { BrowserConnectorCapturePreviewItem, BrowserConnectorCaptureRequest, BrowserConnectorSaveResult, BrowserCaptureJob } from '@shared/browserConnector';
 import type { LibraryCollectionView, LibraryItemType, LibraryTagRecord } from '@shared/libraryTypes';
 import { filterCollectionRows, normalizeTags } from '../../../browser-extension/lib/collections.js';
 import { applyMetadataEdits, formatCreators } from '../../../browser-extension/lib/metadata-form.js';
 import { ITEM_TYPES, byline, typeGlyph, typeLabel } from '../../../browser-extension/lib/presentation.js';
+import { createCaptureReview, reviewedCaptureRequest, captureJobSummary, type CaptureReview } from '../../../browser-extension/lib/capture-review.js';
 import connectorIcon from '../../../browser-extension/icons/icon.svg';
 
 type CapturePreview = BrowserConnectorCaptureRequest & { snapshotAvailable?: boolean };
@@ -61,8 +62,14 @@ export function BrowserCaptureModal({
   const [busy, setBusy] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState<BrowserConnectorSaveResult | null>(null);
-  const [savedCount, setSavedCount] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [jobs, setJobs] = useState<BrowserCaptureJob[]>([]);
+  const [reviews, setReviews] = useState<CaptureReview[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const notified = useRef(new Set<string>());
+  const submittedJobs = useRef(new Set<string>());
+  const onSavedRef = useRef(onSaved); onSavedRef.current = onSaved;
+  const activePreview = reviews[activeIndex] ?? preview;
   const [selectedCandidates, setSelectedCandidates] = useState<Set<number>>(new Set());
   const collectionWrapRef = useRef<HTMLDivElement | null>(null);
   const tagWrapRef = useRef<HTMLDivElement | null>(null);
@@ -73,21 +80,37 @@ export function BrowserCaptureModal({
 
   useEffect(() => {
     if (!preview) return;
-    setTitle(preview.metadata.title ?? '');
-    setCreators(formatCreators(preview.metadata.creators));
-    setDate(preview.metadata.date ?? (preview.metadata.year ? String(preview.metadata.year) : ''));
-    setPublicationTitle(preview.metadata.publicationTitle ?? '');
-    setDoi(preview.metadata.doi ?? '');
-    setItemType(preview.metadata.itemType);
-    setSelectedTags(candidates?.length
-      ? []
-      : normalizeTags([...(preview.metadata.tags ?? []), ...(preview.tags ?? [])]));
-    setSelectedAttachments(new Set((preview.attachments ?? []).map((_entry, index) => index)));
-    setIncludeSnapshot(Boolean(preview.snapshotAvailable && !(preview.attachments?.length ?? 0)));
-    setSaved(null);
-    setSavedCount(0);
-    setError(null);
-  }, [candidates?.length, preview]);
+    setReviews((candidates?.length ? candidates.map((entry) => entry.request) : [preview]).map(createCaptureReview));
+    setActiveIndex(0); setSubmitted(false); setError(null);
+  }, [candidates, preview]);
+  useEffect(() => {
+    if (!activePreview) return;
+    setTitle(activePreview.metadata.title ?? '');
+    setCreators(formatCreators(activePreview.metadata.creators));
+    setDate(activePreview.metadata.date ?? (activePreview.metadata.year ? String(activePreview.metadata.year) : ''));
+    setPublicationTitle(activePreview.metadata.publicationTitle ?? ''); setDoi(activePreview.metadata.doi ?? '');
+    setItemType(activePreview.metadata.itemType);
+    setSelectedTags(normalizeTags(activePreview.metadata.tags ?? []));
+    const review = reviews[activeIndex];
+    setSelectedAttachments(new Set(review?.attachmentIndexes ?? (activePreview.attachments ?? []).map((_entry, index) => index)));
+    setIncludeSnapshot(review?.includeSnapshot ?? Boolean(activePreview.snapshotAvailable && !activePreview.attachments?.length));
+  }, [activePreview, activeIndex, reviews]);
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const next = await window.nodus.listBrowserCaptureJobs();
+        if (cancelled) return;
+        setJobs(next);
+        for (const job of next) for (const [index, entry] of job.entries.entries()) {
+          const key = `${job.id}:${index}`;
+          if (entry.result && submittedJobs.current.has(job.id) && !notified.current.has(key)) { notified.current.add(key); onSavedRef.current(entry.result); }
+        }
+      } catch (cause) { if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause)); }
+    };
+    void refresh(); const timer = window.setInterval(() => { void refresh(); }, 1000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
 
   useEffect(() => {
     setSelectedCandidates(new Set((candidates ?? []).map((_entry, index) => index)));
@@ -150,87 +173,34 @@ export function BrowserCaptureModal({
     setTagQuery('');
   };
 
-  const editedMetadata = useMemo(() => applyMetadataEdits(preview?.metadata ?? {
+  const editedMetadata = useMemo(() => applyMetadataEdits(activePreview?.metadata ?? {
     title: '', itemType: 'webpage', creators: [], year: null, isbn: [], issn: [], tags: [],
-  }, { title, creators, date, publicationTitle, doi }), [creators, date, doi, preview, publicationTitle, title]);
+  }, { title, creators, date, publicationTitle, doi }), [creators, date, doi, activePreview, publicationTitle, title]);
 
+  const commitReview = () => reviews.map((review, index) => index === activeIndex
+    ? { ...review, metadata: { ...editedMetadata, itemType, tags: [...selectedTags] }, attachmentIndexes: [...selectedAttachments], includeSnapshot }
+    : review);
+  const selectReview = (index: number) => { setReviews(commitReview()); setActiveIndex(index); setTagQuery(''); };
   const save = async () => {
-    if (!preview) return;
-    setBusy(true);
-    setError(null);
+    if (!preview || busy) return;
+    setBusy(true); setError(null);
     try {
-      const batch = candidates?.length
-        ? candidates.filter((_entry, index) => selectedCandidates.has(index))
-        : [{ request: preview, warnings }];
+      const next = commitReview();
+      const batch = next.filter((_entry, index) => !candidates?.length || selectedCandidates.has(index));
       if (!batch.length) throw new Error(t('Selecciona al menos una referencia.'));
-      const results: BrowserConnectorSaveResult[] = [];
-      for (const [index, entry] of batch.entries()) {
-        const request = entry.request;
-        const isPrimaryReview = request === preview || index === 0 && request.pageUrl === preview.pageUrl
-          && request.metadata.title === preview.metadata.title;
-        const requestTags = selectedTags;
-        const attachments = isPrimaryReview
-          ? (preview.attachments ?? []).filter((_entry, attachmentIndex) => selectedAttachments.has(attachmentIndex))
-          : request.attachments ?? [];
-        const result = await window.nodus.saveBrowserCapture({
-          ...request,
-          collectionId: selectedCollection,
-          tags: requestTags,
-          attachments,
-          metadata: isPrimaryReview
-            ? { ...editedMetadata, itemType, tags: requestTags }
-            : { ...request.metadata, tags: requestTags },
-        }, isPrimaryReview && batch.length === 1 && includeSnapshot);
-        results.push({ ...result, warnings: [...entry.warnings, ...result.warnings] });
-        onSaved(result);
-      }
+      const queued = await window.nodus.enqueueBrowserCaptures(batch.map((review) => reviewedCaptureRequest(review, selectedCollection)));
+      submittedJobs.current.add(queued.id);
       localStorage.setItem('nodus.connector.lastCollectionId', selectedCollection ?? '');
-      const first = results[0];
-      setSaved({
-        ...first,
-        disposition: results.some((result) => result.disposition === 'created')
-          ? 'created'
-          : results.some((result) => result.disposition === 'updated') ? 'updated' : 'existing',
-        deduplicated: results.every((result) => result.deduplicated),
-        title: results.length > 1 ? t('{n} referencias').replace('{n}', String(results.length)) : first.title,
-        attachmentCount: results.reduce((total, result) => total + result.attachmentCount, 0),
-        warnings: results.flatMap((result) => result.warnings),
-        pendingUploads: results.flatMap((result) => result.pendingUploads),
-      });
-      setSavedCount(results.length);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setBusy(false);
-    }
+      setSubmitted(true); setJobs(await window.nodus.listBrowserCaptureJobs());
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+    finally { setBusy(false); }
   };
 
-  const content = saved ? (
-    <div className="flex min-h-[300px] flex-col items-center justify-center px-8 py-10 text-center" data-testid="browser-connector-success">
-      <span className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-500/15 text-2xl font-bold text-emerald-500">✓</span>
-      <strong className="text-lg text-neutral-900 dark:text-neutral-100">
-        {saved.disposition === 'existing'
-          ? t('Ya estaba en Nodus')
-          : saved.deduplicated
-            ? t('Referencia actualizada')
-            : t('Guardado en Nodus')}
-      </strong>
-      <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-        {saved.disposition === 'existing' && savedCount <= 1
-          ? t('No se ha creado ningún duplicado.')
-          : savedCount > 1
-          ? t('Se han guardado {n} referencias.').replace('{n}', String(savedCount))
-          : t('Se han guardado {n} archivo(s).').replace('{n}', String(saved.attachmentCount))}
-      </p>
-      {saved.warnings.length > 0 && (
-        <div className="mt-4 max-h-28 w-full overflow-auto rounded-lg bg-amber-500/10 p-3 text-left text-xs text-amber-700 dark:text-amber-300">
-          {saved.warnings.map((warning, index) => <p key={`${warning}-${index}`} className="my-1">{warning}</p>)}
-        </div>
-      )}
-      <div className="mt-5 flex gap-2">
-        {savedCount <= 1 && <button type="button" className="btn btn-primary" onClick={() => onOpenInNodus(saved.itemId)}>{t('Abrir en Nodus')}</button>}
-        <button type="button" className="btn btn-ghost border border-neutral-300 dark:border-neutral-700" onClick={onClose}>{t('Listo')}</button>
-      </div>
+  const content = submitted ? (
+    <div className="flex min-h-[160px] flex-col items-center justify-center px-8 py-8 text-center" data-testid="browser-connector-success">
+      <strong>{t('Guardado en cola')}</strong>
+      <p className="mt-2 text-sm text-neutral-500">{t('El guardado continúa aunque cierres esta ventana.')}</p>
+      <button type="button" className="btn btn-primary mt-4" onClick={onClose}>{t('Listo')}</button>
     </div>
   ) : loading ? (
     <ConnectorState state="loading" title={t('Detectando este documento…')} detail={t('Leyendo únicamente la pestaña activa después de tu clic.')} />
@@ -245,12 +215,13 @@ export function BrowserCaptureModal({
             <span>{selectedCandidates.size}</span>
           </div>
           <div className="max-h-36 overflow-y-auto">
-            {candidates?.map((candidate, index) => (
-              <label key={`${candidate.request.metadata.doi ?? candidate.request.metadata.title}-${index}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-indigo-500/10">
+            {reviews.map((candidate, index) => (
+              <div key={`${candidate.metadata.doi ?? candidate.metadata.title}-${index}`} className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-indigo-500/10">
                 <input
                   type="checkbox"
                   className="mt-0.5 accent-indigo-600"
                   checked={selectedCandidates.has(index)}
+                  aria-label={candidate.metadata.title}
                   disabled={busy}
                   onChange={(event) => setSelectedCandidates((current) => {
                     const next = new Set(current);
@@ -258,8 +229,8 @@ export function BrowserCaptureModal({
                     return next;
                   })}
                 />
-                <span className="min-w-0"><strong className="block truncate">{candidate.request.metadata.title}</strong><small className="text-neutral-500">{byline(candidate.request.metadata)}</small></span>
-              </label>
+                <button type="button" aria-pressed={activeIndex === index} disabled={busy} onClick={() => selectReview(index)} className="min-w-0 flex-1 text-left aria-pressed:text-indigo-600"><strong className="block truncate">{candidate.metadata.title}</strong><small className="text-neutral-500">{byline(candidate.metadata)}</small></button>
+              </div>
             ))}
           </div>
         </section>
@@ -288,7 +259,7 @@ export function BrowserCaptureModal({
             onChange={(event) => setTitle(event.target.value)}
             aria-label={t('Título')}
           />
-          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">{byline(editedMetadata) || safeHost(preview.pageUrl)}</p>
+          <p className="mt-0.5 truncate text-xs text-neutral-500 dark:text-neutral-400">{byline(editedMetadata) || safeHost(activePreview?.pageUrl ?? '')}</p>
         </div>
       </article>
 
@@ -404,11 +375,11 @@ export function BrowserCaptureModal({
         )}
       </div>
 
-      {(preview.attachments?.length ?? 0) > 0 && (
+      {(activePreview?.attachments?.length ?? 0) > 0 && (
         <section className="mt-4">
           <FieldLabel>{t('Archivos')}</FieldLabel>
           <div className="overflow-hidden rounded-lg border border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-            {preview.attachments?.map((attachment, index) => (
+            {activePreview?.attachments?.map((attachment, index) => (
               <label key={`${attachment.url}-${index}`} className="flex items-start gap-2 border-b border-neutral-200 px-3 py-2 last:border-b-0 dark:border-neutral-700">
                 <input
                   type="checkbox"
@@ -431,7 +402,7 @@ export function BrowserCaptureModal({
         </section>
       )}
 
-      {preview.snapshotAvailable && (
+      {activePreview?.snapshotAvailable && (
         <label className="mt-3 flex items-start gap-2 rounded-lg bg-neutral-100 p-2.5 dark:bg-neutral-800/70">
           <input type="checkbox" className="mt-1 accent-indigo-600" checked={includeSnapshot} disabled={busy} onChange={(event) => setIncludeSnapshot(event.target.checked)} />
           <span className="min-w-0">
@@ -465,7 +436,7 @@ export function BrowserCaptureModal({
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 p-6" onClick={() => !busy && onClose()}>
       <div
         data-testid="browser-capture-modal"
-        className="w-full max-w-[460px] overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-50 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
+        className="flex max-h-[calc(100vh-3rem)] w-full max-w-[460px] flex-col overflow-hidden rounded-2xl border border-neutral-300 bg-neutral-50 text-neutral-900 shadow-2xl dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex h-14 items-center justify-between border-b border-neutral-200 px-4 dark:border-neutral-800">
@@ -479,6 +450,20 @@ export function BrowserCaptureModal({
           </div>
         </header>
         {content}
+        {jobs.length > 0 && <section className="max-h-64 overflow-y-auto border-t border-neutral-200 px-4 py-3 dark:border-neutral-800" aria-live="polite" data-testid="browser-capture-jobs">
+          <strong className="text-xs">{t('Guardados y descargas')}</strong>
+          {jobs.map((job) => {
+            const summary = captureJobSummary(job);
+            return <div key={job.id} data-job-id={job.id} className="mt-2 rounded-lg border border-neutral-200 p-2 text-xs dark:border-neutral-700">
+              <strong>{job.title}</strong>
+              <p className="mt-1 text-neutral-500">{t('{saved}/{total} referencias · {files} archivos').replace('{saved}', String(summary.saved)).replace('{total}', String(summary.total)).replace('{files}', String(summary.files))} · {t(job.status === 'complete' ? 'Completado' : job.status === 'failed' ? 'Requiere atención' : job.status === 'downloading' ? 'Descargando…' : 'Guardando…')}</p>
+              {summary.pending > 0 && <p>{t('{count} archivo(s) pendientes').replace('{count}', String(summary.pending))}</p>}
+              {summary.errors.map((message, index) => <p key={index} className="mt-1 text-amber-600 dark:text-amber-300">{message}</p>)}
+              {job.status === 'failed' && <button type="button" className="btn btn-ghost mt-1" onClick={() => void window.nodus.retryBrowserCaptureJob(job.id)}>{t('Reintentar')}</button>}
+              {job.entries.filter((entry) => entry.result).map((entry, index) => <button key={index} type="button" className="mt-1 block text-left text-indigo-600 dark:text-indigo-300" onClick={() => onOpenInNodus(entry.result!.itemId)}>{t('Abrir en Nodus')} · {entry.title}</button>)}
+            </div>;
+          })}
+        </section>}
       </div>
     </div>,
     document.body,

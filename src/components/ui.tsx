@@ -54,6 +54,7 @@ export const EDGE_LABELS: Record<EdgeType, string> = {
 // ── Inline icon set (feather-style strokes) ─────────────────────────────────
 // Kept inline so buttons with long text labels read at a glance, without a dep.
 const ICON_PATHS: Record<string, string> = {
+  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/>',
   building: '<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 7h2"/><path d="M14 7h2"/><path d="M8 11h2"/><path d="M14 11h2"/><path d="M10 21v-5h4v5"/>',
   flag: '<path d="M5 21V4"/><path d="M5 4h11l-2 3.5L16 11H5"/>',

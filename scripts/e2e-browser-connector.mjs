@@ -7,12 +7,13 @@ import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
+import { extensionTestChromium } from './lib/browserExtensionTestRuntime.mjs';
 import { typeLabel } from '../browser-extension/lib/presentation.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const extensionRoot = path.join(root, 'browser-extension');
 const output = path.join(root, 'output', 'browser-connector');
-const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const chrome = extensionTestChromium();
 const english = JSON.parse(await readFile(path.join(extensionRoot, '_locales/en/messages.json'), 'utf8'));
 
 const contentTypes = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
@@ -69,6 +70,22 @@ async function exercise(colorScheme) {
       permissions: { request: async () => true },
       runtime: { getManifest: () => ({ version: '4.1.3' }), getURL: (path = '') => `chrome-extension://abcdefghijklmnopabcdefghijklmnop/${path}`, openOptionsPage: async () => undefined },
     };
+    // Visual tests isolate the worker; the native recovery suite exercises its
+    // real lifecycle, permissions and durable storage in an installed extension.
+    const jobs = [];
+    chrome.runtime.sendMessage = async (message) => {
+      const endpoint = `http://127.0.0.1:${values.port}`;
+      const post = async (path, body) => (await fetch(`${endpoint}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+      if (message.type === 'nodus:jobs') return { ok: true, jobs, missingOrigins: [] };
+      if (message.type === 'nodus:pair') { const result = await post('/api/browser/pair', {}); values.token = result.token; return result; }
+      if (message.type === 'nodus:enqueue') {
+        const entries = [];
+        for (const request of message.requests) entries.push({ title: request.metadata.title, request: null, result: await post('/api/browser/save', request), error: null, uploads: [] });
+        const job = { id: `visual-${jobs.length}`, title: entries[0].title, status: 'complete', entries, createdAt: Date.now(), updatedAt: Date.now() };
+        jobs.push(job); return { ok: true, job };
+      }
+      return { ok: true };
+    };
   }, { messages: english, detected: { ...snapshot, startPaired: colorScheme === 'dark' } });
   let pairRequests = 0;
   await page.route('http://127.0.0.1:4323/api/browser/**', (route) => route.abort('connectionrefused'));
@@ -108,7 +125,7 @@ async function exercise(colorScheme) {
   await page.screenshot({ path: path.join(output, `popup-${colorScheme}.png`), fullPage: true });
   await page.locator('#save-button').click();
   await page.locator('#success-view:not(.hidden)').waitFor();
-  assert.match(await page.locator('#success-summary').textContent(), /1 file/);
+  assert.match(await page.locator('#jobs-list').textContent(), /1 file/);
   await browser.close();
 }
 
@@ -141,6 +158,22 @@ async function exerciseMultiCapture() {
       permissions: { request: async () => true, contains: async () => false, remove: async () => true },
       runtime: { getManifest: () => ({ version: '5.3.1' }), getURL: (path = '') => `chrome-extension://ilcclajjhofhieoljdjmikmfopfbamej/${path}`, openOptionsPage: async () => undefined },
     };
+    // Visual tests isolate the worker; the native recovery suite exercises its
+    // real lifecycle, permissions and durable storage in an installed extension.
+    const jobs = [];
+    chrome.runtime.sendMessage = async (message) => {
+      const endpoint = `http://127.0.0.1:${values.port}`;
+      const post = async (path, body) => (await fetch(`${endpoint}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+      if (message.type === 'nodus:jobs') return { ok: true, jobs, missingOrigins: [] };
+      if (message.type === 'nodus:pair') { const result = await post('/api/browser/pair', {}); values.token = result.token; return result; }
+      if (message.type === 'nodus:enqueue') {
+        const entries = [];
+        for (const request of message.requests) entries.push({ title: request.metadata.title, request: null, result: await post('/api/browser/save', request), error: null, uploads: [] });
+        const job = { id: `visual-${jobs.length}`, title: entries[0].title, status: 'complete', entries, createdAt: Date.now(), updatedAt: Date.now() };
+        jobs.push(job); return { ok: true, job };
+      }
+      return { ok: true };
+    };
   }, { messages: english, snapshot: detected });
   let saves = 0;
   await page.route('http://127.0.0.1:4321/api/browser/**', async (route) => {
@@ -162,7 +195,7 @@ async function exerciseMultiCapture() {
   await page.locator('#save-button').click();
   await page.locator('#success-view:not(.hidden)').waitFor();
   assert.equal(saves, 2);
-  assert.match(await page.locator('#success-summary').textContent(), /2 references saved/);
+  assert.match(await page.locator('#jobs-list').textContent(), /2\/2 references/);
   assert.equal(await page.locator('#open-button').isHidden(), true);
   await browser.close();
 }
@@ -216,6 +249,22 @@ async function exerciseLocalizedSurfaces(browser, { directory, uiLanguage, langu
       storage: { local: { get: async (defaults) => ({ ...defaults, ...values }), set: async (input) => Object.assign(values, input), remove: async (keys) => { for (const key of keys) delete values[key]; } } },
       permissions: { request: async () => true, contains: async () => true, remove: async () => true },
       runtime: { getManifest: () => ({ version: '5.5.0' }), getURL: (path = '') => `chrome-extension://abcdefghijklmnopabcdefghijklmnop/${path}`, openOptionsPage: async () => undefined },
+    };
+    // Visual tests isolate the worker; the native recovery suite exercises its
+    // real lifecycle, permissions and durable storage in an installed extension.
+    const jobs = [];
+    chrome.runtime.sendMessage = async (message) => {
+      const endpoint = `http://127.0.0.1:${values.port}`;
+      const post = async (path, body) => (await fetch(`${endpoint}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+      if (message.type === 'nodus:jobs') return { ok: true, jobs, missingOrigins: [] };
+      if (message.type === 'nodus:pair') { const result = await post('/api/browser/pair', {}); values.token = result.token; return result; }
+      if (message.type === 'nodus:enqueue') {
+        const entries = [];
+        for (const request of message.requests) entries.push({ title: request.metadata.title, request: null, result: await post('/api/browser/save', request), error: null, uploads: [] });
+        const job = { id: `visual-${jobs.length}`, title: entries[0].title, status: 'complete', entries, createdAt: Date.now(), updatedAt: Date.now() };
+        jobs.push(job); return { ok: true, job };
+      }
+      return { ok: true };
     };
   }, { messages, detected: snapshot, uiLanguage });
   await page.route('http://127.0.0.1:4321/api/browser/**', async (route) => {

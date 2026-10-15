@@ -82,6 +82,7 @@ export const platformApi: PlatformApi = {
   },
 
   getChatGptSubscriptionStatus: () => ipcRenderer.invoke('ai:chatgptSubscription:status'),
+  installChatGptSubscriptionRuntime: () => ipcRenderer.invoke('ai:chatgptSubscription:installRuntime'),
   startChatGptSubscriptionLogin: () => ipcRenderer.invoke('ai:chatgptSubscription:login'),
   cancelChatGptSubscriptionLogin: (loginId) => ipcRenderer.invoke('ai:chatgptSubscription:cancelLogin', loginId),
   logoutChatGptSubscription: () => ipcRenderer.invoke('ai:chatgptSubscription:logout'),
@@ -91,6 +92,7 @@ export const platformApi: PlatformApi = {
     return () => ipcRenderer.removeListener('ai:chatgptSubscription:statusChanged', listener);
   },
   getGitHubCopilotSubscriptionStatus: () => ipcRenderer.invoke('ai:githubCopilotSubscription:status'),
+  installGitHubCopilotSubscriptionRuntime: () => ipcRenderer.invoke('ai:githubCopilotSubscription:installRuntime'),
   startGitHubCopilotSubscriptionLogin: () => ipcRenderer.invoke('ai:githubCopilotSubscription:login'),
   cancelGitHubCopilotSubscriptionLogin: () => ipcRenderer.invoke('ai:githubCopilotSubscription:cancelLogin'),
   logoutGitHubCopilotSubscription: () => ipcRenderer.invoke('ai:githubCopilotSubscription:logout'),

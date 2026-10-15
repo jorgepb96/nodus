@@ -38,9 +38,9 @@ test('new installs learn MCP, Nodus Server, Zotero and the current six-tool cata
   assert.match(guide, /<img src=\{zoteroLogo\} alt="Zotero" \/>/);
 });
 
-test('existing users get the cinematic summary after the Nodus Presenter announcement and only mark it seen on completion', async () => {
+test('the historical platform announcement is archived while shared tutorial panels stay active', async () => {
   const [guide, app, styles] = await Promise.all([
-    read('src/components/PlatformHighlightsGuide.tsx'),
+    read('archive/startup-announcements/PlatformHighlightsGuide.tsx'),
     read('src/App.tsx'),
     read('src/index.css'),
   ]);
@@ -53,12 +53,9 @@ test('existing users get the cinematic summary after the Nodus Presenter announc
   assert.match(guide, /const finish = \(\) => \{[\s\S]*markSeen\(\);[\s\S]*onSettled\(\);[\s\S]*\};/);
   assert.equal((guide.match(/markSeen\(\);/g) ?? []).length, 1, 'seen state is written only by the explicit finish action');
 
-  assert.match(app, /<PlatformHighlightsUpdateTour/);
-  assert.match(app, /whatsNewSettled && pdfPresenterTutorialSettled && mobileTeaserSettled && !platformHighlightsSettled/);
-  assert.match(app, /platformHighlightsSettled && !toolkitBetaTourSettled/);
-  assert.ok(app.indexOf('<WhatsNewModal') < app.indexOf('<PlatformHighlightsUpdateTour'));
-  assert.ok(app.indexOf('<PlatformHighlightsUpdateTour') < app.indexOf('<ToolkitBetaUpdateTour'));
-  assert.ok(app.indexOf('<PlatformHighlightsUpdateTour') < app.indexOf('<NodiStyleModal'));
+  assert.doesNotMatch(app, /PlatformHighlightsUpdateTour|platformHighlightsSettled/);
+  const sharedGuide = await read('src/components/PlatformHighlightsGuide.tsx');
+  assert.doesNotMatch(sharedGuide, /PlatformHighlightsUpdateTour|localStorage/);
 
   assert.match(styles, /\.platform-guide-hero/);
   assert.match(styles, /\.platform-guide-zotero-brand/);

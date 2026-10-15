@@ -54,7 +54,7 @@ try {
     await page.getByRole('button',{name:'Regenerar respuesta',exact:true}).click();
     await page.waitForFunction(()=>window.requests.length===2 && !document.querySelector('.research-composer-stop'));
     assert.deepEqual(await page.evaluate(()=>window.requests[1].attachmentIds),request.attachmentIds,'regeneration keeps file references');
-    await page.getByTestId('research-history-toggle').click();
+    if (!(await page.getByTestId('research-history-sidebar').isVisible())) await page.getByTestId('research-history-toggle').click();
     await page.getByRole('button',{name:'Nueva conversación',exact:true}).last().click();
     assert.equal(await page.locator('.research-attachment').count(),0);
     const history=page.getByTestId('research-history-sidebar');

@@ -270,6 +270,7 @@ export class LibraryCatalog {
       CREATE INDEX IF NOT EXISTS library_items_pmid ON library_items (json_extract(metadata_json, '$.pmid')) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS library_items_pmcid ON library_items (json_extract(metadata_json, '$.pmcid')) WHERE deleted_at IS NULL;
       CREATE INDEX IF NOT EXISTS library_items_arxiv ON library_items (json_extract(metadata_json, '$.arxiv')) WHERE deleted_at IS NULL;
+      CREATE INDEX IF NOT EXISTS library_items_capture_request ON library_items (json_extract(metadata_json, '$.extra."Browser capture request"')) WHERE deleted_at IS NULL;
       CREATE TABLE IF NOT EXISTS library_collections (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -833,12 +834,16 @@ export class LibraryCatalog {
   }
 
   /** Ordered, explainable duplicate lookup shared by imports and captures. */
-  findItemIdByMetadata(metadata: LibraryItemMetadata): { itemId: string; matchedBy: 'identifier' | 'bibliography' | 'url' } | null {
+  findItemIdByMetadata(metadata: LibraryItemMetadata, allowUrlMatch = true, captureRequestId?: string): { itemId: string; matchedBy: 'request' | 'identifier' | 'bibliography' | 'url' } | null {
+    if (captureRequestId) {
+      const row = this.handle.prepare("SELECT id FROM library_items WHERE deleted_at IS NULL AND json_extract(metadata_json, '$.extra.\"Browser capture request\"')=? LIMIT 1").get(captureRequestId) as { id: string } | undefined;
+      if (row) return { itemId: row.id, matchedBy: 'request' };
+    }
     const identifier = this.findItemIdByMetadataIdentifiers(metadata);
     if (identifier) return { itemId: identifier, matchedBy: 'identifier' };
     const bibliography = this.findItemIdByNormalizedBibliography(metadata);
     if (bibliography) return { itemId: bibliography, matchedBy: 'bibliography' };
-    const url = this.findItemIdByMetadataUrl(metadata);
+    const url = allowUrlMatch ? this.findItemIdByMetadataUrl(metadata) : null;
     return url ? { itemId: url, matchedBy: 'url' } : null;
   }
 

@@ -62,6 +62,7 @@ import {
 } from '../browser/authPrompt';
 import { browserMediaStates, setMediaNotifier } from '../browser/media';
 import { getSystemVolume, setSystemVolume } from '../toolkit/presenter/systemAudio';
+import { enqueueBrowserCaptures, listBrowserCaptureJobs, retryBrowserCaptureJob, resumeBrowserCaptureJobs } from '../browser/captureJobs';
 import { activePageIsPdf, captureActivePage, importPdfIntoItem, saveCapture } from '../browser/capture';
 import {
   activeBrowserDownloadCount,
@@ -160,6 +161,10 @@ async function syncActiveBrowserNodiContext(): Promise<boolean> {
 }
 
 export function registerBrowserIpc({ h, getWindow }: IpcContext): void {
+  void resumeBrowserCaptureJobs().catch(() => undefined);
+  h('browser:captureJobs:list', async (event) => { assertUiSender(event, getWindow); return listBrowserCaptureJobs(); });
+  h('browser:captureJobs:enqueue', async (event, requests: unknown) => { assertUiSender(event, getWindow); return enqueueBrowserCaptures(requests); });
+  h('browser:captureJobs:retry', async (event, id: string) => { assertUiSender(event, getWindow); return retryBrowserCaptureJob(String(id)); });
   /** Push the whole browser state; the renderer re-renders from it wholesale. */
   const broadcast = () => {
     const window = getWindow();
@@ -345,8 +350,11 @@ export function registerBrowserIpc({ h, getWindow }: IpcContext): void {
         if (resolved.kind === 'navigate' || resolved.kind === 'search') return resolved.url;
       }
     }
-    if (settings.browserHomeMode === 'bookmarks') return NODUS_BOOKMARKS_URL;
-    return settings.browserHomeMode === 'start' ? NODUS_RESEARCH_ATLAS_START_URL : 'about:blank';
+    if (settings.browserHomeMode === 'start') return NODUS_RESEARCH_ATLAS_START_URL;
+    if (settings.browserHomeMode === 'blank') return 'about:blank';
+    // Bookmarks, and a custom home whose address is empty or unusable: without a
+    // site of the user's own, Home lands on their bookmarks rather than a blank page.
+    return NODUS_BOOKMARKS_URL;
   };
 
   let restartInFlight: Promise<BrowserRestartResult> | null = null;

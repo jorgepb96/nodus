@@ -185,6 +185,16 @@
 
 /* Embedded chat changes only its frame and the optional side panels. */
 .research-chat-history[hidden] { display: none; }
+.research-history-help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.research-history-help-card { padding: 14px; border: 1px solid var(--prompt-line); border-radius: 12px; color: var(--prompt-text); }
+.research-history-help-card h3 { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.research-history-help-card h3 svg { flex-shrink: 0; color: var(--vault-accent); }
+.research-history-help-card p { margin-top: 10px; font-size: 12px; line-height: 1.6; }
+.research-history-help-card .research-history-help-use { color: var(--prompt-muted); }
+.research-history-help-choice { color: var(--prompt-ink); font-size: 12px; line-height: 1.6; }
+.research-history-help-notes { color: var(--prompt-muted); font-size: 11px; line-height: 1.6; }
+.research-history-help-notes p + p { margin-top: 4px; }
+@media (max-width: 560px) { .research-history-help-grid { grid-template-columns: 1fr; } }
 /* The top of the history: icon actions, then the notebook the chat reads from. */
 .research-chat-history-tools { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--research-border, #262626); }
 .research-chat-history-tool { display: inline-grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; border: 1px solid transparent; color: #a3a3a3; }
@@ -366,7 +376,10 @@
   box-shadow: 0 3px 20px #00000018;
 }
 .research-composer-shell:focus-within { border-color: color-mix(in srgb, var(--vault-accent) 55%, transparent); }
-.research-composer-shell .research-composer { border: 0; box-shadow: none; background: transparent; padding-left: 10px; }
+.research-composer-shell .research-composer { border: 0; box-shadow: none; background: transparent; padding-left: 10px; flex-wrap: wrap; }
+/* The history sidebar can leave a narrow composer even in a wide window. Keep
+   an editable field and wrap the controls instead of shrinking it to zero. */
+.research-composer-shell .research-composer-input { flex-basis: 180px; }
 .research-composer-attach { flex: 0 0 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #a1a1aa; background: transparent; }
 .research-composer-attach:hover:not(:disabled) { background: #8882; color: var(--vault-accent); }
 .research-composer-attach:disabled { opacity: .4; cursor: wait; }

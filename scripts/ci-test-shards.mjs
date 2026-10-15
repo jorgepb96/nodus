@@ -9,7 +9,7 @@ import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
 import { pipeline } from 'node:stream/promises';
 
-export const shardCount = 3;
+export const shardCount = 6;
 export const fileConcurrency = 2;
 const allowedSkips = new Map([
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
@@ -68,7 +68,8 @@ export function validatePlan(plan, files, commit) {
   assert.equal(plan.commit, commit, 'Plan belongs to a different commit');
   assert.deepEqual(plan.files, [...files].sort(), 'Test discovery changed');
   assert.equal(plan.shards.length, shardCount, 'Missing shard');
-  assert.deepEqual(plan.shards.map(s => s.index).sort(), [1, 2, 3], 'Duplicate shard index');
+  assert.deepEqual(plan.shards.map(s => s.index).sort((a, b) => a - b),
+    Array.from({ length: shardCount }, (_, index) => index + 1), 'Duplicate shard index');
   const assigned = plan.shards.flatMap(shard => {
     assert.ok(shard.files.length > 0, 'Empty shard');
     return shard.files;

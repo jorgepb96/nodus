@@ -2,7 +2,7 @@ name: macOS Intel release
 
 # The Intel product is appended to a release after it has been published, so
 # the slower Intel runner never holds back Apple silicon, Windows and Linux.
-# release-build.yml calls this once verify-and-publish succeeds. It can also be
+# release-build.yml dispatches this as a separate run after publication. It can also be
 # dispatched by hand to retry a failed run or to add Intel to a release that was
 # published without it.
 #

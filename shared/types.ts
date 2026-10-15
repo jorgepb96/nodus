@@ -1502,6 +1502,18 @@ export interface ChatGptSubscriptionRateLimits {
 }
 
 /** Renderer-safe view of the managed ChatGPT login. OAuth tokens never cross IPC. */
+/**
+ * The vendor CLI behind a subscription provider (Codex, GitHub Copilot). Installers no
+ * longer carry it: it is fetched from npm, checked against the integrity hash pinned
+ * at build time, the first time the provider is used. A development checkout still
+ * finds it in node_modules and is always `ready`.
+ */
+export interface AgentRuntimeStatus {
+  state: 'ready' | 'missing' | 'installing' | 'failed';
+  receivedBytes: number;
+  totalBytes: number | null;
+}
+
 export interface ChatGptSubscriptionStatus {
   available: boolean;
   connected: boolean;
@@ -1510,6 +1522,7 @@ export interface ChatGptSubscriptionStatus {
   planType: string | null;
   rateLimits: ChatGptSubscriptionRateLimits | null;
   error: string | null;
+  runtime?: AgentRuntimeStatus;
 }
 
 export interface ChatGptSubscriptionLogin {
@@ -1553,6 +1566,7 @@ export interface GitHubCopilotSubscriptionStatus {
   quota: GitHubCopilotSubscriptionQuotaWindow[];
   lastSession: GitHubCopilotSessionUsage | null;
   error: string | null;
+  runtime?: AgentRuntimeStatus;
 }
 
 /** Usage Nodus can observe locally for OpenCode Go. The authoritative balance
@@ -1966,10 +1980,18 @@ export interface AiConcurrencySnapshot {
 }
 
 export type AcademicMode = 'auto' | 'manual';
+export type AcademicInterfaceProfile = 'simple' | 'intermediate' | 'advanced' | 'custom';
 
 export interface AppSettings {
+  academicLearningProgress?: import('./academicLearning').AcademicLearningProgress;
+  academicPracticeSession?: import('./academicLearning').AcademicPracticeSession;
   /** Vault-local, fixed after onboarding. Legacy vaults use Auto. */
   academicMode?: AcademicMode;
+  /** Desktop, vault-local. Missing preserves the legacy grouped interface. */
+  academicInterfaceProfile?: AcademicInterfaceProfile;
+  academicInterfaceGuidesSeen?: Partial<Record<AcademicInterfaceProfile, number>>;
+  /** Optional overrides for the desktop header, stored independently in each vault. */
+  headerActionVisibility?: import('./headerActions').HeaderActionVisibility;
   /** Whether the user explicitly enabled the cross-vault catalogue. */
   libraryGlobalEnabled: boolean;
   /** Last scope selected after the compatibility-first Library introduction. */
@@ -2709,6 +2731,8 @@ export interface ReplicaPresenceInput {
 }
 
 export interface VaultSummary {
+  /** Internal practice instance; never listed in the user's vault selector. */
+  learningWorkspace?: boolean;
   id: string;
   name: string;
   path: string;
@@ -9231,6 +9255,9 @@ export interface BrowserApi {
   getBrowserDeviceVolume(): Promise<number>;
   setBrowserDeviceVolume(volume: number): Promise<void>;
   onBrowserMediaChanged(cb: (states: import('./browser').BrowserMediaState[]) => void): () => void;
+  listBrowserCaptureJobs(): Promise<import('./browserConnector').BrowserCaptureJob[]>;
+  enqueueBrowserCaptures(requests: import('./browserConnector').BrowserConnectorCaptureRequest[]): Promise<import('./browserConnector').BrowserCaptureJob>;
+  retryBrowserCaptureJob(id: string): Promise<void>;
   captureBrowserPage(): Promise<import('./browserConnector').BrowserConnectorCapturePreview | null>;
   saveBrowserCapture(
     request: import('./browserConnector').BrowserConnectorCaptureRequest,
@@ -9292,6 +9319,11 @@ export interface NodusApi extends StudyFocusApi, ProsopographyApi, TestimoniesAp
   // settings + secrets
   getSettings(): Promise<AppSettings>;
   updateSettings(patch: Partial<AppSettings>): Promise<AppSettings>;
+  updateAcademicLearning(vaultId: string, patch: Pick<Partial<AppSettings>, 'academicLearningProgress' | 'academicPracticeSession'>): Promise<AppSettings | null>;
+  getAcademicLearningWorkspace(): Promise<import('./learningWorkspace').LearningWorkspaceInfo | null>;
+  openAcademicLearningWorkspace(lessonId: import('./academicLearning').AcademicLessonId): Promise<void>;
+  academicLearningWorkspaceReady(): Promise<void>;
+  closeAcademicLearningWorkspace(discard?: boolean): Promise<void>;
   getAiConcurrencySnapshot(): Promise<AiConcurrencySnapshot[]>;
   onAiConcurrencySnapshot(cb: (snapshot: AiConcurrencySnapshot[]) => void): () => void;
   listVaults(): Promise<VaultSummary[]>;

@@ -1,3 +1,4 @@
+import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { createPortal } from "react-dom";
 import {
   useCallback,
@@ -508,7 +509,7 @@ function CreationDialog({
   onOpenExisting: (entry: DictionaryEntrySummary) => void;
   onQueued: (entries: Array<Pick<DictionaryEntry, "id" | "name">>) => void;
 }) {
-  const [input, setInput] = useState(emptyInput);
+  const [input, setInput] = useState(() => ({...emptyInput(), outputLanguage: settings.promptLanguage}));
   const [drafts, setDrafts] = useState<DictionaryCreationDraft[]>(() => [
     emptyCreationDraft(),
   ]);
@@ -1422,7 +1423,6 @@ export function DictionaryView({
               return next;
             })
           }
-          settings={settings}
           model={model}
           research={research}
           catalog={catalog}
@@ -1848,7 +1848,6 @@ function DictionaryEntryView({
   onTabChange,
   progress,
   onGenerationStarted,
-  settings,
   model,
   research,
   catalog,
@@ -1862,7 +1861,6 @@ function DictionaryEntryView({
   onTabChange: (tab: DictionaryDetailTab) => void;
   progress?: DictionaryProgress;
   onGenerationStarted: (progress: DictionaryProgress) => void;
-  settings: AppSettings;
   model: ModelRef | null;
   research: DictionaryResearchOptions;
   catalog: CatalogData;
@@ -1880,6 +1878,7 @@ function DictionaryEntryView({
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [hideBackgroundFailure, setHideBackgroundFailure] = useState(false);
   const choseTab = useRef(restoredTab !== undefined);
+  useLearningArtifact('dictionary', detail?.currentVersion?.id, learningMarkdownRefs(detail?.currentVersion?.contentMarkdown ?? ''));
   const load = useCallback(
     async () => setDetail(await window.nodus.getDictionaryEntry(entryId)),
     [entryId],
@@ -2027,24 +2026,11 @@ function DictionaryEntryView({
               </div>
             </div>
             <div className="ml-auto grid w-full max-w-full gap-2 xl:w-[620px]">
-              <div className="flex min-h-9 flex-wrap items-center justify-end gap-3">
-                {progress && (
-                  <div className="min-w-0 flex-1" aria-live="polite">
-                    <DictionaryGenerationState progress={progress} status={entry.status} />
-                  </div>
-                )}
-                <ModelPicker
-                  className="!w-auto max-w-full"
-                  settings={settings}
-                  value={model}
-                  onChange={() => undefined}
-                  compact
-                  disabled
-                  ariaLabel={t("Modelo del Diccionario")}
-                  menu
-                />
-                <DictionaryResearchControls model={model} research={research} disabled={!!busy || backgroundBusy} />
-              </div>
+              {progress && (
+                <div className="flex min-h-9 min-w-0 items-center" aria-live="polite">
+                  <DictionaryGenerationState progress={progress} status={entry.status} />
+                </div>
+              )}
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(118px,0.58fr)_minmax(118px,0.58fr)] gap-2">
                 <button
                   className="btn btn-ghost h-9 min-w-0 justify-center whitespace-nowrap border border-neutral-300 text-xs dark:border-neutral-700"

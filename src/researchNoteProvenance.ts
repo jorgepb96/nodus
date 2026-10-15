@@ -81,3 +81,7 @@ export function researchNoteSource(input: {
     },
   };
 }
+/** Generic citation markers are interface labels; named references and URLs stay intact. */
+export function localizeResearchCitationLabels(content:string,sourceLabel:string):string {
+  return content.replace(/\[(?:fuente|source)\]\((nodus:\/\/(?:passage|idea|work)\/[^\s)]+)\)/gi,(_match,url:string)=>`[${sourceLabel}](${url})`);
+}

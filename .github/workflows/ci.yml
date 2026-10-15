@@ -1,6 +1,7 @@
 name: CI
 
-# Build once, then run all three Linux test shards and E2E on isolated runners.
+# Build once, then run six Linux test shards and three E2E groups on isolated runners.
+# Lint and TypeScript run alongside the build and remain required by the final gate.
 # Complete coverage; native and specialized checks follow changed paths.
 # Documentation has a fast lane. The final test job is an unconditional gate.
 # Exact original configuration: .github/actions-budget/ (explicit restore only).
@@ -86,6 +87,38 @@ jobs:
           npm run site:verify
           node --test scripts/test-cla.mjs scripts/test-cla-reminder.mjs
 
+  quality:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies for static checks
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Restore incremental check caches
+        uses: actions/cache@v6
+        with:
+          path: .ci/cache
+          key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
+          restore-keys: |
+            checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
+      - name: Generate the current TypeScript contract sources
+        run: npm run build:cloudflare
+      - name: Lint
+        run: npm run lint:ci
+      - name: Typecheck renderer and Electron
+        run: npm run typecheck:ci
+
   linux:
     needs: changes
     if: needs.changes.outputs.full == 'true'
@@ -125,13 +158,6 @@ jobs:
           xvfb-run --auto-servernum glxinfo -B
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
-      - name: Restore incremental check caches
-        uses: actions/cache@v6
-        with:
-          path: .ci/cache
-          key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
-          restore-keys: |
-            checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
       - name: Restore Electron download cache
         uses: actions/cache@v6
         with:
@@ -150,10 +176,8 @@ jobs:
           npx electron-builder install-app-deps
           sudo chown root:root node_modules/electron/dist/chrome-sandbox
           sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
-      - name: Lint
-        run: npm run lint:ci
-      - name: Build (includes typecheck)
-        run: npm run build:ci
+      - name: Build the current commit while static checks run independently
+        run: npm run build:ci:bundle
       - name: Build the Server Web bundle
         run: npm run build:server-web
       - name: Compile component test styles
@@ -222,7 +246,7 @@ jobs:
       # Every group must finish and report even if another group fails.
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
@@ -263,6 +287,11 @@ jobs:
   e2e:
     needs: [changes, linux]
     if: needs.changes.outputs.full == 'true'
+    name: Real app (${{ matrix.group }})
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [smoke, backups, integration]
     runs-on: ubuntu-22.04
     timeout-minutes: 35
     env:
@@ -281,44 +310,66 @@ jobs:
           node-version: ${{ needs.linux.outputs.node_version }}
           marketplace-ref: ${{ needs.linux.outputs.marketplace_ref }}
       - name: Both repositories agree and signed packages install
+        if: matrix.group == 'integration'
         run: npm run verify:cross-repo
       - name: Prepare hash-verified local OCR test resource
+        if: matrix.group == 'integration'
         run: node scripts/prepare-research-ocr-fixture.mjs
       - name: Real AppImage update compatibility
-        if: needs.changes.outputs.appimage == 'true'
+        if: matrix.group == 'integration' && needs.changes.outputs.appimage == 'true'
         run: node scripts/verify-appimage-updates.mjs
+      - name: Parallel Linux installer payload and updater contracts
+        if: matrix.group == 'integration' && needs.changes.outputs.appimage == 'true'
+        run: |
+          sudo apt-get install --no-install-recommends -y libarchive-tools
+          node scripts/verify-linux-release-formats.mjs
       - name: Native Linux Presenter controller
-        if: needs.changes.outputs.presenter == 'true'
+        if: matrix.group == 'integration' && needs.changes.outputs.presenter == 'true'
         run: xvfb-run --auto-servernum node scripts/verify-presenter-lan.cjs
       - name: Managed Research runtime, isolation and lifecycle
-        if: needs.changes.outputs.research == 'true'
+        if: matrix.group == 'integration' && needs.changes.outputs.research == 'true'
         run: node scripts/ci-native-checks.mjs research --no-synthetic
       - name: E2E smoke (real app boot)
         timeout-minutes: 10
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e'
       - name: Backups export and restore E2E
         timeout-minutes: 10
+        if: matrix.group == 'backups'
         env:
           NODUS_BACKUPS_ARTIFACT_DIR: ${{ github.workspace }}/.ci/backups-e2e
         run: xvfb-run --auto-servernum npm run test:e2e:backups
       - name: Stellar canvas E2E
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar'
       - name: Graph tabs E2E
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:stellar-tabs'
       - name: Argument map E2E
         timeout-minutes: 5
+        if: matrix.group == 'smoke'
         run: xvfb-run --auto-servernum bash -e -c 'npm run test:e2e:argument-map'
       - name: Each package installs, migrates, registers and uninstalls
+        if: matrix.group == 'integration'
         run: xvfb-run --auto-servernum npm run verify:capability-packages
+      - name: Guided academic learning E2E
+        timeout-minutes: 4
+        if: matrix.group == 'integration'
+        run: xvfb-run --auto-servernum node scripts/e2e-academic-learning.mjs
+      - name: Isolated learning workspace E2E
+        timeout-minutes: 4
+        if: matrix.group == 'integration'
+        run: xvfb-run --auto-servernum node scripts/e2e-learning-workspace.mjs
       - name: A 5.3.1 profile migrates, fails and retries
+        if: matrix.group == 'integration'
         run: xvfb-run --auto-servernum npm run verify:capability-migration
       - name: Preserve real-app and native lifecycle diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ci-e2e-${{ github.run_attempt }}
+          name: ci-e2e-${{ matrix.group }}-${{ github.run_attempt }}
           overwrite: true
           path: |
             .ci/backups-e2e/*.png
@@ -359,6 +410,13 @@ jobs:
           npx electron-builder install-app-deps
       - name: Native macOS APIs and real Python credentials cannot skip
         run: node scripts/ci-native-checks.mjs platform
+      - name: Restore native-host incremental TypeScript caches
+        uses: actions/cache@v6
+        with:
+          path: .ci/cache
+          key: checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-${{ github.sha }}
+          restore-keys: |
+            checks-${{ runner.os }}-${{ runner.arch }}-node22-${{ hashFiles('package-lock.json', 'tsconfig*.json', 'electron/tsconfig.json', '.eslintrc.cjs', 'package.json') }}-
       - name: Compile renderer and native entry points
         run: npm run build:ci
       - name: Checkout the marketplace
@@ -456,7 +514,7 @@ jobs:
           exit 1
 
   test:
-    needs: [changes, linux, unit, e2e, light, platform, scheme, server]
+    needs: [changes, quality, linux, unit, e2e, light, platform, scheme, server]
     if: always()
     runs-on: ubuntu-22.04
     timeout-minutes: 5
@@ -480,7 +538,7 @@ jobs:
           artifact-ids: ${{ needs.linux.outputs.plan_artifact_id }}
           path: .ci
           merge-multiple: true
-      - name: Download all three execution reports
+      - name: Download all six execution reports
         if: needs.changes.outputs.full == 'true'
         uses: actions/download-artifact@v8
         with:

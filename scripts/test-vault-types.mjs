@@ -224,7 +224,9 @@ test('the header vault entry point uses a stable localized label', async () => {
   // The right-rail Bóvedas button is gone; the centred badge is the permanent way in,
   // with the command palette as the last resort when the badge has nowhere to sit.
   assert.match(app, /data-testid="header-vault-badge"/);
-  assert.match(app, /\{vaultTypeLabel\(activeVault\.type\)\}/);
+  // The private practice profile names its workspace instead; both labels are localized
+  // constants, never the vault's own name.
+  assert.match(app, /\{activeVault\.learningWorkspace\s*\?\s*learningText\('workspace',\s*settings\.uiLanguage\)\s*:\s*vaultTypeLabel\(activeVault\.type\)\}/);
   assert.match(app, /id: 'act:vaults', label: t\('Bóvedas'\)/);
   // The badge must not be hidden below a breakpoint now that nothing else opens the panel.
   assert.doesNotMatch(app, /header-vault-badge[^"]*\bhidden\b/);

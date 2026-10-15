@@ -1,15 +1,19 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -70,6 +74,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -87,6 +92,7 @@ export const TR: Record<string, string> = {
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.tr,
   ...CALENDAR_SYNC_TRANSLATIONS["tr"],
+  ...AGENT_RUNTIME_TRANSLATIONS["tr"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["tr"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Web’de gezinin ve araştırmanız için kaynakları kaydedin.",
@@ -134,6 +140,7 @@ export const TR: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.tr,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.tr,
+  ...GALLERY_FILTER_TRANSLATIONS.tr,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.tr,
   ...STALE_MODEL_TRANSLATIONS.tr,
   ...SCHEME_DECLUTTER_TRANSLATIONS.tr,
@@ -171,6 +178,7 @@ export const TR: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["tr"],
   ...STUDY_FOCUS_TRANSLATIONS["tr"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["tr"],
+  ...BOOKMARK_SORT_TRANSLATIONS["tr"],
   ...SCRIPTOR_AI_TRANSLATIONS["tr"],
   ...STUDY_IMPROVE_TRANSLATIONS.tr,
   ...WORKSPACE_TRANSLATIONS.tr,
@@ -2428,7 +2436,7 @@ export const TR: Record<string, string> = {
   "Detener y eliminar de la cola": "Durdurun ve kuyruktan kaldırın",
   "Eliminar de la cola": "Sıradan kaldır",
   "Se quitarán de la cola los elementos pendientes y los ya terminados. El elemento en curso seguirá procesándose.": "Bekleyen ve tamamlanan öğeler kuyruktan kaldırılacaktır. Devam eden öğe işlenmeye devam edecek.",
-  "Limpiar": "Temiz",
+  "Limpiar": "Temizle",
   "Se detendrá el escaneo en curso y se eliminarán todos los elementos de la cola. Esta acción no se puede deshacer.": "Devam eden tarama durdurulacak ve kuyruktaki tüm öğeler silinecek. Bu eylem geri alınamaz.",
   "Detener y vaciar": "Dur ve boşalt",
   "Obra": "iş",
@@ -8674,4 +8682,6 @@ export const TR: Record<string, string> = {
   "Audio pendiente": "Bekleyen ses",
   "Modelo local": "Yerel model",
   "Detener dictado": "Dikteyi durdur",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["tr"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["tr"],
 };

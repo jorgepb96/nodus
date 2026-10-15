@@ -85,14 +85,6 @@
   "saved": {
     "message": "Salvo no Nodus"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ arquivo(s) foram anexados agora. A preparação da leitura limpa continua no Nodus.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Abrir no Nodus"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "Selecione pelo menos uma referência."
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ referências salvas com $FILES$ arquivo(s) anexado(s).",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Já estava no Nodus"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "Código-fonte AGPL"
+  },
+  "jobHistory": {
+    "message": "Salvamentos e downloads"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ referências · $FILES$ arquivos",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ arquivo(s) pendentes",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "Baixando…"
+  },
+  "jobNeedsPermission": {
+    "message": "Requer autorização"
+  },
+  "jobFailed": {
+    "message": "Requer atenção"
+  },
+  "jobComplete": {
+    "message": "Concluído"
+  },
+  "jobQueued": {
+    "message": "Salvamento na fila"
+  },
+  "jobContinues": {
+    "message": "O salvamento continua depois de fechar esta janela."
+  },
+  "authorizeDownloads": {
+    "message": "Autorizar e baixar"
+  },
+  "retry": {
+    "message": "Tentar novamente"
   }
 }

@@ -6,12 +6,12 @@ import sharp from 'sharp';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const assetDir = path.join(root, 'electron/assets/worldbuilding-demo');
 const entries = (await fs.readdir(assetDir))
-  .filter((name) => /^character-[a-z0-9-]+\.png$/.test(name))
+  .filter((name) => /^character-[a-z0-9-]+\.original\.webp$/.test(name))
   .sort();
 
 for (const originalName of entries) {
   const originalPath = path.join(assetDir, originalName);
-  const thumbnailPath = originalPath.replace(/\.png$/, '.webp');
+  const thumbnailPath = originalPath.replace(/\.original\.webp$/, '.webp');
   const thumbnail = await sharp(originalPath)
     .rotate()
     .resize({ width: 360, height: 480, fit: 'inside', withoutEnlargement: true })

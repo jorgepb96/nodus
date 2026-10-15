@@ -14,7 +14,9 @@ import type {
   WritingWorkshopExportRequest,
   WritingWorkshopMatrixRow,
   WritingWorkshopSavedDraft,
+  PromptLanguage,
 } from '@shared/types';
+import { citationWords } from '@shared/citationWords';
 import { stripLeadingAbstract } from '@shared/writingDocument';
 import { DEEP_LABELS, deepResearchReportInput, type DeepReportLabels } from '@shared/deepResearchReport';
 import { markdownToPdf } from './markdownRender';
@@ -229,52 +231,85 @@ export function buildDeepResearchPdfInput(
   return deepResearchReportInput(draft, imageOverride ?? reportImage(entityId, labels), entityId ? getDocumentVisuals({ kind: 'deep-research', id: entityId }) : null);
 }
 
+/** Headings of the Markdown export that the PDF report labels do not already name. */
+interface DraftMarkdownLabels {
+  type: string;
+  summary: string;
+  outline: string;
+  sources: string;
+  draft: string;
+  matrix: string;
+  reviewDraft: string;
+  noMatrix: string;
+}
+
+const DRAFT_MARKDOWN_LABELS: Record<PromptLanguage, DraftMarkdownLabels> = {
+  es: { type: 'Tipo', summary: 'Resumen', outline: 'Esquema', sources: 'Fuentes', draft: 'Borrador', matrix: 'Matriz de apoyo', reviewDraft: 'Revisar el borrador.', noMatrix: 'Sin matriz generada.' },
+  en: { type: 'Type', summary: 'Abstract', outline: 'Outline', sources: 'Sources', draft: 'Draft', matrix: 'Support matrix', reviewDraft: 'Review the draft.', noMatrix: 'No matrix generated.' },
+  fr: { type: 'Type', summary: 'Résumé', outline: 'Plan', sources: 'Sources', draft: 'Brouillon', matrix: 'Matrice d’appui', reviewDraft: 'Relire le brouillon.', noMatrix: 'Aucune matrice générée.' },
+  de: { type: 'Typ', summary: 'Zusammenfassung', outline: 'Gliederung', sources: 'Quellen', draft: 'Entwurf', matrix: 'Belegmatrix', reviewDraft: 'Den Entwurf überprüfen.', noMatrix: 'Keine Matrix erstellt.' },
+  pt: { type: 'Tipo', summary: 'Resumo', outline: 'Esquema', sources: 'Fontes', draft: 'Rascunho', matrix: 'Matriz de apoio', reviewDraft: 'Rever o rascunho.', noMatrix: 'Nenhuma matriz gerada.' },
+  'pt-BR': { type: 'Tipo', summary: 'Resumo', outline: 'Esquema', sources: 'Fontes', draft: 'Rascunho', matrix: 'Matriz de apoio', reviewDraft: 'Revisar o rascunho.', noMatrix: 'Nenhuma matriz gerada.' },
+  it: { type: 'Tipo', summary: 'Riassunto', outline: 'Schema', sources: 'Fonti', draft: 'Bozza', matrix: 'Matrice di supporto', reviewDraft: 'Rivedere la bozza.', noMatrix: 'Nessuna matrice generata.' },
+  tr: { type: 'Tür', summary: 'Özet', outline: 'Taslak plan', sources: 'Kaynaklar', draft: 'Taslak', matrix: 'Destek matrisi', reviewDraft: 'Taslağı gözden geçirin.', noMatrix: 'Matris oluşturulmadı.' },
+  'zh-Hans': { type: '类型', summary: '摘要', outline: '提纲', sources: '来源', draft: '草稿', matrix: '支撑矩阵', reviewDraft: '审阅草稿。', noMatrix: '未生成矩阵。' },
+  'zh-Hant': { type: '類型', summary: '摘要', outline: '提綱', sources: '來源', draft: '草稿', matrix: '支撐矩陣', reviewDraft: '審閱草稿。', noMatrix: '未產生矩陣。' },
+  vi: { type: 'Loại', summary: 'Tóm tắt', outline: 'Dàn ý', sources: 'Nguồn', draft: 'Bản nháp', matrix: 'Ma trận hỗ trợ', reviewDraft: 'Xem lại bản nháp.', noMatrix: 'Chưa tạo ma trận.' },
+  ja: { type: '種類', summary: '要旨', outline: '構成', sources: '出典', draft: '下書き', matrix: '根拠マトリクス', reviewDraft: '下書きを見直す。', noMatrix: 'マトリクスは生成されていません。' },
+  ru: { type: 'Тип', summary: 'Аннотация', outline: 'План', sources: 'Источники', draft: 'Черновик', matrix: 'Матрица опоры', reviewDraft: 'Проверить черновик.', noMatrix: 'Матрица не создана.' },
+  uk: { type: 'Тип', summary: 'Анотація', outline: 'План', sources: 'Джерела', draft: 'Чернетка', matrix: 'Матриця опори', reviewDraft: 'Переглянути чернетку.', noMatrix: 'Матрицю не створено.' },
+  ko: { type: '유형', summary: '초록', outline: '개요', sources: '출처', draft: '초안', matrix: '근거 매트릭스', reviewDraft: '초안을 검토하세요.', noMatrix: '생성된 매트릭스가 없습니다.' },
+};
+
 function renderDraftMarkdown(draft: WritingWorkshopDraft): string {
+  const language = draft.brief.language ?? 'es';
+  const report = DEEP_LABELS[language] ?? DEEP_LABELS.es;
+  const labels = DRAFT_MARKDOWN_LABELS[language] ?? DRAFT_MARKDOWN_LABELS.es;
   const parts = [
     `# ${draft.title}`,
     '',
-    `Generado: ${draft.generatedAt}`,
-    `Tipo: ${draft.brief.kind}`,
-    `Objetivo: ${draft.brief.objective}`,
+    `${report.generated}: ${draft.generatedAt}`,
+    `${labels.type}: ${draft.brief.kind}`,
+    `${report.objective}: ${draft.brief.objective}`,
     '',
-    '## Resumen',
+    `## ${labels.summary}`,
     draft.abstract,
     '',
     ...(draft.deepResearchStructure === 'single' ? [] : [
-      '## Esquema',
+      `## ${labels.outline}`,
       ...draft.outline.flatMap((section, index) => [
         `### ${index + 1}. ${section.title}`,
         section.purpose,
         '',
         ...section.keyClaims.map((claim) => `- ${claim}`),
-        ...(section.sources.length ? ['', `Fuentes: ${section.sources.join('; ')}`] : []),
+        ...(section.sources.length ? ['', `${labels.sources}: ${section.sources.join('; ')}`] : []),
         '',
       ]),
     ]),
-    '## Borrador',
+    `## ${labels.draft}`,
     // The body already opens with the abstract and closes with its limitations and
     // references, so those are rendered once — here from the body, not twice.
     stripLeadingAbstract(draft.draftMarkdown, draft.abstract),
     '',
-    '## Matriz de apoyo',
-    matrixTable(draft.matrix),
+    `## ${labels.matrix}`,
+    matrixTable(draft.matrix, report, labels, citationWords(language).source),
     '',
-    '## Siguientes pasos',
-    ...(draft.nextSteps.length ? draft.nextSteps.map((item) => `- ${item}`) : ['- Revisar el borrador.']),
+    `## ${report.recommendations}`,
+    ...(draft.nextSteps.length ? draft.nextSteps.map((item) => `- ${item}`) : [`- ${labels.reviewDraft}`]),
     '',
   ];
   return parts.join('\n');
 }
 
-function matrixTable(rows: WritingWorkshopMatrixRow[]): string {
-  if (rows.length === 0) return 'Sin matriz generada.';
-  const header = '| Papel | Afirmacion | Fuente | Evidencia | Notas |\n| --- | --- | --- | --- | --- |';
+function matrixTable(rows: WritingWorkshopMatrixRow[], report: DeepReportLabels, labels: DraftMarkdownLabels, sourceWord: string): string {
+  if (rows.length === 0) return labels.noMatrix;
+  const header = `| ${report.role} | ${report.claim} | ${report.source} | ${report.evidence} | ${report.notes} |\n| --- | --- | --- | --- | --- |`;
   const body = rows
     .map((row) =>
       [
         row.role,
         row.claim,
-        row.citation ? `[${row.sourceLabel || 'fuente'}](${row.citation})` : row.sourceLabel,
+        row.citation ? `[${row.sourceLabel || sourceWord}](${row.citation})` : row.sourceLabel,
         row.evidence,
         row.notes,
       ]

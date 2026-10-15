@@ -28,7 +28,7 @@ const OUT = path.join(repoRoot, '.tutorial-out', deck);
 const CARDS = path.join(OUT, 'cards');
 const NAME = `nodus-tutorial-${deck}-en`;
 const SUBS_NAME = `nodus-tutorial-${deck}`;
-const { TITLE: TITLE_TEXT } = await import(`../decks/${deck}/shots.mjs`);
+const { TITLE: TITLE_TEXT, END_CARD } = await import(`../decks/${deck}/shots.mjs`);
 
 const W = 1920;
 const H = 1080;
@@ -121,7 +121,14 @@ const titleHtml = `<!doctype html><html><head><meta charset="utf-8"><style>${BAS
   </div>
 </body></html>`;
 
-const endHtml = `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}
+const endHtml = END_CARD ? `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}
+.title { margin-top: 48px; font-size: 52px; font-weight: 600; }
+.destination { margin-top: 28px; font-size: 32px; color: #7c3aed; }
+.detail { margin-top: 28px; font-size: 23px; color: #4b4266; }
+</style></head><body><div class="wrap"><div class="mark">${logoSvg}</div>
+<div class="wordmark">NODUS</div><div class="title">${END_CARD.title}</div>
+<div class="destination">${END_CARD.destination}</div><div class="detail">${END_CARD.detail}</div>
+</div></body></html>` : `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}
 .tagline { margin-top: 44px; text-align: center;
   font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: 66px; line-height: 1.22; }
 .tagline .accent { color: #7c3aed; }

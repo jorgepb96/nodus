@@ -1,5 +1,4 @@
 import { app } from 'electron';
-import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -13,6 +12,7 @@ import type {
   ReasoningEffort,
 } from '@shared/types';
 import type { VisionImagePart } from '@shared/imageAnalysis';
+import { agentRuntimeStatus, ensureAgentRuntime, onAgentRuntimeChanged } from './agentRuntime';
 import { CodexAppServerClient } from './codexAppServerClient';
 import { resolveCodexReasoningEffort, runIsolatedCodexCompletion } from './codexCompletion';
 import { runIsolatedCodexImage } from './codexImage';
@@ -95,6 +95,15 @@ function emitStatus(status: ChatGptSubscriptionStatus): void {
   for (const listener of statusListeners) listener(status);
 }
 
+// The Codex CLI is downloaded the first time it is needed (./agentRuntime). Its
+// progress travels with the status, and the account is read again once it is ready.
+onAgentRuntimeChanged((kind) => {
+  if (kind !== 'codex') return;
+  const runtime = agentRuntimeStatus('codex');
+  if (runtime.state === 'ready') void refreshAndEmitStatus();
+  else emitStatus({ ...lastStatus, runtime });
+});
+
 function codexHome(): string {
   const dir = path.join(app.getPath('userData'), 'codex-subscription');
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
@@ -102,61 +111,13 @@ function codexHome(): string {
   return dir;
 }
 
-function unpackedAsarPath(file: string): string {
-  const marker = `${path.sep}app.asar${path.sep}`;
-  return file.includes(marker) ? file.replace(marker, `${path.sep}app.asar.unpacked${path.sep}`) : file;
-}
-
-export function resolveCodexBinaryPath(): string {
-  const target = (() => {
-    if (process.platform === 'darwin' && process.arch === 'arm64') return ['@openai/codex-darwin-arm64', 'aarch64-apple-darwin'];
-    if (process.platform === 'darwin' && process.arch === 'x64') return ['@openai/codex-darwin-x64', 'x86_64-apple-darwin'];
-    if (process.platform === 'linux' && process.arch === 'arm64') return ['@openai/codex-linux-arm64', 'aarch64-unknown-linux-musl'];
-    if (process.platform === 'linux' && process.arch === 'x64') return ['@openai/codex-linux-x64', 'x86_64-unknown-linux-musl'];
-    if (process.platform === 'win32' && process.arch === 'arm64') return ['@openai/codex-win32-arm64', 'aarch64-pc-windows-msvc'];
-    if (process.platform === 'win32' && process.arch === 'x64') return ['@openai/codex-win32-x64', 'x86_64-pc-windows-msvc'];
-    return null;
-  })();
-  if (!target) throw new Error(`Codex no es compatible con ${process.platform}/${process.arch}.`);
-
-  // The Electron bundle recreates __filename in its banner; using it also keeps
-  // the repository's CommonJS-based TS test harness compatible with this module.
-  const require = createRequire(__filename);
-  let packageJson: string;
-  try {
-    packageJson = require.resolve(`${target[0]}/package.json`);
-  } catch {
-    // electron-builder may keep optional dependencies nested under their
-    // parent package instead of hoisting them. Resolve the signed Codex loader
-    // first and accept only its own pinned optional runtime.
-    try {
-      const codexPackageJson = require.resolve('@openai/codex/package.json');
-      packageJson = path.join(
-        path.dirname(codexPackageJson),
-        'node_modules',
-        ...target[0].split('/'),
-        'package.json'
-      );
-      if (!fs.existsSync(packageJson)) throw new Error('nested runtime missing');
-    } catch {
-      throw new Error('No se encontró el runtime oficial de Codex incluido con Nodus.');
-    }
-  }
-  const executable = unpackedAsarPath(path.join(
-    path.dirname(packageJson),
-    'vendor',
-    target[1],
-    'bin',
-    process.platform === 'win32' ? 'codex.exe' : 'codex'
-  ));
-  if (!fs.existsSync(executable)) throw new Error('El ejecutable oficial de Codex no está disponible en esta instalación.');
-  return executable;
-}
-
-function getClient(): CodexAppServerClient {
+/** The App Server client, downloading the Codex CLI first if this machine lacks it. */
+async function getClient(): Promise<CodexAppServerClient> {
+  if (client) return client;
+  const binaryPath = await ensureAgentRuntime('codex');
   if (client) return client;
   client = new CodexAppServerClient({
-    binaryPath: resolveCodexBinaryPath(),
+    binaryPath,
     codexHome: codexHome(),
     appVersion: app.getVersion(),
   });
@@ -184,8 +145,13 @@ function mapRateLimits(snapshot: CodexRateLimitSnapshot | null): ChatGptSubscrip
 }
 
 async function readStatus(refreshToken = false): Promise<ChatGptSubscriptionStatus> {
+  // Reading the status never downloads the CLI: every visit to Providers reads it.
+  const runtimeState = agentRuntimeStatus('codex');
+  if (runtimeState.state !== 'ready') {
+    return { ...STATUS_UNAVAILABLE, available: true, runtime: runtimeState };
+  }
   try {
-    const runtime = getClient();
+    const runtime = await getClient();
     const response = await runtime.request<CodexAccountResponse>('account/read', { refreshToken });
     if (response.account?.type !== 'chatgpt') {
       return {
@@ -198,6 +164,7 @@ async function readStatus(refreshToken = false): Promise<ChatGptSubscriptionStat
         error: response.account
           ? 'Codex está autenticado con un método no permitido. Nodus solo admite el acceso gestionado con ChatGPT.'
           : null,
+        runtime: runtimeState,
       };
     }
 
@@ -217,11 +184,13 @@ async function readStatus(refreshToken = false): Promise<ChatGptSubscriptionStat
       planType: response.account.planType,
       rateLimits,
       error: null,
+      runtime: runtimeState,
     };
   } catch (error) {
     return {
       ...STATUS_UNAVAILABLE,
       error: error instanceof Error ? error.message : String(error),
+      runtime: agentRuntimeStatus('codex'),
     };
   }
 }
@@ -243,6 +212,9 @@ function invalidateConnectedCache(): void {
  *  forced token refresh, but pays for it once per window rather than per call. */
 async function ensureConnectedForCompletion(): Promise<void> {
   if (connectedCached && Date.now() - connectedAt < CONNECTED_TTL_MS) return;
+  // Using the provider is what downloads its CLI, so a connected account carried over
+  // from an installer that still shipped it keeps working after the update.
+  await ensureAgentRuntime('codex');
   const status = await readStatus(true);
   connectedCached = status.connected;
   connectedAt = Date.now();
@@ -274,8 +246,14 @@ export async function getChatGptSubscriptionStatus(): Promise<ChatGptSubscriptio
   return refreshAndEmitStatus();
 }
 
+/** Download the Codex CLI now (the Providers button), then read the account again. */
+export async function installChatGptSubscriptionRuntime(): Promise<ChatGptSubscriptionStatus> {
+  await ensureAgentRuntime('codex');
+  return refreshAndEmitStatus();
+}
+
 export async function startChatGptSubscriptionLogin(): Promise<ChatGptSubscriptionLogin> {
-  const response = await getClient().request<
+  const response = await (await getClient()).request<
     { type: 'chatgpt'; loginId: string; authUrl: string } | { type: string }
   >('account/login/start', {
     type: 'chatgpt',
@@ -292,13 +270,13 @@ export async function startChatGptSubscriptionLogin(): Promise<ChatGptSubscripti
 
 export async function cancelChatGptSubscriptionLogin(loginId: string): Promise<ChatGptSubscriptionStatus> {
   if (pendingLoginId && pendingLoginId !== loginId) throw new Error('El identificador de acceso ya no está activo.');
-  await getClient().request('account/login/cancel', { loginId });
+  await (await getClient()).request('account/login/cancel', { loginId });
   pendingLoginId = null;
   return refreshAndEmitStatus();
 }
 
 export async function logoutChatGptSubscription(): Promise<ChatGptSubscriptionStatus> {
-  await getClient().request('account/logout');
+  await (await getClient()).request('account/logout');
   pendingLoginId = null;
   modelCatalog = new Map();
   invalidateConnectedCache();
@@ -310,7 +288,7 @@ async function readModelCatalog(force = false): Promise<CodexModel[]> {
   const models: CodexModel[] = [];
   let cursor: string | null = null;
   do {
-    const page: { data: CodexModel[]; nextCursor: string | null } = await getClient().request('model/list', {
+    const page: { data: CodexModel[]; nextCursor: string | null } = await (await getClient()).request('model/list', {
       cursor,
       limit: 100,
       // Keep the full capability catalog for validating an older saved model; the
@@ -329,6 +307,7 @@ export async function listChatGptSubscriptionModels(): Promise<ModelInfo[]> {
 }
 
 export async function listChatGptSubscriptionModelCatalog(): Promise<ProviderModelCatalog> {
+  await ensureAgentRuntime('codex');
   const status = await readStatus(false);
   if (!status.connected) {
     throw new ProviderRuntimeError('Conecta primero una suscripción de ChatGPT en Proveedores y modelos.', 'auth');
@@ -356,7 +335,7 @@ export async function listChatGptSubscriptionModelCatalog(): Promise<ProviderMod
 export async function completeWithChatGptSubscription(options: CodexCompletionOptions): Promise<string> {
   await ensureConnectedForCompletion();
 
-  const runtime = getClient();
+  const runtime = await getClient();
   const catalog = await readModelCatalog(false);
   const selected = catalog.find((model) => model.id === options.model) ?? null;
   // Research Assistant's standard is the minimum, even when a saved choice was
@@ -397,7 +376,7 @@ export async function generateImageWithChatGptSubscription(options: {
 }): Promise<{ bytes: Buffer; mimeType: string }> {
   await ensureConnectedForCompletion();
 
-  const runtime = getClient();
+  const runtime = await getClient();
   // A stored model that left the catalog would fail deep inside `thread/start` with a
   // protocol error. Say plainly what happened and where to fix it instead.
   const catalog = await readModelCatalog(false);

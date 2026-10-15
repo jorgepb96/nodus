@@ -1,15 +1,19 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
 import { RESEARCH_CHAT_HISTORY_TRANSLATIONS } from './i18n.researchChatHistory';
 import { RESEARCH_ACTIVITY_TRANSLATIONS } from './i18n.researchActivity';
 import { RESEARCH_NOTEBOOK_TRANSLATIONS } from './i18n.researchNotebooks';
 import { CALENDAR_SYNC_TRANSLATIONS } from './i18n.calendarSync';
+import { AGENT_RUNTIME_TRANSLATIONS } from './i18n.agentRuntimes';
 import { ACADEMIC_MANUAL_TRANSLATIONS } from './i18n.academicManual';
 import { STUDY_SOURCE_TRANSLATIONS } from './i18n.studySources';
 import { COMPLETE_GUIDE_TRANSLATIONS } from './i18n.completeGuide';
 import { STUDY_FOCUS_TRANSLATIONS } from './i18n.studyFocus';
 import { STUDY_NOTE_LINKS_TRANSLATIONS } from './i18n.studyNoteLinks';
+import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
@@ -76,6 +80,7 @@ import { SOURCE_CITATION_TRANSLATIONS } from './i18n.sourceCitation';
 import { DEEP_RESEARCH_APPROACH_TRANSLATIONS } from './i18n.deepResearchApproaches';
 import { DICTIONARY_TRANSLATIONS } from './i18n.dictionary';
 import { DEEP_RESEARCH_VERSION_TRANSLATIONS } from './i18n.deepResearchVersions';
+import { GALLERY_FILTER_TRANSLATIONS } from './i18n.galleryFilters';
 import { DOCUMENT_UNDERSTANDING_TRANSLATIONS } from './i18n.documentUnderstanding';
 import { STALE_MODEL_TRANSLATIONS } from './i18n.staleModels';
 import { SCHEME_DECLUTTER_TRANSLATIONS } from './i18n.schemeDeclutter';
@@ -92,6 +97,7 @@ export const PT: Record<string, string> = {
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.pt,
   ...CALENDAR_SYNC_TRANSLATIONS["pt"],
+  ...AGENT_RUNTIME_TRANSLATIONS["pt"],
   ...ACADEMIC_MANUAL_TRANSLATIONS["pt"],
   // Nodus Tools catalogue
   "Navega por la web y guarda fuentes para tu investigación.": "Navega na web e guarda fontes para a tua investigação.",
@@ -136,6 +142,7 @@ export const PT: Record<string, string> = {
   ...SOURCE_CITATION_TRANSLATIONS.pt,
   ...DEEP_RESEARCH_APPROACH_TRANSLATIONS.pt,
   ...DEEP_RESEARCH_VERSION_TRANSLATIONS.pt,
+  ...GALLERY_FILTER_TRANSLATIONS.pt,
   ...DOCUMENT_UNDERSTANDING_TRANSLATIONS.pt,
   ...STALE_MODEL_TRANSLATIONS.pt,
   ...SCHEME_DECLUTTER_TRANSLATIONS.pt,
@@ -173,6 +180,7 @@ export const PT: Record<string, string> = {
   ...COMPLETE_GUIDE_TRANSLATIONS["pt"],
   ...STUDY_FOCUS_TRANSLATIONS["pt"],
   ...STUDY_NOTE_LINKS_TRANSLATIONS["pt"],
+  ...BOOKMARK_SORT_TRANSLATIONS["pt"],
   ...SCRIPTOR_AI_TRANSLATIONS["pt"],
   ...STUDY_IMPROVE_TRANSLATIONS.pt,
   ...WORKSPACE_TRANSLATIONS.pt,
@@ -8865,4 +8873,6 @@ export const PT: Record<string, string> = {
   "Audio pendiente": "Áudio pendente",
   "Modelo local": "Modelo local",
   "Detener dictado": "Parar ditado",
+  ...ACADEMIC_INTERFACE_TRANSLATIONS["pt"],
+  ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["pt"],
 };

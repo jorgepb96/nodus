@@ -22,6 +22,12 @@ function load(file) {
 
 test.after(() => rm(outDir, { recursive: true, force: true }));
 
+test('generic citation markers use the interface language while names and targets survive',()=>{
+ const {localizeResearchCitationLabels}=load('src/researchNoteProvenance.ts');
+ const input='[fuente](nodus://passage/scope:1) [Carey, 2020](nodus://work/paper) [fuente](https://example.com)';
+ assert.equal(localizeResearchCitationLabels(input,'Source'),'[Source](nodus://passage/scope:1) [Carey, 2020](nodus://work/paper) [fuente](https://example.com)');
+ assert.equal(input,'[fuente](nodus://passage/scope:1) [Carey, 2020](nodus://work/paper) [fuente](https://example.com)');
+});
 test('captured answers preserve exact content and resolve structured study citations', () => {
   const { researchMessageReferences, researchNoteSource } = load('src/researchNoteProvenance.ts');
   const content = 'Texto exacto ([Web](https://example.com/a)).\n\nFuente [S1](nodus://study/evidence/S1).';

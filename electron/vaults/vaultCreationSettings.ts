@@ -63,3 +63,14 @@ export function initializeVaultModelSelection(databasePath: string, selection: V
   }
   writeGlobalPrefs({ favorites, synthesisModel: selection.aiModel });
 }
+
+/** Only local vault creation calls this; restores and replicas retain their presentation. */
+export function initializeVaultInterfaceProfile(databasePath: string): void {
+  const db = new Database(databasePath);
+  try {
+    const row = db.prepare('SELECT value FROM settings WHERE key=?').get('app') as { value: string } | undefined;
+    const stored = row ? JSON.parse(row.value) : {};
+    db.prepare('INSERT INTO settings (key,value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')
+      .run('app', JSON.stringify({ ...stored, academicInterfaceProfile: 'simple', autoLightScan:false, autoDeepScanOnReadTag:false }));
+  } finally { db.close(); }
+}

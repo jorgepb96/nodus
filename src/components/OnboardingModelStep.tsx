@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AiProvider, EmbeddingProvider, ModelRef } from '@shared/types';
 import { PROVIDER_LABELS } from '@shared/providers';
-import { getNodusLocalModel, modelRefSupportsExtraction, type NodusLocalAiStatus } from '@shared/localAiModels';
+import { getNodusLocalModel, modelRefSupportsExtraction, modelRefSupportsCapability, type NodusLocalAiStatus } from '@shared/localAiModels';
 import {
   autoDiscoverableAiProviders,
   autoDiscoverableEmbeddingProviders,
@@ -13,7 +13,9 @@ import {
   type ModelChoice,
   type ProviderKeyMap,
 } from '@shared/onboardingModels';
-import { t, tx } from '../i18n';
+import { learningText } from '@shared/academicLearningCopy';
+import { isLocalModelProvider } from '@shared/providers';
+import { getActiveLang, t, tx } from '../i18n';
 import { SearchableModelSelect } from './SearchableModelSelect';
 import { SubscriptionQuotaNotice } from './ModelPicker';
 import { Icon } from './ui';
@@ -47,7 +49,7 @@ export function OnboardingModelStep({
   embeddingModel,
   onAiChange,
   onEmbeddingChange,
-  disabled,
+  disabled, purpose = 'analysis', cloudFirst = false, showEmbeddings = true,
 }: {
   providerKeys: ProviderKeyMap;
   aiModel: ModelRef | null;
@@ -55,7 +57,12 @@ export function OnboardingModelStep({
   onAiChange: (ref: ModelRef) => void;
   onEmbeddingChange: (ref: ModelRef) => void;
   disabled?: boolean;
+  purpose?: 'chat' | 'analysis';
+  cloudFirst?: boolean;
+  showEmbeddings?: boolean;
 }) {
+  const [localEnabled, setLocalEnabled] = useState(!cloudFirst);
+  const copy = (key: Parameters<typeof learningText>[0]) => learningText(key, getActiveLang());
   const [keys, setKeys] = useState<ProviderKeyMap>(providerKeys);
   const [aiChoices, setAiChoices] = useState<ModelChoice[]>([]);
   const [embeddingChoices, setEmbeddingChoices] = useState<ModelChoice[]>([]);
@@ -73,15 +80,15 @@ export function OnboardingModelStep({
   const discover = useCallback(async (active: ProviderKeyMap) => {
     setLoading(true);
     const [aiOutcomes, embeddingOutcomes] = await Promise.all([
-      Promise.all(autoDiscoverableAiProviders(active).map((provider) => listFor('ai', provider))),
-      Promise.all(autoDiscoverableEmbeddingProviders(active).map((provider) => listFor('embedding', provider))),
+      Promise.all(autoDiscoverableAiProviders(active).filter(provider => localEnabled || !isLocalModelProvider(provider)).map((provider) => listFor('ai', provider))),
+      showEmbeddings ? Promise.all(autoDiscoverableEmbeddingProviders(active).filter(provider => localEnabled || !isLocalModelProvider(provider)).map((provider) => listFor('embedding', provider))) : Promise.resolve([]),
     ]);
     const ai = collectDiscovery(aiOutcomes);
     const embedding = collectDiscovery(embeddingOutcomes);
     // The AI model becomes `synthesisModel`, which runs the scans in basic mode, so it must be able
     // to extract ideas. Drop vision-only local models (Qwen3.5-0.8B, LFM2.5) rather than offering
     // them for a role they cannot hold.
-    const aiChoicesCapable = ai.choices.filter((choice) => modelRefSupportsExtraction(choice));
+    const aiChoicesCapable = ai.choices.filter((choice) => purpose === 'analysis' ? modelRefSupportsExtraction(choice) : modelRefSupportsCapability(choice, 'chat'));
     setAiChoices(aiChoicesCapable);
     setEmbeddingChoices(embedding.choices);
     // One provider can fail for both roles; report it once.
@@ -101,12 +108,12 @@ export function OnboardingModelStep({
     // Discoveries re-run when a key is added, and this leaves the two selections alone:
     // they belong to the person, not to the listing.
     setLoading(false);
-  }, []);
+  }, [localEnabled, purpose, showEmbeddings]);
 
   useEffect(() => {
     void discover(keys);
-    void window.nodus.getNodusLocalAiStatus().then(setLocalStatus).catch(() => setLocalStatus(null));
-  }, []);
+    if (localEnabled) void window.nodus.getNodusLocalAiStatus().then(setLocalStatus).catch(() => setLocalStatus(null));
+  }, [discover, localEnabled]);
 
   const saveKey = async () => {
     if (!keyProvider || !keyValue.trim()) return;
@@ -156,8 +163,8 @@ export function OnboardingModelStep({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block text-sm">
-          {t('Modelo de IA')}
-          <span className="mt-0.5 block text-[11px] text-neutral-500">{t('Analiza, escribe y responde.')}</span>
+          {purpose === 'chat' ? t('Modelo del chat') : t('Modelo de IA')}
+          <span className="mt-0.5 block text-[11px] text-neutral-500">{purpose === 'chat' ? t('Pregunta sobre tus fuentes y comprueba las citas de las respuestas.') : copy('cloud')}</span>
           <div className="mt-1.5">
             <SearchableModelSelect
               testId="onboarding-ai-model"
@@ -178,7 +185,7 @@ export function OnboardingModelStep({
             <SubscriptionQuotaNotice model={aiModel} />
           </div>
         </label>
-        <label className="block text-sm">
+        {showEmbeddings && <label className="block text-sm">
           {t('Modelo de embeddings')}
           <span className="mt-0.5 block text-[11px] text-neutral-500">{t('Indexa el vault para buscar por significado.')}</span>
           <div className="mt-1.5">
@@ -194,9 +201,10 @@ export function OnboardingModelStep({
               noteFor={localNote}
             />
           </div>
-        </label>
+        </label>}
       </div>
 
+      {cloudFirst && <div className="rounded-lg border border-neutral-300 dark:border-neutral-700 p-3"><button type="button" className="btn btn-ghost text-xs" aria-expanded={localEnabled} onClick={() => setLocalEnabled(value => !value)}>{copy('local')}</button>{localEnabled && <p className="mt-2 text-xs leading-5 text-neutral-600 dark:text-neutral-400">{copy('localBody')}</p>}</div>}
       {failures.length > 0 && (
         <p className="text-[11px] leading-5 text-neutral-500" data-testid="onboarding-model-failures">
           {tx('Sin respuesta de {list}. Puedes continuar con el resto y revisarlo luego en Ajustes → Proveedores.', {

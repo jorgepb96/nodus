@@ -29,6 +29,7 @@ import type { AppSettings } from '@shared/types';
 // overrides, monitored collections and vault onboarding flags).
 
 export const GLOBAL_PREF_KEYS = [
+  'academicLearningProgress',
   'libraryGlobalEnabled',
   'libraryScope',
   'libraryScopeOnboardingVersion',

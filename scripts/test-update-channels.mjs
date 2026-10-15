@@ -123,8 +123,11 @@ test('stable and beta publication have isolated entry points and shared build lo
   assert.doesNotMatch(shared, /- os: macos-\d+-intel/, 'the Intel runner never sits in the matrix that gates publication');
   assert.match(shared, /platform: '--mac --arm64'/, 'each macOS runner packs exactly one architecture');
   assert.doesNotMatch(shared, /platform: '--mac --x64'/, 'Intel is built after publication, not before it');
-  assert.match(shared, /release-macos-intel:\n(?:    #.*\n)*    needs: verify-and-publish\n    uses: \.\/\.github\/workflows\/release-macos-intel\.yml/,
-    'Intel is appended only once the release is published');
+  const dispatch = shared.slice(shared.indexOf('  release-macos-intel:'));
+  assert.match(dispatch, /needs: verify-and-publish/);
+  assert.match(dispatch, /gh workflow run release-macos-intel\.yml/,
+    'Intel is appended independently only once the release is published');
+  assert.doesNotMatch(dispatch, /uses: \.\/\.github\/workflows/, 'the primary workflow does not wait for Intel');
   // The audited manifest gate and all native builds must pass before publication.
   assert.match(shared, /merge-mac-manifest:/, 'the supported macOS manifest is normalized before publication');
   assert.match(shared, /needs\.merge-mac-manifest\.result == 'success'/, 'publication waits for the merged manifest');

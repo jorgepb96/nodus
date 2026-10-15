@@ -46,6 +46,14 @@ try {
     ['[fuente](nodus://passage/work-1%237)'],
     'the tail contract exposes only canonical, de-duplicated targets copied from context',
   );
+  {
+    // The placeholder label and the instruction follow the answer's language: a model
+    // that copies a target whole must not put a Spanish word in an English answer.
+    const english = buildCitationOutputContract('{"citation":"nodus://work/w-1"}', 'en');
+    assert.deepEqual(english.exactTargets, ['[source](nodus://work/w-1)']);
+    assert.doesNotMatch(english.requirement, /respuesta|fuente|inválida|afirmación/i);
+    assert.deepEqual(buildCitationOutputContract('{"citation":"nodus://work/w-1"}', 'de').exactTargets, ['[Quelle](nodus://work/w-1)']);
+  }
   assert.deepEqual(
     extractCitationRefs('[cortada](nodus://work/a%2)'),
     [{ kind: 'work', id: 'a%2' }],

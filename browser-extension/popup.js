@@ -7,7 +7,7 @@ import { DEFAULT_NODUS_PORT, discoverNodus, extensionOrigin, normalizeConnectorP
 import { applyMetadataEdits, formatCreators } from './lib/metadata-form.js';
 import { ITEM_TYPES, byline, typeGlyph, typeLabel } from './lib/presentation.js';
 import { collectPageSnapshot } from './lib/snapshot.js';
-import { MAX_ATTACHMENT_BYTES, readResponseWithLimit } from './lib/upload.js';
+import { createCaptureReview, reviewedCaptureRequest, captureJobSummary } from './lib/capture-review.js';
 // The languages the package ships in _locales, keyed by the UI language Chrome
 // resolves them for. Anything else falls back to English, exactly like the
 // catalog lookup, so the copy and the document types never disagree.
@@ -21,6 +21,7 @@ function uiLocale() {
 }
 const $ = (id) => document.getElementById(id);
 const state = {
+  reviews: [], activeIndex: 0, connected: false, busy: false, jobs: [], missingOrigins: [],
   capture: null, captures: [], selectedCaptureIndexes: new Set(), tab: null,
   port: DEFAULT_NODUS_PORT, token: '', collections: [], tags: [], selectedCollection: null,
   selectedTags: [], tagsDirty: false, metadataDirty: new Set(), savedItemId: null,
@@ -75,31 +76,46 @@ function metadataEdits() {
   };
 }
 
+function commitReview() {
+  if (!state.capture) return;
+  state.capture.metadata = { ...applyMetadataEdits(state.capture.metadata, metadataEdits(), captureLabels()), itemType: $('item-type').value, tags: [...state.selectedTags] };
+  const choices = captureUiChoices();
+  state.capture.attachmentIndexes = [...choices.attachmentIndexes];
+  state.capture.includeSnapshot = choices.snapshot;
+}
+function selectReview(index) {
+  if (state.busy || !state.connected) return;
+  commitReview(); state.activeIndex = index; state.capture = state.reviews[index];
+  state.selectedTags = [...(state.capture.metadata.tags || [])]; state.metadataDirty.clear();
+  renderTags(); renderCapture();
+}
 function renderMultiCapture() {
-  const multiple = state.captures.length > 1;
+  const multiple = state.reviews.length > 1;
   $('multi-capture-block').classList.toggle('hidden', !multiple);
   if (!multiple) return;
-  $('multi-capture-title').textContent = msg('multipleDetected', [String(state.captures.length)]);
-  $('multi-capture-list').replaceChildren(...state.captures.map((capture, index) => {
-    const label = document.createElement('label'); label.className = 'multi-capture-row';
-    const input = document.createElement('input'); input.type = 'checkbox'; input.checked = state.selectedCaptureIndexes.has(index); input.dataset.captureIndex = String(index);
+  $('multi-capture-title').textContent = msg('multipleDetected', [String(state.reviews.length)]);
+  $('multi-capture-list').replaceChildren(...state.reviews.map((capture, index) => {
+    const row = document.createElement('div'); row.className = 'multi-capture-row';
+    const input = document.createElement('input'); input.type = 'checkbox'; input.checked = state.selectedCaptureIndexes.has(index); input.dataset.captureIndex = String(index); input.disabled = state.busy || !state.connected;
+    input.setAttribute('aria-label', capture.metadata.title);
     input.onchange = () => { if (input.checked) state.selectedCaptureIndexes.add(index); else state.selectedCaptureIndexes.delete(index); updateSaveLabel(); };
-    const copy = document.createElement('span');
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'review-reference'; button.dataset.reviewIndex = String(index); button.setAttribute('aria-pressed', String(state.activeIndex === index)); button.disabled = state.busy || !state.connected;
     const title = document.createElement('strong'); title.textContent = capture.metadata.title;
     const detail = document.createElement('small'); detail.textContent = byline(capture.metadata) || typeLabel(capture.metadata.itemType, uiLocale());
-    copy.append(title, detail); label.append(input, copy); return label;
+    button.append(title, detail); button.onclick = () => selectReview(index); row.append(input, button); return row;
   }));
 }
 
 function updateSaveLabel() {
   const count = state.captures.length > 1 ? state.selectedCaptureIndexes.size : 1;
-  $('save-button').disabled = count === 0;
+  $('save-button').disabled = count === 0 || !state.connected || state.busy;
   $('save-button').textContent = state.captures.length > 1 ? msg('saveMultiple', [String(count)]) : msg('save');
 }
 
 function renderCapture(choices = null) {
   const metadata = state.capture.metadata;
   const selectedType = choices?.itemType || metadata.itemType;
+  choices ||= { attachmentIndexes: new Set(state.capture.attachmentIndexes), snapshot: state.capture.includeSnapshot };
   $('item-type').replaceChildren(...ITEM_TYPES.map(([value]) => {
     const option = document.createElement('option'); option.value = value; option.textContent = typeLabel(value, uiLocale()); option.selected = value === selectedType; return option;
   }));
@@ -128,6 +144,8 @@ function renderCapture(choices = null) {
   }
   renderMultiCapture();
   updateSaveLabel();
+  for (const input of $('capture-view').querySelectorAll('input,select,textarea,button')) input.disabled = state.busy || !state.connected;
+  updateSaveLabel();
   show('capture-view');
 }
 
@@ -148,9 +166,10 @@ async function detectActiveTab() {
   } catch { /* Chrome's built-in PDF viewer does not accept injected scripts. */ }
   if (!snapshot) snapshot = { title: tab.title || '', url: tab.url, lang: chrome.i18n.getUILanguage(), contentType: '', metas: [], links: [], jsonLd: [], coins: [], anchors: [], html: '' };
   state.captures = detectCaptureCandidates(snapshot, captureLabels());
-  state.capture = state.captures[0];
+  state.reviews = state.captures.map(createCaptureReview);
+  state.capture = state.reviews[0];
   state.selectedCaptureIndexes = new Set(state.captures.map((_capture, index) => index));
-  state.selectedTags = state.captures.length > 1 ? [] : normalizeTags(state.capture.metadata.tags || []);
+  state.selectedTags = normalizeTags(state.capture.metadata.tags || []);
   state.tagsDirty = false;
   state.metadataDirty.clear();
   renderTags();
@@ -184,13 +203,9 @@ async function adoptConnection(connection) {
 }
 
 async function pair() {
-  const paired = await api('/api/browser/pair', { method: 'POST', body: JSON.stringify({
-    extensionVersion: chrome.runtime.getManifest().version,
-    extensionId: new URL(chrome.runtime.getURL('')).hostname,
-    pageUrl: state.capture?.pageUrl || state.tab?.url || '',
-  }) });
+  const paired = await chrome.runtime.sendMessage({ type: 'nodus:pair', port: state.port, pageUrl: state.capture?.pageUrl || '' });
+  if (!paired?.token) throw new Error(paired?.error || msg('backgroundTransferNoResult'));
   state.token = paired.token;
-  await chrome.storage.local.set({ port: state.port, token: state.token });
 }
 
 async function connect() {
@@ -216,18 +231,20 @@ async function loadCatalog() {
   if (!rememberedCollection) state.selectedCollection = null;
   $('collection-label').textContent = rememberedCollection?.name || msg('libraryRoot');
   renderCollectionRows('');
-  if (state.capture) {
-    $('enrichment-status').classList.remove('hidden');
-    try {
-      const preview = await api('/api/browser/preview', { method: 'POST', body: JSON.stringify({ ...state.capture, snapshotHtml: undefined }) });
-      const choices = captureUiChoices();
-      state.capture.metadata = preview.metadata ? { ...state.capture.metadata, ...preview.metadata, itemType: choices.itemType || preview.metadata.itemType } : state.capture.metadata;
-      state.captures[0] = state.capture;
-      if (!state.tagsDirty) { state.selectedTags = state.captures.length > 1 ? [] : normalizeTags(state.capture.metadata.tags || []); renderTags(); }
-      renderCapture(choices);
-    } catch { /* embedded metadata remains usable offline */ }
-    finally { $('enrichment-status').classList.add('hidden'); }
-  }
+  $('enrichment-status').classList.remove('hidden');
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(4, state.reviews.length) }, async () => {
+    while (next < state.reviews.length) {
+      const index = next++; const capture = state.reviews[index];
+      try {
+        const preview = await api('/api/browser/preview', { method: 'POST', body: JSON.stringify({ ...capture, snapshotHtml: undefined }) });
+        if (preview.metadata) capture.metadata = { ...capture.metadata, ...preview.metadata };
+      } catch { /* Embedded metadata remains reviewable offline. */ }
+    }
+  }));
+  state.connected = true; state.metadataDirty.clear();
+  state.selectedTags = [...(state.capture.metadata.tags || [])];
+  renderTags(); renderCapture(); $('enrichment-status').classList.add('hidden');
 }
 
 function renderCollectionRows(query) {
@@ -273,144 +290,57 @@ function renderTagSuggestions(query) {
   }));
 }
 
-async function requestAttachmentPermissions(attachments) {
-  const activeOrigin = new URL(state.capture.pageUrl).origin;
-  const origins = [...new Set(attachments.flatMap((attachment) => {
-    try {
-      const url = new URL(attachment.url);
-      if (!/^https?:$/.test(url.protocol) || url.origin === activeOrigin) return [];
-      return [`${url.origin}/*`];
-    } catch { return []; }
-  }))];
-  if (!origins.length) return { temporaryOrigins: [], deniedOrigins: [] };
-  const missing = [];
-  for (const origin of origins) {
-    try {
-      if (!(await chrome.permissions.contains({ origins: [origin] }))) missing.push(origin);
-    } catch { missing.push(origin); }
-  }
-  if (!missing.length) return { temporaryOrigins: [], deniedOrigins: [] };
-  try {
-    const granted = await chrome.permissions.request({ origins: missing });
-    return granted ? { temporaryOrigins: missing, deniedOrigins: [] } : { temporaryOrigins: [], deniedOrigins: missing };
-  } catch {
-    return { temporaryOrigins: [], deniedOrigins: missing };
-  }
+async function refreshJobs() {
+  const response = await chrome.runtime.sendMessage({ type: 'nodus:jobs' });
+  if (!response?.ok) return;
+  state.jobs = response.jobs; state.missingOrigins = response.missingOrigins;
+  renderJobs();
 }
-
-async function revokeAttachmentPermissions(origins) {
-  if (!origins.length || !chrome.permissions.remove) return;
-  try { await chrome.permissions.remove({ origins }); } catch { /* best effort; never hide the saved item */ }
-}
-
-async function browserUpload(itemId, attachment) {
-  const response = await fetch(attachment.url, { credentials: 'include' });
-  if (!response.ok) throw new Error(msg('downloadFailed', [attachmentName(attachment), String(response.status)]));
-  const contentType = (response.headers.get('content-type') || attachment.mimeType || 'application/octet-stream').split(';')[0];
-  if (attachment.mimeType === 'application/pdf' && contentType.includes('html')) throw new Error(msg('signInPageInsteadOfPdf', [attachmentName(attachment)]));
-  const bytes = await readResponseWithLimit(response, MAX_ATTACHMENT_BYTES, msg('fileExceedsLimit', [attachmentName(attachment)]));
-  return api(`/api/browser/items/${encodeURIComponent(itemId)}/attachments`, {
-    method: 'POST', body: bytes, headers: {
-      'Content-Type': 'application/octet-stream',
-      'X-Nodus-File-Name': encodeURIComponent(attachment.fileName || 'document'),
-      'X-Nodus-File-Title': encodeURIComponent(attachment.title || msg('capturedDocument')),
-      'X-Nodus-Mime-Type': encodeURIComponent(contentType),
-      'X-Nodus-Attachment-Role': attachment.role || 'supplement',
-      'X-Nodus-Source-Url': encodeURIComponent(attachment.url),
-    },
-  });
-}
-
-async function uploadPendingUploads(itemId, pendingUploads, initialAttachmentCount = 0, temporaryOrigins = []) {
-  if (!pendingUploads.length) return { attachmentCount: initialAttachmentCount, warnings: [] };
-  // The MV3 worker owns the transfer, so closing this popup does not cancel a
-  // long download. Never retry in the popup after a worker error: it may have
-  // already uploaded some files before its response channel closed.
-  if (chrome.runtime.sendMessage) {
-    try {
-      const result = await chrome.runtime.sendMessage({ type: 'nodus:upload-pending', itemId, pendingUploads, port: state.port, token: state.token, attachmentCount: initialAttachmentCount, temporaryOrigins });
-      if (result?.ok) return { ...result, attachmentCount: result.attachmentCount ?? initialAttachmentCount };
-      if (result?.error) return { attachmentCount: initialAttachmentCount, warnings: [result.error] };
-      return { attachmentCount: initialAttachmentCount, warnings: [msg('backgroundTransferNoResult')] };
-    } catch (error) {
-      return { attachmentCount: initialAttachmentCount, warnings: [error.message || String(error)] };
+function renderJobs() {
+  $('jobs-panel').classList.toggle('hidden', !state.jobs.length);
+  $('jobs-list').replaceChildren(...state.jobs.map((job) => {
+    const summary = captureJobSummary(job);
+    const row = document.createElement('div'); row.className = 'capture-job'; row.dataset.jobId = job.id;
+    const title = document.createElement('strong'); title.textContent = job.title;
+    const detail = document.createElement('p'); detail.textContent = `${msg('jobProgress', [String(summary.saved), String(summary.total), String(summary.files)])} · ${job.status === 'complete' ? msg('jobComplete') : job.status === 'failed' ? msg('jobFailed') : job.status === 'needs-permission' ? msg('jobNeedsPermission') : job.status === 'downloading' ? msg('jobDownloading') : msg('saving')}`;
+    row.append(title, detail);
+    const errors = [...summary.errors, ...job.entries.flatMap((entry) => entry.result?.warnings || [])];
+    for (const error of errors) { const p = document.createElement('p'); p.className = 'job-error'; p.textContent = error; row.append(p); }
+    if (summary.pending) { const pending = document.createElement('p'); pending.textContent = msg('jobPending', [String(summary.pending)]); row.append(pending); }
+    if (['failed', 'needs-permission'].includes(job.status)) {
+      const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'secondary-button'; retry.textContent = msg('retry');
+      retry.onclick = async () => { retry.disabled = true; await chrome.runtime.sendMessage({ type: 'nodus:retry', id: job.id }); await refreshJobs(); };
+      row.append(retry);
     }
-  }
-  const warnings = [];
-  let attachmentCount = initialAttachmentCount;
-  for (const pending of pendingUploads) {
-    try {
-      const uploaded = await browserUpload(itemId, pending);
-      attachmentCount = uploaded.attachmentCount ?? attachmentCount + 1;
-    } catch (error) { warnings.push(error.message || String(error)); }
-  }
-  return { attachmentCount, warnings };
+    for (const entry of job.entries.filter((entry) => entry.result)) {
+      const disposition = document.createElement('p'); disposition.textContent = entry.result.disposition === 'existing' ? `${msg('alreadySaved')} · ${msg('duplicateAvoided')}` : entry.result.deduplicated ? msg('updatedExisting') : msg('saved'); row.append(disposition);
+      const open = document.createElement('button'); open.type = 'button'; open.className = 'job-open'; open.textContent = `${msg('openInNodus')} · ${entry.title}`;
+      open.onclick = async () => {
+        const result = await chrome.runtime.sendMessage({ type: 'nodus:open', itemId: entry.result.itemId, port: job.port });
+        if (result?.ok) window.close(); else $('jobs-error').textContent = result?.error || msg('backgroundTransferNoResult');
+      }; row.append(open);
+    }
+    return row;
+  }));
+  $('authorize-button').classList.toggle('hidden', !state.missingOrigins.length);
 }
-
-async function saveCapture(capture, primary, includeSnapshot) {
-  const selectedAttachments = primary
-    ? [...document.querySelectorAll('[data-attachment-index]:checked')]
-      .map((input) => capture.attachments[Number(input.dataset.attachmentIndex)]).filter(Boolean)
-    : capture.attachments;
-  const metadata = primary
-    ? { ...applyMetadataEdits(capture.metadata, metadataEdits(), captureLabels()), itemType: $('item-type').value, tags: state.selectedTags }
-    : { ...capture.metadata, tags: state.selectedTags };
-  let temporaryOrigins = [];
-  try {
-    const result = await api('/api/browser/save', { method: 'POST', body: JSON.stringify({
-      ...capture, metadata, collectionId: state.selectedCollection, tags: state.selectedTags,
-      attachments: selectedAttachments,
-      snapshotHtml: includeSnapshot ? capture.snapshotHtml : undefined,
-    }) });
-    const pendingUploads = result.pendingUploads || [];
-    const permissions = await requestAttachmentPermissions(pendingUploads);
-    temporaryOrigins = permissions.temporaryOrigins;
-    const uploaded = await uploadPendingUploads(result.itemId, pendingUploads, result.attachmentCount || 0, temporaryOrigins);
-    return {
-      ...result,
-      attachmentCount: uploaded.attachmentCount,
-      warnings: [
-        ...(result.warnings || []),
-        ...(permissions.deniedOrigins.length ? [msg('permissionDenied', [permissions.deniedOrigins.join(', ')])] : []),
-        ...(uploaded.warnings || []),
-      ],
-    };
-  } finally {
-    // The worker also performs this cleanup: this path covers the local fallback
-    // and makes the normal open-popup flow release access immediately.
-    await revokeAttachmentPermissions(temporaryOrigins);
-  }
-}
-
 async function save() {
-  $('capture-error').classList.add('hidden'); $('save-button').disabled = true; $('save-button').textContent = msg('saving');
+  if (state.busy || !state.connected) return;
+  commitReview(); state.busy = true; updateSaveLabel();
+  $('capture-error').classList.add('hidden');
   try {
-    const indexes = state.captures.length > 1 ? [...state.selectedCaptureIndexes].sort((a, b) => a - b) : [0];
-    if (!indexes.length) throw new Error(msg('selectAtLeastOne'));
-    const results = [];
-    for (const index of indexes) {
-      const capture = state.captures[index];
-      results.push(await saveCapture(capture, index === 0, indexes.length === 1 && index === 0 && $('snapshot-checkbox').checked));
-    }
-    state.savedItemId = results.length === 1 ? results[0].itemId : null;
+    const requests = [...state.selectedCaptureIndexes].sort((a, b) => a - b).map((index) => reviewedCaptureRequest(state.reviews[index], state.selectedCollection));
+    if (!requests.length) throw new Error(msg('selectAtLeastOne'));
+    const response = await chrome.runtime.sendMessage({ type: 'nodus:enqueue', port: state.port, requests });
+    if (!response?.ok) throw new Error(response?.error || msg('backgroundTransferNoResult'));
     await chrome.storage.local.set({ lastCollectionId: state.selectedCollection });
-    const attachmentCount = results.reduce((total, result) => total + (result.attachmentCount || 0), 0);
-    const allExisting = results.every((result) => result.disposition === 'existing');
-    const anyDeduplicated = results.some((result) => result.deduplicated);
-    $('success-title').textContent = results.length === 1 && allExisting
-      ? msg('alreadySaved')
-      : results.length === 1 && anyDeduplicated ? msg('updatedExisting') : msg('saved');
-    $('success-summary').textContent = results.length > 1
-      ? msg('savedBatchSummary', [String(results.length), String(attachmentCount)])
-      : allExisting ? msg('duplicateAvoided') : msg('savedSummary', [String(attachmentCount)]);
-    $('open-button').classList.toggle('hidden', results.length > 1);
-    const warnings = results.flatMap((result) => result.warnings || []);
-    $('success-warnings').classList.toggle('hidden', !warnings.length);
-    $('success-warnings').replaceChildren(...warnings.map((warning) => { const p = document.createElement('p'); p.textContent = warning; return p; }));
-    show('success-view');
+    state.savedItemId = null;
+    $('success-title').textContent = msg('jobQueued'); $('success-summary').textContent = msg('jobContinues');
+    $('open-button').classList.add('hidden'); $('success-warnings').classList.add('hidden');
+    show('success-view'); await refreshJobs();
   } catch (error) {
     $('capture-error').textContent = error.message || String(error); $('capture-error').classList.remove('hidden');
-  } finally { updateSaveLabel(); }
+  } finally { state.busy = false; updateSaveLabel(); }
 }
 
 async function initConnection() {
@@ -437,6 +367,14 @@ async function initConnection() {
 }
 
 function wire() {
+  $('authorize-button').onclick = () => {
+    // Call directly in the click handler: no asynchronous work before request().
+    const origins = [...state.missingOrigins];
+    chrome.permissions.request({ origins }).then((granted) => {
+      if (!granted) $('jobs-error').textContent = msg('permissionDenied', [origins.join(', ')]);
+      return refreshJobs();
+    }).catch((error) => { $('jobs-error').textContent = error.message; });
+  };
   $('settings-button').onclick = () => chrome.runtime.openOptionsPage();
   $('pair-button').onclick = () => void connect();
   $('metadata-toggle').onclick = () => {
@@ -465,4 +403,6 @@ function wire() {
 }
 
 localize(); wire();
+chrome.storage.onChanged?.addListener(() => { void refreshJobs(); });
+await refreshJobs();
 try { await detectActiveTab(); await initConnection(); } catch (error) { $('unsupported-message').textContent = error.message || String(error); show('unsupported-view'); }

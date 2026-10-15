@@ -27,6 +27,7 @@ import {
 import { listStudyIdeasForSources } from '../db/studyKnowledgeRepo';
 import { completeJson, completeText } from './aiClient';
 import { retrieveStudyAssistantEntries } from './studySearch';
+import { citationWords } from '@shared/citationWords';
 import {
   approachRules,
   planApproachRetrieval,
@@ -376,13 +377,19 @@ function isFinal(value: unknown): value is StudyFinal {
   return Boolean(value && typeof value === 'object');
 }
 
-function escapeLabel(value: string): string {
-  return value.replaceAll('[', '').replaceAll(']', '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'Fuente';
+function escapeLabel(value: string, language: PromptLanguage): string {
+  return value.replaceAll('[', '').replaceAll(']', '').replace(/\s+/g, ' ').trim().slice(0, 120) || citationWords(language).source;
 }
 
-function locationLabel(entry: StudySearchIndexEntry): string {
+/** How a slide number is cited, next to the "p." of a page. */
+const SLIDE_ABBREVIATION: Record<PromptLanguage, string> = {
+  es: 'diap.', en: 'slide', fr: 'diapo', de: 'Folie', pt: 'diap.', 'pt-BR': 'slide', it: 'diap.', tr: 'slayt',
+  'zh-Hans': '幻灯片', 'zh-Hant': '投影片', vi: 'trang chiếu', ja: 'スライド', ru: 'слайд', uk: 'слайд', ko: '슬라이드',
+};
+
+function locationLabel(entry: StudySearchIndexEntry, language: PromptLanguage): string {
   if (entry.location.pageNumber) return `p. ${entry.location.pageNumber}`;
-  if (entry.location.slideNumber) return `diap. ${entry.location.slideNumber}`;
+  if (entry.location.slideNumber) return `${SLIDE_ABBREVIATION[language] ?? SLIDE_ABBREVIATION.en} ${entry.location.slideNumber}`;
   if (entry.location.timestampSeconds != null) {
     const minutes = Math.floor(entry.location.timestampSeconds / 60);
     const seconds = Math.floor(entry.location.timestampSeconds % 60).toString().padStart(2, '0');
@@ -397,7 +404,7 @@ function sourceUrl(entry: StudySearchIndexEntry): string {
   return `nodus://study/recording/${encodeURIComponent(entry.location.recordingId || entry.sourceId)}${entry.location.timestampSeconds != null ? `?t=${Math.max(0, Math.floor(entry.location.timestampSeconds))}` : ''}`;
 }
 
-function buildSources(entries: StudySearchIndexEntry[], limit = 18): StudyResearchSource[] {
+function buildSources(entries: StudySearchIndexEntry[], language: PromptLanguage, limit = 18): StudyResearchSource[] {
   const grouped = new Map<string, StudySearchIndexEntry[]>();
   for (const entry of entries) {
     const key = `${entry.kind}:${entry.sourceId}`;
@@ -407,9 +414,9 @@ function buildSources(entries: StudySearchIndexEntry[], limit = 18): StudyResear
   }
   return [...grouped.values()].slice(0, limit).map((chunks, index) => {
     const entry = chunks[0];
-    const location = chunks.map(locationLabel).filter(Boolean).filter((value, at, all) => all.indexOf(value) === at).slice(0, 4).join(' · ');
+    const location = chunks.map((chunk) => locationLabel(chunk, language)).filter(Boolean).filter((value, at, all) => all.indexOf(value) === at).slice(0, 4).join(' · ');
     const url = sourceUrl(entry);
-    const label = escapeLabel(`${entry.title}${location ? `, ${location}` : ''}`);
+    const label = escapeLabel(`${entry.title}${location ? `, ${location}` : ''}`, language);
     return {
       id: `S${index + 1}`,
       kind: entry.kind,
@@ -757,10 +764,10 @@ export async function generateStudyDeepResearchReport(
       rules: approachRules(approach, unitMode ? 'unit' : 'study'),
     };
   }
-  const ordinarySources = buildSources(ordinaryRetrieved);
+  const ordinarySources = buildSources(ordinaryRetrieved, language);
   const sources = approach === 'general'
     ? ordinarySources
-    : mergeStudySources(ordinarySources, buildSources(retrieved, 24));
+    : mergeStudySources(ordinarySources, buildSources(retrieved, language, 24));
   if (!sources.length) {
     throw new Error(copy.progress.noSources(unitMode));
   }

@@ -3,7 +3,8 @@
 // de-duplicating and — critically — stripping any nodus:// citation that the
 // model is not allowed to use, so a hallucinated passage id never reaches the
 // rendered text as a broken "⚠" link.
-import type { CitationRef } from '@shared/types';
+import type { CitationRef, PromptLanguage } from '@shared/types';
+import { citationWords } from '../../shared/citationWords';
 
 /** Citation kinds a project suggestion may reference (passages are never project materials). */
 export const CITATION_KINDS: CitationRef['kind'][] = ['idea', 'work', 'gap', 'contradiction'];
@@ -25,6 +26,25 @@ export function citationUrl(ref: CitationRef): string {
   return `nodus://${ref.kind}/${encodeURIComponent(ref.id)}`;
 }
 
+/** The contract's instruction, in the language the answer is written in. */
+const CITATION_CONTRACT_REQUIREMENT: Record<PromptLanguage, string> = {
+  es: 'La respuesta es inválida si usa el corpus sin incluir citas Markdown verificables. Después de cada afirmación sustantiva, copia el destino exacto de una fuente pertinente de esta lista y escribe como texto visible «Autor, Año»; no inventes ids, no cites orientación documental y no agrupes todas las citas solo al final.',
+  en: 'The answer is invalid if it uses the corpus without verifiable Markdown citations. After each substantive claim, copy the exact target of a relevant source from this list and write «Author, Year» as the visible text; do not invent ids, do not cite documentary orientation, and do not group every citation at the end.',
+  fr: 'La réponse est invalide si elle utilise le corpus sans citations Markdown vérifiables. Après chaque affirmation substantielle, copiez la cible exacte d’une source pertinente de cette liste et écrivez « Auteur, Année » comme texte visible ; n’inventez pas d’identifiants, ne citez pas l’orientation documentaire et ne regroupez pas toutes les citations à la fin.',
+  de: 'Die Antwort ist ungültig, wenn sie das Korpus ohne überprüfbare Markdown-Zitate verwendet. Kopieren Sie nach jeder inhaltlichen Aussage das exakte Ziel einer passenden Quelle aus dieser Liste und schreiben Sie „Autor, Jahr“ als sichtbaren Text; erfinden Sie keine IDs, zitieren Sie keine Dokumentorientierung und sammeln Sie nicht alle Zitate am Ende.',
+  pt: 'A resposta é inválida se usar o corpus sem citações Markdown verificáveis. Depois de cada afirmação substantiva, copia o destino exato de uma fonte pertinente desta lista e escreve «Autor, Ano» como texto visível; não inventes ids, não cites a orientação documental e não agrupes todas as citações no final.',
+  'pt-BR': 'A resposta é inválida se usar o corpus sem citações Markdown verificáveis. Depois de cada afirmação substantiva, copie o destino exato de uma fonte pertinente desta lista e escreva “Autor, Ano” como texto visível; não invente ids, não cite a orientação documental e não agrupe todas as citações no final.',
+  it: 'La risposta non è valida se usa il corpus senza citazioni Markdown verificabili. Dopo ogni affermazione sostanziale, copia la destinazione esatta di una fonte pertinente da questo elenco e scrivi «Autore, Anno» come testo visibile; non inventare id, non citare l’orientamento documentale e non raggruppare tutte le citazioni alla fine.',
+  tr: 'Yanıt, derlemi doğrulanabilir Markdown atıfları olmadan kullanırsa geçersizdir. Her önemli iddiadan sonra bu listeden ilgili bir kaynağın tam hedefini kopyalayın ve görünen metin olarak “Yazar, Yıl” yazın; kimlik uydurmayın, belge yönlendirmesine atıf yapmayın ve tüm atıfları sona toplamayın.',
+  'zh-Hans': '如果回答使用了语料库却没有可验证的 Markdown 引用，则回答无效。每个实质性论断之后，从此列表中复制相关来源的准确目标，并以“作者, 年份”作为可见文本；不要编造 id，不要引用文献导引，也不要把所有引用都集中在结尾。',
+  'zh-Hant': '如果回答使用了語料庫卻沒有可驗證的 Markdown 引用，則回答無效。每個實質性論斷之後，從此清單中複製相關來源的準確目標，並以「作者, 年份」作為可見文字；不要編造 id，不要引用文獻導引，也不要把所有引用都集中在結尾。',
+  vi: 'Câu trả lời không hợp lệ nếu dùng kho ngữ liệu mà không có trích dẫn Markdown kiểm chứng được. Sau mỗi khẳng định quan trọng, hãy sao chép đúng đích của một nguồn phù hợp trong danh sách này và viết «Tác giả, Năm» làm văn bản hiển thị; không bịa id, không trích dẫn phần định hướng tài liệu và không dồn mọi trích dẫn xuống cuối.',
+  ja: 'コーパスを使いながら検証可能な Markdown 引用を含まない回答は無効です。実質的な主張のたびに、このリストから該当する出典の正確なリンク先をコピーし、表示テキストには「著者, 年」と書いてください。id を作らず、文書ガイドを引用せず、引用を末尾にまとめないでください。',
+  ru: 'Ответ недействителен, если он использует корпус без проверяемых ссылок Markdown. После каждого содержательного утверждения скопируйте точную цель подходящего источника из этого списка и напишите «Автор, Год» как видимый текст; не выдумывайте идентификаторы, не цитируйте документальные ориентиры и не собирайте все ссылки в конце.',
+  uk: 'Відповідь недійсна, якщо вона використовує корпус без перевірюваних посилань Markdown. Після кожного змістовного твердження скопіюйте точну ціль відповідного джерела з цього списку та напишіть «Автор, Рік» як видимий текст; не вигадуйте ідентифікатори, не цитуйте документальні орієнтири й не збирайте всі посилання наприкінці.',
+  ko: '코퍼스를 사용하면서 검증 가능한 Markdown 인용이 없으면 답변은 무효입니다. 실질적인 주장마다 이 목록에서 관련 출처의 정확한 대상을 복사하고 보이는 텍스트로 "저자, 연도"를 쓰세요. id를 지어내지 말고, 문헌 안내를 인용하지 말고, 모든 인용을 끝에 몰아 두지 마세요.',
+};
+
 /**
  * Keep the citation contract close to the end of very large chat prompts. Some
  * providers follow the system rule in short contexts but omit every link once
@@ -32,19 +52,21 @@ export function citationUrl(ref: CitationRef): string {
  * These are not new or inferred sources: every target is copied from the exact
  * context and the normal existence + in-context allow-list still runs after
  * generation.
+ *
+ * The placeholder label is written in the answer's language, because a model
+ * that copies the target whole would otherwise show it to the reader; the
+ * label repair afterwards replaces it with the source's author-year anyway.
  */
-export function buildCitationOutputContract(sourceContext: string): {
+export function buildCitationOutputContract(sourceContext: string, language: PromptLanguage = 'es'): {
   requirement: string;
   exactTargets: string[];
 } | null {
   const refs = extractCitationRefs(sourceContext);
   if (!refs.length) return null;
+  const label = citationWords(language).source;
   return {
-    requirement:
-      'La respuesta es inválida si usa el corpus sin incluir citas Markdown verificables. ' +
-      'Después de cada afirmación sustantiva, copia el destino exacto de una fuente pertinente de esta lista; ' +
-      'no inventes ids, no cites orientación documental y no agrupes todas las citas solo al final.',
-    exactTargets: refs.slice(0, 40).map((ref) => `[fuente](${citationUrl(ref)})`),
+    requirement: CITATION_CONTRACT_REQUIREMENT[language] ?? CITATION_CONTRACT_REQUIREMENT.en,
+    exactTargets: refs.slice(0, 40).map((ref) => `[${label}](${citationUrl(ref)})`),
   };
 }
 

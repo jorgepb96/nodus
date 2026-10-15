@@ -73,6 +73,34 @@ try {
   ]);
   assert.equal(racedA.itemId, racedB.itemId, 'concurrent captures must share one deduplicated record');
   assert.deepEqual(new Set([racedA.disposition, racedB.disposition]), new Set(['created', 'existing']));
+  const batch = ['First paper', 'Second book'].map((title, index) => ({
+    pageUrl: 'https://catalog.example/search', metadataSource: 'coins', sourceIsResultPage: true, metadataReviewed: true,
+    captureRequestId: `aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa:${index}`,
+    metadata: { title, itemType: index ? 'book' : 'journal-article', creators: [], url: 'https://catalog.example/search', year: null,
+      ...(index ? { isbn: ['9788400000000'] } : { doi: '10.1000/one' }) },
+  }));
+  const batchFirst = await capture.saveBrowserCapture(batch[0]);
+  const batchSecond = await capture.saveBrowserCapture(batch[1]);
+  assert.notEqual(batchFirst.itemId, batchSecond.itemId, 'a listing URL cannot merge independent records');
+  assert.deepEqual(library.getGlobalLibraryItem(batchFirst.itemId).metadata.isbn, []);
+  const replay = await capture.saveBrowserCapture(batch[1]);
+  assert.equal(replay.itemId, batchSecond.itemId, 'a lost acknowledgement is replayed idempotently');
+  assert.equal(replay.matchedBy, 'request');
+  const originalResolver = library.resolveGlobalLibraryMetadata;
+  library.resolveGlobalLibraryMetadata = async () => ({ candidates: [{ metadata: {
+    title: 'Provider title', itemType: 'journal-article', creators: [{ creatorType: 'author', name: 'Provider author', fieldMode: 1 }],
+    year: 2020, isbn: [], issn: [], tags: ['unwanted provider tag'],
+  } }] });
+  try {
+    const reviewed = await capture.saveBrowserCapture({
+      pageUrl: 'https://example.test/reviewed.pdf', metadataSource: 'direct-file', metadataReviewed: true,
+      metadata: { title: 'Corrected title', itemType: 'report', creators: [{ creatorType: 'editor', name: 'Corrected editor', fieldMode: 1 }],
+        doi: '10.1000/reviewed', url: 'https://example.test/reviewed.pdf', year: null, isbn: [], issn: [], tags: [] }, tags: [],
+    });
+    const storedReview = library.getGlobalLibraryItem(reviewed.itemId).metadata;
+    assert.equal(storedReview.title, 'Corrected title'); assert.equal(storedReview.itemType, 'report');
+    assert.equal(storedReview.creators[0].creatorType, 'editor'); assert.deepEqual(storedReview.tags, []);
+  } finally { library.resolveGlobalLibraryMetadata = originalResolver; }
   console.log('Browser capture deduplication reuses records, preserves better metadata, and strips tracking URL parameters.');
 } finally {
   library.closeGlobalLibrary();

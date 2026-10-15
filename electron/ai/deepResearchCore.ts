@@ -7,6 +7,7 @@ import {
   referenceEntry as sharedReferenceEntry,
   sourceLabelFromWork,
 } from '@shared/citationLabel';
+import { citationWords } from '@shared/citationWords';
 import type {
   DeepResearchMeta,
   DeepResearchProgress,
@@ -751,6 +752,8 @@ export interface SnapshotMaps {
   /** What each contradiction actually opposes, and who holds each side. */
   contradictionById: Map<string, { label: string; summary: string; sources: string[] }>;
   validIds: Set<string>;
+  /** Language the report is written in; names the citations that have no author-year. */
+  language?: PromptLanguage;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2017,7 +2020,7 @@ export function buildPlanInput(
       label: i.label,
       type: i.type,
       statement: clip(i.statement, 220),
-      works: i.works.map((w) => `${w.authors[0] ?? 'Autor'}${w.year ? ` (${w.year})` : ''}`).join('; '),
+      works: i.works.map((w) => `${w.authors[0] ?? citationWords(language).author}${w.year ? ` (${w.year})` : ''}`).join('; '),
     })),
     themes: snapshot.themes.slice(0, POOL_LIMITS.themes).map((t) => ({ id: t.id, label: t.label, summary: clip(t.summary, 160) })),
     gaps: snapshot.gaps.slice(0, POOL_LIMITS.gaps).map((g) => ({ id: g.id, label: g.label, summary: clip(g.summary, 160) })),
@@ -2028,7 +2031,7 @@ export function buildPlanInput(
     passages: passages.map((passage) => ({
         id: passage.id,
         workId: passage.nodus_id,
-        source: `${passage.authors[0] ?? 'Autor'}${passage.year ? ` (${passage.year})` : ''}`,
+        source: `${passage.authors[0] ?? citationWords(language).author}${passage.year ? ` (${passage.year})` : ''}`,
         page: passage.pageLabel,
         extract: excerpts.get(passage.id)!,
       })),
@@ -2736,7 +2739,7 @@ function degradedSection(section: DeepResearchPlanSection, maps: SnapshotMaps, L
     .filter((idea): idea is WritingWorkshopIdeaCandidate => !!idea)
     .slice(0, 8)
     .map((idea) => {
-      const token = ideaCitation(idea);
+      const token = ideaCitation(idea, maps.language);
       return `- ${clip(idea.statement || idea.label, 260)} ${token}`;
     });
   if (bullets.length > 0) lines.push(...bullets);
@@ -2804,6 +2807,7 @@ function normalizeCitationIdentity(value: string): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function buildSnapshotMaps(snapshot: WritingWorkshopSnapshot): SnapshotMaps {
+  const language = snapshot.brief?.language ?? 'es';
   const ideaById = new Map<string, WritingWorkshopIdeaCandidate>();
   const workInfoById = new Map<string, WorkInfo>();
   const passageWorkId = new Map<string, string>();
@@ -2838,7 +2842,7 @@ export function buildSnapshotMaps(snapshot: WritingWorkshopSnapshot): SnapshotMa
     }
   }
   for (const g of snapshot.gaps)
-    gapById.set(g.id, { label: g.label, summary: g.summary ?? '', source: sourceLabelFromWork(g.work) });
+    gapById.set(g.id, { label: g.label, summary: g.summary ?? '', source: sourceLabelFromWork(g.work, language) });
   for (const c of snapshot.contradictions)
     contradictionById.set(c.id, { label: c.label, summary: c.summary ?? '', sources: c.sources ?? [] });
   for (const p of snapshot.passages) {
@@ -2864,7 +2868,7 @@ export function buildSnapshotMaps(snapshot: WritingWorkshopSnapshot): SnapshotMa
   for (const id of contradictionById.keys()) validIds.add(`contradiction:${id}`);
   for (const id of passageWorkId.keys()) validIds.add(`passage:${id}`);
 
-  return { ideaById, workInfoById, passageWorkId, passagePage, passageText, gapById, contradictionById, validIds };
+  return { ideaById, workInfoById, passageWorkId, passagePage, passageText, gapById, contradictionById, validIds, language };
 }
 
 /**
@@ -3081,6 +3085,8 @@ export function applyCitationPolicy(
     contradictions: new Set<string>(),
     passages: new Set<string>(),
   };
+  const language = maps.language ?? 'es';
+  const words = citationWords(language);
   const out = repairLooseCitations(markdown).replace(CITATION_RE, (_full, label: string, type: string, rawId: string) => {
     let id = rawId;
     try {
@@ -3096,18 +3102,18 @@ export function applyCitationPolicy(
       case 'idea': {
         cited.ideas.add(id);
         const idea = maps.ideaById.get(id);
-        const canonical = idea ? sourceLabelFromWork(idea.works[0]) : label;
+        const canonical = idea ? sourceLabelFromWork(idea.works[0], language) : label;
         return `[${canonical || label}](nodus://idea/${encodeURIComponent(id)})`;
       }
       case 'work': {
         cited.works.add(id);
-        const canonical = sourceLabelFromWork(maps.workInfoById.get(id)) || label;
+        const canonical = sourceLabelFromWork(maps.workInfoById.get(id), language) || label;
         return `[${canonical}](nodus://work/${encodeURIComponent(id)})`;
       }
       case 'passage': {
         cited.passages.add(id);
         const workId = maps.passageWorkId.get(id);
-        const base = sourceLabelFromWork(workId ? maps.workInfoById.get(workId) : undefined) || label;
+        const base = sourceLabelFromWork(workId ? maps.workInfoById.get(workId) : undefined, language) || label;
         const page = maps.passagePage.get(id);
         const withPage = page ? `${base}, ${page}` : base;
         return `[${withPage}](nodus://passage/${encodeURIComponent(id)})`;
@@ -3118,10 +3124,10 @@ export function applyCitationPolicy(
       // not in the visible citation.
       case 'gap':
         cited.gaps.add(id);
-        return `[${maps.gapById.get(id)?.source || 'hueco'}](nodus://gap/${encodeURIComponent(id)})`;
+        return `[${maps.gapById.get(id)?.source || words.gap}](nodus://gap/${encodeURIComponent(id)})`;
       case 'contradiction':
         cited.contradictions.add(id);
-        return `[${maps.contradictionById.get(id)?.sources[0] || 'contradicción'}](nodus://contradiction/${encodeURIComponent(id)})`;
+        return `[${maps.contradictionById.get(id)?.sources[0] || words.contradiction}](nodus://contradiction/${encodeURIComponent(id)})`;
       default:
         return label || '';
     }
@@ -3378,7 +3384,7 @@ function buildMatrix(coveredIdeaIds: Set<string>, maps: SnapshotMaps, L: Labels)
     rows.push({
       claim: clip(idea.statement || idea.label, 240),
       role: matrixRole(idea.type),
-      sourceLabel: sourceLabelFromWork(idea.works[0]) || L.corpusSource,
+      sourceLabel: sourceLabelFromWork(idea.works[0], maps.language) || L.corpusSource,
       citation: `nodus://idea/${encodeURIComponent(id)}`,
       evidence: idea.evidenceCount > 0 ? L.anchoredEvidence(idea.evidenceCount) : L.derivedIdea,
       notes: idea.workCount > 1 ? L.supportedBy(idea.workCount) : L.singleSupport,
@@ -3471,7 +3477,7 @@ function sectionSources(section: DeepResearchPlanSection, maps: SnapshotMaps): s
     .map((id) => maps.ideaById.get(id))
     .filter((idea): idea is WritingWorkshopIdeaCandidate => !!idea)
     .slice(0, 8)
-    .map((idea) => ideaCitation(idea));
+    .map((idea) => ideaCitation(idea, maps.language));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3480,6 +3486,8 @@ function sectionSources(section: DeepResearchPlanSection, maps: SnapshotMaps): s
 
 export function buildCitationMenu(section: DeepResearchPlanSection, maps: SnapshotMaps): CitationMenuItem[] {
   const items: CitationMenuItem[] = [];
+  const language = maps.language ?? 'es';
+  const words = citationWords(language);
   const excerpts = passageExcerpts(section.passageIds.flatMap(id => {
     const text = maps.passageText.get(id);
     return text?.trim() && maps.passageWorkId.has(id) ? [{ id, text }] : [];
@@ -3492,10 +3500,10 @@ export function buildCitationMenu(section: DeepResearchPlanSection, maps: Snapsh
     const idea = maps.ideaById.get(id);
     if (!idea) continue;
     items.push({
-      token: ideaCitation(idea),
+      token: ideaCitation(idea, language),
       kind: 'idea',
       note: clip(idea.statement || idea.label, IDEA_NOTE_CHARS),
-      source: ideaSupportLabel(idea),
+      source: ideaSupportLabel(idea, language),
     });
   }
   for (const id of section.workIds) {
@@ -3504,17 +3512,17 @@ export function buildCitationMenu(section: DeepResearchPlanSection, maps: Snapsh
     // claim. Scoped documentary runs must cite their actual passages or Ideas.
     if (!work || work.metadataOnly) continue;
     items.push({
-      token: `[${sourceLabelFromWork(work)}](nodus://work/${encodeURIComponent(id)})`,
+      token: `[${sourceLabelFromWork(work, language)}](nodus://work/${encodeURIComponent(id)})`,
       kind: 'work',
       note: clip(work.title, 200),
-      source: sourceLabelFromWork(work),
+      source: sourceLabelFromWork(work, language),
     });
   }
   for (const id of section.gapIds) {
     const gap = maps.gapById.get(id);
     if (!gap) continue;
     items.push({
-      token: `[${gap.source || 'hueco'}](nodus://gap/${encodeURIComponent(id)})`,
+      token: `[${gap.source || words.gap}](nodus://gap/${encodeURIComponent(id)})`,
       kind: 'gap',
       note: clip(gap.summary || gap.label, IDEA_NOTE_CHARS),
     });
@@ -3525,7 +3533,7 @@ export function buildCitationMenu(section: DeepResearchPlanSection, maps: Snapsh
     const sides = contradiction.label ? `Posturas enfrentadas: ${contradiction.label}. ` : '';
     const who = contradiction.sources.length ? ` Lo sostienen ${contradiction.sources.join('; ')}.` : '';
     items.push({
-      token: `[${contradiction.sources[0] || 'contradicción'}](nodus://contradiction/${encodeURIComponent(id)})`,
+      token: `[${contradiction.sources[0] || words.contradiction}](nodus://contradiction/${encodeURIComponent(id)})`,
       kind: 'contradiction',
       note: `${sides}${clip(contradiction.summary, IDEA_NOTE_CHARS)}${who}`.trim(),
       source: contradiction.sources.join('; ') || undefined,
@@ -3538,7 +3546,7 @@ export function buildCitationMenu(section: DeepResearchPlanSection, maps: Snapsh
     // number attached to words the writer never saw.
     if (!workId || !text) continue;
     const page = maps.passagePage.get(id);
-    const label = `${sourceLabelFromWork(maps.workInfoById.get(workId))}${page ? `, ${page}` : ''}`;
+    const label = `${sourceLabelFromWork(maps.workInfoById.get(workId), language)}${page ? `, ${page}` : ''}`;
     items.push({
       token: `[${label}](nodus://passage/${encodeURIComponent(id)})`,
       kind: 'passage',
@@ -3611,11 +3619,11 @@ function citationUrlsFromMenu(menu: CitationMenuItem[]): Set<string> {
 function sourceLabelForClaim(claim: CitationClaim, maps: SnapshotMaps): string {
   switch (claim.kind) {
     case 'idea':
-      return sourceLabelFromWork(maps.ideaById.get(claim.id)?.works[0]) || '';
+      return sourceLabelFromWork(maps.ideaById.get(claim.id)?.works[0], maps.language) || '';
     case 'passage': {
       const workId = maps.passageWorkId.get(claim.id);
       const page = maps.passagePage.get(claim.id);
-      const base = sourceLabelFromWork(workId ? maps.workInfoById.get(workId) : undefined);
+      const base = sourceLabelFromWork(workId ? maps.workInfoById.get(workId) : undefined, maps.language);
       return page ? `${base}, ${page}` : base;
     }
     case 'gap':
@@ -3628,16 +3636,16 @@ function sourceLabelForClaim(claim: CitationClaim, maps: SnapshotMaps): string {
 }
 
 /** Which works back an idea, so the writer can name them in prose. */
-function ideaSupportLabel(idea: WritingWorkshopIdeaCandidate): string {
+function ideaSupportLabel(idea: WritingWorkshopIdeaCandidate, language?: PromptLanguage): string {
   return idea.works
     .slice(0, 3)
-    .map((w) => sourceLabelFromWork(w))
+    .map((w) => sourceLabelFromWork(w, language))
     .filter(Boolean)
     .join('; ');
 }
 
-function ideaCitation(idea: WritingWorkshopIdeaCandidate): string {
-  const label = sourceLabelFromWork(idea.works[0]) || idea.label;
+function ideaCitation(idea: WritingWorkshopIdeaCandidate, language?: PromptLanguage): string {
+  const label = sourceLabelFromWork(idea.works[0], language) || idea.label;
   return `[${label}](nodus://idea/${encodeURIComponent(idea.id)})`;
 }
 
@@ -3661,31 +3669,33 @@ export interface CitationCatalog {
 }
 
 export function buildCitationCatalog(snapshot: WritingWorkshopSnapshot): CitationCatalog {
+  const language = snapshot.brief?.language ?? 'es';
+  const words = citationWords(language);
   const passages = snapshot.passages.filter(passage => passage.summary?.trim()).slice(0, POOL_LIMITS.passages);
   const excerpts = passageExcerpts(passages.map(passage => ({ id: passage.id, text: passage.summary })));
   return {
     ideas: snapshot.ideas.slice(0, POOL_LIMITS.ideas).map((i) => ({
-      token: ideaCitation(i),
+      token: ideaCitation(i, language),
       note: clip(i.statement || i.label, 200),
       type: i.type,
-      works: i.works.map((w) => `${w.authors[0] ?? 'Autor'}${w.year ? ` (${w.year})` : ''}`).join('; '),
+      works: i.works.map((w) => `${w.authors[0] ?? citationWords(language).author}${w.year ? ` (${w.year})` : ''}`).join('; '),
     })),
     works: snapshot.works.slice(0, POOL_LIMITS.works).map((w) => ({
-      token: `[${sourceLabelFromWork(w) || w.label}](nodus://work/${encodeURIComponent(w.id)})`,
+      token: `[${sourceLabelFromWork(w, language) || w.label}](nodus://work/${encodeURIComponent(w.id)})`,
       note: clip(w.title || w.label, 160),
     })),
     gaps: snapshot.gaps.slice(0, POOL_LIMITS.gaps).map((g) => ({
-      token: `[${sourceLabelFromWork(g.work) || 'hueco'}](nodus://gap/${encodeURIComponent(g.id)})`,
+      token: `[${sourceLabelFromWork(g.work, language) || words.gap}](nodus://gap/${encodeURIComponent(g.id)})`,
       note: clip(g.summary || g.label, 160),
     })),
     contradictions: snapshot.contradictions.slice(0, POOL_LIMITS.contradictions).map((c) => ({
-      token: `[${c.sources?.[0] || 'contradicción'}](nodus://contradiction/${encodeURIComponent(c.id)})`,
+      token: `[${c.sources?.[0] || words.contradiction}](nodus://contradiction/${encodeURIComponent(c.id)})`,
       note: `Posturas enfrentadas: ${c.label}. ${clip(c.summary, 200)}${c.sources?.length ? ` Lo sostienen ${c.sources.join('; ')}.` : ''}`.trim(),
     })),
     // Only passages whose text is actually present; a page number the writer cannot
     // read is an invitation to invent what the source says.
     passages: passages.map((p) => {
-        const label = `${authorYearLabel(p.authors[0], p.year)}${p.pageLabel ? `, ${p.pageLabel}` : ''}`;
+        const label = `${authorYearLabel(p.authors[0], p.year, undefined, language)}${p.pageLabel ? `, ${p.pageLabel}` : ''}`;
         return {
           token: `[${label}](nodus://passage/${encodeURIComponent(p.id)})`,
           note: `«${excerpts.get(p.id)!}»`,

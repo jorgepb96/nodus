@@ -2,6 +2,7 @@
 // persistent surface it exposes, and cleanup must leave no demo residue.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -49,20 +50,28 @@ try {
   const count = (table, where = '1=1') => Number(db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${where}`).get().n);
   const demoAssetDir = path.join(repoRoot, 'electron/assets/worldbuilding-demo');
   const demoAssetFiles = fs.readdirSync(demoAssetDir);
-  const originalAssets = demoAssetFiles.filter((file) => file.endsWith('.png'));
-  const thumbnailAssets = demoAssetFiles.filter((file) => file.endsWith('.webp'));
+  const originalAssets = demoAssetFiles.filter((file) => file.endsWith('.original.webp'));
+  const thumbnailAssets = demoAssetFiles.filter((file) => file.endsWith('.webp') && !file.endsWith('.original.webp'));
   assert.equal(originalAssets.length, 55, 'worldbuilding ships every full-resolution demo original');
   assert.equal(thumbnailAssets.length, 55, 'every original has an independent compact thumbnail');
   assert.deepEqual(
-    originalAssets.map((file) => file.replace(/\.png$/, '')).sort(),
+    originalAssets.map((file) => file.replace(/\.original\.webp$/, '')).sort(),
     thumbnailAssets.map((file) => file.replace(/\.webp$/, '')).sort(),
     'originals and thumbnails match one-to-one',
   );
-  for (const file of originalAssets) {
-    const header = fs.readFileSync(path.join(demoAssetDir, file)).subarray(0, 8);
-    assert.ok(header.equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), `${file} is a lossless PNG`);
-  }
-  for (const file of thumbnailAssets) {
+  assert.ok(!demoAssetFiles.some((file) => file.endsWith('.png')), 'no PNG ships: they were 118 MB of every installer');
+  // An existing demo vault may still hold what earlier builds stored (the PNG originals
+  // of 5.9.1 and earlier, the first demo's WebP crops); their hashes are what lets the
+  // upgrade tell those demo-owned rows from author artwork.
+  const legacyOriginals = JSON.parse(fs.readFileSync(path.join(demoAssetDir, 'legacy-originals.json'), 'utf8'));
+  assert.deepEqual(
+    Object.keys(legacyOriginals.pngOriginals).sort(),
+    originalAssets.map((file) => file.replace(/\.original\.webp$/, '')).sort(),
+    'every original keeps the hash of the PNG it replaced',
+  );
+  assert.ok(Object.values(legacyOriginals.pngOriginals).every((hash) => /^[0-9a-f]{64}$/.test(hash)));
+  assert.ok(Object.keys(legacyOriginals.webpCrops).length >= 40, 'the first demo\'s crops are recognisable');
+  for (const file of [...originalAssets, ...thumbnailAssets]) {
     const header = fs.readFileSync(path.join(demoAssetDir, file)).subarray(0, 12);
     assert.equal(header.subarray(0, 4).toString(), 'RIFF', `${file} is a RIFF WebP`);
     assert.equal(header.subarray(8, 12).toString(), 'WEBP', `${file} is a RIFF WebP`);
@@ -171,17 +180,26 @@ try {
   // produced thumbnail, and also copied the avatar itself into the gallery. The upgrade
   // repairs the portrait pair and replaces only that demo-owned duplicate with a real
   // secondary scene, while preserving author-owned replacements.
+  //
+  // Those builds stored lossless PNG originals that no longer ship. A stand-in PNG,
+  // registered by hash exactly as legacy-png-originals.json registers the real ones,
+  // plays that vault.
   const elanThumbnail = fs.readFileSync(path.join(demoAssetDir, 'character-elan.webp'));
-  const elanOriginal = fs.readFileSync(path.join(demoAssetDir, 'character-elan.png'));
-  const elanGalleryOriginal = fs.readFileSync(path.join(demoAssetDir, 'character-elan-gallery.png'));
+  const elanOriginal = fs.readFileSync(path.join(demoAssetDir, 'character-elan.original.webp'));
+  const legacyElanPng = Buffer.from('the lossless PNG original of character-elan that 5.9.1 shipped');
+  worldbuilding.__setLegacyDemoOriginalsForTest({
+    ...legacyOriginals,
+    pngOriginals: { ...legacyOriginals.pngOriginals, 'character-elan': createHash('sha256').update(legacyElanPng).digest('hex') },
+  });
+  const elanGalleryOriginal = fs.readFileSync(path.join(demoAssetDir, 'character-elan-gallery.original.webp'));
   const elanGalleryThumbnail = fs.readFileSync(path.join(demoAssetDir, 'character-elan-gallery.webp'));
   const wrongThumbnail = fs.readFileSync(path.join(demoAssetDir, 'character-aurel.webp'));
   db.prepare(
-    "UPDATE person_portraits SET thumbnail = ? WHERE person_id = 'demo-world-char-elan'"
-  ).run(wrongThumbnail);
+    "UPDATE person_portraits SET blob = ?, mime = 'image/png', thumbnail = ? WHERE person_id = 'demo-world-char-elan'"
+  ).run(legacyElanPng, wrongThumbnail);
   db.prepare(
-    "UPDATE world_images SET bytes = ?, blob = ?, thumbnail = ? WHERE image_id = 'demo-world-image-character-char-elan-0'"
-  ).run(elanOriginal.length, elanOriginal, wrongThumbnail);
+    "UPDATE world_images SET mime_type = 'image/png', bytes = ?, blob = ?, thumbnail = ? WHERE image_id = 'demo-world-image-character-char-elan-0'"
+  ).run(legacyElanPng.length, legacyElanPng, wrongThumbnail);
   const customOriginal = Buffer.from('author-owned-original');
   const customThumbnail = Buffer.from('author-owned-thumbnail');
   const veshPortrait = db.prepare(
@@ -199,14 +217,12 @@ try {
     "UPDATE world_images SET blob = ?, thumbnail = ? WHERE entity_id = 'demo-world-group-tidecant'"
   ).run(tideArt.blob, tideArt.thumbnail);
   assert.equal(worldbuilding.upgradeWorldbuildingDemoImageQuality(), true);
-  assert.ok(
-    db.prepare("SELECT thumbnail FROM person_portraits WHERE person_id = 'demo-world-char-elan'").get().thumbnail.equals(elanThumbnail),
-    'legacy character card thumbnail is rebuilt from the matching original'
-  );
-  assert.ok(
-    db.prepare("SELECT blob FROM world_images WHERE image_id = 'demo-world-image-character-char-elan-0'").get().blob.equals(elanGalleryOriginal),
-    'legacy avatar copy is replaced by a distinct secondary gallery original'
-  );
+  const elanPortrait = db.prepare("SELECT blob, mime, thumbnail FROM person_portraits WHERE person_id = 'demo-world-char-elan'").get();
+  assert.ok(elanPortrait.thumbnail.equals(elanThumbnail), 'legacy character card thumbnail is rebuilt from the matching original');
+  assert.ok(elanPortrait.blob.equals(legacyElanPng) && elanPortrait.mime === 'image/png', 'the lossless PNG the vault already holds is kept');
+  const elanGallery = db.prepare("SELECT blob, mime_type FROM world_images WHERE image_id = 'demo-world-image-character-char-elan-0'").get();
+  assert.ok(elanGallery.blob.equals(elanGalleryOriginal), 'legacy avatar copy is replaced by a distinct secondary gallery original');
+  assert.equal(elanGallery.mime_type, 'image/webp', 'the replacement is labelled with its own format');
   assert.ok(
     db.prepare("SELECT thumbnail FROM world_images WHERE image_id = 'demo-world-image-character-char-elan-0'").get().thumbnail.equals(elanGalleryThumbnail),
     'legacy gallery thumbnail is rebuilt from that secondary original'
@@ -228,6 +244,38 @@ try {
         SET blob = ?, thumbnail = ?, mime = ?, thumbnail_mime = ?, updated_at = ?
       WHERE person_id = 'demo-world-char-vesh'`
   ).run(veshPortrait.blob, veshPortrait.thumbnail, veshPortrait.mime, veshPortrait.thumbnail_mime, veshPortrait.updated_at);
+  // A vault seeded today holds no PNG: put Elan back to the shipped original.
+  db.prepare("UPDATE person_portraits SET blob = ?, mime = 'image/webp' WHERE person_id = 'demo-world-char-elan'").run(elanOriginal);
+  worldbuilding.__setLegacyDemoOriginalsForTest(null);
+  const untouched = db.prepare("SELECT updated_at FROM world_images WHERE image_id = 'demo-world-image-character-char-elan-0'").get().updated_at;
+  assert.equal(worldbuilding.upgradeWorldbuildingDemoImageQuality(), true);
+  assert.equal(
+    db.prepare("SELECT updated_at FROM world_images WHERE image_id = 'demo-world-image-character-char-elan-0'").get().updated_at,
+    untouched,
+    'a repaired row holding today\'s original is not rewritten on the next launch',
+  );
+  // The very first demo stored its small WebP crops as originals. Originals are WebP
+  // now too, so only the crop's hash can tell it from a WebP the author chose.
+  const gateCrop = fs.readFileSync(path.join(demoAssetDir, 'lore-gate.webp'));
+  assert.ok(
+    Object.values(legacyOriginals.webpCrops).flat().includes(createHash('sha256').update(gateCrop).digest('hex')),
+    'lore-gate.webp is still byte-identical to the crop the first demo stored',
+  );
+  const authorWebp = Buffer.from('RIFF....WEBPVP8 an image the author chose');
+  db.prepare("UPDATE world_images SET mime_type = 'image/webp', blob = ? WHERE image_id = 'demo-world-image-scene-scene-gate-0'").run(gateCrop);
+  db.prepare("UPDATE world_images SET mime_type = 'image/webp', blob = ? WHERE image_id = 'demo-world-image-scene-scene-archive-0'").run(authorWebp);
+  assert.equal(worldbuilding.upgradeWorldbuildingDemoImageQuality(), true);
+  assert.ok(
+    db.prepare("SELECT blob FROM world_images WHERE image_id = 'demo-world-image-scene-scene-gate-0'").get().blob
+      .equals(fs.readFileSync(path.join(demoAssetDir, 'lore-gate.original.webp'))),
+    'a first-demo crop is replaced by the full original',
+  );
+  assert.ok(
+    db.prepare("SELECT blob FROM world_images WHERE image_id = 'demo-world-image-scene-scene-archive-0'").get().blob.equals(authorWebp),
+    'a WebP the author put in a demo row is not mistaken for a crop',
+  );
+  db.prepare("UPDATE world_images SET blob = ? WHERE image_id = 'demo-world-image-scene-scene-archive-0'")
+    .run(fs.readFileSync(path.join(demoAssetDir, 'lore-archive.original.webp')));
 
   // Existing demo vaults must gain the new dynasty section without being reset.
   db.prepare(`
@@ -363,10 +411,10 @@ try {
   assert.equal(count('world_articles', "article_id LIKE 'demo-world-article-%'"), 14, 'worldbuilding demo has a substantial encyclopedia');
   assert.equal(count('world_threads', "thread_id LIKE 'demo-world-%'"), 7, 'worldbuilding demo covers conflicts and arcs');
   assert.equal(count('world_rules', "rule_id LIKE 'demo-world-rule-%'"), 7, 'worldbuilding demo covers rule states and scopes');
-  assert.equal(count('person_portraits', "person_id LIKE 'demo-world-%' AND mime = 'image/png' AND thumbnail_mime = 'image/webp' AND generated = 1"), 10, 'every demo character has a lossless original and separate thumbnail');
-  assert.equal(count('world_images', "image_id LIKE 'demo-world-%' AND mime_type = 'image/png' AND thumbnail_mime_type = 'image/webp' AND generated = 1"), 56, 'every visual world entity has a lossless gallery original and separate thumbnail');
-  assert.equal(count('world_images', "entity_id LIKE 'demo-world-group-%' AND kind = 'emblem' AND mime_type = 'image/png'"), 3, 'each demo dynasty has a lossless coat of arms');
-  assert.equal(count('map_images', "image_id LIKE 'demo-world-%' AND mime_type = 'image/png' AND thumbnail_mime_type = 'image/webp' AND generated = 1"), 6, 'all map roles preserve lossless artwork');
+  assert.equal(count('person_portraits', "person_id LIKE 'demo-world-%' AND mime = 'image/webp' AND thumbnail_mime = 'image/webp' AND generated = 1"), 10, 'every demo character has a full original and separate thumbnail');
+  assert.equal(count('world_images', "image_id LIKE 'demo-world-%' AND mime_type = 'image/webp' AND thumbnail_mime_type = 'image/webp' AND generated = 1"), 56, 'every visual world entity has a full gallery original and separate thumbnail');
+  assert.equal(count('world_images', "entity_id LIKE 'demo-world-group-%' AND kind = 'emblem' AND mime_type = 'image/webp'"), 3, 'each demo dynasty has a full coat of arms');
+  assert.equal(count('map_images', "image_id LIKE 'demo-world-%' AND mime_type = 'image/webp' AND thumbnail_mime_type = 'image/webp' AND generated = 1"), 6, 'all map roles keep their full artwork');
   const seededArtwork = db.prepare(`
     SELECT
       (SELECT COALESCE(SUM(LENGTH(blob)), 0) FROM person_portraits WHERE person_id LIKE 'demo-world-%') +
@@ -378,7 +426,7 @@ try {
       (SELECT COALESCE(SUM(LENGTH(thumbnail)), 0) FROM map_images WHERE image_id LIKE 'demo-world-%')
       AS thumbnail_bytes
   `).get();
-  assert.ok(Number(seededArtwork.original_bytes) > Number(seededArtwork.thumbnail_bytes) * 10, 'lists stay light without reducing the zoomable originals');
+  assert.ok(Number(seededArtwork.original_bytes) > Number(seededArtwork.thumbnail_bytes) * 2, 'lists stay light without reducing the zoomable originals');
   for (const personId of [
     'aurel', 'cael', 'elan', 'ilyra', 'maelor', 'nara', 'odran', 'sena', 'tarek', 'vesh',
   ].map((slug) => `demo-world-char-${slug}`)) {
@@ -387,7 +435,7 @@ try {
       'SELECT blob, thumbnail FROM person_portraits WHERE person_id = ?'
     ).get(personId);
     assert.ok(
-      portrait.blob.equals(fs.readFileSync(path.join(demoAssetDir, `character-${slug}.png`))),
+      portrait.blob.equals(fs.readFileSync(path.join(demoAssetDir, `character-${slug}.original.webp`))),
       `${slug} dossier uses its own original`
     );
     assert.ok(
@@ -398,7 +446,7 @@ try {
       "SELECT blob, thumbnail FROM world_images WHERE entity_kind = 'character' AND entity_id = ?"
     ).get(personId);
     assert.ok(
-      gallery.blob.equals(fs.readFileSync(path.join(demoAssetDir, `character-${slug}-gallery.png`))),
+      gallery.blob.equals(fs.readFileSync(path.join(demoAssetDir, `character-${slug}-gallery.original.webp`))),
       `${slug} gallery opens its own high-resolution scene`
     );
     assert.ok(

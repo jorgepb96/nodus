@@ -14,6 +14,7 @@ import {
   type Candidate,
 } from './chapterIdeas';
 import { getSettings } from '../db/settingsRepo';
+import { citationWords } from '../../shared/citationWords';
 import { findSimilarIdeas, getIdeaDetail, getIdeaEdges, getIdeaSummary } from '../db/ideasRepo';
 import { embeddedPassageCount, findSimilarPassages, getPassageDetail } from '../db/passagesRepo';
 import { getWork } from '../db/worksRepo';
@@ -302,7 +303,7 @@ function lexicalIdeaScore(row: LexicalIdeaRow, terms: WeightedTerm[], normalized
 function authorYearLabel(authors: string[] | undefined, year: number | null | undefined): string | null {
   const raw = authors?.[0]?.trim();
   if (!raw && !year) return null;
-  const surname = raw ? (raw.includes(',') ? raw.split(',')[0] : raw.split(/\s+/).slice(-1)[0]).trim() : 'Autor';
+  const surname = raw ? (raw.includes(',') ? raw.split(',')[0] : raw.split(/\s+/).slice(-1)[0]).trim() : citationWords(getSettings().promptLanguage ?? 'es').author;
   return year ? `${surname}, ${year}` : surname;
 }
 

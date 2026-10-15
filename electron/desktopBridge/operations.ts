@@ -1,3 +1,7 @@
+import {researchVisualFields} from '../../shared/documentVisualContent';
+import {canonicalJson} from '../../shared/canonicalJson';
+import {getDocumentVisuals as readCanonicalDocumentVisuals} from '../ai/documentVisuals';
+import {getWritingWorkshopDraft as readCanonicalVisualDraft} from '../db/writingDraftsRepo';
 import {runLiveDocumentVisuals,type LiveVisualMethod} from './liveDocumentVisuals';
 import {mobileStudyKnowledgeSource} from './mobileStudyKnowledge';
 import {getMobileDeepResearchVisualSource,readMobileDeepResearchVisualAsset} from './researchVisualSource';
@@ -15,7 +19,7 @@ import { withMobileOperation } from './executionBoundary';
 import {runCompanionSpaceAction} from './spaceActions';
 import {mobileAcademicSource,saveMobileAcademicResult,listSavedCompanionArgumentMaps,savedCompanionLiveArgumentMap,saveCompanionLiveArgumentMap} from './academicGeneration';
 import {buildArgumentMap} from '../ai/argumentMap';
-import {PROMPT_LANGUAGES,type PromptLanguage,type ArgumentMapRequest} from '../../shared/types';
+import {PROMPT_LANGUAGES,type PromptLanguage,type ArgumentMapRequest,type WritingWorkshopDraft} from '../../shared/types';
 import { MOBILE_EXPORT_METHODS, renderMobileExport } from './exports';
 import { listGlobalLibraryVaultLinks } from '../library/libraryService';
 import { BridgeJobCancelledError } from './jobs';
@@ -56,6 +60,14 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   const [channel, permission] = MOBILE_OPERATIONS[method as MobileOperation];
   if (!domains.includes(permission)) throw new Error('permission_denied');
   if (!Array.isArray(args) || args.length > 12) throw new Error('invalid_arguments');
+  if(method==='getDocumentVisuals') {
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
+      const target=args[0] as {kind:'deep-research'|'immersion';id:string};
+      if(args.length<1||args.length>2||!target||!['deep-research','immersion'].includes(target.kind)||typeof target.id!=='string')throw new Error('invalid_visual_read');
+      if(args.length===2){const expected=args[1] as {expectedDraft?:WritingWorkshopDraft},actual=target.kind==='deep-research'?readCanonicalVisualDraft(target.id)?.draft:null;if(!actual||!expected?.expectedDraft||typeof expected.expectedDraft.draftMarkdown!=='string'||typeof expected.expectedDraft.abstract!=='string'||actual.title!==expected.expectedDraft.title||canonicalJson(researchVisualFields(actual))!==canonicalJson(researchVisualFields(expected.expectedDraft)))throw new Error('research_visual_source_revision_conflict');}
+      return readCanonicalDocumentVisuals(target);
+    },domains)));
+  }
   if(['enrichDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method)) {
     if(args.length!==1||!bridgeJobId||!jobIdentity)throw new Error('job_required');
     if(!args[0]||typeof args[0]!=='object'||(args[0] as {requestId?:unknown}).requestId!==jobIdentity.idempotencyKey)throw new Error('live_visual_request_identity_conflict');

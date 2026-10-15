@@ -101,6 +101,7 @@ function studyTables() {
 }
 const call = async (method: string, ...args: unknown[]): Promise<any> => {
   if(method==='createNote'){if(args.length!==1)throw new Error('Nota no válida.');return native.nodusMobileCall(method,seedWorkspaceNote(args[0]));}
+  if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='live'&&(native.nodusMobileConfig.pageDownloadedOnly||native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.initialResearchVisualReportId.startsWith('mobile-dr-')))return Promise.resolve({...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language});
   if(method==='getSettings'&&native.nodusMobileConfig.initialResearchVisualReportId&&native.nodusMobileConfig.executionMode==='autonomous')return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
   if(method==='getSettings'&&native.nodusMobileConfig.executionMode==='autonomous'&&(native.nodusMobileConfig.initialResearchVisualReportId||(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType))))))return native.nodusMobileCall('mobileSettings',{...DEFAULT_APP_SETTINGS,theme:native.nodusMobileConfig.theme,uiLanguage:native.nodusMobileConfig.language,promptLanguage:native.nodusMobileConfig.language});
   if(native.nodusMobileConfig.live&&(native.nodusMobileConfig.surface==='studyIdeas'||(native.nodusMobileConfig.surface==='graph'&&['estudio','docencia'].includes(native.nodusMobileConfig.vaultType)))&&native.nodusMobileConfig.executionMode==='autonomous'&&['getStudyWorkspace','listStudyIdeas','getStudyIdeaDetail','getStudyKnowledgeGraph'].includes(method)) {
@@ -250,7 +251,7 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
   }
 };
 const subscriptions = native.nodusMobileSubscriptions;
-const localVisualEditor=!!native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.executionMode==='autonomous'||native.nodusMobileConfig.initialResearchVisualReportId?.startsWith('mobile-dr-');
+const localVisualEditor=!!native.nodusMobileConfig.pageDownloadedOnly||!!native.nodusMobileConfig.initialResearchVisualLocalOnly||native.nodusMobileConfig.executionMode==='autonomous'||native.nodusMobileConfig.initialResearchVisualReportId?.startsWith('mobile-dr-');
 const liveVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&!localVisualEditor?new LiveDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,()=>window.dispatchEvent(new Event('nodus:live-visual-state'))):null;
 const documentVisualEditor=native.nodusMobileConfig.initialResearchVisualReportId&&localVisualEditor?new AutonomousDocumentVisuals(call,native.nodusMobileConfig.initialResearchVisualReportId,native.nodusMobileConfig.vaultId??'',()=>{const target=documentVisualEditor?.checkpoint?.target;if(target)for(const listener of subscriptions.get('onDocumentVisualsChanged')??[])listener(target);}):null;
 const streamHandlers = new Map<string, Record<string, (...args: any[]) => void>>();
@@ -327,6 +328,7 @@ window.nodus = new Proxy({}, { get: (_, method: string) => {
     return liveVisualEditor.remove(args[0]);
   };
   if(documentVisualEditor&&['getDocumentVisuals','enrichDocumentVisuals','cancelDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))return async(target:{kind:string;id:string},...args:any[])=>{
+    if(native.nodusMobileConfig.executionMode!=='autonomous'&&['enrichDocumentVisuals','undoDocumentVisuals','removeDocumentFigure'].includes(method))throw new Error('Este informe se consulta desde su fuente local. Sincronízalo con el Mac o elige explícitamente el modo autónomo para editar sus figuras.');
     if(target.kind!=='deep-research'||target.id!==documentVisualEditor.checkpoint?.target.id)throw new Error('document_visual_target_conflict');
     if(method==='getDocumentVisuals')return documentVisualEditor.checkpoint?.manifest??null;
     if(method==='enrichDocumentVisuals')return documentVisualEditor.enrich(args[0],args[1]);

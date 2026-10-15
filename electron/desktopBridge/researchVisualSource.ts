@@ -1,3 +1,5 @@
+import {getDocumentVisuals} from '../ai/documentVisuals';
+import type {WritingWorkshopDraft} from '../../shared/types';
 import {canonicalJson} from '../../shared/canonicalJson';
 import type {DocumentVisualCapture} from '../../shared/mobileDocumentVisuals';
 import {createHash} from 'node:crypto';
@@ -37,7 +39,14 @@ export function getMobileDeepResearchVisualSource(raw:unknown){
 /** Re-resolve the actual source for every bounded read: removed/replaced figures
  * cannot continue to disclose files under a stale source proof. */
 export function readMobileDeepResearchVisualAsset(raw:unknown){
- const input=raw as {reportId:string;captureHash?:string;expected?:{contentHash:string;revision:string|null;manifestHash:string};assetId:string;owner:string;offset:number;count:number};
+ const source=raw as {action?:string;reportId?:string;expectedDraft?:WritingWorkshopDraft};
+ if(source?.action==='context'){
+  if(typeof source.reportId!=='string'||!uuid.test(source.reportId)||!source.expectedDraft||typeof source.expectedDraft.draftMarkdown!=='string'||typeof source.expectedDraft.abstract!=='string')throw new Error('invalid_research_visual_context');
+  const saved=getWritingWorkshopDraft(source.reportId);
+  if(!saved||saved.draft.brief.kind!=='deep_research'||saved.draft.title!==source.expectedDraft.title||canonicalJson(researchVisualFields(saved.draft))!==canonicalJson(researchVisualFields(source.expectedDraft)))throw new Error('research_visual_source_revision_conflict');
+  const target={kind:'deep-research' as const,id:source.reportId};return {version:1,vaultId:getActiveVault().id,target,manifest:getDocumentVisuals(target)};
+ }
+ const input=raw as {reportId:string;captureHash?:string;expected?:{contentHash:string;revision:string|null;manifestHash?:string};expectedManifest?:unknown;source?:string;assetId:string;owner:string;offset:number;count:number};
  if(!input||!uuid.test(input.reportId)||!uuid.test(input.assetId)||!/^([a-f0-9]{64})$/.test(input.owner)||!Number.isSafeInteger(input.offset)||input.offset<0||!Number.isSafeInteger(input.count)||input.count<1||input.count>524288)throw new Error('invalid_research_visual_asset_read');
  const saved=getWritingWorkshopDraft(input.reportId),manifest=readDocumentVisuals(getActiveVault().id,{kind:'deep-research',id:input.reportId});
  if(!saved||saved.draft.brief.kind!=='deep_research')throw new Error('research_visual_document_missing');
@@ -45,10 +54,11 @@ export function readMobileDeepResearchVisualAsset(raw:unknown){
  let asset:CapturedAsset|undefined;
  if(input.expected){
   const expected={contentHash,revision:manifest?.revision??null,manifestHash:createHash('sha256').update(canonicalJson(manifest)).digest('hex')};
-  if(canonicalJson(expected)!==canonicalJson(input.expected))throw new Error('research_visual_source_revision_conflict');
-  const figure=manifest?.figures.find(item=>item.owner===input.owner&&(item.poster===`nodus-image://chat/${input.owner}/${input.assetId}`||hasAttachment(item.view?.nodes,input.assetId)));
+  if(input.expected.contentHash!==contentHash||input.expected.revision!==expected.revision||(input.expected.manifestHash?input.expected.manifestHash!==expected.manifestHash:canonicalJson(input.expectedManifest)!==canonicalJson(manifest)))throw new Error('research_visual_source_revision_conflict');
+  const imageSource=`nodus-image://chat/${input.owner}/${input.assetId}`,fileSource=`nodus-capability://chat/${input.owner}/${input.assetId}`;if(input.source&&input.source!==imageSource&&input.source!==fileSource)throw new Error('invalid_research_visual_asset_read');
+  const figure=manifest?.figures.find(item=>item.owner===input.owner&&(input.source===imageSource?item.poster===imageSource:input.source===fileSource?hasAttachment(item.view?.nodes,input.assetId):item.poster===imageSource||hasAttachment(item.view?.nodes,input.assetId)));
   if(!figure)throw new Error('research_visual_asset_not_captured');
-  const image=getChatImage(`${input.owner}/${input.assetId}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${input.owner}/${input.assetId}`),bytes=image?.blob??file?.blob,mimeType=image?.mime??file?.mimeType;
+  const image=input.source?.startsWith('nodus-capability://')?null:getChatImage(`${input.owner}/${input.assetId}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${input.owner}/${input.assetId}`),bytes=image?.blob??file?.blob,mimeType=image?.mime??file?.mimeType;
   if(!bytes||!mimeType||!['image/png','image/jpeg','image/webp'].includes(mimeType)||bytes.length>8*1024*1024)throw new Error('research_visual_asset_unavailable');
   asset={id:input.assetId,figureId:figure.id,owner:input.owner,mimeType,byteCount:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
  }else{
@@ -57,7 +67,7 @@ export function readMobileDeepResearchVisualAsset(raw:unknown){
   asset=capture.assets.find(item=>item.id===input.assetId&&item.owner===input.owner);
  }
  if(!asset||input.offset>asset.byteCount)throw new Error('research_visual_asset_not_captured');
- const image=getChatImage(`${asset.owner}/${asset.id}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${asset.owner}/${asset.id}`),bytes=image?.blob??file?.blob;
+ const image=input.source?.startsWith('nodus-capability://')?null:getChatImage(`${asset.owner}/${asset.id}`),file=image?null:getCapabilityFile(`nodus-capability://chat/${asset.owner}/${asset.id}`),bytes=image?.blob??file?.blob;
  if(!bytes||bytes.length!==asset.byteCount||createHash('sha256').update(bytes).digest('hex')!==asset.sha256)throw new Error('research_visual_asset_changed');
  return {version:1,assetId:asset.id,offset:input.offset,byteCount:asset.byteCount,mimeType:asset.mimeType,sha256:asset.sha256,base64:bytes.subarray(input.offset,Math.min(input.offset+input.count,bytes.length)).toString('base64')};
 }

@@ -63,6 +63,7 @@ export async function prepareDocumentVisualHints(policy: DocumentSkillPolicy | u
 
 /** Trusted invocation-local journaling; never accepted from IPC request data. */
 export interface DocumentVisualRuntime {
+  snapshot?: (view:Parameters<typeof snapshotDocumentFigure>[0],owner:string,invoke:()=>Promise<string>)=>Promise<string>;
   completion?: <T>(kind:'text'|'json'|'resources', input: {options:Omit<import('./aiClient').CallOpts,'signal'>;model?:ModelRef|null}, invoke:()=>Promise<T>)=>Promise<T>;
 }
 export async function enrichDocumentVisuals(target: DocumentVisualTarget, policy: DocumentSkillPolicy, request: DocumentVisualEnrichOptions & { hints?: string[]; signal?: AbortSignal } = {}, runtime:DocumentVisualRuntime = {}): Promise<DocumentVisualManifest> {
@@ -102,7 +103,7 @@ export async function enrichDocumentVisuals(target: DocumentVisualTarget, policy
         return runtime.completion ? runtime.completion('text',{options:safe,model:chosen},()=>completeText(options,chosen)) : completeText(options,chosen);
       }, executeResources: (answer,execution,signal) => runtime.completion
         ? runtime.completion('resources',{options:{system:'Canonical document resource execution',user:JSON.stringify({answer,owner:execution.owner,version:execution.version,question:execution.question,locale:execution.locale}),maxTokens:0},model},()=>executeSkillResources(answer,execution,signal))
-        : executeSkillResources(answer,execution,signal), snapshot: snapshotDocumentFigure,
+        : executeSkillResources(answer,execution,signal), snapshot: (view,owner,signal) => runtime.snapshot ? runtime.snapshot(view,owner,()=>snapshotDocumentFigure(view,owner,signal)) : snapshotDocumentFigure(view,owner,signal),
       owner: chatAssetOwner, assetVersion: chatAssetVersion,
       clock: () => new Date().toISOString(), id: randomUUID,
       logPipelineInfo, logPipelineWarning, logPipelineFailure,

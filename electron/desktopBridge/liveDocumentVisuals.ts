@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {importDocumentFigureAsset} from '../chatAssets';
 import {canonicalJson} from '../../shared/canonicalJson';
 import {asDocumentVisualModel} from '../../shared/documentVisualEnrich';
 import type {DocumentSkillPolicy,DocumentVisualManifest,DocumentVisualTarget} from '../../shared/documentSkills';
@@ -29,6 +30,7 @@ export async function runLiveDocumentVisuals(method:LiveVisualMethod,raw:unknown
  if(value.continueRequestId){if(method!=='enrichDocumentVisuals'||!uuid(value.continueRequestId)||!value.retry)fail('invalid_live_visual_continuation');const prior=db.prepare('SELECT target_id,content_hash,state FROM mobile_live_visual_commands WHERE device_grant=? AND request_id=?').get(grant,value.continueRequestId) as {target_id:string;content_hash:string;state:string}|undefined;if(!prior||prior.target_id!==value.target.id||prior.content_hash!==value.expected.contentHash||prior.state==='available')fail('live_visual_continuation_conflict');if(db.prepare("SELECT 1 FROM mobile_live_visual_answers WHERE device_grant=? AND request_id=? AND state='started' LIMIT 1").get(grant,value.continueRequestId))fail('live_visual_paid_response_uncertain');}
  db.prepare('INSERT INTO mobile_live_visual_commands VALUES(?,?,?,?,?,\'started\',NULL,NULL)').run(grant,value.requestId,hash,value.target.id,value.expected.contentHash);
  const runtime=liveVisualCompletionJournal(grant,value.requestId,value.continueRequestId);
+ runtime.snapshot=async(view,owner,invoke)=>persistLiveVisualPoster(owner,await invoke(),view.title??'Figure');
  let result:DocumentVisualManifest|null=null;
  const progress=()=>{try{const manifest=getDocumentVisuals(value.target);emit({target:value.target,state:manifest?.state??'pending',revision:manifest?.revision??null,ready:manifest?.figures.filter(figure=>figure.state==='ready').length??0,failed:manifest?.figures.filter(figure=>figure.state==='failed').length??0});}catch{/* The final fenced result retains an explicit failure. */}};
  const timer=method==='enrichDocumentVisuals'?setInterval(progress,750):null;
@@ -71,4 +73,15 @@ export function restoreAnsweredResources(grant:string,requestId:string,target:Do
   figure.view=result.view;figure.artifactSources=result.artifactSources;figure.state='failed';changed=true;
  }
  if(changed&&manifest)writeDocumentVisuals(manifest);
+}
+
+/** Keep fresh LIVE acknowledgements small: actual renderer pixels become a
+ * canonical owner-scoped file before its URI enters the manifest. */
+export function persistLiveVisualPoster(owner:string,dataURL:string,title:string){
+ if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(dataURL))fail('invalid_live_visual_poster');
+ const bytes=Buffer.from(dataURL.slice(dataURL.indexOf(',')+1),'base64');
+ const identity=digest({owner,sha256:createHash('sha256').update(bytes).digest('hex')}),hex=identity.slice(0,32);
+ const id=`${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+ importDocumentFigureAsset(owner,id,{bytes,mimeType:'image/png'},{title});
+ return `nodus-image://chat/${owner}/${id}`;
 }

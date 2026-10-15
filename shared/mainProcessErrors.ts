@@ -1,3 +1,4 @@
+import { COMPANION_RUNTIME_ERRORS, COMPANION_RUNTIME_ERROR_PATTERNS } from './companionErrors';
 import { BACKUPS_RUNTIME_ERRORS, BACKUPS_RUNTIME_ERROR_PATTERNS } from './backupsErrors';
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
@@ -34,6 +35,7 @@ export type MainErrorTranslations = Partial<Record<AppLanguage, string>> & { en:
 
 /** Messages whose text is fixed, matched exactly. */
 export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
+  ...COMPANION_RUNTIME_ERRORS,
   'Directorio ZIP64 dañado.': { en: 'The ZIP64 directory is damaged.', fr: 'Le répertoire ZIP64 est endommagé.', de: 'Das ZIP64-Verzeichnis ist beschädigt.', pt: 'O diretório ZIP64 está danificado.', 'pt-BR': 'O diretório ZIP64 está danificado.', it: 'La directory ZIP64 è danneggiata.', tr: 'ZIP64 dizini bozuk.' , "zh-CN": "ZIP64 目录已损坏。" ,
   'zh-TW': "ZIP64 目錄已損壞。",
   ko: "ZIP64 디렉터리가 손상되었습니다.",
@@ -4746,6 +4748,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
 /** Messages that carry runtime values, matched by shape. Order matters: the more
  *  specific pattern of a family must come first. */
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
+  ...COMPANION_RUNTIME_ERROR_PATTERNS,
   { pattern: /^La copia publicada no incluye la tabla (.+)\. Descarga una publicación compatible\.$/, translate: table => ({ "en": "The published copy lacks table {table}. Download a compatible publication.".replace('{table}', table), "fr": "La copie publiée ne contient pas la table {table}. Téléchargez une publication compatible.".replace('{table}', table), "de": "Die veröffentlichte Kopie enthält die Tabelle {table} nicht. Laden Sie eine kompatible Veröffentlichung herunter.".replace('{table}', table), "pt": "A cópia publicada não inclui a tabela {table}. Descarregue uma publicação compatível.".replace('{table}', table), "pt-BR": "A cópia publicada não inclui a tabela {table}. Baixe uma publicação compatível.".replace('{table}', table), "it": "La copia pubblicata non include la tabella {table}. Scarica una pubblicazione compatibile.".replace('{table}', table), "tr": "Yayımlanan kopyada {table} tablosu yok. Uyumlu bir yayın indirin.".replace('{table}', table), "zh-CN": "已发布的副本不包含表 {table}，请下载兼容的发布内容。".replace('{table}', table), "zh-TW": "已發佈的副本不包含資料表 {table}，請下載相容的發佈內容。".replace('{table}', table), "ja": "公開済みのコピーにテーブル {table} がありません。互換性のある公開内容をダウンロードしてください。".replace('{table}', table), "ko": "게시된 사본에 {table} 테이블이 없습니다. 호환되는 게시 내용을 다운로드하세요.".replace('{table}', table) }) },
   ...STT_RUNTIME_ERROR_PATTERNS,
   ...BACKUPS_RUNTIME_ERROR_PATTERNS,

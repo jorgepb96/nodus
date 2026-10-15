@@ -1,6 +1,6 @@
 # Direct workspace connection — 15 October 2026
 
-The current acceptance scope is connection/reconnection and Desktop PR health. Broader consultation/generation parity remains unfinished. Both PRs stay unmerged. The owner explicitly authorized **one complete final-head CI** after local validation; mobile Actions remain unrequested. Workflows and branch protection stay unchanged.
+The current acceptance scope is connection/reconnection and Desktop PR health. Broader consultation/generation parity remains unfinished. Both PRs stay unmerged. The owner explicitly authorized **one complete final-head CI** after local validation; it ran and failed. Corrections and their local verification are recorded in [the follow-up checkpoint](ci-corrections-2026-10-15.md). A second run is not yet authorized; mobile Actions remain unrequested. Workflows and branch protection stay unchanged.
 
 ## Connection behavior
 
@@ -17,13 +17,13 @@ Original references: Desktop `0a173fd9c698a7cb2d5989aa64b59cddd329bcf9`; mobile 
 
 The real production renderer/Electron bundle was built at Desktop `9dfa24f7cb7f6aebd9a0dcfe3dd9fdf945b3fff7`, incorporating main through `58cd4b0f`. Dependency closure was corrected at `756c6473`, packaged-app test support at `271e80a8`, native signing at `63100ae9`, and the actual Settings renewal-code driver at `9a6e86ac`. Later documentation does not imply the app was rebuilt from that documentation commit. Each native execution has its own pre-execution source and compiled-artifact receipt.
 
-A private **Nodus 5.10.0 arm64** preview was packaged with Electron 43.6.0 and signed with Developer ID / team `6RPLS9EA4X`:
+The initial private **Nodus 5.10.0 arm64** preview was packaged with Electron 43.6.0 and signed with Developer ID / team `6RPLS9EA4X`:
 
 - Application: `/private/tmp/nodus-desktop-mobile-20261015/mac-arm64/Nodus.app`.
 - `app.asar` SHA-256: `e8424ae15dc1a2e30b1dea6f8dfec864419acd22f6c97505653a2446415ed76b`.
 - Executable SHA-256: `ffedab9c263e273e3bd957cc4a9cf99feb3365c7b7d1a45c9ec4f0c63670b3f3`.
 - Strict/deep application verification and individual verification of all **81 native components** passed with the same team identity.
-- The preview is **not notarized, installed over normal Nodus or published**. Normal installation and original vaults remain unchanged.
+- The preview is **not notarized, installed over normal Nodus or published**. Normal installation and original vaults remain unchanged. A final corrected-source preview at `706c7cfc` has since been rebuilt, signed and accepted against the actual Mac LAN; its hashes and exact scope are in [the follow-up checkpoint](ci-corrections-2026-10-15.md).
 
 Packaging initially exposed stale root/server dependency locks and generic binary detection attempting to timestamp Python data. Root `ws` and server lock metadata were aligned; temporary server `npm ci --ignore-scripts` passed. The signing filter positively identifies Mach-O code/bundles and leaves resources sealed by their container. Existing release identity, entitlements and notarization checks remain intact. The generated sitemap dates were refreshed with the canonical generator.
 
@@ -68,7 +68,7 @@ Earlier results remain preserved: a report keyboard assertion failed after succe
 - Tailscale is installed, but its backend is stopped, self is offline and no usable online peer/route was demonstrated. **Real VPN handover remains unverified.** Learned VPN-origin and credential-security fixtures do not establish that route.
 - Desktop listener/address enumeration supports IPv4 LAN/VPN. IPv6-only networks were not implemented or accepted by this checkpoint.
 - Apple Vision decoded actual QR pixels; no physical camera scan is claimed. The owner will perform physical iPhone validation after TestFlight.
-- TestFlight **0.1.0 (1002)** remains the delivered beta. Native rediscovery/recovery is configured as **0.1.0 (1003)**, not yet uploaded. The existing shared renderer resources intentionally retain beta 1002's Desktop `80c54bd0` provenance; this connection campaign does not claim merged-main UI parity.
+- TestFlight **0.1.0 (1003)** is now delivered internally, in **Nodus interno**, with saved test notes. The earlier **1002** remains historical. The existing shared renderer resources intentionally retain beta 1002's Desktop `80c54bd0` provenance; this connection campaign does not claim merged-main UI parity.
 - GitHub requires `CLA / signature`, `Issue linked` and `test` from integration `15368`, declared in `.github/rulesets/cla-main.json`. The authorized complete CI must run on the final pushed Desktop head. Local logs cannot substitute for these statuses; a missing/canceled/failed check is not green.
 
 Credentials, QR offers, copied vault content, screenshots, raw logs and `.xcresult` bundles stay local. Only sanitized descriptions and test source are committed.

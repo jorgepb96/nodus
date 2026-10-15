@@ -85,14 +85,6 @@
   "saved": {
     "message": "In Nodus gespeichert"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ Datei(en) sind jetzt angehängt. Die Aufbereitung für klares Lesen läuft in Nodus weiter.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "In Nodus öffnen"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "Wähle mindestens eine Referenz aus."
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ Referenzen mit $FILES$ angehängten Datei(en) gespeichert.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Bereits in Nodus"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "AGPL-Quellcode"
+  },
+  "jobHistory": {
+    "message": "Speicherungen und Downloads"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ Referenzen · $FILES$ Dateien",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ Datei(en) ausstehend",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "Wird heruntergeladen…"
+  },
+  "jobNeedsPermission": {
+    "message": "Zugriff erforderlich"
+  },
+  "jobFailed": {
+    "message": "Aktion erforderlich"
+  },
+  "jobComplete": {
+    "message": "Abgeschlossen"
+  },
+  "jobQueued": {
+    "message": "Speicherung vorgemerkt"
+  },
+  "jobContinues": {
+    "message": "Die Speicherung läuft weiter, wenn du dieses Fenster schließt."
+  },
+  "authorizeDownloads": {
+    "message": "Erlauben und herunterladen"
+  },
+  "retry": {
+    "message": "Erneut versuchen"
   }
 }

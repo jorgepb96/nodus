@@ -59,6 +59,6 @@ export function detectCaptureCandidates(snapshot, labels = DETECTOR_LABELS, limi
     }
   }
   const unique = [...new Map(candidates.map((capture) => [identity(capture), capture]).filter(([key]) => key)).values()];
-  if (unique.length > 1) return unique.slice(0, limit);
+  if (unique.length > 1) return unique.slice(0, limit).map((capture) => ({ ...capture, sourceIsResultPage: true }));
   return [detectCapture(snapshot, labels)];
 }

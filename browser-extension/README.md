@@ -18,7 +18,7 @@ Nodus then enriches DOI, ISBN, PMID/PMCID and arXiv records through the desktop 
 existing metadata resolvers. The user sees and may correct title, authors, date, publication, DOI and
 the detected Zotero-compatible item type; select a nested editable Nodus collection; review tags;
 choose files; and decide whether to retain a bounded readable page snapshot. Search/result pages
-that expose independent COinS or Schema.org records can be saved as a reviewed batch.
+that expose independent COinS or Schema.org records can be reviewed one reference at a time and saved as a batch. Each reference retains its own metadata, tags and file choices.
 
 Imported Zotero collections remain read-only. They can be synchronized by the Zotero workflow,
 while the browser connector writes to the Library root or to Nodus-owned collections. Saving an
@@ -48,8 +48,7 @@ after a toolbar click. Its only mandatory origins are `127.0.0.1` and `localhost
 exposes a token-authenticated, extension-origin-only API. Cross-site attachment access is optional
 and requested for the exact site only after Nodus cannot retrieve the selected public URL itself;
 newly granted access is revoked after transfer. The package contains no analytics, advertising,
-remotely hosted code, or `eval`. Its Manifest V3 service worker runs only while a user-confirmed
-attachment transfer is active, so closing the popup does not interrupt a large file.
+remotely hosted code, or `eval`. Its Manifest V3 service worker owns pairing and the entire confirmed save job, so closing the popup does not interrupt pairing or the remainder of a batch. A local history shows saved references, pending files and failures. Failed operations can be retried; completed references and files are retained. A recovery alarm resumes interrupted jobs after worker or browser restarts.
 
 Requests to the local Nodus API use extension-page `fetch()` with both the standard installed
 extension origin and a dedicated request marker. Current Chromium versions allow extensions with
@@ -85,7 +84,10 @@ and Nodus Browser's own review dialog share that table.
 npm run browser:zip
 node --test scripts/test-browser-connector.mjs
 npm run verify:browser-connector
+npm run verify:browser-capture-jobs
 npm run test:e2e:browser-connector
+# Also exercise native optional-permission approval in a visible test browser:
+NODUS_TEST_HEADED=1 npm run test:e2e:browser-connector:recovery
 ```
 
 Tests use a temporary Nodus profile and a synthetic Library. They never open or mutate the user's

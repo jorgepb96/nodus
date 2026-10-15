@@ -85,14 +85,6 @@
   "saved": {
     "message": "Сохранено в Nodus"
   },
-  "savedSummary": {
-    "message": "Добавлено файлов: $ATTACHMENTCOUNT$. Подготовка чистого чтения продолжится в Nodus.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Открыть в Nodus"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "Выберите хотя бы одну ссылку."
-  },
-  "savedBatchSummary": {
-    "message": "Сохранено ссылок: $COUNT$, прикреплено файлов: $FILES$.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Уже есть в Nodus"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "Исходный код AGPL"
+  },
+  "jobHistory": {
+    "message": "Сохранения и загрузки"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ источников · $FILES$ файлов",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "Ожидают загрузки: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "Загрузка…"
+  },
+  "jobNeedsPermission": {
+    "message": "Нужно разрешение"
+  },
+  "jobFailed": {
+    "message": "Требуется внимание"
+  },
+  "jobComplete": {
+    "message": "Завершено"
+  },
+  "jobQueued": {
+    "message": "Сохранение в очереди"
+  },
+  "jobContinues": {
+    "message": "Сохранение продолжится после закрытия этого окна."
+  },
+  "authorizeDownloads": {
+    "message": "Разрешить и загрузить"
+  },
+  "retry": {
+    "message": "Повторить"
   }
 }

@@ -117,3 +117,148 @@ export const BROWSER_CONNECTOR_TRANSLATIONS = {
     "解凍された開発拡張機能または別のローカルインストール。",
   ]),
 } as const;
+
+// Capture queue copy is kept aligned with the Chrome catalogs.
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["en"], {
+  "Guardados y descargas": "Saves and downloads",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} references · {files} files",
+  "{count} archivo(s) pendientes": "{count} file(s) pending",
+  "Descargando…": "Downloading…",
+  "Necesita autorización": "Authorization needed",
+  "Requiere atención": "Needs attention",
+  "Completado": "Complete",
+  "Guardado en cola": "Save queued",
+  "El guardado continúa aunque cierres esta ventana.": "Saving continues after you close this window.",
+  "Autorizar y descargar": "Authorize and download",
+  "Reintentar": "Retry"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["fr"], {
+  "Guardados y descargas": "Enregistrements et téléchargements",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} références · {files} fichiers",
+  "{count} archivo(s) pendientes": "{count} fichier(s) en attente",
+  "Descargando…": "Téléchargement…",
+  "Necesita autorización": "Autorisation nécessaire",
+  "Requiere atención": "Intervention nécessaire",
+  "Completado": "Terminé",
+  "Guardado en cola": "Enregistrement en attente",
+  "El guardado continúa aunque cierres esta ventana.": "L’enregistrement continue après la fermeture de cette fenêtre.",
+  "Autorizar y descargar": "Autoriser et télécharger",
+  "Reintentar": "Réessayer"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["de"], {
+  "Guardados y descargas": "Speicherungen und Downloads",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} Referenzen · {files} Dateien",
+  "{count} archivo(s) pendientes": "{count} Datei(en) ausstehend",
+  "Descargando…": "Wird heruntergeladen…",
+  "Necesita autorización": "Zugriff erforderlich",
+  "Requiere atención": "Aktion erforderlich",
+  "Completado": "Abgeschlossen",
+  "Guardado en cola": "Speicherung vorgemerkt",
+  "El guardado continúa aunque cierres esta ventana.": "Die Speicherung läuft weiter, wenn du dieses Fenster schließt.",
+  "Autorizar y descargar": "Erlauben und herunterladen",
+  "Reintentar": "Erneut versuchen"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["pt"], {
+  "Guardados y descargas": "Gravações e transferências",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} referências · {files} ficheiros",
+  "{count} archivo(s) pendientes": "{count} ficheiro(s) pendentes",
+  "Descargando…": "A transferir…",
+  "Necesita autorización": "Requer autorização",
+  "Requiere atención": "Requer atenção",
+  "Completado": "Concluído",
+  "Guardado en cola": "Gravação em fila",
+  "El guardado continúa aunque cierres esta ventana.": "A gravação continua depois de fechar esta janela.",
+  "Autorizar y descargar": "Autorizar e transferir",
+  "Reintentar": "Tentar novamente"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["pt-BR"], {
+  "Guardados y descargas": "Salvamentos e downloads",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} referências · {files} arquivos",
+  "{count} archivo(s) pendientes": "{count} arquivo(s) pendentes",
+  "Descargando…": "Baixando…",
+  "Necesita autorización": "Requer autorização",
+  "Requiere atención": "Requer atenção",
+  "Completado": "Concluído",
+  "Guardado en cola": "Salvamento na fila",
+  "El guardado continúa aunque cierres esta ventana.": "O salvamento continua depois de fechar esta janela.",
+  "Autorizar y descargar": "Autorizar e baixar",
+  "Reintentar": "Tentar novamente"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["it"], {
+  "Guardados y descargas": "Salvataggi e download",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} riferimenti · {files} file",
+  "{count} archivo(s) pendientes": "{count} file in attesa",
+  "Descargando…": "Download in corso…",
+  "Necesita autorización": "Autorizzazione necessaria",
+  "Requiere atención": "Richiede attenzione",
+  "Completado": "Completato",
+  "Guardado en cola": "Salvataggio in coda",
+  "El guardado continúa aunque cierres esta ventana.": "Il salvataggio continua dopo la chiusura di questa finestra.",
+  "Autorizar y descargar": "Autorizza e scarica",
+  "Reintentar": "Riprova"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["tr"], {
+  "Guardados y descargas": "Kayıtlar ve indirmeler",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} kaynak · {files} dosya",
+  "{count} archivo(s) pendientes": "{count} dosya bekliyor",
+  "Descargando…": "İndiriliyor…",
+  "Necesita autorización": "İzin gerekiyor",
+  "Requiere atención": "İşlem gerekiyor",
+  "Completado": "Tamamlandı",
+  "Guardado en cola": "Kayıt sıraya alındı",
+  "El guardado continúa aunque cierres esta ventana.": "Bu pencereyi kapatsanız da kayıt devam eder.",
+  "Autorizar y descargar": "İzin ver ve indir",
+  "Reintentar": "Yeniden dene"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["zh-CN"], {
+  "Guardados y descargas": "保存与下载",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} 条文献 · {files} 个文件",
+  "{count} archivo(s) pendientes": "{count} 个文件待处理",
+  "Descargando…": "正在下载…",
+  "Necesita autorización": "需要授权",
+  "Requiere atención": "需要处理",
+  "Completado": "已完成",
+  "Guardado en cola": "已加入保存队列",
+  "El guardado continúa aunque cierres esta ventana.": "关闭此窗口后仍会继续保存。",
+  "Autorizar y descargar": "授权并下载",
+  "Reintentar": "重试"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["zh-TW"], {
+  "Guardados y descargas": "儲存與下載",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} 筆文獻 · {files} 個檔案",
+  "{count} archivo(s) pendientes": "{count} 個檔案待處理",
+  "Descargando…": "正在下載…",
+  "Necesita autorización": "需要授權",
+  "Requiere atención": "需要處理",
+  "Completado": "已完成",
+  "Guardado en cola": "已加入儲存佇列",
+  "El guardado continúa aunque cierres esta ventana.": "關閉此視窗後仍會繼續儲存。",
+  "Autorizar y descargar": "授權並下載",
+  "Reintentar": "重試"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["ja"], {
+  "Guardados y descargas": "保存とダウンロード",
+  "{saved}/{total} referencias · {files} archivos": "{saved}/{total} 件の文献 · {files} 個のファイル",
+  "{count} archivo(s) pendientes": "{count} 個のファイルが保留中",
+  "Descargando…": "ダウンロード中…",
+  "Necesita autorización": "許可が必要",
+  "Requiere atención": "確認が必要",
+  "Completado": "完了",
+  "Guardado en cola": "保存を予約しました",
+  "El guardado continúa aunque cierres esta ventana.": "このウィンドウを閉じても保存は続きます。",
+  "Autorizar y descargar": "許可してダウンロード",
+  "Reintentar": "再試行"
+});
+Object.assign(BROWSER_CONNECTOR_TRANSLATIONS["ko"], {
+  "Guardados y descargas": "저장 및 다운로드",
+  "{saved}/{total} referencias · {files} archivos": "문헌 {saved}/{total}개 · 파일 {files}개",
+  "{count} archivo(s) pendientes": "파일 {count}개 대기 중",
+  "Descargando…": "다운로드 중…",
+  "Necesita autorización": "권한 필요",
+  "Requiere atención": "확인 필요",
+  "Completado": "완료",
+  "Guardado en cola": "저장 대기 중",
+  "El guardado continúa aunque cierres esta ventana.": "이 창을 닫아도 저장이 계속됩니다.",
+  "Autorizar y descargar": "허용하고 다운로드",
+  "Reintentar": "다시 시도"
+});

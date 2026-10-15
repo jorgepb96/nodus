@@ -9253,6 +9253,9 @@ export interface BrowserApi {
   getBrowserDeviceVolume(): Promise<number>;
   setBrowserDeviceVolume(volume: number): Promise<void>;
   onBrowserMediaChanged(cb: (states: import('./browser').BrowserMediaState[]) => void): () => void;
+  listBrowserCaptureJobs(): Promise<import('./browserConnector').BrowserCaptureJob[]>;
+  enqueueBrowserCaptures(requests: import('./browserConnector').BrowserConnectorCaptureRequest[]): Promise<import('./browserConnector').BrowserCaptureJob>;
+  retryBrowserCaptureJob(id: string): Promise<void>;
   captureBrowserPage(): Promise<import('./browserConnector').BrowserConnectorCapturePreview | null>;
   saveBrowserCapture(
     request: import('./browserConnector').BrowserConnectorCaptureRequest,

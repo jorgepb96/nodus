@@ -85,14 +85,6 @@
   "saved": {
     "message": "已儲存到 Nodus"
   },
-  "savedSummary": {
-    "message": "已附加 $ATTACHMENTCOUNT$ 個檔案。乾淨閱讀的準備會在 Nodus 中繼續。",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "在 Nodus 中開啟"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "請至少選擇一筆參考文獻。"
-  },
-  "savedBatchSummary": {
-    "message": "已儲存 $COUNT$ 筆參考文獻，並附加 $FILES$ 個檔案。",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "已在 Nodus 中"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "AGPL 原始碼"
+  },
+  "jobHistory": {
+    "message": "儲存與下載"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ 筆文獻 · $FILES$ 個檔案",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ 個檔案待處理",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "正在下載…"
+  },
+  "jobNeedsPermission": {
+    "message": "需要授權"
+  },
+  "jobFailed": {
+    "message": "需要處理"
+  },
+  "jobComplete": {
+    "message": "已完成"
+  },
+  "jobQueued": {
+    "message": "已加入儲存佇列"
+  },
+  "jobContinues": {
+    "message": "關閉此視窗後仍會繼續儲存。"
+  },
+  "authorizeDownloads": {
+    "message": "授權並下載"
+  },
+  "retry": {
+    "message": "重試"
   }
 }

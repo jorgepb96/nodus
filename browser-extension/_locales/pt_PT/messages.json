@@ -85,14 +85,6 @@
   "saved": {
     "message": "Guardado no Nodus"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ ficheiro(s) foram agora anexados. A preparação da leitura limpa continua no Nodus.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Abrir no Nodus"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "Selecione pelo menos uma referência."
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ referências guardadas com $FILES$ ficheiro(s) anexado(s).",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Já estava no Nodus"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "Código-fonte AGPL"
+  },
+  "jobHistory": {
+    "message": "Gravações e transferências"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ referências · $FILES$ ficheiros",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ ficheiro(s) pendentes",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "A transferir…"
+  },
+  "jobNeedsPermission": {
+    "message": "Requer autorização"
+  },
+  "jobFailed": {
+    "message": "Requer atenção"
+  },
+  "jobComplete": {
+    "message": "Concluído"
+  },
+  "jobQueued": {
+    "message": "Gravação em fila"
+  },
+  "jobContinues": {
+    "message": "A gravação continua depois de fechar esta janela."
+  },
+  "authorizeDownloads": {
+    "message": "Autorizar e transferir"
+  },
+  "retry": {
+    "message": "Tentar novamente"
   }
 }

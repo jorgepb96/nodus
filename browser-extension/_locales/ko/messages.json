@@ -85,14 +85,6 @@
   "saved": {
     "message": "Nodus에 저장했습니다"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$개 파일을 첨부했습니다. 깨끗한 읽기 준비는 Nodus에서 계속됩니다.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Nodus에서 열기"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "참고문헌을 하나 이상 선택하세요."
-  },
-  "savedBatchSummary": {
-    "message": "참고문헌 $COUNT$건을 저장하고 파일 $FILES$개를 첨부했습니다.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Nodus에 이미 있음"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "AGPL 소스 코드"
+  },
+  "jobHistory": {
+    "message": "저장 및 다운로드"
+  },
+  "jobProgress": {
+    "message": "문헌 $SAVED$/$TOTAL$개 · 파일 $FILES$개",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "파일 $COUNT$개 대기 중",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "다운로드 중…"
+  },
+  "jobNeedsPermission": {
+    "message": "권한 필요"
+  },
+  "jobFailed": {
+    "message": "확인 필요"
+  },
+  "jobComplete": {
+    "message": "완료"
+  },
+  "jobQueued": {
+    "message": "저장 대기 중"
+  },
+  "jobContinues": {
+    "message": "이 창을 닫아도 저장이 계속됩니다."
+  },
+  "authorizeDownloads": {
+    "message": "허용하고 다운로드"
+  },
+  "retry": {
+    "message": "다시 시도"
   }
 }

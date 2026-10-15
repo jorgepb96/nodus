@@ -99,6 +99,12 @@
       <div id="success-warnings" class="warning-list hidden"></div>
       <div class="success-actions"><button id="open-button" class="primary-button" type="button" data-i18n="openInNodus">Open in Nodus</button><button id="done-button" class="secondary-button" type="button" data-i18n="done">Done</button></div>
     </section>
+    <section id="jobs-panel" class="jobs-panel hidden" aria-live="polite">
+      <strong data-i18n="jobHistory">Saves and downloads</strong>
+      <div id="jobs-list"></div>
+      <button id="authorize-button" class="primary-button hidden" type="button" data-i18n="authorizeDownloads">Authorize and download</button>
+      <p id="jobs-error" class="error-text" role="alert"></p>
+    </section>
   </main>
   <script type="module" src="popup.js"></script>
 </body>

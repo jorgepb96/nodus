@@ -142,12 +142,14 @@ function editableCollectionId(requested: string | null | undefined): string | nu
 }
 
 export async function saveBrowserCapture(request: BrowserConnectorCaptureRequest): Promise<BrowserConnectorSaveResult> {
-  const preview = await previewBrowserCapture(request);
+  const preview = request.metadataReviewed
+    ? { metadata: normalizeLibraryMetadata(request.metadata, request.pageUrl), warnings: [] as string[] }
+    : await previewBrowserCapture(request);
   const tags = [...new Set([...(preview.metadata.tags ?? []), ...(request.tags ?? [])].map((entry) => cleanText(entry, 200)).filter(Boolean))].slice(0, 256);
   const collectionId = editableCollectionId(request.collectionId);
-  const incomingMetadata = { ...preview.metadata, tags };
+  const incomingMetadata = { ...preview.metadata, tags, ...(request.captureRequestId ? { extra: { ...preview.metadata.extra, 'Browser capture request': request.captureRequestId } } : {}) };
   const resolution = await serializeCaptureMutation(async () => {
-    const match = findGlobalLibraryItemByMetadata(incomingMetadata);
+    const match = findGlobalLibraryItemByMetadata(incomingMetadata, !request.sourceIsResultPage, request.captureRequestId);
     const initialRevision = match?.item.clock.revision ?? null;
     let record = match
       ? mergeGlobalLibraryItemMetadataIfMissing(match.item.id, incomingMetadata)

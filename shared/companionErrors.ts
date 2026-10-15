@@ -4,6 +4,19 @@ type Translations = Partial<Record<AppLanguage, string>> & { en: string };
 
 // Preserve the specific recovery reason for downloaded companion data through IPC.
 export const COMPANION_RUNTIME_ERRORS: Record<string, Translations> = {
+  "La selección supera el contexto de investigación del móvil. Descarga un conjunto menor de fuentes de estudio.": {
+    "en": "The selection exceeds the research context available on the phone. Download a smaller set of study sources.",
+    "fr": "La sélection dépasse le contexte de recherche disponible sur le mobile. Téléchargez un ensemble plus restreint de sources d’étude.",
+    "de": "Die Auswahl überschreitet den auf dem Mobilgerät verfügbaren Recherchekontext. Lade eine kleinere Auswahl an Lernquellen herunter.",
+    "pt": "A seleção excede o contexto de investigação disponível no telemóvel. Transfere um conjunto menor de fontes de estudo.",
+    "pt-BR": "A seleção excede o contexto de pesquisa disponível no celular. Baixe um conjunto menor de fontes de estudo.",
+    "it": "La selezione supera il contesto di ricerca disponibile sul dispositivo mobile. Scarica un insieme più piccolo di fonti di studio.",
+    "tr": "Seçim, telefonda kullanılabilen araştırma bağlamını aşıyor. Daha az çalışma kaynağı indirin.",
+    "zh-CN": "所选内容超出手机可用的研究上下文。请下载范围更小的学习来源。",
+    "zh-TW": "所選內容超出手機可用的研究上下文。請下載範圍較小的學習來源。",
+    "ja": "選択した内容がモバイル端末で利用できる調査コンテキストを超えています。学習資料の数を減らしてダウンロードしてください。",
+    "ko": "선택한 내용이 모바일 기기에서 사용할 수 있는 연구 컨텍스트를 초과합니다. 더 적은 학습 자료를 다운로드하세요."
+  },
   "La copia no corresponde a esta vista.": {
     "en": "The copy does not match this view.",
     "fr": "La copie ne correspond pas à cette vue.",

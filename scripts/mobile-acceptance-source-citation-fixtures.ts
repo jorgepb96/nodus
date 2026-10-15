@@ -46,10 +46,14 @@ export async function ensureAcceptanceSourceCitationFixtures(lab: string): Promi
   const fixture = await withOwningVault(vault.id, () => withVaultDatabase(vault.id, () => {
     const db = getDb();
     return db.transaction(() => {
-      db.prepare('INSERT INTO works(nodus_id,title,authors_json,item_type,source_type,deep_hash) VALUES(?,?,?,?,?,?)')
+      const existingWork = db.prepare('SELECT title FROM works WHERE nodus_id=?').get(record.id) as {title:string} | undefined;
+      if (existingWork && existingWork.title !== record.metadata.title) throw new Error('Source fixture work identity conflicts with its actual library record');
+      db.prepare('INSERT INTO works(nodus_id,title,authors_json,item_type,source_type,deep_hash) VALUES(?,?,?,?,?,?) ON CONFLICT(nodus_id) DO NOTHING')
         .run(record.id, record.metadata.title, '[]', 'report', 'manual', revision);
+      const existingPassage = db.prepare('SELECT nodus_id,text FROM passages WHERE passage_id=?').get(passageId) as {nodus_id:string;text:string} | undefined;
+      if (existingPassage && (existingPassage.nodus_id !== record.id || existingPassage.text !== text)) throw new Error('Source fixture passage identity conflicts with its actual quotation');
       db.prepare(`INSERT INTO passages(passage_id,nodus_id,chunk_index,text,page_label,page_number,char_len,content_hash,created_at)
-        VALUES(?,?,?,?,?,?,?,?,?)`).run(passageId, record.id, 0, text, 'p. 2', 2, text.length, revision, new Date().toISOString());
+        VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(passage_id) DO NOTHING`).run(passageId, record.id, 0, text, 'p. 2', 2, text.length, revision, new Date().toISOString());
       const entry = createDictionaryEntry({name, aliases:[], focusPrompt:'Fixture ficticio para verificar la apertura de una fuente en su página exacta.',
         scope:{kind:'works',workIds:[record.id]}, outputLanguage:'es', detailLevel:'standard', tags:['mobile-acceptance']});
       upsertDictionaryEvidence(entry.id, [{kind:'passage', refId:passageId, decision:'included', score:1, reason:'Cita literal preparada para la aceptación',

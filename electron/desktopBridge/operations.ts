@@ -1,4 +1,6 @@
 import {mobileStudyKnowledgeSource} from './mobileStudyKnowledge';
+import {getMobileDeepResearchVisualSource,readMobileDeepResearchVisualAsset} from './researchVisualSource';
+import {saveMobileDeepResearchVisuals} from './researchVisualEdits';
 import {MOBILE_DATABASE_ACTION_METHODS,executeMobileDatabaseAction} from './databaseActionsOperation';
 import {mobileDeepResearchSource,saveMobileDeepResearchReport} from './mobileDeepResearch';
 import type { IpcMainInvokeEvent } from 'electron';
@@ -56,6 +58,15 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
   if(MOBILE_DATABASE_ACTION_METHODS.has(method)) {
     if(method!=='getMobileDatabaseActionSource'&&!bridgeJobId)throw new Error('job_required');
     return executeMobileDatabaseAction(vaultId,domains,method,args,jobIdentity,signal,phase=>events?.('mobile:databaseAction:progress',{phase}));
+  }
+  if(method==='getMobileDeepResearchVisualSource'||method==='readMobileDeepResearchVisualAsset') {
+    if(args.length!==1||!domains.includes('corpus'))throw new Error('permission_denied');
+    return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>method==='getMobileDeepResearchVisualSource'?getMobileDeepResearchVisualSource(args[0]):readMobileDeepResearchVisualAsset(args[0]),domains)));
+  }
+  if(method==='saveMobileDeepResearchVisuals') {
+    if(args.length!==1||!domains.includes('corpus')||!bridgeJobId||!jobIdentity)throw new Error('permission_denied');
+    const result=await withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>saveMobileDeepResearchVisuals(args[0],jobIdentity.deviceGrant),domains)));
+    invalidateLiveCorpus(vaultId);return result;
   }
   if(method==='getMobileDeepResearchSource'||method==='saveMobileDeepResearchReport') {
     if(args.length!==1||!domains.includes('corpus'))throw new Error('permission_denied');

@@ -1,3 +1,6 @@
+import {validateMediaAsset} from '../../packages/capability-api/src/media';
+import {DocumentFigureContext} from '../components/DocumentFigures';
+import type {DocumentVisualManifest} from '@shared/documentSkills';
 import '../index.css';
 import './proseRead.css';
 import {useLayoutEffect,useRef,type CSSProperties} from 'react';
@@ -11,7 +14,7 @@ import {proseSelectionPayload} from './proseSelectionBridge';
 import {formulaExpansionControls} from './proseFormulaExpansion';
 
 interface Annotation extends ReaderAnchor {id:string;kind:'highlight'|'comment'|'bookmark';color:string|null}
-interface Input {source:string;language:AppSettings['uiLanguage'];dark:boolean;accent:string;fontSize:number;justify:boolean;annotations:Annotation[];highlighter:string|null;search:Array<{location:number;length:number}>;activeSearch:{location:number;length:number}|null;searchAim:number;bookmarkAim:number;legacyBookmark?:{selectedText:string;startOffset:number;endOffset:number;prefix:string;suffix:string}|null}
+interface Input {figureContext?:{manifest:DocumentVisualManifest};source:string;language:AppSettings['uiLanguage'];dark:boolean;accent:string;fontSize:number;justify:boolean;annotations:Annotation[];highlighter:string|null;search:Array<{location:number;length:number}>;activeSearch:{location:number;length:number}|null;searchAim:number;bookmarkAim:number;legacyBookmark?:{selectedText:string;startOffset:number;endOffset:number;prefix:string;suffix:string}|null}
 const native=window as unknown as {webkit:{messageHandlers:{proseRead:{postMessage(value:unknown):void}}};nodusProseRender(input:Input):void;nodusProseUpdate(input:Input):void;nodusProseReply(id:string,result:unknown,error:string|null):void;nodusProseClear():void;nodusProseRefreshSelection():boolean};
 let sequence=0,current:Input,root:HTMLElement|null=null,searchAim=0,bookmarkAim=0,legacyMigrated=false;
 const pending=new Map<string,{resolve:(value:any)=>void;reject:(error:Error)=>void}>();
@@ -85,22 +88,28 @@ function Document({input}:{input:Input}){
   useLayoutEffect(()=>{
     root=ref.current;if(!root)return;legacyMigrated=false;searchAim=0;bookmarkAim=0;
     const host=root,controller=new AbortController(),resources=new ReaderResourceQueue(4);
+    window.nodus={readCapabilityMedia:async(source:string)=>{const value=await resources.run(()=>call('image',source,controller.signal),controller.signal),bytes=Uint8Array.from(atob(value.data),c=>c.charCodeAt(0));return {bytes,mimeType:value.mime,info:validateMediaAsset(bytes,value.mime)};},downloadCapabilityFile:async(source:string)=>{send('openImage',{source,title:'Figura'});}} as unknown as typeof window.nodus;
     root.querySelectorAll('.katex-mathml').forEach(node=>node.setAttribute('data-reader-ignore','true'));
     root.querySelectorAll('table').forEach(table=>{const heads=Array.from(table.querySelectorAll('thead th'));if(heads.length>3)table.dataset.mobileColumns=String(heads.length);table.querySelectorAll('tbody tr').forEach(row=>row.querySelectorAll('td').forEach((cell,index)=>cell.setAttribute('data-column-label',heads[index]?.textContent??String(index+1))));});
     const adaptFormulae=formulaExpansionControls(root,value=>send('formula',value));adaptFormulae();
     invalidateReaderTextIndex(root);send('text',readerTextIndex(root).content);paint();measure();
-    const resize=new ResizeObserver(()=>{adaptFormulae();measure();});resize.observe(root);
+    let figureTimer:ReturnType<typeof setTimeout>|undefined;
+    const reportFigureAnchors=()=>{clearTimeout(figureTimer);if(input.figureContext)figureTimer=setTimeout(()=>{if(!controller.signal.aborted){const expected=input.figureContext!.manifest.figures.filter(figure=>figure.state==='ready'&&figure.poster).length;send('figureAnchors',{expected,matched:host.querySelectorAll('[data-figure-id]').length});}},50);};
+    const resize=new ResizeObserver(()=>{adaptFormulae();measure();reportFigureAnchors();});resize.observe(root);
+    const figureChanges=new MutationObserver(reportFigureAnchors);figureChanges.observe(host,{childList:true,subtree:true});
+    const visibleImages=new WeakSet<HTMLImageElement>();
+    const imageObserver=typeof IntersectionObserver==='undefined'?null:new IntersectionObserver(entries=>{for(const entry of entries){const image=entry.target as HTMLImageElement;if(entry.isIntersecting){visibleImages.add(image);image.dispatchEvent(new Event('nodus-load'));}else{visibleImages.delete(image);image.removeAttribute('src');}}},{rootMargin:'400px'});
     host.querySelectorAll('img').forEach(image=>{
       const source=image.getAttribute('src');if(!source)return;image.removeAttribute('src');image.dataset.proseSource=source;
       const valid=()=>!controller.signal.aborted&&image.isConnected&&host.contains(image)&&image.dataset.proseSource===source;
       const open=()=>{if(valid())send('openImage',{source,title:image.alt});};
       image.onclick=open;image.setAttribute('tabindex','0');image.setAttribute('role','button');image.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();open();}};
-      const load=()=>{void resources.run(()=>call('image',source,controller.signal),controller.signal).then(value=>{
-        if(!valid())return;image.src=`data:${value.mime};base64,${value.data}`;measure();
+      let loading=false;const load=()=>{if(loading||image.hasAttribute('src'))return;loading=true;void resources.run(()=>call('image',source,controller.signal),controller.signal).then(value=>{
+        if(!valid()||imageObserver&&!visibleImages.has(image))return;image.src=`data:${value.mime};base64,${value.data}`;measure();
       }).catch(error=>{
         if(!valid())return;const label=document.createElement('button');label.dataset.readerIgnore='true';label.className='prose-image-error';
         label.textContent=`${image.alt||'Imagen'}: ${error.message}. Reintentar`;label.onclick=()=>{label.remove();if(valid())load();};image.after(label);measure();
-      });};load();
+      }).finally(()=>{loading=false;});};image.addEventListener('nodus-load',load);if(imageObserver)imageObserver.observe(image);else load();
     });
     const clicked=(event:MouseEvent)=>{
       if((event.target as HTMLElement).closest('button,img'))return;
@@ -110,13 +119,14 @@ function Document({input}:{input:Input}){
       const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(!caret)return;
       for(const item of current.annotations.filter(item=>item.kind==='highlight')){const range=resolve(item);if(range?.isPointInRange(caret.startContainer,caret.startOffset)){send('highlight',{id:item.id,rect:rect(range)});return;}}
     };host.addEventListener('click',clicked);
-    return()=>{controller.abort();resize.disconnect();host.removeEventListener('click',clicked);if(root===host)root=null;};
-  },[input.source]);
-  return <div ref={ref} className="prose-document" style={{fontSize:input.fontSize+'px',textAlign:input.justify?'justify':'start'} as CSSProperties}><Markdown content={imageMarkdown(input.source)} verify={false} allowDataImages localReaderImages
+    reportFigureAnchors();
+    return()=>{controller.abort();clearTimeout(figureTimer);figureChanges.disconnect();imageObserver?.disconnect();resize.disconnect();host.removeEventListener('click',clicked);if(root===host)root=null;};
+  },[input.source,input.figureContext?.manifest.revision]);
+  return <div ref={ref} className="prose-document" style={{fontSize:input.fontSize+'px',textAlign:input.justify?'justify':'start'} as CSSProperties}><DocumentFigureContext.Provider value={input.figureContext?{manifest:input.figureContext.manifest,target:input.figureContext.manifest.target,refresh:()=>{},downloadPoster:figure=>send('openImage',{source:figure.poster,title:figure.caption}),downloadOriginal:(figure,node)=>{if(node.kind==='svg')send('figureSvg',{figureId:figure.id,svg:node.svg});else if('attachmentId' in node)send('openImage',{source:`nodus-capability://chat/${figure.owner}/${node.attachmentId}`,title:figure.caption});}}:null}><Markdown content={imageMarkdown(input.source)} verify={false} allowDataImages localReaderImages
     onCitation={ref=>link(ref.kind,ref.id)} onWorldEntry={(kind,id)=>link('world/'+kind,id)}
     onStudyEvidence={id=>link('study/evidence',id)} onStudyDocument={(id,where)=>link('study/doc',id,{from:where?.from})}
     onStudyMaterial={(id,where)=>link('study/material',id,{page:where?.pageNumber,slide:where?.slideNumber})}
-    onStudyRecording={(id,time)=>link('study/recording',id,{t:time})}/></div>;
+    onStudyRecording={(id,time)=>link('study/recording',id,{t:time})}/></DocumentFigureContext.Provider></div>;
 }
 const renderer=createRoot(document.getElementById('root')!);
 function configure(input:Input){current=input;document.documentElement.classList.toggle('dark',input.dark);document.documentElement.style.setProperty('--prose-accent',input.accent);setActiveLang(input.language);}

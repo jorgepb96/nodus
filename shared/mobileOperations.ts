@@ -108,6 +108,9 @@ export const MOBILE_OPERATIONS = {
   getWritingWorkshopDraft: ['writing:saved:get', 'corpus'],
   getMobileDeepResearchSource: ['research:deep:mobile:source', 'corpus'],
   saveMobileDeepResearchReport: ['research:deep:mobile:save', 'writing'],
+  getMobileDeepResearchVisualSource: ['research:deep:mobile:visuals:source', 'writing'],
+  readMobileDeepResearchVisualAsset: ['research:deep:mobile:visuals:asset', 'writing'],
+  saveMobileDeepResearchVisuals: ['research:deep:mobile:visuals', 'writing'],
   listDeepResearchJobs: ['research:deep:queue:list', 'corpus'], enqueueDeepResearchJob: ['research:deep:queue:enqueue-mobile', 'research-generation'],
   clearFinishedDeepResearchJobs: ['research:deep:queue:clear-mobile', 'research-generation'],
   cancelDeepResearchJob: ['research:deep:queue:cancel', 'research-generation'],
@@ -208,7 +211,7 @@ export const MOBILE_JOB_OPERATIONS: ReadonlySet<string> = new Set([
   'saveMobileAcademicResult',
   'streamMobileCompanionChat',
   'exportWritingWorkshopDraft', 'exportDeepResearchArchive', 'exportImmersionSessionPdf','exportDatabaseDeepResearchReport',
-  'saveMobileDeepResearchReport', 'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
+  'saveMobileDeepResearchReport', 'saveMobileDeepResearchVisuals', 'saveDictionaryGeneratedVersion', 'saveImmersionGeneratedSession', 'saveContentTranslationFromMobile', 'saveStudyImprovementFromMobile', 'saveWritingWorkshopFromMobile', 'saveMobileDatabaseResearchReport', 'startDictionaryGeneration', 'enqueueDeepResearchJob',
   'saveMobileWorldMapImage', 'generateMobileWorldMap', 'generateReportImage', 'generateImmersionSession', 'generateWritingWorkshopDraft', 'generateContentTranslation',
   'researchChat', 'researchChatStream', 'worldChatStream', 'dbChatStream', 'streamStudyAssistant', 'enqueueDatabaseDeepResearch', 'improveStudyText', 'buildArgumentMap', 'scanDictionaryNewEvidence', 'generateConversationTitle',
 ]);

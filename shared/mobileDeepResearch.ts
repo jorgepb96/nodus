@@ -1,3 +1,4 @@
+import type {DocumentVisualManifest} from './documentSkills';
 import {citationUrl} from './completeGuide/locators';
 import type {CompleteGuideSnapshot} from './completeGuide/snapshot';
 import type {DeepResearchRequest,DeepResearchReport,WritingWorkshopSnapshot,DeepResearchProgress,ModelRef} from './types';
@@ -16,7 +17,14 @@ export interface MobileDeepResearchSource {
  sourceScope:'linked_corpus'|'device_downloads';
 }
 export type MobileDeepResearchProof = Pick<MobileDeepResearchSource,"version"|"vaultId"|"vaultType"|"revision"|"sourceScope"|"queryEmbeddingModel"|"preparedSourcesOnly">;
-export interface MobileDeepResearchCheckpoint {
+/** Provider effects share this durable journal without pretending that a visual
+ * edit session is a new prose generation. */
+export interface DurableMobileCompletionJournal {
+ calls:Record<string,{input:string;output:unknown}>;
+ completionTranscript?:string[];
+ inflight?:{key:string;input:string;request?:unknown;createdAt:string};
+}
+export interface MobileDeepResearchCheckpoint extends DurableMobileCompletionJournal {
  imageModel?:ModelRef;
  webSearchEndpoint?:string;
  embeddingConfiguration?:{provider:string;model:string;dim:number};
@@ -24,7 +32,7 @@ export interface MobileDeepResearchCheckpoint {
  completionTranscript?:string[];
  citationIndex?:Record<string,{callKey:string;path:Array<string|number>;citation?:string}>;
  guideCache?:Record<string,unknown>;guideCheckpoints?:Record<string,unknown>;
- context?:MobileDeepResearchProof;calls:Record<string,{input:string;output:unknown}>;report?:DeepResearchReport;
+ context?:MobileDeepResearchProof;calls:Record<string,{input:string;output:unknown}>;report?:MobileDeepResearchReport;
  inflight?:{key:string;input:string;request?:unknown;createdAt:string};
  uncertainAttempts?:Array<{key:string;input:string;request?:unknown;createdAt:string}>;completionAttempt?:string;
  history?:Array<{stage:string;input:unknown}>;recoveryReviewRequired?:boolean;progress?:DeepResearchProgress;error?:string;result?:unknown;publicationPending?:boolean;visualAssetsPublished?:boolean;hiddenFromQueue?:boolean;
@@ -50,7 +58,7 @@ export function assertMobileDeepResearchSource(source:MobileDeepResearchSource):
 /** Every paid call is captured before its result reaches the orchestration core.
  * Replaying the same stage never calls a provider again; changed inputs require a
  * new cache entry rather than borrowing another stage's answer. */
-export async function durableDeepResearchCall<T>(checkpoint:MobileDeepResearchCheckpoint,key:string,input:unknown,invoke:()=>Promise<T>,persist:()=>Promise<void>,options?:{paid?:boolean;request?:unknown;recover?:()=>Promise<T|undefined>}):Promise<T> {
+export async function durableDeepResearchCall<T>(checkpoint:DurableMobileCompletionJournal,key:string,input:unknown,invoke:()=>Promise<T>,persist:()=>Promise<void>,options?:{paid?:boolean;request?:unknown;recover?:()=>Promise<T|undefined>}):Promise<T> {
  const canonical=canonicalJson(input);const existing=checkpoint.calls[key];
  if(existing){if(existing.input!==canonical)throw new Error('deep_research_checkpoint_input_conflict');return structuredClone(existing.output) as T;}
  if(options?.paid&&checkpoint.inflight){
@@ -113,7 +121,8 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
 }
 
 export interface MobileDeepResearchCover {model:ModelRef;style:import('./types').DecorativeImageStyle;context:string;prompt:string;bytes:string;mime:string}
-export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover};
+export interface MobileDeepResearchVisuals {manifest:DocumentVisualManifest;assets:Array<{id:string;owner:string;ownerRevision:string;generationId:string;figureId:string;mimeType:string;byteCount:number;sha256:string}>}
+export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover;mobileVisuals?:MobileDeepResearchVisuals};
 
 export function mobileDeepResearchCoverMetadata(cover:MobileDeepResearchCover,id:string,createdAt:string):import('./types').DecorativeImage {
  return {entityKind:'deep_research',entityId:id,requested:true,status:'ready',provider:cover.model.provider==='gemini'?'google':cover.model.provider as 'openai'|'openrouter',model:cover.model.model,style:cover.style,visualContext:cover.context,prompt:cover.prompt,assetRef:null,mimeType:cover.mime,error:null,source:'ai',hasPrevious:false,createdAt,updatedAt:createdAt};

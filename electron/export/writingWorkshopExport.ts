@@ -1,4 +1,4 @@
-import { getDocumentVisuals } from '../ai/documentVisuals';
+import { getDocumentVisualsForExport as getDocumentVisuals } from './documentVisualAssets';
 import { dialogTitle } from '../dialogTitles';
 import { documentMarkdownWithFigures } from '@shared/documentFigureExport';
 import AdmZip from 'adm-zip';

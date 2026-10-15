@@ -5,6 +5,7 @@ import {aiColumnSystem,buildAiCellPrompt,buildAiImagePrompt,buildAiRowContext} f
 import {attachmentKind} from '../../shared/databases';
 import {isVisionMime} from '../../shared/imageAnalysis';
 import {getDb} from '../db/database';
+import {portablePageDocument} from './pageDocuments';
 import {getSettings} from '../db/settingsRepo';
 import {getColumn,getDatabaseDetail,getRow,listAttachments,getAttachmentBlob,setCell,addAttachment,deleteAttachment,getColumns,listRelations,createRow} from '../db/databasesRepo';
 import {getPageDocumentForRow,savePageDocument} from '../db/pagesRepo';
@@ -180,14 +181,17 @@ export function saveMobileDatabaseButtonResult(raw:unknown,grant:string) {
   const request=mobileDatabaseActionRequest(value.request,true);if(request.kind!=='button')throw new Error('invalid_database_button_publication');
   const prior=identity(value.requestId,grant,raw);if(prior.result!==undefined)return prior.result;
   const result=value.result as Record<string,unknown>,clickedAt=result.clickedAt,finishedAt=result.finishedAt;
-  if(Object.keys(result).some(key=>!['clickedAt','finishedAt','completedSteps','failedStep','webhooks'].includes(key))||typeof clickedAt!=='string'||!Number.isFinite(Date.parse(clickedAt))||typeof finishedAt!=='string'||!Number.isFinite(Date.parse(finishedAt))||typeof result.completedSteps!=='number'||!Number.isSafeInteger(result.completedSteps)||result.completedSteps<1||!result.webhooks||typeof result.webhooks!=='object'||Array.isArray(result.webhooks))throw new Error('invalid_database_button_publication');
+  if(Object.keys(result).some(key=>!['clickedAt','finishedAt','completedSteps','failedStep','webhooks','interruptedStep','resolution','interruptedExecution'].includes(key))||typeof clickedAt!=='string'||!Number.isFinite(Date.parse(clickedAt))||typeof finishedAt!=='string'||!Number.isFinite(Date.parse(finishedAt))||typeof result.completedSteps!=='number'||!Number.isSafeInteger(result.completedSteps)||result.completedSteps<1||!result.webhooks||typeof result.webhooks!=='object'||Array.isArray(result.webhooks))throw new Error('invalid_database_button_publication');
   return getDb().transaction(()=>{
-    const source=material(request,true),plan=instantiateMobileDatabaseButtonPlan(source.plan,value.requestId as string,clickedAt) as ReturnType<typeof compileMobileDatabaseButton>,completed=result.completedSteps as number,failed=result.failedStep;
-    if(completed>plan.operations.length||failed!=null&&(typeof failed!=='number'||!Number.isSafeInteger(failed)||failed!==completed-1||plan.operations[failed]?.type!=='webhook')||failed==null&&completed!==plan.operations.length)throw new Error('invalid_database_button_progress');
+    const source=material(request,true),plan=instantiateMobileDatabaseButtonPlan(source.plan,value.requestId as string,clickedAt) as ReturnType<typeof compileMobileDatabaseButton>,completed=result.completedSteps as number,failed=result.failedStep,interrupted=result.interruptedStep;
+    if(interrupted!=null){const original=result.interruptedExecution as Record<string,unknown>|undefined;if(result.resolution!=='publishConfirmedPrefix'||failed!=null||!Number.isSafeInteger(interrupted)||interrupted!==completed||plan.operations[completed]?.type!=='webhook'||!original||original.pendingWebhook!==completed||original.completedSteps!==completed||original.clickedAt!==clickedAt||original.finishedAt!=null||original.failedStep!=null||canonicalJson(Object.fromEntries(Object.entries((original.webhooks??{}) as Record<string,unknown>).filter(([key])=>key!==String(completed))))!==canonicalJson(result.webhooks)||Object.keys(original).some(key=>!['clickedAt','completedSteps','webhooks','pendingWebhook'].includes(key)))throw new Error('invalid_database_button_resolution');}
+    else if(result.resolution!=null||result.interruptedExecution!=null)throw new Error('invalid_database_button_resolution');
+    if(completed>plan.operations.length||failed!=null&&(typeof failed!=='number'||!Number.isSafeInteger(failed)||failed!==completed-1||plan.operations[failed]?.type!=='webhook')||failed==null&&interrupted==null&&completed!==plan.operations.length)throw new Error('invalid_database_button_progress');
     const webhooks=result.webhooks as Record<string,{status:string;httpStatus:number;attempt:number}>;
     const executedWebhooks=plan.operations.slice(0,completed).flatMap((op,index)=>op.type==='webhook'?[String(index)]:[]);
     if(Object.keys(webhooks).some(key=>!executedWebhooks.includes(key)))throw new Error('invalid_database_webhook_receipt');
     for(const key of executedWebhooks){const receipt=webhooks[key],op=plan.operations[Number(key)];if(!receipt||!['succeeded','failed'].includes(receipt.status)||!Number.isInteger(receipt.httpStatus)||receipt.httpStatus<100||receipt.httpStatus>599||!Number.isInteger(receipt.attempt)||receipt.attempt<1||receipt.attempt>Number(op.maxAttempts)||receipt.status!==(Number(key)===failed?'failed':'succeeded')||receipt.status==='succeeded'&&(receipt.httpStatus<200||receipt.httpStatus>299))throw new Error('invalid_database_webhook_receipt');}
+    const createdPages:ReturnType<typeof portablePageDocument>[]=[];
     const insertedRuns=new Set<string>();
     const ensureRun=(id:string)=>{if(insertedRuns.has(id))return;const run=plan.runs.find(run=>run.id===id);if(!run)throw new Error('invalid_database_automation_run');getDb().prepare(`INSERT INTO automation_runs(id,rule_id,database_id,row_id,event_key,status,depth,attempt,actions_completed,output_json,error,started_at) VALUES(?,?,?,?,?,'running',?,1,0,'null',NULL,?)`).run(run.id,run.ruleId,run.databaseId,run.rowId,`mobile-button:${value.requestId}:${run.id}`,run.depth,clickedAt);insertedRuns.add(id);};
     for(const op of plan.operations.slice(0,completed)) {
@@ -198,16 +202,17 @@ export function saveMobileDatabaseButtonResult(raw:unknown,grant:string) {
         if(!document)throw new Error('database_action_page_missing');
         const blocks=op.blocks as Parameters<typeof savePageDocument>[0]['blocks'];
         if(blocks.length){const saved=savePageDocument({pageId:document.page.id,expectedRevision:document.revision,blocks,reason:'automation'});if(!saved.ok)throw new Error('database_action_page_conflict');}
+        const committed=getPageDocumentForRow(created.id);if(!committed)throw new Error('database_action_page_missing');createdPages.push(portablePageDocument(committed));
       }else if(op.type==='notify'){ensureRun(op.runId as string);getDb().prepare('INSERT INTO automation_notifications(id,rule_id,run_id,database_id,row_id,title,body,is_read,created_at) VALUES(?,?,?,?,?,?,?,0,?)').run(op.id,op.ruleId,op.runId,op.databaseId,op.rowId,op.title,op.body,clickedAt);}
       // A webhook receipt is persisted in the action receipt, never sent here.
     }
     for(const run of plan.runs) {
-      if(failed!=null&&Number(run.startedStep)>Number(failed)||failed==null&&Number(run.startedStep)>=completed&&completed<plan.operations.length)continue;
+      if(failed!=null&&Number(run.startedStep)>Number(failed)||interrupted!=null&&Number(run.startedStep)>Number(interrupted)||failed==null&&interrupted==null&&Number(run.startedStep)>=completed&&completed<plan.operations.length)continue;
       const actionEnds=run.actionEnds as number[],limit=failed==null?completed:Number(failed),done=actionEnds.filter(end=>end<=limit).length;
       const status=run.status==='skipped'?'skipped':Number(run.finishedStep)<=completed&&(failed==null||Number(run.finishedStep)<=Number(failed))?'succeeded':'failed';
-      ensureRun(run.id as string);getDb().prepare('UPDATE automation_runs SET status=?,attempt=?,actions_completed=?,output_json=?,error=?,finished_at=? WHERE id=?').run(status,failed==null?1:webhooks[String(failed)]?.attempt??1,done,JSON.stringify({device:true,completedSteps:completed,webhooks}),status==='failed'?'La acción externa falló en el dispositivo.':null,finishedAt,run.id);
+      ensureRun(run.id as string);getDb().prepare('UPDATE automation_runs SET status=?,attempt=?,actions_completed=?,output_json=?,error=?,finished_at=? WHERE id=?').run(status,failed==null?1:webhooks[String(failed)]?.attempt??1,done,JSON.stringify({device:true,completedSteps:completed,webhooks,...(interrupted!=null?{interruptedStep:interrupted,resolution:result.resolution,interruptedExecution:result.interruptedExecution}:{})}),status==='failed'?(interrupted!=null?'La acción externa no tiene respuesta confirmada; el usuario conservó únicamente los pasos confirmados.':'La acción externa falló en el dispositivo.'):null,finishedAt,run.id);
     }
-    const published={row:getRow(request.rowId),result,runs:plan.runs.map(run=>run.id)};
+    const published={row:getRow(request.rowId),result,runs:[...insertedRuns],createdPages};
     getDb().prepare('INSERT INTO mobile_database_action_receipts(request_id,device_grant,fingerprint,stage,result_json) VALUES(?,?,?,\'completed\',?)').run(value.requestId,grant,prior.fingerprint,JSON.stringify(published));return published;
   })();
 }

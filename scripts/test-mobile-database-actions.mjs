@@ -68,7 +68,7 @@ try {
   automations.createAutomationRule(actionDb.id,{name:'Canonical five actions',trigger:{type:'button',columnId:actionButton.id},maxAttempts:1,actions:[
     {type:'set_property',columnId:stateColumn.id,value:{type:'literal',value:'device-set'}},
     {type:'update_related',relationColumnId:relation.id,changes:[{columnId:stateColumn.id,value:{type:'literal',value:'related-set'}}]},
-    {type:'create_page',databaseId:destination.id,properties:{[targetTitle.id]:{type:'literal',value:'Device-created page'}},blocks:[{type:'paragraph',content:{text:'Exact device-authored page'}}]},
+    {type:'create_page',databaseId:destination.id,properties:{[targetTitle.id]:{type:'literal',value:'Device-created page'}},blocks:[{type:'paragraph',content:{text:'Exact device-authored page'}},{id:'exact-table',type:'table',content:{rows:[['Original canonical cell']],columnWidths:[180]}},{id:'exact-child',parentBlockId:'exact-table',type:'paragraph',content:{text:'Exact nested text',reference:{id:'preserved-source-ref'}}}]},
     {type:'notify',title:'Device notice',body:'Confirmed local steps'},
     {type:'webhook',url:'https://never-called.invalid/receipt',method:'POST',headers:{},body:'explicit-user-action'}
   ]});
@@ -83,10 +83,38 @@ try {
   assert.equal(repo.getRow(actionRow.id).cells[stateColumn.id],'device-set');assert.equal(repo.getRow(relatedRow.id).cells[stateColumn.id],'related-set');
   const created=plan.operations.find(operation=>operation.type==='create_page');assert.equal(repo.getRow(created.rowId).cells[targetTitle.id],'Device-created page');
   const page=require('../electron/db/pagesRepo.ts').getPageDocumentForRow(created.rowId);assert(page.markdown.includes('Exact device-authored page'));
+  const acknowledgedPage=receipt.createdPages.find(document=>document.page.rowId===created.rowId);
+  assert.equal(acknowledgedPage.page.id,`row:${created.rowId}`);assert.deepEqual(acknowledgedPage.blocks.map(block=>({id:block.id,type:block.type,content:block.content})),created.blocks.map(block=>({id:block.id,type:block.type,content:block.content})));
+  assert(acknowledgedPage.revision>0 && acknowledgedPage.page.revision>0);
   assert.equal(automations.listAutomationNotifications(actionDb.id).length,1);
   const unchanged=database.getDb().prepare('SELECT total_changes() AS n').get().n;
   assert.deepEqual(actions.saveMobileDatabaseButtonResult(deviceInput,'fixture-device-button'),receipt);
   assert.equal(database.getDb().prepare('SELECT total_changes() AS n').get().n,unchanged,'Lost ACK never repeats notifications, hooks or local writes');
+  // A real uncertain external attempt is represented by a persisted receipt,
+  // not replayed. Only the explicitly approved prefix reaches canonical SQL.
+  const uncertainButton=repo.createColumn(actionDb.id,'Uncertain action','button');
+  automations.createAutomationRule(actionDb.id,{name:'Uncertain receipt',trigger:{type:'button',columnId:uncertainButton.id},maxAttempts:1,actions:[
+    {type:'set_property',columnId:stateColumn.id,value:{type:'literal',value:'confirmed-prefix'}},
+    {type:'webhook',url:'https://never-called.invalid/unknown',method:'POST',headers:{},body:'unknown outcome'},
+    {type:'notify',title:'Must not execute',body:'After uncertain external step'}
+  ]});
+  const uncertainSource=actions.getMobileDatabaseActionSource({rowId:actionRow.id,columnId:uncertainButton.id,kind:'button'}),uncertainId=randomUUID();
+  const uncertainPlan=actions.instantiateMobileDatabaseButtonPlan(uncertainSource.plan,uncertainId,clickedAt),pending=uncertainPlan.operations.findIndex(operation=>operation.type==='webhook');
+  assert(pending>0 && pending<uncertainPlan.operations.length-1);
+  const originalAttempt={clickedAt,completedSteps:pending,webhooks:{},pendingWebhook:pending};
+  const resolvedInput={requestId:uncertainId,request:{rowId:actionRow.id,columnId:uncertainButton.id,kind:'button',revision:uncertainSource.revision},result:{clickedAt,finishedAt:'2026-10-15T10:00:05Z',completedSteps:pending,webhooks:{},interruptedStep:pending,resolution:'publishConfirmedPrefix',interruptedExecution:originalAttempt}};
+  assert.throws(()=>actions.saveMobileDatabaseButtonResult({...resolvedInput,result:{...resolvedInput.result,interruptedStep:pending+1}},'uncertain-device'),/invalid_database_button_resolution/);
+  const noticesBefore=automations.listAutomationNotifications(actionDb.id).length;
+  const resolvedReceipt=actions.saveMobileDatabaseButtonResult(resolvedInput,'uncertain-device');
+  assert.equal(repo.getRow(actionRow.id).cells[stateColumn.id],'confirmed-prefix');
+  assert.equal(automations.listAutomationNotifications(actionDb.id).length,noticesBefore,'No unconfirmed suffix notification is dispatched');
+  assert.deepEqual(resolvedReceipt.result.interruptedExecution,originalAttempt);
+  const failedRun=database.getDb().prepare('SELECT * FROM automation_runs WHERE id=?').get(uncertainPlan.runs[0].id);
+  assert.equal(failedRun.status,'failed');assert.match(failedRun.error,/no tiene respuesta confirmada/);
+  const afterResolution=database.getDb().prepare('SELECT total_changes() AS n').get().n;
+  assert.deepEqual(actions.saveMobileDatabaseButtonResult(resolvedInput,'uncertain-device'),resolvedReceipt);
+  assert.equal(database.getDb().prepare('SELECT total_changes() AS n').get().n,afterResolution,'Resolution lost-ACK reuses receipt without hooks, notices or SQL changes');
+
  }));
  assert.equal(providerCalls,0);console.log('PASS real isolated canonical DB source/CAS/receipt/button contracts; no providers or external actions invoked');
 }finally{globalThis.fetch=originalFetch;runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

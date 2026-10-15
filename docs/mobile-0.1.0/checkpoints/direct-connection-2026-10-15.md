@@ -1,6 +1,6 @@
 # Direct workspace connection — 15 October 2026
 
-The current acceptance scope is connection/reconnection and Desktop PR health. Broader consultation/generation parity remains unfinished. Both PRs stay unmerged. The owner explicitly authorized **one complete final-head CI** after local validation; it ran and failed. Corrections and their local verification are recorded in [the follow-up checkpoint](ci-corrections-2026-10-15.md). A second run is not yet authorized; mobile Actions remain unrequested. Workflows and branch protection stay unchanged.
+The current acceptance scope is connection/reconnection and Desktop PR health. Broader consultation/generation parity remains unfinished. Both PRs stay unmerged. The owner authorized two complete CI executions separately. The second passed all 1,046 test files but failed a later immediate Stellar canvas assertion; its bounded synchronization correction passed the real local E2E. Full results and the remaining hosted gate are recorded in [the follow-up checkpoint](ci-corrections-2026-10-15.md). No third run is authorized; mobile Actions remain unrequested. Workflows and branch protection stay unchanged.
 
 ## Connection behavior
 

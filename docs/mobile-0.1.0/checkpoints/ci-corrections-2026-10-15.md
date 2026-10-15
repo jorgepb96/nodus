@@ -1,6 +1,6 @@
 # CI corrections and final connection preview — 15 October 2026
 
-Connection acceptance is recorded in [the direct connection checkpoint](direct-connection-2026-10-15.md). This checkpoint records the complete CI failure, the concrete corrections and their local verification. **The Desktop PR is not yet green.** No additional CI has been dispatched after the owner's single authorized run.
+Connection acceptance is recorded in [the direct connection checkpoint](direct-connection-2026-10-15.md). This checkpoint records both authorized complete CI executions, the concrete corrections and their local verification. **The Desktop PR is not yet green.** The second run passed every Linux test file but found another immediate canvas assertion in Stellar's E2E; its correction and real local repeat are recorded below.
 
 ## Authorized CI result
 
@@ -54,8 +54,23 @@ The corrected sources were rebuilt and packaged at **`706c7cfc22367e773edf89b1e2
 
 Mobile **0.1.0 (1003)** is now available in internal TestFlight, assigned to **Nodus interno** with saved notes. Archive source is mobile `d51aa71aae1f4450efe6e2293d3dc635b760c165`. [Delivery record](https://github.com/jorgepb96/nodus-mobile/blob/codex/mobile-0.1.0-parity/docs/mobile-0.1.0/TESTFLIGHT-2026-10-15.md). Installing iOS does not update the normal Desktop installation.
 
+## Second authorized complete CI
+
+The owner explicitly approved a second complete CI after the corrections above. [Run 38715196486](https://github.com/jorgepb96/nodus/actions/runs/38715196486) executed once on `3248de8a0c65445c4759160fdeb7cc179b9956ae` and **failed**; it has not been rerun.
+
+- All **1,046 test files passed**, exactly once across all six groups. Downloaded reports independently validate against the production plan/report validator: **5,269 tests, 5,259 passed, zero failed, 10 explicitly skipped** for named platform/native-ABI reasons. The skips remain visible and are not functional acceptance.
+- Full TypeScript/ESLint, production build, Server, Scheme, native macOS/Windows, real-app integration and backup/restore groups passed.
+- The smoke group passed boot and Stellar canvas, then `Graph tabs E2E` failed the immediate assertion after closing the last exploration: **0 visible targets versus 13 expected**, at the original line 367. The final `test` gate consequently failed; this is not a successful hosted run.
+- The hub component stays mounted between tabs, while its canvas remounts and receives its actual dimensions asynchronously through `ResizeObserver`. Visible targets are culled to that viewport. Waiting only for the wrapper allowed assertions to read the temporary empty canvas.
+- `e2e-stellar-tabs.mjs` now waits a bounded 30 seconds for a measured canvas and the exact expected node IDs after returning, closing tabs, section navigation and reload. The topology/selection/count assertions remain; exact-ID checks are added. Restored DOM positions also have an exact bounded wait instead of a fixed 250 ms sleep. These waits do not restore snapshots, inject nodes, mutate application state or hide a failed assertion.
+- The corrected **actual application E2E passed in one attempt**, 46 seconds, with the existing final production renderer/main/preload and native dependency hashes unchanged before/after. No rebuild, additional provider call or original-vault write was needed. Independent read-only review found no actionable issue in the correction.
+
+Private evidence: `authorized-second-ci.json`, `authorized-second-ci-state.json`, `authorized-second-ci-watch.log`, `ci-run-2-plan/plan.json`, `ci-run-2-inventory/ci-tests-*/shard-*.json`, `ci-run-2-inventory-summary.json`, `ci2-job-116358212863.log`, `ci2-job-116361608482.log`, `ci2-stellar-tabs-local.source.json`, `.result.json` and `.log`. The corrected E2E script SHA-256 is `bebe99b9a8175bab692ed0a8dbcd571d2df9b623a5c16391ea674c0407f9d9f8`.
+
+Only test synchronization and this checkpoint change after the second hosted run. The delivered signed Desktop preview and TestFlight 1003 production code remain unchanged, retaining their actual binary/source receipts.
+
 ## Remaining gate
 
-The corrected Desktop commits need a new genuine hosted `test` result. `.github/rulesets/cla-main.json` requires that check from GitHub Actions integration `15368`; local logs cannot substitute for it. The first CI authorization is consumed. **A second run requires another explicit owner exception.** Workflows/rules remain unchanged; no fabricated statuses, no merge.
+The corrected Desktop commits need a new genuine hosted `test` result. `.github/rulesets/cla-main.json` requires that check from GitHub Actions integration `15368`; local logs cannot substitute for it. Both authorized complete executions have been consumed. **A third execution requires another explicit owner exception.** Workflows/rules remain unchanged; no fabricated statuses, no merge.
 
 LAN acceptance is complete for the cases above. Real Tailscale/VPN routing, physical camera/iPhone validation, actual Wi-Fi-interface switching and Mac sleep/wake are not established by these tests. Broader application parity remains unfinished.

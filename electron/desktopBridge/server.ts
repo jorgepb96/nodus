@@ -35,6 +35,7 @@ import { getNodusServerTokenFor } from '../secrets/secretStore';
 import {desktopPairingQR} from '../../shared/desktopPairingQR';
 import {desktopBridgeOrigins} from '../../shared/desktopBridgeOrigins';
 import {desktopBridgeDiscoveryTXT} from '../../shared/desktopBridgeDiscovery';
+import {listenDesktopBridge} from './listen';
 
 export const DESKTOP_BRIDGE_PROTOCOL = '/bridge/v1' as const;
 // A bounded 20 MB image becomes up to 28 MB of base64 plus its publication
@@ -708,13 +709,9 @@ async function startServer(): Promise<void> {
   const candidate = createServer({ cert: certPem, key: readFileSync(keyFile) }, (request, response) => {
     void handle(request, response).catch((error) => reply(response, 500, { error: error instanceof Error ? error.message : 'bridge_error' }));
   });
-  await new Promise<void>((resolve, reject) => {
-    candidate.once('error', reject);
-    const portFile = path.join(directory, 'port');
-    const savedPort = existsSync(portFile) ? Number(readFileSync(portFile, 'utf8')) : 0;
-    if (!Number.isInteger(savedPort) || savedPort < 0 || savedPort > 65535) { reject(new Error('invalid_bridge_port')); return; }
-    candidate.listen(savedPort, '0.0.0', () => resolve());
-  });
+  const portFile = path.join(directory, 'port');
+  const savedPort = existsSync(portFile) ? Number(readFileSync(portFile, 'utf8')) : 0;
+  await listenDesktopBridge(candidate, savedPort);
   server = candidate;
   port = (candidate.address() as import('node:net').AddressInfo).port;
   writeFileSync(path.join(directory, 'port'), String(port), { mode: 0o600 });

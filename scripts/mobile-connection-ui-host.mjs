@@ -8,6 +8,8 @@ import {randomBytes} from 'node:crypto';
 import {createRequire} from 'node:module';
 import {_electron} from 'playwright-core';
 const require=createRequire(import.meta.url),repo=path.resolve(import.meta.dirname,'..');
+const packagedExecutable=process.env.NODUS_MOBILE_ACCEPTANCE_APP;
+if(packagedExecutable)assert(path.isAbsolute(packagedExecutable)&&fs.existsSync(packagedExecutable),'An existing absolute packaged executable is required');
 const lab=fs.realpathSync(process.env.NODUS_MOBILE_ACCEPTANCE_LAB??'');
 assert(fs.existsSync(path.join(lab,'.nodus-mobile-acceptance-lab')));
 const root=path.dirname(lab), marker=JSON.parse(fs.readFileSync(path.join(root,'isolation.json'),'utf8'));
@@ -23,7 +25,7 @@ async function launch(){
  }
  const env={...process.env,NODUS_ISOLATED_ROOT:root,NODUS_USERDATA:lab,NODUS_DISABLE_AUTO_UPDATE:'1',NODUS_E2E_UPDATE_STATUS:'not-available'};
  delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_HARNESS_KEYS_FILE;
- app=await _electron.launch({executablePath:require('electron'),args:[repo],cwd:repo,env,timeout:90000});
+ app=await _electron.launch({executablePath:packagedExecutable??require('electron'),args:packagedExecutable?[]:[repo],cwd:repo,env,timeout:90000});
  page=await app.firstWindow();page.setDefaultTimeout(30000);
  await page.waitForFunction(()=>Boolean(document.getElementById('root')?.children.length),null,{timeout:90000});
  await page.evaluate(async()=>{await window.nodus.updateSettings({uiLanguage:'es',mascotEnabled:false,tourComplete:true,advancedTourComplete:true});});
@@ -39,7 +41,7 @@ async function launch(){
  await page.locator('[data-tour="nav-settings"]').click();
  await page.getByRole('button',{name:'Conexión móvil',exact:true}).click();
  await page.getByRole('heading',{name:'Vincular con mi Nodus',exact:true}).waitFor();
- console.log(JSON.stringify({ready:true,desktopPid:app.process().pid,isolated:true}));
+ console.log(JSON.stringify({ready:true,desktopPid:app.process().pid,isolated:true,packaged:Boolean(packagedExecutable)}));
 }
 async function close(){if(app){await app.close();app=undefined;}}
 async function offer(){

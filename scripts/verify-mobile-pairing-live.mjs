@@ -12,6 +12,8 @@ import {_electron} from 'playwright-core';
 
 const require = createRequire(import.meta.url);
 const repo = path.resolve(import.meta.dirname, '..');
+const packagedExecutable = process.env.NODUS_MOBILE_ACCEPTANCE_APP;
+if (packagedExecutable) assert(path.isAbsolute(packagedExecutable) && fs.existsSync(packagedExecutable), 'An existing absolute packaged executable is required');
 const lab = fs.realpathSync(process.env.NODUS_MOBILE_ACCEPTANCE_LAB ?? '');
 assert(fs.existsSync(path.join(lab, '.nodus-mobile-acceptance-lab')), 'A marked isolated lab is required');
 const root = path.dirname(lab);
@@ -49,7 +51,7 @@ async function request(route, method='GET', body, expected=200) {
 async function launch() {
   const env={...process.env,NODUS_USERDATA:lab,NODUS_ISOLATED_ROOT:root,NODUS_DISABLE_AUTO_UPDATE:'1',NODUS_E2E_UPDATE_STATUS:'not-available'};
   delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_HARNESS_KEYS_FILE;
-  app=await _electron.launch({executablePath:require('electron'),args:[repo],cwd:repo,env,timeout:90000});
+  app=await _electron.launch({executablePath:packagedExecutable??require('electron'),args:packagedExecutable?[]:[repo],cwd:repo,env,timeout:90000});
   page=await app.firstWindow();page.setDefaultTimeout(30000);
   await page.waitForFunction(()=>Boolean(document.getElementById('root')?.children.length),null,{timeout:90000});
 }
@@ -97,7 +99,7 @@ try {
   assert.equal(end.pairings.filter(p=>p.id===grant.id&&!p.revokedAt).length,0);
   assert.equal(end.pairings.length,initial.pairings.length+1,'Renewal creates no extra linked device');
   assert.equal(sourceRevision(repo).sourceDigest,before.sourceDigest,'Source changed during acceptance');
-  const receipt={executed:1,passed:1,failed:0,skipped:0,at:new Date().toISOString(),source:before,scope:'actual Desktop app renderer/preload/IPC and real HTTPS via Mac LAN address; phone UI and VPN route separate',checks:{wholeWorkspacePreload:true,realMacProcessRestart:true,stablePort:true,stableTLSIdentity:true,persistedGrant:true,noDuplicate:true,renewal:true,oldTokenRejected:true,desktopRevocation:true,providerCalls:0}};
+  const receipt={executed:1,passed:1,failed:0,skipped:0,at:new Date().toISOString(),source:before,packagedExecutable:packagedExecutable??null,scope:'actual Desktop app renderer/preload/IPC and real HTTPS via Mac LAN address; phone UI and VPN route separate',checks:{wholeWorkspacePreload:true,realMacProcessRestart:true,stablePort:true,stableTLSIdentity:true,persistedGrant:true,noDuplicate:true,renewal:true,oldTokenRejected:true,desktopRevocation:true,providerCalls:0}};
   fs.writeFileSync(path.join(evidence,'result.json'),JSON.stringify(receipt,null,2)+'\n');
   console.log(JSON.stringify(receipt));
 } finally {agent.destroy();await close();}

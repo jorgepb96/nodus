@@ -66,7 +66,7 @@ try {
   const collision = { ...creation, id: randomUUID() };
   await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', collision), /identity_conflict/);
   assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(collision.id).n), 0);
-  for (const invalidCreation of [{ ...creation.creation, kind: 'idea' }, { ...creation.creation, source: { ref: 'private' } }, { ...creation.creation, tags: [37] }]) {
+  for (const invalidCreation of [{ ...creation.creation, kind: 'idea', globalId: 'invalid' }, { ...creation.creation, source: { ref: 'private' } }, { ...creation.creation, tags: [37] }]) {
     await assert.rejects(applyWorkspaceEdit(first.id, 'phone-grant', { ...creation, id: randomUUID(), noteId: randomUUID(), creation: invalidCreation }), /invalid_workspace_creation/);
   }
   for (const invalid of [
@@ -79,6 +79,40 @@ try {
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(rejected.noteId).n), 0, 'Invalid creations roll back the note and its complete structured editor');
     assert.equal(await scoped(db => db.prepare('SELECT COUNT(*) n FROM desktop_workspace_edit_receipts WHERE request_id=?').get(rejected.id).n), 0);
   }
+  const {seedWorkspaceNote} = require('../src/mobileWeb/workspaceNotes.ts');
+  const captureMarkdown = '# Captura\n\nCita [S1](nodus://idea/source-37) y $x^2$.\n\n| A | B |\n| --- | --- |\n| 7 | 30 |';
+  const provenance = {origin:'assistant',model:{provider:'openai',model:'real-model-reference',pending:false,reasoningEffort:'high'},ref:'response-37',note:'Captured answer',authoredOn:'mobile',researchChat:{surface:'research',conversationId:'conversation-37',conversationTitle:'Real context',messageId:'message-7',messageIndex:2,references:[{citationId:'S1',label:'Actual citation',subtitle:null,quote:'Original quotation',href:'nodus://idea/source-37'}]}};
+  const withoutBlockIds=blocks=>blocks.map(({id,children,...block})=>({...block,children:withoutBlockIds(children??[])}));
+  const nextBeforeCaptures = await scoped(() => ideas.nextGlobalId());
+  for (const kind of ['markdown','assistant','writing','debate','idea','hypothesis']) {
+    const seeded = seedWorkspaceNote({title:'Same explicit capture',content:captureMarkdown,kind,source:provenance,tags:['capture'],folderId:folder.id});
+    assert.deepEqual(withoutBlockIds(seeded.nativeDocument),withoutBlockIds(markdownToBlockNote(captureMarkdown)));
+    assert.deepEqual(seeded.source,provenance);
+    const intent={id:randomUUID(),noteId:randomUUID(),creation:{kind,source:seeded.source,tags:seeded.tags,folderId:folder.id},input:{title:seeded.title,contentMarkdown:seeded.content,nativeDocument:seeded.nativeDocument,schemaVersion:2,expectedRevision:0}};
+    const committed=await applyWorkspaceEdit(first.id,'phone-grant',intent);
+    assert.equal(committed.note.kind,kind);assert.deepEqual(committed.note.source,provenance);assert.equal(committed.note.content,captureMarkdown);
+    assert.deepEqual(committed.editorData.nativeDocument,seeded.nativeDocument);
+    database.closeDb();setActiveVault(other.id);
+    assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',intent),committed,'Reopen/lost ACK returns exact seeded capture receipt');
+    assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(intent.noteId).n),1);
+    const secondSeed=seedWorkspaceNote({title:seeded.title,content:seeded.content,kind,source:provenance});
+    const second={...intent,id:randomUUID(),noteId:randomUUID(),input:{...intent.input,nativeDocument:secondSeed.nativeDocument}};
+    const again=await applyWorkspaceEdit(first.id,'phone-grant',second);
+    assert.notEqual(again.note.id,committed.note.id,'Two explicit identical captures are two notes, never content-hash deduplicated');
+    const invalid={...intent,id:randomUUID(),noteId:randomUUID(),input:{...intent.input,nativeDocument:[{id:'invalid',type:'unsupported-private-block'}]}};
+    await assert.rejects(applyWorkspaceEdit(first.id,'phone-grant',invalid));
+    assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM notes WHERE id=?').get(invalid.noteId).n),0,'Invalid seeded document rolls back note and metadata');
+  }
+  assert.equal(await scoped(()=>ideas.nextGlobalId()),nextBeforeCaptures,'Kind idea captures do not allocate a manual or derived idea identity');
+  assert.equal(await scoped(db=>db.prepare('SELECT COUNT(*) n FROM ideas WHERE label=?').get('Same explicit capture').n),0);
+  const imageData='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN3sAAAAASUVORK5CYII=';
+  const imageSeed=seedWorkspaceNote({title:'Inline capture',content:`![Preserved](${imageData})`,kind:'assistant',source:provenance});
+  assert.ok(JSON.stringify(imageSeed.nativeDocument).includes(imageData),'Canonical Markdown importer preserves inline resource bytes');
+  const imageCapture={id:randomUUID(),noteId:randomUUID(),creation:{kind:'assistant',source:provenance,folderId:null,tags:[]},input:{title:imageSeed.title,contentMarkdown:imageSeed.content,nativeDocument:imageSeed.nativeDocument,schemaVersion:2,expectedRevision:0}};
+  const imageCaptureSaved=await applyWorkspaceEdit(first.id,'phone-grant',imageCapture);
+  assert.deepEqual(imageCaptureSaved.editorData.nativeDocument,imageSeed.nativeDocument);assert.equal(imageCaptureSaved.note.content,imageSeed.content);
+  assert.deepEqual(await applyWorkspaceEdit(first.id,'phone-grant',imageCapture),imageCaptureSaved);
+
   // A valid sub-2 MB attachment occurs in native JSON and Markdown. Its
   // complete envelope exceeds the former 4 MiB transport limit.
   const {MOBILE_WORKSPACE_EDIT_MAX_BYTES} = require('../shared/mobileWorkspace.ts');

@@ -15,6 +15,7 @@ export interface MobileDeepResearchSource {
 }
 export type MobileDeepResearchProof = Pick<MobileDeepResearchSource,"version"|"vaultId"|"vaultType"|"revision"|"sourceScope"|"queryEmbeddingModel"|"preparedSourcesOnly">;
 export interface MobileDeepResearchCheckpoint {
+ imageModel?:ModelRef;
  webSearchEndpoint?:string;
  embeddingConfiguration?:{provider:string;model:string;dim:number};
  id:string;entityKey:string;request:DeepResearchRequest;state:'accepted'|'running'|'saved'|'available'|'failed'|'cancelled';createdAt:string;
@@ -89,3 +90,6 @@ export function indexMobileDeepResearchCitations(checkpoint:MobileDeepResearchCh
  }
  return index;
 }
+
+export interface MobileDeepResearchCover {model:ModelRef;style:import('./types').DecorativeImageStyle;context:string;prompt:string;bytes:string;mime:string}
+export type MobileDeepResearchReport = DeepResearchReport & {mobileCover?:MobileDeepResearchCover};

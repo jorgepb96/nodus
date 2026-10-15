@@ -1,6 +1,7 @@
+import {mobileDeepResearchCover} from './deepResearchCover';
 import {autonomousCompleteGuide} from './autonomousCompleteGuide';
 import {orchestrateDeepResearch,type DeepResearchDeps} from '../../electron/ai/deepResearchCore';
-import {durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource} from '@shared/mobileDeepResearch';
+import {durableDeepResearchCall,indexMobileDeepResearchCitations,normalizeMobileDeepResearchRequest,assertMobileDeepResearchSource,type MobileDeepResearchCheckpoint,type MobileDeepResearchSource,type MobileDeepResearchReport} from '@shared/mobileDeepResearch';
 import {sha256Snapshot} from '@shared/databaseResearchEngine';
 import {structuredPrompt} from './structuredPrompt';
 import type {DeepResearchRequest,DeepResearchProgress,DeepResearchJobRecord} from '@shared/types';
@@ -49,6 +50,7 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
   },persist);
  };
  try {
+  if(request.decorativeImage?.enabled&&!checkpoint.imageModel){const imageModel=await call('mobileImageConfiguration');if(!imageModel?.provider||!imageModel?.model)throw new Error('Configura un modelo de imagen del móvil antes de generar la portada.');checkpoint.imageModel=imageModel;await persist();}
   if(!checkpoint.report){
    if(request.completeGuide){
     checkpoint.state='running';delete checkpoint.error;await persist();
@@ -83,8 +85,10 @@ async function execute(call:Call,checkpoint:MobileDeepResearchCheckpoint,control
    const report=checkpoint.report;report.draft={...report.draft,brief:{...report.draft.brief,deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion},deepResearchApproach:request.approach,deepResearchVersion:request.deepResearchVersion,deepResearchSectionLength:request.sectionLength,generationModel:model,documentSkills:undefined};
    }
    }
-   checkpoint.state='saved';await persist();
+   await persist();
   }
+  if(request.decorativeImage?.enabled&&!(checkpoint.report as MobileDeepResearchReport).mobileCover){checkpoint.state='running';await persist();(checkpoint.report as MobileDeepResearchReport).mobileCover=await mobileDeepResearchCover(call,checkpoint,persist,signal);}
+  checkpoint.state='saved';await persist();
   try {const result=await call('saveMobileDeepResearchReport',{request,source:checkpoint.context,report:checkpoint.report,requestId:checkpoint.id});
    if(!result||result.id!==checkpoint.id)throw new Error('invalid_deep_research_publication_receipt');
    checkpoint.result=result;checkpoint.state='available';delete checkpoint.error;delete checkpoint.publicationPending;await persist();}

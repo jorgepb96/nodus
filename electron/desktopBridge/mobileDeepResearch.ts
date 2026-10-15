@@ -1,3 +1,7 @@
+import {prepareImageStorage} from '../imageStorage';
+import {markDecorativeImagePending,saveDecorativeImagePrompt,saveDecorativeImageReady} from '../db/decorativeImagesRepo';
+import {buildDecorativeImagePrompt} from '../../shared/imageStyles';
+import {vaultTypeImagePrompt} from '../../shared/vaultTypes';
 import {getWebPassage,recordWebPassage,type WebPassageRecord} from '../db/researchWebRepo';
 import {saveCompleteGuideArtifacts} from '../db/completeGuideRepo';
 import {seedCompleteGuideFigures} from '../ai/completeGuide/figures';
@@ -18,7 +22,7 @@ import {withMobileCompletionReplay} from '../ai/mobileCompletionReplay';
 
 import {getWritingWorkshopDraft,saveWritingWorkshopDraft} from '../db/writingDraftsRepo';
 import {canonicalJson} from '../../shared/canonicalJson';
-import { normalizeMobileDeepResearchRequest, type MobileDeepResearchProof, type MobileDeepResearchSource } from '../../shared/mobileDeepResearch';
+import { normalizeMobileDeepResearchRequest, type MobileDeepResearchProof, type MobileDeepResearchSource,type MobileDeepResearchReport } from '../../shared/mobileDeepResearch';
 import type {DeepResearchReport,DeepResearchRequest,WritingWorkshopBrief,DeepResearchProgress} from '../../shared/types';
 import type { SectionRetrievalInput } from '../ai/deepResearchCore';
 const hash=(value:unknown)=>createHash('sha256').update(canonicalJson(value)).digest('hex');
@@ -101,13 +105,15 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
  if(!input||Object.keys(input).some(key=>!['request','source','report','requestId'].includes(key))||typeof deviceGrant!=='string'||!deviceGrant||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(input.requestId)||Buffer.byteLength(JSON.stringify(input))>32*1024*1024)throw new Error('invalid_deep_research_publication');
  const request=normalizeMobileDeepResearchRequest(input.request);
  if(input.source?.version!==1||typeof input.source.vaultId!=="string"||!input.source.vaultId||!/^[a-f0-9]{64}$/.test(input.source.revision)||!["linked_corpus","device_downloads"].includes(input.source.sourceScope))throw new Error("invalid_deep_research_source_proof");
- const report=input.report;
+ const report=input.report as MobileDeepResearchReport;
  if(!report?.draft||report.draft.brief?.kind!=='deep_research'||report.draft.brief.objective!==request.objective||typeof report.draft.draftMarkdown!=='string'||!report.draft.draftMarkdown.trim()||!Array.isArray(report.draft.bibliography)||!report.meta)throw new Error('invalid_deep_research_report');
  if(request.completeGuide){
   const artifacts=report.completeGuideArtifacts as {runId?:unknown;items?:unknown;chapters?:unknown;syllabus?:unknown;sources?:unknown;passages?:unknown}|undefined;
   const {runId,...config}=request.completeGuide;
   if(report.draft.completeGuide?.runId!==runId||canonicalJson(report.draft.completeGuide.config)!==canonicalJson(config)||artifacts?.runId!==runId||!Array.isArray(artifacts.items)||!Array.isArray(artifacts.chapters)||!Array.isArray(artifacts.sources)||!Array.isArray(artifacts.passages)||!artifacts.syllabus)throw new Error('invalid_complete_guide_publication');
  }else if(report.draft.completeGuide||report.completeGuideArtifacts||report.completeGuideFigures)throw new Error('invalid_complete_guide_publication');
+ const cover=report.mobileCover;
+ if(cover&&(!request.decorativeImage?.enabled||cover.style!==request.decorativeImage.style||!['openai','gemini','openrouter'].includes(cover.model?.provider)||typeof cover.model.model!=='string'||!cover.model.model||typeof cover.context!=='string'||cover.context.length>260||cover.prompt!==buildDecorativeImagePrompt(cover.style,cover.context,vaultTypeImagePrompt(input.source.vaultType))||cover.mime!=='image/jpeg'||typeof cover.bytes!=='string'||cover.bytes.length>7_000_000||!/^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(cover.bytes)))throw new Error('invalid_mobile_deep_research_cover');
  const db=getDb(),fingerprint=hash(input);
  db.exec('CREATE TABLE IF NOT EXISTS mobile_deep_research_publications(device_grant TEXT NOT NULL,request_id TEXT NOT NULL,payload_hash TEXT NOT NULL,result_json TEXT NOT NULL,PRIMARY KEY(device_grant,request_id))');
  return db.transaction(()=>{
@@ -134,6 +140,13 @@ export function saveMobileDeepResearchReport(raw:unknown,deviceGrant:string,sign
   if(getWritingWorkshopDraft(input.requestId))throw new Error('deep_research_identity_conflict');
   const draft={...report.draft,generationModel:request.model,mobileGenerationReceipt:{requestId:input.requestId,inputHash:fingerprint,sourceScope:input.source.sourceScope}};
   const result=saveWritingWorkshopDraft({draft,model:request.model},input.requestId);
+  if(cover){
+   const image=prepareImageStorage(Buffer.from(cover.bytes,'base64'),cover.mime);
+   markDecorativeImagePending({entityKind:'deep_research',entityId:result.id,provider:cover.model.provider as 'openai'|'gemini'|'openrouter',model:cover.model.model,style:cover.style,preserveContext:false,preservePrompt:false});
+   saveDecorativeImagePrompt('deep_research',result.id,cover.context,cover.prompt);
+   result.image=saveDecorativeImageReady('deep_research',result.id,image.image,image.mimeType,image.thumbnail,image.thumbnailMimeType);
+  }
+
   if(request.completeGuide){
    saveCompleteGuideArtifacts(result.id,request.completeGuide.runId,report.completeGuideArtifacts);
    // The receipt is committed only after required evidence and prepared figures

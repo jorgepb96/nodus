@@ -1,3 +1,4 @@
+import { RELEASE_5_12_0_HIGHLIGHTS } from './releaseNotes5120';
 import { RELEASE_5_11_1_HIGHLIGHTS } from './releaseNotes5111';
 import { RELEASE_5_11_0_HIGHLIGHTS } from './releaseNotes5110';
 import { RELEASE_5_10_0_HIGHLIGHTS } from './releaseNotes5100';
@@ -14,6 +15,7 @@ import { RELEASE_5_5_0_HIGHLIGHTS } from './releaseNotes550';
 export const RELEASE_NOTES_JA: Record<string, string[]> = {
   // 5.5.0 reads its Japanese from the release's own highlight columns, the same
   // way the Italian, Turkish and both Chinese tables do.
+  "5.12.0": RELEASE_5_12_0_HIGHLIGHTS.map(highlight => highlight['ja']),
   "5.11.1": RELEASE_5_11_1_HIGHLIGHTS.map(highlight => highlight['ja']),
   "5.11.0": RELEASE_5_11_0_HIGHLIGHTS.map(highlight => highlight['ja']),
   "5.10.0": RELEASE_5_10_0_HIGHLIGHTS.map(highlight => highlight['ja']),

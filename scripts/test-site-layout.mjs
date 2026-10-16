@@ -104,6 +104,7 @@ test('the dedicated Pages worker owns the website and its scheduled cache refres
   assert.doesNotMatch(pagesWorkflow, /ref:\s*\$\{\{.*github\.ref/, 'manual runs cannot publish a legacy branch');
   assert.match(pagesWorkflow, /actions\/deploy-pages@v5/);
   assert.match(pagesWorkflow, /node scripts\/github-release-downloads\.mjs/);
+  assert.match(pagesWorkflow, /schedule:\s*\n(?:\s*#.*\n)*\s*- cron: '[^']+'/, 'the download counters refresh daily');
   assert.doesNotMatch(pagesWorkflow, /git push|git commit/, 'generated data must not bypass the CLA gate on main');
   assert.doesNotMatch(pagesWorkflow, /repos\/\$\{GITHUB_REPOSITORY\}\/pages/);
   assert.doesNotMatch(releaseWorkflow, /pages\/builds|github-release-downloads|docs\/data\//);

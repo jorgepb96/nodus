@@ -1,5 +1,5 @@
 import { researchActivityStep, startResearchActivity } from './researchActivity';
-import type { ResearchContextLayers } from '@shared/types';
+import { researchIndexedTextsAlone, type ResearchCorpusLayers } from '@shared/researchContextLayers';
 import type { ResearchDocumentRead, ResearchEvidence, ResearchTraversal, ResolvedResearchScope, RetrievalSettings } from '@shared/researchCorpus';
 import { RETRIEVAL_PRESETS, describeResearchLimitation, validateRetrievalSettings, validateResearchDocumentRead } from '@shared/researchCorpus';
 import { ResearchRetrievalBudget } from '@shared/researchRetrievalBudget';
@@ -73,8 +73,8 @@ export class ResearchCorpusRun {
   /** Research Chat and Dictionary: the web step, when the user left it on. Deep Research never sets it. */
   web?: ResearchWebGrant;
   /** Research Chat and Dictionary: the layers the user left on in the context balloon. Deep Research
-   * reads both. A layer that is off is never consulted, not merely left out of the prompt. */
-  layers: ResearchContextLayers = { ideas: true, documents: true };
+   * reads them all. A layer that is off is never consulted, not merely left out of the prompt. */
+  layers: ResearchCorpusLayers = { ideas: true, documents: true, indexed: true };
   /** Whether the supervisor made at least one decision in this run. */
   supervised = false;
   /** Research Chat only. See ResearchChatAgent. */
@@ -152,28 +152,29 @@ export class ResearchCorpusRun {
     }
     // Leave room for an actual decision and bounded original read. Otherwise a
     // successful first retrieval would consume the entire expansion allowance.
-    // Indexed texts only: one search with the message itself, and the supervisor never runs.
-    const indexedOnly = !!this.layers.indexedOnly;
-    const queries = this.agent && !indexedOnly ? [...new Set([query, ...this.agent.plan.queries])].slice(0, 3) : [query];
+    // The indexed texts alone: one search with the message itself, and the supervisor never runs.
+    const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled);
+    const queries = this.agent && !alone ? [...new Set([query, ...this.agent.plan.queries])].slice(0, 3) : [query];
     const opening = Math.floor((this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens) / 3 / queries.length);
-    // With no supervisor to leave room for, indexed texts only spends the whole budget on its search.
-    const limit = !indexedOnly && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
+    // The room is the supervisor's, which reads only with full documents: without them the
+    // opening searches may spend the whole budget.
+    const limit = this.layers.documents && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
     // Each of the chat's opening queries widens the search, the first included; one that fails
     // (a retrieval timeout on a loaded machine) costs its own evidence, not the turn. A run with no
     // agent has only the one query, and its failure is still the run's.
     // The opening queries are embedded in one request rather than one round trip each. A batch
     // that fails leaves each search to embed its own query, as before.
-    const vectors = queries.length > 1 && (this.layers.ideas || this.layers.documents) ? await researchActivityStep('scope', 'embed', () => embedMany(queries, this.signal)).catch(() => []) : [];
+    const vectors = queries.length > 1 && (this.layers.ideas || this.layers.indexed) ? await researchActivityStep('scope', 'embed', () => embedMany(queries, this.signal)).catch(() => []) : [];
     for (const [index, each] of queries.entries()) {
       try { await this.retrieve(each, 1, limit, vectors[index]); }
       catch (error) {
         this.validate();
-        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '') || (index === 0 && (!this.agent || indexedOnly))) throw error;
+        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '') || (index === 0 && (!this.agent || alone))) throw error;
         this.budget.partial = true; this.limitations.add('research_read_unavailable');
       }
     }
     // The supervisor's decisions read documents: nothing to decide with the documents off.
-    if (this.layers.documents && !indexedOnly && !this.agent?.correction) await deepenResearch(this, query, model);
+    if (this.layers.documents && !this.agent?.correction) await deepenResearch(this, query, model);
   }
   async retrieve(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null): Promise<void> {
     this.validate();
@@ -183,8 +184,10 @@ export class ResearchCorpusRun {
     }
     const settings = this.budget.settings;
     if (!this.scope.documents.length) return;
-    const { ideas: readIdeas, documents: readDocuments, indexedOnly = false } = this.layers;
-    if (!readIdeas && !readDocuments) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
+    // The indexed texts are the passages found by search; full documents add what reads the works
+    // in depth: their profiles, the passages around each hit and the quotes their ideas carry.
+    const { ideas: readIdeas, documents: readDocuments, indexed: readIndexed } = this.layers;
+    if (!readIdeas && !readIndexed) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
     const vector = embedded !== undefined ? embedded : await researchActivityStep('scope', 'embed', () => embed(query, this.signal)).catch(() => {
       this.limitations.add('embedding_provider_unavailable'); return null;
     });
@@ -192,24 +195,24 @@ export class ResearchCorpusRun {
     const current = this.inventory().byId;
     const stableWorks = this.pinRevisions ? this.scope.documents.filter(document => (!document.indexedSource || document.indexedSource.revision === document.revision) && current.get(document.id)?.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []) : this.workIds;
     const stableIdeas = stableWorks.length === this.workIds.length ? this.ideaIds : [];
-    // Indexed texts only searches the passages alone: no profiles route it, so the document lanes
-    // (support and routed passages) stay empty too.
+    // Without full documents no profiles route the search, so the document lanes (support and
+    // routed passages) stay empty too.
     const hierarchy = await retrieveHierarchical(query, { embedding: vector, nodusIds: stableWorks, ideaIds: stableIdeas,
-      documentLimit: readDocuments && !indexedOnly ? settings.candidates : 0, ideaLimit: readIdeas ? settings.passagesPerRound : 0, passageLimit: readDocuments ? settings.candidates : 0,
+      documentLimit: readDocuments ? settings.candidates : 0, ideaLimit: readIdeas ? settings.passagesPerRound : 0, passageLimit: readIndexed ? settings.candidates : 0,
       minIdeaSimilarity: -1, minPassageSimilarity: -1, minDocumentSimilarity: -1 });
     const usedBeforeRound = this.budget.usedEvidenceTokens;
     const remaining = Math.min(roundLimit ?? Infinity, this.budget.evidenceTokenLimit - usedBeforeRound);
     const acceptRound = (id: string, text: string) => this.budget.usedEvidenceTokens - usedBeforeRound + Buffer.byteLength(text) <= remaining && this.budget.accept(id, text);
-    // Indexed texts only takes the passages the search returns, without widening to their neighbours.
-    const expansion = settings.autoExpand && !indexedOnly ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
-    const shared = readDocuments && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(this.scope, query,
+    // Without full documents the passages are those the search returns, not widened to their neighbours.
+    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
+    const shared = readIndexed && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(this.scope, query,
       { ...settings, rounds: expansion, evidenceTokens: remaining }, vector, this.signal, undefined, () => this.inventory().documents) : { evidence: [], traversal: { rounds: 1, candidates: 0, partial: true } };
     for (let round = 1; round < shared.traversal.rounds; round++) this.budget.nextRound();
     this.validate();
     // Interleave independent native/shared lanes, retaining source diversity.
     const candidates = shared.evidence.map(item => this.passage(item));
     // The quotes analysed ideas carry are derived from the graph, not the indexed text.
-    const separable = readDocuments && !indexedOnly ? scopedIdeaEvidencePassages(query, stableWorks, settings.candidates) : [];
+    const separable = readDocuments ? scopedIdeaEvidencePassages(query, stableWorks, settings.candidates) : [];
     const inventory = this.inventory().documents;
     const legacy = selectPassageEvidence([...hierarchy.passages, ...separable], settings.passagesPerRound, { preferLexical: true, preferSourceDiversity: true }).flatMap(hit => {
       const receipt = recordScopedLegacyPassage(this.scope, hit.passage_id, inventory, this.pendingReceipts);

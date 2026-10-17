@@ -18,7 +18,7 @@ import { researchModelContextWindow, researchRequestUpperBound } from './aiClien
 import { recordRetrieval } from './transcript';
 import { researchAnswerTokens, researchPromptUpperBound } from '@shared/researchRetrievalBudget';
 import { documentedMaxOutput } from '@shared/providerContextWindows';
-import { researchContextLayers } from '@shared/researchContextLayers';
+import { researchContextLayers, researchIndexedTextsAlone } from '@shared/researchContextLayers';
 import { ResearchCorpusRun } from './researchCorpusRun';
 import { RESEARCH_CHAT_AGENT_DECISION_BYTES, RESEARCH_CHAT_AGENT_SETTINGS, RESEARCH_CHAT_LIGHT_AGENT_SETTINGS, researchScopeForPrompt, validateRetrievalSettings, compactResearchTraversal } from '@shared/researchCorpus';
 import { planResearchTurn, literalResearchTurnPlan } from './researchTurnPlanner';
@@ -736,9 +736,12 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   gathering.then(evidenceSoFar, () => evidenceSoFar(null));
   // The turn plan reads the conversation and nothing else, so its model call runs beside the gather.
   // A route correction plans nothing (see `correction` below), so it starts no plan call early either.
-  // Indexed texts only: one search of the passage index, no planner, supervisor or web.
-  const indexedOnly = !genealogy && !!researchContextLayers(request.selection, true).indexedOnly;
-  const planned = !genealogy && !indexedOnly && !(chemistryRoute && isRouteFixPrompt(question)) && requestNotebookScope(request) && !council?.corpus && (() => { const layers = researchContextLayers(request.selection, true); return layers.ideas || layers.documents; })()
+  // The indexed texts alone, with the web off: one search of the passage index, no planner,
+  // supervisor or web.
+  const turnLayers = researchContextLayers(request.selection, true);
+  const webMode = request.webSearch ?? getSettings().researchWebSearch ?? 'auto';
+  const indexedOnly = !genealogy && researchIndexedTextsAlone(turnLayers, webMode !== 'off');
+  const planned = !genealogy && !indexedOnly && !(chemistryRoute && isRouteFixPrompt(question)) && requestNotebookScope(request) && !council?.corpus && (turnLayers.ideas || turnLayers.indexed)
     ? planResearchTurn(messages, request.model, signal) : null;
   planned?.catch(() => undefined);
   const moleculeDossiers = await inspecting;
@@ -823,7 +826,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   } else if (notebookScope) {
     const run = new ResearchCorpusRun(notebookScope, { ...retrieval,
       evidenceTokens: Math.max(256, Math.min(retrieval.evidenceTokens, Math.floor(contextBudget / LOCAL_CHARS_PER_TOKEN))) }, signal);
-    run.layers = researchContextLayers(request.selection, true);
+    run.layers = turnLayers;
     run.budget.decisionTokenLimit = RESEARCH_CHAT_AGENT_DECISION_BYTES;
     // Use the final request's bound, including its actual answer + thinking output.
     // Keep room for source metadata, citations and provider-injected instructions.
@@ -836,11 +839,11 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
         Math.max(Math.ceil(window * 0.75), reserved));
     }
     const depth = webDepth(retrieval);
-    run.web = new ResearchWebGrant(indexedOnly ? 'off' : request.webSearch ?? getSettings().researchWebSearch ?? 'auto', depth, retrievalQuestion, signal, request.model,
+    run.web = new ResearchWebGrant(webMode, depth, retrievalQuestion, signal, request.model,
       Math.min(WEB_RESEARCH_LIMITS[depth].evidenceBytes, Math.max(0, Math.floor(contextBudget / 3))), {}, question);
     // The chat is an agent: it plans the turn from the conversation, keeps what earlier
     // answers cited and looks in the catalogue before it lets the answer be written.
-    const consulted = run.layers.ideas || run.layers.documents;
+    const consulted = run.layers.ideas || run.layers.indexed;
     // A route correction searches what its request searched: the target and its reaction classes.
     // Planning the chip's text only added searches for its rules, and the supervisor's reads are
     // the request's own again; the passages earlier answers cited are carried below.
@@ -854,7 +857,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     // no graph. A request for the library or the web, and a chemistry route, always search.
     const direct = plan.planned && !plan.needsSources && !plan.explicitLibrary && !correction && !chemistryRoute && !run.web.explicit;
     if (!direct) {
-      if (run.layers.documents) run.seedPriorEvidence(messages.slice(0, -1));
+      if (run.layers.indexed) run.seedPriorEvidence(messages.slice(0, -1));
       // A synthesis-route turn searches for the target and its reaction classes: the request
       // itself is mostly output rules, and a planned goal drawn from it retrieved passages on
       // formatting rather than chemistry.
@@ -867,7 +870,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     const finishGraph = run.layers.ideas && !direct ? startResearchActivity('graph', 'read') : undefined;
     const snapshot = run.snapshotFromEvidence({ kind: 'research_question', objective: question, language: promptLanguage });
     finishGraph?.('completed', snapshot.themes.length + snapshot.gaps.length + snapshot.contradictions.length);
-    const nothingConsulted = direct || (!run.layers.ideas && !run.layers.documents && !webPassages.length);
+    const nothingConsulted = direct || (!run.layers.ideas && !run.layers.indexed && !webPassages.length);
     // Works that actually took part: those a passage came from, those a search matched and those
     // the catalogue lookup found. `snapshotFromEvidence` ranks the whole authorized scope by one
     // boolean — whether a work yielded evidence — and returns the first `candidates` of it, so a
@@ -933,7 +936,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       ? await buildResearchContext({ ...request.selection, contradictions: false, gaps: false }, question, contextBudget, promptLanguage, { retrievalQuery: retrievalQuestion })
       : await buildResearchContext(request.selection, indexedOnly ? indexedTextsQuery(messages) : question, contextBudget, promptLanguage));
     const layers = researchContextLayers(request.selection);
-    if (!layers.ideas && !layers.documents) context = { ...context, research_scope: { instruction: NO_SOURCES_INSTRUCTION } };
+    if (!layers.ideas && !layers.indexed) context = { ...context, research_scope: { instruction: NO_SOURCES_INSTRUCTION } };
     else if (indexedOnly) context = { ...context, research_scope: { instruction: INDEXED_TEXTS_INSTRUCTION } };
   }
   validateNotebookRequest(request);
@@ -1063,9 +1066,9 @@ async function buildRelevanceScope(selection: ResearchContextSelection, question
     }
   }
 
-  // Indexed texts only: the passages alone, searched once, with no profiles, ideas or similar works
+  // The indexed texts alone: the passages, searched once, with no profiles, ideas or similar works
   // routing them. Without an embedding the search is the index's literal one.
-  if (selection.layers?.indexedOnly) {
+  if (researchIndexedTextsAlone(researchContextLayers(selection))) {
     let passageHits: HierarchicalPassageHit[] = [];
     try {
       passageHits = (await retrieveHierarchical(question, {

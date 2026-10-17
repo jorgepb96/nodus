@@ -7,35 +7,63 @@ import type { ResearchContextLayers, ResearchContextSelection } from './types';
  * the layers themselves.
  */
 
-/** The layers a selection chooses. One saved before layers existed is read from its
- * sections; in an academic vault its documents were always read, so they stay on.
- * Indexed texts only reads the passages of the documents and nothing of the ideas. */
-export function researchContextLayers(selection: ResearchContextSelection, academic = false): ResearchContextLayers {
-  if (selection.layers?.indexedOnly) return { ideas: false, documents: true, indexedOnly: true };
-  if (selection.layers) return { ideas: !!selection.layers.ideas, documents: !!selection.layers.documents };
+/** The corpus layers a turn reads, every one decided. The web is the composer's own state. */
+export type ResearchCorpusLayers = { ideas: boolean; documents: boolean; indexed: boolean };
+export type ResearchCorpusLayer = keyof ResearchCorpusLayers;
+
+/** The layers a selection chooses. One saved before layers existed is read from its sections;
+ * in an academic vault its documents were always read, so they stay on. One saved before the
+ * indexed texts had a switch of their own searched them with the documents layer, and 5.12.0's
+ * exclusive indexed-texts mode reads as that switch alone. Full documents build on the indexed
+ * texts, so they never come without them. */
+export function researchContextLayers(selection: ResearchContextSelection, academic = false): ResearchCorpusLayers {
+  const saved = selection.layers;
+  if (saved?.indexedOnly) return { ideas: false, documents: false, indexed: true };
+  if (saved) return { ideas: !!saved.ideas, documents: !!saved.documents, indexed: !!saved.documents || !!(saved.indexed ?? saved.documents) };
+  const documents = academic || selection.documents || selection.passages !== false;
   return {
     ideas: selection.ideas || selection.themes || selection.contradictions || selection.gaps || selection.readingPath || selection.authors || selection.graph,
-    documents: academic || selection.documents || selection.passages !== false,
+    documents, indexed: documents,
   };
 }
 
-/** A selection choosing exactly these layers, with its sections set to match. With indexed
- * texts only, the sections are its own (the passages, nothing else) and the layers keep the
- * choice it replaces, so switching it off gives that choice back. */
+/** The chat's web choice: its own when it made one, off in 5.12.0's exclusive mode (which never
+ * read the web), and otherwise the composer's saved setting. */
+export function researchContextWeb(selection: ResearchContextSelection, savedSetting: boolean): boolean {
+  return selection.layers?.web ?? (selection.layers?.indexedOnly ? false : savedSetting);
+}
+
+/** A selection choosing exactly these layers, with its sections set to match: the indexed texts
+ * are the passages, full documents the document section. The chat's web choice is kept, or set
+ * when `web` is given. */
 export function withResearchContextLayers(selection: ResearchContextSelection, layers: ResearchContextLayers): ResearchContextSelection {
-  const indexedOnly = !!layers.indexedOnly;
-  const ideas = !indexedOnly && !!layers.ideas;
-  const documents = !indexedOnly && !!layers.documents;
+  const { ideas, documents, indexed } = researchContextLayers({ ...selection, layers });
+  const web = layers.web ?? selection.layers?.web ?? (layers.indexedOnly || selection.layers?.indexedOnly ? false : undefined);
   return {
     ...selection,
-    layers: { ideas: !!layers.ideas, documents: !!layers.documents, ...(indexedOnly ? { indexedOnly } : {}) },
+    layers: { ideas, documents, indexed, ...(web === undefined ? {} : { web }) },
     ideas, themes: ideas, contradictions: ideas, gaps: ideas, readingPath: ideas, authors: ideas, graph: ideas,
     graphParts: { ideaNodes: ideas, themeNodes: ideas, ideaEdges: ideas, authorGraph: ideas },
-    documents, passages: indexedOnly || documents,
+    documents, passages: indexed,
   };
+}
+
+/** The layers after one switch of the balloon: full documents switched on bring the indexed
+ * texts they read from, and the indexed texts switched off take full documents with them. */
+export function toggleResearchContextLayer(layers: ResearchCorpusLayers, layer: ResearchCorpusLayer, on: boolean): ResearchCorpusLayers {
+  const next = { ...layers, [layer]: on };
+  if (layer === 'documents' && on) next.indexed = true;
+  if (layer === 'indexed' && !on) next.documents = false;
+  return next;
+}
+
+/** Whether a turn reads the indexed texts and nothing else, as NotebookLM works: one search of the
+ * passage index and an answer from those passages alone, with no planner, profiles, ideas or web. */
+export function researchIndexedTextsAlone(layers: ResearchCorpusLayers, webEnabled = false): boolean {
+  return layers.indexed && !layers.ideas && !layers.documents && !webEnabled;
 }
 
 /** Whether a turn may consult nothing of the corpus and no web: it answers from general knowledge. */
-export function researchContextIsEmpty(layers: ResearchContextLayers, webEnabled: boolean): boolean {
-  return !layers.ideas && !layers.documents && !webEnabled;
+export function researchContextIsEmpty(layers: ResearchCorpusLayers, webEnabled: boolean): boolean {
+  return !layers.ideas && !layers.documents && !layers.indexed && !webEnabled;
 }

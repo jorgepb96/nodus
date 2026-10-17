@@ -5965,19 +5965,24 @@ export interface ResearchGraphPartsSelection {
 }
 
 /**
- * What a Research Chat turn may consult, as the context balloon offers it: the ideas
- * layer (ideas, themes, contradictions, gaps, reading paths, authors and the graph) and
- * the documents layer (the works' text, read from the Nodus library or Zotero, and their
- * profiles). The web step has its own setting. All off: the answer comes from general
- * knowledge and says so.
+ * What a Research Chat turn may consult, as the context balloon offers it: the indexed texts
+ * (passages of the works found by search), the ideas layer (ideas, themes, contradictions, gaps,
+ * reading paths, authors and the graph), full documents (the works read in depth from the
+ * indexed texts: their profiles, original pages, neighbouring passages and Zotero) and the web.
+ * All off: the answer comes from general knowledge and says so. Read a saved choice through
+ * `researchContextLayers`, which fills in what older selections leave out.
  */
 export interface ResearchContextLayers {
   ideas: boolean;
+  /** Full documents. They build on the indexed texts, so they never come without them. */
   documents: boolean;
-  /** Indexed texts only, as NotebookLM works: one search of the passage index and an answer
-   * from those passages alone. No ideas, profiles, planner, supervisor, catalogue or web.
-   * In a saved selection the two layers above keep the user's choice, restored when this is
-   * switched off; read through `researchContextLayers` they are the effective ones. */
+  /** The indexed texts. Absent in selections saved before it had a switch of its own, when the
+   * documents layer searched them: there it reads as the documents layer. On its own, with the
+   * web off, the turn works as NotebookLM does: one search and an answer from those passages. */
+  indexed?: boolean;
+  /** The web step for this chat. Absent: the composer's saved web setting. */
+  web?: boolean;
+  /** Saved by 5.12.0's exclusive indexed-texts mode, read as the indexed texts alone. */
   indexedOnly?: boolean;
 }
 

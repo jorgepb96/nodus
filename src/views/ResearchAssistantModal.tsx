@@ -29,7 +29,7 @@ import { InvokedSkillPills, SkillMentionMenu, findSkillMention, rankSkillMention
 import { useSkillLibrary } from '../components/skillLibrary';
 import type { ResearchNotebook, ResearchNotebookPreparation } from '@shared/researchCorpus';
 import { matchingResearchWorkIds, normalizeResearchSourceFilter, type ResearchContextSources } from '@shared/researchContextFilters';
-import { researchContextLayers, withResearchContextLayers } from '@shared/researchContextLayers';
+import { researchContextIsEmpty, researchContextLayers, researchContextWeb, toggleResearchContextLayer, withResearchContextLayers } from '@shared/researchContextLayers';
 import { ResearchCoverage } from '../components/ResearchCoverage';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ModelPicker } from '../components/ModelPicker';
@@ -80,13 +80,18 @@ const DEFAULT_SELECTION: ResearchContextSelection = {
   },
 };
 
-/** A new chat reads both layers of the corpus, ideas and documents, and the web while it is on. */
-const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true });
+/** A new chat reads every layer of the corpus, and the web while the composer has it on. */
+const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true, indexed: true });
+/** The Simple interface never extracts ideas, so a new chat there reads the indexed texts alone,
+ * with the web off: the answer comes from the passages its search returns. */
+const INDEXED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: false, documents: false, indexed: true, web: false });
 
-/** The context balloon's layers, in the order the activity balloon lists what they read. */
+/** The context balloon's corpus layers, each a switch of its own. Full documents read the works
+ * from the indexed texts, so switching them on brings the indexed texts too. */
 const CONTEXT_LAYERS = [
+  { id: 'indexed', icon: 'fileText', label: 'Textos indexados', description: 'Pasajes de tus fuentes encontrados por búsqueda. Si es lo único activo, la respuesta sale solo de ellos.' },
   { id: 'ideas', icon: 'bulb', label: 'Ideas', description: 'Ideas, temas, contradicciones, huecos, rutas de lectura, autores y el grafo que los relaciona.' },
-  { id: 'documents', icon: 'book', label: 'Documentos', description: 'El texto de las obras en la biblioteca de Nodus y en Zotero, y sus perfiles documentales.' },
+  { id: 'documents', icon: 'book', label: 'Documentos completos', description: 'Lee a fondo las obras a partir de los textos indexados: perfiles documentales, páginas originales y Zotero.' },
 ] as const;
 
 // Starter prompts offered as clickable chips on an empty chat. They run against
@@ -165,6 +170,10 @@ export function ResearchAssistantModal({
   onOpenSavedNote?: (noteId: string) => void;
 }) {
   const simpleInterface = useAcademicInterface() === 'simple' && isAcademic && !adapter;
+  const newChatSelection = simpleInterface ? INDEXED_SELECTION : LAYERED_SELECTION;
+  // A choice saved before the indexed texts had a switch of their own was never made in this
+  // balloon, so a new chat in the Simple interface starts from its own default instead.
+  const newChatFrom = (current: ResearchContextSelection) => simpleInterface && current.layers?.indexed === undefined ? cloneSelection(INDEXED_SELECTION) : current;
   const api = adapter ?? window.nodus;
   const apiRef = useRef(api);
   apiRef.current = api;
@@ -177,7 +186,7 @@ export function ResearchAssistantModal({
   const draftScope = isAcademic && embedded && !adapter ? learning.vaultId ?? null : null;
   const draftSeed = useRef(composerDraftStore(draftScope));
   const initialDraft = draftSeed.current.drafts[draftSeed.current.lastId ?? 'new'];
-  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ?? LAYERED_SELECTION));
+  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ? newChatFrom(initialDraft.selection) : newChatSelection));
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState(initialDraft?.input ?? '');
   const [attachments, setAttachments] = useState<ResearchAttachment[]>(initialDraft?.attachments ?? []);
@@ -198,7 +207,12 @@ export function ResearchAssistantModal({
   // used at, so a level the user picked is not reset by switching chats or models.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel);
   const [webSearch, setWebSearchState] = useState<ResearchWebSearchMode>(settings.researchWebSearch === 'off' ? 'off' : 'auto');
-  const setWebSearch = (mode: ResearchWebSearchMode) => { setWebSearchState(mode); void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined); };
+  // The web is this chat's choice, and the composer's saved setting for chats that never made one.
+  const setWebSearch = (mode: ResearchWebSearchMode) => {
+    setWebSearchState(mode);
+    setSelection(current => withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), web: mode !== 'off' }));
+    void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined);
+  };
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const activityRun = activeId ? activityRuns[activeId] ?? null : null;
@@ -394,10 +408,8 @@ export function ResearchAssistantModal({
   // What the balloon offers: the corpus layers and the web. A selection saved before layers
   // existed is read from its sections, as the backend reads it.
   const contextLayers = useMemo(() => researchContextLayers(selection, isAcademic), [selection, isAcademic]);
-  // Indexed texts only replaces the other layers and the web: it is the one thing consulted.
-  const indexedOnly = !!contextLayers.indexedOnly;
-  const turnWebSearch: ResearchWebSearchMode = indexedOnly ? 'off' : webSearch;
-  const selectedCount = indexedOnly ? 1 : Number(contextLayers.ideas) + Number(contextLayers.documents) + Number(webSearch !== 'off');
+  const turnWebSearch: ResearchWebSearchMode = researchContextWeb(selection, webSearch !== 'off') ? 'auto' : 'off';
+  const selectedCount = Number(contextLayers.indexed) + Number(contextLayers.ideas) + Number(contextLayers.documents) + Number(turnWebSearch !== 'off');
   const sourceFilterOn = !!selection.sourceFilter?.enabled && !selection.notebookId;
   // The works the Library tab authorizes, counted for the Focus tab's summary while it is open.
   const [contextSources, setContextSources] = useState<ResearchContextSources | null>(null);
@@ -415,17 +427,14 @@ export function ResearchAssistantModal({
   const shownContextTab = contextTab === 'library' && !selection.notebookId ? 'library' : 'focus';
 
   const setContextLayer = (layer: (typeof CONTEXT_LAYERS)[number]['id'], on: boolean) =>
-    setSelection(current => withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), [layer]: on }));
-  // Switching indexed texts off gives back the layers chosen before it, which the selection keeps.
-  const setIndexedOnly = (on: boolean) =>
-    setSelection(current => withResearchContextLayers(current, { ...(current.layers ?? researchContextLayers(current, isAcademic)), indexedOnly: on }));
+    setSelection(current => withResearchContextLayers(current, toggleResearchContextLayer(researchContextLayers(current, isAcademic), layer, on)));
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
     loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
-    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return rest; });
+    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return newChatFrom(rest); });
     setActiveNotebookId(null);
     adapter?.reset?.();
     if (!activeId) void systemPrompts.select(null);
@@ -483,7 +492,7 @@ export function ResearchAssistantModal({
     const council = loadedMessages.filter(message => message.role === 'assistant').at(-1)?.concilium;
     setConcilium(council ? { chairman: council.chairman, models: council.members.map(member => member.model) } : null);
     setStoppedMessageId(null);
-    setSelection(cloneSelection(conversation.selection ?? LAYERED_SELECTION));
+    setSelection(cloneSelection(conversation.selection ?? newChatSelection));
     setActiveNotebookId(conversation.selection?.notebookId ?? conversation.notebookId ?? null);
     if (conversation.model && !restoringDraft) setSelectedModel(conversation.model);
     setContextTitle(conversation.title || null);
@@ -878,7 +887,8 @@ export function ResearchAssistantModal({
       if(selection.notebookId && activeId){rememberComposerDraft(draftScope,activeId,{input,attachments,selection});startNewConversation();}
       loadSequenceRef.current++; draftRestoring.current=false;
       setInput(current => current.includes(value.prompt) ? current : current.trim() ? `${current}\n\n${value.prompt}` : value.prompt);
-      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ideas: false, documents: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
+      // A question about one document reads its indexed text; full documents stay as chosen.
+      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), ideas: false, indexed: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
       inputRef.current?.focus();
     };
     prepare(); window.addEventListener('nodus:learning-prompt', prepare);
@@ -1110,7 +1120,7 @@ export function ResearchAssistantModal({
           }} />}
             {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
           </AcademicSecondary>
-          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{indexedOnly ? t('Textos indexados') : [contextLayers.ideas ? t('Ideas') : null, contextLayers.documents ? t('Documentos') : null, webSearch !== 'off' ? t('Búsqueda web') : null].filter(Boolean).join(' · ')}</span>}
+          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
 
 
           </div>
@@ -1179,7 +1189,7 @@ export function ResearchAssistantModal({
               <button type="button" className="btn btn-ghost text-xs" onClick={() => setEditingProjectInstructions(activeProject)}><Icon name="brain" size={14} />{t('Instrucciones del proyecto')}</button>
             </header>}
             <div className="relative flex-1 min-h-0">
-              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(!contextLayers.documents ? ['profiles', 'nodus', 'zotero', 'context'] as const : indexedOnly ? ['profiles', 'zotero', 'context'] as const : [])]} />}
+              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (
                   <div role="status" className="mx-auto max-w-xl rounded-lg border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
@@ -1397,7 +1407,7 @@ export function ResearchAssistantModal({
                     }
                   }}
                 />
-                {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending || indexedOnly} />}
+                {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending} />}
                 {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
                 {sending ? (
                   <button
@@ -1472,13 +1482,10 @@ export function ResearchAssistantModal({
           <div className="context-tab-scroll">
             <p className="research-context-intro">{t('Elige qué consulta el asistente antes de responder.')}</p>
             <div className="research-context-layers" data-testid="research-context-layers">
-              <ContextLayerSwitch testId="research-context-layer-indexed" icon="fileText" label={t('Textos indexados')}
-                description={t('Solo pasajes del texto indexado, recuperados por búsqueda. Sin ideas, perfiles, agente ni web.')} checked={indexedOnly} disabled={sending}
-                onChange={setIndexedOnly} />
               {CONTEXT_LAYERS.map(layer => <ContextLayerSwitch key={layer.id} testId={`research-context-layer-${layer.id}`} icon={layer.icon} label={t(layer.label)}
-                description={t(layer.description)} checked={!indexedOnly && contextLayers[layer.id]} disabled={sending || indexedOnly} onChange={on => setContextLayer(layer.id, on)} />)}
+                description={t(layer.description)} checked={contextLayers[layer.id]} disabled={sending} onChange={on => setContextLayer(layer.id, on)} />)}
               <ContextLayerSwitch testId="research-context-layer-web" icon="globe" label={t('Búsqueda web')}
-                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={turnWebSearch !== 'off'} disabled={sending || indexedOnly}
+                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={turnWebSearch !== 'off'} disabled={sending}
                 onChange={on => setWebSearch(on ? 'auto' : 'off')} />
             </div>
             {selection.notebookId ? <div className="research-context-sources" data-testid="research-context-sources">
@@ -1487,7 +1494,7 @@ export function ResearchAssistantModal({
               <Icon name="filter" size={15} /><span><strong>{t('Fuentes autorizadas')}</strong><small>{authorizedSourcesSummary}</small></span>
               <Icon name="chevronRight" size={14} />
             </button>}
-            {!contextLayers.ideas && !contextLayers.documents && webSearch === 'off' && <p className="research-context-empty" role="status" data-testid="research-context-empty">
+            {researchContextIsEmpty(contextLayers, turnWebSearch !== 'off') && <p className="research-context-empty" role="status" data-testid="research-context-empty">
               {t('Sin fuentes: el asistente responderá con conocimiento general y lo dirá en la respuesta.')}</p>}
           </div>
           <footer className="header-balloon-foot"><button className="btn btn-primary w-full" onClick={() => setShowContext(false)}>{t('Listo')}</button></footer>

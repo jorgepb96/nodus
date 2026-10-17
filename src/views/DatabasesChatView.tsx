@@ -66,7 +66,7 @@ export function DatabasesChatView({ settings, initialDatabaseId, conversationTar
     archiveConversation: window.nodus.archiveChatHistoryConversation ? (id, archived) => window.nodus.archiveChatHistoryConversation!('database', id, archived) : undefined,
     renameConversation: window.nodus.renameChatHistoryConversation ? (id, title) => window.nodus.renameChatHistoryConversation!('database', id, title) : undefined,
     researchChatStream: async (request, handlers) => { const result = await window.nodus.dbChatStream({ conversationId: request.conversationId, attachmentIds: request.attachmentIds, question: request.messages.at(-1)!.content, databaseIds: selected, history: request.messages.slice(0, -1), model: request.model, thinkingEffort: request.thinkingEffort, systemPromptId: request.systemPromptId }, handlers); return { answer: result.text, aborted: result.aborted }; },
-    cancelResearchChat: () => window.nodus.cancelDbChat(),
+    cancelResearchChat: conversationId => window.nodus.cancelDbChat(conversationId),
     renderMessage: (message, streaming) => <AssistantMessage text={message.content} streaming={streaming} />,
   }), [databases, selected, reading, notebooks]);
   return <ResearchAssistantModal settings={settings} embedded adapter={adapter} initialConversationTarget={conversationTarget} onOpenSavedNote={onOpenSavedNote} />;

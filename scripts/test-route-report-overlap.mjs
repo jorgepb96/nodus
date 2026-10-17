@@ -22,7 +22,7 @@ await build({ entryPoints: [path.join(root, 'electron/ai/moleculeInspection.ts')
       '../capabilities/runner': `export function createTrustedCapabilityRunner(){throw Error('test must supply a runner')}`,
       './aiClient': `export async function completeText(){return ''}`,
       '../reactionIndex': `export const reactionIndexService=()=>({localDirectory:async()=>'/ord'})`,
-      './synthesisEvidence': `export async function invokeDisconnectionsEach(){return []} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
+      './synthesisEvidence': `export async function invokeDisconnectionsEach(){return []} export async function invokeForwardSteps(){return null} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
       './pubchemMirror': `export const pubchemMirrorDirectory=()=>null; export const opsinDirectory=()=>null`,
       './chemistryStock': `export const chemistryStockDirectory=()=>'/stock'`,
       './textbookSchemes': `export const textbookSchemeDirectory=()=>'/schemes'; export const textbookCitations=()=>[]`,

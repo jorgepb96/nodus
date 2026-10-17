@@ -432,6 +432,10 @@
 .research-history-row:hover .research-history-row-actions, .research-history-row:focus-within .research-history-row-actions, .research-history-row.is-menu-open .research-history-row-actions { opacity: 1; }
 .research-history-row.is-pinned .research-history-row-actions { opacity: 1; }
 .research-history-row.is-pinned:not(:hover):not(:focus-within):not(.is-menu-open) .research-history-action:not(.is-on) { visibility: hidden; }
+/* A chat still answering while the user is in another one. */
+.research-history-running { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--vault-accent, #6366f1); animation: research-history-running 1.2s ease-in-out infinite; }
+@keyframes research-history-running { 50% { opacity: .3; transform: scale(.75); } }
+@media (prefers-reduced-motion: reduce) { .research-history-running { animation: none; } }
 .research-history-action { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; color: #8a8a8a; }
 .research-history-action:hover { color: #f5f5f5; background: #262626; }
 .research-history-action.is-on { color: var(--vault-accent, #6366f1); }
@@ -622,3 +626,23 @@ p.research-notebook-banner { flex-direction: row; align-items: center; }
 .research-web-source-meta { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #71717a; }
 .research-web-source-tag { flex-shrink: 0; padding: 0 7px; border-radius: 999px; font-size: 10px; line-height: 18px; color: #71717a; background: #88888818; }
 .research-web-source-tag.cited { color: #41916d; background: #41916d22; font-weight: 600; }
+
+/* Multiple selection in the chat history: a bar with the count and the bulk actions,
+   a checkbox on every chat, and Shift + click for ranges. */
+.research-chat-history-tool.is-on { color: var(--vault-accent); border-color: color-mix(in srgb, var(--vault-accent) 40%, transparent); background: color-mix(in srgb, var(--vault-accent) 12%, transparent); }
+.research-chat-selection { display: flex; flex-direction: column; gap: 2px; padding: 5px 4px 6px 6px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--vault-accent, #6366f1) 35%, transparent); background: color-mix(in srgb, var(--vault-accent, #6366f1) 8%, transparent); }
+.research-chat-selection-row { display: flex; align-items: center; justify-content: space-between; gap: 2px; min-width: 0; }
+.research-chat-selection-count { flex: 0 1 auto; overflow: hidden; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-width: 0; height: 26px; padding: 0 2px; border-radius: 7px; font-size: 11.5px; color: #d4d4d4; }
+.research-chat-selection-count:hover { background: #262626; }
+.research-chat-selection-hint { margin: 0 2px; font-size: 10.5px; line-height: 1.35; color: #8a8a8a; }
+.research-chat-selection .research-history-action:disabled { opacity: .35; cursor: not-allowed; }
+.research-chat-selection .research-history-action:disabled:hover { background: transparent; color: #8a8a8a; }
+.research-history-action.is-danger:not(:disabled):hover { color: #f87171; }
+.research-history-check { display: inline-grid; place-items: center; flex-shrink: 0; width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid #6b6b6b; color: #fff; }
+.research-history-check.is-checked, .research-history-check.is-mixed { border-color: var(--vault-accent, #6366f1); background: var(--vault-accent, #6366f1); }
+.research-history-row.is-selected { background: color-mix(in srgb, var(--vault-accent, #6366f1) 10%, transparent); }
+.light .research-chat-selection-count { color: #27272a; }
+.light .research-chat-selection-count:hover { background: #e4e4e7; }
+.light .research-chat-selection-hint { color: #71717a; }
+.light .research-history-check { border-color: #a1a1aa; }
+.light .research-history-check.is-checked, .light .research-history-check.is-mixed { border-color: var(--vault-accent, #6366f1); }

@@ -20,7 +20,7 @@ await build({ entryPoints: [path.join(root, 'electron/ai/moleculeInspection.ts')
       './aiClient': `export async function completeText(){return globalThis.__routeReview ?? '{"status":"ok"}'}`,
       // The reaction index and the route evidence are optional; with no index they add nothing.
       '../reactionIndex': `export const reactionIndexService=()=>({localDirectory:async()=>null})`,
-      './synthesisEvidence': `export async function invokeDisconnections(){return []} export async function invokeDisconnectionsEach(){return []} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
+      './synthesisEvidence': `export async function invokeDisconnections(){return []} export async function invokeDisconnectionsEach(){return []} export async function invokeForwardSteps(){return null} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
       // No PubChem mirror: the name and structure lookups go to the package as before.
       './pubchemMirror': `export const pubchemMirrorDirectory=()=>null; export const opsinDirectory=()=>null`,
       './chemistryStock': `export const chemistryStockDirectory=()=>null`,

@@ -32,7 +32,8 @@ export interface ResearchChatAdapter {
   notebooks?: ChatHistoryNotebooks;
   generateConversationTitle?: (id: string, model?: ModelRef | null) => Promise<unknown>;
   researchChatStream: (request: ResearchChatRequest, handlers: import('@shared/types').ResearchChatStreamHandlers) => Promise<{ answer: string; aborted?: boolean; stats?: ResearchContextStats; message?: Partial<ResearchUiMessage> }>;
-  cancelResearchChat: () => Promise<unknown>;
+  /** Stops the turn of that conversation; the surface's other chats keep answering. */
+  cancelResearchChat: (conversationId: string) => Promise<unknown>;
   renderMessage: (message: ResearchUiMessage, streaming: boolean) => ReactNode;
 }
 

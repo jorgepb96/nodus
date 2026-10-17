@@ -156,7 +156,11 @@ npm run report:embeddinggemma -- --controlled-root=/absolute/marked/controlled-r
 
 Reports preserve individual answers, citations, traces, rankings, screenshots, cost bounds and classified failures. Manual reviews identify the reviewer, answer/source hashes and specific unsupported claims. A reviewed sample is not generalized to unreviewed answers.
 
-The [model-independent Research Chat follow-up](research-chat-grounding.md) adds frozen-source redrafting, claim/quotation/arithmetic checks and exact coverage proof without rebuilding vectors. Its [final recorded regression](../audit/research-chat-grounding/README.md) remains below the required joint fidelity/adequacy threshold; the PR stays a draft. Separate native 256-dimensional Desktop capacity now records hot p95 447 ms against 10,000 chunks on the M2/16 GB reference, with approximately 1 GiB sampled runtime resident-memory growth. Fixture generation was contended and is not a quiet indexing-throughput measurement. Other native operating systems remain pending.
+The [model-independent Research Chat follow-up](research-chat-grounding.md) adds frozen-source redrafting, claim/quotation/arithmetic checks and exact coverage proof without rebuilding vectors. Its [final recorded regression](../audit/research-chat-grounding/README.md) remains below the required joint fidelity/adequacy threshold; profile validation remains withheld. On 2026-10-17 the user accepted the integration as experimental, with the incomplete validation recorded separately. Separate native 256-dimensional Desktop capacity now records hot p95 447 ms against 10,000 chunks on the M2/16 GB reference, with approximately 1 GiB sampled runtime resident-memory growth. Fixture generation was contended and is not a quiet indexing-throughput measurement. Other native operating systems remain pending.
+
+## Experimental integration closeout (2026-10-17)
+
+The [selected 37-case regression](../audit/research-live-quality/regression37-2026-10-15/README.md) closed incomplete: thirteen source-reviewed publications (eleven recovered failures and two controls), two verification-withheld cases, one protocol failure and 21 cases without final evidence. Original temporary profiles and raw transport/collector artifacts were absent on resumption; the preserved source packets and reviewer read receipts remain hash-verifiable. This does not revise the closed eighty-case baseline or validate a profile. The user authorized delivery and merge with these limits.
 
 ## Release gates
 

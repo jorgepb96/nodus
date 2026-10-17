@@ -112,7 +112,10 @@ nuestra compilación es la decisión de ahorro solicitada por el propietario.
 
 AppImage, Presenter, Research native, Research packaging y Scheme scan permanecen
 habilitados con entrada manual; su cobertura automática necesaria se selecciona
-desde CI. Website y la publicación de la imagen del servidor son manuales. La
+desde CI. Website es manual y, desde el 16 de octubre de 2026 y a petición del
+propietario, también se despliega una vez al día a las 23:00 UTC para refrescar
+los contadores de descargas del README y del sitio. La publicación de la imagen
+del servidor es manual. La
 imagen del servidor requiere `publish=true` y `main` para publicar; por defecto
 solo comprueba un contenedor sin publicar. Website publica siempre el `main`
 canónico. Sus despliegues y las comprobaciones de instaladores no se lanzan para

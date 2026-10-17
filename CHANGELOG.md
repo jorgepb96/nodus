@@ -1,5 +1,59 @@
 # Changelog
 
+## 5.12.1 — 2026-10-17
+
+### Enhancements
+
+- In Research Chat, Indexed texts no longer switches off the other sources in the context panel. It is now one more switch and combines with Ideas, Full documents and Web search. Documents is renamed Full documents and reads the works in depth from the indexed texts. Turning it on therefore turns on Indexed texts too. With only Indexed texts on and the web off, the answer comes only from the passages found.
+
+- In the Simple interface, a new Research Chat conversation starts with only Indexed texts on and the web off. This interface does not extract ideas, so the assistant answers from the passages of your sources. You can turn on the other sources in the context panel.
+
+### Fixes
+
+- Synthesis routes use the forward step search with precedents again. Since 14 October every call to it failed, which looked as if no precedent existed. The check of each step also names the fault more precisely. An inverted stereocentre is no longer reported as an unbalanced step.
+
+## 5.12.0 — 2026-10-17
+
+### New features
+
+- Research Chat has a new Indexed texts mode in the Focus tab of the context panel. With it on, the assistant searches the indexed text of your sources once and answers only with the passages it finds. It does not use ideas, document profiles, the research agent or the web, and it cites a passage for every claim. Short follow-up questions keep the topic of the previous question. When you turn it off, the layers you had chosen come back.
+
+### Enhancements
+
+- Research Chat no longer locks while it writes an answer. You can open other chats, start a new one and send messages in several chats at once. A dot in the history marks the chats that are still answering. Stop generating only stops the chat on screen, and deleting a chat that is answering stops its answer. The same applies to the chats in study, worldbuilding and database vaults.
+
+## 5.11.1 — 2026-10-16
+
+### Enhancements
+
+- In Nodus Sign you can draw your handwritten signature with a finger on the trackpad. On macOS the drawing area shows the trackpad to scale, so its edges are the real limits and no stroke is cut off. On Windows and Linux the cursor is locked and draws while you hold the trackpad down. Before saving, you can crop the signature with an adjustable frame. The editor tools are now icons with tooltips.
+
+- In Nodus Sign you move signatures on the page with the mouse and resize them from eight handles. Corners keep the proportions, and Shift frees them. Edges stretch one side. The exact percentages are still available under Precise adjustment. A certificate signature no longer has to show anything on the document. If you turn off its appearance, the PDF looks unchanged and PDF readers show the signature in their signatures panel.
+
+### Fixes
+
+- The Nodus Sign signing engine now installs on macOS. In 5.11.0 the installation always ended with a connection error, although the download worked. Nodus now uses a compatible Python on your computer or downloads its own.
+
+- Plugins that use Python work even when the default python3 is newer than they support. Nodus picks another installed version the plugin supports. If there is none, the message lists the supported versions and the ones found.
+
+## 5.11.0 — 2026-10-16
+
+### New features
+
+- Nodus Sign is a new tool in Nodus Tools for signing PDFs on your computer. Draw or import handwritten signatures, keep them in a library, and place them with exact position, size and pages. You can also sign with a PKCS#12 certificate. Certificate signing uses an optional engine that Nodus installs with one button. The original PDF is never changed, and the signed copy can be saved to your vault.
+
+### Enhancements
+
+- The Chrome connector and Nodus Browser let you review each captured reference separately, with its own metadata, tags, files and snapshot. Captures continue when the Chrome popup is closed and resume after a restart. A progress and history list shows each save, with retry for failed items and links to saved references.
+
+### Fixes
+
+- When a visual resource fails to generate in the document reader, its controls keep the same size as the rest of the toolbar. The full error opens in a dialog. Tooltips appear again when you switch to the keyboard after a click.
+
+- Nodus Focus uses the selected application palette in the dashboard, timer, header, focus rail, notices and dialogs. Primary buttons follow the palette in their normal and hover states.
+
+- Closing the Chrome popup during pairing or capture no longer loses the connection or the transfer. Saving keeps the metadata you reviewed. Different references found on the same results page are no longer merged into one.
+
 ## 5.10.0 — 2026-10-14
 
 ### New features

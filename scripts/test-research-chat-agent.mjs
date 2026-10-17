@@ -77,6 +77,19 @@ try {
   const literal = await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null);
   assert.deepEqual([literal.planned, literal.goal, literal.explicitLibrary], [false, 'usa zotero mcp', true], 'a planner that fails falls back to the literal message');
   assert.equal(literalResearchTurnPlan('define libro de viaje vs relato de viaje').kind, 'comparison');
+  // The plan says whether the message needs sources at all. Only an explicit «no» skips the
+  // search: a model that says nothing, a planner that fails and a request for the library search.
+  assert.equal(literal.needsSources, true, 'a plan that failed searches as before');
+  assert.equal(plan.needsSources, true, 'a plan that does not say searches');
+  ai.completeJson = async (options, guard) => {
+    assert.match(options.system, /needsSources: false ONLY when/);
+    const reply = { needsSources: false, goal: 'Agradecimiento por la respuesta', queries: ['agradecimiento'], authors: [], titles: [], explicitLibrary: false, kind: 'other' };
+    assert.equal(guard(reply), true); return reply;
+  };
+  assert.equal((await planResearchTurn([...history, { role: 'user', content: 'gracias, perfecto' }], null)).needsSources, false);
+  assert.equal((await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null)).needsSources, true, 'a request for the library is never answered without it');
+  ai.completeJson = async (options, guard) => { const reply = { needsSources: 'no', goal: 'x y z', queries: ['x y'], kind: 'other' }; if (!guard(reply)) throw new Error('invalid'); return reply; };
+  assert.equal((await planResearchTurn([...history, { role: 'user', content: 'vale' }], null)).needsSources, true, 'an invalid answer falls back to searching');
 
   // Every one of the planner's four facets reaches the real retrieval binding.
   // Small windows must not be divided into five slices smaller than one chunk.

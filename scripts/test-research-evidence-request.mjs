@@ -110,6 +110,20 @@ try {
   assert.ok(JSON.parse(thinking.user).contexto_modular_seleccionado.pasajes_relevantes.length > 0);
   assert.equal(await ai.completeText({ system: thinking.system, user: thinking.user, ...thinking.generationOptions, corpusContext: true }, thinkingModel), 'Answer');
   assert.equal(sent.length, 3, 'final prompts pass real aiClient validation and reach the simulated transport');
+  // A message the planner answers as it is searches nothing and sends no sources.
+  let investigated = 0;
+  ResearchCorpusRun.prototype.investigate = async function() { investigated++; };
+  planner.planResearchTurn = async () => ({ ...planner.literalResearchTurnPlan('gracias'), planned: true, needsSources: false });
+  const thanks = await research.testBuildPrompt(request({ provider: 'openai', model: 'unknown-model' }), [], undefined, new AbortController().signal);
+  const thanksContext = JSON.parse(thanks.user).contexto_modular_seleccionado;
+  assert.equal(investigated, 0, 'no library search for a message that needs no sources');
+  assert.deepEqual([thanksContext.obras.length, thanksContext.pasajes_relevantes.length, thanksContext.temas_principales.length], [0, 0, 0]);
+  assert.match(thanksContext.research_scope.instruction, /needs no sources, so nothing was searched/);
+  assert.equal(thanksContext.research_scope.research_log, undefined);
+  // Asked for the library in so many words, the turn searches whatever the plan said.
+  planner.planResearchTurn = async () => ({ ...planner.literalResearchTurnPlan('usa zotero'), planned: true, needsSources: false, explicitLibrary: true });
+  await research.testBuildPrompt(request({ provider: 'openai', model: 'unknown-model' }), [], undefined, new AbortController().signal);
+  assert.equal(investigated, 1, 'a request for the library always searches');
   console.log('Evidence request: real retrieval, JSON expansion, complete citations, large-window recovery and dispatch passed.');
 } finally {
   await new Promise(resolve => server.close(resolve));

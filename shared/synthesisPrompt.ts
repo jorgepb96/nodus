@@ -3,7 +3,7 @@
  *  the route, the roles and the systematic IUPAC names, and the application derives every
  *  structure and every balanced equation from the names. */
 
-import { routeSpeciesRules } from './routeRules';
+import { routeProgramMode, routeSpeciesRules } from './routeRules';
 
 /** How to plan, ahead of the output format. Weaker thinking models spent most of their reasoning
  *  hand-balancing hydrogens and re-deriving mechanisms (deepseek-flash on the Robinson tropinone
@@ -56,6 +56,23 @@ const HEAD = [
 // final report, after every step passes. So the contract asks for no drawing block at all; asking
 // for a target drawing made the model announce one ("the target is drawn below") that the reader
 // then saw replaced by the "Not drawn here" placeholder on every route answer.
+// Program mode's output format, replacing HEAD. The names-first format and this one cannot both
+// be in force: HEAD asks for four labelled lines of species per step, these rules ask for
+// operations and no species at all, and a prompt carrying both would contradict itself. The
+// vocabulary stays generic (start, apply, site) and must stay generic in diffs and commit text.
+const PROGRAM_HEAD = [
+  'Output format — follow exactly.',
+  '1. Write the route as a program inside ONE fenced block marked «route-program», one statement per',
+  '   line and nothing else inside the fence. For example:',
+  '',
+  '     «««route-program',
+  '     M1 = start("ethanoic acid")',
+  '     M2 = apply(M1, named="acid-to-acyl-chloride", reagents=["thionyl chloride"])',
+  '     M3 = apply(M2, named="n-acylation", reagents=["ethanamine"])',
+  '     target = M3',
+  '     «««',
+];
+
 const TAIL = [
   '2. Draw nothing: emit no chemistry-plan, chemfig, smiles, json or SVG block, and never a',
   '   nodus-view, nodus-artifact or nodus-capability-result block. Those are application results:',
@@ -69,7 +86,8 @@ const placeholders = (lines: string[]) => lines.join('\n').split('«').join('`')
 export const SYNTHESIS_TEMPLATE_ADDENDUM = [
   METHOD.join('\n'),
   '',
-  placeholders(HEAD),
+  // One format or the other, never both — see PROGRAM_HEAD.
+  placeholders(routeProgramMode() ? PROGRAM_HEAD : HEAD),
   ...routeSpeciesRules().map((rule) => `   - ${rule}`),
   placeholders(TAIL),
 ].join('\n');

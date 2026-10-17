@@ -1,5 +1,7 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -3803,7 +3805,7 @@ export const TR: Record<string, string> = {
   "Contenido": "İçerik",
   "Crear una idea manual indexable": "Manuel olarak indekslenebilir bir fikir oluşturun",
   "Cuerpo de cada nota": "Her notanın gövdesi",
-  "Deshacer": "geri almak",
+  "Deshacer": "Geri al",
   "elemento": "eleman",
   "Esta carpeta tiene un resumen": "Bu klasörde bir özet var",
   "Estructura completa con ids y metadatos, ideal para procesar.": "İşleme için ideal, kimlikler ve meta veriler içeren eksiksiz yapı.",
@@ -8684,4 +8686,7 @@ export const TR: Record<string, string> = {
   "Detener dictado": "Dikteyi durdur",
   ...ACADEMIC_INTERFACE_TRANSLATIONS["tr"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["tr"],
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["tr"],
 };
+
+Object.assign(TR, SIGN_TRANSLATIONS['tr']);

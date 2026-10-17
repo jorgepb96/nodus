@@ -51,6 +51,7 @@ exports.default = async function beforePack(context) {
   require('../scripts/build-apple-calendar.cjs').buildAppleCalendar(Arch[context.arch]);
   require('../scripts/build-presenter-native.cjs').buildPresenterNative(Arch[context.arch]);
   require('../scripts/build-system-audio.cjs').buildSystemAudio(Arch[context.arch]);
+  require('../scripts/build-trackpad-native.cjs').buildTrackpadNative(Arch[context.arch]);
   const source = path.join(__dirname, 'docktile');
   const output = path.join(__dirname, 'NodusDockTile.docktileplugin');
   const contents = path.join(output, 'Contents');

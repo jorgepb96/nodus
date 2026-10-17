@@ -1,5 +1,6 @@
 node_modules/
 build/system-audio/*/*.node
+build/trackpad-native/*/*.node
 tmp/
 dist/
 dist-electron/

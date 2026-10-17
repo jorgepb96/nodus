@@ -15,7 +15,7 @@ export class FittedSlideRenderer {
   ) {}
 
   /** Render `pageNum` fitted to the container. Safe to call rapidly. */
-  async render(doc: PDFDocumentProxy, pageNum: number): Promise<void> {
+  async render(doc: PDFDocumentProxy, pageNum: number, zoom = 1): Promise<void> {
     const gen = ++this.generation;
     let page;
     try {
@@ -38,7 +38,7 @@ export class FittedSlideRenderer {
 
     const base = page.getViewport({ scale: 1 });
     const dpr = window.devicePixelRatio || 1;
-    const fitScale = Math.min(cw / base.width, ch / base.height);
+    const fitScale = Math.min(cw / base.width, ch / base.height) * zoom;
     const viewport = page.getViewport({ scale: Math.min(fitScale, this.maxScale) * dpr });
 
     // Render into a buffer first, then blit — avoids showing a half-painted canvas

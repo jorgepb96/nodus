@@ -1,5 +1,7 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -8933,4 +8935,7 @@ export const DE: Record<string, string> = {
   "Detener dictado": "Diktat stoppen",
   ...ACADEMIC_INTERFACE_TRANSLATIONS["de"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["de"],
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["de"],
 };
+
+Object.assign(DE, SIGN_TRANSLATIONS['de']);

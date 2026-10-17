@@ -16,5 +16,10 @@ export async function loadPresenterPdf(id: string): Promise<PDFDocumentProxy | n
   const bytes = await window.nodus.getPresenterPdfData(id);
   if (!bytes) return null;
   // pdfjs takes ownership of the buffer; hand it a fresh Uint8Array.
+  return loadPdfBytes(bytes);
+}
+
+/** Shared offline byte loader for local PDF tools; callers own and destroy the proxy. */
+export function loadPdfBytes(bytes: Uint8Array): Promise<PDFDocumentProxy> {
   return getDocument({ data: new Uint8Array(bytes) }).promise;
 }

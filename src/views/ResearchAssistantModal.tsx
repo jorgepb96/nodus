@@ -30,13 +30,15 @@ import { InvokedSkillPills, SkillMentionMenu, findSkillMention, rankSkillMention
 import { useSkillLibrary } from '../components/skillLibrary';
 import type { ResearchNotebook, ResearchNotebookPreparation } from '@shared/researchCorpus';
 import { matchingResearchWorkIds, normalizeResearchSourceFilter, type ResearchContextSources } from '@shared/researchContextFilters';
-import { researchContextLayers, withResearchContextLayers } from '@shared/researchContextLayers';
+import { researchContextIsEmpty, researchContextLayers, researchContextWeb, toggleResearchContextLayer, withResearchContextLayers } from '@shared/researchContextLayers';
 import { ResearchCoverage } from '../components/ResearchCoverage';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import { ModelPicker } from '../components/ModelPicker';
+import { liveResearchTurnKey, liveResearchTurns, type LiveResearchTurn } from '../researchLiveTurns';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
 import { ChatSkillsControl } from '../components/ChatSkillsControl';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type ReactNode } from 'react';
 import type {
   AppSettings,
   ChatConversationSummary,
@@ -48,7 +50,7 @@ import type {
   NoteSource,
   ResearchWebSearchMode,
 } from '@shared/types';
-import { Icon, modelLabel, sortModelRefs } from '../components/ui';
+import { Icon, sortModelRefs } from '../components/ui';
 import type { MarkdownCitation } from '../components/Markdown';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
@@ -79,13 +81,18 @@ const DEFAULT_SELECTION: ResearchContextSelection = {
   },
 };
 
-/** A new chat reads both layers of the corpus, ideas and documents, and the web while it is on. */
-const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true });
+/** A new chat reads every layer of the corpus, and the web while the composer has it on. */
+const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true, indexed: true });
+/** The Simple interface never extracts ideas, so a new chat there reads the indexed texts alone,
+ * with the web off: the answer comes from the passages its search returns. */
+const INDEXED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: false, documents: false, indexed: true, web: false });
 
-/** The context balloon's layers, in the order the activity balloon lists what they read. */
+/** The context balloon's corpus layers, each a switch of its own. Full documents read the works
+ * from the indexed texts, so switching them on brings the indexed texts too. */
 const CONTEXT_LAYERS = [
+  { id: 'indexed', icon: 'fileText', label: 'Textos indexados', description: 'Pasajes de tus fuentes encontrados por búsqueda. Si es lo único activo, la respuesta sale solo de ellos.' },
   { id: 'ideas', icon: 'bulb', label: 'Ideas', description: 'Ideas, temas, contradicciones, huecos, rutas de lectura, autores y el grafo que los relaciona.' },
-  { id: 'documents', icon: 'book', label: 'Documentos', description: 'El texto de las obras en la biblioteca de Nodus y en Zotero, y sus perfiles documentales.' },
+  { id: 'documents', icon: 'book', label: 'Documentos completos', description: 'Lee a fondo las obras a partir de los textos indexados: perfiles documentales, páginas originales y Zotero.' },
 ] as const;
 
 // Starter prompts offered as clickable chips on an empty chat. They run against
@@ -111,6 +118,8 @@ const GENEALOGY_SUGGESTIONS = [
 ];
 
 type UiMessage = ResearchUiMessage;
+/** What one turn consulted, shown in the activity panel of the chat it belongs to. */
+type ActivityRun = { conversationId: string; turnId: string; activities: ResearchActivity[]; outcome: ResearchActivityStatus };
 
 /** How often a streaming answer is repainted: about 20 times a second, instead of once per
  *  delta. Short enough to read as live typing. */
@@ -162,6 +171,10 @@ export function ResearchAssistantModal({
   onOpenSavedNote?: (noteId: string) => void;
 }) {
   const simpleInterface = useAcademicInterface() === 'simple' && isAcademic && !adapter;
+  const newChatSelection = simpleInterface ? INDEXED_SELECTION : LAYERED_SELECTION;
+  // A choice saved before the indexed texts had a switch of their own was never made in this
+  // balloon, so a new chat in the Simple interface starts from its own default instead.
+  const newChatFrom = (current: ResearchContextSelection) => simpleInterface && current.layers?.indexed === undefined ? cloneSelection(INDEXED_SELECTION) : current;
   const api = adapter ?? window.nodus;
   const apiRef = useRef(api);
   apiRef.current = api;
@@ -174,7 +187,7 @@ export function ResearchAssistantModal({
   const draftScope = isAcademic && embedded && !adapter ? learning.vaultId ?? null : null;
   const draftSeed = useRef(composerDraftStore(draftScope));
   const initialDraft = draftSeed.current.drafts[draftSeed.current.lastId ?? 'new'];
-  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ?? LAYERED_SELECTION));
+  const [selection, setSelection] = useState<ResearchContextSelection>(() => cloneSelection(initialDraft?.selection ? newChatFrom(initialDraft.selection) : newChatSelection));
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState(initialDraft?.input ?? '');
   const [attachments, setAttachments] = useState<ResearchAttachment[]>(initialDraft?.attachments ?? []);
@@ -189,13 +202,18 @@ export function ResearchAssistantModal({
   const [contextTitle, setContextTitle] = useState<string | null>(null);
   const [concilium, setConcilium] = useState<ConciliumConfig | null>(null);
   const [selectedModel, setSelectedModel] = useFeatureModel(settings, adapter?.modelFeature ?? 'chatModel', adapter?.modelFeature === 'studyModel' ? 'chatModel' : undefined);
-  const [sending, setSending] = useState(false);
-  const [activityRun, setActivityRun] = useState<{ conversationId: string; turnId: string; activities: ResearchActivity[]; outcome: ResearchActivityStatus } | null>(null);
+  // Each chat's latest turn: a chat reopened while it still answers shows its own activity.
+  const [activityRuns, setActivityRuns] = useState<Record<string, ActivityRun>>({});
   // Remembered per provider+model: a conversation keeps whatever level the model was last
   // used at, so a level the user picked is not reset by switching chats or models.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel);
   const [webSearch, setWebSearchState] = useState<ResearchWebSearchMode>(settings.researchWebSearch === 'off' ? 'off' : 'auto');
-  const setWebSearch = (mode: ResearchWebSearchMode) => { setWebSearchState(mode); void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined); };
+  // The web is this chat's choice, and the composer's saved setting for chats that never made one.
+  const setWebSearch = (mode: ResearchWebSearchMode) => {
+    setWebSearchState(mode);
+    setSelection(current => withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), web: mode !== 'off' }));
+    void window.nodus.updateSettings({ researchWebSearch: mode }).catch(() => undefined);
+  };
   const [answerVerification, setAnswerVerificationState] = useState<'off' | 'legacy' | 'structured'>(settings.researchAnswerVerification ?? 'off');
   useEffect(() => { setAnswerVerificationState(settings.researchAnswerVerification ?? 'off'); }, [settings.researchAnswerVerification]);
   const setAnswerVerification = (mode: 'off' | 'structured') => {
@@ -204,6 +222,7 @@ export function ResearchAssistantModal({
   };
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const activityRun = activeId ? activityRuns[activeId] ?? null : null;
   const draftRestoring = useRef(Boolean(draftScope && draftSeed.current.lastId && !initialTarget && !initialConversationTarget));
   useEffect(() => {
     if(!draftRestoring.current)rememberComposerDraft(draftScope,activeId,{input,attachments,selection});
@@ -247,6 +266,7 @@ export function ResearchAssistantModal({
   // A notebook is read once its collections are indexed; until then it says so and waits.
   const notebookBlocked = !!activeNotebook && (!notebookPreparation || notebookPreparation.pending > 0);
   const [pendingDelete, setPendingDelete] = useState<ChatConversationSummary | null>(null);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState<ChatConversationSummary[] | null>(null);
   const [citationOrigin, setCitationOrigin] = useState<{conversationId?:string;messageId?:string}>({});
   const [citation, setCitation] = useState<CitationTarget>(null);
   const [noteTarget, setNoteTarget] = useState<{ content: string; title: string; source: NoteSource } | null>(null);
@@ -258,18 +278,9 @@ export function ResearchAssistantModal({
   // The context balloon's two tabs: how the assistant approaches the corpus, and which of it.
   const [contextTab, setContextTab] = useState<'focus' | 'library'>('focus');
   // The context picker opens as a header balloon, like its neighbours.
-  // Id of the assistant message currently streaming — drives the live caret and
-  // the "stop" affordance. Null when nothing is in flight.
-  const [streamingId, setStreamingId] = useState<string | null>(null);
-  // Set once the main process repaints the turn with its own finished text (skills run, route
-  // checks pending): its drawings are complete blocks and render instead of "Loading…".
-  const [repaintedId, setRepaintedId] = useState<string | null>(null);
   // Id of the last assistant message the user stopped. Its partial text stays and
   // the red notice renders under it instead of replacing the whole answer.
   const [stoppedMessageId, setStoppedMessageId] = useState<string | null>(null);
-  // Set by the stop button and read when the stream settles, so a cancellation that
-  // still rejects is not mistaken for a genuine generation failure.
-  const stopRequestedRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const contextTriggerRef = useRef<HTMLButtonElement>(null);
@@ -284,6 +295,40 @@ export function ResearchAssistantModal({
   // without the stream overwriting the conversation they switched to.
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
+  // This view's identity in the store of turns in progress, which outlives the view.
+  const viewId = useRef(crypto.randomUUID()).current;
+  const liveScope = adapter?.id ?? 'research';
+  // Turns run per conversation, several at once: only the chat on screen locks while its own
+  // turn runs, and the user can open other chats or start new ones meanwhile. Re-renders when a
+  // turn starts, is repainted or ends; the streamed text is painted by the turn itself.
+  useSyncExternalStore(liveResearchTurns.subscribe, () => liveResearchTurns.signature(liveScope));
+  const liveTurnOnScreen = activeId ? liveResearchTurns.get(liveResearchTurnKey(liveScope, activeId)) : null;
+  const sending = !!liveTurnOnScreen;
+  // Id of the assistant message streaming on screen — drives the live caret and the "stop"
+  // affordance. Null when the chat on screen is not answering.
+  const streamingId = liveTurnOnScreen?.assistantId ?? null;
+  // Set once the main process repaints the turn with its own finished text (skills run, route
+  // checks pending): its drawings are complete blocks and render instead of "Loading…".
+  const repaintedId = liveTurnOnScreen?.repainted ? liveTurnOnScreen.assistantId : null;
+  // The history marks every chat still answering.
+  const runningConversationIds = new Set(liveResearchTurns.active().filter(turn => turn.key.startsWith(`${liveScope}:`)).map(turn => turn.conversationId));
+  const updateActivityRun = (conversationId: string, turnId: string, change: (run: ActivityRun) => ActivityRun) =>
+    setActivityRuns(runs => runs[conversationId]?.turnId === turnId ? { ...runs, [conversationId]: change(runs[conversationId]) } : runs);
+  // A chat whose turn is still running shows it from the store of turns in progress: when it is
+  // reopened (a turn paints only while its chat is on screen), and when the turn was sent by a
+  // view that has since unmounted (the user left the chat and came back). The activity of this
+  // view's own turns is already kept per chat, and may be settled while the turn still saves.
+  const showLiveTurn = useCallback((live: LiveResearchTurn) => {
+    setMessages([...live.base, { id: live.assistantId, role: 'assistant', content: live.content, reasoning: live.reasoning || undefined, concilium: live.concilium, selectionKey: live.selectionKey }]);
+    if (live.owner !== viewId) setActivityRuns(runs => ({ ...runs, [live.conversationId]: { conversationId: live.conversationId, turnId: live.assistantId, activities: live.activities, outcome: 'active' } }));
+  }, [viewId]);
+  // Stops one chat's turn; the surface's other chats keep answering.
+  const stopTurn = (conversationId: string) => {
+    const key = liveResearchTurnKey(liveScope, conversationId);
+    if (!liveResearchTurns.get(key)) return;
+    liveResearchTurns.requestStop(key);
+    void api.cancelResearchChat(conversationId);
+  };
   // Bumped by every conversation load and by "new chat": a load whose answer arrives after a
   // newer one started (two chats clicked in quick succession) must not replace it.
   const loadSequenceRef = useRef(0);
@@ -370,7 +415,8 @@ export function ResearchAssistantModal({
   // What the balloon offers: the corpus layers and the web. A selection saved before layers
   // existed is read from its sections, as the backend reads it.
   const contextLayers = useMemo(() => researchContextLayers(selection, isAcademic), [selection, isAcademic]);
-  const selectedCount = Number(contextLayers.ideas) + Number(contextLayers.documents) + Number(webSearch !== 'off');
+  const turnWebSearch: ResearchWebSearchMode = researchContextWeb(selection, webSearch !== 'off') ? 'auto' : 'off';
+  const selectedCount = Number(contextLayers.indexed) + Number(contextLayers.ideas) + Number(contextLayers.documents) + Number(turnWebSearch !== 'off');
   const sourceFilterOn = !!selection.sourceFilter?.enabled && !selection.notebookId;
   // The works the Library tab authorizes, counted for the Focus tab's summary while it is open.
   const [contextSources, setContextSources] = useState<ResearchContextSources | null>(null);
@@ -388,18 +434,20 @@ export function ResearchAssistantModal({
   const shownContextTab = contextTab === 'library' && !selection.notebookId ? 'library' : 'focus';
 
   const setContextLayer = (layer: (typeof CONTEXT_LAYERS)[number]['id'], on: boolean) =>
-    setSelection(current => withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), [layer]: on }));
+    setSelection(current => withResearchContextLayers(current, toggleResearchContextLayer(researchContextLayers(current, isAcademic), layer, on)));
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
     loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
-    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return rest; });
+    setSelection(current => { const { sourceFilter: _sourceFilter, notebookId: _notebookId, ...rest } = current; return newChatFrom(rest); });
     setActiveNotebookId(null);
     adapter?.reset?.();
     if (!activeId) void systemPrompts.select(null);
     setActiveProjectId(null);
+    // Now, not at the next render: a turn still running in the chat left behind stops painting here.
+    activeIdRef.current = null;
     setActiveId(null);
     setMessages([]);
     setInput('');
@@ -415,6 +463,7 @@ export function ResearchAssistantModal({
     loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
+    activeIdRef.current = null;
     setActiveId(null);
     setMessages([]);
     setStoppedMessageId(null);
@@ -443,10 +492,14 @@ export function ResearchAssistantModal({
     setActiveId(conversation.id);
     const loadedMessages = conversation.messages.map((m) => ({ ...m, id: m.id || crypto.randomUUID() }));
     setMessages(loadedMessages);
+    // A turn still running in this conversation replaces what was saved before it finished.
+    activeIdRef.current = conversation.id;
+    const live = liveResearchTurns.get(liveResearchTurnKey(liveScope, conversation.id));
+    if (live) showLiveTurn(live);
     const council = loadedMessages.filter(message => message.role === 'assistant').at(-1)?.concilium;
     setConcilium(council ? { chairman: council.chairman, models: council.members.map(member => member.model) } : null);
     setStoppedMessageId(null);
-    setSelection(cloneSelection(conversation.selection ?? LAYERED_SELECTION));
+    setSelection(cloneSelection(conversation.selection ?? newChatSelection));
     setActiveNotebookId(conversation.selection?.notebookId ?? conversation.notebookId ?? null);
     if (conversation.model && !restoringDraft) setSelectedModel(conversation.model);
     setContextTitle(conversation.title || null);
@@ -484,7 +537,6 @@ export function ResearchAssistantModal({
   }, [initialConversationTarget?.nonce]);
 
   const openProject = (projectId: string) => {
-    if (sending) return;
     startNewConversation();
     setActiveProjectId(projectId);
     window.setTimeout(() => inputRef.current?.focus(), 0);
@@ -540,7 +592,6 @@ export function ResearchAssistantModal({
   };
   // A notebook opens on its own page; the first message there starts a chat inside it.
   const openNotebook = (notebookId: string) => {
-    if (sending) return;
     startNewConversation();
     setActiveNotebookId(notebookId);
     // An adapter points its own context at it; Research Chat reads it through the selection.
@@ -581,6 +632,26 @@ export function ResearchAssistantModal({
     await refreshConversations();
   };
 
+  // The multiple selection acts on every chat, then refreshes the history once.
+  const moveConversations = async (conversations: ChatConversationSummary[], projectId: string | null) => {
+    for (const conversation of conversations) if (conversation.projectId !== projectId) await organizer!.setProject(conversation.id, projectId);
+    await refreshConversations();
+  };
+  const archiveConversations = async (conversations: ChatConversationSummary[], archived: boolean) => {
+    for (const conversation of conversations) if (!!conversation.archived !== archived) await api.archiveConversation?.(conversation.id, archived);
+    await refreshConversations();
+  };
+  const confirmBulkDelete = async () => {
+    const deleting = pendingBulkDelete ?? [];
+    setPendingBulkDelete(null);
+    for (const conversation of deleting) {
+      stopTurn(conversation.id);
+      await api.deleteConversation(conversation.id);
+      await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${conversation.id}`, null);
+    }
+    if (deleting.some(conversation => conversation.id === activeId)) startNewConversation();
+    await refreshConversations();
+  };
   const archiveConversation = async (conversation: ChatConversationSummary) => {
     await api.archiveConversation?.(conversation.id, !conversation.archived);
     await refreshConversations();
@@ -588,6 +659,7 @@ export function ResearchAssistantModal({
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
+    stopTurn(pendingDelete.id);
     await api.deleteConversation(pendingDelete.id);
     await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${pendingDelete.id}`, null);
     if (pendingDelete.id === activeId) startNewConversation();
@@ -632,72 +704,79 @@ export function ResearchAssistantModal({
       userMessage,
     ].map((m) => ({ role: m.role, content: m.content, attachments: m.attachments }));
 
-    stopRequestedRef.current = false;
     setStoppedMessageId(null);
-    setMessages([...priorMessages, userMessage, { id: assistantId, role: 'assistant', content: '', selectionKey }]);
-    setSending(true);
-    setActivityRun({ conversationId, turnId: assistantId, activities: [], outcome: 'active' });
-    setStreamingId(assistantId);
+    const onScreen = () => activeIdRef.current === conversationId;
+    if (onScreen()) setMessages([...priorMessages, userMessage, { id: assistantId, role: 'assistant', content: '', selectionKey }]);
+    const liveKey = liveResearchTurnKey(liveScope, conversationId);
+    liveResearchTurns.start({ key: liveKey, owner: viewId, conversationId, assistantId, selectionKey, base: [...priorMessages, userMessage] });
+    // Stopped in this chat, here or from a view mounted after this one left. Read when the stream
+    // settles, so a cancellation that still rejects is not mistaken for a genuine failure.
+    const stopped = () => !!liveResearchTurns.get(liveKey)?.stopRequested;
+    let settled: UiMessage[] | null = null;
+    let outcome: ResearchActivityStatus = 'failed';
+    setActivityRuns(runs => ({ ...runs, [conversationId]: { conversationId, turnId: assistantId, activities: [], outcome: 'active' } }));
     // Reveal the question and the beginning of the answer once. Streaming
     // deltas must not chase the bottom: keeping this position stable lets the
     // user read from the start and scroll through the reply at their own pace,
     // matching Nodi's chat behaviour.
-    window.setTimeout(() => scrollToBottom('auto'), 0);
+    if (onScreen()) window.setTimeout(() => scrollToBottom('auto'), 0);
 
     let streamed = '';
+    let reasoned = '';
     let councilResult: ConciliumResult | undefined;
     // Deltas arrive one IPC message at a time, often faster than the screen refreshes, and
     // each one used to re-render the timeline and re-parse the growing answer's Markdown.
-    // They are gathered and painted together at most every STREAM_PAINT_MS.
-    let unpainted = '';
+    // They are gathered and painted together at most every STREAM_PAINT_MS. A paint writes
+    // the whole answer so far, so it also completes a chat reopened mid-answer.
     let paintTimer: number | null = null;
     const paint = () => {
       paintTimer = null;
-      const chunk = unpainted;
-      unpainted = '';
-      if (!chunk || activeIdRef.current !== conversationId) return; // user switched away
-      setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: message.content + chunk } : message));
+      if (!onScreen()) return; // user switched away
+      const content = streamed;
+      setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content } : message));
       window.setTimeout(updateJumpIndicator, 0);
     };
     const dropUnpainted = () => {
       if (paintTimer != null) window.clearTimeout(paintTimer);
       paintTimer = null;
-      unpainted = '';
     };
     try {
       await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
-        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
+        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
           // A terminal event may arrive after the turn settled (it travels on another IPC pipe
           // than the reply); it then replaces the placeholder the settlement wrote.
-          onActivity: event => setActivityRun(current => current?.turnId === assistantId && (current.outcome === 'active' || event.status !== 'active') ? { ...current, activities: updateResearchActivities(current.activities, event) } : current),
+          onActivity: event => {
+            liveResearchTurns.update(liveKey, turn => ({ activities: updateResearchActivities(turn.activities, event) }));
+            updateActivityRun(conversationId, assistantId, run => run.outcome === 'active' || event.status !== 'active' ? { ...run, activities: updateResearchActivities(run.activities, event) } : run);
+          },
           onConcilium: (result) => {
             councilResult = result;
-            if (activeIdRef.current !== conversationId) return;
+            liveResearchTurns.update(liveKey, () => ({ concilium: result }));
+            if (!onScreen()) return;
             setMessages(current => current.map(message => message.id === assistantId ? { ...message, concilium: result } : message));
           },
           onReplace: (text) => {
             // The repaint is the whole turn so far: deltas still waiting to be painted are in it.
             dropUnpainted();
             streamed = text;
-            setRepaintedId(text ? assistantId : null);
-            if (activeIdRef.current !== conversationId) return;
+            liveResearchTurns.update(liveKey, () => ({ content: text, repainted: !!text }));
+            if (!onScreen()) return;
             setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: text } : message));
             window.setTimeout(updateJumpIndicator, 0);
           },
           onDelta: (delta) => {
             streamed += delta;
-            unpainted += delta;
+            liveResearchTurns.update(liveKey, () => ({ content: streamed }));
             if (paintTimer == null) paintTimer = window.setTimeout(paint, STREAM_PAINT_MS);
           },
           onReasoning: (delta) => {
-            if (activeIdRef.current !== conversationId) return;
-            setMessages((current) =>
-              current.map((message) =>
-                message.id === assistantId ? { ...message, reasoning: (message.reasoning ?? '') + delta } : message
-              )
-            );
+            reasoned += delta;
+            liveResearchTurns.update(liveKey, () => ({ reasoning: reasoned }));
+            if (!onScreen()) return;
+            const reasoning = reasoned;
+            setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, reasoning } : message));
           },
         }
       );
@@ -706,8 +785,10 @@ export function ResearchAssistantModal({
       dropUnpainted();
       // A user-triggered stop resolves with the partial answer; treat an empty
       // partial as "nothing generated" and drop the placeholder bubble.
-      const aborted = stopRequestedRef.current || Boolean(response.aborted);
-      setActivityRun(current => current?.turnId === assistantId ? { ...current, activities: settleResearchActivities(current.activities, aborted ? 'cancelled' : 'completed'), outcome: aborted ? 'cancelled' : 'completed' } : current);
+      const aborted = stopped() || Boolean(response.aborted);
+      outcome = aborted ? 'cancelled' : 'completed';
+      const settledOutcome = outcome;
+      updateActivityRun(conversationId, assistantId, run => ({ ...run, activities: settleResearchActivities(run.activities, settledOutcome), outcome: settledOutcome }));
       if ('concilium' in response && response.concilium) councilResult = response.concilium;
       const answer = response.answer.trim();
       const finalMessages: UiMessage[] = answer || councilResult
@@ -717,7 +798,8 @@ export function ResearchAssistantModal({
             { id: assistantId, role: 'assistant', content: answer, concilium: councilResult, selectionKey, stats: response.stats, ...('message' in response ? response.message : {}), interrupted: aborted },
           ]
         : [...priorMessages, userMessage];
-      if (activeIdRef.current === conversationId) {
+      settled = finalMessages;
+      if (onScreen()) {
         setMessages(finalMessages);
         if (aborted && answer) setStoppedMessageId(assistantId);
         window.setTimeout(updateJumpIndicator, 0);
@@ -732,17 +814,21 @@ export function ResearchAssistantModal({
         }
       }
     } catch (e) {
-      if (!adapter) learning.emit({ kind: 'recovery', recovery: learningChatRecovery(e, stopRequestedRef.current), conversationId, messageId: assistantId });
+      const stoppedNow = stopped();
+      outcome = stoppedNow ? 'cancelled' : 'failed';
+      if (!adapter) learning.emit({ kind: 'recovery', recovery: learningChatRecovery(e, stoppedNow), conversationId, messageId: assistantId });
       dropUnpainted();
-      setActivityRun(current => current?.turnId === assistantId ? { ...current, activities: settleResearchActivities(current.activities, stopRequestedRef.current ? 'cancelled' : 'failed'), outcome: stopRequestedRef.current ? 'cancelled' : 'failed' } : current);
-      if (stopRequestedRef.current) {
+      const settledOutcome = outcome;
+      updateActivityRun(conversationId, assistantId, run => ({ ...run, activities: settleResearchActivities(run.activities, settledOutcome), outcome: settledOutcome }));
+      if (stoppedNow) {
         // The user stopped the stream: keep the text that already arrived and mark
         // the message as aborted instead of replacing everything with the error.
         const partial = streamed.trim();
         const finalMessages: UiMessage[] = partial || councilResult
           ? [...priorMessages, userMessage, { id: assistantId, role: 'assistant', content: partial, concilium: councilResult, interrupted: true, selectionKey }]
           : [...priorMessages, userMessage];
-        if (activeIdRef.current === conversationId) {
+        settled = finalMessages;
+        if (onScreen()) {
           setMessages(finalMessages);
           if (partial) setStoppedMessageId(assistantId);
           window.setTimeout(updateJumpIndicator, 0);
@@ -760,7 +846,8 @@ export function ResearchAssistantModal({
           concilium: councilResult,
         };
         const finalMessages = [...priorMessages, userMessage, errorMessage];
-        if (activeIdRef.current === conversationId) {
+        settled = finalMessages;
+        if (onScreen()) {
           setMessages(finalMessages);
           window.setTimeout(updateJumpIndicator, 0);
         }
@@ -768,11 +855,36 @@ export function ResearchAssistantModal({
       }
     } finally {
       dropUnpainted();
-      setSending(false);
-      setStreamingId(null);
-      setRepaintedId(null);
+      // Saved by now: the chat unlocks, and shows the settled conversation if it is on screen.
+      liveResearchTurns.finish(liveKey, settled, outcome);
     }
   };
+
+  // The chat on screen follows its turn from the store when this view did not send it (the
+  // user left the chat and came back): the activity and the streaming answer, exactly as the
+  // view that sent it would show them. When any turn of the chat on screen ends, the chat shows
+  // what was saved, also for a turn of this view's that settled while the chat was elsewhere.
+  useEffect(() => {
+    // Deltas arrive faster than the screen paints; following views repaint at the stream's pace.
+    let timer: number | null = null;
+    const liveOnScreen = () => activeIdRef.current ? liveResearchTurns.get(liveResearchTurnKey(liveScope, activeIdRef.current)) : null;
+    const off = liveResearchTurns.subscribe(turn => {
+      if (!activeIdRef.current || turn.key !== liveResearchTurnKey(liveScope, activeIdRef.current)) return;
+      if (turn.done) {
+        if (timer != null) { window.clearTimeout(timer); timer = null; }
+        if (turn.final) setMessages(turn.final);
+        if (turn.owner !== viewId) updateActivityRun(turn.conversationId, turn.assistantId, run => ({ ...run, activities: settleResearchActivities(run.activities, turn.outcome === 'active' ? 'completed' : turn.outcome), outcome: turn.outcome }));
+        return;
+      }
+      if (turn.owner === viewId || timer != null) return;
+      timer = window.setTimeout(() => {
+        timer = null;
+        const live = liveOnScreen();
+        if (live && live.owner !== viewId) showLiveTurn(live);
+      }, STREAM_PAINT_MS);
+    });
+    return () => { off(); if (timer != null) window.clearTimeout(timer); };
+  }, [viewId, liveScope, showLiveTurn]);
 
   useEffect(() => {
     if (adapter) return;
@@ -782,7 +894,8 @@ export function ResearchAssistantModal({
       if(selection.notebookId && activeId){rememberComposerDraft(draftScope,activeId,{input,attachments,selection});startNewConversation();}
       loadSequenceRef.current++; draftRestoring.current=false;
       setInput(current => current.includes(value.prompt) ? current : current.trim() ? `${current}\n\n${value.prompt}` : value.prompt);
-      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ideas: false, documents: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
+      // A question about one document reads its indexed text; full documents stay as chosen.
+      if (value.documentId) setSelection(current => ({ ...withResearchContextLayers(current, { ...researchContextLayers(current, isAcademic), ideas: false, indexed: true }), notebookId:null, sourceFilter: { enabled: true, workIds: [value.documentId!], authorIds: [] } }));
       inputRef.current?.focus();
     };
     prepare(); window.addEventListener('nodus:learning-prompt', prepare);
@@ -927,12 +1040,9 @@ export function ResearchAssistantModal({
     </div>
   );
 
-  const handleStop = () => {
-    stopRequestedRef.current = true;
-    void api.cancelResearchChat();
-  };
+  // Stops the chat on screen only; other chats keep answering.
+  const handleStop = () => { if (activeIdRef.current) stopTurn(activeIdRef.current); };
 
-  const serializedModel = selectedModel ? serializeModel(selectedModel) : '';
   const visibleConversations = conversations.filter((c) => showArchived || !c.archived);
   const archivedCount = conversations.filter((c) => c.archived).length;
   const lastMessageId = messages.length ? messages[messages.length - 1].id : null;
@@ -951,20 +1061,12 @@ export function ResearchAssistantModal({
     setCitation({ kind: c.kind, id: c.id });
   }, []);
 
-  const chatModelControl = (<select
-            className="input text-xs py-1 max-w-xs"
-            title={concilium ? t('Chairman') : t('Modelo del chat')}
-            disabled={sending || !!concilium}
-            value={serializedModel}
-            onChange={(e) => setSelectedModel(e.target.value ? parseModel(e.target.value) : null)}
-          >
-            {!selectedModel && <option value="">{t('Sin modelo seleccionado')}</option>}
-            {availableModels.map((model) => (
-              <option key={serializeModel(model)} value={serializeModel(model)}>
-                {modelLabel(model)}
-              </option>
-            ))}
-          </select>);
+  // The same searchable picker as the rest of the app, over this chat's own list.
+  const chatModelControl = (<div className="max-w-xs min-w-[11rem]" data-testid="research-chat-model">
+    <ModelPicker settings={settings} value={selectedModel} models={availableModels} onChange={setSelectedModel}
+      compact menu triggerModelOnly allowEmpty={!selectedModel} disabled={sending || !!concilium}
+      ariaLabel={concilium ? t('Chairman') : t('Modelo del chat')} />
+  </div>);
   return (
     <div className={embedded ? "research-chat-surface research-chat-view h-full min-h-0 flex flex-col" : "research-chat-surface fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"} data-testid={embedded ? "research-chat-view" : undefined}>
       <div
@@ -1025,7 +1127,7 @@ export function ResearchAssistantModal({
           }} />}
             {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
           </AcademicSecondary>
-          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[contextLayers.ideas ? t('Ideas') : null, contextLayers.documents ? t('Documentos') : null, webSearch !== 'off' ? t('Búsqueda web') : null].filter(Boolean).join(' · ')}</span>}
+          {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
 
 
           </div>
@@ -1049,7 +1151,7 @@ export function ResearchAssistantModal({
               notebookLocksMoves={adapterNotebooks ? adapterNotebooks.locksMoves : true}
               activeId={activeId}
               activeProjectId={activeProjectId}
-              sending={sending}
+              runningIds={runningConversationIds}
               archivedCount={archivedCount}
               showArchived={showArchived}
               onToggleArchived={() => setShowArchived((value) => !value)}
@@ -1070,6 +1172,9 @@ export function ResearchAssistantModal({
               onArchiveConversation={api.archiveConversation ? archiveConversation : undefined}
               onDeleteConversation={setPendingDelete}
               onMoveConversation={moveConversation}
+              onDeleteConversations={setPendingBulkDelete}
+              onArchiveConversations={api.archiveConversation ? archiveConversations : undefined}
+              onMoveConversations={supportsProjects ? moveConversations : undefined}
               onUpdateProject={updateProject}
               onEditProjectInstructions={setEditingProjectInstructions}
               onDeleteProject={deleteProject}
@@ -1091,7 +1196,7 @@ export function ResearchAssistantModal({
               <button type="button" className="btn btn-ghost text-xs" onClick={() => setEditingProjectInstructions(activeProject)}><Icon name="brain" size={14} />{t('Instrucciones del proyecto')}</button>
             </header>}
             <div className="relative flex-1 min-h-0">
-              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={webSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.documents ? [] : ['profiles', 'nodus', 'zotero', 'context'] as const)]} />}
+              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (
                   <div role="status" className="mx-auto max-w-xl rounded-lg border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
@@ -1100,11 +1205,11 @@ export function ResearchAssistantModal({
                 )}
                 {projectHome && activeProjectId && messages.length === 0 && <ProjectChatList
                   conversations={visibleConversations.filter(conversation => conversation.projectId === activeProjectId)}
-                  draggable onOpen={(id) => { if (!sending) void loadConversation(id); }}
+                  draggable onOpen={(id) => void loadConversation(id)}
                 />}
                 {notebookHome && messages.length === 0 && <ProjectChatList
                   conversations={visibleConversations.filter(conversation => conversation.notebookId === activeNotebookId)}
-                  onOpen={(id) => { if (!sending) void loadConversation(id); }}
+                  onOpen={(id) => void loadConversation(id)}
                   empty={adapterNotebooks?.kind === 'course' ? t('Los chats que empieces aquí leerán los materiales de este curso.')
                     : adapterNotebooks ? t('Los chats que empieces aquí leerán las fuentes de este cuaderno.') : t('Los chats que empieces aquí leerán las colecciones de este cuaderno.')}
                 />}
@@ -1309,7 +1414,7 @@ export function ResearchAssistantModal({
                     }
                   }}
                 />
-                {!adapter && !isGenealogy && <ResearchWebSearchControl value={webSearch} onChange={setWebSearch} disabled={sending} />}
+                {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending} />}
                 {!adapter && !isGenealogy && <ResearchVerificationControl value={answerVerification} onChange={setAnswerVerification} disabled={sending} />}
                 {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
                 {sending ? (
@@ -1388,7 +1493,7 @@ export function ResearchAssistantModal({
               {CONTEXT_LAYERS.map(layer => <ContextLayerSwitch key={layer.id} testId={`research-context-layer-${layer.id}`} icon={layer.icon} label={t(layer.label)}
                 description={t(layer.description)} checked={contextLayers[layer.id]} disabled={sending} onChange={on => setContextLayer(layer.id, on)} />)}
               <ContextLayerSwitch testId="research-context-layer-web" icon="globe" label={t('Búsqueda web')}
-                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={webSearch !== 'off'} disabled={sending}
+                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={turnWebSearch !== 'off'} disabled={sending}
                 onChange={on => setWebSearch(on ? 'auto' : 'off')} />
             </div>
             {selection.notebookId ? <div className="research-context-sources" data-testid="research-context-sources">
@@ -1397,7 +1502,7 @@ export function ResearchAssistantModal({
               <Icon name="filter" size={15} /><span><strong>{t('Fuentes autorizadas')}</strong><small>{authorizedSourcesSummary}</small></span>
               <Icon name="chevronRight" size={14} />
             </button>}
-            {!contextLayers.ideas && !contextLayers.documents && webSearch === 'off' && <p className="research-context-empty" role="status" data-testid="research-context-empty">
+            {researchContextIsEmpty(contextLayers, turnWebSearch !== 'off') && <p className="research-context-empty" role="status" data-testid="research-context-empty">
               {t('Sin fuentes: el asistente responderá con conocimiento general y lo dirá en la respuesta.')}</p>}
           </div>
           <footer className="header-balloon-foot"><button className="btn btn-primary w-full" onClick={() => setShowContext(false)}>{t('Listo')}</button></footer>
@@ -1429,6 +1534,17 @@ export function ResearchAssistantModal({
           danger
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingBulkDelete && (
+        <ConfirmModal
+          title={t('Eliminar conversaciones')}
+          message={tx('Se eliminarán {n} conversaciones y todo su historial de mensajes y archivos adjuntos. Esta acción no se puede deshacer.', { n: pendingBulkDelete.length })}
+          confirmLabel={t('Eliminar')}
+          danger
+          onConfirm={() => void confirmBulkDelete()}
+          onCancel={() => setPendingBulkDelete(null)}
         />
       )}
 
@@ -1488,15 +1604,6 @@ function ContextLayerSwitch({ testId, icon, label, description, checked, disable
     <span><strong>{label}</strong><small>{description}</small></span>
     <span className="research-context-switch" aria-hidden="true"><span /></span>
   </button>;
-}
-
-function serializeModel(model: ModelRef): string {
-  return `${model.provider}::${model.model}`;
-}
-
-function parseModel(value: string): ModelRef {
-  const [provider, model] = value.split('::');
-  return { provider: provider as ModelRef['provider'], model };
 }
 
 function sameModelRef(a: ModelRef, b: ModelRef): boolean {

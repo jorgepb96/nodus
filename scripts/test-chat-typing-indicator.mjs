@@ -38,7 +38,8 @@ test('the research assistant holds the start of a streaming answer like Nodi', a
     1,
     'a new turn scrolls into view once, before streaming begins',
   );
-  assert.match(generate, /setStreamingId\(assistantId\)[\s\S]*?setTimeout\(\(\) => scrollToBottom\('auto'\), 0\)[\s\S]*?researchChatStream/);
+  // The turn is marked as streaming (its chat's live turn starts) before it scrolls into view.
+  assert.match(generate, /liveResearchTurns\.start\(\{[^}]*assistantId[\s\S]*?setTimeout\(\(\) => scrollToBottom\('auto'\), 0\)[\s\S]*?researchChatStream/);
   assert.doesNotMatch(generate, /onDelta:[\s\S]*?scrollToBottom/, 'stream deltas never chase the bottom');
   assert.doesNotMatch(assistant, /stickToBottomRef/, 'there is no latent stream-following mode');
   assert.match(generate, /onDelta:[\s\S]*?setTimeout\(updateJumpIndicator, 0\)/, 'growth still exposes the manual jump-to-bottom control');

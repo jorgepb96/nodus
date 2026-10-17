@@ -127,6 +127,61 @@ export async function invokeDisconnections(runner: Runner, targets: string[], st
   return artifact ? normalizeDisconnections(artifact.data, limit) : [];
 }
 
+const FORWARD_TOOL = 'propose-forward-steps';
+
+/** One forward-step candidate, as the application needs it: the product, the curated
+ *  transformation id when one makes it, the precedent count, and an objection when the record's
+ *  "outcome" is not a reaction. */
+export interface ForwardStep { product: string; named: string | null; recorded: number; caution?: string }
+
+/** What the recorded chemistry supports doing to one molecule, or null when the package has no
+ *  such tool or the index is not downloaded.
+ *
+ *  Invoked BY THE APPLICATION, which is the whole point. The same search has been available to the
+ *  model as a tool since it was written and the model has never once called it: 19 offers across
+ *  the small-molecule arm and 14 delivered as REQUIRED across the peptide chains produced zero
+ *  lookups (2026-10-14). In the very same turn that produced those zeroes, `propose-disconnections`
+ *  ran six times — because `invokeDisconnections` is an application call. The lesson is not that
+ *  the model dislikes tools, it is that asking it to fetch its own evidence does not work, and the
+ *  original objection to the application choosing still holds: this gathers candidates and ranks
+ *  them by precedent, and the choice stays with the model. */
+export async function invokeForwardSteps(runner: Runner, molecule: string, reagents: string[] = [], limit = 6, options: EvidenceOptions = {}): Promise<ForwardStep[] | null> {
+  options.signal?.throwIfAborted();
+  if (options.evidenceScope?.external === false) return null;
+  const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
+  if (!provider?.tools.some((tool) => tool.id === FORWARD_TOOL) || !molecule.trim()) return null;
+  const indexDir = await reactionIndexService().localDirectory();
+  options.signal?.throwIfAborted();
+  if (!indexDir) return null;
+  // FLAT, which is what the tool declares: `{ molecule, reagents, limit, indexDir }`, with
+  // `molecule` required and `additionalProperties: false`. The nested `forwardSteps: {...}` this
+  // sent until 2026-10-17 is the shape of the PYTHON worker's stdin, one layer further in — the
+  // package builds it itself inside `proposeForwardSteps`. So the tool read `input.molecule`,
+  // found nothing, and threw "A forward-step search needs the molecule to act on" on every call
+  // since the search was written on 10-14. The throw was swallowed by the caller's `.catch`, which
+  // logs "forward-step support unavailable" and carries on, so the route reports simply had no
+  // forward-step support in them and nothing said why. Any run before this date that was read as
+  // the application's forward-step search finding nothing was the call failing, not the index
+  // being empty.
+  const input = { indexDir, molecule, ...(reagents.length ? { reagents: reagents.slice(0, 4) } : {}), limit };
+  dumpToolInput(FORWARD_TOOL, input);
+  const result = await runner.invoke({ provider, toolId: FORWARD_TOOL, input });
+  const artifact = (result.artifacts ?? []).find((entry) => entry.artifactType === 'forward-steps');
+  const rows = (artifact?.data as { forwardSteps?: unknown[] } | undefined)?.forwardSteps ?? [];
+  const out: ForwardStep[] = [];
+  for (const row of rows) {
+    const { product, named, count, caution } = (row ?? {}) as { product?: unknown; named?: unknown; count?: unknown; caution?: unknown };
+    if (typeof product !== 'string' || !product) continue;
+    out.push({
+      product,
+      named: typeof named === 'string' && named ? named : null,
+      recorded: typeof count === 'number' && Number.isFinite(count) ? count : 0,
+      ...(typeof caution === 'string' && caution ? { caution } : {}),
+    });
+  }
+  return out;
+}
+
 /** The package's decomposition tool, when it has one (older packages do not). */
 function decomposeProvider() {
   const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
@@ -136,11 +191,30 @@ function decomposeProvider() {
 /** Below this many atoms the target is searched whole, as it always was.
  *
  *  What is measured is the far end: at 270-290 atoms a whole-target pass takes 180-275 s and so is
- *  truncated by the tool's own 230 s budget, returning whatever it reached. Between 150 and 270 the
- *  pass has not been timed, so this threshold is a choice rather than a measurement — a low one,
- *  because the real gate is the `linkBonds` test below. A molecule that was not assembled from
- *  units has nothing to cut and is searched whole whatever its size. */
-const DECOMPOSE_ABOVE_ATOMS = 150;
+ *  truncated by the tool's own 230 s budget, returning whatever it reached. A molecule that was not
+ *  assembled from units has nothing to cut and is searched whole whatever its size — the real gate
+ *  is the `linkBonds` test below, and this number only says when it is worth asking.
+ *
+ *  The middle is now measured too, which is why this is 80 rather than 150. One call per target
+ *  against the real index, 2026-10-14, cost and answer both recorded:
+ *
+ *    chain n=4    23 atoms    3.2s   0 recorded   0 available
+ *    chain n=8    57 atoms   10.3s   0 recorded   0 available
+ *    chain n=12   94 atoms   26.7s   0 recorded   0 available
+ *    chain n=16  138 atoms   51.1s   0 recorded   0 available
+ *    chain n=24  196 atoms  105.5s   0 recorded   0 available
+ *
+ *  Not one proposal carried ORD precedent at any length, the cost grows roughly with the square of
+ *  the size, and the application makes 10 to 16 of these calls a turn — so at 150 the chains from
+ *  about eleven residues up paid minutes a turn for rows with no precedent before they were large
+ *  enough to be cut. 80 matches the coverage measurement already on record (whole-target coverage
+ *  was 0 of 20 steps above 80 heavy atoms) and leaves every target in the small-molecule suite far
+ *  below it: the largest is progesterone at 23 atoms, and a small molecule is where this search
+ *  earns its cost (acetaminophen, 2 recorded and 6 available in 1.8s).
+ *
+ *  Lowering it changes nothing for a molecule with nothing to cut: that is the `linkBonds` gate,
+ *  and a 200-carbon alkane is still searched whole. */
+const DECOMPOSE_ABOVE_ATOMS = 80;
 
 /** The units a target is built from. Null when the package has no such tool; [] when it has one and
  *  nothing could be cut. The unit library is the user's local data and may be absent, in which case

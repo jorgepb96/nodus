@@ -15,6 +15,10 @@ import { RELEASE_5_4_5_HIGHLIGHTS } from './releaseNotes545';
 import { RELEASE_5_6_0_HIGHLIGHTS } from './releaseNotes560';
 import { RELEASE_5_7_0_HIGHLIGHTS } from './releaseNotes570';
 import { RELEASE_5_7_2_HIGHLIGHTS } from './releaseNotes572';
+import { RELEASE_5_12_0_HIGHLIGHTS } from './releaseNotes5120';
+import { RELEASE_5_12_1_HIGHLIGHTS } from './releaseNotes5121';
+import { RELEASE_5_11_1_HIGHLIGHTS } from './releaseNotes5111';
+import { RELEASE_5_11_0_HIGHLIGHTS } from './releaseNotes5110';
 import { RELEASE_5_10_0_HIGHLIGHTS } from './releaseNotes5100';
 import { RELEASE_5_9_0_HIGHLIGHTS } from './releaseNotes590';
 import { RELEASE_5_8_1_HIGHLIGHTS } from './releaseNotes581';
@@ -3114,6 +3118,26 @@ const RELEASE_5_2_2_HIGHLIGHTS: RawReleaseHighlight[] = [
 ];
 
 const RAW_RELEASE_NOTES: RawReleaseNote[] = [
+  {
+    version: '5.12.1',
+    date: '2026-10-17',
+    highlights: RELEASE_5_12_1_HIGHLIGHTS,
+  },
+  {
+    version: '5.12.0',
+    date: '2026-10-17',
+    highlights: RELEASE_5_12_0_HIGHLIGHTS,
+  },
+  {
+    version: '5.11.1',
+    date: '2026-10-16',
+    highlights: RELEASE_5_11_1_HIGHLIGHTS,
+  },
+  {
+    version: '5.11.0',
+    date: '2026-10-16',
+    highlights: RELEASE_5_11_0_HIGHLIGHTS,
+  },
   {
     version: '5.10.0',
     date: '2026-10-14',

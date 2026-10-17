@@ -1,0 +1,38 @@
+{
+  "format": "nodus.embedding-integration-merge-check/1",
+  "checkedOn": "2026-10-17",
+  "base": "origin/main",
+  "experimental": true,
+  "validationCampaignComplete": false,
+  "sourceHashes": {
+    "electron/ai/researchAssistant.ts": "bece724ff8529b8ff7c79d32efb1f3d23b33514444142a17e49f741a8ecc6898",
+    "electron/ai/researchCorpusRun.ts": "9048472ebfba7e4325712b80322e8f302c3a2968a391d9eddf2e532d0bf499d8",
+    "electron/ai/researchTurnPlanner.ts": "b6b13720e28294a22aa073027c2743c22b2cbfd0773402336cc8c0484a170151",
+    "src/views/ResearchAssistantModal.tsx": "f07ed081c4c80c25aae79b1b665bec987f9ab70ce316ac878ba03b9ce87d7d2f"
+  },
+  "resolution": "Retain main direct-answer routing, indexed-text-only/full-document layer separation and per-chat web selection; retain query embedding roles, bounded full-document facet budgets, lexical probes, constructive mode and opt-in verification.",
+  "checks": [
+    {
+      "command": "tsc --noEmit",
+      "passed": true
+    },
+    {
+      "command": "tsc --noEmit -p electron/tsconfig.json",
+      "passed": true
+    },
+    {
+      "command": "node --test --test-concurrency=1 scripts/test-research-chat-agent.mjs scripts/test-research-corpus-run.mjs scripts/test-research-evidence-request.mjs scripts/test-research-system-prompts.mjs scripts/test-research-chat-selection.mjs scripts/test-research-structured-answer.mjs scripts/test-documentary-retrieval.mjs scripts/test-research-answer-plan.mjs",
+      "passed": true,
+      "modules": 8,
+      "failures": 0
+    }
+  ],
+  "nativeConcurrency": 1,
+  "priorityNice": 10,
+  "paidProviderCalls": 0,
+  "realVaultAccess": false,
+  "limits": [
+    "These checks do not complete the 37-case generation campaign or pending native real-weight/package gates.",
+    "Fresh exact-head CI build, full test inventory and real-app E2E remain required before merge."
+  ]
+}

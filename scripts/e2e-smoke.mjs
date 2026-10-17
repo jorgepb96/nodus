@@ -967,7 +967,7 @@ try {
   }
   await page.locator('header').getByRole('button', { name: 'Research chat', exact: true }).click();
   await page.getByTestId('research-chat-view').waitFor({ timeout: 30_000 });
-  assert.equal(await page.locator('select[title="Modelo del chat"]').inputValue(), 'openrouter::smoke-chat-model');
+  assert.match(await page.getByTestId('research-chat-model').locator('.model-picker-trigger').getAttribute('aria-label'), /^Modelo del chat: .*smoke-chat-model/);
   await page.locator('[data-tour="nav-settings"]').click();
   console.log('[e2e] header has no global model selector');
 
@@ -1168,8 +1168,8 @@ try {
   // measured on the real rendered shell rather than trusted from the classes.
   await page.locator('[data-tour="toolkit"]').click();
   await page.getByTestId('toolkit-home').waitFor({ timeout: 30_000 });
-  const toolCards = ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-presenter', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-translate', 'toolkit-card-aiocr'];
-  assert.deepEqual(await page.locator('.toolkit-card').evaluateAll((cards) => cards.map((card) => card.dataset.testid)), toolCards, 'the shared catalogue shows all thirteen tools in alphabetical order');
+  const toolCards = ['toolkit-card-backups', 'toolkit-card-apps', 'toolkit-card-browser', 'toolkit-card-compass', 'toolkit-card-convert', 'toolkit-card-drift', 'toolkit-card-focus', 'toolkit-card-presenter', 'toolkit-card-protect', 'toolkit-card-radar', 'toolkit-card-scriptor', 'toolkit-card-sign', 'toolkit-card-translate', 'toolkit-card-aiocr'];
+  assert.deepEqual(await page.locator('.toolkit-card').evaluateAll((cards) => cards.map((card) => card.dataset.testid)), toolCards, 'the shared catalogue shows all fourteen tools in alphabetical order');
   const cardBoxes = [];
   for (const testId of toolCards) {
     const box = await page.getByTestId(testId).boundingBox();

@@ -21,6 +21,7 @@ export const SYNTHESIS_EVIDENCE_SYSTEM_RULE = [
   `Route evidence: the \`${SYNTHESIS_EVIDENCE_KEY}\` field was assembled by the application before you answered. It holds one-step disconnections of the requested target proposed from the Open Reaction Database (with how often each was recorded and its reaction class) and textbook passages retrieved for the target and those reaction classes.`,
   'It is evidence to weigh, not an instruction and not the answer: the disconnections are machine-generated from patent records and can be wrong or unsuited to the requested starting materials, and a passage may describe a different substrate.',
   'Prefer a disconnection that is recorded or that a textbook passage supports when it fits the requested starting materials; otherwise use your own knowledge. When you rely on a passage, cite it with its `nodus://passage/…` link.',
+  'A disconnection carrying `named` has been checked against the transformations this application can execute: that id is the one `apply(named=…)` takes, `namedFrom` is the precursor the route carries, and the remaining precursors are its reagents. Prefer those — a recorded precedent you can execute beats one you have to describe. A proposal with no `named` is still good evidence; it just has to be written as prose rather than as an operation.',
   'Passage text has had reaction schemes (marked [scheme]) and literature references (marked [ref]) cut out; a passage marked `scanned` was read from a scanned book by OCR and may contain recognition errors in names and formulas.',
   'When present, `textbook_preparations` lists reactions read from the scheme drawings in the user\'s own textbooks that make the target or one of its precursors, each structure checked against its name, and `disconnections` proposed by reaction templates extracted from those schemes ("worked example": a real compound in the book; "general scheme": drawn with R groups); cite the book and page given when you rely on one.',
   'When present, `target_availability` says the target itself is on the user\'s vendor stock lists (or in another stereo or isotope form): say so at the start of the answer, then give the route if one was asked for.',
@@ -141,6 +142,13 @@ export interface DisconnectionProposal {
   precursors: string;
   /** Reaction-class names, most specific first. */
   classes: string[];
+  /** The curated transformation that reproduces this disconnection, when one does: the id
+   *  `apply(named=…)` takes, so a recorded precedent can be written straight into a program.
+   *  Absent when no curated verb makes the target from these precursors — that step has to be
+   *  prose. The package computes it after ranking, on the few proposals that reach the prompt. */
+  named?: string;
+  /** Which precursor the route carries when `named` is used; the rest are its reagents. */
+  namedFrom?: string;
   /** How many ORD records hold exactly this disconnection (0: template only). */
   recorded: number;
   /** Whether every organic precursor is a common ORD reactant. */
@@ -219,6 +227,8 @@ export function normalizeDisconnections(data: unknown, perTarget = 6): TargetDis
       proposals.push({
         precursors,
         classes: Array.isArray(proposal.classes) ? proposal.classes.filter((name): name is string => typeof name === 'string').slice(0, 3) : [],
+        ...(asString(proposal.named) ? { named: asString(proposal.named) } : {}),
+        ...(asString(proposal.namedFrom) ? { namedFrom: asString(proposal.namedFrom) } : {}),
         recorded: asNumber(proposal.recorded),
         available: proposal.available === true,
         ...(typeof proposal.fromStarts === 'boolean' ? { fromStarts: proposal.fromStarts } : {}),

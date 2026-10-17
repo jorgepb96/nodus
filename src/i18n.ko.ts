@@ -1,5 +1,7 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -3437,7 +3439,7 @@ export const KO: Record<string, string> = {
   "Contenido": "콘텐츠",
   "Crear una idea manual indexable": "색인 생성 가능한 수동 아이디어 만들기",
   "Cuerpo de cada nota": "각 음표의 본문",
-  "Deshacer": "끄르다",
+  "Deshacer": "실행 취소",
   "elemento": "목",
   "Esta carpeta tiene un resumen": "이 폴더에는 요약이 있습니다.",
   "Estructura completa con ids y metadatos, ideal para procesar.": "ID와 메타데이터가 포함된 전체 구조로 처리에 이상적입니다.",
@@ -6470,7 +6472,7 @@ export const KO: Record<string, string> = {
   "Notas del presentador": "발표자 노트",
   "Notas importadas": "가져온 메모",
   "Notas — {name}": "참고 — {name}",
-  "Rehacer": "다시 하다",
+  "Rehacer": "다시 실행",
   "Se guarda automáticamente": "자동으로 저장됨",
   "Se importaron notas para {n} diapositivas.": "{n} 슬라이드에 대한 노트를 가져왔습니다.",
   "Aumentar": "증가하다",
@@ -8295,4 +8297,7 @@ export const KO: Record<string, string> = {
   "Detener dictado": "받아쓰기 중지",
   ...ACADEMIC_INTERFACE_TRANSLATIONS["ko"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["ko"],
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["ko"],
 };
+
+Object.assign(KO, SIGN_TRANSLATIONS['ko']);

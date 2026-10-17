@@ -227,7 +227,8 @@ export interface DatabasesApi {
   ): Promise<{ canceled: boolean; path: string | null }>;
   onDatabaseDeepResearchProgress(cb: (progress: DatabaseResearchProgress) => void): () => void;
   dbChatStream(request: DatabaseChatRequest, handlers: { onDelta: (delta: string) => void }): Promise<{ text: string; aborted?: boolean }>;
-  cancelDbChat(): Promise<void>;
+  /** Without a conversation, aborts the stream started last. */
+  cancelDbChat(conversationId?: string): Promise<void>;
   /** Archived chats only when asked for. */
   listDatabaseChatConversations(includeArchived?: boolean): Promise<DatabaseChatConversationSummary[]>;
   getDatabaseChatConversation(id: string): Promise<DatabaseChatConversation | null>;

@@ -1,5 +1,7 @@
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -7940,4 +7942,7 @@ export const ZH_CN: Record<string, string> = {
   "Detener dictado": "停止听写",
   ...ACADEMIC_INTERFACE_TRANSLATIONS["zh-CN"],
   ...CHAT_ORGANIZATION_HELP_TRANSLATIONS["zh-CN"],
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["zh-CN"],
 };
+
+Object.assign(ZH_CN, SIGN_TRANSLATIONS['zh-CN']);

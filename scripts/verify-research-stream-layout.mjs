@@ -31,7 +31,7 @@ try {
   await page.getByRole('button', { name: 'Research chat', exact: true }).first().click();
   await page.locator('.research-assistant-header').waitFor();
   await page.getByTestId('research-context-trigger').click();
-  for (const id of ['ideas', 'documents']) {
+  for (const id of ['indexed', 'ideas', 'documents']) {
     const button = page.getByTestId(`research-context-layer-${id}`);
     if (await button.getAttribute('aria-checked') === 'true') await button.click();
   }

@@ -26,7 +26,7 @@ childProcess.execFileSync = (file, args = [], options = {}) => {
 // beforePack's macOS-only tail compiles native helpers and writes the Dock tile into build/.
 // A beforePack that no longer builds the server web app must fail here, not write there.
 const { Module } = require('node:module');
-for (const [file, name] of [['build-apple-calendar.cjs', 'buildAppleCalendar'], ['build-presenter-native.cjs', 'buildPresenterNative'], ['build-system-audio.cjs', 'buildSystemAudio']]) {
+for (const [file, name] of [['build-apple-calendar.cjs', 'buildAppleCalendar'], ['build-presenter-native.cjs', 'buildPresenterNative'], ['build-system-audio.cjs', 'buildSystemAudio'], ['build-trackpad-native.cjs', 'buildTrackpadNative']]) {
   const filename = require.resolve(`./${file}`);
   const stub = new Module(filename);
   stub.filename = filename;

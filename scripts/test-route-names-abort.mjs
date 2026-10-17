@@ -25,7 +25,7 @@ await build({ entryPoints: [path.join(root, 'electron/ai/moleculeInspection.ts')
         opts.signal?.addEventListener('abort', () => { clearTimeout(timer); reject(opts.signal.reason); }, { once: true });
       }); }`,
       '../reactionIndex': `export const reactionIndexService=()=>({localDirectory:async()=>null})`,
-      './synthesisEvidence': `export async function invokeDisconnectionsEach(){return []} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
+      './synthesisEvidence': `export async function invokeDisconnectionsEach(){return []} export async function invokeForwardSteps(){return null} export function synthesisEvidenceWorkIds(){return []} export async function textbookPassages(){return []}`,
       './pubchemMirror': `export const pubchemMirrorDirectory=()=>null; export const opsinDirectory=()=>null`,
       './chemistryStock': `export const chemistryStockDirectory=()=>null`,
       './textbookSchemes': `export const textbookSchemeDirectory=()=>null; export const textbookCitations=()=>[]`,

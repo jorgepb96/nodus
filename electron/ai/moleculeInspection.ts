@@ -15,6 +15,7 @@ import {
   stepDeclaresRearrangement,
   stepDeclaresRadical,
   findAnswerSpecies,
+  type StructureDisagreement,
   findSmilesCandidates,
   findStepConditions,
   findStepNamedSpecies,
@@ -25,8 +26,10 @@ import {
   formatEvidenceSources,
   routeStepFailure,
   routeStepSummaries,
+  findRouteProgram,
   formatRouteAudit,
   formatRouteCheckUnavailable,
+  formatRouteProgramReportFix,
   formatStructureAudit,
   formatUnresolvedNameClarification,
   implyRacemicTarget,
@@ -58,12 +61,13 @@ import { chemistryStockDirectory } from './chemistryStock';
 import { textbookCitations, textbookSchemeDirectory } from './textbookSchemes';
 import { formatTextbookPrecedents, TEXTBOOK_ID } from '@shared/textbookSchemes';
 import { compatibilityFixLines, formatCompatibility, normalizeCompatibility, type StepCompatibility } from '@shared/stepCompatibility';
-import { invokeDisconnectionsEach, synthesisEvidenceWorkIds, textbookPassages } from './synthesisEvidence';
+import { invokeDisconnectionsEach, invokeForwardSteps, synthesisEvidenceWorkIds, textbookPassages } from './synthesisEvidence';
 import { opsinDirectory, pubchemMirrorDirectory } from './pubchemMirror';
 import { dumpToolInput } from './routeInputDump';
 import type { ChemistryEvidenceScope } from './chemistryEvidenceScope';
 import { capabilityRegistry, pinCapabilitiesForTurn, type CapabilityProvider } from '../capabilities/registry';
 import { createTrustedCapabilityRunner } from '../capabilities/runner';
+import { routeProgramMode } from '@shared/routeRules';
 import { reactionIndexService } from '../reactionIndex';
 import { completeText } from './aiClient';
 import type { ViewDocumentV1 } from '../../packages/capability-api/src/views';
@@ -173,6 +177,47 @@ export async function appendStructureAudit(
 function routeProvider() {
   const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
   return provider && provider.tools.some((tool) => tool.id === ROUTE_TOOL) ? provider : null;
+}
+
+/** Program mode's tool. It returns the SAME `route-audit` artifact `verify-route` does, which is
+ *  what lets a program answer reuse the whole report, review and fix-prompt path unchanged. */
+const PROGRAM_TOOL = 'execute-route-program';
+
+function programProvider() {
+  const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
+  return provider && provider.tools.some((tool) => tool.id === PROGRAM_TOOL) ? provider : null;
+}
+
+/** Executes a route program and returns the audit of the equations it generated.
+ *
+ *  Unlike the names-first path there are no steps to count: the program decides how many
+ *  equations there are, so nothing here can check a returned count against an expected one. */
+async function invokeRouteProgram(runner: Runner, provider: CapabilityProvider, program: string, target?: string | null): Promise<{ audit: RouteAudit | null; blocked: string[] }> {
+  const indexDir = await reactionIndexService().localDirectory().catch(() => null);
+  const input = {
+    program,
+    ...(target ? { target } : {}),
+    ...(indexDir ? { indexDir } : {}),
+    ...mirrorInput(provider, PROGRAM_TOOL),
+  };
+  dumpToolInput(PROGRAM_TOOL, input);
+  const result = await runner.invoke({ provider, toolId: PROGRAM_TOOL, input });
+  const artifact = (result.artifacts ?? []).find((entry) => entry.artifactType === 'route-audit');
+  // A program the package REJECTED comes back as an audit with no steps and its complaints in
+  // `blocked` — and normalizeRouteAudit returns null for any audit without steps. Reading only the
+  // normalized value threw those complaints away and reported the check as unavailable, which is
+  // the one thing a failed check must never look like: the model was told nothing had been
+  // checked, when in fact its program had been read and found wanting. Found 2026-10-13.
+  const data = artifact?.data as { blocked?: unknown } | undefined;
+  const blocked = Array.isArray(data?.blocked) ? data.blocked.filter((entry): entry is string => typeof entry === 'string') : [];
+  return { audit: artifact ? normalizeRouteAudit(artifact.data) : null, blocked };
+}
+
+/** Whether the installed package carries the forward-step search, so the contract only offers a
+ *  fence the package can actually answer. An older package simply never hears about it. */
+export function forwardStepsAvailable(): boolean {
+  const provider = capabilityRegistry().providers.get(CHEMISTRY_CAPABILITY);
+  return Boolean(provider && provider.tools.some((tool) => tool.id === 'propose-forward-steps'));
 }
 
 function compileProvider() {
@@ -399,6 +444,9 @@ export interface RouteResolutionOutcome {
   /** Species the model supplied as structures because no name would resolve, as prose, so the
    *  caller discloses that their structure came from the model, not a reference. */
   authorStructures: string[];
+  /** Species whose name and author-written structure are different molecules. Empty on the legacy
+   *  path, which does no name resolution and so has nothing to disagree with. */
+  disagreements?: StructureDisagreement[];
   /** Every species' resolution status and source, so a run can record where each structure came
    *  from. The author-supplied ones are the category silent wrongness hides in. */
   resolutionSources: Array<{ status: string; source?: string }>;
@@ -689,12 +737,22 @@ export async function resolveNamedRoute(
       } catch { /* naming is best effort; the declared structure stands */ }
     }
 
+    // A name that resolved to a DIFFERENT MOLECULE than the author's own structure. Not the same
+    // thing as a different writing of one molecule, which is why the comparison is canonical on
+    // both sides: `nameByStructure` already holds RDKit's canonical form of every declared
+    // structure, and the resolver returns canonical isomeric SMILES.
+    const disagreements: StructureDisagreement[] = [];
     const resolvedByStep: ResolvedSpecies[][] = speciesByStep.map((step) => classifyCoProducts(step.map((entry): ResolvedSpecies => {
       const resolution = resolutions.get(entry.name);
       if (resolution?.status === 'resolved' && resolution.smiles) {
-        // The name is authoritative in the names-first path, and the resolver now returns the
-        // canonical isomeric SMILES, so a model-declared writing is not compared here: an
-        // equivalent SMILES written differently would otherwise look like a correction.
+        // The name stays authoritative in the names-first path — an equivalent SMILES written
+        // differently must not look like a correction, which is why the canonical forms are
+        // compared and not the strings. But when the two are genuinely different molecules the
+        // model's structure is silently discarded, and THAT is disclosed: measured on chainL-6,
+        // four Fmoc amino acids written as D enantiomers and named "Fmoc-L-X" verified at turn 0
+        // with nothing said to anyone.
+        const declared = entry.declaredSmiles ? nameByStructure.get(entry.declaredSmiles)?.canonicalSmiles : undefined;
+        if (declared && declared !== resolution.smiles) disagreements.push({ name: entry.name, declared, resolved: resolution.smiles });
         return { ...entry, status: 'resolved' as const, smiles: resolution.smiles, source: resolution.source ?? 'pubchem', ...(resolution.formula ? { formula: resolution.formula } : {}) };
       }
       if (entry.declaredSmiles) {
@@ -725,6 +783,7 @@ export async function resolveNamedRoute(
       consistent: critical.length === 0,
       corrections,
       authorStructures,
+      disagreements,
       resolutionSources,
       ...(critical.length ? { clarification: formatUnresolvedNameClarification(critical, options.target), unresolved: critical } : {}),
       legacy: false,
@@ -819,7 +878,32 @@ async function buildStepSupport(
     }
   })().catch((error) => { console.warn('[route] ORD alternatives unavailable:', error instanceof Error ? error.message : String(error)); });
 
-  await Promise.all([passagesPromise, alternativesPromise]);
+  // The forward view on the same steps, from the other end. `alternatives` asks what else makes
+  // the product; this asks what the record supports doing to the reactant the step already has,
+  // which is the question a step with no precedent needs answered. Run for the carried reactant of
+  // each step that needs help, serially and capped, because each call is an index scan and the
+  // gather step is already the slow half of a turn.
+  const forwardPromise = (async () => {
+    const wanted: Array<[number, string, string[]]> = [];
+    for (const step of audit.steps) {
+      const entry = entryFor.get(step.index);
+      const needs = routeStepFailure(step) !== null || (entry ? entry.count === 0 && !entry.unchanged : false);
+      if (!needs || wanted.length >= MAX_ALTERNATIVE_STEPS) continue;
+      const reactants = (labels[step.index] ?? []).filter((label) => label.role === 'reactant' && /[Cc]/.test(label.smiles));
+      if (!reactants.length) continue;
+      // The carried molecule is the biggest reactant; the rest are the partners the search needs
+      // to offer any two-component transformation at all.
+      const sorted = [...reactants].sort((a, b) => b.smiles.length - a.smiles.length);
+      wanted.push([step.index, sorted[0].smiles, sorted.slice(1).map((label) => label.smiles)]);
+    }
+    for (const [step, reactant, partners] of wanted) {
+      options.signal?.throwIfAborted();
+      const steps = await invokeForwardSteps(runner, reactant, partners, 6, options);
+      if (steps && steps.length) support.set(step, { ...support.get(step), forward: { reactant, steps } });
+    }
+  })().catch((error) => { console.warn('[route] forward-step support unavailable:', error instanceof Error ? error.message : String(error)); });
+
+  await Promise.all([passagesPromise, alternativesPromise, forwardPromise]);
   return support;
 }
 
@@ -988,6 +1072,42 @@ async function checkStepCompatibility(runner: Runner, labels: RouteSpeciesLabel[
 
 /** The post-answer route check, then one drawing per verified step. Neither rewrites the
  *  answer nor asks the model again; a step the checker refused is reported, not drawn. */
+/** A program-mode answer's report. The program IS the route, so there are no resolved names, no
+ *  stock lines and no per-species drawings to assemble: the application executed the operations
+ *  and the audit it gets back is already the verdict. That is the point of the mode — the model
+ *  never wrote a structure, so none of it can be mis-declared. */
+async function appendRouteProgramReport(finalAnswer: string, program: string, options: InspectOptions): Promise<string> {
+  const provider = programProvider();
+  if (!provider) return `${finalAnswer.trimEnd()}\n\n${formatRouteCheckUnavailable('the installed chemistry package has no route-program tool')}\n`;
+  const { runner, dispose } = chemistryRunner(options);
+  try {
+    const { audit, blocked } = await invokeRouteProgram(runner, provider, program, options.target);
+    // The audit is the report; the fix chip is what makes a failure recoverable. Appending it here
+    // is the only place it can happen for a program: this function returns before the names-first
+    // builder that used to be the sole caller of any fix-prompt code, which is why every program
+    // failure on record took exactly one turn with its fix rounds unspent.
+    if (audit) {
+      const fix = formatRouteProgramReportFix(audit, blocked);
+      return `${finalAnswer.trimEnd()}\n\n${formatRouteAudit(audit)}\n${fix ? `\n${fix}\n` : ''}`;
+    }
+    // Rejected, not unchecked: the package read the program and said what is wrong with it, so the
+    // model is given those lines to act on rather than a note that nothing happened.
+    if (blocked.length) {
+      const fix = formatRouteProgramReportFix(null, blocked);
+      return [finalAnswer.trimEnd(), '', '### Route check (RDKit)', '',
+        '**The route program could not be executed** — it was read and refused, so no equation was checked.',
+        ...blocked.map((entry) => `- ${entry}`), ...(fix ? ['', fix] : []), ''].join('\n');
+    }
+    return `${finalAnswer.trimEnd()}\n\n${formatRouteCheckUnavailable('the chemistry package returned no route audit for the program')}\n`;
+  } catch (error) {
+    // A program that will not parse or an operation that cannot apply is a result, not a crash:
+    // the message is the checker's and goes back to the model as the fix.
+    return `${finalAnswer.trimEnd()}\n\n${formatRouteCheckUnavailable(error instanceof Error ? error.message : 'the route program could not be executed')}\n`;
+  } finally {
+    dispose();
+  }
+}
+
 export async function appendRouteReportAndDrawings(
   finalAnswer: string,
   modelAnswer: string,
@@ -996,6 +1116,13 @@ export async function appendRouteReportAndDrawings(
 ): Promise<string> {
   options.signal?.throwIfAborted();
   if (options.enabled === false || !routeVerificationAvailable()) return finalAnswer;
+  // Program mode answers with a program, not labelled steps, so the names-first guard below would
+  // see no steps and hand back the bare answer. Branch before it. An answer that carries no
+  // program falls through, which is what a refusal or a prose-only reply should do.
+  if (routeProgramMode()) {
+    const program = findRouteProgram(modelAnswer);
+    if (program) return appendRouteProgramReport(finalAnswer, program, options);
+  }
   // The names-first path derives the equations from the resolved names and passes them in.
   const steps = overrides.steps ?? [];
   const labels = overrides.labels ?? [];

@@ -1,6 +1,6 @@
 {
   "name": "nodus",
-  "version": "5.10.0",
+  "version": "5.12.1",
   "description": "Local-first desktop app that turns a Zotero library into a navigable graph of ideas and authors.",
   "author": {
     "name": "Jorge Pérez Burgueño",
@@ -13,7 +13,7 @@
     "url": "https://github.com/jorgepb96/nodus.git"
   },
   "releaseMetadata": {
-    "dateReleased": "2026-10-14",
+    "dateReleased": "2026-10-17",
     "conceptDoi": "10.5281/zenodo.21515531",
     "versionDoi": null
   },
@@ -33,7 +33,7 @@
     "test:ci:shard": "node scripts/ci-test-shards.mjs run",
     "lint:ci": "npm run lint -- --cache --cache-strategy content --cache-location .ci/cache/eslint",
     "typecheck:ci": "tsc --noEmit -p tsconfig.json --incremental --tsBuildInfoFile .ci/cache/renderer.tsbuildinfo && tsc --noEmit -p electron/tsconfig.json --incremental --tsBuildInfoFile .ci/cache/electron.tsbuildinfo",
-    "prebuild:ci": "node scripts/clean-electron-output.mjs && node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs",
+    "prebuild:ci": "node scripts/clean-electron-output.mjs && node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs && node scripts/build-trackpad-native.cjs",
     "build:ci": "npm run build:cloudflare && npm run typecheck:ci && vite build",
     "prebuild:ci:bundle": "npm run prebuild:ci",
     "build:ci:bundle": "npm run build:cloudflare && vite build",
@@ -181,8 +181,8 @@
     "verify:maps": "node scripts/verify-maps.mjs",
     "verify:historical-maps": "node scripts/verify-historical-maps.mjs",
     "research:runtime": "node scripts/prepare-zotero-mcp.mjs",
-    "predev": "node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs",
-    "prebuild": "node scripts/clean-electron-output.mjs && node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs",
+    "predev": "node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs && node scripts/build-trackpad-native.cjs",
+    "prebuild": "node scripts/clean-electron-output.mjs && node scripts/build-apple-calendar.cjs && node scripts/build-presenter-native.cjs && node scripts/build-system-audio.cjs && node scripts/build-trackpad-native.cjs",
     "build:apple-calendar": "node scripts/build-apple-calendar.cjs",
     "build:presenter-native": "node scripts/build-presenter-native.cjs",
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
@@ -221,7 +221,9 @@
     "audit:research:live-identities": "node scripts/research-live-semantic-identity-audit.mjs",
     "audit:research:live-passages": "node scripts/research-live-passages-export.mjs",
     "test:research:passages": "node --test scripts/test-research-live-evidence-finalize.mjs scripts/test-research-live-semantic-identity-audit.mjs scripts/test-research-live-passages-export.mjs scripts/test-score-research-passage-retrieval.mjs",
-    "score:research:passages": "node scripts/score-research-passage-retrieval.mjs"
+    "score:research:passages": "node scripts/score-research-passage-retrieval.mjs",
+    "test:sign": "node --test scripts/test-sign.mjs scripts/test-sign-install.mjs scripts/test-sign-i18n.mjs scripts/test-sign-trackpad.mjs",
+    "verify:sign": "node scripts/verify-sign.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
@@ -400,6 +402,15 @@
       {
         "from": "build/zotero-mcp",
         "to": "zotero-mcp"
+      },
+      {
+        "from": "electron/assets/sign",
+        "to": "sign",
+        "filter": [
+          "engine.py",
+          "requirements.lock",
+          "requirements.txt"
+        ]
       }
     ],
     "files": [
@@ -469,6 +480,10 @@
         {
           "from": "build/system-audio/${arch}/nodus-system-audio.node",
           "to": "system-audio/nodus-system-audio.node"
+        },
+        {
+          "from": "build/trackpad-native/${arch}/nodus-trackpad.node",
+          "to": "trackpad-native/nodus-trackpad.node"
         },
         {
           "from": "build/apple-calendar/${arch}/nodus-apple-calendar.node",

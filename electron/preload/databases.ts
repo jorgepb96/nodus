@@ -3,12 +3,12 @@
 import { ipcRenderer } from 'electron';
 
 import type { DatabasesApi } from '@shared/api/databases';
+import { chatStreamRegistry } from './chatStreams';
 
-// Tracks the data-chat stream currently in flight so cancelDatabaseChat can abort it
-// without the renderer juggling request ids. Only one runs at a time (the composer is
-// disabled while sending). It lived in preload.ts next to the research-chat one; it
-// belongs with the bindings that are its only users.
-let activeDbChatRequestId: string | null = null;
+// Tracks the data-chat streams in flight so cancelDbChat can abort the one of the chat it
+// was pressed in. It lived in preload.ts next to the research-chat one; it belongs with
+// the bindings that are its only users.
+const dbChatStreams = chatStreamRegistry();
 
 // A deterministic latency hook for the isolated notion-parity runner. It is
 // deliberately unavailable unless the process also carries the QA-root guard,
@@ -217,16 +217,17 @@ export const databasesApi: DatabasesApi = {
       if (id === requestId) handlers.onDelta(delta);
     };
     ipcRenderer.on('db:chatStream:delta', onDelta);
-    activeDbChatRequestId = requestId;
+    const untrack = dbChatStreams.track(requestId, request.conversationId);
     try {
       return await ipcRenderer.invoke('db:chatStream', requestId, request);
     } finally {
-      if (activeDbChatRequestId === requestId) activeDbChatRequestId = null;
+      untrack();
       ipcRenderer.removeListener('db:chatStream:delta', onDelta);
     }
   },
-  cancelDbChat: async () => {
-    if (activeDbChatRequestId) await ipcRenderer.invoke('db:chatStream:cancel', activeDbChatRequestId);
+  cancelDbChat: async (conversationId) => {
+    const requestId = dbChatStreams.find(conversationId);
+    if (requestId) await ipcRenderer.invoke('db:chatStream:cancel', requestId);
   },
   listDatabaseChatConversations: (includeArchived) => ipcRenderer.invoke('db:chatHistory:list', includeArchived),
   getDatabaseChatConversation: (id) => ipcRenderer.invoke('db:chatHistory:get', id),

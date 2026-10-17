@@ -12,7 +12,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-1150-1930"
   - name: "Nodus contributors"
 type: software
-version: "5.12.0"
+version: "5.12.1"
 date-released: "2026-10-17"
 license: "AGPL-3.0-only"
 repository-code: "https://github.com/jorgepb96/nodus"

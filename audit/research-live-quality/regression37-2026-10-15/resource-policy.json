@@ -1,0 +1,30 @@
+{
+  "format": "nodus.regression37-resource-policy/1",
+  "recordedAt": "2026-10-15T20:00:18.676Z",
+  "stage": "running",
+  "root": "/private/tmp/nodus-research-regression37-serial-Bgzxr9",
+  "supervisorFile": "/private/tmp/nodus-reg37-serial-supervisor.mjs",
+  "supervisorSha256": "1c83a9efa10e82971ae7ca56c729c7cec17f2b076aaf286c6ff8fa53329a605d",
+  "maxNativeQaApplications": 1,
+  "maxActiveApplicationGenerators": 1,
+  "maxIndependentSourceReviewers": 1,
+  "independentReviewerInputs": "Small saved question/answer/source JSON packets only; no native app or local model worker",
+  "nice": 10,
+  "hiddenWindow": true,
+  "betweenCases": {
+    "nativeAppClosed": true,
+    "minimumPauseMs": 30000,
+    "requireMacosReportedMemoryFreePercentAtLeast": 20
+  },
+  "withinCampaignCasePauseMs": 20000,
+  "macosPolicy": "PRIO_DARWIN_BG on this serial QA supervisor, producer and descendants only",
+  "otherSessionsModified": false,
+  "newBenchmarksOrBuilds": false,
+  "paidProviderCalls": 0,
+  "limitations": [
+    "macOS memory_pressure percentage is a launch guard, not a measured UI responsiveness guarantee.",
+    "Summed process RSS includes shared pages; process CPU values are lifetime averages and cannot be read as whole-system utilization.",
+    "Cases run serially; no answer-result retries or cohort changes are allowed by this resource policy.",
+    "Six infrastructure-invalid original attempts have one separately registered replacement; all prior histories are retained."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-77f45f61da95c5c52e3e293e",
+      "answerSha256": "78d6c27fdde372638d8f01f4e9e3d0739fef255a1cf2439767ca83e5731f73d8",
+      "sourceHash": "1f8228b3cda4bccd69856722add0286121d3065925f0b150cb0494f5c77d595b",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_003",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "Both requested quantities are explicitly covered: source-1 (fixture 08, p. 1) states that Alba uses green light at 530 nm to measure turbidity and does not measure oxygen concentration. Both answer citations point to that exact supplied source. The wavelength, unit, measured quantity, and explicit exclusion are accurate; sources 2, 3, 5, and 6 corroborate them. The question requests no calibration interval, dates, or calculations. The supplied evidence is sufficient, and the answer has no material unsupported claims."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-59a69d17f91e9dd4e09520c0",
+      "answerSha256": "f6cd7f090c7ce479c2e690ec9dd5a5212c5e869fa8691eba84b130222a4ab02e",
+      "sourceHash": "1f3a48ec17ef3d946890b5798ef2183379748616b3561841ec574d513141238e",
+      "question": "Does the 51 percent recall figure belong to spaced retrieval?",
+      "language": "en",
+      "answer": "No. In the Vega trial, 51% was the rereading figure; spaced retrieval participants recalled 72%. [fixture 02, p. 1](nodus://review-source/review-59a69d17f91e9dd4e09520c0/1)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 02, p. 1",
+          "text": "Source title: fixture 02\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-59a69d17f91e9dd4e09520c0/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "public AGENT001, pp. 8–9",
+          "text": "Source title: public AGENT001\nSource locator: pp. 8–9\nEvidence provenance: source\nVerbatim excerpt:\n[p. 8] an uninformative response, where Isabella discusses topics such as collaborations for events and projects and cleanliness and organization in a cafe. Instead of summarizing, the memory stream described below surfaces relevant memories, resulting in a more informative and specific response that mentions Isabella’s passion for making people feel welcome and included, planning events and creating an atmosphere that people can enjoy, such as the Valentine’s Day party. Approach: The memory stream maintains a comprehensive record of the agent’s experience. It is a list of memory objects, where each object contains a natural language description, a creation timestamp, and a most recent access timestamp. The most basic element of the memory stream is an observation, which is an event directly perceived by an agent. Common observations include behaviors performed by the agent themselves or behaviors that agents perceive being performed by other agents or non-agent objects. For instance, Isabella Rodriguez, who works at a coffee shop, might accrue the following observations over time: (1) Isabella Rodriguez is setting out the pastries, (2) Maria Lopez is studying for a Chemistry test while drinking coffee, (3) Isabella Rodriguez and Maria Lopez are conversing about planning a Valentine’s day party at Hobbs Cafe, (4) The refrigerator is empty. Our architecture implements a retrieval function that takes the agent’s current situation as input and returns a subset of the memory stream to pass on to the language model. There are many possible implementations of a retrieval function, depending on what is important for the agent to consider when deciding how to act. [p. 9] Figure 6: The memory stream comprises a large number of observations that are relevant and irrelevant to the agent’s current situation. Retrieval identifies",
+          "page": null,
+          "citation": "nodus://review-source/review-59a69d17f91e9dd4e09520c0/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 27, p. 1",
+          "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-59a69d17f91e9dd4e09520c0/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 17, p. 1",
+          "text": "Source title: fixture 17\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+          "page": null,
+          "citation": "nodus://review-source/review-59a69d17f91e9dd4e09520c0/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 12, p. 1",
+          "text": "Source title: fixture 12\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+          "page": null,
+          "citation": "nodus://review-source/review-59a69d17f91e9dd4e09520c0/5"
+        }
+      ]
+    }
+  ]
+}

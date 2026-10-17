@@ -1,0 +1,50 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-d1f054bc08794b03cd830dcc",
+      "answerSha256": "8c02748ff1d16f4102ff5555dfe8c4bfd921435421ecce0797568e4401d6d04e",
+      "sourceHash": "051bc9177bc0a07932abdf0ebde8f5f2f2534cd82979a021ea0f43ebaedf67dd",
+      "question": "Should the Bruma mean and median be reported as the same statistic?",
+      "language": "en",
+      "answer": "No. The Bruma median was 18 and the mean was 24; the source says they are not equivalent. [fixture 14, p. 1](nodus://review-source/review-d1f054bc08794b03cd830dcc/4)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 19, p. 1",
+          "text": "Source title: fixture 19\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nresponses, and separate definitions of the mean and median. Administrative review 79 contains no additional outcome claim. ## Archive section 81 Bruma field log 80: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 80 contains no additional outcome claim. ## Archive section 82 Bruma field log 81: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 81 contains no additional outcome claim. ## Archive section 83 Bruma field log 82: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 82 contains no additional outcome claim. ## Archive section 84 Bruma field log 83: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 83 contains no additional outcome claim. ## Archive section 85 Bruma field log 84: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 84 contains no additional outcome claim. ## Archive section 86 Bruma field log 85: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 85 contains no additional outcome claim. ## Archive section 87 Bruma field log 86: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 86 contains no additional outcome claim. ## Archive section 88 Bruma field log 87: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 87 contains no additional outcome",
+          "page": null,
+          "citation": "nodus://review-source/review-d1f054bc08794b03cd830dcc/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 29, p. 1",
+          "text": "Source title: fixture 29\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Bruma · archive 29 · Evidence: O inquérito Bruma incluiu 240 pessoas de seis aldeias. A confiança foi de 95%. A mediana foi 18 e a média 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. 2. Document: Statistic · Evidence: Value 3. Document: Median · Evidence: 18 4. Document: Mean · Evidence: 24 5. Document: Sample · Evidence: 240",
+          "page": null,
+          "citation": "nodus://review-source/review-d1f054bc08794b03cd830dcc/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 27, p. 1",
+          "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-d1f054bc08794b03cd830dcc/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 14, p. 1",
+          "text": "Source title: fixture 14\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nBruma · archive 14 The Bruma survey included 240 people from six villages. Confidence was 95%. The median was 18 and the mean 24; they are not equivalent. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+          "page": null,
+          "citation": "nodus://review-source/review-d1f054bc08794b03cd830dcc/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 04, p. 1",
+          "text": "Source title: fixture 04\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nBruma - archive 4 Die Bruma-Umfrage umfasste 240 Personen aus sechs Dörfern. Das Konfidenzniveau betrug 95%. Der Median war 18, der Mittelwert 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-d1f054bc08794b03cd830dcc/5"
+        }
+      ]
+    }
+  ]
+}

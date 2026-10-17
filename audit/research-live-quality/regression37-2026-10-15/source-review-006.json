@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-12f8cca9842ef1b5308c4715",
+      "answerSha256": "834ba80f194ceaddc71bbfb7eb14483c2c0a8838b00fb0693a979d78dbe99ad4",
+      "sourceHash": "642530b7ca5ac80d67f98947c75e768017ffc9899c9fbde32550915dfa7e8d1a",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_006",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer directly and fully resolves whether Alba can supply an oxygen reading: no. Its cited fixture 08, p. 1 explicitly states that Alba measures turbidity using green light at 530 nm and does not measure oxygen concentration, supporting every assertion, the wavelength and unit, and the negation. The citation exactly matches supplied source-1. Sources 2 through 6 agree on turbidity, green light at 530 nm, and no oxygen measurement. No calculation or date claim is made. Calibration every 30 days is outside the question and need not be included. The supplied evidence is sufficient; no unsupported inference or missing qualification is needed."
+    }
+  ]
+}

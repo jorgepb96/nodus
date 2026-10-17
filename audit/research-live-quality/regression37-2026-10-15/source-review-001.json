@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-77bd8ce916e067e448c0dfc2",
+      "answerSha256": "f3e566ece1540ff49e81d3423dafef860878168f9fae29926d3d9bd4f6748b27",
+      "sourceHash": "09ee2314afe8d9a0a4306db3a0f15ca8f08cd454a6bfc178016d9f3c056de033",
+      "reviewer": "/root/reg37_review_001",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "All requested facets are supported by the supplied QLoRA excerpts. Source 2 explicitly supports equally populated expected NFk bins, optimality for zero-centered normally distributed data, quantizing quantization constants for additional savings, and the 32/64 = 0.5 bits-per-parameter example. Source 1 identifies NF4 as 4-bit NormalFloat, reports the 4-bit base model's 5,048 MB consumption (rendered with Spanish thousands punctuation as 5.048 MB), and supports paged optimizers preventing gradient-checkpointing memory spikes from causing out-of-memory errors. Source 1 also explicitly distinguishes usually 4-bit storage from usually BFloat16 computation, with dequantization followed by 16-bit matrix multiplication. Every citation points to the excerpt supporting its associated claim. The final paragraph accurately restates source 1. The calculation is quoted from source 2, not a new derivation. No requested evidence is unavailable at this level of explanation, so no insufficiency qualification is required."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-2bac502846422e47f020b016",
+      "answerSha256": "543fb8e4a6f99f989740cc44f752505583749d68c7dd3cbee4577a9e2f83c9d7",
+      "sourceHash": "b364e29374a49d86c62bdcbf102e295e64dfc76a2fbe62c15883f7e75f32fcef",
+      "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+      "language": "es",
+      "answer": "En el ensayo Vega, el grupo de recuperación espaciada recordó el 72% y el de relectura, el 51%. [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4)\n\nCálculo: 72% − 51% = 21 puntos porcentuales. [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4)\n\nSe midió el recuerdo; la inteligencia no se midió. [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4)\n\n| Grupo | Recuerdo medido [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4) |\n| --- | --- |\n| Recuperación espaciada | 72% [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4) |\n| Relectura | 51% [fixture 02, p. 1](nodus://review-source/review-2bac502846422e47f020b016/4) |",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 12, p. 1",
+          "text": "Source title: fixture 12\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+          "page": null,
+          "citation": "nodus://review-source/review-2bac502846422e47f020b016/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 07, p. 1",
+          "text": "Source title: fixture 07\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-2bac502846422e47f020b016/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 17, p. 1",
+          "text": "Source title: fixture 17\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+          "page": null,
+          "citation": "nodus://review-source/review-2bac502846422e47f020b016/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 02, p. 1",
+          "text": "Source title: fixture 02\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-2bac502846422e47f020b016/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 27, p. 1",
+          "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-2bac502846422e47f020b016/5"
+        }
+      ]
+    }
+  ]
+}

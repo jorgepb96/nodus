@@ -1,0 +1,14 @@
+{
+  "packetSHA256": "90a4b67071093885e7738acb4e064fd62d2cd4ab1a102c384f0953a48fa3de85",
+  "packetBytes": 3801,
+  "byteRanges": [
+    {
+      "startByte": 0,
+      "endByteExclusive": 3801,
+      "sha256": "90a4b67071093885e7738acb4e064fd62d2cd4ab1a102c384f0953a48fa3de85"
+    }
+  ],
+  "completeReadTimestamp": "2026-10-15T19:38:29.765Z",
+  "model": "unknown",
+  "effort": "unknown"
+}

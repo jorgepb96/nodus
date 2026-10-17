@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-9393736aac972c9fc1a06581",
+      "answerSha256": "78f58e7827f3ef0f3889c3d5fa0d7040a4fd409051c500bccf091a8a92a4f3a8",
+      "sourceHash": "5a072edb3be60f29074598bbb877e9c78f187204a51989d25b1bfadc4748428d",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_011",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer supplies both requested facets: Alba measures turbidity (Trübung) using green light at 530 nm. The cited fixture 08 excerpt explicitly supports the property, color, wavelength, and nm unit. The specifically requested archive 3 is supplied as fixture 03; despite OCR corruption, its French excerpt likewise states green light, 530 nm, and turbidity. Thus the citation is to a corroborating archive rather than archive 3, but all answer claims are supported and consistent with the requested source. No calculation or date is required; the negative oxygen statement and 30-day calibration detail are outside the question and need not be repeated. Evidence is sufficient."
+    }
+  ]
+}

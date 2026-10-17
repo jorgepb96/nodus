@@ -1,0 +1,14 @@
+{
+  "packetSHA256": "8d738079209282d7241d35f742252f84d131bc4922373b11106235a8be56696d",
+  "packetBytes": 6861,
+  "parts": [
+    {
+      "startByte": 0,
+      "endByteExclusive": 6861,
+      "sha256": "8d738079209282d7241d35f742252f84d131bc4922373b11106235a8be56696d"
+    }
+  ],
+  "completeReadTimestamp": "2026-10-15T19:27:30.684Z",
+  "model": "unknown",
+  "effort": "unknown"
+}

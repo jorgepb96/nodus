@@ -1,0 +1,399 @@
+{
+  "format": "nodus.regression37-closed-incomplete/1",
+  "closedOn": "2026-10-17",
+  "stage": "closed-incomplete",
+  "complete": false,
+  "selectionSha256": "7fe041d2ab5376d6b250526825282fccc1be9b780b4c07db8417ed3ff786f2ec",
+  "amendmentSha256": "87d4faab421260789d4b454dcf651b29fcd08e6411ee0924d8cef019bf6fdaf4",
+  "productionCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "qaCommit": "d8bd4d0c1561b2dc49f69384b3cef7eafe46b337",
+  "planned": 37,
+  "knownTerminal": 16,
+  "sourceReviewedPublications": 13,
+  "resolvedFailures": {
+    "passed": 11,
+    "planned": 32
+  },
+  "controlsRetained": {
+    "passed": 2,
+    "planned": 5
+  },
+  "verificationWithheld": [
+    "R002",
+    "R009"
+  ],
+  "protocolFailures": [
+    "R005"
+  ],
+  "withoutFinalEvidence": [
+    "R029",
+    "R031",
+    "R032",
+    "R033",
+    "R034",
+    "R035",
+    "R044",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R070",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "lastObservedProgress": {
+    "at": "2026-10-15T21:29:05.701Z",
+    "serialConcluded": 15,
+    "retainedConcluded": 1,
+    "activeCase": "R029",
+    "acceptedRequests": 142,
+    "completedRequests": 140,
+    "abandonedRequests": 1
+  },
+  "closureReason": "The dispatcher failed on a Codex usage limit. On resumption, the temporary QA profile, queues, source snapshots, databases and full collector outputs were absent. The user chose to close this experimental iteration instead of reconstructing the campaign.",
+  "transportQualification": "Historically checked before producing the copied review packets; original request/read/dispatch and collector artifacts cannot now be independently reverified. Preserved packet/read-receipt/judgment integrity remains verifiable.",
+  "paidProviderCalls": 0,
+  "qualityAcceptanceEligible": false,
+  "globalImprovementClaim": false,
+  "validatedProfiles": [],
+  "rows": [
+    {
+      "caseId": "R002",
+      "role": "previous-failure",
+      "status": "verification-withheld",
+      "success": false,
+      "evidence": "Preserved initial summary/checkpoints and contemporaneous operational observations; no publication credited."
+    },
+    {
+      "caseId": "R005",
+      "role": "previous-failure",
+      "status": "protocol-failure",
+      "success": false,
+      "evidence": "Preserved initial summary/checkpoints and contemporaneous operational observations; no publication credited."
+    },
+    {
+      "caseId": "R006",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-77bd8ce916e067e448c0dfc2",
+      "answerSha256": "f3e566ece1540ff49e81d3423dafef860878168f9fae29926d3d9bd4f6748b27",
+      "sourceHash": "09ee2314afe8d9a0a4306db3a0f15ca8f08cd454a6bfc178016d9f3c056de033",
+      "reviewFile": "source-review-001.json",
+      "packetFile": "blind-review-pack-001.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R007",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-2bac502846422e47f020b016",
+      "answerSha256": "543fb8e4a6f99f989740cc44f752505583749d68c7dd3cbee4577a9e2f83c9d7",
+      "sourceHash": "b364e29374a49d86c62bdcbf102e295e64dfc76a2fbe62c15883f7e75f32fcef",
+      "reviewFile": "source-review-002.json",
+      "packetFile": "blind-review-pack-002.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R008",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-77f45f61da95c5c52e3e293e",
+      "answerSha256": "78d6c27fdde372638d8f01f4e9e3d0739fef255a1cf2439767ca83e5731f73d8",
+      "sourceHash": "1f8228b3cda4bccd69856722add0286121d3065925f0b150cb0494f5c77d595b",
+      "reviewFile": "source-review-003.json",
+      "packetFile": "blind-review-pack-003.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R009",
+      "role": "previous-failure",
+      "status": "verification-withheld",
+      "success": false,
+      "evidence": "Preserved initial summary/checkpoints and contemporaneous operational observations; no publication credited."
+    },
+    {
+      "caseId": "R010",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-a09cdf7f494d90f0a68ccc73",
+      "answerSha256": "1d7ea68d3c6d32fdcbfb03273e8b3213644a4b779c1a604120e0b5ec60096525",
+      "sourceHash": "537c01fc48289ad64d10338008e4476d5827f6796b696f7c7866715706ec567a",
+      "reviewFile": "source-review-004.json",
+      "packetFile": "blind-review-pack-004.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R012",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-7b4031d9369a2b27ba3901ad",
+      "answerSha256": "cf9a54f5f8cc242491da3217658037a32383b76f440907fa66ab82ff9463bb2d",
+      "sourceHash": "c0813454f2ba0c437b404250be292c69abf3096453120e1c4d63b24fd988aa22",
+      "reviewFile": "source-review-005.json",
+      "packetFile": "blind-review-pack-005.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R013",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-12f8cca9842ef1b5308c4715",
+      "answerSha256": "834ba80f194ceaddc71bbfb7eb14483c2c0a8838b00fb0693a979d78dbe99ad4",
+      "sourceHash": "642530b7ca5ac80d67f98947c75e768017ffc9899c9fbde32550915dfa7e8d1a",
+      "reviewFile": "source-review-006.json",
+      "packetFile": "blind-review-pack-006.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R014",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-d1f054bc08794b03cd830dcc",
+      "answerSha256": "8c02748ff1d16f4102ff5555dfe8c4bfd921435421ecce0797568e4401d6d04e",
+      "sourceHash": "051bc9177bc0a07932abdf0ebde8f5f2f2534cd82979a021ea0f43ebaedf67dd",
+      "reviewFile": "source-review-007.json",
+      "packetFile": "blind-review-pack-007.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R015",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-0f4fec41eb1075d09b2e5e56",
+      "answerSha256": "c7754f8bc4e5f9479d7712acaf044390e5207ba76be5f92f47764151dc8f93ac",
+      "sourceHash": "967aa5b2956b842f34d009f2ee24d3889b290c91a315c534c153fcc86386909e",
+      "reviewFile": "source-review-008.json",
+      "packetFile": "blind-review-pack-008.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R017",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-59a69d17f91e9dd4e09520c0",
+      "answerSha256": "f6cd7f090c7ce479c2e690ec9dd5a5212c5e869fa8691eba84b130222a4ab02e",
+      "sourceHash": "1f3a48ec17ef3d946890b5798ef2183379748616b3561841ec574d513141238e",
+      "reviewFile": "source-review-009.json",
+      "packetFile": "blind-review-pack-009.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R018",
+      "role": "normal-control",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-49d9b19cdc36edc0e8c191ee",
+      "answerSha256": "6256d48380a0c8629744fa25020db8a03809673b572510d11fdb1d162ad2e208",
+      "sourceHash": "a8d360abd6032608b3fac5e9a4ddcd565c9b87a20b98690ed7d4eccc0aa3ea54",
+      "reviewFile": "source-review-010.json",
+      "packetFile": "blind-review-pack-010.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R021",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-9393736aac972c9fc1a06581",
+      "answerSha256": "78f58e7827f3ef0f3889c3d5fa0d7040a4fd409051c500bccf091a8a92a4f3a8",
+      "sourceHash": "5a072edb3be60f29074598bbb877e9c78f187204a51989d25b1bfadc4748428d",
+      "reviewFile": "source-review-011.json",
+      "packetFile": "blind-review-pack-011.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R022",
+      "role": "normal-control",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-e5493255de64369b15aded7f",
+      "answerSha256": "d89f04cfd2983ad5471199e6dd4347f44cbaf23d46d7043223e7f37a9de3dd3a",
+      "sourceHash": "77cf3fa09adb00059cefc78262424bcb5d140d595e3e59ed3204dd8b35a49fa7",
+      "reviewFile": "source-review-012.json",
+      "packetFile": "blind-review-pack-012.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R023",
+      "role": "previous-failure",
+      "status": "source-reviewed-publication",
+      "reviewId": "review-0276fcb87cfd5ca1fb86294b",
+      "answerSha256": "b08a31fc4d1d993e719c42536775a1000f93e66655111b7a39bcfec7ce4ad29d",
+      "sourceHash": "6cb96edf44b02a7ed329303bd771759739d1a841989ac14a8112d7baba0d38fe",
+      "reviewFile": "source-review-013.json",
+      "packetFile": "blind-review-pack-013.json",
+      "success": true,
+      "caseBinding": "Recorded operational case-boundary and review-dispatch observations; original collector snapshots are no longer available."
+    },
+    {
+      "caseId": "R029",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "in-progress"
+    },
+    {
+      "caseId": "R031",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R032",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R033",
+      "role": "normal-control",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R034",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R035",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R044",
+      "role": "normal-control",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R047",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R051",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R054",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R055",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R058",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R059",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R064",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R068",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R069",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R070",
+      "role": "normal-control",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R071",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R072",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R073",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    },
+    {
+      "caseId": "R074",
+      "role": "previous-failure",
+      "status": "no-final-evidence",
+      "success": false,
+      "lastObserved": "no attempt observed before dispatcher loss"
+    }
+  ],
+  "limitations": [
+    "These selected cases cannot estimate population embedding improvement or revise the closed 80-case baseline.",
+    "Unknown post-interruption outcomes receive no credit and are not labelled unattempted, successful, or retrieval failures.",
+    "Source reviews are model-assisted, not external human review; the original full transport provenance is no longer present.",
+    "No Windows/Linux real-weight/package validation or complete final-build delete/redownload/index/search coverage is added by this campaign.",
+    "One preserved answer contains a stray provider citation opener before its valid source link; a technical answer has a documented scope caveat. See supplemental inspections."
+  ]
+}

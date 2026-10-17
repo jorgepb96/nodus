@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-7b4031d9369a2b27ba3901ad",
+      "answerSha256": "cf9a54f5f8cc242491da3217658037a32383b76f440907fa66ab82ff9463bb2d",
+      "sourceHash": "c0813454f2ba0c437b404250be292c69abf3096453120e1c4d63b24fd988aa22",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_005",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer fully addresses the IQ-versus-recall question. Source 1 (fixture 02, p. 1), cited accurately by both links, explicitly states that intelligence was not measured and gives recall of 72% for spaced retrieval and 51% for rereading. Therefore the answer correctly says Vega cannot establish an IQ difference and reports only the measured recall result; the negative claim, groups, values, and percentage units are preserved. Sources 3–6 corroborate these statements in other languages. Source 2 concerns unrelated mask-quality ratings and is not used. No dates or calculated differences are asserted, and no unsupported causal or statistical-significance claim is added."
+    }
+  ]
+}

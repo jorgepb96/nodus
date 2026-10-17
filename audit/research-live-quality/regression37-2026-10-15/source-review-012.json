@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-e5493255de64369b15aded7f",
+      "answerSha256": "d89f04cfd2983ad5471199e6dd4347f44cbaf23d46d7043223e7f37a9de3dd3a",
+      "sourceHash": "77cf3fa09adb00059cefc78262424bcb5d140d595e3e59ed3204dd8b35a49fa7",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_012",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The German answer directly and completely answers the requested Version 2 event-retention duration: 14 days. Its additional statement that the previous duration was 7 days is explicitly supported by cited source-1 (fixture 10, p. 1), which says Version 2 increased the period from 7 to 14 days. The citation URI and title match source-1. All six supplied sources corroborate the same 7-to-14-day change; source-6 also explicitly associates Version 1 with 7 days and Version 2 with 14 days. Numbers, version attribution, and days as the unit are accurate. No calculation or date claim is made, and no unsupported restore/account assertion is introduced. The evidence is sufficient, so no uncertainty caveat is needed."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-2bac502846422e47f020b016",
+      "answerSha256": "543fb8e4a6f99f989740cc44f752505583749d68c7dd3cbee4577a9e2f83c9d7",
+      "sourceHash": "b364e29374a49d86c62bdcbf102e295e64dfc76a2fbe62c15883f7e75f32fcef",
+      "reviewer": "/root/reg37_review_002",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer covers every requested facet: a table compares spaced retrieval (72%) and rereading (51%), gives the explicitly labeled calculation 72% - 51% = 21 percentage points, and identifies recall as the measured outcome. Source-4 (fixture 02, p. 1), cited consistently using its exact supplied citation URI, directly states both recall percentages and that intelligence was not measured. The 21-point difference is a correct derivation clearly distinguished as a calculation. Sources 1, 2, 3 and 5 corroborate the groups, percentages and intelligence negation. No requested facet lacks evidence, no unavailable information is asserted, and no material unsupported claim appears."
+    }
+  ]
+}

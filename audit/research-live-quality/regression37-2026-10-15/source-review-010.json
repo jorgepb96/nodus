@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-49d9b19cdc36edc0e8c191ee",
+      "answerSha256": "6256d48380a0c8629744fa25020db8a03809673b572510d11fdb1d162ad2e208",
+      "sourceHash": "a8d360abd6032608b3fac5e9a4ddcd565c9b87a20b98690ed7d4eccc0aa3ea54",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_010",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer directly resolves the requested distinction: 530 nm specifies the wavelength of green light used by Alba for turbidity measurement, while the calibration interval is 30 days. Both factual sentences are supported by the cited fixture 08, p. 1, whose citation URI matches supplied source-1. Fixtures 13, 18, 28, and 23 independently agree on 530 nm and calibration every 30 days. No dates, calculations, unsupported negations, or additional unsupported claims occur; the supplied evidence is sufficient."
+    }
+  ]
+}

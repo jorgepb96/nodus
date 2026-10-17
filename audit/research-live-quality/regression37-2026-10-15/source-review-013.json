@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-0276fcb87cfd5ca1fb86294b",
+      "answerSha256": "b08a31fc4d1d993e719c42536775a1000f93e66655111b7a39bcfec7ce4ad29d",
+      "sourceHash": "6cb96edf44b02a7ed329303bd771759739d1a841989ac14a8112d7baba0d38fe",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_013",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The question asks when the Puerto Claro school library opened. The answer supplies 1912, explicitly supported by cited source-2 (fixture 01, p. 1; citation /2): the school opened its library in 1912 and opened the laboratory, not the library, in 1913. Sources 1, 3, 4, 5, and 6 corroborate the library year and laboratory distinction. The answer is in German, fully addresses the requested opening date, accurately identifies the institution, and adds no unsupported claims. Source-7 and the unrelated measurements in source-6 do not affect the answer. No calculation or unit conversion is needed; there is sufficient evidence and the citation resolves to the supporting supplied source."
+    }
+  ]
+}

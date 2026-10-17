@@ -1,0 +1,57 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-49d9b19cdc36edc0e8c191ee",
+      "answerSha256": "6256d48380a0c8629744fa25020db8a03809673b572510d11fdb1d162ad2e208",
+      "sourceHash": "a8d360abd6032608b3fac5e9a4ddcd565c9b87a20b98690ed7d4eccc0aa3ea54",
+      "question": "Is the 530 nm specification a calibration period or a wavelength?",
+      "language": "en",
+      "answer": "530 nm is the wavelength of the green light the Alba sensor uses to measure turbidity. [fixture 08, p. 1](nodus://review-source/review-49d9b19cdc36edc0e8c191ee/1)\n\nThe same excerpt separately says calibration is required every 30 days. [fixture 08, p. 1](nodus://review-source/review-49d9b19cdc36edc0e8c191ee/1)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 08, p. 1",
+          "text": "Source title: fixture 08\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba - archive 8 The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 13, p. 1",
+          "text": "Source title: fixture 13\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba · archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentración de oxígeno. Debe calibrarse cada 30 días.",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 18, p. 1",
+          "text": "Source title: fixture 18\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba · archive 18 # Alba · archive 18 Il sensore Alba misura la torbidità con luce verde a 530 nm. Non misura l’ossigeno. Va calibrato ogni 30 giorni.",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 28, p. 1",
+          "text": "Source title: fixture 28\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Alba · archive 28 · Evidence: Der Alba-Sensor misst Trübung mit grünem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 23, p. 1",
+          "text": "Source title: fixture 23\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Alba · archive 23 O sensor Alba mede turbidez com luz verde de 530 nm. Não mede oxigénio. Deve ser calibrado a cada 30 dias. Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt.",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/5"
+        },
+        {
+          "sourceRef": "source-6",
+          "title": "fixture 03, p. 1",
+          "text": "Source title: fixture 03\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba: archive 3 Le capteur Alba utilise une lumildre verte >} 530 nm pour mesurer la turbidit}<. Il ne mesure pas l'oxyglne. II doit Xitre Htalonn! A tous les 30 jours. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-49d9b19cdc36edc0e8c191ee/6"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "format": "nodus.regression37-reviewed-progress/1",
+  "at": "2026-10-15T19:40:24.239Z",
+  "stage": "running",
+  "productionCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "qaCodeCommit": "d8bd4d0c",
+  "planned": 37,
+  "concluded": 4,
+  "publishedQualified": 2,
+  "reviewed": 2,
+  "resolvedFailures": {
+    "passed": 2,
+    "planned": 32
+  },
+  "controlsRetained": {
+    "passed": 0,
+    "planned": 5
+  },
+  "pending": [
+    "R008",
+    "R009",
+    "R010",
+    "R012",
+    "R013",
+    "R014",
+    "R015",
+    "R017",
+    "R018",
+    "R021",
+    "R022",
+    "R023",
+    "R029",
+    "R031",
+    "R032",
+    "R033",
+    "R034",
+    "R035",
+    "R044",
+    "R047",
+    "R051",
+    "R054",
+    "R055",
+    "R058",
+    "R059",
+    "R064",
+    "R068",
+    "R069",
+    "R070",
+    "R071",
+    "R072",
+    "R073",
+    "R074"
+  ],
+  "outcomes": [
+    {
+      "caseId": "R002",
+      "role": "previous-failure",
+      "status": "unpublished-or-unqualified",
+      "attemptStatus": "verification-withheld",
+      "success": false,
+      "reviewId": "review-ccc2a9c5f195f2e33a0e650b",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "caseId": "R005",
+      "role": "previous-failure",
+      "status": "unpublished-or-unqualified",
+      "attemptStatus": "protocol-failure",
+      "success": false,
+      "reviewId": "review-9f9f967b92fa890e7ab8d274",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "62ed862954c91defb3315e0e556bd4002f85e26e3fa5d1086124e8520bb717ad"
+    },
+    {
+      "caseId": "R006",
+      "role": "previous-failure",
+      "status": "passed",
+      "attemptStatus": "answered",
+      "success": true,
+      "reviewId": "review-77bd8ce916e067e448c0dfc2",
+      "answerSha256": "f3e566ece1540ff49e81d3423dafef860878168f9fae29926d3d9bd4f6748b27",
+      "sourceHash": "09ee2314afe8d9a0a4306db3a0f15ca8f08cd454a6bfc178016d9f3c056de033"
+    },
+    {
+      "caseId": "R007",
+      "role": "previous-failure",
+      "status": "passed",
+      "attemptStatus": "answered",
+      "success": true,
+      "reviewId": "review-2bac502846422e47f020b016",
+      "answerSha256": "543fb8e4a6f99f989740cc44f752505583749d68c7dd3cbee4577a9e2f83c9d7",
+      "sourceHash": "b364e29374a49d86c62bdcbf102e295e64dfc76a2fbe62c15883f7e75f32fcef"
+    }
+  ],
+  "limits": [
+    "Selected-failure regression; no global embedding improvement estimate.",
+    "All model-assisted reviews blinded to case/baseline/control status; exact packet hashes and complete read ranges verified. Effective reviewer model/effort not exported.",
+    "No external human review. Two published source-supported complete positives so far; 33 cases still pending.",
+    "One native QA application and one application-generation agent at a time; independent judges read only small saved JSON packets.",
+    "No real profile access, paid provider calls, production-source changes or terminal answer retries."
+  ]
+}

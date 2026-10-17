@@ -1,0 +1,64 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-0276fcb87cfd5ca1fb86294b",
+      "answerSha256": "b08a31fc4d1d993e719c42536775a1000f93e66655111b7a39bcfec7ce4ad29d",
+      "sourceHash": "6cb96edf44b02a7ed329303bd771759739d1a841989ac14a8112d7baba0d38fe",
+      "question": "Wann eröffnete die Schulbibliothek von Puerto Claro?",
+      "language": "de",
+      "answer": "Die Schulbibliothek der Schule von Puerto Claro wurde 1912 eröffnet. [fixture 01, p. 1](nodus://review-source/review-0276fcb87cfd5ca1fb86294b/2)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 11, p. 1",
+          "text": "Source title: fixture 11\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro · archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laboratório abriu em 1913, não a biblioteca.",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 01, p. 1",
+          "text": "Source title: fixture 01\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro · archive 1 La escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 16, p. 1",
+          "text": "Source title: fixture 16\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro · archive 16 # Puerto Claro · archive 16 Die Schule in Puerto Claro eröffnete ihre Bibliothek 1912. Das Labor eröffnete 1913, nicht die Bibliothek.",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 26, p. 1",
+          "text": "Source title: fixture 26\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro · archive 26 The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library.",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 06, p. 1",
+          "text": "Source title: fixture 06\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro - archive 6 La scuola di Puerto Claro aprX la biblioteca nel 1912. Il laboratorio apr] nel 1913, non la biblioteca. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/5"
+        },
+        {
+          "sourceRef": "source-6",
+          "title": "fixture 21, p. 1",
+          "text": "Source title: fixture 21\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/6"
+        },
+        {
+          "sourceRef": "source-7",
+          "title": "fixture 22, p. 1",
+          "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+          "page": null,
+          "citation": "nodus://review-source/review-0276fcb87cfd5ca1fb86294b/7"
+        }
+      ]
+    }
+  ]
+}

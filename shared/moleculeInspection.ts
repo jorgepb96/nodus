@@ -183,6 +183,12 @@ export interface RouteStepAudit {
   /** A bond edit at carbon the step cannot explain: an undeclared 1,2-shift, or a new C–C or
    *  C–heteroatom bond at a carbon nothing activates. */
   skeletonProblem?: string;
+  /** A stereocentre that comes out with the opposite configuration. Its own field, not a balance
+   *  difference: an epimer has the same formula, so the equation balances and `balanced` stays
+   *  true. It used to arrive with `balanced` cleared and the text in `differences`, which printed
+   *  `NOT balanced` about atoms that counted correctly — and a reader told that counts atoms,
+   *  finds nothing, and never examines the configuration. */
+  stereoProblem?: string;
   /** Set when the step balanced only because a species listed under Reactants was treated as
    *  taking no part. Reported because the arithmetic cannot tell a condition that was never
    *  consumed from a reagent that was, whose product the author forgot to name. */
@@ -1813,6 +1819,7 @@ function normalizeRouteStep(entry: unknown, index: number): RouteStepAudit | nul
     ...(value.radical === true ? { radical: true } : {}),
     // Kept whole, like the checker's other messages: it ends with what to do.
     ...(typeof value.skeletonProblem === 'string' && value.skeletonProblem ? { skeletonProblem: value.skeletonProblem.slice(0, 1000) } : {}),
+    ...(typeof value.stereoProblem === 'string' && value.stereoProblem ? { stereoProblem: value.stereoProblem.slice(0, 1000) } : {}),
     ...(typeof value.refiledReactant === 'string' && value.refiledReactant ? { refiledReactant: value.refiledReactant.slice(0, 1000) } : {}),
     ...(typeof value.monatomicSpecies === 'string' && value.monatomicSpecies ? { monatomicSpecies: value.monatomicSpecies.slice(0, 1000) } : {}),
   };
@@ -2573,16 +2580,21 @@ export function formatRouteAudit(audit: RouteAudit, labels: RouteSpeciesLabel[][
     const refiledNote = step.refiledReactant ? ` ${step.refiledReactant}` : '';
     // Not plain "balanced" beside FAIL: the equation closed only after the checker moved a species
     // the author declared consumed.
-    const balanceNote = step.balanced && step.refiledReactant ? REFILED_BALANCE : balance;
+    // Stereo first: the package blocks in that order, and a refusal for configuration cannot also
+    // carry refiling advice (the balance repair is not attempted on an inverted step).
+    const balanceNote = step.balanced && step.stereoProblem
+      ? INVERTED_BALANCE
+      : step.balanced && step.refiledReactant ? REFILED_BALANCE : balance;
     // Printed for the same reason, and it is the more urgent of the two: a lone atom of a diatomic
     // element said nothing at all in this line, so the step named no fault while failing.
     const monatomicNote = step.monatomicSpecies ? ` ${step.monatomicSpecies}` : '';
     const skeletonNote = skeletonFailure ? ` ${sentence(step.skeletonProblem ?? '')}` : skeletonFacts(step);
+    const stereoProblemNote = step.stereoProblem ? ` ${sentence(step.stereoProblem)}` : '';
     const agents = step.agents.length ? ` [agents: ${sideTrace(step.agents, names)}]` : '';
     const stepLabels = labels[step.index] ?? [];
     const reactantSide = groupedSideTrace(step.reactants, stepLabels.filter((entry) => entry.role === 'reactant'), names, step.balanced === true, step.products);
     const productSide = groupedSideTrace(step.products, stepLabels.filter((entry) => entry.role === 'product'), names, step.balanced === true, step.reactants);
-    lines.push(`- ${label} ${verdict} — ${balanceNote}${stereo}.${nameNote}${largeNote}${refiledNote}${monatomicNote}${assemblyNote}${skeletonNote} ${reactantSide}${agents} → ${productSide}`);
+    lines.push(`- ${label} ${verdict} — ${balanceNote}${stereo}.${nameNote}${largeNote}${refiledNote}${monatomicNote}${stereoProblemNote}${assemblyNote}${skeletonNote} ${reactantSide}${agents} → ${productSide}`);
     const alpha = alphaConfigurationLine(step, stepLabels);
     if (alpha) lines.push(alpha);
   }
@@ -2794,8 +2806,19 @@ function sentence(text: string): string {
   return /[.!?]$/.test(text.trim()) ? text.trim() : `${text.trim()}.`;
 }
 
-/** How a step that balanced only after the checker refiled a declared reactant is described. */
-const REFILED_BALANCE = 'balanced only after the checker refiled a declared reactant';
+/** How a step whose equation closes only once a declared reactant is set aside is described.
+ *
+ *  It used to read "balanced only after the checker refiled a declared reactant", which describes a
+ *  repair that has been made — under a FAIL verdict. Measured on a route whose step 12 carried that
+ *  line unchanged through three correction rounds: a reader cannot act on a sentence that says the
+ *  step was both fixed and not fixed. The condition is the honest form, and the actionable one. */
+const REFILED_BALANCE = 'balances only if a declared reactant takes no part';
+
+/** How a step whose equation closes but whose configuration does not is described. Said this way
+ *  round deliberately: the atoms ARE right, and a reader told "NOT balanced" about them goes and
+ *  counts them. Measured on a route where three correction rounds left the inverted centre
+ *  untouched. */
+const INVERTED_BALANCE = 'balanced, but a stereocentre is inverted';
 
 export function routeStepFailure(step: RouteStepAudit): string | null {
   if (step.nameProblems?.length) return step.nameProblems.join('; ');
@@ -2805,6 +2828,10 @@ export function routeStepFailure(step: RouteStepAudit): string | null {
   // assembles a product from more than one substrate. The report already shows this, so the
   // one-click prompts must name it too, or they point at a different step than the checker did.
   if (step.assemblyProblem) return step.assemblyProblem;
+  // A balanced step with one centre the wrong way round. The equation is closed, so only this
+  // reads the fault — which is why the predicate has to grow with the field rather than rely on
+  // `balanced` having been cleared for it.
+  if (step.stereoProblem) return step.stereoProblem;
   // Likewise a balanced step whose bond changes the reactants cannot make: a ring closed onto a
   // carbon nothing activates, a bromine beyond the α-carbon, an undeclared 1,2-shift.
   if (step.skeletonProblem) return step.skeletonProblem;

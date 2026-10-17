@@ -18,6 +18,11 @@ const allowedSkips = new Map([
   // which live in a separate repository. Both cases run wherever that checkout is beside this one.
   ['every program example in the prompt parses against the real grammar', 'the chemistry package checkout is not beside this one'],
   ['the package declares the fence the rule names, with the fields the rule names', 'the chemistry package checkout is not beside this one'],
+  // Same reason: the application's own tool input is checked against the manifest that declares it.
+  ['every key the forward-step input carries is one the package declares', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
+  // Local only, with the held rules it checks: the RDKit layer of the stereo guard needs the
+  // operator's index venv and tools/check-prompt-stereo.py, neither of which is in any checkout.
+  ['RDKit agrees with the allow-list, when the index venv is available', 'ord-index/.venv or tools/check-prompt-stereo.py not present; the allow-list check still ran'],
   // Nodus Sign's real-cryptography cases need a pyHanko interpreter; run them with NODUS_SIGN_PYTHON.
   ['real PKCS#12 inspection handles wrong, missing and expired certificates', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],
   ['real PAdES B-B signs incrementally, validates and preserves a previous signature', 'Set NODUS_SIGN_PYTHON to run real crypto tests'],

@@ -153,7 +153,17 @@ export async function invokeForwardSteps(runner: Runner, molecule: string, reage
   const indexDir = await reactionIndexService().localDirectory();
   options.signal?.throwIfAborted();
   if (!indexDir) return null;
-  const input = { indexDir, forwardSteps: { molecule, ...(reagents.length ? { reagents: reagents.slice(0, 4) } : {}), limit } };
+  // FLAT, which is what the tool declares: `{ molecule, reagents, limit, indexDir }`, with
+  // `molecule` required and `additionalProperties: false`. The nested `forwardSteps: {...}` this
+  // sent until 2026-10-17 is the shape of the PYTHON worker's stdin, one layer further in — the
+  // package builds it itself inside `proposeForwardSteps`. So the tool read `input.molecule`,
+  // found nothing, and threw "A forward-step search needs the molecule to act on" on every call
+  // since the search was written on 10-14. The throw was swallowed by the caller's `.catch`, which
+  // logs "forward-step support unavailable" and carries on, so the route reports simply had no
+  // forward-step support in them and nothing said why. Any run before this date that was read as
+  // the application's forward-step search finding nothing was the call failing, not the index
+  // being empty.
+  const input = { indexDir, molecule, ...(reagents.length ? { reagents: reagents.slice(0, 4) } : {}), limit };
   dumpToolInput(FORWARD_TOOL, input);
   const result = await runner.invoke({ provider, toolId: FORWARD_TOOL, input });
   const artifact = (result.artifacts ?? []).find((entry) => entry.artifactType === 'forward-steps');

@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v28', stage: 'coherent-answer-review-v28' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v29', stage: 'coherent-answer-review-v29' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -116,17 +116,22 @@ export async function researchAnswerVerdictsWithFallback(paragraphs: string[],
       try { return await recheck(indexed, false); }
       catch (recheckError) { signal?.throwIfAborted(); if (!structural(recheckError)) throw recheckError; }
     }
-    if (paragraphs.length < 2 || paragraphs.length > 12) throw error;
-    const parts: ResearchAnswerVerdicts[] = [];
-    for (const text of paragraphs) {
+    if (paragraphs.length < 2 || paragraphs.length > 64) throw error;
+    const batchSize = paragraphs.length > 12 ? 4 : 1;
+    const parts: Array<{ start: number; review: ResearchAnswerVerdicts }> = [];
+    for (let start = 0; start < paragraphs.length; start += batchSize) {
       signal?.throwIfAborted();
-      const result = await check([{ index: 0, text }], true);
-      if (!validResearchAnswerCoverage(result, 1)) throw error;
-      parts.push(result);
+      const batch = paragraphs.slice(start, start + batchSize).map((text, index) => ({ index, text }));
+      const result = await check(batch, true);
+      if (!validResearchAnswerCoverage(result, batch.length)) throw error;
+      parts.push({ start, review: result });
     }
-    return { claims: parts.map((part, index) => ({ ...part.claims[0] as object, index })),
-      coherent: parts.every(part => part.coherent), relevant: parts.every(part => part.relevant), complete: parts.every(part => part.complete),
-      issues: [...new Set(parts.flatMap(part => part.issues))] };
+    return { claims: parts.flatMap(({ start, review }) => review.claims.map((raw, index) => {
+      const claim = raw as { premises: Array<{ fromParagraphs?: number[] }> };
+      return { ...claim, index: start + index, premises: claim.premises.map(premise => ({ ...premise,
+        ...(premise.fromParagraphs ? { fromParagraphs: premise.fromParagraphs.map(parent => start + parent) } : {}) })) };
+    })), coherent: parts.every(part => part.review.coherent), relevant: parts.every(part => part.review.relevant), complete: parts.every(part => part.review.complete),
+      issues: [...new Set(parts.flatMap(part => part.review.issues))] };
   }
 }
 

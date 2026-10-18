@@ -108,6 +108,18 @@ try {
   assert.equal(partitioned.claims[1].index, 1);
   assert.equal(partitioned.claims[1].supported, false, 'Fallback never coerces a rejection into approval');
   let freshProofs = 0;
+  {
+    let batches = 0;
+    const many = await review.researchAnswerVerdictsWithFallback(Array.from({ length: 18 }, (_, i) => 'Sentence ' + i), async (units, independent) => {
+      if (!independent) throw protocolError;
+      batches++; assert.ok(units.length <= 4);
+      return envelope(units.map((unit, i) => ({ ...structuredClone(verdict), index: i, premises: [{ ...structuredClone(verdict.premises[0]), ...(i ? { fromParagraphs: [0] } : {}) }] })));
+    });
+    assert.equal(many.claims.length, 18, 'Longer sentence-based answers recover through bounded smaller checks');
+    assert.equal(batches, 5);
+    assert.deepEqual(many.claims.map(claim => claim.index), Array.from({ length: 18 }, (_, i) => i));
+    assert.deepEqual(many.claims[5].premises[0].fromParagraphs, [4], 'Independent batch dependencies restore their real positions');
+  }
   const recoveredProof = await review.researchAnswerVerdictsWithFallback(['a'], async () => { throw protocolError; }, undefined, async () => {
     freshProofs++; return envelope([{ ...verdict, supported: false, unsupportedParts: ['not entailed'] }]);
   });

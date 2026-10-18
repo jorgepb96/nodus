@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v20';
+const POLICY = 'document-review-v21';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -61,7 +61,7 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
       // v18 has the same source-bound verdict transport and factual guards.
       // Reuse only exact-input positive proofs/vetoes,
       // then run the current deterministic normalizer before publication.
-      for (const policy of ['document-review-v19', 'document-review-v18']) {
+      for (const policy of ['document-review-v20', 'document-review-v19', 'document-review-v18']) {
         const cached = harness.cachedStage(`${policy}.${kind}`, input);
         if (cached.found && compatible(cached.value)) return cached.value;
       }
@@ -174,7 +174,8 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         }
       } catch (error) {
         harness.validate();
-        technicalFailure = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'verification_unavailable';
+        technicalFailure = harness.record.summary.stopReason === 'budget' ? 'research_run_budget_exhausted'
+          : error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' && error.code ? error.code : 'verification_unavailable';
         break;
       }
     }
@@ -190,11 +191,20 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
     pending = [];
     for (const revisionBatch of researchDocumentBatches(failed, text => researchAnswerProofUnits(text).length)) {
       try {
-        const input = { investigationBackground: objective, parts: revisionBatch.map(part => ({ ...part, diagnosis: diagnose.get(part.id), ...(attempt === 2 ? { verifiedCore: diagnose.get(part.id)?.claims.filter(claim => claim.status === 'supported' && claim.evidence.length) } : {}) })), sources: frozen.filter(source => revisionBatch.some(part => researchDocumentSources(part, frozen).includes(source))) };
+        const input = { investigationBackground: objective, parts: revisionBatch.map(part => {
+          const diagnosis = diagnose.get(part.id)!;
+          if (attempt !== 2) return { ...part, diagnosis };
+          // A reconstruction starts from proved content, not the rejected draft.
+          // Keep every semantic objection, but avoid priming the writer to repeat
+          // the same unsupported opening or boilerplate yet again.
+          const { text: _rejectedDraft, ...remit } = part;
+          return { ...remit, diagnosis: { issues: diagnosis.issues, rejectedReasons: diagnosis.claims.filter(claim => claim.status !== 'supported').map(claim => claim.reason) },
+            verifiedCore: diagnosis.claims.filter(claim => claim.status === 'supported' && claim.evidence.length) };
+        }), sources: frozen.filter(source => revisionBatch.some(part => researchDocumentSources(part, frozen).includes(source))) };
         const citations = researchWriterCitationTransport(input.sources);
-        const projected = { ...input, parts: citations.projectValue(input.parts.map(part => ({ ...part, literalBindingCandidates: researchLiteralRepairCandidates(part.text, input.sources) }))), sources: citations.sources };
+        const projected = { ...input, parts: citations.projectValue(input.parts.map(part => ({ ...part, literalBindingCandidates: researchLiteralRepairCandidates(part.text ?? '', input.sources) }))), sources: citations.sources };
         const revision = await researchHarnessStage(`${POLICY}.revision`, { ...projected, attempt }, () => documentJson('research_document_revision', RESEARCH_DOCUMENT_REVISION_SCHEMA, revisionBatch, {
-          system: `Revise each COMPLETE field coherently using only its authorized evidence. If verifiedCore is supplied, reconstruct a shorter useful field from that supported core while resolving every remaining semantic objection. Do not preserve optional rejected assertions or pad to a numeric target. This is a final bounded recovery, never approval without a fresh check. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. Copy the short source.citation destination attached to the supporting excerpt, never a neighboring source. Do not retype opaque storage identities. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
+          system: `Revise each COMPLETE field coherently using only its authorized evidence. If verifiedCore is supplied, write a fresh compact field of about eight sentences from that supported core while resolving every remaining semantic objection. The failed draft is deliberately absent: do not recreate its rejected claims or stock evidence disclaimers. Prioritize a coherent useful answer to the local remit; use fewer claims with precise citations. This is guidance, not an output-length error gate. Do not preserve optional rejected assertions or pad to a numeric target. This is a final bounded recovery, never approval without a fresh check. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. Copy the short source.citation destination attached to the supporting excerpt, never a neighboring source. Do not retype opaque storage identities. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
           user: JSON.stringify(projected), ...options, temperature: 0, corpusContext: true, noRetry: true, signal,
         }, (value): value is { parts: Array<{ id: string; text: string }> } => {
           const rows = value && typeof value === 'object' && 'parts' in value ? (value as { parts: Array<{ id: string; text: string }> }).parts : undefined;
@@ -202,7 +212,8 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
             && rows.every(row => revisionBatch.some(part => part.id === row.id) && typeof row.text === 'string' && row.text.length <= 40_000);
         }));
         pending.push(...revisionBatch.map(part => ({ ...part, text: canonicalResearchUnrequestedQuotes(citations.restore(revision.parts.find(row => row.id === part.id)!.text), frozen, objective) })));
-      } catch (error) { harness.validate(); technicalFailure = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'revision_unavailable'; break; }
+      } catch (error) { harness.validate(); technicalFailure = harness.record.summary.stopReason === 'budget' ? 'research_run_budget_exhausted'
+          : error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' && error.code ? error.code : 'revision_unavailable'; break; }
     }
   }
   const result: ResearchDocumentReview = { parts: parts.map(part => completed.get(part.id) ?? { id: part.id, text: '', status: 'limited', claims: diagnose.get(part.id)?.claims ?? [], issues: diagnose.get(part.id)?.issues.length ? diagnose.get(part.id)!.issues : [technicalFailure ?? 'unverified_field'] }),

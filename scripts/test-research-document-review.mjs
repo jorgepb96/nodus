@@ -114,6 +114,10 @@ try {
     assert.ok(!output.parts[0].text.includes('Today'), 'A changed full fragment is independently checked again');
   }
   {
+    const output = await run([part('unavailable')], () => { throw Object.assign(new Error('Provider failure'), { code: null }); });
+    assert.equal(output.technicalFailure, 'verification_unavailable', 'A null provider code is not a diagnostic or a budget reason');
+  }
+  {
     let calls = 0;
     const output = await run(Array.from({ length: 24 }, (_, i) => part(`field-${i}`)), (_options, input) => {
       calls++; if (calls === 3) throw Object.assign(new Error('Provider unavailable'), { code: 'provider_unavailable' });
@@ -276,6 +280,21 @@ try {
     assert.equal(output.status, 'verified'); assert.equal(output.technicalFailure, undefined, 'A self-dependent proof is rejected locally, revised and rechecked without cancelling unrelated fields');
   }
 
+  {
+    let reconstructions = 0;
+    const output = await run([part('core-rebuild', 'A supported result. A rejected opening.')], (options, input) => {
+      if (options.system.startsWith('Revise')) {
+        const field = input.parts[0];
+        if (field.verifiedCore) { reconstructions++; assert.equal(field.text, undefined, 'The rejected draft cannot prime core reconstruction'); assert.ok(field.verifiedCore.length); return { parts: [{ id: field.id, text: 'A supported result.' }] }; }
+        return { parts: [{ id: field.id, text: 'A supported result. A rejected opening.' }] };
+      }
+      if (!input.parts[0].paragraphs) return semantic(input);
+      const value = proof(input), bad = value.parts[0].claims[1];
+      if (bad) { bad.supported = false; bad.unsupportedParts = ['Rejected opening']; }
+      return value;
+    });
+    assert.equal(output.status, 'verified'); assert.equal(reconstructions, 1);
+  }
   {
     const previousObjective = context.objective; context.objective = 'Copia una cita literal y explica el resultado.';
     try {

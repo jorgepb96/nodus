@@ -749,6 +749,7 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
     bounded.auditFactualProse = undefined;
     bounded.auditReportConsistency = undefined;
     bounded.auditSectionClaims = undefined;
+    bounded.auditPlanCoverage = undefined;
     bounded.auditFinalSummary = undefined;
     bounded.verifyCitations = undefined;
     bounded.reviseSection = undefined;

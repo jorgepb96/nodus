@@ -33,7 +33,7 @@ for (const provider of ['deepseek','openrouter','gemini']) {
   const limit = authorization.providerLimitsUsd[provider];
   if (limit === .8) continue;
   const records = (authorization.adjustments ?? []).filter(row => row.provider === provider);
-  if (!['deepseek','gemini'].includes(provider) || ![.85, ...(provider === 'gemini' ? [.9] : [])].includes(limit)
+  if (!['deepseek','openrouter','gemini'].includes(provider) || ![.85, ...(provider !== 'deepseek' ? [.9] : [])].includes(limit)
       || records.length !== (limit === .9 ? 2 : 1)) throw new Error('Changed authorization');
   const ledger = JSON.parse(fs.readFileSync(path.join(artifacts, `cost-ledger-${provider}.json`)));
   let previous = .8;

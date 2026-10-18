@@ -1119,6 +1119,10 @@ async function aiPlanReport(input: PlanInput, model: ModelRef | null, approach?:
   );
   const ai = await completeJson<AiPlan>({ system, user, temperature: 0.2, maxTokens: 6000 }, isAiPlan, model);
   const draft = planFromAi(ai);
+  // V1's supervisor and final source-bound review own the research loop. Repeating
+  // the legacy planner, editorial review and red team before writing consumes the
+  // same allowance without establishing any documentary claim.
+  if (currentResearchHarness()) return draft;
   let candidate = draft;
   try {
     const reviewSystem = promptPack.reviewPlan;

@@ -9,7 +9,7 @@ import { researchOpenAiModels } from './fixtures/research-openai-models.mjs';
 
 const dir = await mkdtemp(path.join(os.tmpdir(), 'research-reasoning-'));
 await build({ entryPoints: ['shared/researchReasoning.ts'], outfile: path.join(dir, 'reasoning.mjs'), bundle: true, platform: 'node', format: 'esm' });
-const { researchReasoningProfile: profile, researchEffortChoices: choices, researchReasoningBody: body, resolveResearchEffort: resolve, researchOmitsTemperature: omit, researchAdvertisedEfforts: advertised } = await import(pathToFileURL(path.join(dir, 'reasoning.mjs')));
+const { researchReasoningProfile: profile, researchEffortChoices: choices, researchReasoningBody: body, resolveResearchEffort: resolve, researchOmitsTemperature: omit, researchAdvertisedEfforts: advertised, researchSemanticValidationEffort: semanticEffort } = await import(pathToFileURL(path.join(dir, 'reasoning.mjs')));
 const ref = (provider, model) => ({ provider, model });
 const request = (provider, model, effort = 'standard', info) => body(ref(provider, model), effort, 16000, info);
 test.after(() => rm(dir, { recursive: true, force: true }));
@@ -185,4 +185,15 @@ test('native metadata can add transport levels without changing legacy validator
   assert.deepEqual(request('openrouter', info.id, 'xhigh', info), { reasoning: { effort: 'xhigh' } });
   const claude = { id: 'claude-next', researchReasoningLevels: ['low', 'medium', 'high'] };
   assert.deepEqual(request('anthropic', claude.id, 'medium', claude), { output_config: { effort: 'medium' } });
+});
+
+
+test('semantic review uses bounded native reasoning and preserves explicit off choices', () => {
+  const deepseek = profile(ref('deepseek', 'deepseek-flash'));
+  for (const requested of ['standard', 'low', 'high', 'max']) assert.equal(semanticEffort(deepseek, requested), 'low');
+  assert.equal(semanticEffort(deepseek, 'none'), 'none');
+  assert.equal(semanticEffort(profile(ref('lmstudio', 'local'), { id: 'local', researchReasoningLevels: ['off', 'on'] }), 'off'), 'off');
+  assert.equal(semanticEffort(profile(ref('openai', 'gpt-5')), 'high'), 'minimal');
+  assert.equal(semanticEffort(profile(ref('custom', 'unknown')), 'standard'), 'standard');
+  assert.equal(resolve(deepseek, 'standard'), 'none', 'Legacy validators retain their existing policy');
 });

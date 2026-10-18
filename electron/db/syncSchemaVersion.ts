@@ -11,8 +11,10 @@
  * a hard break: v201 adds one index and rewrites two triggers, and still made every v200
  * replica refuse a v201 publication and every v200 owner drop a v201 collaborator's changes.
  *
- * So this is the LAST migration that changed any table's set of columns. Raise it to the new
- * migration's number whenever a migration adds, drops or alters a table or a column;
- * scripts/test-sync-schema-version.mjs fails until it matches.
+ * So this is the LAST migration that changed a transferable table's columns. Raise it to the new
+ * migration's number whenever a migration adds, drops or alters a transferable table
+ * or column; scripts/test-sync-schema-version.mjs fails until it matches. Purely
+ * local execution tables do not change the wire shape: tests must establish their
+ * exclusion from packages, publication and mutation outboxes before exempting them.
  */
 export const SYNC_SCHEMA_VERSION = 200;

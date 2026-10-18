@@ -1,3 +1,4 @@
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -113,6 +114,7 @@ export const TR: Record<string, string> = {
   "Elige al menos una base de datos.": "En az bir veritabanı seçin.",
   ...RESEARCH_PROMPT_TRANSLATIONS["tr"],
   ...RESEARCH_SOURCE_TRANSLATIONS["tr"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["tr"],
   ...RESEARCH_REASONING_TRANSLATIONS["tr"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["tr"],
   ...CHAT_SKILLS_TRANSLATIONS['tr'],

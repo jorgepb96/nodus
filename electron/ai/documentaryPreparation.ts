@@ -2,6 +2,7 @@ import { isEmbeddingGemma2, embeddingGemma2Contract } from '@shared/embeddingGem
 import { canonicalizeEmbeddingContract } from '@shared/embeddingContract';
 import { listResearchNotebooks } from '../db/researchNotebooksRepo';
 import { recordEmbeddingTrace } from '../qa/embeddingTrace';
+import { researchTestEmbeddingEndpointIdentity } from '../qa/researchProviderProxy';
 import { selectResearchDocuments } from './researchCorpusScope';
 import { researchActivityEnabled, startResearchActivity } from './researchActivity';
 import { app } from 'electron';
@@ -210,7 +211,7 @@ function embeddingIdentityParameters(config: EmbeddingExecutionConfig): Record<s
     endpoint: createHash('sha256').update(config.endpoint).digest('hex'),
     inputPolicy: 'utf8-4096/2', contract: canonicalizeEmbeddingContract(embeddingGemma2Contract(config.modelId)),
   };
-  return { endpoint: createHash('sha256').update(config.endpoint).digest('hex'), inputPolicy: 'utf8-4096/2' };
+  return { endpoint: createHash('sha256').update(researchTestEmbeddingEndpointIdentity(config.provider, config.endpoint)).digest('hex'), inputPolicy: 'utf8-4096/2' };
 }
 
 export function prepareDocumentaryEmbeddings(indexKey: string, chunks: DocumentaryChunk[], signal?: AbortSignal, execution = effectiveEmbeddingConfig(), assertAuthorized: (final?: boolean) => void = () => {}, progress: (completed: number, unknown: number) => void = () => {}): Promise<{ indexKey: string; vectors: number[][]; provider: string; model: string }> {

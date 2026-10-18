@@ -29,13 +29,34 @@ const Database = require('better-sqlite3');
 const { migrations, runMigrations, SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
 const { buildServerSnapshot } = require(path.join(repoRoot, 'electron/serverSync/serverSnapshot.ts'));
 const { ensureOutboxTriggers } = require(path.join(repoRoot, 'electron/serverSync/outboxTriggers.ts'));
+const { syncedTableNames, describeSyncCoverage } = require(path.join(repoRoot, 'electron/db/syncTables.ts'));
+const { getDb, closeDb } = require(path.join(repoRoot, 'electron/db/database.ts'));
 
-test.after(async () => { await rm(userData, { recursive: true, force: true }); });
+test.after(async () => { closeDb(); await rm(userData, { recursive: true, force: true }); });
 
 function shape(db) {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
-  return JSON.stringify(tables.map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
+  // V202 adds only a machine-bound execution checkpoint. The test below verifies
+  // every transport boundary; its columns cannot affect a receiver's wire shape.
+  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs').map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
 }
+
+test('research execution checkpoints remain local across every sync transport', () => {
+  const db = getDb();
+  assert.ok(db.prepare("SELECT 1 FROM sqlite_master WHERE name='research_harness_runs'").get());
+  assert.equal(syncedTableNames(db).includes('research_harness_runs'), false);
+  assert.ok(describeSyncCoverage().excluded.includes('research_harness_runs'));
+  ensureOutboxTriggers(db, true);
+  db.prepare("INSERT INTO research_harness_runs(id,mode,status,summary_json,record_json,updated_at) VALUES('local-fixture','chat','paused','{}',?, '2026-10-18')").run(JSON.stringify({ privateFixture: 'local-checkpoint-fixture' }));
+  const snapshot = buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: true }, db);
+  const payload = JSON.parse(snapshot.buffer.toString('utf8'));
+  assert.equal(Object.hasOwn(payload.tables, 'research_harness_runs'), false);
+  assert.equal(snapshot.buffer.includes('local-checkpoint-fixture'), false, 'Private checkpoint contents never enter the publication');
+  const triggers = db.prepare("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='research_harness_runs' AND instr(sql, 'server_outbox') > 0").all();
+  assert.deepEqual(triggers, [], 'Checkpoints must never create outgoing mutations');
+  db.prepare("DELETE FROM research_harness_runs WHERE id='local-fixture'").run();
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM server_outbox WHERE table_name='research_harness_runs'").get().n, 0, 'Saving and deleting a checkpoint do not enqueue a mutation');
+});
 
 function lastShapeChange() {
   const db = new Database(':memory:');

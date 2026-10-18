@@ -11,6 +11,7 @@ import { applyDecorativeImageOption } from './decorativeImages';
 import { localizedForUi } from '../ipc/context';
 import { addNotification } from '../notifications';
 import { getActiveVault, listVaults } from '../vaults/vaultRegistry';
+import { getSettings } from '../db/settingsRepo';
 import { generateDeepResearchReport } from './deepResearch';
 import {
   configureDeepResearchQueue,
@@ -99,6 +100,8 @@ export function ensureDeepResearchLane(): void {
   if (configured) return;
   configured = true;
   configureDeepResearchQueue({
+    normalizeRequest: request => ({ ...request, model: request.model ?? getSettings().deepResearchModel ?? getSettings().synthesisModel,
+      harnessVersion: request.harnessVersion ?? getSettings().researchHarnessVersion ?? 'legacy', webSearch: request.webSearch ?? 'off' }),
     generate: (request, onProgress, signal) => generateDeepResearchReport(request, onProgress, signal),
     saveDraft: ({ report, request, title }) => {
       const saved = saveWritingWorkshopDraft({

@@ -26,7 +26,11 @@ try {
     platform: 'node',
     logLevel: 'silent',
   });
-  const { enforceContextBudget, prioritizePassageQueryCoverage, humanizeCitationLabels, passagePageCitationLabel, CONTEXT_DROP_ORDER } = await import(pathToFileURL(outfile).href);
+  const { enforceContextBudget, prioritizePassageQueryCoverage, humanizeCitationLabels, passagePageCitationLabel, researchAuthorYearLabel, CONTEXT_DROP_ORDER } = await import(pathToFileURL(outfile).href);
+  assert.equal(researchAuthorYearLabel(['Alburquerque García, Luis'], 2014), 'Alburquerque García, 2014');
+  assert.equal(researchAuthorYearLabel(['John Urry'], 1997), 'Urry, 1997');
+  assert.equal(researchAuthorYearLabel([], 2014), '2014');
+  assert.equal(researchAuthorYearLabel([], null), null);
 
   // Build a realistic context: a big ideas array (most relevant), some contradictions and
   // gaps (less relevant), plus a panoramic authors object (least relevant, dropped first).

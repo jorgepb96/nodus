@@ -1,3 +1,4 @@
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -117,6 +118,7 @@ export const ZH_CN: Record<string, string> = {
   ...VAULT_FILE_DROP_TRANSLATIONS['zh-CN'],
   ...RESEARCH_PROMPT_TRANSLATIONS['zh-CN'],
   ...RESEARCH_SOURCE_TRANSLATIONS["zh-CN"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["zh-CN"],
   ...RESEARCH_REASONING_TRANSLATIONS["zh-CN"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["zh-CN"],
   ...CHAT_SKILLS_TRANSLATIONS['zh-CN'],

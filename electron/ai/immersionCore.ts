@@ -242,6 +242,8 @@ export interface ExamResult {
 }
 
 export interface ImmersionDeps {
+  prepareStation?(station: CurriculumStation, material: ImmersionMaterial): Promise<void>;
+  verifyPlan?(plan: ImmersionPlan): Promise<ImmersionPlan>;
   buildMaterial(topic: string): Promise<ImmersionMaterial>;
   planCurriculum(input: CurriculumInput): Promise<CurriculumResult>;
   writePanorama(input: PanoramaInput): Promise<PanoramaResult>;
@@ -329,8 +331,8 @@ export async function orchestrateImmersion(
 
   // ── Panorama ───────────────────────────────────────────────────────────────
   emit({ phase: 'panorama', message: msg.panorama });
-  const catalog = buildCitationCatalog(material);
-  const citationLabels = buildCitationLabels(material);
+  let catalog = buildCitationCatalog(material);
+  let citationLabels = buildCitationLabels(material);
   let panorama: PanoramaResult;
   try {
     panorama = await generateWithRecovery(() => deps.writePanorama(panoramaInput(request.topic, language, curriculum, material)));
@@ -349,6 +351,10 @@ export async function orchestrateImmersion(
   const stations: ImmersionStation[] = [];
   for (let i = 0; i < curriculum.stations.length; i++) {
     const spec = curriculum.stations[i];
+    if (deps.prepareStation) {
+      await deps.prepareStation(spec, material);
+      catalog = buildCitationCatalog(material); citationLabels = buildCitationLabels(material);
+    }
     emit({
       phase: 'station',
       message: msg.station,
@@ -449,7 +455,7 @@ export async function orchestrateImmersion(
   };
 
   emit({ phase: 'done', message: msg.done });
-  return plan;
+  return deps.verifyPlan ? deps.verifyPlan(plan) : plan;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

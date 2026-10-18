@@ -1,5 +1,7 @@
 import { useLearningArtifact, learningMarkdownRefs } from '../learning/useLearningArtifact';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import { ResearchHarnessControl, useResearchHarnessOptions, type ResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import { DocumentVisualScope, DocumentVisualActions } from '../components/DocumentVisualScope';
@@ -312,6 +314,7 @@ export function DeepResearchView({
   onCompleteGuideTargetConsumed?: () => void;
 }) {
   const variant: DeepResearchVariant = isTeaching ? 'unit' : isGenealogy ? 'genealogy' : isStudy ? 'study' : 'academic';
+  const isAcademic = variant === 'academic';
   const copy = DEEP_RESEARCH_COPY[variant];
   // A report can only be the surface if there was one open; the pair is stored
   // together, and a reader with nothing in it would render the gallery anyway.
@@ -336,6 +339,7 @@ export function DeepResearchView({
   // The thinking level for that model, shared with the Research chat's memory: the level
   // last chosen for it, or its middle level.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel ?? null);
+  const harnessOptions = useResearchHarnessOptions(settings);
   const [deepSectionLimit, setDeepSectionLimit] = useState<DeepResearchSectionLimit>('auto');
   const [deepSectionLength, setDeepSectionLength] = useState<DeepResearchSectionLength>('auto');
   const [sectionLengthValid, setSectionLengthValid] = useState(true);
@@ -627,6 +631,7 @@ export function DeepResearchView({
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
+      ...(isAcademic ? { harnessVersion: harnessOptions.version, webSearch: harnessOptions.web } : {}),
       language,
       sectionLimit: deepSectionLimit,
       sectionLength: deepSectionLength,
@@ -1157,6 +1162,7 @@ export function DeepResearchView({
   return (
     <div className="theme-workspace-surface h-full flex flex-col min-h-0">
       {workspaceTabs}
+      {isAcademic && <ResearchHarnessPanel mode="deep-research" onResumed={() => void refreshSavedDrafts()} />}
       <SectionHeader
         icon="telescope"
         title={t(copy.heading)}
@@ -1418,6 +1424,7 @@ export function DeepResearchView({
           model={selectedModel}
           thinkingEffort={thinkingEffort}
           onThinkingEffort={setThinkingEffort}
+          harnessOptions={harnessOptions}
           sectionLimit={deepSectionLimit}
           sectionLength={deepSectionLength}
           onSectionLength={setDeepSectionLength}
@@ -2469,6 +2476,7 @@ function ReaderView({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ComposerModal({
+  harnessOptions,
   documentSkills,
   isAcademic = false,
   settings,
@@ -2515,6 +2523,7 @@ export function ComposerModal({
   guidePanel,
   guideReady = false,
 }: {
+  harnessOptions?: ResearchHarnessOptions;
   documentSkills: ReturnType<typeof useDocumentSkills>;
   isAcademic?: boolean;
   settings: AppSettings;
@@ -2772,6 +2781,7 @@ export function ComposerModal({
             </label>
             <ResearchEffortControl variant="field" label className="w-full !py-2 text-sm" testId="deep-research-thinking" model={model ?? null} value={thinkingEffort} onChange={onThinkingEffort} disabled={!model} />
           </div>
+          {isAcademic && harnessOptions && <ResearchHarnessControl options={harnessOptions} web />}
           {!isAcademic && <DocumentSkillsControl value={documentSkills.policy} onChange={documentSkills.setPolicy} onValidityChange={documentSkills.setValid} />}
           <div className="flex flex-wrap items-center gap-2">
             <button

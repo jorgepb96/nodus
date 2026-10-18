@@ -1,3 +1,4 @@
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -118,6 +119,7 @@ export const FR: Record<string, string> = {
   "Elige al menos una base de datos.": "Choisissez au moins une base de données.",
   ...RESEARCH_PROMPT_TRANSLATIONS["fr"],
   ...RESEARCH_SOURCE_TRANSLATIONS["fr"],
+  ...RESEARCH_HARNESS_TRANSLATIONS["fr"],
   ...RESEARCH_REASONING_TRANSLATIONS["fr"],
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["fr"],
   ...CHAT_SKILLS_TRANSLATIONS['fr'],

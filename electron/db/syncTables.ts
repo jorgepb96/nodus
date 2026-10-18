@@ -255,6 +255,9 @@ const NOT_SYNCED_TABLES = new Set([
   // permissions. Importing them would incorrectly trust another device's history.
   // Publication fencing likewise belongs to the local passage writer.
   'research_run_scopes', 'research_scope_receipts', 'research_conversation_provenance', 'passage_publications',
+  // Checkpoints pin THIS profile's grants, receipts, completed stages and usage.
+  // Saved reports/sessions can travel; a resumable local execution cannot.
+  'research_harness_runs',
   // Web receipts are what THIS machine read; another device verifies its own.
   'research_web_passages',
   // Complete study guide working state and evidence sidecars: run checkpoints and the

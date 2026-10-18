@@ -5,6 +5,9 @@ export interface ResearchClaimRecord {
   kind: 'fact' | 'attributed' | 'inference' | 'nonfactual';
   status: 'supported' | 'removed' | 'unverified';
   evidence: Array<{ id: string; quote: string; originalQuote?: string }>;
+  /** Direct proofs in this paragraph; inherited proofs remain in evidence for
+   * dependency validation but need not create a repeated citation inventory. */
+  citationEvidenceIds?: string[];
   reason: string;
   /** Deterministic cause of a removal. The judge's prose reason is diagnostic
    * only and never decides acceptance. */
@@ -15,7 +18,7 @@ export type ResearchClaimFailure = 'judge_rejected' | 'no_premises' | 'premise_n
   | 'inference_without_supported_premises' | 'unqualified_inference' | 'unsupported_parts' | 'inconsistent_verdict'
   | 'nonfactual_with_content' | 'restates_rejected_claim' | 'internal_contradiction';
 export interface ResearchProseAudit { markdown: string; claims: ResearchClaimRecord[] }
-export interface ResearchAuditSource { id: string; text: string; label: string; citation: string }
+export interface ResearchAuditSource { id: string; text: string; label: string; citation: string; attributionOnly?: boolean; workId?: string; collectiveCredits?: boolean; citationLabel?: string; locator?: string; title?: string }
 
 /** Request-local routing labels avoid asking a judge to reproduce long opaque
  * storage identities. Only an exact supplied alias is expanded; unknown IDs,
@@ -283,7 +286,8 @@ export function decideResearchVerdict(span: string, verdict: Verdict, sources: R
       if (!ok) failure ??= 'inference_without_supported_premises';
     } else {
       // An absence, like any fact, needs a source that states it: silence is not a quote.
-      ok = premise.evidence.length > 0 && premise.evidence.every(literal);
+      ok = premise.evidence.length > 0 && premise.evidence.every(evidence => literal(evidence)
+        && sources.some(source => source.id === evidence.id && (!source.attributionOnly || premise.type === 'attribution')));
       if (!ok) failure ??= 'premise_without_literal_evidence';
     }
     premiseValid.push(ok);
@@ -331,7 +335,10 @@ export function applyResearchProseVerdicts(markdown: string, sources: ResearchAu
     const cited = sources.filter(source => sourceIds.has(source.id));
     const text = span.text.replace(PARENTHESIZED_CITATIONS, '').replace(CITATION, '').trimEnd();
     // Headings keep their evidence in the ledger; links would make them body text.
-    const links = /^\s*#{1,6}\s/u.test(span.text) ? '' : cited.map(source => `[${source.label.replace(/[[\]\\]/g, '')}](${source.citation})`).join(' ');
+    const links = /^\s*#{1,6}\s/u.test(span.text) ? '' : cited.map(source => {
+      const label = source.label.replace(/[[\]\\]/g, '');
+      return source.citation ? `[${label}](${source.citation})` : `(${label})`;
+    }).join(' ');
     edits.push({ ...span, text: links ? `${text} ${links}` : text });
   }
   let result = markdown;

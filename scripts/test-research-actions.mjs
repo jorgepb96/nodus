@@ -11,7 +11,13 @@ installRuntimeHooks(root);
 const require = createRequire(import.meta.url);
 const load = file => require(path.join(repoRoot, file));
 try {
-  const { validResearchAction } = load('shared/researchActions.ts');
+  const { validResearchAction, parseResearchAction } = load('shared/researchActions.ts');
+  const repeated = { action: 'search', taskId: 'task-1', query: 'Servicio Nacional Turismo 1938' };
+  assert.deepEqual(parseResearchAction([repeated, structuredClone(repeated)], false, false, true), repeated);
+  assert.equal(parseResearchAction([repeated, { ...repeated, query: 'different' }], false, false, true), null, 'Never choose between different proposed actions');
+  assert.equal(parseResearchAction([{ ...repeated, command: 'arbitrary' }], false, false, true), null);
+  assert.equal(parseResearchAction([{ action: 'web', queries: ['query'], intent: 'expand' }], false, false, true), null, 'Envelope recovery cannot enable web');
+  assert.equal(parseResearchAction(Array(5).fill(repeated), false, false, true), null);
   for (const value of [{ action: 'web', query: 'anything' }, { action: 'finish', command: 'anything' }, { action: 'original', documentId: 'x', from: 1, to: 100 }, { action: 'read', documentId: 'x', operation: { kind: 'search', query: 'a', path: '/etc/passwd' } }]) assert.equal(validResearchAction(value), false);
   // The web step exists only for the runs that were granted it: same action, two answers.
   const web = { action: 'web', queries: ['represión franquista posguerra víctimas'], intent: 'expand' };

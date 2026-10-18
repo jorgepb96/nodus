@@ -171,6 +171,11 @@ try {
   assert.match(log, /Goal of this turn.*Alburquerque García/);
   assert.match(log, /catalogue \(the user's Zotero and Nodus records.*author albuquerque garcía: 5 works/);
   assert.match(log, /Sources whose own text reached this answer: .*\(Albuquerque García, 2018\)/);
+  const completeHits = [...run.catalogHits];
+  run.catalogHits.clear(); run.catalogHits.set(completeHits[0][0], completeHits[0][1]);
+  assert.match(run.researchLog().join('\n'), /"author":"albuquerque garcía","totalMatchingRecords":5/, 'A single retrieved work must not become a complete author bibliography');
+  for (const [id, hit] of completeHits) run.catalogHits.set(id, hit);
+
 
   // 2b. One work is searched inside twice at most; a third search is refused with a note.
   const repeatedRun = new ResearchCorpusRun(scope, RESEARCH_CHAT_AGENT_SETTINGS);

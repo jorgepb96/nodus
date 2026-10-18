@@ -187,6 +187,14 @@ export function resolveResearchEffort(p: ResearchReasoningProfile, requested: un
   return p.levels.includes(requested as NativeResearchEffort) ? requested as NativeResearchEffort : p.legacyStandard ?? p.levels[0];
 }
 
+/** V1's final semantic check needs actual reasoning, even without a job thinking scope.
+ * Keep this bounded to the model's lowest supported reasoning level, while respecting
+ * an explicit user choice to disable it. Legacy Standard transport is unchanged. */
+export function researchSemanticValidationEffort(p: ResearchReasoningProfile, requested: ResearchEffort): ResearchEffort {
+  if (requested === 'none' || requested === 'off') return resolveResearchEffort(p, requested) ?? 'standard';
+  return minimumReasoningEffort(p.levels) ?? resolveResearchEffort(p, requested) ?? 'standard';
+}
+
 /**
  * The settings key one selection's remembered level lives under. Provider ids never
  * contain a colon and model ids may contain slashes (OpenRouter's `vendor/model`), so

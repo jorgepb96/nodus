@@ -1,3 +1,4 @@
+import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
@@ -116,6 +117,7 @@ export const KO: Record<string, string> = {
   ...DOCUMENT_SKILLS_TRANSLATIONS.ko,
   ...RESEARCH_PROMPT_TRANSLATIONS.ko,
   ...RESEARCH_SOURCE_TRANSLATIONS.ko,
+  ...RESEARCH_HARNESS_TRANSLATIONS["ko"],
   ...RESEARCH_REASONING_TRANSLATIONS.ko,
   ...RESEARCH_NOTEBOOK_TRANSLATIONS["ko"],
   ...CHAT_SKILLS_TRANSLATIONS.ko,

@@ -2244,6 +2244,8 @@ export interface AppSettings {
   researchEffortByModel: Record<string, ResearchEffort>;
   /** Research Chat's web step: automatic (the agent decides) or off. App-wide. */
   researchWebSearch: ResearchWebSearchMode;
+  /** Opt-in rollout, independent of the Deep Research engine version. */
+  researchHarnessVersion?: import('./researchHarness').ResearchHarnessVersion;
   /** Explicit experimental documentary verification; off keeps the standard writer. */
   researchAnswerVerification?: 'off' | 'legacy' | 'structured';
   // When using OpenRouter, bias routing toward the fastest upstream provider.
@@ -6015,6 +6017,8 @@ export interface ResearchChatMessage {
 }
 
 export interface ResearchChatRequest {
+  runId?: string;
+  harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
   concilium?: import('./researchConcilium').ConciliumConfig;
   attachmentIds?: string[];
   /** Optional vault-local preference; null/absence keeps the original application prompt. */
@@ -6056,6 +6060,7 @@ export interface ResearchWebSource {
 }
 
 export interface ResearchContextStats {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   researchTraversal?: import('./researchCorpus').ResearchTraversal;
   webSearch?: ResearchWebSearchStats;
   webSources?: ResearchWebSource[];
@@ -6069,6 +6074,7 @@ export interface ResearchContextStats {
 }
 
 export interface ResearchChatResponse {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   concilium?: import('./researchConcilium').ConciliumResult;
   answer: string;
   stats: ResearchContextStats;
@@ -6077,6 +6083,7 @@ export interface ResearchChatResponse {
 }
 
 export interface ResearchChatStreamHandlers {
+  onRun?(run: import('./researchHarness').ResearchRunSummary): void;
   onActivity?(activity: import('./researchActivity').ResearchActivity): void;
   onConcilium?(result: import('./researchConcilium').ConciliumResult): void;
   onDelta(delta: string): void;
@@ -7382,6 +7389,7 @@ export interface SupportAuditEntry {
 }
 
 export interface WritingWorkshopDraft {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   claimLedger?: import('./researchClaimAudit').ResearchClaimRecord[];
   researchTraversal?: import('./researchCorpus').ResearchTraversal;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
@@ -7601,6 +7609,10 @@ export interface DeepResearchOutlineSection {
 }
 
 export interface DeepResearchRequest {
+  runId?: string;
+  harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  /** Opt-in for academic reports. Absence preserves corpus-only research. */
+  webSearch?: ResearchWebSearchMode;
   notebookId?: string | null;
   retrieval?: import('./researchCorpus').RetrievalSettings;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
@@ -7666,6 +7678,7 @@ export interface DeepResearchRequest {
 
 /** One live progress event emitted while a report is being orchestrated. */
 export interface DeepResearchProgress {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   /** `queued` is emitted while the report waits its turn in the single generation lane. */
   phase: 'queued' | 'discovery' | 'document_preparation' | 'snapshot' | 'planning' | 'section' | 'coverage' | 'assembling' | 'done';
   message: string;
@@ -7726,6 +7739,7 @@ export interface DeepResearchJobRecord {
 
 /** Coverage + evidence accounting attached to a finished report. */
 export interface DeepResearchMeta {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   factualAudit?: { checked: number; supported: number; removed: number; unverified: number;
     /** Whole-report reconciliation; pairs are kept so removals can be reviewed. */
     consistency?: { checked: boolean; conflicts: number; removed: number; pruned: number; pairs: Array<{ a: string; b: string; reason: string }> } };
@@ -8267,6 +8281,10 @@ export interface ImmersionScope {
 }
 
 export interface ImmersionRequest {
+  retrieval?: import('./researchCorpus').RetrievalSettings;
+  runId?: string;
+  harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  webSearch?: ResearchWebSearchMode;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
   topic: string;
   language?: 'es' | 'en';
@@ -8401,6 +8419,7 @@ export interface ImmersionPlanStats {
 }
 
 export interface ImmersionPlan {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
   documentVisualHints?: string[];
   topic: string;
@@ -8452,6 +8471,7 @@ export interface ImmersionProgress {
 }
 
 export interface ImmersionSession {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   id: string;
   topic: string;
   language: 'es' | 'en';
@@ -8479,6 +8499,7 @@ export interface ImmersionSessionSummary {
 }
 
 export interface ImmersionBuildProgress {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   phase: 'discovery' | 'document_preparation' | 'material' | 'curriculum' | 'panorama' | 'station' | 'contrasts' | 'frontiers' | 'exam' | 'assembling' | 'done';
   message: string;
   stationIndex?: number;

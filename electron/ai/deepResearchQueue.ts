@@ -51,6 +51,7 @@ export interface DeepResearchJobInput {
 }
 
 export interface DeepResearchQueueDeps {
+  normalizeRequest?: (request: DeepResearchRequest) => DeepResearchRequest;
   generate: (
     request: DeepResearchRequest,
     onProgress: (progress: DeepResearchProgress) => void,
@@ -296,6 +297,7 @@ function vaultChangedMessage(job: QueuedJob, current: DeepResearchQueueVault): s
 }
 
 function enqueueJob(input: DeepResearchJobInput, waiter: Pick<QueuedJob, 'listener' | 'resolve' | 'reject'>): QueuedJob {
+  input = { ...input, request: requireDeps().normalizeRequest?.(input.request) ?? input.request };
   const vault = requireDeps().activeVault();
   const deepResearchVersion = parseDeepResearchRequestVersion(input.request.deepResearchVersion);
   // A complete study guide is validated before it waits in the lane (an empty
@@ -438,6 +440,7 @@ async function drain(): Promise<void> {
     try {
       const report = await requireDeps().generate(job.request, (progress) => {
         if (job.record.status !== 'running') return;
+        if (progress.researchRun) job.request.runId = progress.researchRun.id;
         job.record.progress = progress;
         job.listener?.(progress);
         notifyChange();

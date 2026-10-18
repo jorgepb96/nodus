@@ -13,6 +13,7 @@ import type {
 import type { DeepResearchApproach } from '@shared/deepResearchApproaches';
 import { normalizeDeepResearchApproach } from '@shared/deepResearchApproaches';
 import { getDb } from './database';
+import { getResearchRun, saveResearchRun, deleteResearchRuns } from './researchRunsRepo';
 import { deleteDecorativeImageRow, getDecorativeImage } from './decorativeImagesRepo';
 import { deleteAnnotationsForWritingDraft } from './writingAnnotationsRepo';
 import { deleteCompleteGuideArtifacts } from './completeGuideRepo';
@@ -206,6 +207,13 @@ export function countWritingWorkshopDrafts(kind?: WritingWorkshopKind): number {
 }
 
 export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest): WritingWorkshopSavedDraft {
+  return getDb().transaction(() => saveWritingWorkshopDraftTransaction(request))();
+}
+function saveWritingWorkshopDraftTransaction(request: WritingWorkshopSaveDraftRequest): WritingWorkshopSavedDraft {
+  const run = request.draft.researchRun ? getResearchRun(request.draft.researchRun.id) : null;
+  if (run && (run.context.mode !== 'deep-research' || run.context.vaultId !== getActiveVault().id)) throw new Error('research_run_not_authorized');
+  const prior = run?.artifactId ? getWritingWorkshopDraft(run.artifactId) : null;
+  if (prior) return prior;
   const now = new Date().toISOString();
   const id = uuid();
   const title = request.title?.trim() || request.draft.title.trim() || 'Borrador sin título';
@@ -227,6 +235,7 @@ export function saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftReques
     );
   const saved = getWritingWorkshopDraft(id);
   if (!saved) throw new Error('No se pudo guardar el borrador');
+  if (run) { run.artifactId = saved.id; saveResearchRun(run); }
   return saved;
 }
 
@@ -262,6 +271,7 @@ export function setWritingWorkshopDraftRead(id: string, read: boolean): WritingW
 }
 
 export function deleteWritingWorkshopDraft(id: string): boolean {
+  deleteResearchRuns({ artifactId: id });
   deleteDocumentVisuals(getActiveVault().id, { kind: 'deep-research', id });
   deleteDecorativeImageRow('deep_research', id);
   deleteAnnotationsForWritingDraft(id);

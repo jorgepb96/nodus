@@ -1,4 +1,6 @@
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import { ResearchHarnessControl, useResearchHarnessOptions, type ResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import { DocumentVisualScope, DocumentVisualActions, DocumentVisualFigures } from '../components/DocumentVisualScope';
@@ -200,6 +202,7 @@ export function ImmersionView({
   const [model, setModel] = useFeatureModel(settings, 'immersionModel');
   // The thinking level for that model, shared with the Research chat's memory.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, model ?? null);
+  const harnessOptions = useResearchHarnessOptions(settings);
 
   const [scope, setScope] = useState<ImmersionScope | null>(null);
   const [scoping, setScoping] = useState(false);
@@ -313,6 +316,8 @@ export function ImmersionView({
       scope,
       request: {
         topic: scope.topic,
+        harnessVersion: harnessOptions.version,
+        webSearch: harnessOptions.web,
         documentSkills: documentSkills.policy,
         language,
         minutes,
@@ -433,6 +438,7 @@ export function ImmersionView({
 
   return (
     <div className="theme-workspace-surface h-full flex flex-col min-h-0">
+      <ResearchHarnessPanel mode="immersion" onResumed={() => void refreshSessions()} />
       {mode !== 'scope' && <WorkspaceTabStrip
         homeLabel={t('Inmersión')}
         homeIcon="target"
@@ -478,6 +484,7 @@ export function ImmersionView({
               model={model}
               thinkingEffort={thinkingEffort}
               onThinkingEffort={setThinkingEffort}
+              harnessOptions={harnessOptions}
               hasModel={hasModel}
               scoping={scoping}
               error={error}
@@ -1010,6 +1017,7 @@ function SessionListRow({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ImmersionComposerModal({
+  harnessOptions,
   documentSkills,
   settings,
   topic,
@@ -1034,6 +1042,7 @@ export function ImmersionComposerModal({
   onExplore,
   onClose,
 }: {
+  harnessOptions?: ResearchHarnessOptions;
   documentSkills: ReturnType<typeof useDocumentSkills>;
   settings: AppSettings;
   topic: string;
@@ -1160,6 +1169,7 @@ export function ImmersionComposerModal({
             </div>
           </div>
 
+          {harnessOptions && <ResearchHarnessControl options={harnessOptions} web disabled={scoping} />}
           <DocumentSkillsControl value={documentSkills.policy} onChange={documentSkills.setPolicy} onValidityChange={documentSkills.setValid} />
 
           {error && (

@@ -208,6 +208,12 @@ function pruneSectionToFit(context: SectionPayload, key: string, maxChars: numbe
 export type CitationLabelLookup = (kind: string, id: string) => string | null;
 
 /** Add a page marker to bare numeric or Roman-numeral locators only. */
+export function researchAuthorYearLabel(authors: readonly string[], year: number | null | undefined): string | null {
+  const first = (authors[0] ?? '').trim();
+  const surname = first.includes(',') ? first.split(',')[0].trim() : first.split(/\s+/u).at(-1);
+  return surname ? year != null ? `${surname}, ${year}` : surname : year != null ? String(year) : null;
+}
+
 export function passagePageCitationLabel(base: string, pageLabel: string | null | undefined): string {
   if (!pageLabel) return base;
   const locator = pageLabel.trim();

@@ -19,6 +19,16 @@ const studyAssistantStreams = chatStreamRegistry();
 let activeStudySttRequestId: string | null = null;
 
 export const academicApi: AcademicApi = {
+  listResearchRuns: conversationId => ipcRenderer.invoke('research:run:list', conversationId),
+  getResearchRun: id => ipcRenderer.invoke('research:run:get', id),
+  pauseResearchRun: id => ipcRenderer.invoke('research:run:pause', id),
+  cancelResearchRun: id => ipcRenderer.invoke('research:run:cancel', id),
+  resumeResearchRun: id => ipcRenderer.invoke('research:run:resume', id),
+  onResearchRun: callback => {
+    const listener = (_event: unknown, run: import('@shared/researchHarness').ResearchRunSummary) => callback(run);
+    ipcRenderer.on('research:run:update', listener);
+    return () => ipcRenderer.removeListener('research:run:update', listener);
+  },
   exportAcademicDocument: input => ipcRenderer.invoke('workspace:academic:export',input),
   getResearchCorpusSources: () => ipcRenderer.invoke('research:corpus:sources'),
   setResearchZoteroAutomatic: enabled => ipcRenderer.invoke('research:zotero:automatic', enabled),
@@ -622,6 +632,8 @@ export const academicApi: AcademicApi = {
       if (id === requestId) handlers.onActivity?.(activity);
     };
     ipcRenderer.on('research:chatStream:activity', onActivity);
+    const onRun = (_e: unknown, id: string, run: import('@shared/researchHarness').ResearchRunSummary) => { if (id === requestId) handlers.onRun?.(run); };
+    ipcRenderer.on('research:chatStream:run', onRun);
     const onDelta = (_e: unknown, id: string, delta: string) => {
       if (id === requestId) handlers.onDelta(delta);
     };
@@ -649,6 +661,7 @@ export const academicApi: AcademicApi = {
       // Activity events and the invoke reply travel on different IPC pipes, so the reply can
       // overtake the last events of the turn. Keep listening briefly for those stragglers.
       setTimeout(() => ipcRenderer.removeListener('research:chatStream:activity', onActivity), ACTIVITY_GRACE_MS);
+      ipcRenderer.removeListener('research:chatStream:run', onRun);
       ipcRenderer.removeListener('research:chatStream:concilium', onConcilium);
       ipcRenderer.removeListener('research:chatStream:delta', onDelta);
       ipcRenderer.removeListener('research:chatStream:reasoning', onReasoning);

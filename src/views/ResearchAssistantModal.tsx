@@ -7,6 +7,8 @@ import { useAcademicInterface } from '../components/AcademicInterfaceContext';
 import { AcademicSecondary } from '../components/AcademicSecondary';
 import { ProjectInstructionsDialog } from '../components/ProjectInstructionsDialog';
 import { ResearchActivityPanel } from '../components/ResearchActivityPanel';
+import { ResearchHarnessControl, useResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { ResearchWebSearchControl } from '../components/ResearchWebSearchControl';
 import { ResearchVerificationControl } from '../components/ResearchVerificationControl';
 import { ResearchWebSources } from '../components/ResearchWebSources';
@@ -207,6 +209,7 @@ export function ResearchAssistantModal({
   // Remembered per provider+model: a conversation keeps whatever level the model was last
   // used at, so a level the user picked is not reset by switching chats or models.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel);
+  const harnessOptions = useResearchHarnessOptions(settings);
   const [webSearch, setWebSearchState] = useState<ResearchWebSearchMode>(settings.researchWebSearch === 'off' ? 'off' : 'auto');
   // The web is this chat's choice, and the composer's saved setting for chats that never made one.
   const setWebSearch = (mode: ResearchWebSearchMode) => {
@@ -743,7 +746,7 @@ export function ResearchAssistantModal({
     try {
       await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
-        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
+        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch, harnessVersion: harnessOptions.version } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
           // A terminal event may arrive after the turn settled (it travels on another IPC pipe
           // than the reply); it then replaces the placeholder the settlement wrote.
@@ -1091,6 +1094,7 @@ export function ResearchAssistantModal({
             <Icon name="chat" className="research-accent-text" />
             {embedded ? 'Research chat' : t('Asistente de investigación')}
           </div>
+          {!adapter && !isGenealogy && <ResearchHarnessControl options={harnessOptions} disabled={sending} />}
           {!simpleInterface && chatModelControl}
           <div className="research-assistant-actions">
           {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
@@ -1195,6 +1199,7 @@ export function ResearchAssistantModal({
               <h2>{activeProject.name}</h2>
               <button type="button" className="btn btn-ghost text-xs" onClick={() => setEditingProjectInstructions(activeProject)}><Icon name="brain" size={14} />{t('Instrucciones del proyecto')}</button>
             </header>}
+            {!adapter && !isGenealogy && <ResearchHarnessPanel mode="chat" conversationId={activeId} onResumed={() => { if (activeId) void loadConversation(activeId); }} />}
             <div className="relative flex-1 min-h-0">
               {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">

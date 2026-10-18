@@ -5,6 +5,7 @@ import { chatAssetOwner, deleteChatAssets, reconcileChatAssets } from '../chatAs
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { v4 as uuid } from 'uuid';
 import { getDb } from './database';
+import { deleteResearchRuns } from './researchRunsRepo';
 import type {
   ChatConversation,
   ChatConversationSummary,
@@ -208,6 +209,7 @@ export function deleteConversation(id: string): void {
   const db = getDb();
   const tx = db.transaction(() => {
     db.prepare('DELETE FROM chat_messages WHERE conversation_id = ?').run(id);
+    deleteResearchRuns({ conversationId: id });
     deleteConversationPlacement(id);
     db.prepare('DELETE FROM chat_conversations WHERE id = ?').run(id);
   });

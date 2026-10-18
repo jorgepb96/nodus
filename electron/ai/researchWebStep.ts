@@ -11,6 +11,7 @@ import { extractScholarlyRecord } from '../websearch/webPageExtract';
 import { WebExtractionHost } from '../websearch/webExtraction';
 import { recordWebPassage } from '../db/researchWebRepo';
 import { PICK_SYSTEM, PLAN_SYSTEM, RATE_SYSTEM, REFORMULATE_SYSTEM, validPick, validPlan, validQueries, validRatings } from '../websearch/webPlanning';
+import { currentResearchHarness } from './researchHarnessRuntime';
 
 /** The user asked for the internet in so many words. Deliberately narrow: a
  * question that merely mentions a website is not a request to search. */
@@ -50,7 +51,14 @@ export class ResearchWebGrant {
     /** The user's own words, when the search question is derived from them (a route's target and classes). */
     asked = question) {
     this.explicit = explicitWebRequest(asked);
+    const saved = currentResearchHarness()?.record.checkpoint.web as ReturnType<ResearchWebGrant['checkpointState']> | undefined;
+    if (saved) {
+      if (saved.mode !== mode || saved.depth !== depth) throw new Error('research_scope_changed');
+      saved.evidence.forEach(([id, value]) => this.evidence.set(id, value));
+      this.outcomes.push(...saved.outcomes); saved.visited.forEach(key => this.visited.add(key)); this.steps = saved.steps;
+    }
   }
+  private checkpointState() { return { mode: this.mode, depth: this.depth, evidence: [...this.evidence.entries()], outcomes: this.outcomes, visited: [...this.visited], steps: this.steps }; }
   get enabled(): boolean { return this.mode !== 'off'; }
   /** The supervisor may choose web at most once (fast/balanced) or twice (deep). */
   get available(): boolean { return this.enabled && this.steps < (this.depth === 'deep' ? 2 : 1) && this.bytesLeft() > 600; }
@@ -59,7 +67,11 @@ export class ResearchWebGrant {
 
   async search(queries: string[], intent: ResearchWebIntent | 'fallback', trigger: 'supervisor' | 'explicit' | 'fallback', library: string): Promise<WebResearchOutcome | null> {
     if (!this.enabled || (trigger !== 'fallback' && !this.available) || (trigger === 'fallback' && this.steps > 0)) return null;
+    const harness = currentResearchHarness();
+    const corpus = harness?.corpus;
+    if (corpus && !corpus.budget.nextRound(true)) { corpus.limitations.add('budget_exhausted'); corpus.checkpoint(); return null; }
     this.steps++;
+    if (harness && corpus) { harness.record.checkpoint.web = this.checkpointState(); corpus.checkpoint(); }
     const controller = new AbortController();
     const signal = this.signal ? AbortSignal.any([this.signal, controller.signal]) : controller.signal;
     const extraction = new WebExtractionHost();
@@ -94,12 +106,14 @@ export class ResearchWebGrant {
     // The closing row appears when the step ends, carrying why it ended.
     const finishStep: ReturnType<typeof startResearchActivity> = (...args) => startResearchActivity('web', 'finish')(...args);
     try {
-      const outcome = await runWebResearch({ question: this.question, depth: this.depth, hint: queries, intent, library, evidenceBytes: this.bytesLeft(),
+      const remaining = corpus ? Math.max(0, corpus.budget.evidenceTokenLimit - corpus.budget.usedEvidenceTokens) : Infinity;
+      const outcome = await runWebResearch({ question: this.question, depth: this.depth, hint: queries, intent, library, evidenceBytes: Math.min(this.bytesLeft(), remaining),
         visited: this.visited, signal, activity: { start: (operation, subject, detail) => startResearchActivity('web', operation, subject, detail) } }, deps);
       for (const item of outcome.evidence) {
+        if (corpus && !corpus.budget.wouldAccept(item.text)) continue;
         const id = recordWebPassage({ url: item.url, finalUrl: item.finalUrl, title: item.title, siteName: item.siteName, domain: item.domain, byline: item.byline,
           publishedAt: item.publishedAt, doi: item.doi, kind: item.kind, pageNumber: item.pageNumber, heading: item.heading, text: item.text, retrievedAt: item.retrievedAt });
-        this.evidence.set(id, { id, item });
+        if (!corpus || corpus.budget.accept(`web-evidence:${id}`, item.text) || this.evidence.has(id)) this.evidence.set(id, { id, item });
       }
       this.outcomes.push({ ...outcome, trigger });
       finishStep(outcome.reason === 'unavailable' ? 'failed' : 'completed', this.evidence.size, { reason: outcome.reason, sources: new Set([...this.evidence.values()].map(entry => entry.item.pageKey)).size });
@@ -112,6 +126,9 @@ export class ResearchWebGrant {
     } finally {
       controller.abort();
       await extraction.close();
+      const harness = currentResearchHarness();
+      if (harness) { harness.record.checkpoint.web = this.checkpointState(); harness.persist(); }
+      if (!this.signal?.aborted) currentResearchHarness()?.corpus?.checkpoint();
     }
   }
 

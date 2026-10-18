@@ -1,6 +1,8 @@
 import { withJobThinkingEffort } from './thinkingEffort';
 import { registerNotebookRun } from './researchNotebookService';
-import { bindAcademicCorpusRun } from './researchCorpusRun';
+import { bindAcademicCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
+import { currentResearchHarness, researchHarnessEnabled, withResearchHarness } from './researchHarnessRuntime';
+import { researchHarnessContext } from './researchHarnessContext';
 import { withDocumentVisualPlanning } from './documentVisualContext';
 import { documentSkillCatalog } from '../../shared/documentSkills';
 import { listDocumentSkills } from '../capabilities/documentCatalog';
@@ -114,6 +116,14 @@ function sectionClaimsForWriting(section: DeepResearchPlanSection): string[] {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function generateDeepResearchReport(request: DeepResearchRequest, onProgress?: (p: DeepResearchProgress) => void, signal?: AbortSignal): Promise<DeepResearchReport> {
+  if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
+    const scope = resolveAcademicRunScope(request.notebookId);
+    const context = researchHarnessContext('deep-research', request, scope);
+    return withResearchHarness({ request, context, scope, signal,
+      validate: () => { if (getActiveVault().id !== scope.vaultId || resolveAcademicRunScope(request.notebookId).id !== scope.id) throw new Error('research_scope_changed'); },
+      onUpdate: researchRun => onProgress?.({ phase: 'discovery', message: context.objective, researchRun }),
+    }, runSignal => generateDeepResearchReport({ ...request, model: context.model }, progress => onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() }), runSignal));
+  }
   const settings = getSettings();
   const academic = getActiveVault().type === 'academic';
   if (request.notebookId && !academic) throw new Error('Research notebooks require an academic vault');

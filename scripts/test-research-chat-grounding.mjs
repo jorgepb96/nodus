@@ -143,6 +143,12 @@ test('a semantically correct paraphrase cannot masquerade as a direct quote', ()
   assert.equal(pure.researchChatLiteralQuotes({ ...review, markdown: translation, claims: [{ ...review.claims[0], sentence: translation }] }, sources).markdown, translation);
   const literal = 'The source says “The river level is 18 metres.”';
   assert.equal(pure.researchChatLiteralQuotes({ ...review, markdown: literal, claims: [{ ...review.claims[0], sentence: literal }] }, sources).markdown, literal);
+  const mixed = 'Translated: “El nivel del río es de 18 metros”. The source says “The river reached 99 metres”.';
+  assert.equal(pure.researchChatLiteralQuotes({ ...review, markdown: mixed, claims: [{ ...review.claims[0], sentence: mixed }] }, sources).claims[0].status, 'removed', 'One translation label cannot exempt other direct quotations');
+  const nested = 'El texto dice «La mirada incluye “signos sociales” y no es neutral». ';
+  const nestedSources = [{ ...sources[0], text: 'La mirada incluye “signos sociales” y no es neutral' }];
+  assert.equal(pure.researchChatLiteralQuotes({ ...review, markdown: nested, claims: [{ ...review.claims[0], sentence: nested }] }, nestedSources).claims[0].status, 'supported');
+  assert.equal(pure.researchQuotedSpans('Afirma «una cita sin cierre').unclosed, true);
 });
 
 test('simple calculated equations and table values are checked despite an approving semantic judge', () => {

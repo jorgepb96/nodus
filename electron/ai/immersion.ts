@@ -1,4 +1,9 @@
 import { withJobThinkingEffort } from './thinkingEffort';
+import { currentResearchHarness, researchHarnessEnabled, withResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
+import { researchHarnessContext } from './researchHarnessContext';
+import { repairResearchDraft } from './researchHarnessVerification';
+import { ResearchWebGrant } from './researchWebStep';
+import { getActiveVault } from '../vaults/vaultRegistry';
 import { withDocumentVisualPlanning, withoutDocumentVisualPlanning } from './documentVisualContext';
 import { documentSkillCatalog, documentVisualProgressLabel } from '../../shared/documentSkills';
 import { listDocumentSkills } from '../capabilities/documentCatalog';
@@ -27,7 +32,7 @@ import { getImmersionSession, recordImmersionAnswer, saveImmersionSession } from
 import { buildWritingWorkshopSnapshot } from './writingWorkshop';
 import { completeJson, embedQuery } from './aiClient';
 import { ResearchCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
-import { RETRIEVAL_PRESETS } from '@shared/researchCorpus';
+import { RETRIEVAL_PRESETS, validateRetrievalSettings } from '@shared/researchCorpus';
 import {
   IMMERSION_LIMITS,
   orchestrateImmersion,
@@ -66,6 +71,10 @@ const PASSAGE_MAX_KEEP = 24;
 const WORK_MAX_KEEP = 40;
 const DOCUMENT_WORK_MAX_KEEP = 20;
 const GAP_SCORE_CUT = 0.2;
+function immersionRetrieval() {
+  const request = currentResearchHarness()?.record.request as ImmersionRequest | undefined;
+  return validateRetrievalSettings(request?.retrieval ?? (request && request.minutes >= 150 ? RETRIEVAL_PRESETS.deep : RETRIEVAL_PRESETS.balanced));
+}
 
 /** Let the event loop breathe between heavy synchronous steps (queries + graph build). */
 function yieldLoop(): Promise<void> {
@@ -171,7 +180,11 @@ export async function buildImmersionMaterial(
   researchModel?: ModelRef | null,
 ): Promise<ImmersionMaterial> {
   const query = topic.trim();
-  const research = researchModel === undefined ? null : new ResearchCorpusRun(resolveAcademicRunScope(), RETRIEVAL_PRESETS.balanced);
+  const research = researchModel === undefined ? null : new ResearchCorpusRun(resolveAcademicRunScope(), currentResearchHarness() ? immersionRetrieval() : RETRIEVAL_PRESETS.balanced, currentResearchHarness()?.signal);
+  if (research?.harness) {
+    research.budget.decisionTokenLimit = 128_000;
+    research.web = new ResearchWebGrant(research.harness.record.context.capabilities.web ? 'auto' : 'off', 'balanced', query, research.signal, researchModel, 2600);
+  }
   const vector = await embedQuery(query);
   const snapshot = await buildWritingWorkshopSnapshot({ kind: 'deep_research', objective: query });
   await yieldLoop();
@@ -251,13 +264,30 @@ export async function buildImmersionMaterial(
     passages.sort((a, b) => b.score - a.score);
   }
   if (research) {
-    await research.investigate(query, researchModel);
+    if (research.harness) {
+      // Existing indexed excerpts are authorized evidence too. Admit them once,
+      // with room left for the agent's subsequent searches and original reads.
+      const openingLimit = Math.floor(research.budget.evidenceTokenLimit / 3);
+      const admitted = passages.filter(passage => {
+        if (!research.scope.documents.some(doc => doc.workId === passage.workId)
+          || research.budget.usedEvidenceTokens + new TextEncoder().encode(passage.text).length > openingLimit) return false;
+        if (!research.budget.accept(`material:${passage.id}`, passage.text)) return false;
+        research.evidence.set(passage.id, { id: passage.id, nodus_id: passage.workId, label: passage.workTitle, summary: passage.text,
+          authors: passage.authors, year: passage.year, zotero_key: passage.zoteroKey ?? '', pageLabel: passage.pageLabel,
+          citation: `nodus://passage/${encodeURIComponent(passage.id)}`, reason: 'source', score: passage.score });
+        return true;
+      });
+      passages.splice(0, passages.length, ...admitted);
+    }
+    if (research.harness) research.budget.phaseRoundLimit = Math.max(1, Math.floor(research.budget.settings.rounds / 3));
+    try { await research.investigate(query, researchModel); }
+    finally { research.budget.phaseRoundLimit = Infinity; }
     // Keep the existing topic ranking, profiles and graph. Shared retrieval adds
     // indexed documents and original pages (local or Zotero MCP) with resolvable
     // citation receipts. Abstracts and generated notes are not literal sources.
     const seen = new Set(passages.map(passage => JSON.stringify([passage.workId, passage.text, passage.pageLabel])));
     for (const passage of research.evidence.values()) {
-      if (passage.reason !== 'source') continue;
+      if (passage.reason !== 'source' && passage.reason !== 'web') continue;
       const key = JSON.stringify([passage.nodus_id, passage.summary, passage.pageLabel]);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -281,6 +311,7 @@ export async function buildImmersionMaterial(
     }
   }
   for (const passage of passages) {
+    if (passage.workId.startsWith('web:')) continue;
     if (!workMeta.has(passage.workId)) {
       workMeta.set(passage.workId, { title: passage.workTitle, authors: passage.authors, year: passage.year, zoteroKey: passage.zoteroKey, orientation: null });
     }
@@ -462,6 +493,14 @@ export async function buildImmersionScope(request: ImmersionScopeRequest): Promi
 }
 
 export async function generateImmersionSession(request: ImmersionRequest, onProgress?: (p: ImmersionBuildProgress) => void): Promise<ImmersionSession> {
+  if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
+    const scope = resolveAcademicRunScope();
+    const context = researchHarnessContext('immersion', request, scope);
+    return withResearchHarness({ request, context, scope,
+      validate: () => { if (getActiveVault().id !== scope.vaultId || resolveAcademicRunScope().id !== scope.id) throw new Error('research_scope_changed'); },
+      onUpdate: researchRun => onProgress?.({ phase: 'material', message: request.topic, researchRun }),
+    }, () => generateImmersionSession({ ...request, model: context.model }, progress => onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() })));
+  }
   const settings = getSettings();
   const hints = await prepareDocumentVisualHints(request.documentSkills, request.topic, request.model ?? settings.immersionModel ?? settings.synthesisModel);
   const catalog = request.documentSkills ? documentSkillCatalog(listDocumentSkills(), request.documentSkills) : '[]';
@@ -485,7 +524,13 @@ async function generateImmersionWithVisualPlan(
     try { onProgress?.(progress); } catch { /* progress cannot abort generation */ }
   };
   emit({ phase: 'discovery', message: copy.material });
-  const material = await buildImmersionMaterial(request.topic, language, model);
+  const material = await researchHarnessStage('immersion.material', { topic: request.topic, language, model }, () => buildImmersionMaterial(request.topic, language, model));
+  // A cached material phase still needs the restored run for station-level research.
+  if (currentResearchHarness() && !currentResearchHarness()!.corpus) {
+    const run = new ResearchCorpusRun(resolveAcademicRunScope(), immersionRetrieval(), currentResearchHarness()!.signal);
+    run.budget.decisionTokenLimit = 128_000;
+    run.web = new ResearchWebGrant(request.webSearch ?? 'off', 'balanced', request.topic, run.signal, model, 2600);
+  }
   emit({
     phase: 'document_preparation',
     message: language === 'es'
@@ -523,7 +568,16 @@ async function generateImmersionWithVisualPlan(
   const plan = await orchestrateImmersion({ ...routedRequest, model }, realDeps(model, material), onProgress);
   plan.documentSkills = request.documentSkills;
   plan.documentVisualHints = documentVisualHints;
-  const saved = saveImmersionSession(plan, model);
+  if (currentResearchHarness()) plan.researchRun = currentResearchHarness()!.summary();
+  const saved = await researchHarnessStage('immersion.save', { topic: request.topic, model }, async () => getDb().transaction(() => {
+    const harness = currentResearchHarness();
+    const prior = harness?.record.artifactId ? getImmersionSession(harness.record.artifactId) : null;
+    if (prior) return prior;
+    const saved = saveImmersionSession(plan, model);
+    if (harness) { harness.record.artifactId = saved.id; harness.persist(); }
+    return saved;
+  })());
+  if (currentResearchHarness()) { currentResearchHarness()!.record.artifactId = saved.id; currentResearchHarness()!.persist(); }
   if (request.documentSkills?.enabled) {
     emit({ phase: 'assembling', message: documentVisualProgressLabel(settings.uiLanguage) });
     await withoutDocumentVisualPlanning(() => enrichDocumentVisuals({ kind: 'immersion', id: saved.id }, request.documentSkills!, { hints: documentVisualHints, model })).catch(() => undefined);
@@ -594,11 +648,53 @@ function realDeps(model: ModelRef | null, preparedMaterial?: ImmersionMaterial):
       }
       return buildImmersionMaterial(topic, undefined, model);
     },
-    planCurriculum: (input) => aiPlanCurriculum(input, model),
-    writePanorama: (input) => aiWritePanorama(input, model),
-    writeStation: (input) => aiWriteStation(input, model),
-    writeContrasts: (input) => aiWriteContrasts(input, model),
-    writeExam: (input) => aiWriteExam(input, model),
+    planCurriculum: input => researchHarnessStage('immersion.curriculum', input, () => aiPlanCurriculum(input, model)),
+    writePanorama: input => researchHarnessStage('immersion.panorama', input, () => aiWritePanorama(input, model)),
+    writeStation: input => researchHarnessStage('immersion.station', input, () => aiWriteStation(input, model)),
+    writeContrasts: input => researchHarnessStage('immersion.contrasts', input, () => aiWriteContrasts(input, model)),
+    writeExam: input => researchHarnessStage('immersion.exam', input, () => aiWriteExam(input, model)),
+    ...(currentResearchHarness() ? {
+      prepareStation: async (station, corpus) => {
+        const run = currentResearchHarness()!.corpus!;
+        const prepared = await researchHarnessStage('immersion.prepare-station', { question: station.question, passageIds: station.passageIds }, async () => {
+          const before = new Set(run.evidence.keys());
+          run.harness!.agenda.addQuestion(station.question);
+          await run.investigate(station.question, model);
+          const passages = [...run.evidence.values()].filter(item => ['source', 'web'].includes(item.reason)).map(item => ({
+            id: item.id, workId: item.nodus_id, workTitle: item.label, authors: item.authors, year: item.year,
+            zoteroKey: item.zotero_key, pageLabel: item.pageLabel, text: item.summary, score: item.score,
+          }));
+          const fresh = passages.filter(p => !before.has(p.id)).map(p => p.id);
+          return { passages, passageIds: [...new Set([...fresh, ...station.passageIds])].slice(0, 8) };
+        });
+        for (const passage of prepared.passages) if (!corpus.passages.some(p => p.id === passage.id)) corpus.passages.push(passage);
+        station.passageIds = prepared.passageIds;
+      },
+      verifyPlan: async plan => {
+        plan.overview = await repairResearchDraft(plan.overview, model, currentResearchHarness()!.signal);
+        for (const term of plan.keyTerms) term.definition = await repairResearchDraft(term.definition, model, currentResearchHarness()!.signal);
+        const verifyQuiz = async (questions: typeof plan.exam.questions) => {
+          for (const item of questions) {
+            if (item.explanation) item.explanation = await repairResearchDraft(item.explanation, model, currentResearchHarness()!.signal);
+            if (item.expected) item.expected = await repairResearchDraft(item.expected, model, currentResearchHarness()!.signal);
+          }
+        };
+        for (const station of plan.stations) {
+          station.context = await repairResearchDraft(station.context, model, currentResearchHarness()!.signal);
+          station.synthesis = await repairResearchDraft(station.synthesis, model, currentResearchHarness()!.signal);
+          for (let i = 0; i < station.takeaways.length; i++) station.takeaways[i] = await repairResearchDraft(station.takeaways[i], model, currentResearchHarness()!.signal);
+          for (const position of station.positions) position.position = await repairResearchDraft(position.position, model, currentResearchHarness()!.signal);
+          for (const citation of station.citations) {
+            citation.commentary = await repairResearchDraft(citation.commentary, model, currentResearchHarness()!.signal);
+            citation.whyItMatters = await repairResearchDraft(citation.whyItMatters, model, currentResearchHarness()!.signal);
+          }
+          await verifyQuiz(station.quiz);
+        }
+        for (const row of plan.contrasts.rows) for (const cell of row.cells) if (cell.stance) cell.stance = await repairResearchDraft(cell.stance, model, currentResearchHarness()!.signal);
+        await verifyQuiz(plan.exam.questions);
+        return plan;
+      },
+    } satisfies Partial<ImmersionDeps> : {}),
   };
 }
 

@@ -20,6 +20,8 @@ export class ResearchRetrievalBudget {
   decisionTokens = 0;
   candidates = 0;
   partial = false;
+  /** A phase can reserve later rounds without increasing the run's total allowance. */
+  phaseRoundLimit = Infinity;
   readonly visited = new Set<string>();
   /** Supervisor decisions are separate provider calls: they have their own allowance, of
    * the same size as the evidence one, instead of taking evidence the answer needs. */
@@ -41,7 +43,7 @@ export class ResearchRetrievalBudget {
     return true;
   }
   nextRound(explicit = false): boolean {
-    const allowed = explicit || this.settings.autoExpand ? this.settings.rounds : 1;
+    const allowed = Math.min(this.phaseRoundLimit, explicit || this.settings.autoExpand ? this.settings.rounds : 1);
     if (this.rounds >= allowed || this.usedEvidenceTokens >= this.evidenceTokenLimit) { this.partial = true; return false; }
     this.rounds++;
     return true;

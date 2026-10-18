@@ -160,7 +160,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 201;
+export const SCHEMA_VERSION = 202;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9627,6 +9627,13 @@ export const migrations: Migration[] = [
     CREATE TRIGGER passages_document_fts_ad AFTER DELETE ON passages BEGIN
       DELETE FROM passages_fts WHERE rowid IN (SELECT id FROM passages_fts_content WHERE c0=old.passage_id);
     END;
+  ` },
+  { version: 202, up: /* sql */ `
+    CREATE TABLE IF NOT EXISTS research_harness_runs (
+      id TEXT PRIMARY KEY, mode TEXT NOT NULL, status TEXT NOT NULL,
+      conversation_id TEXT, artifact_id TEXT, summary_json TEXT NOT NULL, record_json TEXT NOT NULL, updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS research_harness_runs_conversation ON research_harness_runs(conversation_id,updated_at);
   ` },
 ];
 

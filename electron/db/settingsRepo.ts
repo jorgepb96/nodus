@@ -211,6 +211,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   codexReasoningEfforts: {},
   researchEffortByModel: {},
   researchWebSearch: 'auto',
+  researchHarnessVersion: 'legacy',
   researchAnswerVerification: 'off',
   openRouterThroughput: true,
   providerFreeTier: {},
@@ -412,6 +413,7 @@ export function getSettings(): AppSettings {
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(parsed.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(parsed.researchEffortByModel);
   merged.researchWebSearch = parsed.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchHarnessVersion = parsed.researchHarnessVersion === 'v1' ? 'v1' : 'legacy';
   merged.researchAnswerVerification = ['legacy', 'structured'].includes(parsed.researchAnswerVerification ?? '') ? parsed.researchAnswerVerification : 'off';
   merged.mascotScale = normalizeNodiScale(parsed.mascotScale);
   merged.studyImproveToolbarStyleIds = [...new Set((Array.isArray(merged.studyImproveToolbarStyleIds) ? merged.studyImproveToolbarStyleIds : [])
@@ -577,6 +579,7 @@ export function getSettings(): AppSettings {
   merged.codexReasoningEfforts = sanitizeCodexReasoningEfforts(merged.codexReasoningEfforts);
   merged.researchEffortByModel = sanitizeResearchEffortByModel(merged.researchEffortByModel);
   merged.researchWebSearch = merged.researchWebSearch === 'off' ? 'off' : 'auto';
+  merged.researchHarnessVersion = merged.researchHarnessVersion === 'v1' ? 'v1' : 'legacy';
   merged.researchAnswerVerification = ['legacy', 'structured'].includes(merged.researchAnswerVerification ?? '') ? merged.researchAnswerVerification : 'off';
   if ((merged.sttProvider as string) === 'local') {
     merged.sttProvider = 'transformers';

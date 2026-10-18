@@ -5,6 +5,7 @@ import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
 import { embedQuery as embedResearchQuery } from '../ai/aiClient';
 import { assertAcademicAutomation } from '../ai/academicMode';
 import { registerResearchAttachmentIpc } from './researchAttachments';
+import { registerResearchHarnessIpc } from './researchHarness';
 import { dialogTitle } from '../dialogTitles';
 import { getResearchSystemPrompts, saveResearchSystemPrompt, selectResearchSystemPrompt, deleteResearchSystemPrompt } from '../db/researchSystemPromptsRepo';
 import { mergeHybridResults, searchSnippet } from '@shared/hybridSearch';
@@ -469,6 +470,7 @@ function pageCapableLibraryCopy(nodusId: string): OpenEvidenceAtPageResult['loca
 
 let releasePreparationProgress: (() => void) | null = null;
 export function registerAcademicIpc(context: IpcContext): void {
+  registerResearchHarnessIpc(context);
   releasePreparationProgress?.();
   releasePreparationProgress = onDocumentaryPreparationChanged(() => {
     const progress = preparationExperience.getResearchPreparationProgress();
@@ -1763,7 +1765,8 @@ export function registerAcademicIpc(context: IpcContext): void {
         },
         controller.signal,
         result => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:concilium', requestId, result); },
-        activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); }
+        activity => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:activity', requestId, activity); },
+        run => { if (!e.sender.isDestroyed()) e.sender.send('research:chatStream:run', requestId, run); }
       );
     } finally {
       const s = (t: number) => (t ? ((t - t0) / 1000).toFixed(1) : '-');

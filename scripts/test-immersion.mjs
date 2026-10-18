@@ -275,6 +275,30 @@ try {
     assert.equal(plan.contrasts.rows.length, plan.stations.length, 'fallback contrasts complete');
   }
 
+  // Station research must run before writing, and its fresh citations must reach
+  // both the writer and the output policy. Verification precedes persistence.
+  {
+    const material = makeMaterial();
+    const deps = happyDeps(material);
+    const write = deps.writeStation;
+    let prepared = 0, verified = 0;
+    deps.prepareStation = async (spec, corpus) => {
+      const id = `late-station-${++prepared}`;
+      corpus.passages.push({ ...corpus.passages[0], id, text: 'Fresh literal evidence collected for this station.' });
+      spec.passageIds = [id];
+    };
+    deps.writeStation = async input => {
+      assert.ok(input.passages[0].id.startsWith('late-station-'));
+      return write(input);
+    };
+    deps.verifyPlan = async plan => { verified++; return { ...plan, overview: 'Verified overview' }; };
+    const plan = await orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps);
+    assert.equal(prepared, plan.stations.length);
+    assert.equal(verified, 1);
+    assert.equal(plan.overview, 'Verified overview');
+    assert.ok(plan.stations.every(station => station.citations.some(c => c.text === 'Fresh literal evidence collected for this station.')));
+  }
+
   // ── No material → clean error ───────────────────────────────────────────────
   {
     const empty = { ...makeMaterial(0, 0), ideas: [], passages: [] };

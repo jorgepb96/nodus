@@ -1,7 +1,7 @@
 import type { ModelRef } from '@shared/types';
-import type { ResearchAuditSource } from '@shared/researchClaimAudit';
+import { researchWriterCitationTransport, type ResearchAuditSource } from '@shared/researchClaimAudit';
 import { researchDocumentBatches, RESEARCH_SOURCE_CHUNK_RULE, RESEARCH_SOURCE_QUALIFICATION_RULE, type ResearchDocumentPart, type ResearchDocumentPartReview, type ResearchDocumentReview } from '@shared/researchDocumentReview';
-import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, researchAnswerEvidenceTransport, researchAnswerParagraphs, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
+import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerParagraphs, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
 import { completeJson, type CallOpts } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchReviewEvidence, RESEARCH_SOURCE_REVIEW } from './researchHarnessVerification';
@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v15';
+const POLICY = 'document-review-v17';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -51,7 +51,7 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
     const decode = (value: unknown) => native ? decodeResearchDocumentFields(value) : value;
     const value = decode(await completeJson({ ...opts, ...(native ? {
       system: opts.system + '\nNATIVE FIELD CONTRACT: parts is an OBJECT with exactly the requested field IDs as keys, not an array. Each value contains the field result without an id property. When claims is present, it is an OBJECT with exactly p0, p1, etc. for ALL supplied paragraph indices; its values omit index. Use the supplied native schema. Never omit a paragraph or duplicate a field per paragraph.',
-      responseSchema: { name, schema: researchDocumentFieldSchema(schema, fields, quoteKeys) },
+      responseSchema: { name, schema: researchDocumentFieldSchema(schema, fields, quoteKeys, target?.provider !== 'gemini') },
     } : {}) }, (value): value is unknown => valid(decode(value)), target));
     if (!valid(value)) throw new Error('invalid_document_review_transport');
     return value;
@@ -59,11 +59,11 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   const completed = new Map<string, ResearchDocumentPartReview>();
   const diagnose = new Map<string, ResearchAnswerReview>();
   let technicalFailure: string | undefined;
-  let pending = parts.filter(part => part.text.trim()).map(part => ({ ...part }));
+  let pending = parts.filter(part => part.text.trim()).map(part => ({ ...part, text: canonicalResearchUnrequestedQuotes(part.text, frozen, harness.record.context.objective) }));
   const objective = harness.record.context.objective;
   for (let attempt = 0; attempt < 4 && pending.length && !technicalFailure; attempt++) {
     let failed: ResearchDocumentPart[] = [];
-    for (const batch of researchDocumentBatches(pending, text => researchAnswerParagraphs(text).length, target?.provider === 'gemini' ? 4 : 10)) {
+    for (const batch of researchDocumentBatches(pending, text => researchAnswerProofUnits(text).length, target?.provider === 'gemini' ? 4 : 10)) {
       harness.validate();
       try {
         const selected = new Map(batch.map(part => [part.id, researchDocumentSources(part, frozen)]));
@@ -78,7 +78,10 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
           const rows = value && typeof value === 'object' && 'parts' in value ? (value as Reply).parts : undefined;
           return Array.isArray(rows) && rows.length === batch.length && new Set(rows.map(row => row.id)).size === rows.length
             && rows.every(row => { const part = input.parts.find(part => part.id === row.id);
-              return !!part && validResearchAnswerCoverage(row, part.paragraphs.length, new Set(part.sourceIds)); });
+              // Routing and shape are structural; an out-of-field proof ID is
+              // rejected by the exact selected-source normalizer below, without
+              // aborting review of unrelated lesson fields.
+              return !!part && validResearchAnswerCoverage(row, part.paragraphs.length); });
         };
         let rejected: unknown;
         const guard = (value: unknown): value is Reply => { rejected = value; return valid(value); };
@@ -150,18 +153,20 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
     if (attempt === 2) failed = failed.filter(part => diagnose.get(part.id)?.claims.some(claim => claim.status === 'supported' && claim.evidence.length));
     if (!failed.length) break;
     pending = [];
-    for (const revisionBatch of researchDocumentBatches(failed, text => researchAnswerParagraphs(text).length)) {
+    for (const revisionBatch of researchDocumentBatches(failed, text => researchAnswerProofUnits(text).length)) {
       try {
         const input = { investigationBackground: objective, parts: revisionBatch.map(part => ({ ...part, diagnosis: diagnose.get(part.id), ...(attempt === 2 ? { verifiedCore: diagnose.get(part.id)?.claims.filter(claim => claim.status === 'supported' && claim.evidence.length) } : {}) })), sources: frozen.filter(source => revisionBatch.some(part => researchDocumentSources(part, frozen).includes(source))) };
-        const revision = await researchHarnessStage(`${POLICY}.revision`, { ...input, attempt }, () => documentJson('research_document_revision', RESEARCH_DOCUMENT_REVISION_SCHEMA, revisionBatch, {
-          system: `Revise each COMPLETE field coherently using only its authorized evidence. If verifiedCore is supplied, reconstruct a shorter useful field from that supported core while resolving every remaining semantic objection. Do not preserve optional rejected assertions or pad to a numeric target. This is a final bounded recovery, never approval without a fresh check. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
-          user: JSON.stringify(input), ...options, temperature: 0, corpusContext: true, noRetry: true, signal,
+        const citations = researchWriterCitationTransport(input.sources);
+        const projected = { ...input, parts: citations.projectValue(input.parts.map(part => ({ ...part, literalBindingCandidates: researchLiteralRepairCandidates(part.text, input.sources) }))), sources: citations.sources };
+        const revision = await researchHarnessStage(`${POLICY}.revision`, { ...projected, attempt }, () => documentJson('research_document_revision', RESEARCH_DOCUMENT_REVISION_SCHEMA, revisionBatch, {
+          system: `Revise each COMPLETE field coherently using only its authorized evidence. If verifiedCore is supplied, reconstruct a shorter useful field from that supported core while resolving every remaining semantic objection. Do not preserve optional rejected assertions or pad to a numeric target. This is a final bounded recovery, never approval without a fresh check. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. Copy the short source.citation destination attached to the supporting excerpt, never a neighboring source. Do not retype opaque storage identities. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
+          user: JSON.stringify(projected), ...options, temperature: 0, corpusContext: true, noRetry: true, signal,
         }, (value): value is { parts: Array<{ id: string; text: string }> } => {
           const rows = value && typeof value === 'object' && 'parts' in value ? (value as { parts: Array<{ id: string; text: string }> }).parts : undefined;
           return Array.isArray(rows) && rows.length === revisionBatch.length && new Set(rows.map(row => row.id)).size === rows.length
             && rows.every(row => revisionBatch.some(part => part.id === row.id) && typeof row.text === 'string' && row.text.length <= 40_000);
         }));
-        pending.push(...revisionBatch.map(part => ({ ...part, text: revision.parts.find(row => row.id === part.id)!.text })));
+        pending.push(...revisionBatch.map(part => ({ ...part, text: canonicalResearchUnrequestedQuotes(citations.restore(revision.parts.find(row => row.id === part.id)!.text), frozen, objective) })));
       } catch (error) { harness.validate(); technicalFailure = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'revision_unavailable'; break; }
     }
   }

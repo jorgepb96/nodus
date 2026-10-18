@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v32', stage: 'coherent-answer-review-v32' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v33', stage: 'coherent-answer-review-v33' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -52,7 +52,7 @@ export function researchAnswerCatalogueCitationIssues(text: string, sources: rea
  * NOT approve the assertion: the entire result still needs literal premises and
  * semantic entailment. Explicit literal requests keep the strict quote gate. */
 export function canonicalResearchUnrequestedQuotes(text: string, sources: readonly ResearchAuditSource[], question: string): string {
-  if (/\b(?:citas?|citar|copia(?:r)?|literal(?:es|mente)?|textual(?:es|mente)?|quotes?|quotation|verbatim|littéral(?:ement)?|copi(?:ez|er)|wörtlich|zitat)\b/iu.test(question)) return text;
+  if (/\b(?:copia(?:r)?|literal(?:es|mente)?|textual(?:es|mente)?|quotes?|quotation|verbatim|littéral(?:ement)?|copi(?:ez|er)|wörtlich|zitat)\b/iu.test(question)) return text;
   const normalize = (value: string) => value.normalize('NFC').replace(/\s+/gu, ' ').trim();
   const excerpts = sources.map(source => normalize(source.text));
   const spans = researchQuotedSpans(text).spans.filter(span => span.text.length >= 12
@@ -572,4 +572,21 @@ export async function reviewAndReviseResearchAnswer(draft: string, review: (text
     }
   }
   return { answer: researchAnswerReviewLimitation(language), status: 'limited' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts };
+}
+
+
+/** Real excerpt matches offered to a rewriter after a locator/quotation failure.
+ * These are candidates, never a verdict or an automatic source replacement. */
+export function researchLiteralRepairCandidates(text: string, sources: readonly ResearchAuditSource[]) {
+  const normalize = (value: string) => value.normalize('NFC').replace(/\s+/gu, ' ').trim();
+  return researchAnswerProofUnits(text).flatMap(unit => {
+    const cited = sources.filter(source => source.citation && unit.text.includes(`](${source.citation})`));
+    return researchQuotedSpans(unit.text).spans.filter(span => span.text.length >= 12
+      && !cited.some(source => normalize(source.text).includes(normalize(span.text))))
+      .flatMap(span => {
+        const matches = sources.filter(source => source.citation && source.proseSupport !== false && normalize(source.text).includes(normalize(span.text)));
+        return matches.length ? [{ sentence: unit.text, quote: span.text, candidates: matches.map(source => ({ id: source.id, label: source.citationLabel ?? source.label,
+          citation: `[${source.citationLabel ?? source.label}](${source.citation})`, attributionOnly: Boolean(source.attributionOnly) })) }] : [];
+      });
+  }).slice(0, 12);
 }

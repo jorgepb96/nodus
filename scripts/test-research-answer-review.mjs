@@ -33,6 +33,7 @@ try {
   const english = { ...source, text: 'There is no single tourist gaze as such.' };
   assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Explica la mirada'), translated.replace('«', '').replace('»', ''));
   assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Copia una cita literal'), translated, 'Explicit literal requests must still fail the nonliteral quote gate');
+  assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Explica con citas Nodus'), translated.replace('«', '').replace('»', ''), 'Bibliographic citation instructions do not demand invented verbatim quotes');
   const literal = 'Dice «There is no single tourist gaze as such».';
   assert.equal(review.canonicalResearchUnrequestedQuotes(literal, [english], 'Explica la mirada'), literal);
   const labelledTranslation = 'Traducción: «no hay una única mirada turística».';
@@ -320,6 +321,16 @@ try {
     assert.equal(result.status, 'verified');
     assert.equal(result.answer, 'Correctly attributed paraphrase.');
     assert.equal(result.attempts.length, 5, 'The narrow final quotation repair always receives a complete new review');
+  }
+  {
+    const original = { ...source, text: 'The original source states an actual literal qualification.' };
+    const other = { ...source, id: 'other', citation: 'nodus://passage/other', text: 'A different statement.' };
+    const text = 'Afirma «an actual literal qualification» [Other](nodus://passage/other).';
+    const matches = review.researchLiteralRepairCandidates(text, [original, other]);
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].candidates[0].id, source.id);
+    assert.equal(matches[0].quote, 'an actual literal qualification');
+    assert.equal(review.researchLiteralRepairCandidates(text, [other]).length, 0, 'No nearby or invented source is suggested without an exact real excerpt');
   }
   const wrongLink = paragraph.replace('nodus://passage/p1', 'nodus://passage/wrong');
   const rebound = review.bindResearchAnswerCitations(wrongLink, check(wrongLink), [source]);

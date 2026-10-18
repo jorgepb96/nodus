@@ -113,10 +113,13 @@ try {
   }
   {
     let calls = 0;
-    const output = await run([part('field')], (_options, input) => {
-      calls++; const value = proof(input); value.parts[0].claims[0].premises[0].evidence[0].id = 'invented'; return value;
+    const output = await run([part('field')], (options, input) => {
+      calls++;
+      if (options.system.startsWith('Revise')) return { parts: [{ id: 'field', text: 'A still unverified assertion.' }] };
+      const value = proof(input); value.parts[0].claims[0].premises[0].evidence[0].id = 'invented'; return value;
     });
-    assert.equal(calls, 1); assert.equal(output.status, 'limited'); assert.equal(output.parts[0].text, '');
+    assert.ok(calls > 1); assert.equal(output.status, 'limited'); assert.equal(output.parts[0].text, '');
+    assert.equal(output.technicalFailure, undefined, 'A forged source never passes, but it is a local unverified proof rather than a whole-lesson outage');
   }
   {
     const selected = reviewer.researchDocumentSources(part('commentary', 'Other actor.', { evidenceIds: ['p1'], strictEvidence: true }), evidence.map(item => ({ ...item, text: item.summary })));
@@ -174,6 +177,36 @@ try {
     assert.equal(result.stats.stations, 1); assert.equal(result.stats.quizQuestions, 0); assert.equal(result.stats.citations, 1);
     assert.ok(!result.stations[0].synthesis.includes('No he podido'), 'One top-level limitation replaces repeated field boilerplate');
     reviewer.reviewResearchDocument = original;
+  }
+
+  {
+    const source = { ...evidence[0], id: 'documentary:' + 'a'.repeat(64) + ':' + 'b'.repeat(64) + ':14', citation: 'nodus://passage/' + encodeURIComponent('documentary:' + 'a'.repeat(64) + ':' + 'b'.repeat(64) + ':14') };
+    let rewrite = false;
+    const output = await run([part('bound-field', 'A supported result with an overreach.')], (options, input) => {
+      if (options.system.startsWith('Revise')) {
+        rewrite = true;
+        assert.equal(input.sources[0].id, 'source-1');
+        assert.equal(input.sources[0].citation, 'nodus://passage/nr-1');
+        return { parts: [{ id: 'bound-field', text: 'The source documents a specific supported result [Author](nodus://passage/nr-1).' }] };
+      }
+      if (!input.parts[0].paragraphs) return semantic(input);
+      const result = proof(input);
+      if (!rewrite) { result.parts[0].claims[0].supported = false; result.parts[0].claims[0].unsupportedParts = ['Remove overreach']; }
+      return result;
+    }, [source]);
+    assert.equal(output.status, 'verified');
+    assert.ok(output.parts[0].text.includes('](' + source.citation + ')'), 'Only the original granted destination survives the checked rewrite');
+    assert.ok(!output.parts[0].text.includes('nr-1'));
+  }
+  {
+    const { researchWriterCitationTransport } = load('shared/researchClaimAudit.ts');
+    const sources = [{ id: 'p1', citation: 'nodus://passage/nr-1', text: 'Verbatim text', label: 'Original' }, { id: 'p2', citation: 'nodus://passage/opaque%3Aidentity', text: 'Second source', label: 'Second' }];
+    const transport = researchWriterCitationTransport(sources);
+    const text = '[Original](nodus://passage/nr-1) and [Second](nodus://passage/opaque%3Aidentity).';
+    assert.deepEqual(transport.restore(transport.project(text)), text);
+    assert.equal(transport.sources[0].citation, 'nodus://passage/_nr-1', 'A real source identity cannot collide with a request-local alias');
+    assert.equal(transport.restore('[Unknown](nodus://passage/_nr-99)'), '[Unknown](nodus://passage/_nr-99)', 'Unknown aliases never resolve to guessed sources');
+    assert.equal(transport.sources[0].text, sources[0].text, 'The source excerpt is never rewritten by citation transport');
   }
   console.log('Document review: batched proofs, independent semantic veto, complete revisions, exact-source comments, literal evidence, stable IDs and technical-stop retention passed.');
   db.close();

@@ -1267,7 +1267,7 @@ export function ResearchAssistantModal({
                           (!message.error || message.concilium) &&
                           message.id === lastMessageId &&
                           message.id !== streamingId &&
-                          (message.content.trim() || message.concilium) && (
+                          (message.content.trim() || message.stats?.sourceNotices?.length || message.concilium) && (
                             <button
                               className="rounded p-1 text-neutral-500 opacity-70 transition hover:bg-neutral-800 research-accent-hover hover:opacity-100 disabled:opacity-40"
                               title={t('Regenerar respuesta')}

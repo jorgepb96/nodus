@@ -445,3 +445,31 @@ export async function reconcileResearchReport(parts: ResearchReportParts, ledger
   if (conflicting.size) map(plain => conflicting.has(researchSentenceKey(plain)), 'internal_contradiction');
   return finish(conflicts.length, true);
 }
+
+
+/** Short request-local citation destinations reduce opaque-ID transcription and
+ * source/locator drift during whole-answer revision. Only supplied destinations
+ * are expanded. Unknown aliases remain unknown for the normal authority checks. */
+export function researchWriterCitationTransport(sources: readonly ResearchAuditSource[]) {
+  const original = new Set(sources.map(source => source.citation).filter(Boolean));
+  let prefix = 'nr-';
+  while ([...original].some(url => /^nodus:\/\/[^/]+\//u.test(url) && url.split('/').at(-1)?.startsWith(prefix))) prefix = '_' + prefix;
+  const short = new Map<string, string>(), long = new Map<string, string>();
+  for (const citation of original) {
+    const kind = /^nodus:\/\/([^/]+)\//u.exec(citation)?.[1];
+    if (!kind) continue;
+    const alias = `nodus://${kind}/${prefix}${short.size + 1}`;
+    short.set(citation, alias); long.set(alias, citation);
+  }
+  const replace = (text: string, bindings: Map<string, string>) => text.replace(/\]\((nodus:\/\/[^)\s]+)\)/gu,
+    (full, url: string) => bindings.has(url) ? `](${bindings.get(url)})` : full);
+  const project = (text: string) => replace(text, short);
+  const projectValue = <T>(value: T): T => {
+    if (typeof value === 'string') return project(value) as T;
+    if (Array.isArray(value)) return value.map(item => projectValue(item)) as T;
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, projectValue(item)])) as T;
+    return value;
+  };
+  return { project, projectValue, restore: (text: string) => replace(text, long),
+    sources: researchAuditSourceTransport(sources).sources.map(source => ({ ...source, citation: short.get(source.citation) ?? source.citation })) };
+}

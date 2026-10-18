@@ -5,6 +5,7 @@ import {MobileDocumentVisualEditor} from './MobileDocumentVisualEditor';
 import {AutonomousDocumentVisuals} from './autonomousDocumentVisuals';
 import {seedWorkspaceNote} from './workspaceNotes';
 import {studyKnowledgeCopies} from './studyKnowledgeCopy';
+import {selectedStudyOffline} from './studyKnowledgeOffline';
 import {MobileStudyIdeas} from './MobileStudyIdeas';
 import {seedStudyKnowledgeNote} from './studyKnowledgeNotes';
 import {autonomousDocumentSkillCatalog} from './autonomousResearchVisuals';
@@ -232,6 +233,11 @@ const call = async (method: string, ...args: unknown[]): Promise<any> => {
   if(method==='listDeepResearchJobs'&&config.executionMode==='autonomous')return localDeepResearchJobs(call);
   try { return await native.nodusMobileCall(method, ...args); }
   catch (error) {
+    const studyCopy=await selectedStudyOffline(native.nodusMobileCall,native.nodusMobileConfig,method,args,error);
+    if(studyCopy.handled){
+      native.webkit.messageHandlers.nodus.postMessage({id:'downloaded-study',method:'surfaceOfflineCopy',args:[]});
+      return studyCopy.value;
+    }
     if((error as {code?:string})?.code==='offline'&&config.surface==='databaseResearch'&&databaseOfflineComposerMethods.has(method)) {
       native.webkit.messageHandlers.nodus.postMessage({id:'downloaded-databases',method:'surfaceOfflineCopy',args:[]});
       return databaseOfflineComposer(call,method,args);

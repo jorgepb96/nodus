@@ -376,6 +376,25 @@ one V1 BGE request took 60.5 seconds. Generation accounted for USD 0.08900 versu
 guarantee. The compact-decision and Dictionary changes came afterward and require
 their own measurement; these results must not be attributed to those changes.
 
+At `4df1f888`, five fresh V1 answers repeated the same questions against that
+frozen V1 baseline. Mean time changed from 53.1 to 41.9 seconds, median from 46.8
+to 40.6, and generation accounting from USD 0.08900 to 0.07405 (16.8% lower).
+Input tokens fell 18.2%, although model calls increased from 42 to 50: smaller
+decisions leave room for more useful work within the original allowance. The old
+60.5-second BGE outlier affects the mean, so it is not a pure code-speed estimate.
+A masked Gemini 3.8 Flash reviewer preferred the optimized version four times and
+the previous V1 once; all ten answers passed its rubric. The previous answer's
+advantage was historical depth in one comparison. This before/after development
+sample does not establish universal non-inferiority. Each judgment used the full
+cited excerpts and backend operations, with exact duplicate source records pooled
+losslessly to fit the remaining authorized budget; unused retrieved material is
+retained separately. No candidate was rewritten or regenerated after judging.
+
+A native Dictionary smoke test on the same policy produced a synthesis in 33.6
+seconds through its existing two-attempt correction path, saved one version, and
+resolved seven cited receipts within exactly two selected works. It is an
+integration/grounding smoke test, not a blind comparison with legacy Dictionary.
+
 After the user stopped the fresh 15-pair campaign, six pairs and their original
 votes were retained (legacy 4, V1 2). No remaining pairs were resumed. A short
 V1-only regression repeated three predeclared questions after removing the

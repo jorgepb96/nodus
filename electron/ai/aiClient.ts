@@ -1793,7 +1793,7 @@ function errorMessage(e: unknown): string {
  * a success and its ideas are lost with no error anywhere.
  */
 function endsMidJson(text: string): boolean {
-  const start = text.indexOf('{');
+  const start = text.search(/[[{]/);
   if (start === -1) return false;
   let depth = 0;
   let inString = false;
@@ -1817,12 +1817,12 @@ function endsMidJson(text: string): boolean {
   return inString || depth > 0 || !closed;
 }
 
-/** Strip code fences and locate the outermost JSON object. */
+/** Strip code fences and locate the outermost JSON object or array. */
 function extractJson(text: string): unknown {
   let t = text.trim();
   t = t.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
-  const first = t.indexOf('{');
-  const last = t.lastIndexOf('}');
+  const first = t.search(/[[{]/);
+  const last = t.lastIndexOf(t[first] === '[' ? ']' : '}');
   if (first === -1 || last === -1) throw new AiError('La respuesta no contiene JSON', false, false, 'invalid_json');
   const candidate = t.slice(first, last + 1);
   try {

@@ -144,7 +144,7 @@ export function AcademicInterfacePicker({ open, anchorEl, settings, profile, onS
         <span className="academic-profile-icon"><Icon name={item.icon} size={15} /></span>
         <span className="academic-profile-copy"><strong>{t(item.label)}</strong><span className="academic-profile-description">{t(item.description)}</span><small>{item.tools.split(' · ').map(part => t(part)).join(' · ')}</small></span>
         <span className={`academic-profile-art academic-profile-art-${item.id}`} aria-hidden="true">
-          <img className="academic-profile-illustration" src={PROFILE_ILLUSTRATIONS[item.id]} alt="" width="140" height="72" />
+          <img className="academic-profile-illustration" src={PROFILE_ILLUSTRATIONS[item.id]} alt="" width="180" height="112" />
         </span>
         {item.id === (profile ?? 'custom') ? <Icon name="check" size={15} className="academic-profile-check" /> : <span aria-hidden="true" />}
       </button>)}

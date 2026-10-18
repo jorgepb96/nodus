@@ -191,6 +191,18 @@ try {
   assert.equal(review.assessResearchAnswer(paragraph + '\n\nNo ideas were retrieved; this synthesizes the earlier passage.', [source, operations], envelope([verdict, operationSynthesis]), 'Explica').accepted, true, 'An operational disclosure plus inherited inference does not require a repeated documentary citation');
 
 
+  {
+    const a = { id: 'a', text: 'El centro A abrió en 1901.', label: 'A', citation: 'nodus://passage/a' };
+    const b = { id: 'b', text: 'El centro B abrió en 1902.', label: 'B', citation: 'nodus://passage/b' };
+    const text = 'El centro A abrió en 1901 y el centro B en 1902 [A](nodus://passage/a).';
+    const proof = envelope([{ ...verdict, premises: [a, b].map(s => ({ text: s.text, type: 'fact', entailed: true, evidence: [{ id: s.id, quote: s.text }], from: [] })) }]);
+    const diagnose = value => review.assessResearchAnswer(value, [a, b], proof, 'Explica ambas fechas', true, review.researchAnswerProofUnits(value).map(unit => unit.text));
+    const diagnosis = diagnose(text);
+    assert.equal(diagnosis.accepted, false, 'A compound assertion cannot cite only one of its two directly needed sources');
+    const fixed = review.bindResearchAnswerCitations(text, diagnosis, [a, b], review.researchAnswerProofUnits(text));
+    assert.ok(fixed.includes('nodus://passage/b'));
+    assert.equal(diagnose(fixed).accepted, true, 'Backend binding retains both actual supporting sources without inventing content');
+  }
   const corrupted = structuredClone(uncitedReview); corrupted.claims[0].evidence[0].id = 'fake';
   assert.equal(review.bindResearchAnswerCitations(uncited, corrupted, [source]), null);
   assert.deepEqual(review.researchAnswerScopeIssues('Ese rasgo solo aparece en 2015.'), ['unbounded_source_exclusivity']);
@@ -295,6 +307,19 @@ try {
     assert.equal(result.status, 'verified', 'Useful verified material can survive an unsuccessful optional interpretation');
     assert.equal(seen.at(-1), result.answer, 'The final coherent reconstruction is checked before publication');
     assert.equal(result.verifiedCoreReconstruction, true);
+  }
+
+  {
+    let calls = 0;
+    const result = await review.reviewAndReviseResearchAnswer('Initial.', async text => text === 'Correctly attributed paraphrase.'
+      ? { accepted: true, issues: [], claims: [] }
+      : { accepted: false, issues: [], claims: [
+        { sentence: 'Supported core.', status: 'supported', evidence: [{ id: source.id, quote: source.text }] },
+        { sentence: 'Accidentally nonliteral quotation.', status: 'removed', evidence: [], reason: 'The direct quotation does not match the authorized literal source' },
+      ] }, async (_text, diagnosis) => { calls++; return diagnosis.issues.some(issue => issue.startsWith('literal_source_repair')) ? 'Correctly attributed paraphrase.' : 'Candidate ' + calls; }, 'es');
+    assert.equal(result.status, 'verified');
+    assert.equal(result.answer, 'Correctly attributed paraphrase.');
+    assert.equal(result.attempts.length, 5, 'The narrow final quotation repair always receives a complete new review');
   }
   const wrongLink = paragraph.replace('nodus://passage/p1', 'nodus://passage/wrong');
   const rebound = review.bindResearchAnswerCitations(wrongLink, check(wrongLink), [source]);

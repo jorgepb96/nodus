@@ -1,3 +1,4 @@
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import type { ResearchNotebookInput, ResearchNotebookPreparation, ResolvedResearchScope } from '@shared/researchCorpus';
 import type { ResearchChatRequest } from '@shared/types';
 import { notebookPreparationStatus, validateRetrievalSettings } from '@shared/researchCorpus';
@@ -145,7 +146,7 @@ export function rememberNotebookTurn(input: ResearchChatRequest, answer: string)
   const user = input.messages.filter(message => message.role === 'user').at(-1);
   const insert = getDb().prepare(`INSERT OR IGNORE INTO research_conversation_provenance(conversation_id,scope_id,role,content_hash,created_at) VALUES (?,?,?,?,?)`);
   getDb().transaction(() => {
-    for (const [role, content] of [['user', user?.content], ['assistant', answer]]) if (content) insert.run(input.conversationId, scope.id, role, researchFingerprint(content), new Date().toISOString());
+    for (const [role, content] of [['user', user?.content], ['assistant', answer], ['assistant', researchSourcePresentation(answer).content]]) if (content) insert.run(input.conversationId, scope.id, role, researchFingerprint(content), new Date().toISOString());
   })();
   return answer;
 }

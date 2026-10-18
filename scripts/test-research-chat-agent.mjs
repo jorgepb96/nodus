@@ -256,9 +256,10 @@ try {
     assert.equal(full.sourceCoverage.length, full.sourceCount, 'compaction leaves the live run intact');
     const chats = load('electron/db/chatRepo.ts');
     const conversation = chats.createConversation({ title: 'Coverage round trip' });
-    const stats = { sections: [], works: 0, documents: 0, summaries: 0, passages: 0, contextChars: 0, truncated: full.partial, researchTraversal: compact };
+    const stats = { sections: [], works: 0, documents: 0, summaries: 0, passages: 0, contextChars: 0, truncated: full.partial, researchTraversal: compact, sourceNotices: ['Optional source-coverage note.'] };
     chats.saveMessages(conversation.id, [{ id: 'coverage-message', role: 'assistant', content: 'No evidence', stats }]);
     assert.deepEqual(chats.getConversation(conversation.id).messages[0].stats.researchTraversal, compact, 'coverage detail, attempts and counts survive the actual chat repository');
+    assert.deepEqual(chats.getConversation(conversation.id).messages[0].stats.sourceNotices, stats.sourceNotices, 'optional source notes survive the actual history store independently of prose');
     db.prepare("INSERT INTO ideas(global_id,type,label,statement) VALUES ('coverage-idea','claim','Coverage idea','coverage marker')").run();
     db.prepare("INSERT INTO idea_occurrences(global_id,nodus_id,role,confidence) VALUES ('coverage-idea','coverage-4','principal',1)").run();
     db.prepare("INSERT INTO gaps(id,nodus_id,kind,statement,confidence) VALUES ('coverage-gap','coverage-5','open_question','coverage missing comparison',0.9)").run();

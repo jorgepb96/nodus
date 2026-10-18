@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v30', stage: 'coherent-answer-review-v30' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v32', stage: 'coherent-answer-review-v32' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -15,7 +15,7 @@ export function researchChatPresentationInstruction(question: string): string {
     limits.singleLiteral ? 'Use one literal source excerpt only. Paraphrase other statements and use italics for technical terms.' : ''].filter(Boolean).join(' ');
   return (researchChatHeadingsRequested(question)
     ? 'Use the headings explicitly requested by the user, with substantive paragraphs under each. Preserve inline Nodus citations with author, year and page labels.'
-    : 'Write a cohesive answer in connected paragraphs, with clear transitions and inline Nodus citations (author, year and page). Do not label paragraphs as Note, Limitation or Inference: integrate those qualifications into connected sentences. Do not divide the answer into headings, numbered sections or standalone bold section labels unless the user explicitly requests them. Avoid a report template or an unsolicited catalogue of sources. Preserve Nodus visual/artifact blocks when requested.') + (budget ? ` ${budget}` : '');
+    : 'Write a cohesive answer in connected paragraphs, with clear transitions and inline Nodus citations (author, year and page). Keep substantive qualifications next to their assertions; omit routine operational/source-coverage disclaimers. Necessary source-coverage notes belong in a separate paragraph for the optional source-note control. Do not divide the answer into headings, numbered sections or standalone bold section labels unless the user explicitly requests them. Avoid a report template or an unsolicited catalogue of sources. Preserve Nodus visual/artifact blocks when requested.') + (budget ? ` ${budget}` : '');
 }
 export interface ResearchAnswerReview { accepted: boolean; claims: ResearchClaimRecord[]; issues: string[]; notes?: string[] }
 export interface ResearchAnswerVerdicts { claims: unknown[]; coherent: boolean; relevant: boolean; complete: boolean; issues: string[] }
@@ -454,7 +454,9 @@ export function assessResearchAnswer(text: string, sources: ResearchAuditSource[
     const authorized = cited.every(citation => sources.some(source => source.citation === citation && supportingIds.has(source.id)));
     const citationEvidenceIds = [...new Set(verdict.premises.flatMap(premise => premise.evidence.map(proof => proof.id)))];
     const needsCitation = sources.some(source => Boolean(source.citation) && citationEvidenceIds.includes(source.id));
-    const hasCitation = !needsCitation || cited.length > 0;
+    const hasCitation = !needsCitation || (proofUnits
+      ? sources.filter(source => source.citation && citationEvidenceIds.includes(source.id)).every(source => cited.includes(source.citation))
+      : cited.length > 0);
     const claim: ResearchClaimRecord = { sentence: paragraph, kind: verdict.kind, status: decision.valid && substantive && authorized && hasCitation ? 'supported' : 'removed', evidence: decision.evidence, citationEvidenceIds,
       reason: !substantive ? 'non_substantive_source_fragment' : decision.failure ? `${decision.failure}: ${'diagnosis' in decision ? decision.diagnosis : verdict.reason}` : !authorized ? 'citation_without_verified_support' : !hasCitation ? 'missing_documentary_citation' : verdict.reason,
       ...(decision.failure ? { failure: decision.failure } : {}), premises: verdict.premises.map(({ text, type, entailed }) => ({ text, type, entailed })) };
@@ -548,6 +550,21 @@ export async function reviewAndReviseResearchAnswer(draft: string, review: (text
         const checked = await review(candidate); attempts.push(checked);
         signal?.throwIfAborted();
         if (checked.accepted) return { answer: candidate, status: 'verified' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts, verifiedCoreReconstruction: true };
+        // One narrow final correction can repair a source locator or an accidental
+        // nonliteral quotation. Dependent synthesis is checked again too; no
+        // unsupported fact, semantic objection or technical outage qualifies.
+        const rejected = checked.claims.filter(claim => claim.status !== 'supported');
+        const quoteFailure = rejected.some(claim => /^The direct quotation does not match/u.test(claim.reason ?? ''));
+        if (!checked.issues.length && quoteFailure && rejected.every(claim =>
+          /^The direct quotation does not match|^inference_without_supported_premises/u.test(claim.reason ?? ''))) {
+          const repaired = await revise(candidate, { ...checked, issues: ['literal_source_repair: resolve the exact quotation/source-locator diagnostic with an attributed paraphrase or the actual cited source; preserve every requested facet'] }, ++rewriteAttempts);
+          if (repaired.trim() !== candidate.trim()) {
+            contentRevisions++;
+            const finalCheck = await review(repaired); attempts.push(finalCheck);
+            signal?.throwIfAborted();
+            if (finalCheck.accepted) return { answer: repaired, status: 'verified' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts, verifiedCoreReconstruction: true };
+          }
+        }
       }
     } catch (error) {
       signal?.throwIfAborted();

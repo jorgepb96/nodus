@@ -70,7 +70,8 @@ import { confirm } from '../components/feedback';
 import { SourceCitationModal, type CitationTarget, type OpenCitationLibraryWork } from '../components/SourceCitationModal';
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
 import { TranslationModal } from '../components/TranslationModal';
-import { Markdown } from '../components/Markdown';
+import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice';
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import { DraftActionBar, DraftResultMain, SupportMatrix } from './writingShared';
 import { DeepResearchQueueStrip, type QueueStripItem } from '../components/DeepResearchQueueStrip';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
@@ -917,7 +918,7 @@ export function DeepResearchView({
 
   const copyDraft = async () => {
     if (!openDraft) return;
-    await navigator.clipboard.writeText(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown);
+    await navigator.clipboard.writeText(researchSourcePresentation(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown).content);
     setMessage(t('Borrador copiado.'));
   };
 
@@ -927,8 +928,8 @@ export function DeepResearchView({
   const copyForListening = async () => {
     if (!openDraft) return;
     const text = appliedTranslation
-      ? toReadingCopy(appliedTranslation.markdown)
-      : toReadingCopy(openDraft.draft.draftMarkdown, { title: openDraft.draft.title });
+      ? toReadingCopy(researchSourcePresentation(appliedTranslation.markdown).content)
+      : toReadingCopy(researchSourcePresentation(openDraft.draft.draftMarkdown).content, { title: openDraft.draft.title });
     await navigator.clipboard.writeText(text);
     setMessage(t('Texto copiado sin citas ni referencias.'));
   };
@@ -2427,6 +2428,7 @@ function ReaderView({
               style={{ '--deep-research-font-size': `${initialReaderFontSize}px` } as CSSProperties}
             >
               {appliedTranslation ? <Markdown content={appliedTranslation.markdown} onCitation={onCitation} onStudyDocument={onOpenStudyDocument} onStudyMaterial={onOpenStudyMaterial} onStudyRecording={onOpenStudyRecording} onGuideEvidence={onGuideEvidence} /> : <DraftResultMain
+                sourceNotices
                 draft={saved.draft}
                 exporting={exporting}
                 savingDraft={false}
@@ -2462,7 +2464,7 @@ function ReaderView({
         />
         {showMatrix && (
           <aside className="w-80 shrink-0 overflow-y-auto border-l border-neutral-800 p-4 max-lg:hidden">
-            {saved.draft.completeGuide ? <CompleteGuideCoveragePanel meta={saved.draft.completeGuide} /> : <SupportMatrix draft={saved.draft} onCitation={onCitation} />}
+            {saved.draft.completeGuide ? <CompleteGuideCoveragePanel meta={saved.draft.completeGuide} /> : <SupportMatrix sourceNotices draft={saved.draft} onCitation={onCitation} />}
           </aside>
         )}
       </div>

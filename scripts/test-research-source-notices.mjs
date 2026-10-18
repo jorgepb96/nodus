@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { build } from 'esbuild';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'nodus-source-notices-'));
+try {
+  const bundle = path.join(temp, 'notices.mjs');
+  await build({ entryPoints: ['shared/researchSourceNotices.ts'], outfile: bundle, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
+  const { researchSourcePresentation: present, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION: instruction } = await import(pathToFileURL(bundle).href);
+  const body = 'La propaganda turística construyó una imagen del país [Fuente](nodus://passage/real). Su recepción exige distinguir intención y efecto.';
+  const note = '**Nota sobre la evidencia disponible:** los pasajes recuperados permiten reconstruir el origen, la difusión y la persistencia del tópico, pero no ofrecen un análisis teórico comparado del mismo con otros estereotipos europeos equivalentes. Para profundizar en esa dimensión comparada, convendría indexar más fuentes o reformular la pregunta.';
+  test('old legacy footer is optional, verbatim and absent from copied/saved prose', () => {
+    assert.deepEqual(present(`${body}\n\n${note}`), { content: body, notices: [note] });
+    const persisted = JSON.parse(JSON.stringify({ content: body, stats: { sourceNotices: [note] } }));
+    assert.deepEqual(present(persisted.content, persisted.stats.sourceNotices), { content: body, notices: [note] });
+    assert.deepEqual(present(`${note}\n\n${body}`), { content: body, notices: [note] });
+  });
+  test('unlabelled operational coverage aside moves without creating a note', () => {
+    const aside = 'Los pasajes recuperados no ofrecen datos sobre la recepción de esta campaña. Convendría indexar más fuentes.';
+    assert.deepEqual(present(`${body}\n\n${aside}`), { content: body, notices: [aside] });
+    assert.deepEqual(present(body), { content: body, notices: [] });
+    assert.ok(instruction.includes('Never invent'));
+  });
+  test('substantive scientific uncertainty and quoted source text remain in the argument', () => {
+    for (const text of [
+      'La intención propagandística no demuestra por sí sola un efecto en los visitantes.',
+      'Las fuentes del archivo de 1940 no incluyen testimonios de mujeres; esta ausencia limita el estudio histórico [Autor](nodus://passage/a).',
+      'La autora señala las limitaciones de las fuentes censuradas y propone compararlas con testimonios orales.',
+      '> Los pasajes recuperados no ofrecen un análisis comparado.',
+      '«Los pasajes recuperados no ofrecen un análisis comparado».',
+      'El menú de 1950 no incluye platos extranjeros [Archivo](nodus://passage/a).',
+      '```text\n\nLos pasajes recuperados no contienen pruebas.\n\n```',
+      '| Campo | Valor |\n| --- | --- |\n| Los pasajes recuperados | no contienen pruebas |',
+    ]) assert.deepEqual(present(text), { content: text, notices: [] }, text);
+  });
+  test('a provenance aside inside a paragraph separates without deleting factual scope', () => {
+    const provenance = 'Los pasajes proceden de una revisión indexada anterior de cada obra, no de la versión actual.';
+    assert.deepEqual(present(`${body} ${provenance}`), { content: body, notices: [provenance] });
+    const scoped = 'La postmodernidad aparece en 2015 [Fuente](nodus://passage/a), aspecto que no aparece en los pasajes disponibles de 2011.';
+    assert.deepEqual(present(scoped), { content: scoped, notices: [] });
+  });
+  test('a heading on its own has a reversible optional body and never swallows the next heading', () => {
+    assert.deepEqual(present(`${body}\n\n## Limitaciones de las fuentes\n\nNo se ha consultado el archivo.`), { content: body, notices: ['## Limitaciones de las fuentes\n\nNo se ha consultado el archivo.'] });
+    const text = '## Limitaciones de las fuentes\n\n## Análisis\n\nTexto.';
+    assert.deepEqual(present(text), { content: text, notices: [] });
+  });
+  test('existing notices deduplicate and citations/visuals in the answer stay byte-for-byte intact', () => {
+    const visual = '```nodus-visual\n{"title":"Los pasajes recuperados no bastan"}\n```';
+    const text = `${body}\n\n${visual}`;
+    assert.deepEqual(present(text, [note, note]), { content: text, notices: [note] });
+    assert.deepEqual(present(note), { content: '', notices: [note] });
+  });
+} finally { await fs.rm(temp, { recursive: true, force: true }); }

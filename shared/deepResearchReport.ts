@@ -1,3 +1,4 @@
+import { researchSourcePresentation } from './researchSourceNotices';
 import { documentFigureInsertions } from './documentFigureExport';
 /**
  * A Deep Research report, described for the styled document.
@@ -270,7 +271,7 @@ export function deepResearchReportInput(
 ): ProfessionalReportInput {
   const language = draft.brief.language ?? 'es';
   const labels = DEEP_LABELS[language];
-  const body = stripLeadingAbstract(draft.draftMarkdown, draft.abstract);
+  const body = researchSourcePresentation(stripLeadingAbstract(draft.draftMarkdown, draft.abstract)).content;
   const report = anchoredMarkdown(body, 'report', documentFigureInsertions(body, 'body', visuals));
   const abstract = anchoredMarkdown(draft.abstract || draft.brief.objective, 'summary');
   const sections: ProfessionalReportSection[] = [

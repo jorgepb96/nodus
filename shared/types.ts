@@ -6060,6 +6060,8 @@ export interface ResearchWebSource {
 }
 
 export interface ResearchContextStats {
+  /** Optional source-coverage asides; excluded from answer prose and copying. */
+  sourceNotices?: string[];
   researchRun?: import('./researchHarness').ResearchRunSummary;
   researchTraversal?: import('./researchCorpus').ResearchTraversal;
   webSearch?: ResearchWebSearchStats;

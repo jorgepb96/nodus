@@ -37,6 +37,8 @@ import { ResearchCoverage } from '../components/ResearchCoverage';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ModelPicker } from '../components/ModelPicker';
 import { liveResearchTurnKey, liveResearchTurns, type LiveResearchTurn } from '../researchLiveTurns';
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
+import { ResearchSourceNotice } from '../components/ResearchSourceNotice';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
 import { ChatSkillsControl } from '../components/ChatSkillsControl';
@@ -137,9 +139,10 @@ const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, s
 
 // Scrolling and opening chat controls must not replace completed citation buttons.
 // Keep the callback stable so Markdown retains its DOM and the guide's anchor.
-const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language}:{content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
+const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language,notices}:{notices?:string[];content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
   const cite=useCallback((citation:MarkdownCitation)=>onCitation(citation,{conversationId,messageId}),[onCitation,conversationId,messageId]);
-  return <ChatMarkdown key={language} content={content} streaming={streaming} onCitation={cite}/>;
+  const display = researchSourcePresentation(content, notices);
+  return <><ChatMarkdown key={language} content={display.content} streaming={streaming} onCitation={cite}/><ResearchSourceNotice notices={display.notices} onCitation={cite}/></>;
 });
 
 export function ResearchAssistantModal({
@@ -406,14 +409,14 @@ export function ResearchAssistantModal({
   }, []);
 
   const copyMessageMarkdown = useCallback(async (message: UiMessage) => {
-    const text = message.content.trim();
+    const text = (!adapter && message.role === 'assistant' ? researchSourcePresentation(message.content).content : message.content).trim();
     if (!text) return;
     await navigator.clipboard.writeText(text);
     setCopiedMessageId(message.id);
     window.setTimeout(() => {
       setCopiedMessageId((current) => (current === message.id ? null : current));
     }, 1400);
-  }, []);
+  }, [adapter]);
 
   // What the balloon offers: the corpus layers and the web. A selection saved before layers
   // existed is read from its sections, as the backend reads it.
@@ -1284,7 +1287,7 @@ export function ResearchAssistantModal({
                               const fallbackTitle = messages.find((candidate) => candidate.role === 'user' && candidate.content.trim())?.content.trim().slice(0, 80);
                               const conversationTitle = summary?.title || contextTitle || fallbackTitle || t('Research chat');
                               setNoteTarget({
-                                content: isAcademic ? localizeResearchCitationLabels(message.content,t('Fuente')) : message.content,
+                                content: isAcademic ? localizeResearchCitationLabels(researchSourcePresentation(message.content).content,t('Fuente')) : adapter ? message.content : researchSourcePresentation(message.content).content,
                                 title: deriveNoteTitle(message.content, conversationTitle),
                                 source: researchNoteSource({
                                   surface: attachmentSurface,
@@ -1327,9 +1330,9 @@ export function ResearchAssistantModal({
                         </details>
                       )}
                       {message.role === 'assistant' && !message.error ? (
-                        message.content ? (
+                        (message.content || message.stats?.sourceNotices?.length) ? (
                           <div className={message.id === streamingId ? 'stream-body' : undefined}>
-                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ResearchMessageBody language={settings.uiLanguage ?? 'es'} content={message.content} conversationId={activeId ?? undefined} messageId={message.id} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
+                            {adapter ? <AdapterMessageBody render={adapter.renderMessage} message={message} streaming={message.id === streamingId} /> : <ResearchMessageBody language={settings.uiLanguage ?? 'es'} content={message.content} notices={message.stats?.sourceNotices} conversationId={activeId ?? undefined} messageId={message.id} onCitation={handleCitation} streaming={message.id === streamingId && message.id !== repaintedId} />}
                             {message.id === streamingId && <span aria-hidden className="stream-caret" />}
                           </div>
                         ) : message.id === streamingId ? (

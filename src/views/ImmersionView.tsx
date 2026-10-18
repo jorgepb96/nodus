@@ -48,7 +48,9 @@ import { SectionHeader } from '../components/SectionHeader';
 import { GalleryFilterMenu, GalleryFilterReset, GallerySortMenu, passesFilter, type GalleryFilterOption } from '../components/GalleryFilters';
 import { PROMPT_LANGUAGE_OPTIONS } from '@shared/promptLanguageOptions';
 import { ModelPicker } from '../components/ModelPicker';
-import { Markdown, type MarkdownCitation } from '../components/Markdown';
+import type { MarkdownCitation } from '../components/Markdown';
+import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice';
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import { StudyMarkdown, StudyMarkdownInline } from '../components/StudyMarkdown';
 import { SourceCitationModal, type CitationTarget, type OpenCitationLibraryWork } from '../components/SourceCitationModal';
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
@@ -2686,5 +2688,5 @@ function sessionMarkdown(session: ImmersionSession): string {
     lines.push('');
   }
   lines.push(`## ${t('Cierre Feynman')}`, '', plan.exam.feynman, '');
-  return lines.join('\n');
+  return researchSourcePresentation(lines.join('\n')).content;
 }

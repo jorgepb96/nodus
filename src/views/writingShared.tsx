@@ -1,3 +1,4 @@
+import { ResearchMarkdown, ResearchSourceNotice } from '../components/ResearchSourceNotice';
 import { useState } from 'react';
 import type { DecorativeImageStyle, SupportAuditEntry, WritingWorkshopBrief, WritingWorkshopDraft, WritingWorkshopExportFormat, WritingWorkshopSavedDraft } from '@shared/types';
 import type { DeepResearchQualityAssessment } from '@shared/deepResearchQuality';
@@ -118,6 +119,7 @@ export function DraftActionBar({
 
 /** Main draft/report display: title, actions (copy/save/export) and rendered markdown. */
 export function DraftResultMain({
+  sourceNotices = false,
   draft,
   exporting,
   savingDraft,
@@ -135,6 +137,7 @@ export function DraftResultMain({
   onStudyRecording,
   onGuideEvidence,
 }: {
+  sourceNotices?: boolean;
   draft: WritingWorkshopDraft;
   exporting: boolean;
   savingDraft: boolean;
@@ -156,13 +159,14 @@ export function DraftResultMain({
   onStudyRecording?: (id: string, timestamp?: number | null) => void;
   onGuideEvidence?: (itemId: string, open: () => void) => void;
 }) {
+  const Prose = sourceNotices ? ResearchMarkdown : Markdown;
   return (
     <div className={`mx-auto space-y-5 ${wide ? 'max-w-none' : 'max-w-4xl'}`}>
       <div className="space-y-3">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold break-words">{draft.title}</h2>
           {draft.abstract && <div data-testid="draft-abstract" className={`text-sm text-neutral-400 mt-1 ${justify ? 'text-justify' : ''}`}>
-            <Markdown content={draft.abstract} onCitation={onCitation} onStudyDocument={onStudyDocument} onStudyMaterial={onStudyMaterial} onStudyRecording={onStudyRecording} onGuideEvidence={onGuideEvidence} />
+            <Prose content={draft.abstract} onCitation={onCitation} onStudyDocument={onStudyDocument} onStudyMaterial={onStudyMaterial} onStudyRecording={onStudyRecording} onGuideEvidence={onGuideEvidence} />
           </div>}
         </div>
         {!hideActions && (
@@ -202,10 +206,11 @@ export function DraftResultMain({
           </div>
         </section>
       )}
+      {sourceNotices && <ResearchSourceNotice notices={draft.limitations} onCitation={onCitation} />}
       <section className={`card p-4 ${justify ? 'text-justify' : ''}`}>
         {/* The abstract is the subtitle above and the limitations have their own
             panel below, so the body drops both rather than repeating them. */}
-        <Markdown content={documentBodyForPanels(draft.draftMarkdown, draft.abstract)} onCitation={onCitation} onStudyDocument={onStudyDocument} onStudyMaterial={onStudyMaterial} onStudyRecording={onStudyRecording} onGuideEvidence={onGuideEvidence} />
+        <Prose content={documentBodyForPanels(draft.draftMarkdown, draft.abstract)} onCitation={onCitation} onStudyDocument={onStudyDocument} onStudyMaterial={onStudyMaterial} onStudyRecording={onStudyRecording} onGuideEvidence={onGuideEvidence} />
       </section>
     </div>
   );
@@ -257,9 +262,11 @@ function ExportMenu({ exporting, compact = false, onExport }: { exporting: boole
 
 /** Right-hand support matrix for a generated draft/report. */
 export function SupportMatrix({
+  sourceNotices = false,
   draft,
   onCitation,
 }: {
+  sourceNotices?: boolean;
   draft: WritingWorkshopDraft | null;
   onCitation: (target: CitationTarget) => void;
 }) {
@@ -298,7 +305,7 @@ export function SupportMatrix({
           {draft.researchTraversal && <ResearchCoverage value={draft.researchTraversal} />}
           {draft.qualityAssessment && <DeepResearchQualityPanel assessment={draft.qualityAssessment} />}
           <PanelList title={t('Siguientes pasos')} items={draft.nextSteps} />
-          <PanelList title={t('Limitaciones')} items={draft.limitations} />
+          {sourceNotices ? <ResearchSourceNotice notices={draft.limitations} onCitation={onCitation} /> : <PanelList title={t('Limitaciones')} items={draft.limitations} />}
           <PanelList title={t('Bibliografía')} items={draft.bibliography} />
         </div>
       )}

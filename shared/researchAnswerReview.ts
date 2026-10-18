@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v33', stage: 'coherent-answer-review-v33' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v34', stage: 'coherent-answer-review-v34' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -70,14 +70,14 @@ export function validResearchAnswerVerdicts(value: unknown): value is ResearchAn
 }
 /** Structural provider errors may be retried; unsupported content is never repaired
  * by coercing a positive verdict. Quote aliases are checked against sources later. */
-export function validResearchAnswerCoverage(value: unknown, count: number, sourceIds?: ReadonlySet<string>): value is ResearchAnswerVerdicts {
+export function validResearchAnswerCoverage(value: unknown, count: number, sourceIds?: ReadonlySet<string>, start = 0): value is ResearchAnswerVerdicts {
   if (!validResearchAnswerVerdicts(value) || value.claims.length !== count) return false;
   const seen = new Set<number>();
   return value.claims.every(raw => {
     if (!raw || typeof raw !== 'object') return false;
     const row = raw as Record<string, unknown>;
     const index = row.index as number;
-    if (!Number.isInteger(index) || index < 0 || index >= count || seen.has(index)) return false;
+    if (!Number.isInteger(index) || index < start || index >= start + count || seen.has(index)) return false;
     seen.add(index);
     return typeof row.supported === 'boolean' && typeof row.reason === 'string'
       && Array.isArray(row.premises) && row.premises.length <= 12
@@ -101,38 +101,51 @@ export function validResearchAnswerCoverage(value: unknown, count: number, sourc
   });
 }
 
-/** A malformed review is retried in smaller units, never repaired into approval.
- * Each fallback paragraph must establish its own premises; context is not proof. */
+/** Long answers use bounded proof batches proactively, with stable global unit
+ * identities. Cross-batch dependencies still pass the full backend proof gate. */
 export async function researchAnswerVerdictsWithFallback(paragraphs: string[],
   check: (paragraphs: Array<{ index: number; text: string }>, independent: boolean) => Promise<ResearchAnswerVerdicts>, signal?: AbortSignal,
   recheck?: typeof check): Promise<ResearchAnswerVerdicts> {
   const indexed = paragraphs.map((text, index) => ({ index, text }));
   const structural = (error: unknown) => ['schema_mismatch', 'invalid_json', 'output_truncated'].includes(String(error && typeof error === 'object' && 'code' in error ? error.code : undefined));
-  try { return await check(indexed, false); }
+  const once = async (units: typeof indexed, independent: boolean) => {
+    try { return await check(units, independent); }
+    catch (error) {
+      signal?.throwIfAborted();
+      if (!structural(error) || !recheck) throw error;
+      return recheck(units, independent);
+    }
+  };
+  const batches = async (size: number) => {
+    const parts: ResearchAnswerVerdicts[] = [];
+    for (let start = 0; start < paragraphs.length; start += size) {
+      signal?.throwIfAborted();
+      const batch = indexed.slice(start, start + size);
+      const result = await once(batch, true);
+      if (!validResearchAnswerCoverage(result, batch.length, undefined, start)) throw Object.assign(new Error('Invalid proof batch'), { code: 'schema_mismatch' });
+      parts.push(result);
+    }
+    return { claims: parts.flatMap(part => part.claims), coherent: parts.every(part => part.coherent), relevant: parts.every(part => part.relevant), complete: parts.every(part => part.complete),
+      issues: [...new Set(parts.flatMap(part => part.issues))] };
+  };
+  if (paragraphs.length > 12 && paragraphs.length <= 64) return batches(4);
+  try { return await once(indexed, false); }
   catch (error) {
     signal?.throwIfAborted();
-    if (!structural(error)) throw error;
-    if (recheck) {
-      try { return await recheck(indexed, false); }
-      catch (recheckError) { signal?.throwIfAborted(); if (!structural(recheckError)) throw recheckError; }
-    }
-    if (paragraphs.length < 2 || paragraphs.length > 64) throw error;
-    const batchSize = paragraphs.length > 12 ? 4 : 1;
-    const parts: Array<{ start: number; review: ResearchAnswerVerdicts }> = [];
-    for (let start = 0; start < paragraphs.length; start += batchSize) {
-      signal?.throwIfAborted();
-      const batch = paragraphs.slice(start, start + batchSize).map((text, index) => ({ index, text }));
-      const result = await check(batch, true);
-      if (!validResearchAnswerCoverage(result, batch.length)) throw error;
-      parts.push({ start, review: result });
-    }
-    return { claims: parts.flatMap(({ start, review }) => review.claims.map((raw, index) => {
-      const claim = raw as { premises: Array<{ fromParagraphs?: number[] }> };
-      return { ...claim, index: start + index, premises: claim.premises.map(premise => ({ ...premise,
-        ...(premise.fromParagraphs ? { fromParagraphs: premise.fromParagraphs.map(parent => start + parent) } : {}) })) };
-    })), coherent: parts.every(part => part.review.coherent), relevant: parts.every(part => part.review.relevant), complete: parts.every(part => part.review.complete),
-      issues: [...new Set(parts.flatMap(part => part.review.issues))] };
+    if (!structural(error) || paragraphs.length < 2 || paragraphs.length > 64) throw error;
+    return batches(1);
   }
+}
+
+/** Reject a proof that names an alias absent from its actual model input. This
+ * creates a negative diagnosis for revision, never a positive verdict or a new
+ * source grant. An invalid evidence binding is not a provider outage. */
+export function rejectUnprovidedResearchProofs(value: ResearchAnswerVerdicts, sourceIds: ReadonlySet<string>): ResearchAnswerVerdicts {
+  return { ...value, claims: value.claims.map(raw => {
+    const claim = raw as { premises: Array<{ evidence: Array<{ id: string }> }>; unsupportedParts: string[] };
+    return claim.premises.some(premise => premise.evidence.some(proof => !sourceIds.has(proof.id)))
+      ? { ...claim, supported: false, unsupportedParts: [...claim.unsupportedParts.slice(0, 11), 'source_not_supplied_to_this_proof'] } : raw;
+  }) };
 }
 
 /** Bibliographic names are identities, not verbatim quotations from a work.

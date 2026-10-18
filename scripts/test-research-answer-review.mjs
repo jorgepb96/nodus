@@ -102,8 +102,8 @@ try {
   let fallbacks = 0;
   const partitioned = await review.researchAnswerVerdictsWithFallback(['a', 'b'], async (paragraphs, independent) => {
     if (!independent) throw protocolError;
-    fallbacks++; assert.deepEqual(paragraphs.map(p => p.index), [0]);
-    return envelope([{ ...verdict, supported: false, unsupportedParts: ['Unsupported factual modifier'] }]);
+    fallbacks++; assert.deepEqual(paragraphs.map(p => p.index), [fallbacks - 1]);
+    return envelope([{ ...verdict, index: paragraphs[0].index, supported: false, unsupportedParts: ['Unsupported factual modifier'] }]);
   });
   assert.equal(fallbacks, 2);
   assert.equal(partitioned.claims[1].index, 1);
@@ -112,9 +112,9 @@ try {
   {
     let batches = 0;
     const many = await review.researchAnswerVerdictsWithFallback(Array.from({ length: 18 }, (_, i) => 'Sentence ' + i), async (units, independent) => {
-      if (!independent) throw protocolError;
+      assert.equal(independent, true, 'Long answers go directly to bounded proofs');
       batches++; assert.ok(units.length <= 4);
-      return envelope(units.map((unit, i) => ({ ...structuredClone(verdict), index: i, premises: [{ ...structuredClone(verdict.premises[0]), ...(i ? { fromParagraphs: [0] } : {}) }] })));
+      return envelope(units.map((unit, i) => ({ ...structuredClone(verdict), index: unit.index, premises: [{ ...structuredClone(verdict.premises[0]), ...(unit.index ? { fromParagraphs: [unit.index - 1] } : {}) }] })));
     });
     assert.equal(many.claims.length, 18, 'Longer sentence-based answers recover through bounded smaller checks');
     assert.equal(batches, 5);
@@ -126,6 +126,17 @@ try {
   });
   assert.equal(freshProofs, 1, 'Malformed JSON gets one fresh proof, rather than identical retries');
   assert.equal(recoveredProof.claims[0].supported, false, 'A fresh proof cannot turn a negative verdict into an automatic approval');
+  {
+    const negative = review.rejectUnprovidedResearchProofs(envelope([verdict]), new Set(['another-input-source']));
+    assert.ok(negative.claims[0].unsupportedParts.includes('source_not_supplied_to_this_proof'));
+    assert.equal(review.assessResearchAnswer(paragraph, [source], negative, 'Explica').accepted, false, 'A real but unseen source cannot pass merely because it exists in the frozen pool');
+    assert.deepEqual(review.rejectUnprovidedResearchProofs(envelope([verdict]), new Set(['p1'])), envelope([verdict]));
+    const shifted = envelope([{ ...structuredClone(verdict), index: 4 }]);
+    shifted.claims[0].premises[0].fromParagraphs = [3];
+    assert.equal(review.validResearchAnswerCoverage(shifted, 1, undefined, 4), true, 'Stable global dependencies can cross a batch boundary');
+    shifted.claims[0].premises[0].fromParagraphs = [4];
+    assert.equal(review.validResearchAnswerCoverage(shifted, 1, undefined, 4), false, 'Global numbering never permits a self dependency');
+  }
   let forbiddenRecovery = 0;
   await assert.rejects(review.researchAnswerVerdictsWithFallback(['a'], async () => { throw new Error('permission revoked'); }, undefined, async () => { forbiddenRecovery++; return envelope([verdict]); }), /permission/);
   assert.equal(forbiddenRecovery, 0);

@@ -934,7 +934,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
 
   // A notebook's own limits, or the user's, are kept; otherwise the chat's agent limits apply.
   const retrieval = validateRetrievalSettings(request.selection.retrieval
-    ?? (request.thinkingEffort && ['off', 'none', 'minimal'].includes(request.thinkingEffort) ? RESEARCH_CHAT_LIGHT_AGENT_SETTINGS : RESEARCH_CHAT_AGENT_SETTINGS));
+    ?? (!currentResearchHarness() && request.thinkingEffort && ['off', 'none', 'minimal'].includes(request.thinkingEffort) ? RESEARCH_CHAT_LIGHT_AGENT_SETTINGS : RESEARCH_CHAT_AGENT_SETTINGS));
   contextBudget = Math.min(contextBudget, retrieval.evidenceTokens * LOCAL_CHARS_PER_TOKEN);
   const notebookScope = requestNotebookScope(request);
   let context: SectionPayload;

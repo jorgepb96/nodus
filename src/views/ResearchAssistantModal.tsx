@@ -7,7 +7,8 @@ import { useAcademicInterface } from '../components/AcademicInterfaceContext';
 import { AcademicSecondary } from '../components/AcademicSecondary';
 import { ProjectInstructionsDialog } from '../components/ProjectInstructionsDialog';
 import { ResearchActivityPanel } from '../components/ResearchActivityPanel';
-import { ResearchHarnessControl, useResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { useResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchExplorationControl } from '../components/ResearchExplorationControl';
 import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { ResearchWebSearchControl } from '../components/ResearchWebSearchControl';
 import { ResearchVerificationControl } from '../components/ResearchVerificationControl';
@@ -212,7 +213,7 @@ export function ResearchAssistantModal({
   // Remembered per provider+model: a conversation keeps whatever level the model was last
   // used at, so a level the user picked is not reset by switching chats or models.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel);
-  const harnessOptions = useResearchHarnessOptions(settings);
+  const harnessOptions = useResearchHarnessOptions(settings, 'chat');
   const [webSearch, setWebSearchState] = useState<ResearchWebSearchMode>(settings.researchWebSearch === 'off' ? 'off' : 'auto');
   // The web is this chat's choice, and the composer's saved setting for chats that never made one.
   const setWebSearch = (mode: ResearchWebSearchMode) => {
@@ -749,7 +750,7 @@ export function ResearchAssistantModal({
     try {
       await persist(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
-        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch, harnessVersion: harnessOptions.version } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
+        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch, harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
           // A terminal event may arrive after the turn settled (it travels on another IPC pipe
           // than the reply); it then replaces the placeholder the settlement wrote.
@@ -1097,9 +1098,9 @@ export function ResearchAssistantModal({
             <Icon name="chat" className="research-accent-text" />
             {embedded ? 'Research chat' : t('Asistente de investigación')}
           </div>
-          {!adapter && !isGenealogy && <ResearchHarnessControl options={harnessOptions} disabled={sending} />}
           {!simpleInterface && chatModelControl}
           <div className="research-assistant-actions">
+          {!adapter && !isGenealogy && harnessOptions.version === 'v1' && <ResearchExplorationControl value={harnessOptions.exploration} onChange={harnessOptions.onExploration} disabled={sending} />}
           {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-md border research-accent-soft px-2 py-1 text-xs research-accent-text"

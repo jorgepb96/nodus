@@ -15,7 +15,7 @@ export const researchRunIsActive = (id: string) => running.has(id);
 const hash = (value: unknown) => createHash('sha256').update(researchCanonical(value)).digest('hex');
 export const currentResearchHarness = () => active.getStore();
 export function researchHarnessEnabled(request: { harnessVersion?: 'v1' | 'legacy'; runId?: string }): boolean {
-  return !!request.runId || (request.harnessVersion ?? getSettings().researchHarnessVersion) === 'v1';
+  return !!request.runId || (request.harnessVersion ?? getSettings().researchHarnessVersion ?? 'v1') === 'v1';
 }
 
 export class ResearchHarness {
@@ -115,7 +115,10 @@ export async function withResearchHarness<T extends object>(input: {
   onUpdate?: (summary: ResearchRunSummary) => void;
 }, body: (signal: AbortSignal) => Promise<T>): Promise<T> {
   if (active.getStore()) return body(active.getStore()!.signal);
-  const { runId, ...request } = input.request;
+  const { runId, ...requested } = input.request;
+  // Freeze the resolved profile in the durable request. Changing a UI preference
+  // cannot silently alter an investigation that is subsequently continued.
+  const request = { ...requested, ...(input.context.explorationMode ? { explorationMode: input.context.explorationMode } : {}) };
   const requestKey = hash({ request, context: input.context });
   let record = runId ? getResearchRun(runId) : null;
   if (runId && (!record || record.context.vaultId !== input.context.vaultId || record.context.mode !== input.context.mode
@@ -133,7 +136,7 @@ export async function withResearchHarness<T extends object>(input: {
   if (runId && running.has(runId)) throw new Error('research_run_already_running');
   if (input.context.mode === 'dictionary' && [...running.values()].some(run => run.record.context.mode === 'dictionary' && run.record.context.entryId === input.context.entryId)) throw new Error('research_run_already_running');
   record ??= { context: input.context, request, requestKey, conversationId: request.conversationId, checkpoint: {}, stages: {},
-    summary: { id: randomUUID(), conversationId: request.conversationId, entryId: input.context.entryId, version: 'v1', mode: input.context.mode, objective: input.context.objective, status: 'running', questions: [], tasks: [],
+    summary: { id: randomUUID(), conversationId: request.conversationId, entryId: input.context.entryId, version: 'v1', mode: input.context.mode, explorationMode: input.context.explorationMode, objective: input.context.objective, status: 'running', questions: [], tasks: [],
       usage: { rounds: 0, evidenceBytes: 0, decisionBytes: 0 }, updatedAt: new Date().toISOString() } };
   const harness = new ResearchHarness(record, input.signal, input.validate, input.onUpdate);
   // scopeId fingerprints the full authorized inventory; keep identities/revisions,

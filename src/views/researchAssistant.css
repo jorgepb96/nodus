@@ -274,7 +274,9 @@
 :is(.light, .nodi-theme-light) .research-context-panel .research-context-empty { color: #b45309; background: #fef3c7; }
 
 /* User prompts are vault-scoped; portal surfaces carry the same accent explicitly. */
-.research-system-prompt-name { max-width: 145px; overflow: hidden; text-overflow: ellipsis; }
+.research-system-prompt-trigger { height: 36px; min-height: 36px; max-height: 36px; flex-shrink: 0; padding: 0 10px; line-height: 16px; white-space: nowrap; }
+.research-system-prompt-trigger > svg { flex-shrink: 0; }
+.research-system-prompt-name { max-width: 145px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .research-system-prompt-dialog {
   --prompt-bg: #fff; --prompt-muted-bg: #f8fafb; --prompt-line: #e5e7eb;
   --prompt-text: #172026; --prompt-muted: #65717b;

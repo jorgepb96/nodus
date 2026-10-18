@@ -31,6 +31,7 @@ const settings = { synthesisModel: { provider: 'openai', model: 'gpt-5.4' }, uiL
   // captured and inspected here rather than only asserted.
   { provider: 'deepseek', model: 'deepseek-flash' }, { provider: 'opencode-go', model: 'deepseek-flash' },
 ], sttProvider: 'transformers', sttTransformersModel: 'whisper-tiny', researchEffortByModel: storedEffort() } as AppSettings;
+if (params.get('harness') === 'v1') settings.researchHarnessVersion = 'v1';
 if (params.get('concilium')) {
   settings.uiLanguage = 'en';
   settings.chatModel = { provider: 'deepseek', model: 'deepseek-flash' };

@@ -241,7 +241,8 @@ async function superviseHarness(run: ResearchCorpusRun, question: string, model?
       web: { available: web, explicitRequest: run.web?.explicit ?? false, used: run.web?.used ?? 0 },
       budget: { targets: { rounds: run.budget.settings.rounds, evidenceBytes: run.budget.settings.evidenceTokens }, roundsUsed: run.budget.rounds, roundsRemaining: run.budget.roundLimit - run.budget.rounds, evidenceBytesRemaining: run.budget.evidenceTokenLimit - run.budget.usedEvidenceTokens },
       limitations: [...run.limitations], stagnantActions: harness.agenda.stagnant, coordinator_note: note };
-    const system = HARNESS_SYSTEM;
+    const system = HARNESS_SYSTEM + (harness.record.context.explorationMode === 'fast'
+      ? '\nExploration profile: FAST. Prioritize a focused, well-supported answer to the original request. Related tasks are optional unless needed to answer a requested facet, resolve a material contradiction or check an attribution. Prefer the most relevant sources and reuse useful evidence. Spend the bounded extra allowance only on a concrete important gap and a promising untried action. Finish once the requested answer is supported; do not exhaust the agenda. Keep the same citation and evidence standards and the requested answer length. The profile governs investigation breadth, not model thinking.' : '');
     const targetModel = model ?? harness.record.context.model;
     const window = targetModel ? (await researchModelContextWindow(targetModel)).tokens : 32768;
     const maxTokens = Math.max(384, Math.min(3600, Math.floor(window * 0.08)));

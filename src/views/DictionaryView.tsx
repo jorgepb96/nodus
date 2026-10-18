@@ -615,7 +615,7 @@ function CreationDialog({
               model,
               thinkingEffort: research.thinkingEffort,
               webSearch: research.webSearch,
-              harnessVersion: research.harness.version,
+              harnessVersion: research.harness.version, explorationMode: research.harness.exploration,
             });
             setQueuedDrafts((current) => new Set(current).add(draft.key));
           }
@@ -1063,7 +1063,7 @@ export function DictionaryView({
   const [model, setModel] = useFeatureModel(settings, "dictionaryModel");
   const [thinkingEffort, onThinkingEffort] = useResearchEffort(settings, model);
   const [webSearch, onWebSearch] = useState<ResearchWebSearchMode>('auto');
-  const harness = useResearchHarnessOptions(settings);
+  const harness = useResearchHarnessOptions(settings, 'dictionary');
   const research = { thinkingEffort, onThinkingEffort, webSearch, onWebSearch, harness };
   const [entries, setEntries] = useState<DictionaryEntrySummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -1948,7 +1948,7 @@ function DictionaryEntryView({
           model,
           thinkingEffort: research.thinkingEffort,
           webSearch: research.webSearch,
-          harnessVersion: research.harness.version,
+          harnessVersion: research.harness.version, explorationMode: research.harness.exploration,
       })
       .then((nextProgress) => {
         onGenerationStarted(nextProgress);
@@ -2049,7 +2049,7 @@ function DictionaryEntryView({
                   onClick={() =>
                     void run(
                       "scan",
-                      () => window.nodus.scanDictionaryNewEvidence(entryId, { model, thinkingEffort: research.thinkingEffort, webSearch: research.webSearch, harnessVersion: research.harness.version }),
+                      () => window.nodus.scanDictionaryNewEvidence(entryId, { model, thinkingEffort: research.thinkingEffort, webSearch: research.webSearch, harnessVersion: research.harness.version, explorationMode: research.harness.exploration }),
                       "evidence",
                     )
                   }

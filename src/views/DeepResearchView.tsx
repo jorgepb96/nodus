@@ -339,7 +339,7 @@ export function DeepResearchView({
   // The thinking level for that model, shared with the Research chat's memory: the level
   // last chosen for it, or its middle level.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, selectedModel ?? null);
-  const harnessOptions = useResearchHarnessOptions(settings);
+  const harnessOptions = useResearchHarnessOptions(settings, 'deep-research');
   const [deepSectionLimit, setDeepSectionLimit] = useState<DeepResearchSectionLimit>('auto');
   const [deepSectionLength, setDeepSectionLength] = useState<DeepResearchSectionLength>('auto');
   const [sectionLengthValid, setSectionLengthValid] = useState(true);
@@ -631,7 +631,7 @@ export function DeepResearchView({
       ...(!isStudy && !isTeaching && !isGenealogy ? { notebookId } : {}),
       approach,
       deepResearchVersion: normalizeDeepResearchRequestVersion(deepResearchVersion),
-      ...(isAcademic ? { harnessVersion: harnessOptions.version, webSearch: harnessOptions.web } : {}),
+      ...(isAcademic ? { harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration, webSearch: harnessOptions.web } : {}),
       language,
       sectionLimit: deepSectionLimit,
       sectionLength: deepSectionLength,

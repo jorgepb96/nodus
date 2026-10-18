@@ -2438,6 +2438,7 @@ export function registerTools(server: McpServer): void {
         '"client" — returns a self-contained writing kit (corpus materials with verbatim citation tokens, evidence-derived section plan, method and citation policy) so the MODEL CALLING THIS MCP articulates and drafts the report itself; when done, that draft is passed to nodus_finalize_deep_research to validate citations and assemble references. Both keep Nodus as the grounding authority. writer="nodus" can consume provider tokens and may take several minutes; it sends MCP progress notifications (planning, per-section, assembly) when the request carries a progressToken. It also holds this call open for the whole generation and waits behind anything already in the shared lane — prefer nodus_enqueue_deep_research unless the report is needed in this very turn.',
       inputSchema: {
         harnessVersion: z.enum(['legacy', 'v1']).optional(),
+        explorationMode: z.enum(['fast', 'expanded']).optional().describe('Investigation breadth, independent of model thinking; expanded is the report default.'),
         webSearch: z.enum(['auto', 'off']).optional(),
         objective: z.string().trim().min(1).max(8_000),
         approach: deepResearchApproachSchema,
@@ -2456,7 +2457,7 @@ export function registerTools(server: McpServer): void {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ harnessVersion, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, writer, model, save, title }, extra) =>
+    ({ harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, writer, model, save, title }, extra) =>
       tool(async () => {
         if (writer === 'client') {
           return buildDeepResearchBrief({ objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength });
@@ -2468,7 +2469,7 @@ export function registerTools(server: McpServer): void {
         // response shape (the full saved draft, not just its id).
         const report = await runDeepResearchJob(
           {
-            request: { harnessVersion, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
+            request: { harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
             origin: 'mcp',
             save: false,
           },
@@ -2541,6 +2542,7 @@ export function registerTools(server: McpServer): void {
         'Poll nodus_get_deep_research_job for status; with save=true (the default) the finished report is stored as a Nodus writing draft and appears in the user\'s Deep Research gallery.',
       inputSchema: {
         harnessVersion: z.enum(['legacy', 'v1']).optional(),
+        explorationMode: z.enum(['fast', 'expanded']).optional().describe('Investigation breadth, independent of model thinking; expanded is the report default.'),
         webSearch: z.enum(['auto', 'off']).optional(),
         objective: z.string().trim().min(1).max(8_000),
         approach: deepResearchApproachSchema,
@@ -2555,11 +2557,11 @@ export function registerTools(server: McpServer): void {
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     },
-    ({ harnessVersion, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model, save, title }) =>
+    ({ harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model, save, title }) =>
       tool(() => {
         ensureDeepResearchLane();
         const job = enqueueDeepResearchJob({
-          request: { harnessVersion, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
+          request: { harnessVersion, explorationMode, webSearch, objective, approach, deepResearchVersion, language, audience, sectionLimit, sectionLength, model: asModel(model) ?? null },
           origin: 'mcp',
           save,
           title,

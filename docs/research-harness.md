@@ -1,28 +1,58 @@
-# Nodus Research Harness (v1 preview)
+# Nodus Research Harness
 
-The academic vault can opt into a shared research execution across Research Chat,
-Deep Research, Immersion and Dictionary. The existing `legacy` path remains the default.
-Functional tests establish execution guarantees. The later ten-pair development
-comparison does not establish an overall advantage over legacy: its masked model
-reviewer preferred legacy in seven cases. Source inspection also found reviewer
-errors. Default replacement requires better quality and latency evidence.
+The academic vault uses a shared V1 research execution across Research Chat,
+Deep Research, Immersion and Dictionary. Fast/Expanded select investigation
+breadth within this same engine. Legacy remains available through explicit
+compatibility requests for rollback and comparisons; it is no longer a product
+mode. Development comparisons are small samples, not universal quality guarantees.
 
-## Use and rollback
+## Investigation profiles
 
-- Enable **Nodus Research Harness · Vista previa** in the research composer. The
-  preference is saved as `researchHarnessVersion`; requests may explicitly select
-  `harnessVersion: 'v1' | 'legacy'`.
+V1 shares one coordinator and the same source/citation contracts across two profiles:
+**Fast** (`fast`) and **Expanded** (`expanded`). The two-option switch is directly
+available in the Chat header and in Dictionary, Deep Research and Immersion. It uses
+the active theme accent, supports native radio keyboard navigation, and is translated
+into all twelve interface languages. There is no range slider or popover.
+
+Chat and Dictionary start on Fast; Deep Research and Immersion start on Expanded.
+Choices are remembered separately per surface, across vaults, in
+`researchExplorationByMode`. Requests, including queued Deep Research MCP jobs,
+can override them with `explorationMode`. This is independent of model thinking;
+V1 no longer implicitly selects a light retrieval allowance from thinking-off.
+V1 is the normal default. A one-time settings marker promotes old preview defaults; an explicit compatibility override made after that promotion remains available.
+
+Expanded retains the previous V1 retrieval targets and adaptive margin. Fast narrows
+candidate selection to at most 40, eight passages per round, 16,000 evidence bytes
+and four initial round targets, preserving explicitly smaller settings. It keeps up
+to two extra rounds and a 50% evidence margin for important unresolved questions,
+subject to the existing window limits, and 96,000 decision bytes. Opening searches
+are limited to two and one optional complementary branch is seeded. The agent can
+still enqueue a useful related task, compare sources, read originals, use authorized
+web tools, or finish early. These are operating allowances, never a requirement to
+consume every step or relax evidential standards. Report/lesson writing remains
+specific to those surfaces; profile selection changes investigation breadth.
+
+The effective profile is saved in the durable request/context and shown in the
+execution panel. Continuation preserves that choice and all consumed/narrowed
+allowances, even if the user's current default has since changed. Deliberately
+changing a request's profile requires a new investigation, so cached work from
+one profile cannot silently be presented as another.
+
+## Use and compatibility
+
+- Choose **Fast / Expanded** in the research controls. New product requests use V1.
+  Integrations and comparisons may explicitly select `harnessVersion: 'legacy'`;
+  an internal `researchHarnessVersion` override remains available after promotion.
 - Chat keeps its context controls. Deep Research and Immersion expose an additional
   web switch in v1, initially **off**. Web does not enlarge the authorized library.
 - Expand the execution panel to see questions, queued work, consumed steps and
   model calls. Pause/continue/cancel apply to that execution. After restarting the
   app, an execution without a live worker appears paused and can be continued.
-- Turning the preview off routes new requests through legacy. Existing saved
-  reports, sessions, conversations, citations and checkpoints remain readable.
+- Existing saved reports, sessions, conversations, citations and checkpoints remain readable. Compatibility requests do not change the product profile controls.
 - A source, notebook, model, effort, instruction or conversation change can prevent
   continuation. Start a new request using the current context in that case.
 
-The preview only operates in the academic vault. Autonomous work stays inside the
+The harness operates in the academic vault. Autonomous work stays inside the
 current investigation; it cannot start independent reports, change filters, enable
 disabled capabilities, write arbitrary files, execute commands or contact people.
 

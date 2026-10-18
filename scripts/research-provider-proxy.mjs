@@ -12,6 +12,8 @@ const ENDPOINTS = {
   openrouter: { model: 'baai/bge-m3', route: '/embeddings', url: 'https://openrouter.ai/api/v1/embeddings', input: .01, output: 0 },
 };
 const EXTRA_CHAT_MODELS = [
+  // OpenRouter public catalogue, checked 2026-10-18; independent masked QA judge.
+  { provider: 'openrouter', model: 'google/gemini-3.8-flash', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .825, output: 4.125 },
   // ZDR-capable endpoints verified from OpenRouter's public endpoint list.
   { provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash-1017', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .3, output: 1.2 },
   { provider: 'openrouter', model: 'mistralai/mistral-large-4-0', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .68, output: 2.09 },

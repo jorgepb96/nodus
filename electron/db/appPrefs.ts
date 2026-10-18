@@ -113,6 +113,8 @@ export const SHARED_MODEL_KEYS = [
   // The Research composer's memory of the level it last used per model. A level belongs
   // to the model, not to the vault that happened to be open when it was picked.
   'researchEffortByModel',
+  // Investigation breadth is remembered per research surface across vaults.
+  'researchExplorationByMode',
   // Whether Research Chat may search the web is the user's choice, not the vault's.
   'researchWebSearch',
   'localProviders',

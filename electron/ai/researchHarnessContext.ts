@@ -10,6 +10,7 @@ import { researchFingerprint } from './researchCorpusScope';
 import { getConversation } from '../db/chatRepo';
 import type { DictionaryEntry, DictionaryGenerationRequest } from '@shared/dictionary';
 import { RESEARCH_DECISION_POLICY } from './researchDecisionContext';
+import { RESEARCH_EXPLORATION_POLICY, resolveResearchExploration } from '@shared/researchExploration';
 
 export function researchHarnessContext(mode: ResearchRunMode, request: ResearchChatRequest | DeepResearchRequest | ImmersionRequest, scope: ResolvedResearchScope): ResearchRunContext {
   const settings = getSettings();
@@ -19,8 +20,9 @@ export function researchHarnessContext(mode: ResearchRunMode, request: ResearchC
   return { mode, vaultId: scope.vaultId, scopeId: scope.id, notebookId: scope.notebookId,
     objective: chat ? chat.messages.filter(m => m.role === 'user').at(-1)?.content ?? '' : 'objective' in request ? request.objective : (request as ImmersionRequest).topic,
     model: resolveModelRef(model), effort: request.thinkingEffort ?? 'standard',
+    explorationMode: resolveResearchExploration(mode, request.explorationMode, settings.researchExplorationByMode),
     ...(chat ? { options: { selection: structuredClone(chat.selection), skillIds: [...(chat.skillIds ?? [])] } } : {}),
-    policyKey: researchFingerprint({ decisionPolicy: RESEARCH_DECISION_POLICY, responsePolicy: mode === 'deep-research' ? 'direct-evidence-v1' : 'legacy-parity-v1', turnIntent: RESEARCH_TURN_INTENT_POLICY, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
+    policyKey: researchFingerprint({ explorationPolicy: RESEARCH_EXPLORATION_POLICY, decisionPolicy: RESEARCH_DECISION_POLICY, responsePolicy: mode === 'deep-research' ? 'direct-evidence-v1' : 'legacy-parity-v1', turnIntent: RESEARCH_TURN_INTENT_POLICY, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
       selection: chat?.selection, skillIds: chat?.skillIds,
       instructions: chat ? withResearchSystemPrompt('', chat.systemPromptId, { surface: 'research', conversationId: chat.conversationId }) : '',
       userTurns: chat?.conversationId ? getConversation(chat.conversationId)?.messages.filter(m => m.role === 'user').map(m => [m.id, m.content]) : undefined }),
@@ -35,7 +37,8 @@ export function dictionaryHarnessContext(request: DictionaryGenerationRequest, e
   return { mode: 'dictionary', entryId: entry.id, vaultId: scope.vaultId, scopeId: scope.id, notebookId: scope.notebookId,
     objective: [entry.name, ...entry.aliases, entry.focusPrompt].filter(Boolean).join('. '),
     model: resolveModelRef(request.model ?? settings.dictionaryModel), effort: request.thinkingEffort ?? 'standard',
-    policyKey: researchFingerprint({ decisionPolicy: RESEARCH_DECISION_POLICY, responsePolicy: 'dictionary-legacy-parity-v1',
+    explorationMode: resolveResearchExploration('dictionary', request.explorationMode, settings.researchExplorationByMode),
+    policyKey: researchFingerprint({ explorationPolicy: RESEARCH_EXPLORATION_POLICY, decisionPolicy: RESEARCH_DECISION_POLICY, responsePolicy: 'dictionary-legacy-parity-v1',
       editorial: dictionaryEditorialContext(entry), language: request.language ?? settings.promptLanguage,
       ...(request.mode === 'update' ? { previousContent: entry.contentMarkdown } : {}) }),
     capabilities: { ideas: true, indexed: true, documents: true, web: (request.webSearch ?? 'auto') !== 'off', attachments: [], skills: [], restricted: entry.scope.kind !== 'vault' } };

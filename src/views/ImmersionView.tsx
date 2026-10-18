@@ -204,7 +204,7 @@ export function ImmersionView({
   const [model, setModel] = useFeatureModel(settings, 'immersionModel');
   // The thinking level for that model, shared with the Research chat's memory.
   const [thinkingEffort, setThinkingEffort] = useResearchEffort(settings, model ?? null);
-  const harnessOptions = useResearchHarnessOptions(settings);
+  const harnessOptions = useResearchHarnessOptions(settings, 'immersion');
 
   const [scope, setScope] = useState<ImmersionScope | null>(null);
   const [scoping, setScoping] = useState(false);
@@ -318,7 +318,7 @@ export function ImmersionView({
       scope,
       request: {
         topic: scope.topic,
-        harnessVersion: harnessOptions.version,
+        harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration,
         webSearch: harnessOptions.web,
         documentSkills: documentSkills.policy,
         language,

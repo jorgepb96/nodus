@@ -7,7 +7,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "The research could not be continued.",
     "En pausa": "Paused",
     "Completada": "Completed",
-    "Pasos realizados": "Steps completed"
+    "Pasos realizados": "Steps completed",
+    "Rápido": "Fast",
+    "Ampliado": "Expanded",
+    "Amplitud de investigación": "Research breadth",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Focused searches and fewer readings, with room to resolve important questions.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "More room to explore related questions, compare and connect sources."
   },
   "fr": {
     "Sobre las fuentes": "À propos des sources",
@@ -17,7 +22,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "La recherche n’a pas pu reprendre.",
     "En pausa": "En pause",
     "Completada": "Terminée",
-    "Pasos realizados": "Étapes effectuées"
+    "Pasos realizados": "Étapes effectuées",
+    "Rápido": "Rapide",
+    "Ampliado": "Élargi",
+    "Amplitud de investigación": "Étendue de la recherche",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Des recherches ciblées et moins de lectures, avec une marge pour éclaircir les points importants.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Plus de latitude pour explorer des questions connexes, confronter et relier les sources."
   },
   "de": {
     "Sobre las fuentes": "Zu den Quellen",
@@ -27,7 +37,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "Die Recherche konnte nicht fortgesetzt werden.",
     "En pausa": "Pausiert",
     "Completada": "Abgeschlossen",
-    "Pasos realizados": "Ausgeführte Schritte"
+    "Pasos realizados": "Ausgeführte Schritte",
+    "Rápido": "Schnell",
+    "Ampliado": "Erweitert",
+    "Amplitud de investigación": "Rechercheumfang",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Gezielte Suchen und weniger Lektüre, mit Spielraum zur Klärung wichtiger Fragen.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mehr Spielraum, um verwandte Fragen zu untersuchen und Quellen zu vergleichen und zu verknüpfen."
   },
   "pt": {
     "Sobre las fuentes": "Sobre as fontes",
@@ -37,7 +52,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "Não foi possível continuar a investigação.",
     "En pausa": "Em pausa",
     "Completada": "Concluída",
-    "Pasos realizados": "Passos realizados"
+    "Pasos realizados": "Passos realizados",
+    "Rápido": "Rápido",
+    "Ampliado": "Alargado",
+    "Amplitud de investigación": "Amplitude da investigação",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Pesquisas focadas e menos leituras, com margem para esclarecer dúvidas importantes.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e relacionar fontes."
   },
   "pt-BR": {
     "Sobre las fuentes": "Sobre as fontes",
@@ -47,7 +67,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "Não foi possível continuar a pesquisa.",
     "En pausa": "Em pausa",
     "Completada": "Concluída",
-    "Pasos realizados": "Etapas realizadas"
+    "Pasos realizados": "Etapas realizadas",
+    "Rápido": "Rápido",
+    "Ampliado": "Ampliado",
+    "Amplitud de investigación": "Amplitude da pesquisa",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Buscas focadas e menos leituras, com margem para esclarecer dúvidas importantes.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e conectar fontes."
   },
   "it": {
     "Sobre las fuentes": "Informazioni sulle fonti",
@@ -57,7 +82,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "Impossibile continuare la ricerca.",
     "En pausa": "In pausa",
     "Completada": "Completata",
-    "Pasos realizados": "Passaggi eseguiti"
+    "Pasos realizados": "Passaggi eseguiti",
+    "Rápido": "Rapido",
+    "Ampliado": "Esteso",
+    "Amplitud de investigación": "Ampiezza della ricerca",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Ricerche mirate e meno letture, con margine per chiarire dubbi importanti.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Più spazio per esplorare domande correlate, confrontare e collegare le fonti."
   },
   "tr": {
     "Sobre las fuentes": "Kaynaklar hakkında",
@@ -67,7 +97,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "Araştırmaya devam edilemedi.",
     "En pausa": "Duraklatıldı",
     "Completada": "Tamamlandı",
-    "Pasos realizados": "Gerçekleştirilen adımlar"
+    "Pasos realizados": "Gerçekleştirilen adımlar",
+    "Rápido": "Hızlı",
+    "Ampliado": "Genişletilmiş",
+    "Amplitud de investigación": "Araştırma kapsamı",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Önemli soruları açıklığa kavuşturmak için esneklik sunan odaklı aramalar ve daha az okuma.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "İlgili soruları araştırmak, kaynakları karşılaştırmak ve ilişkilendirmek için daha fazla esneklik."
   },
   "zh-CN": {
     "Sobre las fuentes": "关于来源",
@@ -77,7 +112,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "无法继续研究。",
     "En pausa": "已暂停",
     "Completada": "已完成",
-    "Pasos realizados": "已执行步骤"
+    "Pasos realizados": "已执行步骤",
+    "Rápido": "快速",
+    "Ampliado": "扩展",
+    "Amplitud de investigación": "研究广度",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "聚焦搜索并减少阅读，同时保留解决重要疑问的余地。",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空间来探索相关问题、比较并关联来源。"
   },
   "zh-TW": {
     "Sobre las fuentes": "關於來源",
@@ -87,7 +127,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "無法繼續研究。",
     "En pausa": "已暫停",
     "Completada": "已完成",
-    "Pasos realizados": "已執行步驟"
+    "Pasos realizados": "已執行步驟",
+    "Rápido": "快速",
+    "Ampliado": "擴展",
+    "Amplitud de investigación": "研究廣度",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "聚焦搜尋並減少閱讀，同時保留釐清重要疑問的餘裕。",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空間來探索相關問題、比較並連結來源。"
   },
   "ja": {
     "Sobre las fuentes": "出典について",
@@ -97,7 +142,12 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "調査を再開できませんでした。",
     "En pausa": "一時停止中",
     "Completada": "完了",
-    "Pasos realizados": "実行したステップ"
+    "Pasos realizados": "実行したステップ",
+    "Rápido": "高速",
+    "Ampliado": "拡張",
+    "Amplitud de investigación": "調査の範囲",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "検索と参照を絞り込みながら、重要な疑問を解消する余地を残します。",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "関連する問いを探り、出典を比較して結び付ける余地を広げます。"
   },
   "ko": {
     "Sobre las fuentes": "출처 정보",
@@ -107,6 +157,11 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "No se ha podido continuar la investigación.": "연구를 계속할 수 없습니다.",
     "En pausa": "일시 중지됨",
     "Completada": "완료",
-    "Pasos realizados": "수행한 단계"
+    "Pasos realizados": "수행한 단계",
+    "Rápido": "빠르게",
+    "Ampliado": "확장",
+    "Amplitud de investigación": "연구 범위",
+    "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "핵심에 집중해 검색과 자료 검토를 줄이되, 중요한 의문을 해결할 여유를 둡니다.",
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "관련 질문을 탐색하고 출처를 비교하며 연결할 여유를 늘립니다."
   }
 };

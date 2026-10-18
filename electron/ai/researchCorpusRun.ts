@@ -39,6 +39,7 @@ import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchTaskKey } from '@shared/researchHarness';
+import { researchExplorationRetrieval } from '@shared/researchExploration';
 import { researchExcerptHasProse } from '@shared/researchDocumentReview';
 import type { ResearchAction } from '@shared/researchActions';
 
@@ -104,8 +105,14 @@ export class ResearchCorpusRun {
   private readonly sourceCoverage: NonNullable<ResearchTraversal['sourceCoverage']>;
   constructor(readonly scope: ResolvedResearchScope, settings: RetrievalSettings, readonly signal?: AbortSignal, readonly pinRevisions = false) {
     if (this.harness) this.harness.corpus = this;
-    this.budget = new ResearchRetrievalBudget(settings, settings.evidenceTokens, this.harness ? RESEARCH_AGENT_DECISION_BYTES : settings.evidenceTokens);
+    if (this.harness) settings = researchExplorationRetrieval(settings, this.harness.record.context.explorationMode ?? 'expanded');
+    const fast = this.harness?.record.context.explorationMode === 'fast';
+    this.budget = new ResearchRetrievalBudget(settings, settings.evidenceTokens, this.harness ? fast ? 96000 : RESEARCH_AGENT_DECISION_BYTES : settings.evidenceTokens);
     if (this.harness) this.budget.allowAdaptiveTargets((this.harness.record.checkpoint.modelContext as { tokens?: number } | undefined)?.tokens ?? 32768);
+    if (fast) {
+      this.budget.roundLimit = Math.min(this.budget.roundLimit, settings.rounds + 2);
+      this.budget.evidenceTokenLimit = Math.min(this.budget.evidenceTokenLimit, Math.floor(settings.evidenceTokens * 1.5));
+    }
     const inventory = new Map(getResearchPreparationInventory().documents.map(document => [document.id, document.preparation]));
     this.sourceCoverage = scope.documents.map(document => {
       const state = inventory.get(document.id);
@@ -240,7 +247,7 @@ export class ResearchCorpusRun {
     // searches while its capability grants continue to forbid other layers.
     const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled) && !this.harness;
     const branches = this.harness && !alone && !this.agent?.correction && this.budget.settings.autoExpand && this.budget.roundLimit - this.budget.rounds > 1
-      ? [...this.agent?.plan.exploration ?? []].sort((a, b) => b.priority - a.priority) : [];
+      ? [...this.agent?.plan.exploration ?? []].sort((a, b) => b.priority - a.priority).slice(0, this.harness.record.context.explorationMode === 'fast' ? 1 : 4) : [];
     for (const branch of branches) this.harness!.agenda.enqueue({ action: 'search', query: branch.query }, branch.question, branch.priority,
       { purpose: branch.purpose, relation: branch.relation });
     const plannedQueries = this.agent && !alone ? [...new Set([...this.agent.plan.queries, ...branches.map(branch => branch.query)])].slice(0, 4).map(each => each.trim()).filter(Boolean) : [];
@@ -260,7 +267,7 @@ export class ResearchCorpusRun {
       ? (this.layers.documents || this.harness) ? Math.min(Math.max(1, Math.floor(openingBudget / RETRIEVAL_CHUNK_MAX_BYTES)),
         Math.max(1, this.budget.settings.autoExpand ? this.budget.roundLimit - this.budget.rounds - 1 : 1)) : 3
       : 1;
-    const queries = allQueries.slice(0, queryLimit);
+    const queries = allQueries.slice(0, this.harness?.record.context.explorationMode === 'fast' ? Math.min(2, queryLimit) : queryLimit);
     const opening = Math.floor(openingBudget / queries.length);
     const limit = (this.layers.documents || !!this.harness) && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
     // Each of the chat's opening queries widens the search, the first included; one that fails

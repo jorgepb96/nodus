@@ -21,11 +21,12 @@ window.nodus = {
 } as unknown as typeof window.nodus;
 setActiveLang('es');
 function Fixture() {
-  const [version, onVersion] = useState<ResearchHarnessOptions['version']>('legacy');
+  const version = 'v1' as const;
+  const [exploration, onExploration] = useState<ResearchHarnessOptions['exploration']>('fast');
   const [web, onWeb] = useState<ResearchHarnessOptions['web']>('off');
   return <main className="mx-auto max-w-2xl p-4 text-neutral-900 dark:text-neutral-100">
     <h1 className="mb-4 text-lg">Nodus Research Harness</h1>
-    <ResearchHarnessControl options={{ version, onVersion, web, onWeb }} web />
+    <ResearchHarnessControl options={{ version, web, onWeb, exploration, onExploration }} web />
     <ResearchHarnessPanel mode="chat" conversationId="chat-fixture" />
   </main>;
 }

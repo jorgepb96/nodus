@@ -2244,8 +2244,12 @@ export interface AppSettings {
   researchEffortByModel: Record<string, ResearchEffort>;
   /** Research Chat's web step: automatic (the agent decides) or off. App-wide. */
   researchWebSearch: ResearchWebSearchMode;
-  /** Opt-in rollout, independent of the Deep Research engine version. */
+  /** Compatibility override, independent of the Deep Research engine version. */
   researchHarnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  /** One-time promotion of preview preferences to the normal V1 default. */
+  researchHarnessRolloutVersion?: 1;
+  /** Remembered exploration breadth per surface, independent of model thinking. */
+  researchExplorationByMode?: import('./researchExploration').ResearchExplorationPreferences;
   /** Explicit experimental documentary verification; off keeps the standard writer. */
   researchAnswerVerification?: 'off' | 'legacy' | 'structured';
   // When using OpenRouter, bias routing toward the fastest upstream provider.
@@ -6021,6 +6025,7 @@ export interface ResearchChatMessage {
 export interface ResearchChatRequest {
   runId?: string;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   concilium?: import('./researchConcilium').ConciliumConfig;
   attachmentIds?: string[];
   /** Optional vault-local preference; null/absence keeps the original application prompt. */
@@ -7615,6 +7620,7 @@ export interface DeepResearchOutlineSection {
 export interface DeepResearchRequest {
   runId?: string;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   /** Opt-in for academic reports. Absence preserves corpus-only research. */
   webSearch?: ResearchWebSearchMode;
   notebookId?: string | null;
@@ -8288,6 +8294,7 @@ export interface ImmersionRequest {
   retrieval?: import('./researchCorpus').RetrievalSettings;
   runId?: string;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   webSearch?: ResearchWebSearchMode;
   documentSkills?: import('./documentSkills').DocumentSkillPolicy;
   topic: string;

@@ -278,10 +278,11 @@ export interface DictionaryGenerationRequest {
   thinkingEffort?: import('./researchReasoning').ResearchEffort;
   webSearch?: import('./types').ResearchWebSearchMode;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   runId?: string;
 }
 
-export type DictionaryResearchOptions = Pick<DictionaryGenerationRequest, 'model' | 'thinkingEffort' | 'webSearch' | 'harnessVersion' | 'runId'>;
+export type DictionaryResearchOptions = Pick<DictionaryGenerationRequest, 'model' | 'thinkingEffort' | 'webSearch' | 'harnessVersion' | 'explorationMode' | 'runId'>;
 
 export interface DictionaryRelation {
   id: string;

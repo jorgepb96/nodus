@@ -38,7 +38,7 @@ export function ResearchHarnessPanel({ mode, conversationId, entryId, onResumed 
     finally { setBusy(null); }
   };
   return <details className="mx-4 my-2 break-words rounded-lg border border-neutral-300 p-3 text-xs dark:border-neutral-700" data-testid="research-harness-panel">
-    <summary className="cursor-pointer">Nodus Research Harness · <span role="status" aria-live="polite">{t(states[run.status])}{reason ? ` · ${reason}` : ''}</span></summary>
+    <summary className="cursor-pointer">Nodus Research Harness · {run.explorationMode && <>{t(run.explorationMode === 'fast' ? 'Rápido' : 'Ampliado')} · </>}<span role="status" aria-live="polite">{t(states[run.status])}{reason ? ` · ${reason}` : ''}</span></summary>
     <p className="my-2 font-medium">{run.objective}</p>
     {run.questions.length > 0 && <ul className="my-2 space-y-1">{run.questions.map(question => <li key={question.question}><span aria-hidden="true">{question.status === 'supported' ? '✓' : '○'}</span> {question.question} <span className="text-muted">· {t(questionStates[question.status])}</span>
       {question.purpose && <p className="ml-4 text-muted">{question.purpose}</p>}</li>)}</ul>}

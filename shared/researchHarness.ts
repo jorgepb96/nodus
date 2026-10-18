@@ -25,6 +25,7 @@ export interface ResearchRunContext {
   objective: string;
   model: ModelRef | null;
   effort: string;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   policyKey?: string;
   options?: { selection: ResearchContextSelection; skillIds: string[] };
   capabilities: {
@@ -49,6 +50,7 @@ export interface ResearchRunSummary {
   version: 'v1';
   mode: ResearchRunMode;
   objective: string;
+  explorationMode?: import('./researchExploration').ResearchExplorationMode;
   status: ResearchRunStatus;
   stopReason?: ResearchStopReason;
   questions: ResearchQuestionAssessment[];

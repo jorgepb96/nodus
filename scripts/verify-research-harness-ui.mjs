@@ -27,7 +27,10 @@ try {
   const page = await app.firstWindow(); const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
   await page.getByTestId('research-harness-control').waitFor();
-  await page.getByLabel(/Nodus Research Harness/).check();
+  assert.equal(await page.getByRole('radio', { name: 'Rápido', exact: true }).isChecked(), true);
+  await page.getByRole('radio', { name: 'Rápido', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await page.getByRole('radio', { name: 'Ampliado', exact: true }).isChecked(), true);
   await page.getByLabel('Búsqueda web', { exact: true }).check();
   const panel = page.getByTestId('research-harness-panel'); await panel.locator('summary').click();
   await panel.getByText(/Contrastar explicaciones alternativas/).waitFor();
@@ -44,5 +47,5 @@ try {
   await panel.getByText(/Evidencia suficiente/).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Continuar', exact: true }).count(), 0);
   assert.deepEqual(errors, []);
-  console.log('Harness UI passed: opt-in, web switch, pause/resume, terminal state, dark/light and narrow layout.');
+  console.log('Harness UI passed: profile switch, web switch, pause/resume, terminal state, dark/light and narrow layout.');
 } finally { await app?.close(); await fs.rm(temp, { recursive: true, force: true }); }

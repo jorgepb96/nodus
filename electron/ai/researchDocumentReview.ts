@@ -1,7 +1,7 @@
 import type { ModelRef } from '@shared/types';
 import type { ResearchAuditSource } from '@shared/researchClaimAudit';
 import { researchDocumentBatches, RESEARCH_SOURCE_CHUNK_RULE, RESEARCH_SOURCE_QUALIFICATION_RULE, type ResearchDocumentPart, type ResearchDocumentPartReview, type ResearchDocumentReview } from '@shared/researchDocumentReview';
-import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, researchAnswerEvidenceTransport, researchAnswerParagraphs, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
+import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, researchAnswerEvidenceTransport, researchAnswerParagraphs, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
 import { completeJson, type CallOpts } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchReviewEvidence, RESEARCH_SOURCE_REVIEW } from './researchHarnessVerification';
@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v9';
+const POLICY = 'document-review-v10';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -71,7 +71,7 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         const transport = researchAnswerEvidenceTransport(sources);
         const aliases = new Map(sources.map((source, index) => [source.id, transport.sources[index].id]));
         const input = { investigationBackground: objective, parts: batch.map(part => ({ id: part.id, remit: part.remit, context: part.context,
-          paragraphs: researchAnswerParagraphs(part.text).map((text, index) => ({ index, text })),
+          paragraphs: researchAnswerProofUnits(part.text).map(({ text }, index) => ({ index, text })),
           sourceIds: selected.get(part.id)!.map(source => aliases.get(source.id)!) })), sources: transport.sources };
         type Reply = { parts: Array<ResearchAnswerVerdicts & { id: string }> };
         const valid = (value: unknown): value is Reply => {
@@ -83,7 +83,7 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         let rejected: unknown;
         const guard = (value: unknown): value is Reply => { rejected = value; return valid(value); };
         const prove = (recovery: boolean) => researchHarnessStage(`${POLICY}.proof${recovery ? '.recovery' : ''}`, input, () => documentJson('research_document_proof', RESEARCH_DOCUMENT_PROOF_SCHEMA, input.parts, {
-          system: PROOF_SCHEMA, user: JSON.stringify(input), ...options,
+          system: PROOF_SCHEMA + '\nEach numbered proof unit is one sentence-sized span of its complete field. Check EVERY clause; neighboring spans are context, not permission to omit support. Judge field coherence and completeness over all spans together.', user: JSON.stringify(input), ...options,
           ...(recovery && target ? { maxTokens: withinModelOutput(Math.max(options.maxTokens, 16000), target.provider, target.model) } : {}),
           temperature: 0, corpusContext: true, noRetry: true, signal,
         }, guard, [...new Set(transport.sources.flatMap(source => source.quotes.map(quote => quote.key)))]));
@@ -112,9 +112,9 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         for (const part of batch) {
           const verdict = transport.restore(raw.parts.find(row => row.id === part.id)!);
           let text = canonicalResearchCitationLabels(part.text, sources);
-          let diagnosis = assessResearchAnswer(text, selected.get(part.id)!, verdict, part.remit, false);
-          const bound = bindResearchAnswerCitations(text, diagnosis, selected.get(part.id)!);
-          if (bound) { text = bound; diagnosis = assessResearchAnswer(text, selected.get(part.id)!, verdict, part.remit, false); }
+          let diagnosis = assessResearchAnswer(text, selected.get(part.id)!, verdict, part.remit, false, researchAnswerProofUnits(text).map(unit => unit.text));
+          const bound = bindResearchAnswerCitations(text, diagnosis, selected.get(part.id)!, researchAnswerProofUnits(text));
+          if (bound) { text = bound; diagnosis = assessResearchAnswer(text, selected.get(part.id)!, verdict, part.remit, false, researchAnswerProofUnits(text).map(unit => unit.text)); }
           const scopeIssues = researchAnswerScopeIssues(text);
           if (scopeIssues.length) diagnosis = { ...diagnosis, accepted: false, issues: [...diagnosis.issues, ...scopeIssues] };
           diagnose.set(part.id, diagnosis);

@@ -47,6 +47,24 @@ try {
     assert.ok(output.parts.every(item => item.text.includes('nodus://passage/p1')), 'The backend binds real links without buying another proof');
   }
   {
+    let firstProof = true;
+    const output = await run([part('compound', 'A supported result. A different, unsupported causal claim.')], (options, input) => {
+      if (options.system.startsWith('Revise')) return { parts: [{ id: 'compound', text: 'The source documents a supported result.' }] };
+      if (!input.parts[0].paragraphs) return semantic(input);
+      const result = proof(input);
+      if (firstProof) {
+        firstProof = false;
+        assert.equal(input.parts[0].paragraphs.length, 2, 'Each sentence requires its own proof, even inside one paragraph');
+        result.parts[0].claims[1].supported = false;
+        result.parts[0].claims[1].unsupportedParts = ['The source does not establish this cause.'];
+        result.parts[0].claims[1].premises[0].entailed = false;
+      }
+      return result;
+    });
+    assert.equal(output.status, 'verified');
+    assert.ok(!output.parts[0].text.includes('unsupported causal'), 'The full field must be revised and rechecked');
+  }
+  {
     const original = { ...model };
     Object.assign(model, { provider: 'gemini', model: 'gemini-2.5-flash-lite' });
     const output = await run([part('fixed:field')], (options, input) => {
@@ -135,7 +153,7 @@ try {
     const station = id => ({ id, title: 'Station', question: 'What does the source establish?', context: 'Context.', synthesis: 'Lesson.', ideaIds: ['i1'],
       citations: [{ passageId: 'p1', text: 'A sufficiently long literal source statement.', whyItMatters: 'Relevance.', commentary: 'Meaning.' }], positions: [], takeaways: ['A takeaway.'],
       quiz: [{ id: 'q-' + id, kind: 'choice', question: 'Which?', options: ['a', 'b'], correctIndex: 0, explanation: 'Supported explanation.', expected: '', ideaIds: [] }] });
-    const plan = { topic: 'Topic', overview: 'Overview.', language: 'es', stations: [station('s1'), station('s2')], keyTerms: [], contrasts: { rows: [] },
+    const plan = { topic: 'Topic', overview: 'Overview.', language: 'es', stations: [station('s1'), station('s2')], keyTerms: [], contrasts: { authors: [], rows: [] },
       exam: { questions: [], feynman: 'Explain this.' }, ideaIndex: [{ id: 'i1' }], stats: {}, stoppedReason: null };
     const result = await load('electron/ai/immersionVerification.ts').verifyImmersionPlan(plan, model);
     assert.equal(result.stations.length, 1); assert.equal(result.stations[0].id, 's1');

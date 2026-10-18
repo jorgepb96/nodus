@@ -189,7 +189,7 @@ try {
   assert.deepEqual(review.researchAnswerScopeIssues('Vega solo constata que existe un debate.'), [], 'A verb prefix must not become a source exclusivity claim');
   assert.deepEqual(review.researchAnswerScopeIssues('Los extractos no permiten concluir más; solo consta que se publicó.'), []);
   assert.deepEqual(review.researchAnswerScopeIssues('Solo consta que se publicó.'), [], 'An epistemic acknowledgement is not an exhaustive bibliography claim');
-  assert.match(review.researchChatPresentationInstruction('Máximo 200 palabras.'), /150 prose words/);
+  assert.match(review.researchChatPresentationInstruction('Máximo 200 palabras.'), /approximately 200 prose words/);
 
   assert.equal(review.researchChatRequestedOutputTokens('Máximo 200 palabras.', 60000), 4096);
   assert.equal(review.researchChatRequestedOutputTokens('Máximo 2000 palabras.', 60000), 10048);
@@ -200,11 +200,22 @@ try {
 
   assert.deepEqual(review.researchAnswerScopeIssues('La biblioteca no demuestra esa relación causal.'), ['unbounded_corpus_absence']);
   assert.deepEqual(review.researchAnswerScopeIssues('Con los pasajes consultados no puedo establecer esa relación causal.'), []);
-  assert.equal(review.researchAnswerRequestedBudgetIssues('Una explicación demasiado larga para este límite.', 'Máximo 3 palabras.').length, 1);
+  assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Una explicación demasiado larga para este límite.', 'Máximo 3 palabras.'), [], 'An advisory word target cannot reject grounded content');
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Breve [Una etiqueta de cita muy larga](nodus://passage/p1).', 'Máximo 2 palabras.'), [], 'Citation labels are not explanation prose');
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Este texto tiene más de tres palabras.', 'Para cada autor, máximo 3 palabras.'), [], 'A per-author limit is not a whole-answer limit');
   assert.ok(review.researchAnswerRequestedBudgetIssues('«Primera oración de la fuente». «Segunda oración de la fuente».', 'Una cita literal y una explicación de hasta 100 palabras.').some(issue => issue.startsWith('requested_single_literal_excerpt')));
-  assert.ok(review.researchAnswerRequestedBudgetIssues('«Una cita literal con sus palabras». Esta explicación contiene demasiadas palabras para el límite.', 'Una cita literal y una explicación de hasta 3 palabras.').some(issue => issue.startsWith('requested_explanation_word_limit')));
+  assert.deepEqual(review.researchAnswerRequestedBudgetIssues('«Una cita literal con sus palabras». Esta explicación contiene demasiadas palabras para el límite.', 'Una cita literal y una explicación de hasta 3 palabras.'), []);
+  {
+    const text = 'Una afirmación sin enlace. Otra afirmación [Autor, p. 2](nodus://passage/p1).\n\nUna «cita. Con puntuación» se conserva.';
+    const units = review.researchAnswerProofUnits(text);
+    assert.equal(units.length, 3, 'Citations and quoted punctuation are opaque; sentences get distinct proof slots');
+    assert.ok(units.every(unit => text.slice(unit.start, unit.end) === unit.text));
+    const first = units[0];
+    const diagnosis = { accepted: false, issues: [], claims: units.map((unit, i) => ({ sentence: unit.text, status: 'supported', evidence: [{ id: source.id, quote: source.text }], citationEvidenceIds: [source.id], reason: i ? 'literal_premises' : 'missing_documentary_citation' })) };
+    const bound = review.bindResearchAnswerCitations(text, diagnosis, [source], units);
+    assert.ok(bound.startsWith(first.text.slice(0, -1) + ' ('), 'A missing link attaches to the exact checked sentence');
+    assert.ok(bound.endsWith('\n\nUna «cita. Con puntuación» se conserva.'), 'Binding preserves paragraph layout and other prose verbatim');
+  }
   assert.equal(check(paragraph, []).accepted, false, 'Missing verdicts fail closed');
   assert.equal(check(paragraph, [verdict, verdict]).accepted, false, 'Duplicates fail closed');
   assert.equal(check(paragraph, [{ ...verdict, index: 9 }]).accepted, false);

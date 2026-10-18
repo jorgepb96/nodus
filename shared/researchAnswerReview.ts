@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v25', stage: 'coherent-answer-review-v25' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v26', stage: 'coherent-answer-review-v26' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -10,8 +10,8 @@ export function researchChatHeadingsRequested(question: string): boolean {
 }
 export function researchChatPresentationInstruction(question: string): string {
   const limits = researchAnswerRequestedBudgets(question);
-  const budget = [limits.maxWords === undefined ? '' : `Target at most ${Math.floor(limits.maxWords * 0.75)} prose words, below the user's cap of ${limits.maxWords}; omit optional detail, not requested facets.`,
-    limits.maxExplanationWords === undefined ? '' : `Keep the explanation within ${Math.floor(limits.maxExplanationWords * 0.75)} prose words; the literal excerpt is separate.`,
+  const budget = [limits.maxWords === undefined ? '' : `Aim for approximately ${limits.maxWords} prose words; this is guidance, not a correctness gate. Omit optional detail, not requested facets.`,
+    limits.maxExplanationWords === undefined ? '' : `Aim for approximately ${limits.maxExplanationWords} explanation words; the literal excerpt is separate. This is guidance, not a correctness gate.`,
     limits.singleLiteral ? 'Use one literal source excerpt only. Paraphrase other statements and use italics for technical terms.' : ''].filter(Boolean).join(' ');
   return (researchChatHeadingsRequested(question)
     ? 'Use the headings explicitly requested by the user, with substantive paragraphs under each. Preserve inline Nodus citations with author, year and page labels.'
@@ -280,6 +280,26 @@ export function researchAnswerCitationProjection(text: string): string {
 }
 /** Review every paragraph, prioritizing framing, counts and credit roles. Even a
  * single-source paragraph can conflate terms or bind a clause to the wrong citation. */
+/** Sentence-sized proof units retain offsets into the original prose. Citation
+ * labels/URLs and literal quotations are opaque to sentence segmentation. */
+export function researchAnswerProofUnits(text: string): Array<{ text: string; start: number; end: number }> {
+  const units: Array<{ text: string; start: number; end: number }> = [];
+  let cursor = 0;
+  for (const paragraph of researchAnswerParagraphs(text)) {
+    const base = text.indexOf(paragraph, cursor); cursor = base + paragraph.length;
+    let masked = paragraph.replace(/\[[^\]\n]*\]\([^)]+\)/gu, match => 'x'.repeat(match.length));
+    for (const span of researchQuotedSpans(paragraph).spans.reverse()) masked = masked.slice(0, span.start) + 'x'.repeat(span.end - span.start) + masked.slice(span.end);
+    for (const segment of new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(masked)) {
+      const raw = paragraph.slice(segment.index, segment.index + segment.segment.length);
+      const content = raw.trim();
+      if (!content) continue;
+      const start = base + segment.index + raw.indexOf(content);
+      units.push({ text: content, start, end: start + content.length });
+    }
+  }
+  return units;
+}
+
 export function researchAnswerSemanticFocus(text: string, collectiveCredits = false, question = ''): Array<{ index: number; text: string }> {
   const priority = (paragraph: { text: string }) => Number(collectiveCredits
     || new Set([...paragraph.text.matchAll(/\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu)].map(match => match[1])).size >= 2
@@ -317,17 +337,12 @@ export function researchChatRequestedOutputTokens(question: string, maximum: num
   const words = limits.maxWords ?? (/cita breve|short (?:quote|quotation)/iu.test(question) ? limits.maxExplanationWords : undefined);
   return words === undefined ? maximum : Math.min(maximum, Math.max(4096, words * 4 + 2048));
 }
-/** Only explicit answer budgets are enforced; citation labels are not prose. */
+/** Numeric answer targets are advisory; an explicit quotation request still controls form. */
 export function researchAnswerRequestedBudgetIssues(text: string, question: string): string[] {
-  const { maxWords, maxExplanationWords, singleLiteral } = researchAnswerRequestedBudgets(question);
+  const { singleLiteral } = researchAnswerRequestedBudgets(question);
   const plain = text.replace(/\[[^\]\n]*\]\([^)]+\)/gu, '');
   const quotes = researchQuotedSpans(plain).spans;
-  const words = (body: string) => body.match(/[\p{L}\p{N}]+(?:['’][\p{L}]+)*/gu)?.length ?? 0;
-  let remainder = plain;
-  for (const span of [...quotes].reverse()) remainder = remainder.slice(0, span.start) + remainder.slice(span.end);
   const issues: string[] = [];
-  if (maxWords !== undefined && words(plain) > maxWords) issues.push(`requested_word_limit: ${words(plain)} > ${maxWords}; rebuild within ${Math.floor(maxWords * 0.75)} words, omitting optional detail`);
-  if (maxExplanationWords !== undefined && words(remainder) > maxExplanationWords) issues.push(`requested_explanation_word_limit: ${words(remainder)} > ${maxExplanationWords}; keep one literal excerpt and rebuild its explanation within ${Math.floor(maxExplanationWords * 0.75)} words`);
   if (singleLiteral && quotes.filter(span => span.text.length >= 12).length > 1) issues.push('requested_single_literal_excerpt: keep one source quotation; paraphrase or italicize other terms');
   return issues;
 }
@@ -391,8 +406,8 @@ function decideParagraphProof(paragraph: string, verdict: ParagraphVerdict, rawP
 }
 /** Diagnostics only. Never return the sentence-deleted Markdown of the old audit. */
 export function assessResearchAnswer(text: string, sources: ResearchAuditSource[], raw: ResearchAnswerVerdicts,
-  question: string, chat = true): ResearchAnswerReview {
-  const paragraphs = researchAnswerParagraphs(text);
+  question: string, chat = true, proofUnits?: string[]): ResearchAnswerReview {
+  const paragraphs = proofUnits ?? researchAnswerParagraphs(text);
   const issues = researchAnswerStructureIssues(text, question, chat);
   if (chat && issues.some(issue => issue.startsWith('unbounded_'))) {
     for (const span of researchProseSpans(text)) if (researchAnswerScopeIssues(span.text).length) issues.push(`Qualify this claim to the actual queried scope: ${researchPlainSentence(span.text).slice(0, 600)}`);
@@ -439,8 +454,9 @@ export function assessResearchAnswer(text: string, sources: ResearchAuditSource[
 
 /** Recover presentation from already checked evidence, never from a guessed ID.
  * The caller must review this whole result again before it can be published. */
-export function bindResearchAnswerCitations(text: string, review: ResearchAnswerReview, sources: ResearchAuditSource[]): string | null {
-  const paragraphs = researchAnswerParagraphs(text);
+export function bindResearchAnswerCitations(text: string, review: ResearchAnswerReview, sources: ResearchAuditSource[], units?: Array<{ text: string; start: number; end: number }>): string | null {
+  const paragraphs = units?.map(unit => unit.text) ?? researchAnswerParagraphs(text);
+  if (units?.some((unit, i) => text.slice(unit.start, unit.end) !== unit.text || i > 0 && unit.start < units[i - 1].end)) return null;
   if (review.issues.length || paragraphs.length !== review.claims.length || !review.claims.some(claim => claim.reason === 'missing_documentary_citation' || (claim.reason === 'citation_without_verified_support' && !claim.failure))) return null;
   let changed = false;
   const result = paragraphs.map((paragraph, index) => {
@@ -452,7 +468,7 @@ export function bindResearchAnswerCitations(text: string, review: ResearchAnswer
     const direct = new Set(claim.citationEvidenceIds ?? ids);
     if ([...direct].some(id => !ids.has(id))) return paragraph;
     const authorized = new Set(sources.filter(source => ids.has(source.id)).map(source => source.citation));
-    const cleaned = canonicalResearchCitationGroups(paragraph.replace(/\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu, (match, url: string) => authorized.has(url) ? match : '')).trim();
+    const cleaned = canonicalResearchCitationGroups(paragraph.replace(/[ \t]*\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu, (match, url: string) => authorized.has(url) ? match : '')).trim();
     const links = [...new Map(sources.filter(source => direct.has(source.id) && !cleaned.includes(`](${source.citation})`) && /^nodus:\/\/(?:passage|idea|work)\//u.test(source.citation))
       .map(source => [source.citation, `[${(source.citationLabel ?? source.label).replace(/[[\]\\\r\n]/gu, ' ')}](${source.citation})`])).values()];
     if (!links.length && cleaned === paragraph) return paragraph;
@@ -460,8 +476,12 @@ export function bindResearchAnswerCitations(text: string, review: ResearchAnswer
     if (!links.length) return cleaned;
     const ending = /[.!?]$/u.exec(cleaned)?.[0] ?? '';
     return `${ending ? cleaned.slice(0, -1) : cleaned} (${links.join('; ')})${ending}`;
-  }).join('\n\n');
-  return changed ? result : null;
+  });
+  if (!changed) return null;
+  if (!units) return result.join('\n\n');
+  let restored = text;
+  for (let i = units.length - 1; i >= 0; i--) restored = restored.slice(0, units[i].start) + result[i] + restored.slice(units[i].end);
+  return restored;
 }
 /** A failed review is not evidence that the library lacks the requested facts. */
 export function researchAnswerReviewLimitation(language: string): string {

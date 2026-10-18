@@ -3,6 +3,8 @@ import type { ResearchDocumentPart } from '@shared/researchDocumentReview';
 import { researchExcerptHasProse } from '@shared/researchDocumentReview';
 import { researchAnswerReviewLimitation } from '@shared/researchAnswerReview';
 import { reviewResearchDocument } from './researchDocumentReview';
+import { currentResearchHarness } from './researchHarnessRuntime';
+import { extractCitationRefs } from './citationSanitize';
 
 /** The lesson schema belongs to Immersion; proof/repair belongs to the harness.
  * Stable field IDs prevent a revision from moving an answer into another quiz. */
@@ -55,9 +57,22 @@ export async function verifyImmersionPlan(plan: ImmersionPlan, model: ModelRef |
   plan.exam.questions = keepQuiz(plan.exam.questions);
   const stations = new Set(plan.stations.map(station => station.id));
   plan.contrasts.rows = plan.contrasts.rows.filter(row => stations.has(row.stationId));
+  const columns = plan.contrasts.authors.map((_, index) => index).filter(index => plan.contrasts.rows.some(row => row.cells[index]?.stance.trim()));
+  plan.contrasts.authors = columns.map(index => plan.contrasts.authors[index]);
+  plan.contrasts.rows.forEach(row => { row.cells = columns.map(index => row.cells[index]); });
   const ideas = new Set(plan.stations.flatMap(station => station.ideaIds));
   plan.ideaIndex = plan.ideaIndex.filter(idea => ideas.has(idea.id));
-  plan.stats = { ...plan.stats, stations: plan.stations.length, ideas: ideas.size, citations: plan.stations.reduce((n, station) => n + station.citations.length, 0),
+  const works = new Set(plan.ideaIndex.flatMap(idea => idea.workTitles ?? []));
+  const authors = new Set(plan.ideaIndex.flatMap(idea => idea.authors ?? []));
+  const corpus = currentResearchHarness()?.corpus;
+  const references = review.parts.filter(part => part.status === 'verified').flatMap(part => extractCitationRefs(part.text))
+    .concat(plan.stations.flatMap(station => station.citations.map(citation => ({ kind: 'passage' as const, id: citation.passageId }))));
+  for (const ref of references) {
+    const workId = ref.kind === 'work' ? ref.id : ref.kind === 'passage' ? corpus?.evidence.get(ref.id)?.nodus_id : undefined;
+    const document = corpus?.scope.documents.find(document => document.workId === workId);
+    if (document) { works.add(document.title); document.authors.forEach(author => authors.add(author)); }
+  }
+  plan.stats = { ...plan.stats, works: works.size, authors: authors.size, stations: plan.stations.length, ideas: ideas.size, citations: plan.stations.reduce((n, station) => n + station.citations.length, 0),
     quizQuestions: plan.exam.questions.length + plan.stations.reduce((n, station) => n + station.quiz.length, 0) };
   if (review.status !== 'verified') plan.stoppedReason = [plan.stoppedReason, researchAnswerReviewLimitation(plan.language)].filter(Boolean).join(' · ');
   if (!plan.stations.length) throw new Error('immersion_verification_incomplete');

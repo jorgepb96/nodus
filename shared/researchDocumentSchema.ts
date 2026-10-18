@@ -27,7 +27,9 @@ export function researchDocumentFieldSchema(schema: Record<string, unknown>, fie
     const claims = item.properties.claims as { items: { properties: { premises: { items: { properties: { evidence: { items: { properties: Record<string, unknown> } } } } } } } } | undefined;
     if (claims && field.sourceIds) {
       const proof = claims.items.properties.premises.items.properties.evidence.items.properties;
-      proof.id = { type: 'string', enum: field.sourceIds.length ? field.sourceIds : ['__no_authorized_source__'] };
+      // Bindings are checked by the backend. Repeating a large source enum at
+      // every sentence exceeds Google's constrained decoder state budget.
+      proof.id = string;
       proof.quote = { type: 'string', enum: quoteKeys.length ? quoteKeys : ['__no_quote__'] };
     }
     if (claims && field.paragraphs) {

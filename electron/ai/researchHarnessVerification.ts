@@ -2,7 +2,7 @@ import { researchExcerptHasProse, RESEARCH_SOURCE_CHUNK_RULE, RESEARCH_SOURCE_QU
 import type { ModelRef } from '@shared/types';
 import { serializeChatVisualPart, splitChatVisuals } from '@shared/chatSkills';
 import { type ResearchAuditSource } from '@shared/researchClaimAudit';
-import { RESEARCH_ANSWER_REVIEW_POLICY, assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchTitles, canonicalResearchDocumentTypes, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerProofSources, researchAnswerReviewSourceGroups, researchAnswerCatalogueCitationIssues, canonicalResearchCitationGroups, canonicalResearchLiteralQuotes, canonicalResearchParaphraseStyle, researchAnswerEvidenceTransport, researchAnswerParagraphs, researchAnswerCitationProjection, researchAnswerSemanticFocus, researchAnswerVerdictsWithFallback, researchChatPresentationInstruction, reviewAndReviseResearchAnswer, validResearchAnswerCoverage } from '@shared/researchAnswerReview';
+import { RESEARCH_ANSWER_REVIEW_POLICY, assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchTitles, canonicalResearchDocumentTypes, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerProofSources, researchAnswerReviewSourceGroups, researchAnswerCatalogueCitationIssues, canonicalResearchCitationGroups, canonicalResearchLiteralQuotes, canonicalResearchParaphraseStyle, researchAnswerEvidenceTransport, researchAnswerProofUnits, researchAnswerCitationProjection, researchAnswerSemanticFocus, researchAnswerVerdictsWithFallback, researchChatPresentationInstruction, reviewAndReviseResearchAnswer, validResearchAnswerCoverage } from '@shared/researchAnswerReview';
 import { RESEARCH_CHAT_PRECISION_RULES } from '@shared/researchChatGrounding';
 import { isResearchEffort, researchReasoningProfile, researchSemanticValidationEffort } from '@shared/researchReasoning';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
@@ -102,14 +102,14 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
             : chat && parts.length === 1 ? 'whole chat answer' : 'one prose fragment of a larger answer',
             ...(independent ? { answerContext: text } : {}), paragraphs, paragraphCount: paragraphs.length, sources: researchAnswerProofSources(text, transport.sources) };
           return researchHarnessStage('review-answer-paragraphs-v8', input, () => completeJson({
-            system: RESEARCH_SOURCE_REVIEW + '\n' + RESEARCH_SOURCE_QUALIFICATION_RULE, user: JSON.stringify(input), ...(recovery ? proofRecoveryOptions : { maxTokens: independent ? 5000 : 12000 }), temperature: 0, corpusContext: true, signal, noRetry: true,
+            system: RESEARCH_SOURCE_REVIEW + '\n' + RESEARCH_SOURCE_QUALIFICATION_RULE + '\nEach listed paragraph index is now one sentence-sized proof unit. Check all its clauses, preserving the entire answer context and local proof dependencies; every unit requires its own verdict.', user: JSON.stringify(input), ...(recovery ? proofRecoveryOptions : { maxTokens: independent ? 5000 : 12000 }), temperature: 0, corpusContext: true, signal, noRetry: true,
           }, (value): value is Parameters<typeof assessResearchAnswer>[2] => validResearchAnswerCoverage(value, input.paragraphs.length, new Set(input.sources.map(source => source.id))), reviewModel));
         };
         const reusable = repairedProof?.text === text ? repairedProof : undefined;
-        const verdicts = reusable ? reusable.verdicts : await researchAnswerVerdictsWithFallback(researchAnswerParagraphs(text), proof, signal, (paragraphs, independent) => proof(paragraphs, independent, true));
+        const verdicts = reusable ? reusable.verdicts : await researchAnswerVerdictsWithFallback(researchAnswerProofUnits(text).map(unit => unit.text), proof, signal, (paragraphs, independent) => proof(paragraphs, independent, true));
         if (reusable) citationProofReuses++;
         lastProof = { text, verdicts }; repairedProof = undefined;
-        const assessment = assessResearchAnswer(text, frozen, transport.restore(verdicts), objective, chat);
+        const assessment = assessResearchAnswer(text, frozen, transport.restore(verdicts), objective, chat, researchAnswerProofUnits(text).map(unit => unit.text));
         const catalogueIssues = run.catalogHits.size ? researchAnswerCatalogueCitationIssues(text, frozen) : [];
         if (catalogueIssues.length) { assessment.accepted = false; assessment.issues.push(...catalogueIssues); }
         const prose = text.replace(/\[[^\]\n]*\]\([^)]+\)/gu, '');
@@ -142,7 +142,7 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
         user: JSON.stringify(revision), ...revisionOptions, temperature: 0, corpusContext: true, signal,
       }, reviewModel).then(normalize));
       }, getSettings().promptLanguage ?? 'es', signal, (text, diagnosis) => {
-        const repaired = bindResearchAnswerCitations(text, diagnosis, frozen);
+        const repaired = bindResearchAnswerCitations(text, diagnosis, frozen, researchAnswerProofUnits(text));
         if (repaired && lastProof?.text === text && researchAnswerCitationProjection(repaired) === researchAnswerCitationProjection(text)) repairedProof = { text: repaired, verdicts: lastProof.verdicts };
         return repaired;
       });

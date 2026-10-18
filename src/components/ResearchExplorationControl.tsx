@@ -29,8 +29,9 @@ function ExplorationOption({ mode, active, setActive, description, children }: {
       const above = window.innerHeight - rect.bottom < panel.offsetHeight + 16 && rect.top > panel.offsetHeight + 16;
       setLight(!!element.closest('.light, .nodi-theme-light'));
       setStyle({ width, left: Math.max(12, Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - 12)),
-        top: above ? rect.top - panel.offsetHeight - 8 : rect.bottom + 8,
-        '--research-exploration-accent': getComputedStyle(element).getPropertyValue('--research-exploration-accent').trim() } as CSSProperties);
+        top: Math.max(12, Math.min(above ? rect.top - panel.offsetHeight - 8 : rect.bottom + 8, window.innerHeight - panel.offsetHeight - 12)),
+        '--research-exploration-accent': document.documentElement.classList.contains('theme-active') ? 'var(--a-500)'
+          : getComputedStyle(element).getPropertyValue('--research-exploration-accent').trim() } as CSSProperties);
     };
     place();
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { clearTimeout(timer.current); setActive(null); } };

@@ -1128,8 +1128,14 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       maxTokens: generationOptions.maxTokens,
       englishImagePrompts: skills.some(skill => skillHasCapability(skill, 'image')),
     });
+    // The fixed instructions/history can leave less room than the initially
+    // requested output ceiling, especially with skills on a small local model.
+    // Keep the original evidence so a lower output ceiling can recover it rather
+    // than sending an empty context after the first fit exhausted every section.
+    const recoverableContext = currentResearchHarness() && generationOptions.maxTokens > 512
+      && researchRequestUpperBound(fitInputs()) > window ? structuredClone(context) : null;
     const serializeUserBeforeFit = researchContextTraceEnabled() ? serializeUser() + (attachments?.text ?? '') : '';
-    const fitted = enforceContextBudget(context, window, () => researchRequestUpperBound(fitInputs()), researchContextTraceEnabled() ? receipt => {
+    const fit = () => enforceContextBudget(context, window, () => researchRequestUpperBound(fitInputs()), researchContextTraceEnabled() ? receipt => {
       const fittedUser = serializeUser() + (attachments?.text ?? '');
       recordResearchContextReceipt({
         type: 'research-context-final-fit',
@@ -1151,6 +1157,15 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
         userAfter: receiptHash(fittedUser),
       });
     } : undefined, { passageQueries });
+    let fitted = fit();
+    const fixedOverflow = researchRequestUpperBound(fitInputs()) - window;
+    if (recoverableContext && fixedOverflow > 0) {
+      // Output is an upper allowance, not a quota. Reduce it only when even the
+      // stripped request cannot fit, leaving up to 4k bytes for whole evidence.
+      generationOptions.maxTokens = Math.max(512, generationOptions.maxTokens - fixedOverflow - 4096);
+      context = recoverableContext;
+      fitted = fit();
+    }
     if (fitted.truncated) stats = { ...stats, truncated: true,
       contextChars: JSON.stringify(context).length, passages: Array.isArray(context.pasajes_relevantes) ? context.pasajes_relevantes.length : 0,
       works: Array.isArray(context.obras) ? context.obras.length : 0, documents: Array.isArray(context.obras) ? context.obras.length : 0 };

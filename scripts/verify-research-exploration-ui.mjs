@@ -45,6 +45,8 @@ try {
       await control.scrollIntoViewIfNeeded();
       const bounds = await control.boundingBox();
       assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 380 && bounds.y >= 0 && bounds.y + bounds.height <= 760, `${mode} switch fits the narrow viewport`);
+      const helpBounds = await page.getByRole('tooltip').boundingBox();
+      assert.ok(helpBounds && helpBounds.x >= 0 && helpBounds.x + helpBounds.width <= 380 && helpBounds.y >= 0 && helpBounds.y + helpBounds.height <= 760, `${mode} keyboard tooltip fits both viewport axes`);
       await page.screenshot({ path: path.join(artifacts, `${mode}-${theme}-narrow.png`), animations: 'disabled' });
       records.push({ mode, theme, default: fast ? 'fast' : 'expanded', keyboard: true, narrow: true });
     }

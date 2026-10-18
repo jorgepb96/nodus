@@ -12,7 +12,10 @@ V1 shares one coordinator and the same source/citation contracts across two prof
 **Fast** (`fast`) and **Expanded** (`expanded`). The two-option switch is directly
 available in the Chat header and in Dictionary, Deep Research and Immersion. It uses
 the active theme accent, supports native radio keyboard navigation, and is translated
-into all twelve interface languages. There is no range slider or popover.
+into all twelve interface languages. Descriptive tooltips open on hover or keyboard
+focus, explain the scope/time/resource tradeoff, fit narrow windows and dismiss on
+Escape. There is no range slider or selection popover. The System prompt trigger
+uses the same 36-pixel height and keeps its label on one line.
 
 Chat and Dictionary start on Fast; Deep Research and Immersion start on Expanded.
 Choices are remembered separately per surface, across vaults, in
@@ -157,7 +160,7 @@ resume their previous audit policy silently.
 | Immersion | Retains curriculum/panorama/stations/contrasts/exam and the existing structural/literal-citation handling. Can investigate each station before writing, without an additional field-by-field model audit. Prepared inputs and generated phases survive continuation. |
 | Dictionary | Explicit investigation and generation use the same agenda, related-query planning, original readers, web grant, accounting and checkpoints. Its own adapter pins term/aliases, editorial focus, source scope, language and detail; it retains Dictionary's existing definition, attribution, citation, version and author-card handling. No additional review chain is introduced. Background incremental scans stay local. |
 
-Dictionary exposes the same opt-in and execution panel. Each run belongs to one
+Dictionary exposes the same profile switch and execution panel. Each run belongs to one
 entry, including research-only scans; entry filters are applied before the saved
 run list is bounded. Generation continuation uses the same per-entry queue and
 broadcasts as initial work. A user pause is shown as paused rather than failed,
@@ -216,7 +219,7 @@ The harness fixtures use temporary databases, fake providers and no network. The
 cover deduplication/priority, schema boundaries, forged evidence IDs, provenance,
 web-informed scheduling, late web evidence, interrupted budget accounting,
 completed-stage reuse, context revocation, ownership and deletion. The Electron UI
-fixture checks opt-in/web controls, pause/continue, terminal state, console errors
+fixture checks profile/web controls, pause/continue, terminal state, console errors
 and narrow/light/dark layouts. Screenshots are written under ignored
 `artifacts/research-harness/`.
 
@@ -287,8 +290,9 @@ the following shape (these are field examples, not measured results):
 ```
 
 `blindPreference` is `legacy`, `v1` or `tie`. A no-regression row is only a screening
-result. Promote v1 only after reviewing all surfaces, real answer preference and
-the observed latency/cost tradeoff. Until then the default stays legacy.
+result. Default changes require reviewing all surfaces, real answer preference and
+the observed latency/cost tradeoff. The current product uses V1 with the two profiles
+described above; explicit legacy requests remain available for comparison/rollback.
 
 ## Source-free turns and later lookup requests
 
@@ -394,6 +398,58 @@ presentation does not enlarge the source grant. Both original and presented
 assistant prose are registered for notebook follow-up provenance.
 
 ## Latest targeted validation
+
+A frozen comparison at `95e7b43c` repeated the **ten original Research Chat
+questions**, once in each profile, alternating generation order and counterbalancing
+the masked A/B labels. All twenty answers used DeepSeek Flash, Standard thinking,
+the same source/context choices, web off and optional verification off. The two
+profiles intentionally use different investigation allowances. No candidate was
+rewritten or regenerated after judging.
+
+| Profile | Blind preferences | Median time | Generation USD, ten answers | LLM calls |
+| --- | ---: | ---: | ---: | ---: |
+| Fast | 6 | 30.85 s | 0.07640 | 57 |
+| Expanded | 4 | 41.59 s | 0.14434 | 93 |
+
+Fast used **47.1% less generation accounting** and had a **25.8% lower median
+latency** in this sample, excluding BGE. The masked Gemini 3.8 Flash judge, via
+OpenRouter, received complete retrieved records and actual backend operations,
+losslessly pooling exact duplicates without truncating answers or evidence. Four
+counterbalanced controls passed before the votes: identical substance tied on
+content regardless of headings, and factual corruption lost in either position.
+Two judgments needed an exact-quotation anchor correction with their semantic
+verdict frozen; all ten receipts were usable. Four initial routing failures produced
+no votes and are retained separately. Removing an unsupported transport parameter
+allowed the same model/protocol to run; no semantic selection took place.
+
+The judge rated Fast nine pass/one limited and Expanded eight pass/two fail.
+Expanded supplied better primary-source coverage and more complete multi-part
+comparisons in several cases. Its two failures involved a misread traveler/tourist
+referent and a secondary-quotation attribution; source inspection confirmed these
+material objections. Fast's limited answer omitted one requested facet. This is
+evidence for offering both profiles, not a claim of universal superiority or
+infallible answers. All actual citation targets resolved; the work filter and
+indexed-only grants were respected. No answer introduced headings. Corpus row
+counts and streaming hashes were unchanged.
+
+Generation plus judging accounted for USD **0.41924**, with no new unknown
+reservations and all historical charges/reservations retained. Temporary credential
+copies and the lease were removed. The provider totals stayed inside the previously
+authorized cumulative ceilings. Private answers, sources and packets remain outside
+Git; the local paired report keeps all twenty answers and each original verdict.
+
+Subsequent integration checks removed a duplicate operational manifest from the
+Chat writer prompt (the AI client still injects it once), avoiding wasted context on
+small local models. An empty-corpus/no-web turn now avoids an unnecessary supervisor
+call. When fixed instructions/history leave no room even after context pruning,
+Chat reduces its initial output ceiling and refits the original evidence rather
+than sending an empty context or failing needlessly. These later changes have functional/native integration coverage; the paid
+preference numbers above identify their measured commit and were not relabeled as
+a final-head benchmark. The actual production controls passed 28 UI cases across
+four surfaces, light/dark, narrow screens, twelve languages, keyboard help and live
+theme changes.
+
+### Earlier development comparisons
 
 A subsequent frozen five-question comparison used ten fresh native answers at
 commit `a8743222`, DeepSeek Flash, standard effort, web off and optional verification
@@ -601,7 +657,7 @@ BGE is excluded as requested. These ledger totals are conservative bounds, not
 provider invoices. Temporary encrypted credential copies are removed by each
 paid parent after its child exits; a parent lease prevents overlapping ownership.
 No private answer, source excerpt, vault identifier, credential or report is
-published here. V1 remains opt-in pending stronger evidence across all surfaces.
+published here. At that development stage V1 remained opt-in; the profile release described above promotes V1 to the normal default while retaining explicit legacy compatibility.
 
 ## Private campaign tooling
 

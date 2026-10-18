@@ -30,7 +30,7 @@ try {
     bundle: true,
     format: 'esm',
     platform: 'node',
-    external: ['@shared/*'],
+    alias: { '@shared': path.join(repoRoot, 'shared') },
     logLevel: 'silent',
   });
   const mod = await import(pathToFileURL(outfile).href);
@@ -239,6 +239,19 @@ try {
     );
     assert.equal(plan.stoppedReason, null, 'a recovered transient failure does not mark the route as degraded');
     assert.equal(stationCalls, plan.stations.length + 1, 'the failed station received exactly one fresh attempt');
+  }
+
+  // V1 stops immediately on failures that no unchanged retry can repair.
+  for (const code of ['auth', 'budget_exhausted', 'context_overflow']) {
+    const deps = happyDeps(makeMaterial());
+    let calls = 0;
+    deps.haltOnProviderFailure = true;
+    deps.writePanorama = async () => { calls++; throw Object.assign(new Error(code), { code }); };
+    deps.writeStation = async () => { throw new Error('must not fan out after terminal failure'); };
+    await assert.rejects(() => orchestrateImmersion(
+      { topic: 'test', language: 'es', minutes: 30, includeQuiz: true, model: null }, deps
+    ), error => error.code === code);
+    assert.equal(calls, 1);
   }
 
   // ── Every AI step failing → structural fallback, still completes ────────────

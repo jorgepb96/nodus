@@ -1,3 +1,4 @@
+import { researchFailureRequiresStop } from '@shared/researchFailures';
 import type {
   GraphData,
   ImmersionAuthorPosition,
@@ -242,6 +243,7 @@ export interface ExamResult {
 }
 
 export interface ImmersionDeps {
+  haltOnProviderFailure?: boolean;
   prepareStation?(station: CurriculumStation, material: ImmersionMaterial): Promise<void>;
   verifyPlan?(plan: ImmersionPlan): Promise<ImmersionPlan>;
   buildMaterial(topic: string): Promise<ImmersionMaterial>;
@@ -269,7 +271,8 @@ type ProgressFn = (p: ImmersionBuildProgress) => void;
 async function generateWithRecovery<T>(generate: () => Promise<T>): Promise<T> {
   try {
     return await generate();
-  } catch {
+  } catch (error) {
+    if (researchFailureRequiresStop(error)) throw error;
     return generate();
   }
 }
@@ -324,7 +327,8 @@ export async function orchestrateImmersion(
       stationCount,
       request.topic
     );
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedCurriculum);
     curriculum = fallbackCurriculum(request.topic, material, stationCount);
   }
@@ -342,7 +346,8 @@ export async function orchestrateImmersion(
         fallbackOverview(request.topic, material, msg),
       keyTerms: normalizeKeyTerms(panorama.keyTerms),
     };
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedPanorama);
     panorama = { overview: fallbackOverview(request.topic, material, msg), keyTerms: fallbackKeyTerms(material) };
   }
@@ -366,7 +371,8 @@ export async function orchestrateImmersion(
     let result: StationResult;
     try {
       result = await generateWithRecovery(() => deps.writeStation(input));
-    } catch {
+    } catch (error) {
+      if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
       degradations.push(`${msg.degradedStation} «${spec.title}»`);
       result = fallbackStation(input);
     }
@@ -382,7 +388,8 @@ export async function orchestrateImmersion(
       stations,
       material
     );
-  } catch {
+  } catch (error) {
+    if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
     degradations.push(msg.degradedContrasts);
     contrasts = fallbackContrasts(stations, material);
   }
@@ -403,7 +410,8 @@ export async function orchestrateImmersion(
         questions: normalizeQuiz(result.questions, material, 'exam', IMMERSION_LIMITS.examQuestions),
         feynman: cleanStr(result.feynman, msg.feynman(request.topic)),
       };
-    } catch {
+    } catch (error) {
+      if (deps.haltOnProviderFailure && researchFailureRequiresStop(error)) throw error;
       degradations.push(msg.degradedExam);
       exam = fallbackExam(stations, request.topic, msg);
     }

@@ -314,6 +314,15 @@ try {
   await assert.rejects(() => aiClient.completeText({ system: 'system', user: 'user' }, refused));
   assert.equal(seen.length, 1, 'an unnamed 400 is surfaced, not replayed');
 
+  run([{ status: 402, error: 'budget exhausted' }, '{"ideas":[]}']);
+  await assert.rejects(() => aiClient.completeJson(opts, guard, model), error => {
+    assert.equal(error.code, 'budget_exhausted');
+    assert.equal(error.config, true);
+    assert.match(error.message, /Presupuesto agotado/);
+    return true;
+  });
+  assert.equal(seen.length, 1, 'an exhausted paid allowance stops without retry or invalid-key advice');
+
   console.log('AI JSON retry budget verified.');
 } finally {
   try { closeDb(); } catch { /* database may not have opened */ }

@@ -266,7 +266,7 @@ export class AiError extends Error {
     public retriable = false,
     public config = false,
     public code: 'output_truncated' | 'invalid_json' | 'schema_mismatch' | 'timeout' | 'provider_empty_error'
-      | 'context_overflow' | 'rate_limit' | 'provider_5xx' | 'auth' | 'bad_request' | 'connection'
+      | 'budget_exhausted' | 'context_overflow' | 'rate_limit' | 'provider_5xx' | 'auth' | 'bad_request' | 'connection'
       | typeof AI_MODEL_REQUIRED_ERROR_CODE | null = null,
   ) {
     super(message);
@@ -1699,6 +1699,7 @@ function providerLogCode(error: AiError): PipelineLogCode {
     case 'rate_limit': return 'rate_limit';
     case 'provider_5xx': return 'provider_5xx';
     case 'auth': return 'auth';
+    case 'budget_exhausted': return 'unknown';
     case 'bad_request': return 'bad_request';
     case 'connection': return 'connection';
     default: break;
@@ -1739,6 +1740,7 @@ function classifyToAiError(e: any): AiError {
   if (e?.name?.includes('Timeout') || /timeout|timed out/i.test(e?.message ?? '')) {
     return new AiError('Tiempo agotado esperando al proveedor de IA. Prueba con un modelo más rápido o un fragmento menor.', false, false, 'timeout');
   }
+  if (status === 402) return new AiError('Presupuesto agotado', false, true, 'budget_exhausted');
   if (status === 429 || status === 529) return new AiError('Límite de tasa del proveedor de IA', true, false, 'rate_limit');
   if (status >= 500) return new AiError(`Error del proveedor (${status})`, true, false, 'provider_5xx');
   if (status === 401 || status === 403) return new AiError('Clave de IA inválida. Revísala en Ajustes.', false, true, 'auth');

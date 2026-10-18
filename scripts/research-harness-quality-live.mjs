@@ -28,8 +28,20 @@ if (!fs.existsSync(file)) {
     prices:{deepseek:'https://api-docs.deepseek.com/quick_start/pricing/',gemini:'https://ai.google.dev/gemini-api/docs/pricing',openrouter:'https://openrouter.ai/api/v1/models',fx:'https://www.ecb.europa.eu/stats/exchange/eurofxref/shared/pdf/2026/10/20261009.pdf'}},null,2),{mode:0o600});
 }
 const authorization=JSON.parse(fs.readFileSync(file));
-const adjustedDeepSeek=authorization.providerLimitsUsd.deepseek===.85&&authorization.adjustments?.length===1&&authorization.adjustments[0].provider==='deepseek'&&authorization.adjustments[0].previousLimitUsd===.8&&authorization.adjustments[0].limitUsd===.85&&authorization.adjustments[0].exchangeRate?.usdPerEur===1.1253;
-if(authorization.root!==root||(!adjustedDeepSeek&&authorization.providerLimitsUsd.deepseek!==.8)||authorization.providerLimitsUsd.openrouter!==.8||authorization.providerLimitsUsd.gemini!==.8||authorization.userLimitEurPerProvider!==1)throw new Error('Changed authorization');
+if(authorization.root!==root||authorization.userLimitEurPerProvider!==1||authorization.bgeExcluded!==true)throw new Error('Changed authorization');
+for (const provider of ['deepseek','openrouter','gemini']) {
+  const limit = authorization.providerLimitsUsd[provider];
+  if (limit === .8) continue;
+  const records = (authorization.adjustments ?? []).filter(row => row.provider === provider);
+  const adjustment = records[0];
+  if (!['deepseek','gemini'].includes(provider) || limit !== .85 || records.length !== 1
+      || adjustment.previousLimitUsd !== .8 || adjustment.limitUsd !== limit || adjustment.exchangeRate?.usdPerEur !== 1.1253
+      || limit / adjustment.exchangeRate.usdPerEur * 1.21 * 1.055 * 1.02 >= authorization.userLimitEurPerProvider
+      || !Number.isSafeInteger(adjustment.calls) || adjustment.calls < 0) throw new Error('Changed authorization');
+  const ledger = JSON.parse(fs.readFileSync(path.join(artifacts, `cost-ledger-${provider}.json`)));
+  if (ledger.limitUsd !== limit || ledger.calls.length < adjustment.calls
+      || createHash('sha256').update(JSON.stringify(ledger.calls.slice(0,adjustment.calls))).digest('hex') !== adjustment.callsSha256) throw new Error('Historical spending changed');
+}
 const nativeModels={
   'deepseek:deepseek-flash':{provider:'deepseek',model:'deepseek-flash'},
   'openrouter:mistralai/mistral-large-4-0':{provider:'openrouter',model:'mistralai/mistral-large-4-0'},

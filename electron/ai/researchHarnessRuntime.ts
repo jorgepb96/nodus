@@ -131,12 +131,30 @@ export async function withResearchHarness<T extends object>(input: {
   return active.run(harness, async () => {
     try {
       harness.persist();
+      if (record.context.model) {
+        const { researchModelContextWindow } = await import('./aiClient');
+        let window = await researchModelContextWindow(record.context.model);
+        if (!window.known) {
+          // API/MCP requests need the same real catalogue metadata as the model
+          // picker. The fallback operating cap is not the model's actual window.
+          const { getApiKey } = await import('../secrets/secretStore');
+          const key = getApiKey(record.context.model.provider);
+          if (key) {
+            try {
+              const { listModels } = await import('./providers');
+              await listModels(record.context.model.provider, key, AbortSignal.any([harness.signal, AbortSignal.timeout(5000)]));
+              window = await researchModelContextWindow(record.context.model);
+            } catch { harness.validate(); /* Keep the conservative bound, never invent capacity. */ }
+          }
+        }
+        record.checkpoint.modelContext = window;
+      }
       const result = await body(harness.signal);
       if (harness.signal.aborted) harness.stop(record.summary.status === 'cancelled' ? 'cancelled' : 'paused', 'interrupted');
       else {
         const reviewedChat = record.context.mode === 'chat' && (record.checkpoint.answerReview as { status?: string } | undefined)?.status === 'verified';
-        const sufficient = record.checkpoint.direct || reviewedChat || harness.agenda.canFinish();
-        const reason = record.summary.stopReason;
+        const sufficient = !record.checkpoint.validationLimited && (record.checkpoint.direct || reviewedChat || harness.agenda.canFinish());
+        const reason = (record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure ? 'technical' : record.summary.stopReason;
         harness.stop('completed', reason === 'sufficient' && !sufficient ? 'sources_exhausted' : reason ?? (sufficient ? 'sufficient' : 'sources_exhausted'));
       }
       const summary = harness.summary();

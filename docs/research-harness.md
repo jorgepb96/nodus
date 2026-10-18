@@ -280,6 +280,31 @@ questions unresolved rather than implying every branch was answered.
 
 ## Source-inspected validation
 
+Chat, Deep Research and Immersion use one harness. Mode adapters supply the output
+contract: connected chat prose, a report, or a lesson with stations and questions.
+Authorized evidence, literal proof binding, semantic vetoes, coherent revision,
+checkpoints and technical failure handling remain shared. A mode adapter is active
+only for its selected mode; it does not introduce a separate research agent.
+
+V1 structured documents review stable field IDs in bounded batches. Every field
+has its own remit and permitted evidence. Commentary on a literal excerpt must
+be supported by that exact excerpt. Quiz review checks the question's factual
+presuppositions and selected answer while treating distractors as alternatives.
+Failed fields receive up to two complete revisions, with fresh proof and semantic
+review before publication. Technical failure stops further review fan-out, retains
+earlier verified fields and records a limited result; it never becomes evidence
+that the library lacks sources. Unverified optional lesson fields are omitted,
+and a lesson without any verified station cannot be saved as complete.
+
+Deep Research uses this final coherent review instead of running the older
+sentence-deletion and duplicate editorial audit chain afterward. A single report's
+word guidance applies to the visible report, not independently to every internal
+planning unit. Published citation and word metrics are recounted after review.
+Summaries copy a complete verified paragraph. Cover/navigation snippets cannot
+support substantive claims; bibliographic metadata remains available separately.
+API requests also attempt a free real model-catalogue lookup when the context
+window is unknown, retaining a conservative bound if metadata is unavailable.
+
 The final private campaign covers 25 declared Research Chat questions in two
 rounds of 15 and 10, with targeted repeats after corrections. It covers false
 premises and publications, catalogue counts/types, source filters, context layers,

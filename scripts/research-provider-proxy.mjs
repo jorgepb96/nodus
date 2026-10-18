@@ -16,6 +16,8 @@ const EXTRA_CHAT_MODELS = [
   { provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash-1017', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .3, output: 1.2 },
   { provider: 'openrouter', model: 'mistralai/mistral-large-4-0', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .68, output: 2.09 },
   { provider: 'gemini', model: 'gemini-3.8-flash', route: '/chat/completions', url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', input: .75, output: 3.75 },
+  // Google paid text prices, checked 2026-10-18 against the official pricing page.
+  { provider: 'gemini', model: 'gemini-2.5-flash-lite', route: '/chat/completions', url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', input: .1, output: .4 },
   { provider: 'openrouter', model: 'qwen/qwen3.6-plus', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: .325, output: 1.95 },
   { provider: 'openrouter', model: 'qwen/qwen3.8-max-0902', route: '/chat/completions', url: 'https://openrouter.ai/api/v1/chat/completions', input: 2, output: 6 },
 ];
@@ -224,7 +226,7 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
         return;
       }
       if (reservation) fs.appendFileSync(log, JSON.stringify({ reservation, provider, failed: true, reservationRetained: true, latencyMs: performance.now() - started }) + '\n', { mode: 0o600 });
-      if (!response.headersSent) response.writeHead(403, { 'Content-Type': 'application/json' });
+      if (!response.headersSent) response.writeHead(error instanceof Error && /budget.*exhausted/i.test(error.message) ? 402 : 403, { 'Content-Type': 'application/json' });
       const message = error instanceof Error && /budget.*exhausted/i.test(error.message) ? 'research_budget_exhausted'
         : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked';
       blocked.push({ provider, message, at: new Date().toISOString() });

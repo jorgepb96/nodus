@@ -1,7 +1,8 @@
 import { withJobThinkingEffort } from './thinkingEffort';
 import { currentResearchHarness, researchHarnessEnabled, withResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchHarnessContext } from './researchHarnessContext';
-import { repairResearchDraft } from './researchHarnessVerification';
+import { verifyImmersionPlan } from './immersionVerification';
+import { researchExcerptHasProse } from '@shared/researchDocumentReview';
 import { ResearchWebGrant } from './researchWebStep';
 import { getActiveVault } from '../vaults/vaultRegistry';
 import { withDocumentVisualPlanning, withoutDocumentVisualPlanning } from './documentVisualContext';
@@ -269,7 +270,7 @@ export async function buildImmersionMaterial(
       // with room left for the agent's subsequent searches and original reads.
       const openingLimit = Math.floor(research.budget.evidenceTokenLimit / 3);
       const admitted = passages.filter(passage => {
-        if (!research.scope.documents.some(doc => doc.workId === passage.workId)
+        if (!researchExcerptHasProse(passage.text) || !research.scope.documents.some(doc => doc.workId === passage.workId)
           || research.budget.usedEvidenceTokens + new TextEncoder().encode(passage.text).length > openingLimit) return false;
         if (!research.budget.accept(`material:${passage.id}`, passage.text)) return false;
         research.evidence.set(passage.id, { id: passage.id, nodus_id: passage.workId, label: passage.workTitle, summary: passage.text,
@@ -654,13 +655,14 @@ function realDeps(model: ModelRef | null, preparedMaterial?: ImmersionMaterial):
     writeContrasts: input => researchHarnessStage('immersion.contrasts', input, () => aiWriteContrasts(input, model)),
     writeExam: input => researchHarnessStage('immersion.exam', input, () => aiWriteExam(input, model)),
     ...(currentResearchHarness() ? {
+      haltOnProviderFailure: true,
       prepareStation: async (station, corpus) => {
         const run = currentResearchHarness()!.corpus!;
         const prepared = await researchHarnessStage('immersion.prepare-station', { question: station.question, passageIds: station.passageIds }, async () => {
           const before = new Set(run.evidence.keys());
           run.harness!.agenda.addQuestion(station.question);
           await run.investigate(station.question, model);
-          const passages = [...run.evidence.values()].filter(item => ['source', 'web'].includes(item.reason)).map(item => ({
+          const passages = [...run.evidence.values()].filter(item => ['source', 'web'].includes(item.reason) && researchExcerptHasProse(item.summary)).map(item => ({
             id: item.id, workId: item.nodus_id, workTitle: item.label, authors: item.authors, year: item.year,
             zoteroKey: item.zotero_key, pageLabel: item.pageLabel, text: item.summary, score: item.score,
           }));
@@ -670,30 +672,7 @@ function realDeps(model: ModelRef | null, preparedMaterial?: ImmersionMaterial):
         for (const passage of prepared.passages) if (!corpus.passages.some(p => p.id === passage.id)) corpus.passages.push(passage);
         station.passageIds = prepared.passageIds;
       },
-      verifyPlan: async plan => {
-        plan.overview = await repairResearchDraft(plan.overview, model, currentResearchHarness()!.signal);
-        for (const term of plan.keyTerms) term.definition = await repairResearchDraft(term.definition, model, currentResearchHarness()!.signal);
-        const verifyQuiz = async (questions: typeof plan.exam.questions) => {
-          for (const item of questions) {
-            if (item.explanation) item.explanation = await repairResearchDraft(item.explanation, model, currentResearchHarness()!.signal);
-            if (item.expected) item.expected = await repairResearchDraft(item.expected, model, currentResearchHarness()!.signal);
-          }
-        };
-        for (const station of plan.stations) {
-          station.context = await repairResearchDraft(station.context, model, currentResearchHarness()!.signal);
-          station.synthesis = await repairResearchDraft(station.synthesis, model, currentResearchHarness()!.signal);
-          for (let i = 0; i < station.takeaways.length; i++) station.takeaways[i] = await repairResearchDraft(station.takeaways[i], model, currentResearchHarness()!.signal);
-          for (const position of station.positions) position.position = await repairResearchDraft(position.position, model, currentResearchHarness()!.signal);
-          for (const citation of station.citations) {
-            citation.commentary = await repairResearchDraft(citation.commentary, model, currentResearchHarness()!.signal);
-            citation.whyItMatters = await repairResearchDraft(citation.whyItMatters, model, currentResearchHarness()!.signal);
-          }
-          await verifyQuiz(station.quiz);
-        }
-        for (const row of plan.contrasts.rows) for (const cell of row.cells) if (cell.stance) cell.stance = await repairResearchDraft(cell.stance, model, currentResearchHarness()!.signal);
-        await verifyQuiz(plan.exam.questions);
-        return plan;
-      },
+      verifyPlan: plan => verifyImmersionPlan(plan, model, currentResearchHarness()!.signal),
     } satisfies Partial<ImmersionDeps> : {}),
   };
 }

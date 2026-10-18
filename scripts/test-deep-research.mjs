@@ -1622,6 +1622,32 @@ try {
     assert.equal(promoted.meta.generationSelection?.baseline, 0);
   }
 
+  // V1's final coherent review publishes exactly what was proved and recounts it.
+  {
+    const snapshot = makeSnapshot(4);
+    let writes = 0, planned = 0;
+    const accepted = 'El corpus permite una interpretación acotada [Autor0, 2000](nodus://idea/g-0).';
+    const run = async verified => orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(snapshot), continuousNarrative: true, strictDocumentaryGrounding: true,
+      planReport: async input => { planned = input.sectionCount; return fakePlan(input); },
+      writeSection: async input => { writes++; return fakeWriteSection(input); },
+      finalDocumentReview: async parts => {
+        assert.equal(parts.length, 1, 'A short continuous report is one coherent writing unit');
+        return { status: verified ? 'verified' : 'limited', parts: parts.map(part => ({ id: part.id,
+          text: verified ? accepted : '', status: verified ? 'verified' : 'limited', issues: verified ? [] : ['unverified'],
+          claims: [{ sentence: accepted, kind: 'attributed', status: verified ? 'supported' : 'unverified', evidence: [], reason: 'fixture proof' }] })) };
+      },
+    });
+    const report = await run(true);
+    assert.equal(planned, 1); assert.equal(writes, 1);
+    assert.equal(report.draft.draftMarkdown, accepted, 'No later deletion, unchecked abstract, headings or transition is added');
+    assert.equal(report.meta.words, countWords(accepted)); assert.equal(report.meta.worksCited, 1);
+    assert.equal(report.draft.bibliography.length, 1);
+    const failed = await run(false);
+    assert.equal(failed.meta.sections, 0); assert.equal(failed.meta.words, 0); assert.equal(failed.meta.worksCited, 0);
+    assert.equal(failed.draft.bibliography.length, 0, 'Removed prose does not inflate citation/coverage metrics');
+  }
+
   console.log('deep research orchestration test passed');
 } finally {
   await rm(tmp, { recursive: true, force: true });

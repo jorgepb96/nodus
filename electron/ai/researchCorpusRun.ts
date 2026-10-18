@@ -39,6 +39,8 @@ import { getDocumentaryPassageDetail } from '../citations/documentaryCitations';
 import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchTaskKey } from '@shared/researchHarness';
+import { researchExcerptHasProse } from '@shared/researchDocumentReview';
+import { reviewResearchDocument } from './researchDocumentReview';
 import type { ResearchAction } from '@shared/researchActions';
 
 /** Research Chat's agent: the turn's plan and how many independent sources a finish needs.
@@ -336,7 +338,7 @@ export class ResearchCorpusRun {
     });
     let selected = 0;
     for (let index = 0; index < Math.max(candidates.length, legacy.length); index++) for (const candidate of [candidates[index], legacy[index]]) {
-      if (!candidate) continue;
+      if (!candidate || this.harness && !researchExcerptHasProse(candidate.summary)) continue;
       const key = `passage-content:${JSON.stringify([candidate.nodus_id, candidate.summary, candidate.pageLabel])}`;
       if (this.budget.visited.has(key)) continue;
       if (selected >= settings.passagesPerRound * shared.traversal.rounds) { this.budget.partial = true; break; }
@@ -739,6 +741,24 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
     preparePlanEvidence: undefined,
     finalize: input => deps.finalize({ ...input, supportConcerns: [...(input.supportConcerns ?? []),
       ...(run.budget.partial ? ['Documentary coverage is partial; do not infer absence from missing evidence.'] : []), ...[...run.limitations].map(describeResearchLimitation)] }) };
+  if (run.harness) {
+    bounded.continuousNarrative = true;
+    bounded.finalDocumentReview = async parts => ({ ...await reviewResearchDocument(parts, model, signal), passages: [...run.evidence.values()] });
+    // V1 reviews the complete prose with literal premises and an independent
+    // semantic veto. The legacy sentence-deletion chain must not then prune it.
+    bounded.auditFactualProse = undefined;
+    bounded.auditReportConsistency = undefined;
+    bounded.auditSectionClaims = undefined;
+    bounded.auditFinalSummary = undefined;
+    bounded.verifyCitations = undefined;
+    bounded.reviseSection = undefined;
+    bounded.judgeSectionRevision = undefined;
+    bounded.reviewReport = undefined;
+    bounded.checkCoherence = undefined;
+    bounded.repairSectionCoverage = undefined;
+    bounded.checkSectionCoverage = undefined;
+    bounded.finalize = async input => ({ title: input.planTitle, abstract: '', limitations: [], nextSteps: [] });
+  }
   return new Proxy(bounded, { get(target, property) {
     const value = Reflect.get(target, property);
     if (typeof value !== 'function') return value;
@@ -750,7 +770,7 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       // the same byte-as-token bound. No characters/token conversion applies here.
       run.budget.constrainToWindow(window.tokens, Math.ceil(window.tokens * 0.75));
       const execute = () => withResearchRequestBudget(window.tokens, () => { run.budget.partial = true; }, () => value(...args));
-      const result = await (run.harness && !['researchTraversal', 'auditFactualProse', 'auditReportConsistency'].includes(String(property))
+      const result = await (run.harness && !['researchTraversal', 'auditFactualProse', 'auditReportConsistency', 'finalDocumentReview'].includes(String(property))
         ? researchHarnessStage(`deep.${String(property)}`, args, execute) : execute());
       if (run.harness && property === 'decomposeObjective' && Array.isArray(result)) for (const question of result) if (typeof question === 'string') run.harness.agenda.addQuestion(question);
       run.validate(); return result;

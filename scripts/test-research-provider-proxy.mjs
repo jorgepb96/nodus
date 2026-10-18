@@ -128,14 +128,14 @@ test('provider caps survive restarts, cannot borrow another cap and exclude only
     assert.equal(await post('openrouter',{model:'baai/bge-m3',input:'fixture'},'embeddings'),200);
     assert.equal(proxy.ledgers.openrouter.read().calls.length,1);
     assert.equal(proxy.bgeLedger.read().calls.length,1);
-    assert.equal(await post('deepseek',{...base,model:'deepseek-flash',max_tokens:30000}),403);
+    assert.equal(await post('deepseek',{...base,model:'deepseek-flash',max_tokens:30000}),402);
     assert.equal(calls,3,'the over-budget call never reaches the network');
     assert.equal(await post('openrouter',{...base,model:'qwen/qwen3.8-max-0902',provider:{max_price:{prompt:3,completion:6}}}),403,'Routing cannot silently exceed the reserved per-token price');
     assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash',extra_body:{google:{tools:[{google_search:{}}]}}}),403,'Unmetered server search is forbidden');
     await proxy.close(); proxy=await startResearchProviderProxy(root,config);
     assert.equal(proxy.ledgers.gemini.read().calls.length,1,'restart preserves previous spending');
     assert.equal(proxy.ledgers.openrouter.read().calls.length,1);
-    assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash',max_tokens:30000}),403);
+    assert.equal(await post('gemini',{...base,model:'gemini-3.8-flash',max_tokens:30000}),402);
     assert.equal(calls,3);
   } finally { await proxy.close();fs.rmSync(root,{recursive:true,force:true}); }
 });

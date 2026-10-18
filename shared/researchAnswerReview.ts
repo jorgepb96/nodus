@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v21', stage: 'coherent-answer-review-v21' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v22', stage: 'coherent-answer-review-v22' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -424,12 +424,13 @@ export function assessResearchAnswer(text: string, sources: ResearchAuditSource[
     const decision = decideParagraphProof(paragraph, verdict, rawPremises, sources, claims);
     const cited = [...paragraph.matchAll(/\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu)].map(match => match[1]);
     const supportingIds = new Set(decision.evidence.map(evidence => evidence.id));
+    const substantive = !decision.evidence.some(proof => sources.some(source => source.id === proof.id && source.proseSupport === false));
     const authorized = cited.every(citation => sources.some(source => source.citation === citation && supportingIds.has(source.id)));
     const citationEvidenceIds = [...new Set(verdict.premises.flatMap(premise => premise.evidence.map(proof => proof.id)))];
     const needsCitation = sources.some(source => Boolean(source.citation) && citationEvidenceIds.includes(source.id));
     const hasCitation = !needsCitation || cited.length > 0;
-    const claim: ResearchClaimRecord = { sentence: paragraph, kind: verdict.kind, status: decision.valid && authorized && hasCitation ? 'supported' : 'removed', evidence: decision.evidence, citationEvidenceIds,
-      reason: decision.failure ? `${decision.failure}: ${'diagnosis' in decision ? decision.diagnosis : verdict.reason}` : !authorized ? 'citation_without_verified_support' : !hasCitation ? 'missing_documentary_citation' : verdict.reason,
+    const claim: ResearchClaimRecord = { sentence: paragraph, kind: verdict.kind, status: decision.valid && substantive && authorized && hasCitation ? 'supported' : 'removed', evidence: decision.evidence, citationEvidenceIds,
+      reason: !substantive ? 'non_substantive_source_fragment' : decision.failure ? `${decision.failure}: ${'diagnosis' in decision ? decision.diagnosis : verdict.reason}` : !authorized ? 'citation_without_verified_support' : !hasCitation ? 'missing_documentary_citation' : verdict.reason,
       ...(decision.failure ? { failure: decision.failure } : {}), premises: verdict.premises.map(({ text, type, entailed }) => ({ text, type, entailed })) };
     claims.push(researchChatCalculations(researchChatLiteralQuotes({ markdown: paragraph, claims: [claim] }, sources)).claims[0]);
   }

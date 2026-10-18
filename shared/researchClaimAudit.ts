@@ -18,7 +18,7 @@ export type ResearchClaimFailure = 'judge_rejected' | 'no_premises' | 'premise_n
   | 'inference_without_supported_premises' | 'unqualified_inference' | 'unsupported_parts' | 'inconsistent_verdict'
   | 'nonfactual_with_content' | 'restates_rejected_claim' | 'internal_contradiction';
 export interface ResearchProseAudit { markdown: string; claims: ResearchClaimRecord[] }
-export interface ResearchAuditSource { id: string; text: string; label: string; citation: string; attributionOnly?: boolean; workId?: string; collectiveCredits?: boolean; citationLabel?: string; locator?: string; title?: string }
+export interface ResearchAuditSource { proseSupport?: boolean; id: string; text: string; label: string; citation: string; attributionOnly?: boolean; workId?: string; collectiveCredits?: boolean; citationLabel?: string; locator?: string; title?: string }
 
 /** Request-local routing labels avoid asking a judge to reproduce long opaque
  * storage identities. Only an exact supplied alias is expanded; unknown IDs,

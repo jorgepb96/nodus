@@ -642,6 +642,8 @@ export interface FinalizeResult {
  * logic can be tested with fakes — no DB, no AI provider, no Electron.
  */
 export interface DeepResearchDeps {
+  continuousNarrative?: boolean;
+  finalDocumentReview?(parts: import('@shared/researchDocumentReview').ResearchDocumentPart[]): Promise<import('@shared/researchDocumentReview').ResearchDocumentReview & { passages?: import('@shared/types').WritingWorkshopPassageCandidate[] }>;
   strictDocumentaryGrounding?: boolean;
   /** One evidence-bounded addition before the final factual audit. */
   repairSectionCoverage?(input: SectionInput, draft: string): Promise<string>;
@@ -814,12 +816,15 @@ export async function orchestrateDeepResearch(
       /* The original objective remains the complete coverage contract. */
     }
   }
-  const sectionPlan = resolveSectionPlan(snapshot, request.sectionLimit ?? 'auto', request.objective, coverageQuestions);
+  const sectionPlan = deps.continuousNarrative && request.sectionLimit === 'single'
+    ? { target: typeof request.sectionLength === 'number' ? Math.max(1, Math.ceil(request.sectionLength / 1500)) : 3, mode: 'user' as const }
+    : resolveSectionPlan(snapshot, request.sectionLimit ?? 'auto', request.objective, coverageQuestions);
   const sectionCount = sectionPlan.target;
   // Normalized once here so a legacy request, a persisted queue job and an MCP
   // payload all reach the writers — and the report metadata — as the same value.
   const requestedSectionLength = normalizeDeepResearchSectionLength(request.sectionLength);
-  const sectionLengthPlan = planDeepResearchSectionLength(requestedSectionLength);
+  const sectionLengthPlan = planDeepResearchSectionLength(deps.continuousNarrative && request.sectionLimit === 'single' && typeof requestedSectionLength === 'number'
+    ? Math.ceil(requestedSectionLength / sectionCount) : requestedSectionLength);
 
   emit({ phase: 'planning', message: L.planning(sectionCount) });
   // Ideas and their relationships still choose the thesis and progression. Atomic
@@ -1605,6 +1610,39 @@ export async function orchestrateDeepResearch(
     if (!reconciled.consistencyChecked) finalize.limitations = dedupe([...finalize.limitations, researchConsistencyUnverified(language)]);
   }
 
+  if (deps.finalDocumentReview) {
+    const review = await deps.finalDocumentReview(written.map((item, index) => ({
+      id: `section:${index}`, text: stripInitialHeading(item.markdown),
+      remit: [effectiveRequest.objective, item.section.purpose, ...(item.section.coverageQuestions ?? [])].join('\n'),
+    })));
+    if (review.passages?.length) mergeRetrievedMaterial(maps, { passages: review.passages });
+    for (let index = written.length - 1; index >= 0; index--) {
+      const part = review.parts.find(part => part.id === `section:${index}`);
+      if (!part || part.status !== 'verified' || !part.claims.some(claim => claim.status === 'supported' && claim.kind !== 'nonfactual')) {
+        if (part) claimLedger.push(...part.claims.map(claim => ({ ...claim, status: 'unverified' as const })));
+        written.splice(index, 1); continue;
+      }
+      written[index].markdown = part.text;
+      written[index].section.keyClaims = part.claims.filter(claim => claim.status === 'supported').map(claim => claim.sentence);
+      written[index].section.coverageClaims = [];
+      claimLedger.push(...part.claims);
+    }
+    // Summaries copy a complete verified paragraph, never a new model claim.
+    finalize.abstract = written.length ? stripInitialHeading(written[0].markdown).split(/\n\s*\n/u)[0] : researchEvidenceLimitation(language);
+    finalize.nextSteps = [];
+    finalize.limitations = review.status === 'verified' ? [] : [researchEvidenceLimitation(language)];
+    if (review.status !== 'verified') stoppedReason = researchEvidenceLimitation(language);
+    coveredIdeaIds.clear(); Object.values(citedIds).forEach(set => set.clear());
+    for (const item of written) {
+      const { cited } = applyCitationPolicy(item.markdown, maps);
+      for (const key of Object.keys(citedIds) as Array<keyof typeof citedIds>) cited[key].forEach(id => citedIds[key].add(id));
+      cited.ideas.forEach(id => coveredIdeaIds.add(id));
+      cited.passages.forEach(id => { const work = maps.passageWorkId.get(id); if (work) citedIds.works.add(work); });
+    }
+    totalWords = written.reduce((sum, item) => sum + countWords(item.markdown), 0);
+    coverageEvidence.splice(0, coverageEvidence.length);
+  }
+
   if (deps.checkSectionCoverage) {
     for (const [item, input] of coverageInputs) {
       const finalText = written.includes(item) ? item.markdown : '';
@@ -1621,7 +1659,8 @@ export async function orchestrateDeepResearch(
   const references = buildReferences(citedWorkIds, maps, language);
   const singleNarrative = effectiveRequest.sectionLimit === 'single';
   const draftMarkdown = deps.strictDocumentaryGrounding && !written.length ? researchEvidenceLimitation(language)
-    : assembleMarkdown(written, references, finalize, language, effectiveRequest.sectionLimit);
+    : deps.finalDocumentReview && singleNarrative ? written.map(item => stripInitialHeading(item.markdown)).join('\n\n')
+      : assembleMarkdown(written, references, deps.finalDocumentReview ? { ...finalize, abstract: '' } : finalize, language, effectiveRequest.sectionLimit);
   const worksCited = citedWorkIds.size;
 
   const outline: WritingWorkshopSection[] = singleNarrative ? [] : written.map((w, index) => ({
@@ -1649,7 +1688,7 @@ export async function orchestrateDeepResearch(
   });
 
   // Automated citation existence/entailment checks never constitute acceptance.
-  if (deps.auditFactualProse && qualityAssessment.grade !== 'weak') qualityAssessment.grade = 'needs_review';
+  if ((deps.auditFactualProse || deps.finalDocumentReview) && qualityAssessment.grade !== 'weak') qualityAssessment.grade = 'needs_review';
   const draft: WritingWorkshopDraft = {
     generatedAt: new Date().toISOString(),
     brief,
@@ -1670,7 +1709,7 @@ export async function orchestrateDeepResearch(
     bibliography: references,
     nextSteps: finalize.nextSteps,
     supportAudit,
-    ...(deps.auditFactualProse ? { claimLedger } : {}),
+    ...((deps.auditFactualProse || deps.finalDocumentReview) ? { claimLedger } : {}),
     qualityAssessment,
     limitations: [...finalize.limitations, ...(!deps.auditFactualProse ? coherenceIssues.map(issue => L.coherenceLimitation(issue)) : [])],
     deepResearchStructure: singleNarrative ? 'single' : 'sectioned',
@@ -1689,7 +1728,7 @@ export async function orchestrateDeepResearch(
   };
 
   const meta: DeepResearchMeta = {
-    ...(deps.auditFactualProse ? { factualAudit: { checked: claimLedger.length,
+    ...((deps.auditFactualProse || deps.finalDocumentReview) ? { factualAudit: { checked: claimLedger.length,
       supported: claimLedger.filter(claim => claim.status === 'supported').length,
       removed: claimLedger.filter(claim => claim.status === 'removed').length,
       unverified: claimLedger.filter(claim => claim.status === 'unverified').length,
@@ -1700,7 +1739,12 @@ export async function orchestrateDeepResearch(
     // Recorded per section rather than as one report total: the guidance is per
     // section, and a report where the corpus filled two sections and ran dry on
     // three is a different fact from one that simply came out short.
-    sectionLengthOutcome: sectionLengthPlan.targetWords === null ? null : {
+    sectionLengthOutcome: deps.continuousNarrative && singleNarrative && typeof requestedSectionLength === 'number' ? {
+      targetWords: requestedSectionLength,
+      sections: written.length ? 1 : 0,
+      reached: written.length && totalWords >= Math.round(requestedSectionLength * 0.92) ? 1 : 0,
+      short: written.length && totalWords < Math.round(requestedSectionLength * 0.92) ? 1 : 0,
+    } : sectionLengthPlan.targetWords === null ? null : {
       targetWords: sectionLengthPlan.targetWords,
       sections: written.length,
       reached: written.filter((item) => countWords(item.markdown) >= Math.round(sectionLengthPlan.targetWords! * 0.92)).length,

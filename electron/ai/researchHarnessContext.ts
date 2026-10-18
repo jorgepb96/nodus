@@ -18,7 +18,7 @@ export function researchHarnessContext(mode: ResearchRunMode, request: ResearchC
     objective: chat ? chat.messages.filter(m => m.role === 'user').at(-1)?.content ?? '' : 'objective' in request ? request.objective : (request as ImmersionRequest).topic,
     model: resolveModelRef(model), effort: request.thinkingEffort ?? 'standard',
     ...(chat ? { options: { selection: structuredClone(chat.selection), skillIds: [...(chat.skillIds ?? [])] } } : {}),
-    policyKey: researchFingerprint({ responsePolicy: 'legacy-parity-v1', turnIntent: RESEARCH_TURN_INTENT_POLICY, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
+    policyKey: researchFingerprint({ responsePolicy: mode === 'deep-research' ? 'citation-only-v1' : 'legacy-parity-v1', turnIntent: RESEARCH_TURN_INTENT_POLICY, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
       selection: chat?.selection, skillIds: chat?.skillIds,
       instructions: chat ? withResearchSystemPrompt('', chat.systemPromptId, { surface: 'research', conversationId: chat.conversationId }) : '',
       userTurns: chat?.conversationId ? getConversation(chat.conversationId)?.messages.filter(m => m.role === 'user').map(m => [m.id, m.content]) : undefined }),

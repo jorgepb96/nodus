@@ -744,8 +744,20 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       ...(run.budget.partial ? ['Documentary coverage is partial; do not infer absence from missing evidence.'] : []), ...[...run.limitations].map(describeResearchLimitation)] }) };
   if (run.harness) {
     bounded.continuousNarrative = true;
-    // Keep the existing report checks and their bounds. Investigation adds an
-    // agenda and evidence, not a second proof/rewrite/semantic-review pipeline.
+    // One existing citation-support pass (and its bounded evidence repair) is
+    // enough. The overlapping planning, editorial and premise audits repeatedly
+    // rejected legitimate synthesis and pruned connected reports into fragments.
+    // Do not replace them with another mandatory model-review pipeline.
+    bounded.auditFactualProse = undefined;
+    bounded.auditReportConsistency = undefined;
+    bounded.auditSectionClaims = undefined;
+    bounded.auditPlanCoverage = undefined;
+    bounded.auditFinalSummary = undefined;
+    bounded.judgeSectionRevision = undefined;
+    bounded.reviewReport = undefined;
+    bounded.checkCoherence = undefined;
+    bounded.repairSectionCoverage = undefined;
+    bounded.checkSectionCoverage = undefined;
   }
   return new Proxy(bounded, { get(target, property) {
     const value = Reflect.get(target, property);

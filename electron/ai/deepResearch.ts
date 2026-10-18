@@ -119,10 +119,11 @@ export async function generateDeepResearchReport(request: DeepResearchRequest, o
   if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
     const scope = resolveAcademicRunScope(request.notebookId);
     const context = researchHarnessContext('deep-research', request, scope);
+    let latest: DeepResearchProgress = { phase: 'discovery', message: context.objective };
     return withResearchHarness({ request, context, scope, signal,
       validate: () => { if (getActiveVault().id !== scope.vaultId || resolveAcademicRunScope(request.notebookId).id !== scope.id) throw new Error('research_scope_changed'); },
-      onUpdate: researchRun => onProgress?.({ phase: 'discovery', message: context.objective, researchRun }),
-    }, runSignal => generateDeepResearchReport({ ...request, model: context.model }, progress => onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() }), runSignal));
+      onUpdate: researchRun => onProgress?.({ ...latest, researchRun }),
+    }, runSignal => generateDeepResearchReport({ ...request, model: context.model }, progress => { latest = progress; onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() }); }, runSignal));
   }
   const settings = getSettings();
   const academic = getActiveVault().type === 'academic';

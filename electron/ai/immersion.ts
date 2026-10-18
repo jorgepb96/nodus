@@ -497,10 +497,11 @@ export async function generateImmersionSession(request: ImmersionRequest, onProg
   if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
     const scope = resolveAcademicRunScope();
     const context = researchHarnessContext('immersion', request, scope);
+    let latest: ImmersionBuildProgress = { phase: 'material', message: request.topic };
     return withResearchHarness({ request, context, scope,
       validate: () => { if (getActiveVault().id !== scope.vaultId || resolveAcademicRunScope().id !== scope.id) throw new Error('research_scope_changed'); },
-      onUpdate: researchRun => onProgress?.({ phase: 'material', message: request.topic, researchRun }),
-    }, () => generateImmersionSession({ ...request, model: context.model }, progress => onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() })));
+      onUpdate: researchRun => onProgress?.({ ...latest, researchRun }),
+    }, () => generateImmersionSession({ ...request, model: context.model }, progress => { latest = progress; onProgress?.({ ...progress, researchRun: currentResearchHarness()?.summary() }); }));
   }
   const settings = getSettings();
   const hints = await prepareDocumentVisualHints(request.documentSkills, request.topic, request.model ?? settings.immersionModel ?? settings.synthesisModel);

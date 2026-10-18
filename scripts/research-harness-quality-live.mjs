@@ -38,11 +38,20 @@ for (const provider of ['deepseek','openrouter','gemini']) {
   const ledger = JSON.parse(fs.readFileSync(path.join(artifacts, `cost-ledger-${provider}.json`)));
   let previous = .8;
   for (const adjustment of records) {
+    // Calls in flight at the decision may subsequently settle through the normal
+    // proxy. Reconstruct their original reserved shape for the historical hash;
+    // identities, maxima and already settled consumption must remain identical.
+    const originalCalls = ledger.calls.slice(0, adjustment.calls).map(call => {
+      if (!call.settledAt || Date.parse(call.settledAt) <= Date.parse(adjustment.at)) return call;
+      const original = { ...call, actualUsd: null };
+      delete original.inputTokens; delete original.outputTokens; delete original.settledAt;
+      return original;
+    });
     if (adjustment.previousLimitUsd !== previous || adjustment.limitUsd !== (previous === .8 ? .85 : .9)
         || adjustment.exchangeRate?.usdPerEur !== 1.1253
         || adjustment.limitUsd / adjustment.exchangeRate.usdPerEur * 1.21 * 1.03 >= authorization.userLimitEurPerProvider
         || !Number.isSafeInteger(adjustment.calls) || adjustment.calls < 0 || ledger.calls.length < adjustment.calls
-        || createHash('sha256').update(JSON.stringify(ledger.calls.slice(0,adjustment.calls))).digest('hex') !== adjustment.callsSha256) throw new Error('Historical spending changed');
+        || createHash('sha256').update(JSON.stringify(originalCalls)).digest('hex') !== adjustment.callsSha256) throw new Error('Historical spending changed');
     previous = adjustment.limitUsd;
   }
   if (ledger.limitUsd !== limit || previous !== limit) throw new Error('Changed authorization');

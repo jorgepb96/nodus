@@ -69,13 +69,15 @@ export class ResearchHarness {
   async stage<T>(name: string, input: unknown, generate: () => Promise<T>): Promise<T> {
     this.validate();
     const key = `${name}:${hash(input)}`;
-    if (Object.hasOwn(this.record.stages, key)) return structuredClone(this.record.stages[key]) as T;
+    const unavailableReview = name.startsWith('coherent-answer-review-') && this.record.checkpoint.validationLimited;
+    if (!unavailableReview && Object.hasOwn(this.record.stages, key)) return structuredClone(this.record.stages[key]) as T;
     const existing = this.inflight.get(key);
     if (existing) return existing as Promise<T>;
     const promise = (async () => {
       const value = await generate(); this.validate();
       // The bounded application stages are JSON data, not executable directives.
-      this.record.stages[key] = value === undefined ? null : structuredClone(value); this.persist();
+      if (!(name.startsWith('coherent-answer-review-') && this.record.checkpoint.validationLimited)) this.record.stages[key] = value === undefined ? null : structuredClone(value);
+      this.persist();
       return value;
     })();
     this.inflight.set(key, promise);
@@ -156,8 +158,10 @@ export async function withResearchHarness<T extends object>(input: {
       else {
         const reviewedChat = record.context.mode === 'chat' && (record.checkpoint.answerReview as { status?: string } | undefined)?.status === 'verified';
         const sufficient = !record.checkpoint.validationLimited && (record.checkpoint.direct || reviewedChat || harness.agenda.canFinish());
-        const reason = (record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure ? 'technical' : record.summary.stopReason;
-        harness.stop(reason === 'technical' ? 'failed' : 'completed', reason === 'sufficient' && !sufficient ? 'sources_exhausted' : reason ?? (sufficient ? 'sufficient' : 'sources_exhausted'));
+        const documentFailure = (record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure;
+        const unavailable = Boolean(documentFailure || (record.checkpoint.answerReview as { reviews?: Array<{ attempts?: Array<{ issues: string[] }> }> } | undefined)?.reviews?.some(review => review.attempts?.some(attempt => attempt.issues.includes('verification_unavailable'))));
+        const reason = documentFailure ? /budget_exhausted/u.test(documentFailure) ? 'budget' : 'technical' : record.summary.stopReason;
+        harness.stop(reason === 'technical' || unavailable ? 'failed' : 'completed', reason === 'sufficient' && !sufficient ? 'sources_exhausted' : reason ?? (sufficient ? 'sufficient' : 'sources_exhausted'));
       }
       const summary = harness.summary();
       // Additive metadata keeps existing result and archive shapes compatible.

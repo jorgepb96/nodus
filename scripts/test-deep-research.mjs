@@ -1644,6 +1644,18 @@ try {
     assert.equal(report.meta.words, countWords(accepted)); assert.equal(report.meta.worksCited, 1);
     assert.equal(report.draft.bibliography.length, 1);
     await assert.rejects(() => run(false), /comprobación|verification/iu, 'A wholly unchecked report is not published as an empty completed artifact');
+
+    let fallbackWrites = 0;
+    const fallbackReport = await orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(snapshot), continuousNarrative: true, strictDocumentaryGrounding: true,
+      planReport: async () => { throw new Error('Planner format unavailable'); },
+      writeSection: async input => { fallbackWrites++; assert.equal(input.section.role, 'body'); return fakeWriteSection(input); },
+      finalDocumentReview: async parts => {
+        assert.equal(parts.length, 1, 'A planner fallback does not turn a 500-word narrative into three full report units');
+        return { status: 'verified', parts: parts.map(part => ({ id: part.id, text: accepted, status: 'verified', issues: [], claims: [{ sentence: accepted, kind: 'attributed', status: 'supported', evidence: [], reason: 'fixture proof' }] })) };
+      },
+    });
+    assert.equal(fallbackWrites, 1); assert.equal(fallbackReport.draft.draftMarkdown, accepted);
     let terminalCalls = 0;
     await assert.rejects(() => orchestrateDeepResearch({ objective: 'Explica las fuentes.', sectionLimit: 'single' }, {
       ...baseDeps(snapshot), finalDocumentReview: async () => { throw new Error('must not reach verification'); },

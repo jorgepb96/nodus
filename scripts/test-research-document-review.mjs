@@ -232,6 +232,18 @@ try {
     });
     assert.equal(proofCalls, 2);
   }
+
+  {
+    let corrected = false;
+    const output = await run([part('local-bad-proof'), part('unrelated-good-field')], (options, input) => {
+      if (options.system.startsWith('Revise')) { corrected = true; return { parts: input.parts.map(item => ({ id: item.id, text: 'A supported result.' })) }; }
+      if (!input.parts[0].paragraphs) return semantic(input);
+      const value = proof(input);
+      if (!corrected) value.parts.find(item => item.id === 'local-bad-proof').claims[0].premises[0].fromParagraphs = [0];
+      return value;
+    });
+    assert.equal(output.status, 'verified'); assert.equal(output.technicalFailure, undefined, 'A self-dependent proof is rejected locally, revised and rechecked without cancelling unrelated fields');
+  }
   console.log('Document review: batched proofs, independent semantic veto, complete revisions, exact-source comments, literal evidence, stable IDs and technical-stop retention passed.');
   db.close();
 } finally { fs.rmSync(scratch, { recursive: true, force: true }); }

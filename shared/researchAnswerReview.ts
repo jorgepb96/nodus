@@ -70,7 +70,7 @@ export function validResearchAnswerVerdicts(value: unknown): value is ResearchAn
 }
 /** Structural provider errors may be retried; unsupported content is never repaired
  * by coercing a positive verdict. Quote aliases are checked against sources later. */
-export function validResearchAnswerCoverage(value: unknown, count: number, sourceIds?: ReadonlySet<string>, start = 0): value is ResearchAnswerVerdicts {
+export function validResearchAnswerCoverage(value: unknown, count: number, sourceIds?: ReadonlySet<string>, start = 0, envelopeOnly = false): value is ResearchAnswerVerdicts {
   if (!validResearchAnswerVerdicts(value) || value.claims.length !== count) return false;
   const seen = new Set<number>();
   return value.claims.every(raw => {
@@ -79,6 +79,7 @@ export function validResearchAnswerCoverage(value: unknown, count: number, sourc
     const index = row.index as number;
     if (!Number.isInteger(index) || index < start || index >= start + count || seen.has(index)) return false;
     seen.add(index);
+    if (envelopeOnly) return true; // Each malformed proof remains negative in the source-bound normalizer.
     return typeof row.supported === 'boolean' && typeof row.reason === 'string'
       && Array.isArray(row.premises) && row.premises.length <= 12
       && row.premises.every((rawPremise, position) => {
@@ -122,7 +123,7 @@ export async function researchAnswerVerdictsWithFallback(paragraphs: string[],
       signal?.throwIfAborted();
       const batch = indexed.slice(start, start + size);
       const result = await once(batch, true);
-      if (!validResearchAnswerCoverage(result, batch.length, undefined, start)) throw Object.assign(new Error('Invalid proof batch'), { code: 'schema_mismatch' });
+      if (!validResearchAnswerCoverage(result, batch.length, undefined, start, true)) throw Object.assign(new Error('Invalid proof batch'), { code: 'schema_mismatch' });
       parts.push(result);
     }
     return { claims: parts.flatMap(part => part.claims), coherent: parts.every(part => part.coherent), relevant: parts.every(part => part.relevant), complete: parts.every(part => part.complete),
@@ -142,9 +143,10 @@ export async function researchAnswerVerdictsWithFallback(paragraphs: string[],
  * source grant. An invalid evidence binding is not a provider outage. */
 export function rejectUnprovidedResearchProofs(value: ResearchAnswerVerdicts, sourceIds: ReadonlySet<string>): ResearchAnswerVerdicts {
   return { ...value, claims: value.claims.map(raw => {
-    const claim = raw as { premises: Array<{ evidence: Array<{ id: string }> }>; unsupportedParts: string[] };
-    return claim.premises.some(premise => premise.evidence.some(proof => !sourceIds.has(proof.id)))
-      ? { ...claim, supported: false, unsupportedParts: [...claim.unsupportedParts.slice(0, 11), 'source_not_supplied_to_this_proof'] } : raw;
+    const claim = raw as { premises?: Array<{ evidence?: Array<{ id: string }> }>; unsupportedParts?: string[] };
+    if (!Array.isArray(claim.premises)) return raw;
+    return claim.premises.some(premise => Array.isArray(premise?.evidence) && premise.evidence.some(proof => !sourceIds.has(proof?.id)))
+      ? { ...claim, supported: false, unsupportedParts: [...(Array.isArray(claim.unsupportedParts) ? claim.unsupportedParts.slice(0, 11) : []), 'source_not_supplied_to_this_proof'] } : raw;
   }) };
 }
 

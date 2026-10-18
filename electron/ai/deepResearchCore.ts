@@ -835,6 +835,22 @@ export async function orchestrateDeepResearch(
   // institutional mechanisms even when the objective named them explicitly.
   const effectiveRequest: DeepResearchRequest = { ...request, coverageQuestions };
   const plan = await planWithFallback(deps, effectiveRequest, language, snapshot, sectionPlan);
+  if (deps.continuousNarrative) {
+    // A short continuous report is one argument, even if planning falls back.
+    // Framing and closing fragments must not each inherit the whole objective.
+    if (request.sectionLimit === 'single' && sectionPlan.target === 1) {
+      plan.sections = normalizePlan(plan, snapshot, 1, coverageQuestions).sections.map(section => ({ ...section,
+        role: 'body', title: request.objective, purpose: request.objective, dependsOn: [], coverageQuestions: [...coverageQuestions],
+        passageIds: [...new Set([...section.passageIds, ...snapshot.passages.map(passage => passage.id)])] }));
+    } else {
+      const body = plan.sections.filter(section => section.role === 'body');
+      if (body.length) {
+        plan.sections.filter(section => section.role !== 'body').forEach(section => { section.coverageQuestions = []; });
+        assignMissingCoverageQuestions(body, coverageQuestions);
+      }
+    }
+  }
+
 
   // A bounded diagnostic pass can add graph assignments and one primary owner per
   // question, but the reconciliation guard preserves every historical proposition.
@@ -2113,6 +2129,11 @@ async function planWithFallback(
   }
   if (!plan || plan.sections.length === 0) {
     const fallback = fallbackPlan(request, snapshot, sectionPlan.target, labels(language));
+    if (deps.continuousNarrative) {
+      fallback.sections = fallback.sections.map((section, index) => ({ ...section,
+        role: fallback.sections.length === 1 ? 'body' : index === 0 ? 'intro' : index === fallback.sections.length - 1 ? 'synthesis' : 'body' }));
+      return normalizePlan(fallback, snapshot, sectionPlan.target, input.coverageQuestions);
+    }
     assignMissingCoverageQuestions(fallback.sections, input.coverageQuestions);
     return fallback;
   }

@@ -102,6 +102,29 @@ try {
   });
   assert.equal(recovered.answer, 'Preserved draft'); assert.equal(writes, 1);
   assert.equal(recovered.researchRun.status, 'completed', 'A technical verification failure retries without regenerating completed stages');
+
+  {
+    let checks = 0;
+    const budgetInput = { ...input, request: { ...request, fixture: 'chat-review-budget' } };
+    const stopped = await withResearchHarness(budgetInput, async () => {
+      const h = currentResearchHarness(); h.reserveModelCall();
+      return h.stage('coherent-answer-review-fixture', {}, async () => {
+        checks++; h.record.checkpoint.validationLimited = true;
+        h.record.checkpoint.answerReview = { status: 'limited', reviews: [{ attempts: [{ issues: ['verification_unavailable'], notes: ['budget_exhausted'] }] }] };
+        h.record.summary.stopReason = 'budget'; return { answer: 'Limited' };
+      });
+    });
+    assert.equal(stopped.researchRun.status, 'failed'); assert.equal(stopped.researchRun.stopReason, 'budget');
+    const continued = await withResearchHarness({ ...budgetInput, request: { ...budgetInput.request, runId: stopped.researchRun.id } }, async () => {
+      const h = currentResearchHarness(); assert.equal(h.record.summary.usage.modelCalls, 1, 'Continuation never renews consumed model allowance');
+      return h.stage('coherent-answer-review-fixture', {}, async () => {
+        checks++; h.reserveModelCall(); h.record.checkpoint.validationLimited = false;
+        h.record.checkpoint.answerReview = { status: 'verified' }; return { answer: 'Verified after credit became available' };
+      });
+    });
+    assert.equal(checks, 2, 'An unavailable review cannot freeze a cached fallback forever');
+    assert.equal(continued.researchRun.status, 'completed'); assert.equal(continued.researchRun.usage.modelCalls, 2);
+  }
   chats.deleteConversation(conversation.id);
   assert.equal(runs.getResearchRun(id), null, 'owner deletion removes checkpoints');
 

@@ -108,7 +108,7 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
             ...(independent ? { answerContext: researchAnswerProofUnits(text).map(({ text }, index) => ({ index, text })) } : {}), paragraphs, paragraphCount: paragraphs.length, sources: researchAnswerProofSources(independent ? paragraphs.map(part => part.text).join(' ') : text, transport.sources) };
           return researchHarnessStage('review-answer-paragraphs-v9', input, () => completeJson({
             system: RESEARCH_SOURCE_REVIEW + '\n' + RESEARCH_SOURCE_QUALIFICATION_RULE + '\nEach listed paragraph index is now one sentence-sized proof unit. Check all its clauses, preserving the entire answer context and local proof dependencies; every unit requires its own verdict.', user: JSON.stringify(input), ...(recovery ? proofRecoveryOptions : { maxTokens: independent ? 5000 : 12000 }), temperature: 0, corpusContext: true, signal, noRetry: true,
-          }, (value): value is Parameters<typeof assessResearchAnswer>[2] => validResearchAnswerCoverage(value, input.paragraphs.length, undefined, input.paragraphs[0]?.index ?? 0), reviewModel).then(value => rejectUnprovidedResearchProofs(value, new Set(input.sources.map(source => source.id)))));
+          }, (value): value is Parameters<typeof assessResearchAnswer>[2] => validResearchAnswerCoverage(value, input.paragraphs.length, undefined, input.paragraphs[0]?.index ?? 0, true), reviewModel).then(value => rejectUnprovidedResearchProofs(value, new Set(input.sources.map(source => source.id)))));
         };
         const reusable = repairedProof?.text === text ? repairedProof : undefined;
         const verdicts = reusable ? reusable.verdicts : await researchAnswerVerdictsWithFallback(researchAnswerProofUnits(text).map(unit => unit.text), proof, signal, (paragraphs, independent) => proof(paragraphs, independent, true));
@@ -156,7 +156,8 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
     }
     harness.record.checkpoint.answerReview = { version: RESEARCH_ANSWER_REVIEW_POLICY.version, semanticEffort, status: reviews.every(review => review.status === 'verified') ? 'verified' : 'limited', reviews };
     harness.record.checkpoint.validationLimited = reviews.some(review => review.status !== 'verified');
-    if (harness.record.summary.stopReason !== 'budget' && reviews.some(review => review.attempts.some(attempt => attempt.issues.includes('verification_unavailable')))) harness.record.summary.stopReason = 'technical';
+    if (reviews.some(review => review.attempts.some(attempt => attempt.notes?.some(code => /budget_exhausted/u.test(code))))) harness.record.summary.stopReason = 'budget';
+    else if (harness.record.summary.stopReason !== 'budget' && reviews.some(review => review.attempts.some(attempt => attempt.issues.includes('verification_unavailable')))) harness.record.summary.stopReason = 'technical';
     harness.record.checkpoint.lastAudit = reviews.flatMap(review => review.attempts.at(-1)?.claims ?? []);
     const goal = harness.agenda.questions.find(question => question.question === objective.trim().slice(0, 1000));
     if (goal && chat) {

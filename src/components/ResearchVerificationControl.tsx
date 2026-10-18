@@ -10,7 +10,7 @@ export function ResearchVerificationControl({ value, onChange, disabled }: {
   disabled: boolean;
 }) {
   const on = value === 'structured';
-  return <button type="button" className={`research-web-toggle ${on ? 'is-on' : ''}`} aria-pressed={on}
+  return <button type="button" className={`research-web-toggle research-verification-toggle ${on ? 'is-on' : ''}`} aria-pressed={on}
     aria-label={t('Verificar fuentes')} title={t('La verificación experimental de respuestas añade llamadas y latencia, y no garantiza que sean correctas.')}
     data-testid="research-verification-toggle" disabled={disabled} onClick={() => onChange(on ? 'off' : 'structured')}>
     <Icon name="shield" size={18} />

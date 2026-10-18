@@ -3,7 +3,7 @@
   "version": "5.12.1",
   "description": "Local-first desktop app that turns a Zotero library into a navigable graph of ideas and authors.",
   "author": {
-    "name": "Jorge Pérez Burgueño",
+    "name": "Jorge P\u00e9rez Burgue\u00f1o",
     "url": "https://orcid.org/0000-0002-1150-1930"
   },
   "license": "AGPL-3.0-only",
@@ -187,6 +187,7 @@
     "build:presenter-native": "node scripts/build-presenter-native.cjs",
     "test:presenter-native": "node scripts/test-presenter-native.mjs",
     "test:presenter-lan": "node scripts/verify-presenter-lan.cjs",
+    "test:cloud-relay": "npm --prefix cloudflare ci --ignore-scripts && node --test scripts/acceptance-cloudflare-bridge-relay.mjs",
     "test:embeddinggemma:contracts": "node --test scripts/test-embeddinggemma2.mjs scripts/test-embeddinggemma-availability.mjs scripts/test-embeddinggemma-host.mjs scripts/test-embeddinggemma-execution.mjs scripts/test-research-notebook-status.mjs scripts/test-strict-embeddings.mjs scripts/test-embedding-contract.mjs scripts/test-research-provider-proxy.mjs scripts/test-research-isolation.mjs",
     "test:embeddinggemma:runtime": "node scripts/embeddinggemma-qa.mjs runtime",
     "audit:embeddinggemma": "node scripts/embeddinggemma-qa.mjs audit",
@@ -240,6 +241,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@mozilla/readability": "^0.6.0",
     "@napi-rs/canvas": "^0.1.65",
+    "@noble/hashes": "2.3.0",
     "@nodus/embeddinggemma-transformers": "npm:@huggingface/transformers@4.3.1",
     "@openai/codex": "0.144.6",
     "@pdf-lib/fontkit": "^1.1.1",
@@ -288,7 +290,7 @@
     "turndown": "^7.2.4",
     "uuid": "^11.0.3",
     "word-extractor": "^1.0.4",
-    "ws": "^8.21.0",
+    "ws": "^8.22.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
     "yjs": "^13.6.27",
     "zod": "^3.25.76"
@@ -454,16 +456,17 @@
         }
       ],
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Nodus Research usa el micrófono únicamente cuando inicias un dictado o una grabación de estudio.",
-        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la cámara únicamente después de que lo autorices para ese sitio.",
-        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicación de presentaciones instalada únicamente para convertir a PDF el archivo que elijas importar.",
+        "NSMicrophoneUsageDescription": "Nodus Research usa el micr\u00f3fono \u00fanicamente cuando inicias un dictado o una grabaci\u00f3n de estudio.",
+        "NSCameraUsageDescription": "Nodus Research permite que un sitio abierto en su navegador integrado use la c\u00e1mara \u00fanicamente despu\u00e9s de que lo autorices para ese sitio.",
+        "NSAppleEventsUsageDescription": "Nodus Research puede usar una aplicaci\u00f3n de presentaciones instalada \u00fanicamente para convertir a PDF el archivo que elijas importar.",
         "NSDockTilePlugIn": "NodusDockTile.docktileplugin",
-        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta función.",
+        "NSCalendarsUsageDescription": "Nodus sincroniza los eventos de docencia y estudio con el calendario de Apple que elijas, solo si activas esta funci\u00f3n.",
         "NSCalendarsFullAccessUsageDescription": "Nodus necesita acceso completo para crear, actualizar y eliminar las copias de tus eventos en el calendario de Apple que elijas.",
-        "NSLocalNetworkUsageDescription": "Nodus enlaza Presenter con tu iPhone o iPad únicamente mientras presentas.",
+        "NSLocalNetworkUsageDescription": "Nodus vincula tu iPhone o iPad con los vaults y permisos que elijas y conecta Presenter mientras presentas.",
         "NSBonjourServices": [
           "_nodus-presenter._tcp",
-          "_nodus-peer._tcp"
+          "_nodus-peer._tcp",
+          "_nodus-mobile._tcp"
         ]
       },
       "target": [

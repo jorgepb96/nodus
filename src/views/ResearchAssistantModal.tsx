@@ -62,30 +62,11 @@ import { useFeatureModel } from '../hooks/useFeatureModel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import { localizeResearchCitationLabels, researchNoteSource, type ResearchConversationNavigationTarget } from '../researchNoteProvenance';
 import './researchAssistant.css';
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
+import { MobileSheet } from '../components/MobileSheet';
 
-const DEFAULT_SELECTION: ResearchContextSelection = {
-  ideas: false,
-  themes: false,
-  contradictions: false,
-  gaps: false,
-  readingPath: false,
-  authors: false,
-  documents: false,
-  passages: false,
-  graph: false,
-  graphParts: {
-    ideaNodes: false,
-    themeNodes: false,
-    ideaEdges: false,
-    authorGraph: false,
-  },
-};
-
-/** A new chat reads every layer of the corpus, and the web while the composer has it on. */
-const LAYERED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: true, documents: true, indexed: true });
-/** The Simple interface never extracts ideas, so a new chat there reads the indexed texts alone,
- * with the web off: the answer comes from the passages its search returns. */
-const INDEXED_SELECTION = withResearchContextLayers(DEFAULT_SELECTION, { ideas: false, documents: false, indexed: true, web: false });
+import {DEFAULT_RESEARCH_CHAT_SELECTION as LAYERED_SELECTION,EMPTY_RESEARCH_CHAT_SELECTION} from '@shared/researchChatDefaults';
+const INDEXED_SELECTION=withResearchContextLayers(EMPTY_RESEARCH_CHAT_SELECTION,{ideas:false,documents:false,indexed:true,web:false});
 
 /** The context balloon's corpus layers, each a switch of its own. Full documents read the works
  * from the indexed texts, so switching them on brings the indexed texts too. */
@@ -170,6 +151,8 @@ export function ResearchAssistantModal({
   studyNoteDestination?: StudyNoteDestination | null;
   onOpenSavedNote?: (noteId: string) => void;
 }) {
+  const phone = isPhoneSurface();
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const simpleInterface = useAcademicInterface() === 'simple' && isAcademic && !adapter;
   const newChatSelection = simpleInterface ? INDEXED_SELECTION : LAYERED_SELECTION;
   // A choice saved before the indexed texts had a switch of their own was never made in this
@@ -179,8 +162,8 @@ export function ResearchAssistantModal({
   const apiRef = useRef(api);
   apiRef.current = api;
   const panelKey = adapter?.id ?? 'research';
-  const [historyOpen, setHistoryOpen] = useState(() => !embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) !== '0');
-  const [contextOpen, setContextOpen] = useState(() => embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
+  const [historyOpen, setHistoryOpen] = useState(() => !phone && (!embedded || localStorage.getItem(`nodus.${panelKey}ChatHistoryOpen`) !== '0'));
+  const [contextOpen, setContextOpen] = useState(() => !phone && embedded && !!adapter && localStorage.getItem(`nodus.${panelKey}ChatContextOpen`) === '1');
   const toggleHistory = () => setHistoryOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatHistoryOpen`, open ? '0' : '1'); return !open; });
   const toggleContext = () => setContextOpen(open => { localStorage.setItem(`nodus.${panelKey}ChatContextOpen`, open ? '0' : '1'); return !open; });
   const learning = useAcademicLearning();
@@ -1067,32 +1050,8 @@ export function ResearchAssistantModal({
       compact menu triggerModelOnly allowEmpty={!selectedModel} disabled={sending || !!concilium}
       ariaLabel={concilium ? t('Chairman') : t('Modelo del chat')} />
   </div>);
-  return (
-    <div className={embedded ? "research-chat-surface research-chat-view h-full min-h-0 flex flex-col" : "research-chat-surface fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"} data-testid={embedded ? "research-chat-view" : undefined}>
-      <div
-        role={embedded ? "region" : "dialog"}
-        aria-label="Research chat"
-        onDragEnter={handleFileDrag}
-        onDragOver={handleFileDrag}
-        onDragLeave={() => {
-          dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-          if (!dragDepthRef.current) setDraggingFiles(false);
-        }}
-        onDrop={handleFileDrop}
-        aria-modal={embedded ? undefined : true}
-        className={embedded ? "relative w-full h-full min-h-0 bg-neutral-950 flex flex-col overflow-hidden" : "relative w-full max-w-7xl h-[86vh] bg-neutral-950 border border-neutral-800 rounded-lg shadow-2xl flex flex-col overflow-hidden"}
-      >
-        {draggingFiles && <div className="research-file-drop-overlay" role="status">
-          <div className="research-file-drop-label"><Icon name="plus" size={28} /><strong>{t('Suelta los archivos para adjuntarlos')}</strong></div>
-        </div>}
-        <header className="research-assistant-header px-4 py-3 border-b border-neutral-800 flex items-center gap-3">
-          {embedded && <button type="button" className="btn btn-ghost border border-neutral-700" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
-          <div className="flex items-center gap-2 font-semibold">
-            <Icon name="chat" className="research-accent-text" />
-            {embedded ? 'Research chat' : t('Asistente de investigación')}
-          </div>
-          {!simpleInterface && chatModelControl}
-          <div className="research-assistant-actions">
+  const chatActions = (
+    <div className="research-assistant-actions">
           {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-md border research-accent-soft px-2 py-1 text-xs research-accent-text"
@@ -1125,21 +1084,13 @@ export function ResearchAssistantModal({
             setConcilium(next);
             if (next) setSelectedModel(next.models[next.chairman]);
           }} />}
+
             {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
           </AcademicSecondary>
           {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
-
-
-          </div>
-          <div className="flex-1" />
-          {!embedded && <button className="btn btn-ghost" onClick={onClose} title={t('Cerrar')}>
-            <Icon name="x" />
-          </button>}
-        </header>
-
-        <div className="flex-1 min-h-0 flex flex-col md:flex-row">
-          {/* Conversation history */}
-          <aside hidden={!historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
+          </div>);
+  const activityPanel = !adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />;
+  const historyPanel = (<aside hidden={!phone && !historyOpen} data-testid="research-history-sidebar" className="research-chat-history w-full md:w-60 shrink-0 border-b md:border-b-0 md:border-r border-neutral-800 flex flex-col max-h-48 md:max-h-none">
             <ResearchChatSidebar
               conversations={visibleConversations}
               projects={projects}
@@ -1155,33 +1106,72 @@ export function ResearchAssistantModal({
               archivedCount={archivedCount}
               showArchived={showArchived}
               onToggleArchived={() => setShowArchived((value) => !value)}
-              onNewConversation={startNewConversation}
-              onNewNotebook={adapterNotebooks ? adapterNotebooks.create && (() => adapterNotebooks.create!(openNotebook)) : () => setEditingNotebook('new')}
+              onNewConversation={() => { startNewConversation(); if (phone) setHistoryOpen(false); }}
+              onNewNotebook={adapterNotebooks ? adapterNotebooks.create && (() => { adapterNotebooks.create!(openNotebook); if (phone) setHistoryOpen(false); }) : () => { setEditingNotebook('new'); if (phone) setHistoryOpen(false); }}
               onNewProject={createProject}
-              onOpenConversation={(id) => void loadConversation(id)}
-              onOpenProject={openProject}
+              onOpenConversation={(id) => { void loadConversation(id); if (phone) setHistoryOpen(false); }}
+              onOpenProject={id => { openProject(id); if (phone) setHistoryOpen(false); }}
               activeNotebookId={activeNotebookId}
-              onOpenNotebook={openNotebook}
+              onOpenNotebook={id => { openNotebook(id); if (phone) setHistoryOpen(false); }}
               onEditNotebook={adapterNotebooks
-                ? adapterNotebooks.editSources && (notebook => adapterNotebooks.editSources!(notebook.id))
-                : notebook => setEditingNotebook(researchNotebooks.notebooks.find(item => item.id === notebook.id) ?? null)}
+                ? adapterNotebooks.editSources && (notebook => { adapterNotebooks.editSources!(notebook.id); if (phone) setHistoryOpen(false); })
+                : notebook => { setEditingNotebook(researchNotebooks.notebooks.find(item => item.id === notebook.id) ?? null); if (phone) setHistoryOpen(false); }}
               onUpdateNotebook={!adapterNotebooks || adapterNotebooks.update ? updateNotebook : undefined}
               onDeleteNotebook={!adapterNotebooks || adapterNotebooks.remove ? deleteNotebook : undefined}
               onRenameConversation={renameApi ? renameConversation : undefined}
               onPinConversation={pinConversation}
               onArchiveConversation={api.archiveConversation ? archiveConversation : undefined}
-              onDeleteConversation={setPendingDelete}
+              onDeleteConversation={conversation => { setPendingDelete(conversation); if (phone) setHistoryOpen(false); }}
               onMoveConversation={moveConversation}
-              onDeleteConversations={setPendingBulkDelete}
+              onDeleteConversations={conversations => { setPendingBulkDelete(conversations); if (phone) setHistoryOpen(false); }}
               onArchiveConversations={api.archiveConversation ? archiveConversations : undefined}
               onMoveConversations={supportsProjects ? moveConversations : undefined}
               onUpdateProject={updateProject}
-              onEditProjectInstructions={setEditingProjectInstructions}
+              onEditProjectInstructions={project => { setEditingProjectInstructions(project); if (phone) setHistoryOpen(false); }}
               onDeleteProject={deleteProject}
               folderTree={folderTree}
               folderActions={folderActions}
             />
-          </aside>
+          </aside>);
+
+  return (
+    <div className={embedded ? "research-chat-surface research-chat-view h-full min-h-0 flex flex-col" : "research-chat-surface fixed inset-0 z-50 bg-black/70 p-4 flex items-center justify-center"} data-testid={embedded ? "research-chat-view" : undefined}>
+      <div
+        role={embedded ? "region" : "dialog"}
+        aria-label="Research chat"
+        onDragEnter={handleFileDrag}
+        onDragOver={handleFileDrag}
+        onDragLeave={() => {
+          dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+          if (!dragDepthRef.current) setDraggingFiles(false);
+        }}
+        onDrop={handleFileDrop}
+        aria-modal={embedded ? undefined : true}
+        className={embedded ? "relative w-full h-full min-h-0 bg-neutral-950 flex flex-col overflow-hidden" : "relative w-full max-w-7xl h-[86vh] bg-neutral-950 border border-neutral-800 rounded-lg shadow-2xl flex flex-col overflow-hidden"}
+      >
+        {draggingFiles && <div className="research-file-drop-overlay" role="status">
+          <div className="research-file-drop-label"><Icon name="plus" size={28} /><strong>{t('Suelta los archivos para adjuntarlos')}</strong></div>
+        </div>}
+        <header className="research-assistant-header px-4 py-3 border-b border-neutral-800 flex items-center gap-3">
+          {embedded && <button type="button" className="btn btn-ghost border border-neutral-700" data-testid="research-history-toggle" aria-label={t('Historial de chats')} title={t('Historial de chats')} aria-expanded={historyOpen} onClick={toggleHistory}><Icon name="clock" size={16} /></button>}
+          <div className="flex items-center gap-2 font-semibold">
+            <Icon name="chat" className="research-accent-text" />
+            {embedded ? 'Research chat' : t('Asistente de investigación')}
+          </div>
+          {!simpleInterface && chatModelControl}
+          {phone ? <><button className="btn btn-ghost" aria-label={t('Opciones')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(true)}><Icon name="settings" size={18} /></button>
+            <MobileSheet open={optionsOpen} title={t('Opciones')} onClose={() => setOptionsOpen(false)}>{chatActions}</MobileSheet></> : chatActions}
+
+          {phone && activityPanel}
+          <div className="flex-1" />
+          {!embedded && <button className="btn btn-ghost" onClick={onClose} title={t('Cerrar')}>
+            <Icon name="x" />
+          </button>}
+        </header>
+
+        <div className="flex-1 min-h-0 flex flex-col md:flex-row">
+          {/* Conversation history */}
+          {phone ? <MobileSheet open={historyOpen} title={t('Historial de chats')} onClose={() => setHistoryOpen(false)}>{historyPanel}</MobileSheet> : historyPanel}
 
           <section className={`flex-1 min-w-0 min-h-0 flex flex-col ${projectHome || notebookHome ? 'research-project-home' : ''}`} data-testid={projectHome ? 'research-project-home' : notebookHome ? 'research-notebook-home' : undefined}>
             {notebookHome && activeNotebook && <NotebookHomeHeader notebook={activeNotebook} onEdit={() => setEditingNotebook(activeNotebook)} />}
@@ -1196,7 +1186,7 @@ export function ResearchAssistantModal({
               <button type="button" className="btn btn-ghost text-xs" onClick={() => setEditingProjectInstructions(activeProject)}><Icon name="brain" size={14} />{t('Instrucciones del proyecto')}</button>
             </header>}
             <div className="relative flex-1 min-h-0">
-              {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
+              {!phone && activityPanel}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (
                   <div role="status" className="mx-auto max-w-xl rounded-lg border border-amber-800/70 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
@@ -1246,6 +1236,9 @@ export function ResearchAssistantModal({
                     className={`msg-in flex rounded-lg transition-shadow duration-500 ${highlightedMessageId === message.id ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-950' : ''} ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
+                      role={message.role === 'assistant' ? 'group' : undefined}
+                      aria-label={message.role === 'assistant' ? t('Respuesta del asistente') : undefined}
+                      aria-busy={message.role === 'assistant' ? message.id === streamingId : undefined}
                       className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? 'pr-24' : 'pr-16'} ${
                         message.role === 'user'
                           ? 'research-accent-solid text-white whitespace-pre-wrap'
@@ -1254,7 +1247,7 @@ export function ResearchAssistantModal({
                             : 'bg-neutral-900 border-neutral-800 text-neutral-200'
                       }`}
                     >
-                      <div className="absolute right-2 top-2 flex items-center gap-0.5">
+                      <div className="research-message-actions absolute right-2 top-2 flex items-center gap-0.5">
                         {message.role === 'assistant' &&
                           (!message.error || message.concilium) &&
                           message.id === lastMessageId &&
@@ -1408,7 +1401,7 @@ export function ResearchAssistantModal({
                         return;
                       }
                     }
-                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    if (e.key === 'Enter' && !phone && !e.shiftKey && !e.nativeEvent.isComposing) {
                       e.preventDefault();
                       void send();
                     }
@@ -1439,7 +1432,7 @@ export function ResearchAssistantModal({
                 )}
               </div>
               </div>
-              <div className="mt-1.5 flex items-center gap-1 px-1 text-[11px] text-neutral-400">
+              <div className="research-composer-keyboard-hint mt-1.5 flex items-center gap-1 px-1 text-[11px] text-neutral-400">
                 <kbd className="composer-kbd">Enter</kbd>
                 <span>{t('para enviar')}</span>
                 <span className="text-neutral-700">·</span>

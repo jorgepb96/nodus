@@ -8,4 +8,5 @@ const { packagedNodeModuleExclusions } = require('./packagedNodeModules.cjs');
 module.exports = {
   ...pkg.build,
   files: [...pkg.build.files, ...packagedNodeModuleExclusions()],
+  mac: { ...pkg.build.mac, sign: 'build/macLocalSign.cjs' },
 };

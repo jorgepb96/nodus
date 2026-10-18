@@ -73,13 +73,20 @@ try {
   assert.ok(service.includes('setTimeout(() => void runGeneration'), 'image work starts asynchronously');
   assert.ok(service.includes('active.get(key) !== token'), 'stale/deleted attempts cannot overwrite image state');
   assert.ok(service.includes('interruptDecorativeImageGenerations'), 'vault/app shutdown can invalidate process-local image work');
-  assert.ok(service.includes('VISUAL_CONTEXT_COPY') && service.includes("getSettings().promptLanguage ?? 'es'"), 'visual-context call follows the configured prompt language');
-  for (const marker of ['Maximum 45 words', '45 mots maximum', 'Höchstens 45 Wörter', 'Máximo de 45 palavras', 'Massimo 45 parole', 'En fazla 45 kelime']) {
-    assert.ok(service.includes(marker), `visual-context copy includes ${marker}`);
+  assert.ok(service.includes("decorativeImageContextCall(source,getSettings().promptLanguage ?? 'es')"), 'visual-context call follows the configured prompt language');
+  const contextModule = path.join(tmp, 'decorativeImageContext.mjs');
+  await build({entryPoints: [path.join(root, 'shared/decorativeImageContext.ts')], outfile: contextModule,
+    bundle: true, format: 'esm', platform: 'node', logLevel: 'silent'});
+  const {decorativeImageContextCall} = await import(pathToFileURL(contextModule).href);
+  for (const [language, marker] of [['en', 'Maximum 45 words'], ['fr', '45 mots maximum'], ['de', 'Höchstens 45 Wörter'], ['pt', 'Máximo de 45 palavras'], ['it', 'Massimo 45 parole'], ['tr', 'En fazla 45 kelime']]) {
+    const call = decorativeImageContextCall({title: 'Fixture title', content: 'Fixture source'}, language);
+    assert.ok(call.system.includes(marker), `visual-context copy includes ${marker}`);
+    assert.ok(call.user.includes('Fixture title') && call.user.includes('Fixture source'), 'the canonical call preserves its supplied source');
+    assert.equal(call.maxTokens, 100, 'visual-context call remains short');
+    assert.equal(call.noRetry, true, 'visual-context calls do not duplicate provider work');
   }
-  assert.ok(service.includes('maxTokens: 100'), 'visual-context call remains short');
   assert.ok(service.includes('request.visualContext') && service.includes('buildDecorativeImagePrompt(style, context)'), 'a user-edited scene rebuilds the styled prompt');
-  assert.ok(service.includes('noRetry: true') && service.includes('maxRetries: 0'), 'text and Google image calls are single-attempt');
+  assert.ok(service.includes('maxRetries: 0'), 'Google image calls are single-attempt');
   assert.ok(service.includes('IMAGE_CONTEXT_TIMEOUT_MS = 45_000') && service.includes('IMAGE_TIMEOUT_MS = 120_000'), 'both context and image work are time-bounded');
   assert.ok(!/for\s*\([^)]*retry|while\s*\([^)]*retry/i.test(service), 'there is no automatic retry loop');
 

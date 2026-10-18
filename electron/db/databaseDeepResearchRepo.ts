@@ -267,6 +267,19 @@ export function getDatabaseResearchJob(id: string): DatabaseDeepResearchJob | nu
   const run = getDatabaseResearchRun(id);
   return run ? databaseResearchJob(run) : null;
 }
+/** Retain the host's stable receipt even if a terminal run is later cleared. */
+export function findMobileDatabaseResearchRun(bridgeJobId:string): DatabaseResearchRun | null {
+  const db=getDb();
+  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='desktop_database_research_jobs'").get()) return null;
+  const row=db.prepare('SELECT run_id FROM desktop_database_research_jobs WHERE bridge_job_id=?').get(bridgeJobId) as {run_id:string}|undefined;
+  if(!row) return null;
+  const run=getDatabaseResearchRun(row.run_id);if(!run) throw new Error('mobile_database_research_run_unavailable');return run;
+}
+export function rememberMobileDatabaseResearchRun(bridgeJobId:string,runId:string): void {
+  const db=getDb();db.exec('CREATE TABLE IF NOT EXISTS desktop_database_research_jobs (bridge_job_id TEXT PRIMARY KEY,run_id TEXT NOT NULL,created_at TEXT NOT NULL)');
+  db.prepare('INSERT INTO desktop_database_research_jobs VALUES(?,?,?)').run(bridgeJobId,runId,now());
+}
+export function mobileDatabaseResearchTransaction<T>(run:()=>T): T { return getDb().transaction(run)(); }
 
 /** Clear terminal queue records that do not own a completed report. Reports are
  * deliberately retained in the gallery when a queue is cleared. */
@@ -315,14 +328,15 @@ export function getDatabaseResearchRunDetail(id: string): DatabaseResearchRunDet
   return { run, steps, claims, report: reportRow ? reportFromRow(reportRow) : null };
 }
 
-export function createDatabaseResearchRun(input: DatabaseResearchRequest): DatabaseResearchRun {
+export function createDatabaseResearchRun(input: DatabaseResearchRequest, mobileIdentity?:{id:string;createdAt:string}): DatabaseResearchRun {
   const request = normalizeDatabaseResearchRequest(input);
   requireDatabase(request.databaseId);
   const optionsJson = boundedJson(request.options ?? {}, 'Las opciones de investigación');
   const requestJson = boundedJson(request, 'La petición de investigación');
   const budgetJson = boundedJson(request.options?.budget ?? {}, 'El presupuesto de investigación');
-  const id = `dbr_${randomUUID()}`;
-  const timestamp = now();
+  if(mobileIdentity&&(!/^dbr_mobile_[a-f0-9-]{36}$/i.test(mobileIdentity.id)||!Number.isFinite(Date.parse(mobileIdentity.createdAt))))throw new Error('invalid_mobile_database_identity');
+  const id = mobileIdentity?.id ?? `dbr_${randomUUID()}`;
+  const timestamp = mobileIdentity?.createdAt ?? now();
   getDb().prepare(
     `INSERT INTO database_research_runs
       (id, database_id, objective, title, language, report_type, model_json, options_json, request_json, provider, budget_json, phase, status, progress, created_at, updated_at)

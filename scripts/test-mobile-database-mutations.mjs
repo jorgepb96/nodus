@@ -1,0 +1,94 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import {randomUUID} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {installRuntimeHooks,requireElectronRuntime} from './lib/tsRuntimeHooks.mjs';
+if(!requireElectronRuntime(fileURLToPath(import.meta.url),'--electron-mobile-database-mutations'))process.exit(0);
+const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nodus-mobile-database-write-'));
+const runtime=installRuntimeHooks(directory);runtime.app.on=()=>{};runtime.app.once=()=>{};
+const require=createRequire(import.meta.url),fetch=globalThis.fetch;let database,calls=0;
+globalThis.fetch=async()=>{calls++;throw new Error('A content edit cannot start a provider');};
+try{
+  database=require('../electron/db/database.ts');database.getDb();const vaults=require('../electron/vaults/vaultRegistry.ts'),vault=vaults.createVault('Escritura móvil aislada','databases');
+  const {applyBridgeMutations}=require('../electron/desktopBridge/mutations.ts'),repo=require('../electron/db/databasesRepo.ts');
+  await vaults.withOwningVault(vault.id,()=>database.withVaultDatabase(vault.id,async()=>{
+    const db=database.getDb(),databaseId=`db_${randomUUID()}`,columnId=`dcol_${randomUUID()}`,rowId=`drow_${randomUUID()}`;
+    const mutation=(table,key,row)=>({id:randomUUID(),kind:'upsert',table,key,row,assets:[],createdAt:new Date().toISOString()});
+    const creates=[mutation('db_databases',[databaseId],{id:databaseId,name:'Desde el móvil',icon:'tablecells'}),mutation('db_columns',[columnId],{id:columnId,database_id:databaseId,name:'Nombre',type:'title',config_json:'{}'}),mutation('db_rows',[rowId],{id:rowId,database_id:databaseId})];
+    const first=await applyBridgeMutations(vault.id,'grant',creates);assert.deepEqual(first.applied,creates.map(item=>item.id));assert.equal(first.rejected.length,0);
+    assert.equal(repo.getRow(rowId).databaseId,databaseId);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM db_data_sources WHERE database_id=?').get(databaseId).n,1);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM page_documents WHERE page_id=?').get(`row:${rowId}`).n,1,'Canonical row creation must retain its universal page');
+    const cell=(value,revision,expected)=>mutation('db_cells',[rowId,columnId],{row_id:rowId,column_id:columnId,database_id:databaseId,value_text:value,_mobileExpectedRevision:revision,_mobileExpectedValue:expected});
+    const edit=cell('Título móvil',0,''),written=await applyBridgeMutations(vault.id,'grant',[edit]);assert.deepEqual(written.applied,[edit.id]);assert.equal(repo.getRow(rowId).cells[columnId],'Título móvil');
+    const actual=db.prepare('SELECT revision,value_text FROM db_cells WHERE row_id=? AND column_id=?').get(rowId,columnId);
+    const document=db.prepare('SELECT title FROM pages WHERE row_id=?').get(rowId);assert.equal(document.title,'Título móvil','Title writes must reach the actual linked page');
+    const duplicate=await applyBridgeMutations(vault.id,'grant',[edit]);assert.deepEqual(duplicate.duplicate,[edit.id]);assert.deepEqual(db.prepare('SELECT revision,value_text FROM db_cells WHERE row_id=? AND column_id=?').get(rowId,columnId),actual);
+    repo.setCell(rowId,columnId,'Edición posterior del Mac');
+    const rejected=await applyBridgeMutations(vault.id,'grant',[cell('Sobrescritura',actual.revision,'Título móvil')]);assert.equal(rejected.rejected[0].reason,'database_cell_revision_conflict');assert(rejected.rejected[0].error_description);assert.equal(repo.getRow(rowId).cells[columnId],'Edición posterior del Mac');
+    const revision=db.prepare('SELECT revision FROM db_cells WHERE row_id=? AND column_id=?').get(rowId,columnId).revision;
+    // A later queued phone edit cannot overwrite a foreign edit merely because
+    // its guessed revision coincides with the foreign revision.
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[cell('Otra sobrescritura',revision,'Título móvil')])).rejected[0].reason,'database_cell_revision_conflict');
+    const clear=await applyBridgeMutations(vault.id,'grant',[cell('',revision,'Edición posterior del Mac')]);assert.equal(clear.rejected.length,0);assert.equal(db.prepare('SELECT 1 FROM db_cells WHERE row_id=? AND column_id=?').get(rowId,columnId),undefined);
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[mutation('db_columns',[`dcol_${randomUUID()}`],{id:'mismatched',database_id:databaseId,type:'formula',name:'No',config_json:'{}'})])).rejected.length,1);
+    const {COLUMN_TYPES}=require('../shared/databases.ts');
+    const createdTypes=new Map([['title',columnId]]);
+    for(const definition of COLUMN_TYPES.filter(value=>value.id!=='title')){
+      const id=`dcol_${randomUUID()}`;let config={};
+      if(definition.id==='number')config={numberFormat:'currency',numberCurrency:'EUR',numberDecimals:2};
+      if(definition.id==='formula')config={formula:{kind:'arithmetic',op:'add',operands:[{kind:'number',value:2},{kind:'number',value:3}]}};
+      if(definition.id==='relation')config={relationTargetKind:'db_row',relationTargetDatabaseId:databaseId,relationCardinality:'many'};
+      if(definition.id==='rollup')config={rollupRelationColumnId:createdTypes.get('relation'),rollupTargetColumnId:createdTypes.get('number'),rollupFunction:'sum'};
+      if(definition.id==='comparison')config={comparisonSourceColumnIds:[columnId,createdTypes.get('number')]};
+      const input=mutation('db_columns',[id],{id,database_id:databaseId,name:definition.label,type:definition.id,config_json:JSON.stringify(config)});
+      const result=await applyBridgeMutations(vault.id,'grant',[input]);assert.deepEqual(result.applied,[input.id],`${definition.id}: ${JSON.stringify(result)}`);assert.equal(repo.getColumn(id).type,definition.id);createdTypes.set(definition.id,id);
+    }
+    assert.equal(createdTypes.size,29,'Every actual canonical property type is accepted');
+    assert.equal(repo.getRow(rowId).cells[createdTypes.get('formula')],'5','Only the canonical Mac evaluator computes formula cells');
+    const numericId=createdTypes.get('number');repo.updateColumn(numericId,{config:{...repo.getColumn(numericId).config,futureDesktopField:{version:3,retained:true}}});
+    const beforeColumn=db.prepare('SELECT revision FROM db_columns WHERE id=?').get(numericId).revision;
+    const originalConfig=repo.getColumn(numericId).config;
+    const configEdit=mutation('db_columns',[numericId],{id:numericId,database_id:databaseId,name:'Moneda móvil',type:'number',config_json:JSON.stringify({...originalConfig,numberCurrency:'USD'}),_mobileExpectedRevision:beforeColumn,_mobileExpectedConfigJSON:JSON.stringify(originalConfig)});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[configEdit])).rejected.length,0);assert.equal(repo.getColumn(numericId).config.numberCurrency,'USD');assert.deepEqual(repo.getColumn(numericId).config.futureDesktopField,{version:3,retained:true});
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[configEdit])).duplicate,[configEdit.id]);
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[{...configEdit,id:randomUUID()}])).rejected[0].reason,'database_column_revision_conflict');
+    const optionColumn=createdTypes.get('multi_select'),optionId=`dopt_${randomUUID()}`;
+    const option=mutation('db_select_options',[optionId],{id:optionId,column_id:optionColumn,database_id:databaseId,label:'Seleccionada offline',color:'#123456',group_key:null,_mobileExpectedRevision:0});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[option])).rejected.length,0);assert.equal(repo.getColumn(optionColumn).options[0].id,optionId);
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[option])).duplicate,[option.id]);
+    const select=mutation('db_cells',[rowId,optionColumn],{row_id:rowId,column_id:optionColumn,database_id:databaseId,value_text:JSON.stringify([optionId]),_mobileExpectedRevision:0,_mobileExpectedValue:''});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[select])).rejected.length,0);assert.equal(repo.getRow(rowId).cells[optionColumn],JSON.stringify([optionId]));
+    const wrongOwner={...option,id:randomUUID(),row:{...option.row,column_id:createdTypes.get('select'),_mobileExpectedRevision:1}};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[wrongOwner])).rejected[0].reason,'database_option_parent_unavailable');
+    const deletion={...option,id:randomUUID(),kind:'delete',row:{...option.row,_mobileExpectedRevision:1}};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[deletion])).rejected.length,0);assert.equal(repo.getColumn(optionColumn).options.length,0);assert.equal(repo.getRow(rowId).cells[optionColumn],undefined,'Canonical option delete cleans every selected-cell reference');
+    const relationColumn=createdTypes.get('relation'),target=repo.createRow(databaseId),relationId=`drel_${randomUUID()}`;
+    const relationSet=()=>JSON.stringify(db.prepare("SELECT id,target_kind,target_id,COALESCE(target_vault_id,'') AS target_vault_id FROM db_relations WHERE row_id=? AND column_id=? ORDER BY id").all(rowId,relationColumn));
+    const relation=mutation('db_relations',[relationId],{id:relationId,database_id:databaseId,row_id:rowId,column_id:relationColumn,target_kind:'db_row',target_id:target.id,target_vault_id:null,_mobileExpectedColumnRevision:db.prepare('SELECT revision FROM db_columns WHERE id=?').get(relationColumn).revision,_mobileExpectedRelationsJSON:relationSet()});
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[relation])).applied,[relation.id]);assert.equal(repo.listRelations(rowId,relationColumn)[0].id,relationId);
+    assert.deepEqual((await applyBridgeMutations(vault.id,'grant',[relation])).duplicate,[relation.id]);
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[{...relation,id:randomUUID()}])).rejected[0].reason,'database_relation_revision_conflict');
+    const remove={...relation,id:randomUUID(),kind:'delete',row:{...relation.row,_mobileExpectedRelationsJSON:relationSet()}};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[remove])).rejected.length,0);assert.equal(repo.listRelations(rowId,relationColumn).length,0);
+    const targetVault=vaults.createVault('Personas autorizadas','genealogy');
+    await vaults.withOwningVault(targetVault.id,()=>database.withVaultDatabase(targetVault.id,()=>{
+      database.getDb().prepare('INSERT INTO persons(person_id,display_name,created_at,updated_at) VALUES(?,?,?,?)').run('cross-person','Persona autorizada',new Date().toISOString(),new Date().toISOString());
+    }));
+    const personColumn=repo.createColumn(databaseId,'Persona','relation',{relationTargetKind:'person',relationCardinality:'many'}),personRelationId=`drel_${randomUUID()}`;
+    const personRelation=mutation('db_relations',[personRelationId],{id:personRelationId,database_id:databaseId,row_id:rowId,column_id:personColumn.id,target_kind:'person',target_id:'cross-person',target_vault_id:targetVault.id,_mobileExpectedColumnRevision:1,_mobileExpectedRelationsJSON:'[]'});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[personRelation])).rejected[0].reason,'database_relation_target_not_authorized','Legacy/static grant cannot grow through a target argument');
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[personRelation],['corpus','writing'],[vault.id,targetVault.id])).rejected.length,0,'Only actual route-authorized vaults allow the existing canonical cross-vault entity');
+    assert.equal(repo.listRelations(rowId,personColumn.id)[0].targetVaultId,targetVault.id);
+    const fileColumn=createdTypes.get('files'),file=repo.addAttachment({rowId,columnId:fileColumn,fileName:'Own bytes',mimeType:'text/plain',bytes:3,blob:Buffer.from('own'),contentHash:'own-hash'});
+    const fileDelete={...mutation('db_attachments',[file.id],{id:file.id,database_id:databaseId,row_id:rowId,column_id:fileColumn,_mobileExpectedColumnRevision:db.prepare('SELECT revision FROM db_columns WHERE id=?').get(fileColumn).revision,_mobileExpectedRevision:1,_mobileExpectedContentHash:'wrong'}),kind:'delete'};
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[fileDelete])).rejected[0].reason,'database_attachment_revision_conflict');assert(repo.getAttachment(file.id));
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[{...fileDelete,id:randomUUID(),row:{...fileDelete.row,_mobileExpectedContentHash:'own-hash'}}])).rejected.length,0);assert.equal(repo.getAttachment(file.id),null);
+    const computed=mutation('db_cells',[rowId,createdTypes.get('formula')],{row_id:rowId,column_id:createdTypes.get('formula'),database_id:databaseId,value_text:'999',_mobileExpectedRevision:0,_mobileExpectedValue:''});
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[computed])).rejected[0].reason,'database_property_is_read_only');
+    assert.equal((await applyBridgeMutations(vault.id,'grant',[mutation('automation_rules',['rule'],{id:'rule'})])).rejected[0].reason,'table_not_writable');
+  }));
+  assert.equal(calls,0);console.log('Canonical database, column and row creation, page title hooks, durable duplicate receipts, typed cell clearing and revision/value conflicts: PASS');
+}finally{globalThis.fetch=fetch;database?.closeDb();runtime.restore();fs.rmSync(directory,{recursive:true,force:true});}

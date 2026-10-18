@@ -34,6 +34,7 @@ import { createArtifactRoutes } from './lib/routes/artifacts.mjs';
 import { createNativeVaultRoutes } from './lib/routes/nativeVaults.mjs';
 import { deepResearchPdfBytes } from './lib/core/deepResearchPdf.mjs';
 import { acquireDataDirectoryLock } from './lib/dataDirectoryLock.mjs';
+import { BridgeRelay } from './lib/bridgeRelay.mjs';
 
 // A zero, a `200m`-style unit or a value past what Node can hold in a single buffer
 // would otherwise reach zlib and turn every publication into an opaque rejection, so
@@ -1517,6 +1518,21 @@ async function handleWebControlApi(req, res, url) {
 
 async function route(req, res) {
   const url = new URL(req.url || '/', publicUrl());
+  if (url.pathname === '/api/v1/bridge-relay/channels' && req.method === 'POST') {
+    const auth = authorize(req, res, { need: 'own', via: ['device'], resource: 'api', boundSpace: true });
+    if (!auth) return;
+    if ((auth.device?.kind ?? 'publisher') !== 'publisher') return json(res, 403, { error: 'publisher_required' });
+    if (!rateLimit(req, res, 'bridge-relay-create', 10, 60_000)) return;
+    const input = await jsonBody(req, 4 * 1024);
+    try { return json(res, 201, relay.create(auth.device.hash, input.macId)); }
+    catch (error) { return json(res, 400, { error: error.message }); }
+  }
+  const relayDelete = /^\/api\/v1\/bridge-relay\/channels\/([a-f0-9-]+)$/.exec(url.pathname);
+  if (relayDelete && req.method === 'DELETE') {
+    const auth = authorize(req, res, { need: 'own', via: ['device'], resource: 'api', boundSpace: true });
+    if (!auth) return;
+    return json(res, relay.revoke(relayDelete[1], auth.device.hash) ? 200 : 404, { revoked: true });
+  }
   if (url.pathname === '/favicon.svg' && req.method === 'GET') {
     return staticAsset(res, 200, NODUS_FAVICON_SVG, 'image/svg+xml; charset=utf-8', { 'cache-control': 'public, max-age=86400' });
   }
@@ -2021,6 +2037,15 @@ function applyLimits(instance) {
 }
 
 const server = applyLimits(TLS ? https.createServer({ cert: TLS.cert, key: TLS.key }, handler) : http.createServer(handler));
+const relay = new BridgeRelay({
+  records: () => store.state.bridgeRelayChannels ??= [], save: () => store.save(),
+  isOwnerActive: record => {
+    const device = store.state.deviceTokens.find(item => item.hash === record.ownerDeviceHash && (!item.expiresAt || Date.parse(item.expiresAt) > Date.now()));
+    return Boolean(device && store.state.users.some(user => user.id === device.userId) &&
+      store.state.memberships.some(member => member.userId === device.userId && member.spaceId === device.spaceId && canRole(normalizeSpaceRole(member.role), 'own')));
+  },
+});
+relay.attach(server);
 const scheme = TLS ? 'https' : 'http';
 let pending = HOSTS.length;
 for (const host of HOSTS) {
@@ -2035,7 +2060,9 @@ for (const host of HOSTS) {
 
 if (LOOPBACK_PORT) {
   if (!TLS) throw new Error('NODUS_LOOPBACK_PORT is only meaningful when TLS is configured; without it the main listener already speaks HTTP.');
-  applyLimits(http.createServer(handler)).listen(LOOPBACK_PORT, '127.0.0.1', () => {
+  const loopback = applyLimits(http.createServer(handler));
+  relay.attach(loopback);
+  loopback.listen(LOOPBACK_PORT, '127.0.0.1', () => {
     console.log(`[nodus-server] loopback listener on http://127.0.0.1:${LOOPBACK_PORT}`);
   });
 }

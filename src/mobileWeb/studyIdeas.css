@@ -1,0 +1,23 @@
+.mobile-study-ideas {min-width:0;max-width:100%;}
+.mobile-study-ideas button,.mobile-study-ideas select,.mobile-study-ideas input {min-height:44px;}
+.mobile-study-ideas [data-testid="ideas-table-scroll"] {overscroll-behavior-x:contain;}
+.mobile-study-ideas [data-testid="study-ideas-subject"] {max-width:100%;}
+@media(max-width:700px) {
+ .mobile-study-ideas [data-testid="ideas-tabs"] {align-items:stretch;min-height:44px;}
+ .mobile-study-ideas [data-testid="ideas-tabs"]>div {height:auto;min-height:44px;max-width:calc(100vw - 24px);}
+ .mobile-study-ideas [data-testid="ideas-tabs"] button {flex-shrink:0;}
+ .mobile-study-ideas [data-testid="ideas-tabs"] button[aria-label] {min-width:44px;}
+ .mobile-study-ideas [data-testid="ideas-search"] {min-width:0;}
+ .mobile-study-ideas div:has(>[data-testid="ideas-search"]) {min-width:0;width:100%;flex-basis:100%;}
+ .mobile-study-ideas [data-testid="study-ideas-subject"] {min-width:0;width:100%;}
+ .mobile-study-ideas [data-testid="ideas-catalog-table"] {min-width:0;width:100%;}
+ .mobile-study-ideas [data-testid="ideas-catalog-table"]>div:first-child {display:none;}
+ .mobile-study-ideas [data-testid="study-idea-card"] {grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px;padding:14px;}
+ .mobile-study-ideas [data-testid="study-idea-card"]>div:first-child {grid-column:1/-1;padding-right:0;}
+ .mobile-study-ideas [data-testid="study-idea-card"]>div:first-child span {white-space:normal;overflow-wrap:anywhere;}
+ .mobile-study-ideas [data-testid="study-idea-card"]>span:nth-child(2),.mobile-study-ideas [data-testid="study-idea-card"]>span:nth-child(6) {grid-column:1/-1;}
+ .mobile-study-ideas [data-mobile-label]::before {content:attr(data-mobile-label);display:block;font-size:0.85em;}
+ .mobile-study-ideas [data-testid="study-idea-card"]>svg:last-child {display:none;}
+ .mobile-study-ideas footer {height:auto;min-height:44px;}
+ .mobile-study-ideas [data-testid="study-idea-detail"] {min-width:0;overflow-wrap:anywhere;}
+}

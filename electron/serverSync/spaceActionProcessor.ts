@@ -9,6 +9,7 @@ import type {
   WritingWorkshopKind,
   WritingWorkshopSelection,
 } from '@shared/types';
+import {PROMPT_LANGUAGES,type PromptLanguage} from '@shared/types';
 import { buildArgumentMap } from '../ai/argumentMap';
 import { synthesizeAuthorDossier } from '../ai/authorDossier';
 import { enqueueDeepResearchJob } from '../ai/deepResearchQueue';
@@ -154,7 +155,7 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
       const toneValue = optionalText(payload, 'tone') ?? 'academic';
       if (!['academic', 'synthetic', 'critical', 'exploratory'].includes(toneValue)) throw new Error('bad_writing_tone');
       const language = optionalText(payload, 'language') ?? 'es';
-      if (!['es', 'en', 'fr', 'tr'].includes(language)) throw new Error('bad_writing_language');
+      if (!(PROMPT_LANGUAGES as readonly string[]).includes(language)) throw new Error('bad_writing_language');
       const brief: WritingWorkshopBrief = {
         kind,
         objective: text(payload, 'objective'),
@@ -219,8 +220,10 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
     }
     case 'worldbuilding.continuity':
       return { result: { findings: runContinuity() }, changedVault: false };
-    case 'worldbuilding.proseReview':
-      return { result: await reviewWorldProse(text(payload, 'sceneId')), changedVault: false };
+    case 'worldbuilding.proseReview': {
+      if(payload.language!=null&&!(PROMPT_LANGUAGES as readonly unknown[]).includes(payload.language))throw new Error('invalid_prose_language');
+      return { result: await reviewWorldProse(text(payload, 'sceneId'),payload.language as PromptLanguage|undefined,payload.draft), changedVault: false };
+    }
     case 'worldbuilding.entityDelete': {
       const id = text(payload, 'id');
       const entity = text(payload, 'entity');
@@ -274,6 +277,14 @@ async function execute(action: ClaimedAction, runtime: { base: string; token: st
     default:
       throw new TypedRefusal('unknown_action_kind');
   }
+}
+
+/** The direct companion only enters the content/research subset; remote toolkit,
+ * extraction, recomputation and automation cases cannot cross this boundary. */
+export async function executeCompanionSpaceAction(action:ClaimedAction):Promise<ActionResult>{
+  const allowed=new Set(['idea.delete','idea.saveToNotes','deepResearch.saveToNotes','hypothesis.saveToNotes','projects.create','projects.update','projects.section.update','projects.chapter.import','worldbuilding.entityDelete','pages.restoreRevision','databases.importCSV','author.synthesis.generate','authors.matrix.generate','argumentMap.generate','writing.generate','worldbuilding.continuity','worldbuilding.proseReview']);
+  if(!allowed.has(action.kind))throw new Error('desktop_only_action');
+  return execute(action,{base:'',token:''});
 }
 
 class TypedRefusal extends Error {}

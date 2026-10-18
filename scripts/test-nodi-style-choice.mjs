@@ -72,12 +72,12 @@ test('the manual palette offers Nodi blue plus one swatch per distinct vault acc
 test('the choice is stored app-wide, so it survives creating and switching vaults', async () => {
   const [types, defaults, prefs] = await Promise.all([
     read('shared/types.ts'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
   ]);
   for (const key of ['mascotStyle', 'mascotStyleChosen', 'mascotOrbColorMode', 'mascotOrbColor']) {
     assert.match(types, new RegExp(`${key}:`), `${key} missing from AppSettings`);
-    assert.match(defaults, new RegExp(`${key}:`), `${key} missing from settingsRepo DEFAULTS`);
+    assert.match(defaults, new RegExp(`${key}:`), `${key} missing from shared factory defaults`);
     // A per-vault flag would re-ask the question in every new vault.
     assert.match(prefs, new RegExp(`'${key}'`), `${key} missing from GLOBAL_PREF_KEYS`);
   }

@@ -3,6 +3,7 @@ import { getVaultByPath } from '../vaults/vaultRegistry';
 import { currentEmbeddingConfig, embeddingTextForIdea, ideaNeedsEmbedding, updateIdeaEmbedding } from '../db/ideasRepo';
 import { embedManyStrict } from './aiClient';
 import { isManualAcademic } from './academicMode';
+import { isMobileOperation } from '../desktopBridge/executionBoundary';
 
 export interface ManualIndexStatus { state: 'idle' | 'queued' | 'preparing' | 'indexing' | 'ready' | 'error'; error: string | null; }
 type ManualIndexRow = Parameters<typeof ideaNeedsEmbedding>[0] & Parameters<typeof embeddingTextForIdea>[0] & { global_id: string };
@@ -28,6 +29,7 @@ export function manualIndexStatus(): ManualIndexStatus {
 }
 /** Debounced, vault-scoped and independent from the generative scan queue. */
 export function scheduleManualIndex(retry = false): void {
+  if (isMobileOperation()) return;
   if (!isManualAcademic()) return;
   const id = currentVaultId();
   if (!id) return;

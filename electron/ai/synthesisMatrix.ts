@@ -13,6 +13,7 @@ import type {
   SynthesisMatrixCell,
   SynthesisMatrixCellIdea,
   SynthesisMatrixTheme,
+  PromptLanguage,
 } from '@shared/types';
 import { getDb } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
@@ -133,11 +134,11 @@ function isStanceResponse(v: unknown): v is StanceResponse {
 }
 
 /** Generate and cache the one-sentence stance for a single author×theme cell. */
-export async function synthesizeMatrixCell(
+export function prepareMatrixCellSynthesis(
   authorId: string,
   themeId: string,
-  model?: ModelRef | null
-): Promise<SynthesisMatrixCell> {
+  language?:PromptLanguage
+) {
   const db = getDb();
   const author = db.prepare('SELECT name FROM authors WHERE author_id = ?').get(authorId) as { name: string } | undefined;
   const theme = db.prepare('SELECT label FROM themes WHERE theme_id = ?').get(themeId) as { label: string } | undefined;
@@ -154,20 +155,20 @@ export async function synthesizeMatrixCell(
     )
     .all(authorId, themeId) as { global_id: string; label: string; type: IdeaType; statement: string }[];
 
-  if (ideaRows.length === 0) {
-    return { authorId, themeId, ideaCount: 0, ideas: [], stance: null };
-  }
-
   const ideaBlock = ideaRows.map((i) => `  - ${i.label}: ${clip(i.statement, STATEMENT_CLIP)}`).join('\n');
-  const prompt = synthesisPromptPack(getSettings().promptLanguage ?? 'es');
+  const prompt = synthesisPromptPack(language??getSettings().promptLanguage ?? 'es');
   const system = prompt.matrixSystem;
   const user = `${prompt.matrixAuthor}: ${author.name}\n${prompt.matrixTheme}: ${theme.label}\n\n${prompt.matrixIdeas}:\n${ideaBlock}\n\n${prompt.matrixReturn}`;
 
-  const chosen = model ?? getSettings().synthesisModel ?? null;
-  const result = await completeJson<StanceResponse>({ system, user, temperature: 0.2 }, isStanceResponse, chosen);
+  return {authorId,themeId,ideas:ideaRows,fingerprint:cellFingerprint(ideaRows.map(i=>i.global_id)),prompt:{system,user,temperature:0.2}};
+}
+
+export function saveMatrixCellSynthesisResponse(authorId:string,themeId:string,response:unknown,chosen:ModelRef|null,fingerprint:string,generatedAt=new Date().toISOString()):SynthesisMatrixCell{
+  if(!isStanceResponse(response))throw new Error('invalid_matrix_synthesis');
+  const source=prepareMatrixCellSynthesis(authorId,themeId);
+  if(source.fingerprint!==fingerprint)throw new Error('stale_matrix_synthesis');
+  const ideaRows=source.ideas,result=response,db=getDb();
   const stance = result.stance.trim();
-  const generatedAt = new Date().toISOString();
-  const fingerprint = cellFingerprint(ideaRows.map((i) => i.global_id));
 
   db.prepare(
     `INSERT INTO synthesis_matrix_cell (author_id, theme_id, stance, model_json, fingerprint, generated_at)
@@ -186,4 +187,12 @@ export async function synthesizeMatrixCell(
     ideas: ideaRows.slice(0, MAX_IDEAS_PER_CELL).map((i) => ({ global_id: i.global_id, label: i.label, type: i.type })),
     stance,
   };
+}
+
+export async function synthesizeMatrixCell(authorId:string,themeId:string,model?:ModelRef|null):Promise<SynthesisMatrixCell>{
+  const source=prepareMatrixCellSynthesis(authorId,themeId);
+  if(!source.ideas.length)return {authorId,themeId,ideaCount:0,ideas:[],stance:null};
+  const chosen=model??getSettings().synthesisModel??null;
+  const result=await completeJson<StanceResponse>(source.prompt,isStanceResponse,chosen);
+  return saveMatrixCellSynthesisResponse(authorId,themeId,result,chosen,source.fingerprint);
 }

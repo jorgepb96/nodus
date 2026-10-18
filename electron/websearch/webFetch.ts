@@ -1,3 +1,4 @@
+import {decodeWebText} from '@shared/webTextDecoding';
 import { fetchPublicResource } from '../network/publicDownload';
 import { researchWebFixture } from '../qa/researchWebFixture';
 import { fetchScholarlyRecord, scholarlyRoute, type ScholarlyRecord } from './scholarlySources';
@@ -30,12 +31,7 @@ async function readBounded(response: Response, maxBytes: number, signal: AbortSi
   return Buffer.concat(chunks);
 }
 
-function decode(bytes: Uint8Array, contentType: string): string {
-  const declared = /charset=["']?([\w-]+)/i.exec(contentType)?.[1]
-    ?? /<meta[^>]+charset=["']?([\w-]+)/i.exec(Buffer.from(bytes.subarray(0, 4096)).toString('latin1'))?.[1];
-  try { return new TextDecoder(declared && declared.toLowerCase() !== 'utf8' ? declared : 'utf-8').decode(bytes); }
-  catch { return new TextDecoder('utf-8').decode(bytes); }
-}
+const decode = decodeWebText;
 
 /** One bounded public GET. Private and loopback targets are refused at every
  * redirect (the shared public-download guard pins DNS), sizes are capped while

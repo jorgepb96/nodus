@@ -20,6 +20,8 @@ export interface DocumentVisualSuggestion {
 export interface DocumentFigure extends DocumentVisualSuggestion {
   state: 'pending' | 'running' | 'ready' | 'failed';
   owner?: string;
+  /** Revision at owner creation; retries and removals advance the enclosing manifest. */
+  ownerRevision?: string;
   view?: ViewDocumentV1;
   artifactSources?: string[];
   poster?: string;

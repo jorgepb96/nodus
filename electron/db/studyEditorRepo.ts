@@ -205,9 +205,14 @@ export function restoreStudyDocVersion(documentId: string, versionId: string): S
 }
 
 export function createStudyAnnotation(documentId: string, input: StudyAnnotationInput): StudyAnnotation {
+  return createStudyAnnotationWithIdentity(documentId, input, crypto.randomUUID());
+}
+
+/** Stable mobile identity; owning transaction supplies the replay receipt. */
+export function createStudyAnnotationWithIdentity(documentId: string, input: StudyAnnotationInput, id: string): StudyAnnotation {
   const db = getDb();
   docRow(documentId);
-  const key = ids('ANN');
+  const key = {id, shortId: createStudyShortId('ANN', id)};
   const timestamp = now();
   const position = Number((db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS value FROM study_annotations WHERE document_id = ?').get(documentId) as Row).value);
   db.prepare(`INSERT INTO study_annotations

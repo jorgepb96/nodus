@@ -61,6 +61,18 @@ try {
  };
  const count=async field=>Number(await active().getAttribute(`data-${field}-count`));
  const waitEdges=n=>page.waitForFunction(n=>document.querySelector('.stellar-tab-panel [data-testid="stellar-workspace"]')?.getAttribute('data-edge-count')===String(n),n);
+ const hubIds=()=>hub().locator('.stellar-hit').evaluateAll(nodes=>nodes.map(node=>node.dataset.node).sort());
+ // Switching tabs preserves the hub but remounts its canvas. Its ResizeObserver
+ // must measure the viewport before offscreen-target culling has settled.
+ const waitForHubIds=async expected=>{
+  await hub().waitFor();
+  await page.waitForFunction(expected=>{
+   const hub=document.querySelector('.stellar-tab-panel [data-testid="stellar-themes"]');
+   const box=hub?.querySelector('[data-testid="stellar-canvas"]')?.getBoundingClientRect();
+   const ids=hub?Array.from(hub.querySelectorAll('.stellar-hit'),node=>node.dataset.node).sort():[];
+   return box?.width>0&&box.height>0&&ids.length===expected.length&&ids.every((id,index)=>id===expected[index]);
+  },[...expected].sort(),{timeout:30000});
+ };
  const centered=async button=>{
   const delta=await button.evaluate(button=>{
    const icon=button.querySelector('svg'),box=button.getBoundingClientRect(),shape=icon.getBBox();
@@ -97,11 +109,13 @@ try {
  const themeNode='[data-testid="stellar-themes"] .stellar-node-label';
  await page.locator(themeNode).first().waitFor();
  const expectedThemes=await page.evaluate(()=>window.nodus.stellarThemes());
+ const expectedThemeIds=expectedThemes.map(theme=>theme.id).sort();
  const uniqueIdeas=await page.evaluate(async()=> (await window.nodus.listIdeasPage({limit:1,offset:0,sort:'label'})).total);
  assert.ok(expectedThemes.reduce((sum,theme)=>sum+theme.ideaCount,0)>uniqueIdeas,'fixture includes ideas that belong to multiple themes');
  // The initial full-size constellation may extend beyond a CI runner's screen.
  // Fit it before inspecting every caption; offscreen captions are intentionally culled.
  await hub().getByRole('button',{name:'Encuadrar',exact:true}).click();
+ await waitForHubIds(expectedThemeIds);
  await page.waitForFunction(n=>document.querySelectorAll('[data-testid="stellar-themes"] .stellar-node-label').length===n,expectedThemes.length);
  const bubbles=await page.locator(themeNode).evaluateAll(list=>list.map(b=>({
   id:b.dataset.node,
@@ -188,7 +202,7 @@ try {
  await page.locator('.stellar-tab').nth(2).locator('.stellar-tab-close').click();
  await page.locator('.stellar-tab').nth(1).locator('.stellar-tab-close').click();
  await hub().waitFor();
- await page.locator(themeNode).first().waitFor();
+ await waitForHubIds(expectedThemeIds);
  await page.screenshot({path:root+'/output/stellar-tabs/themes.png'});
  const hubSearch=hub().getByRole('combobox',{name:'Buscar una idea'});
  await hubSearch.fill(''); await hubSearch.focus();
@@ -202,14 +216,22 @@ try {
  await hub().locator('.stellar-search-toggle').nth(1).click();
  await page.waitForFunction(n=>document.querySelectorAll('.stellar-tab-panel .stellar-hit').length===n,initialHubNodes+2);
  await page.keyboard.press('Escape');
+ const preservedHubIds=await hub().locator('.stellar-hit').evaluateAll(nodes=>nodes.map(node=>node.dataset.node).sort());
+ assert.equal(preservedHubIds.length,initialHubNodes+2,'both additions exist before leaving the hub');
  await page.locator(`${themeNode}[data-node="${busiest.id}"]`).click();
  await active().waitFor();
  await page.getByRole('button',{name:'Volver a los temas'}).click();
+ await hub().waitFor();
+ // Wait for the remounted canvas, retaining the exact themes and pinned ideas.
+ await waitForHubIds(preservedHubIds);
  assert.equal(await hub().locator('.stellar-hit').count(),initialHubNodes+2,'hub additions survive entering and leaving a theme');
+ assert.deepEqual(await hub().locator('.stellar-hit').evaluateAll(nodes=>nodes.map(node=>node.dataset.node).sort()),preservedHubIds,'the same themes and pinned ideas survive the round trip');
  await page.locator('.stellar-tab').nth(1).locator('.stellar-tab-close').click();
  await hubSearch.focus();
  await hub().locator('.stellar-search-toggle').nth(1).click();
  await page.waitForFunction(n=>document.querySelectorAll('.stellar-tab-panel .stellar-hit').length===n,initialHubNodes+1);
+ const remainingHubIds=await hubIds();
+ assert.equal(remainingHubIds.length,initialHubNodes+1,'one pinned idea remains before leaving the hub');
  await page.keyboard.press('Escape');
  await page.screenshot({path:root+'/output/stellar-tabs/hub-ideas.png'});
  await page.getByRole('button',{name:'Nuevo grafo',exact:true}).click();
@@ -267,7 +289,10 @@ try {
  await active().getByRole('spinbutton',{name:'Límite de relaciones'}).fill('1');
  await search(other.label);await page.locator('.stellar-tab-panel .stellar-search-choice').first().click();await waitEdges(1);
  await page.getByRole('tab').nth(1).click();assert.equal(await count('node'),preserved,'each canvas keeps its topology');
- await page.waitForTimeout(250);
+ await page.waitForFunction(expected=>{
+  const nodes=Array.from(document.querySelectorAll('.stellar-tab-panel .stellar-hit'));
+  return nodes.length===Object.keys(expected).length&&nodes.every(node=>expected[node.dataset.node]===node.getAttribute('style'));
+ },positions,{timeout:30000});
  assert.equal(await page.locator('.stellar-tab-panel .graph-detail-panel h3').innerText(),detail,'the chosen detail belongs to its tab');
  assert.equal(await active().getByRole('button',{name:'Ocultar fuentes',exact:true}).getAttribute('aria-pressed'),'true');
  assert.deepEqual(await page.locator('.stellar-tab-panel .stellar-hit').evaluateAll(nodes=>Object.fromEntries(nodes.map(node=>[node.dataset.node,node.getAttribute('style')]))),positions,'camera and positions are restored when switching tabs');
@@ -352,7 +377,9 @@ try {
  assert.equal(await active().locator('.stellar-step,.stellar-node-actions,.stellar-hit.selected,.stellar-node-label.featured').count(),0,'double-clicking the background clears node and edge selection');
  assert.equal(await active().locator('.graph-detail-panel').count(),0);
  await page.locator('.stellar-tab').nth(1).locator('.stellar-tab-close').click();assert.equal(await page.getByRole('tab').count(),1);await hub().waitFor();
+ await waitForHubIds(remainingHubIds);
  assert.equal(await hub().locator('.stellar-hit').count(),initialHubNodes+1,'closing secondary tabs preserves the hub and pinned ideas');
+ assert.deepEqual(await hubIds(),remainingHubIds,'closing secondary tabs preserves the exact themes and pinned idea');
  await hub().locator('.stellar-node-label').filter({hasText:pinnedLabel}).first().press('Enter');
  await active().waitFor();
  assert.equal(await page.getByRole('tab').count(),2,'a pinned idea opens its own exploration');
@@ -366,6 +393,8 @@ try {
  // before comparing its visible targets with the pre-navigation fitted canvas.
  await hub().getByRole('button',{name:'Encuadrar',exact:true}).click();
  await page.waitForFunction(n=>document.querySelectorAll('.stellar-tab-panel .stellar-hit').length===n,initialHubNodes+1);
+ await waitForHubIds(remainingHubIds);
+ assert.deepEqual(await hubIds(),remainingHubIds,'section navigation restores the exact themes and pinned idea');
  assert.equal(await hub().locator('.stellar-node-label').filter({hasText:pinnedLabel}).count(),1,'pinned ideas restore after section navigation');
  await page.getByRole('tab').nth(1).click();await active().waitFor();
  const beforeTarget=await count('node');
@@ -375,10 +404,13 @@ try {
  assert.ok((await page.getByRole('tab').last().innerText()).includes(other.label.slice(0,20)),'an external idea opens its own graph');
  await page.getByRole('tab').nth(1).click();assert.equal(await count('node'),beforeTarget,'external navigation preserves previous graphs');
  await page.reload();await page.locator('[data-tour="nav-graph"]').click();await hub().waitFor();
+ await page.locator(themeNode).first().waitFor();
  await hub().getByRole('button',{name:'Encuadrar',exact:true}).click();
+ await waitForHubIds(expectedThemeIds);
  assert.equal(await page.getByRole('tab').count(),1,'a fresh app session starts on the themes hub alone');
  await page.locator('[data-testid="stellar-themes"] .stellar-node-label').first().click();await active().waitFor();
  await page.getByRole('button',{name:'Volver a los temas'}).click();await hub().waitFor();
+ await waitForHubIds(expectedThemeIds);
  await page.screenshot({path:root+'/output/stellar-tabs/empty.png'});
  assert.deepEqual(errors,[]);
  console.log('Stellar tabs E2E passed: corpus context in hub/theme/blank/exploration, intensity and toggle preserve foreground, context idea promotion, permanent themes hub, instant additive hub search, pinned-idea exploration, theme walk + child limit + depth + back, isolated tabs, stable transport height, unified accent hover, background deselection, light/dark full screen, section navigation, hub on reload.');

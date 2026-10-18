@@ -9,6 +9,9 @@
 @import './theme/theme-components.css';
 
 @tailwind base;
+
+.dictionary-model-options,.dictionary-facets{display:contents}
+.dictionary-model-options>summary,.dictionary-count-label{display:none}
 @tailwind components;
 @tailwind utilities;
 

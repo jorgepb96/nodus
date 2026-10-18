@@ -348,9 +348,9 @@ export function IdeasView({
                     </div>
                   </div>
                   <span className="text-neutral-600 dark:text-neutral-400">{t(NODE_LABELS[node.type as IdeaType]) ?? node.type}</span>
-                  <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.workCount}</span>
-                  <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.connectionCount}</span>
-                  <span className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.maxConfidence.toFixed(2)}</span>
+                  <span data-mobile-label={t('Obras')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.workCount}</span>
+                  <span data-mobile-label={t('Conexiones')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.connectionCount}</span>
+                  <span data-mobile-label={t('Confianza')} className="tabular-nums text-neutral-600 dark:text-neutral-400">{node.maxConfidence.toFixed(2)}</span>
                   <span className="flex min-w-0 flex-wrap gap-1 pr-3">
                     {node.themes.slice(0, 3).map((theme) => <span key={theme} title={theme} className="ideas-theme-pill max-w-36 truncate rounded-full bg-neutral-100 px-2 py-1 text-[10px] dark:bg-neutral-900">{theme}</span>)}
                     {node.themes.length > 3 && <span className="ideas-theme-overflow text-[10px] text-neutral-500">+{node.themes.length - 3}</span>}

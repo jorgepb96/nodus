@@ -8,6 +8,8 @@ import { buildEdgeNote, buildIdeaNote } from '../notes';
 import { parsePageNumber } from '@shared/pageLocation';
 import { openEvidenceAtPage } from '../evidenceJump';
 import { t } from '../i18n';
+import { isPhoneSurface } from '../mobileWeb/phoneLayout';
+import { MobileSheet } from './MobileSheet';
 
 // Persisted detail-panel sizing, shared by the graph view and the argument map.
 export const DETAIL_WIDTH_KEY = 'nodus.graph.detailWidth';
@@ -69,10 +71,12 @@ export function NodeDetailPanel({
   onSaveIdea,
   onSaveEdge,
   readOnly = false,
+  allowNoteCopy = false,
   edgeLabel,
   edgeContext,
 }: {
   readOnly?: boolean;
+  allowNoteCopy?: boolean;
   edgeLabel?: string;
   edgeContext?: string;
   ideaDetail: IdeaDetail | null;
@@ -90,7 +94,7 @@ export function NodeDetailPanel({
   onEditIdea?: (ideaId: string) => void;
   /** Called after the user sets/clears an audit verdict, so the host view can refresh its graph. */
   onEdgeFeedback?: (verdict: 'rejected' | 'confirmed' | null) => void;
-  onOpenEvidence?: (sourceRef: string, location: string | null) => void;
+  onOpenEvidence?: (sourceRef: string, location: string | null, quote?: string) => void;
   showEdgeAudit?: boolean;
   onSaveIdea?: (detail: IdeaDetail) => Promise<void>;
   onSaveEdge?: (detail: EdgeDetail) => Promise<void>;
@@ -98,6 +102,7 @@ export function NodeDetailPanel({
   // A note pending capture: built lazily from whichever detail is open.
   const [saving, setSaving] = useState<{ content: string; title: string; ref: string } | null>(null);
   const [savingExternal, setSavingExternal] = useState(false);
+  const [savingError,setSavingError]=useState('');
   const panelRef=useRef<HTMLDivElement>(null);
   useLearningEvidenceVisibility(ideaDetail,panelRef);
 
@@ -116,7 +121,7 @@ export function NodeDetailPanel({
     window.addEventListener('pointerup', onUp, { once: true });
   };
 
-  return (
+  const panel = (
     <div ref={panelRef} data-testid="learning-evidence-panel" className="relative flex min-h-0 shrink-0 flex-col border-l border-neutral-800 bg-neutral-900 graph-detail-panel" style={{ width, '--detail-font-size': `${fontSize}px` } as React.CSSProperties}>
       <div
         className="absolute left-0 top-0 h-full w-2 -translate-x-1/2 cursor-col-resize hover:bg-indigo-500/25"
@@ -125,9 +130,10 @@ export function NodeDetailPanel({
         title={t('Ajustar ancho')}
         onPointerDown={startResize}
       />
+      {savingError && <div role="alert" className="shrink-0 p-3 text-sm text-red-500">{savingError}</div>}
       <div className="graph-detail-header relative z-10 flex shrink-0 items-center justify-end gap-1 border-b border-neutral-800 px-4 py-2">
         {ideaDetail && onEditIdea && <button className="btn btn-primary mr-auto text-xs" data-testid="graph-edit-manual-idea" onClick={() => onEditIdea(ideaDetail.idea.global_id)}><Icon name="edit" size={13} /> {t('Editar')}</button>}
-        {!onEditIdea && !readOnly && (ideaDetail || edgeDetail) && (
+        {!onEditIdea && (!readOnly || allowNoteCopy || (ideaDetail ? !!onSaveIdea : !!onSaveEdge)) && (ideaDetail || edgeDetail) && (
           <button
             className="card mr-auto inline-flex items-center gap-1.5 bg-neutral-900 px-2 py-1 text-xs hover:bg-neutral-800"
             title={t('Guardar en notas')}
@@ -135,8 +141,8 @@ export function NodeDetailPanel({
             onClick={() => {
               if (ideaDetail) {
                 if (onSaveIdea) {
-                  setSavingExternal(true);
-                  void onSaveIdea(ideaDetail).finally(() => setSavingExternal(false));
+                  setSavingExternal(true);setSavingError('');
+                  void onSaveIdea(ideaDetail).catch(error=>setSavingError(error instanceof Error?error.message:String(error))).finally(() => setSavingExternal(false));
                   return;
                 }
                 setSaving({
@@ -146,8 +152,8 @@ export function NodeDetailPanel({
                 });
               } else if (edgeDetail) {
                 if (onSaveEdge) {
-                  setSavingExternal(true);
-                  void onSaveEdge(edgeDetail).finally(() => setSavingExternal(false));
+                  setSavingExternal(true);setSavingError('');
+                  void onSaveEdge(edgeDetail).catch(error=>setSavingError(error instanceof Error?error.message:String(error))).finally(() => setSavingExternal(false));
                   return;
                 }
                 setSaving({
@@ -161,14 +167,14 @@ export function NodeDetailPanel({
             <Icon name="notebook" size={13} /> {t(savingExternal ? 'Guardando…' : 'Guardar en notas')}
           </button>
         )}
-        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-xs" title={t('Disminuir texto')} onClick={() => onFontChange(-1)}>
+        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-xs" aria-label={t('Disminuir texto')} title={t('Disminuir texto')} onClick={() => onFontChange(-1)}>
           a
         </button>
-        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-sm font-semibold" title={t('Aumentar texto')} onClick={() => onFontChange(1)}>
+        <button className="card bg-neutral-900 px-2 py-1 hover:bg-neutral-800 text-sm font-semibold" aria-label={t('Aumentar texto')} title={t('Aumentar texto')} onClick={() => onFontChange(1)}>
           A
         </button>
-        <button className="ml-2 text-neutral-500 hover:text-white" title={t('Cerrar')} onClick={onClose}>
-          ✕
+        <button className="ml-2 inline-flex items-center justify-center text-neutral-500 hover:text-white" data-testid="graph-close-detail" aria-label={t('Cerrar')} title={t('Cerrar')} onClick={onClose}>
+          <Icon name="x" size={18}/>
         </button>
       </div>
       <div className="graph-detail-scroll mt-6 min-h-0 flex-1 overflow-y-auto px-4 pb-4">
@@ -209,7 +215,7 @@ export function NodeDetailPanel({
           <div>
             <Badge color="indigo">{t(NODE_LABELS[ideaDetail.idea.type as IdeaType]) ?? ideaDetail.idea.type}</Badge>
             <h3 className="font-semibold mt-2">{ideaDetail.idea.label}</h3>
-            <p className="text-neutral-400 mt-1">{ideaDetail.idea.statement}</p>
+            <p role="group" aria-label={t('Enunciado de la idea')} className="text-neutral-400 mt-1">{ideaDetail.idea.statement}</p>
           </div>
           {relations && relations.length > 0 && (
             <div>
@@ -254,7 +260,7 @@ export function NodeDetailPanel({
               <div className="text-xs uppercase text-neutral-500 mb-1">{t('Evidencia anclada')}</div>
               {ideaDetail.evidence.map((ev) => (
                 <blockquote key={ev.id} data-evidence-id={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
-                  “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} suffix={` · ${ev.kind}`} onOpen={onOpenEvidence} />
+                  “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} quote={ev.quote} sourceRef={ev.source_ref} pageNumber={ev.page_number} suffix={` · ${ev.kind}`} onOpen={onOpenEvidence} />
                 </blockquote>
               ))}
             </div>
@@ -290,7 +296,7 @@ export function NodeDetailPanel({
           )}
           {edgeDetail.evidence.map((ev) => (
             <blockquote key={ev.id} data-evidence-id={ev.id} className="border-l-2 border-indigo-700 pl-3 py-2 my-2 text-xs text-neutral-300 italic bg-neutral-950/35 rounded-r-md">
-              “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} sourceRef={ev.source_ref} pageNumber={ev.page_number} onOpen={onOpenEvidence} />
+              “{ev.quote}” <EvidenceLocationLink nodusId={ev.nodus_id} location={ev.location} quote={ev.quote} sourceRef={ev.source_ref} pageNumber={ev.page_number} onOpen={onOpenEvidence} />
             </blockquote>
           ))}
           {showEdgeAudit && <EdgeAuditControls edgeDetail={edgeDetail} onEdgeFeedback={onEdgeFeedback} />}
@@ -308,6 +314,7 @@ export function NodeDetailPanel({
       )}
     </div>
   );
+  return isPhoneSurface() ? <MobileSheet title={ideaDetail?.idea.label ?? loading?.label ?? edgeDetail?.fromLabel ?? t('Idea seleccionada')} onClose={onClose}>{panel}</MobileSheet> : panel;
 }
 
 /**
@@ -321,6 +328,7 @@ export function EvidenceLocationLink({
   sourceRef = null,
   pageNumber = null,
   suffix = '',
+  quote,
   onOpen,
 }: {
   nodusId: string;
@@ -328,7 +336,8 @@ export function EvidenceLocationLink({
   sourceRef?: string | null;
   pageNumber?: number | null;
   suffix?: string;
-  onOpen?: (sourceRef: string, location: string | null) => void;
+  quote?: string;
+  onOpen?: (sourceRef: string, location: string | null, quote?: string) => void;
 }) {
   const learning = useAcademicLearning();
   const page = pageNumber ?? parsePageNumber(location);
@@ -341,7 +350,7 @@ export function EvidenceLocationLink({
         className="inline-flex items-center gap-0.5 text-indigo-400 hover:text-indigo-300"
         title={t('Abrir fuente')}
         onClick={async () => {
-          if(onOpen) { onOpen(sourceRef ?? nodusId, location); return; }
+          if(onOpen) { onOpen(sourceRef ?? nodusId, location, quote); return; }
           const result=await openEvidenceAtPage(nodusId,{location,sourceRef,pageNumber:page});
           if((result.ok||result.mode==='local')&&learning.session?.artifactId)learning.emit({kind:'artifact-evidence',artifactId:learning.session.artifactId,citationIds:[`work:${nodusId}`],valid:true});
         }}
@@ -449,20 +458,24 @@ function itemTypeLabel(type?: string | null): string | null {
 export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: IdeaDetail['occurrences'][number]; readOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<WorkSummary | null>(null);
+  const [summaryError,setSummaryError]=useState('');
+  const [summaryAttempt,setSummaryAttempt]=useState(0);
   const work = occurrence.work;
+  const mobileHost = ['phone','tablet'].includes((window as unknown as {nodusMobileConfig?:{device?:string}}).nodusMobileConfig?.device ?? '');
   const author = work.authors[0] ?? t('Autor desconocido');
   const year = work.year ?? t('s.f.');
 
   useEffect(() => {
     let active = true;
-    if (readOnly || work.summary_status !== 'done') return;
+    if (work.summary_status !== 'done') return;
+    setSummary(null); setSummaryError('');
     void window.nodus.getWorkSummary(work.nodus_id).then((value) => {
       if (active) setSummary(value);
-    });
+    }).catch(error=>{if(active)setSummaryError(error instanceof Error?error.message:String(error));});
     return () => {
       active = false;
     };
-  }, [work.nodus_id, work.summary_status, readOnly]);
+  }, [work.nodus_id, work.summary_status, summaryAttempt]);
 
   return (
     <div className="card p-3 mb-2">
@@ -474,7 +487,7 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
             {work.authors.length > 1 ? ' et al.' : ''} ({year})
           </div>
         </div>
-        {!readOnly && <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-200 p-1"
             title={open ? t('Ocultar metadatos') : t('Mostrar metadatos')}
@@ -482,20 +495,21 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
           >
             <Icon name="info" size={14} />
           </button>
-          <button
+          {!readOnly && !mobileHost && <button
             className="inline-flex items-center gap-1 text-indigo-400 text-xs p-1 hover:text-indigo-300"
             title={t('Abrir en Zotero')}
             onClick={() => window.nodus.openInZotero(work.zotero_key)}
           >
             <Icon name="external" size={13} /> Zotero
-          </button>
-        </div>}
+          </button>}
+        </div>
       </div>
       {open && <OccurrenceMeta work={work} />}
       <div className="text-[11px] text-neutral-500 mt-2">
         {occurrence.role} · conf {occurrence.confidence.toFixed(2)}
       </div>
       <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{occurrence.development}</p>
+      {summaryError && <div role="alert">{summaryError}<button className="btn" onClick={()=>setSummaryAttempt(value=>value+1)}>{t('Reintentar')}</button></div>}
       {summary && (
         <div className="mt-2 border-l-2 border-violet-700 pl-2 text-xs leading-relaxed text-neutral-300">
           <div className="mb-0.5 text-[10px] font-medium uppercase text-violet-300">{t('Resumen (orientación)')}</div>
@@ -510,16 +524,18 @@ export function OccurrenceCard({ occurrence, readOnly=false }: { occurrence: Ide
 /** Bibliographic detail for one occurrence — authors, venue, pages — read live from Zotero. */
 function OccurrenceMeta({ work }: { work: WorkView }) {
   const [meta, setMeta] = useState<WorkMeta | null>(null);
+  const [error,setError]=useState('');const [attempt,setAttempt]=useState(0);
   useEffect(() => {
-    let on = true;
+    let on = true;setError('');
     void window.nodus.getWorkMeta(work.nodus_id).then((m) => {
       if (on) setMeta(m);
-    });
+    }).catch(error=>{if(on)setError(error instanceof Error?error.message:String(error));});
     return () => {
       on = false;
     };
-  }, [work.nodus_id]);
+  }, [work.nodus_id,attempt]);
 
+  if(error)return <div role="alert">{error}<button className="btn" onClick={()=>setAttempt(value=>value+1)}>{t('Reintentar')}</button></div>;
   const authors = meta?.authors?.length ? meta.authors : work.authors;
   const type = itemTypeLabel(meta?.itemType ?? work.item_type);
   const year = work.year ?? meta?.year ?? null;

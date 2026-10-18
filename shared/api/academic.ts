@@ -753,6 +753,12 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
     onProgress?: (done: number, total: number, title: string) => void
   ): Promise<DeepResearchArchiveResult | null>;
   listWritingWorkshopDrafts(): Promise<WritingWorkshopSavedDraft[]>;
+  /** Bounded discovery for selected companion downloads; no report bodies. */
+  listWritingWorkshopDownloadCatalogue(request: {offset: number; limit: number}): Promise<{
+    items: Array<Pick<WritingWorkshopSavedDraft, 'id' | 'title' | 'createdAt' | 'updatedAt'>>;
+    total: number; offset: number; limit: number;
+  }>;
+  getWritingWorkshopDraft(id: string): Promise<WritingWorkshopSavedDraft | null>;
   saveWritingWorkshopDraft(request: WritingWorkshopSaveDraftRequest): Promise<WritingWorkshopSavedDraft>;
   /**
    * Mark a saved report read, or take the mark back. Resolves to the report as it now
@@ -814,6 +820,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   // argument map (AI-traced hierarchical outline around a seed idea)
   /** Trace a hierarchical block outline of the ideas connected to a seed idea. */
   buildArgumentMap(request: ArgumentMapRequest): Promise<ArgumentMap>;
+  listSavedCompanionArgumentMaps(cursor?:string|null,limit?:number):Promise<{items:Array<{id:string;map:ArgumentMap}>;cursor:string|null;hasMore:boolean;revision:string}>;
   /** Rank idea hubs by connectivity for the automatic mode (no AI, no model). */
   discoverArgumentRoutes(): Promise<ArgumentRouteSuggestion[]>;
 

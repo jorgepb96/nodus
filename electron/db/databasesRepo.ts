@@ -101,6 +101,7 @@ import {
   DATABASE_CONTAINER_CURSOR_VERSION,
   automaticDatabaseSourcePropertyMap,
   clampDatabaseContainerLimit,
+  combinedDatabaseContainerFilter,
   type AttachDatabaseViewSourceInput,
   type DatabaseContainerDefinition,
   type DatabaseContainerProperty,
@@ -284,9 +285,9 @@ function uniqueShortId(): string {
   return `DB-${uuid().slice(0, 6).toUpperCase()}`;
 }
 
-export function createDatabase(name: string, icon: string | null = null): DatabaseSummary {
+export function createDatabase(name: string, icon: string | null = null, identity?:string): DatabaseSummary {
   const db = getDb();
-  const id = newId('db');
+  const id = identity ?? newId('db');
   const ts = now();
   const position = (db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_databases').get() as { n: number }).n;
   const normalizedName = name.trim() || 'Base de datos';
@@ -624,10 +625,11 @@ export function createColumn(
   databaseId: string,
   name: string,
   type: DatabaseColumnType,
-  config: DatabaseColumnConfig = {}
+  config: DatabaseColumnConfig = {},
+  identity?:string
 ): DatabaseColumn {
   const db = getDb();
-  const id = newId('dcol');
+  const id = identity ?? newId('dcol');
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_columns WHERE database_id = ?').get(databaseId) as {
       n: number;
@@ -781,11 +783,16 @@ export function addOption(
   label: string,
   color: string | null = null,
   group: DatabaseSelectOption['group'] = null,
+  identity?: string,
 ): DatabaseSelectOption {
   const db = getDb();
   const column = getColumn(columnId);
   if (!column) throw new Error('Propiedad de base de datos no encontrada.');
-  const id = newId('dopt');
+  const id = identity ?? newId('dopt');
+  if (identity) {
+    if (!/^dopt_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(identity)) throw new Error('Identidad de opción no válida.');
+    if (db.prepare('SELECT 1 FROM db_select_options WHERE id = ?').get(identity)) throw new Error('La opción ya existe.');
+  }
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_select_options WHERE column_id = ?').get(columnId) as {
       n: number;
@@ -883,10 +890,10 @@ function touchRow(rowId: string): void {
   getDb().prepare("UPDATE db_rows SET updated_at = ?, revision = revision + 1, updated_by = 'local' WHERE id = ?").run(now(), rowId);
 }
 
-export function createRow(databaseId: string): DatabaseRow {
+export function createRow(databaseId: string, identity?:string): DatabaseRow {
   const db = getDb();
   ensurePrimaryTitle(databaseId);
-  const id = newId('drow');
+  const id = identity ?? newId('drow');
   const ts = now();
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_rows WHERE database_id = ?').get(databaseId) as {
@@ -1640,10 +1647,10 @@ function ensureDerivedMaterialized(databaseId: string, columns: DatabaseColumn[]
   derivedMaterializationCache.set(databaseId, expected);
 }
 
-function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColumns(databaseId)): DatabaseRow[] {
+function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColumns(databaseId), readOnly = false): DatabaseRow[] {
   const db = getDb();
   if (metaRows.length === 0) return [];
-  ensureDerivedMaterialized(databaseId, columns);
+  if(!readOnly)ensureDerivedMaterialized(databaseId, columns);
   const rowIndex = new Map<string, DatabaseRow>();
   const out: DatabaseRow[] = metaRows.map((m) => {
     const row: DatabaseRow = {
@@ -1713,7 +1720,7 @@ function hydrateRows(metaRows: RowMeta[], databaseId: string, columns = getColum
 }
 
 /** Keyset-paginated row query. Interactive callers can never receive more than 500 rows. */
-export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
+export function queryDatabaseRows(input: DatabaseRowQuery, {readOnly = false}: {readOnly?:boolean} = {}): DatabaseRowPage {
   const db = getDb();
   const resolved = resolveRowQuery(input);
   const database = db.prepare('SELECT revision FROM db_databases WHERE id = ?').get(resolved.databaseId) as { revision: number } | undefined;
@@ -1723,7 +1730,7 @@ export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
   const limit = clampDatabaseRowPageLimit(input.limit);
   const direction = input.direction === 'backward' ? 'backward' : 'forward';
   const columns = getColumns(resolved.databaseId);
-  ensureDerivedMaterialized(resolved.databaseId, columns);
+  if(!readOnly)ensureDerivedMaterialized(resolved.databaseId, columns);
   const byId = new Map(columns.map((column) => [column.id, column]));
   const params: Record<string, string | number> = { databaseId: resolved.databaseId };
   const fastNumber = indexedNumberFilter(resolved.filter, byId);
@@ -1837,7 +1844,7 @@ export function queryDatabaseRows(input: DatabaseRowQuery): DatabaseRowPage {
   const hasMore = fetched.length > limit;
   let selected = hasMore ? fetched.slice(0, limit) : fetched;
   if (direction === 'backward') selected = selected.reverse();
-  const rows = hydrateRows(selected, resolved.databaseId, columns);
+  const rows = hydrateRows(selected, resolved.databaseId, columns, readOnly);
   const cursorFor = (row: RowMeta & Record<string, string | number>) => encodeRowCursor({
     v: DATABASE_ROW_CURSOR_VERSION,
     queryHash: hash,
@@ -2596,6 +2603,7 @@ function rowToAttachment(row: AttachmentMetaRow): DatabaseAttachment {
 }
 
 export interface AddAttachmentInput {
+  identity?: string;
   rowId: string;
   columnId: string;
   fileName: string | null;
@@ -2615,7 +2623,9 @@ export function addAttachment(input: AddAttachmentInput): DatabaseAttachment {
   const db = getDb();
   const context = cellContext(input.rowId, input.columnId);
   if (!context) throw new Error('Fila o propiedad de base de datos no encontrada.');
-  const id = newId('datt');
+  const id = input.identity ?? newId('datt');
+  if (input.identity && (!/^datt_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.identity)
+    || db.prepare('SELECT 1 FROM db_attachments WHERE id = ?').get(input.identity))) throw new Error('Identidad de adjunto no válida o ya utilizada.');
   const position = (
     db.prepare('SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_attachments WHERE row_id = ? AND column_id = ?').get(
       input.rowId,
@@ -2882,18 +2892,22 @@ function deleteRelationPair(db: ReturnType<typeof getDb>, relation: RelationRow,
 
 function insertRelationRow(
   db: ReturnType<typeof getDb>,
-  input: { rowId: string; column: DatabaseColumn; targetKind: RelationTargetKind; targetId: string; targetVaultId: string | null; label: string },
+  input: { rowId: string; column: DatabaseColumn; targetKind: RelationTargetKind; targetId: string; targetVaultId: string | null; label: string; identity?: string },
 ): RelationRow {
   const existing = db.prepare(
     `SELECT * FROM db_relations WHERE row_id = ? AND column_id = ? AND target_kind = ? AND target_id = ?
        AND COALESCE(target_vault_id, '') = COALESCE(?, '')`,
   ).get(input.rowId, input.column.id, input.targetKind, input.targetId, input.targetVaultId) as RelationRow | undefined;
-  if (existing) return existing;
+  if (existing) {
+    if(input.identity && input.identity!==existing.id) throw new Error('El destino ya tiene otra identidad de relación.');
+    return existing;
+  }
+  if(input.identity && (!/^drel_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(input.identity) || db.prepare('SELECT 1 FROM db_relations WHERE id=?').get(input.identity))) throw new Error('Identidad de relación no válida o ya utilizada.');
   if ((input.column.config.relationCardinality ?? 'many') === 'one') {
     const previous = db.prepare('SELECT * FROM db_relations WHERE row_id = ? AND column_id = ?').all(input.rowId, input.column.id) as RelationRow[];
     previous.forEach((relation) => deleteRelationPair(db, relation));
   }
-  const id = newId('drel');
+  const id = input.identity ?? newId('drel');
   const position = (db.prepare(
     'SELECT COALESCE(MAX(position), -1) + 1 AS n FROM db_relations WHERE row_id = ? AND column_id = ?',
   ).get(input.rowId, input.column.id) as { n: number }).n;
@@ -2913,13 +2927,14 @@ export function addRelation(
   columnId: string,
   targetKind: RelationTargetKind,
   targetId: string,
-  targetVaultId: string | null = null
+  targetVaultId: string | null = null,
+  identity?: string,
 ): DatabaseRelation {
   const db = getDb();
   const validated = validateRelationTarget(rowId, columnId, targetKind, targetId);
   let relationId = '';
   db.transaction(() => {
-    const relation = insertRelationRow(db, { rowId, column: validated.column, targetKind, targetId, targetVaultId, label: validated.label });
+    const relation = insertRelationRow(db, { rowId, column: validated.column, targetKind, targetId, targetVaultId, label: validated.label, identity });
     relationId = relation.id;
     const inverseColumnId = validated.column.config.relationInverseColumnId as string | undefined;
     if (targetKind !== 'db_row' || !inverseColumnId) return;
@@ -3271,13 +3286,14 @@ function dataSourceFromRow(row: DataSourceRow): DatabaseDataSource {
     createdBy: row.created_by, updatedBy: row.updated_by, createdAt: row.created_at, updatedAt: row.updated_at };
 }
 
-function ensureDatabaseDataSource(databaseId: string): DatabaseDataSource {
+function ensureDatabaseDataSource(databaseId: string, readOnly = false): DatabaseDataSource {
   const db = getDb();
   let row = db.prepare('SELECT * FROM db_data_sources WHERE database_id = ?').get(databaseId) as DataSourceRow | undefined;
   if (!row) {
     const database = db.prepare('SELECT name, revision, created_by, updated_by, created_at, updated_at FROM db_databases WHERE id = ?')
       .get(databaseId) as { name: string; revision: number; created_by: string; updated_by: string; created_at: string; updated_at: string } | undefined;
     if (!database) throw new Error('Base de datos no encontrada.');
+    if(readOnly)return dataSourceFromRow({id:`companion-read:${databaseId}`,database_id:databaseId,kind:'local_database',...database});
     const id = newId('dsrc');
     db.prepare(`INSERT INTO db_data_sources
       (id, database_id, name, kind, revision, created_by, updated_by, created_at, updated_at)
@@ -3326,11 +3342,12 @@ function viewSourceRows(viewId: string): ViewSourceRow[] {
   ).all(viewId) as ViewSourceRow[];
 }
 
-export function listDatabaseViewSources(viewId: string): DatabaseViewDataSource[] {
+export function listDatabaseViewSources(viewId: string, readOnly = false): DatabaseViewDataSource[] {
   const db = getDb(); const view = getView(viewId); if (!view) throw new Error('Vista no encontrada.');
   let rows = viewSourceRows(viewId);
   if (rows.length === 0) {
-    const source = ensureDatabaseDataSource(view.databaseId); const timestamp = now();
+    const source = ensureDatabaseDataSource(view.databaseId, readOnly); const timestamp = now();
+    if(readOnly)return [{viewId,sourceId:source.id,databaseId:source.databaseId,sourceName:source.name,alias:source.name,position:0,primary:true,propertyMap:automaticDatabaseSourcePropertyMap(getColumns(source.databaseId)),revision:1,createdAt:source.createdAt,updatedAt:source.updatedAt}];
     db.prepare(`INSERT INTO db_view_sources
       (view_id, source_id, alias, position, is_primary, property_map_json, revision, created_by, updated_by, created_at, updated_at)
       VALUES (?, ?, ?, 0, 1, '{}', 1, 'local', 'local', ?, ?)`).run(viewId, source.id, source.name, timestamp, timestamp);
@@ -3381,9 +3398,9 @@ export function detachDatabaseViewSource(viewId: string, sourceId: string): void
   const timestamp = now(); rows.forEach((entry, position) => update.run(position, timestamp, viewId, entry.source_id));
 }
 
-export function getDatabaseContainer(viewId: string): DatabaseContainerDefinition | null {
+export function getDatabaseContainer(viewId: string, readOnly = false): DatabaseContainerDefinition | null {
   const view = getView(viewId); if (!view) return null;
-  const sources = listDatabaseViewSources(viewId); const properties = new Map<string, DatabaseContainerProperty>();
+  const sources = listDatabaseViewSources(viewId, readOnly); const properties = new Map<string, DatabaseContainerProperty>();
   for (const source of sources) {
     const columns = new Map(getColumns(source.databaseId).map((column) => [column.id, column]));
     for (const [canonical, columnId] of Object.entries(source.propertyMap)) {
@@ -3398,37 +3415,6 @@ export function getDatabaseContainer(viewId: string): DatabaseContainerDefinitio
     sources, properties: [...properties.values()] };
 }
 
-type FilterTranslation = { kind: 'true' } | { kind: 'false' } | { kind: 'node'; node: FilterNode };
-
-function translateContainerFilter(node: FilterNode | null | undefined, source: DatabaseViewDataSource,
-  primaryInverse: Map<string, string>): FilterTranslation {
-  if (!node) return { kind: 'true' };
-  if (node.type === 'condition') {
-    const canonical = source.propertyMap[node.columnId] ? node.columnId : primaryInverse.get(node.columnId) ?? node.columnId;
-    const columnId = source.propertyMap[canonical];
-    return columnId ? { kind: 'node', node: { ...node, columnId } } : { kind: 'false' };
-  }
-  const children = node.children.map((child) => translateContainerFilter(child, source, primaryInverse));
-  if (node.operator === 'and') {
-    if (children.some((child) => child.kind === 'false')) return { kind: 'false' };
-    const nodes = children.flatMap((child) => child.kind === 'node' ? [child.node] : []);
-    return nodes.length ? { kind: 'node', node: { type: 'group', operator: 'and', children: nodes } } : { kind: 'true' };
-  }
-  if (children.some((child) => child.kind === 'true')) return { kind: 'true' };
-  const nodes = children.flatMap((child) => child.kind === 'node' ? [child.node] : []);
-  return nodes.length ? { kind: 'node', node: { type: 'group', operator: 'or', children: nodes } } : { kind: 'false' };
-}
-
-function combinedSourceFilter(viewFilter: FilterNode | null, localFilter: FilterNode | null | undefined,
-  source: DatabaseViewDataSource, primaryInverse: Map<string, string>): FilterTranslation {
-  const view = translateContainerFilter(viewFilter, source, primaryInverse);
-  const local = translateContainerFilter(localFilter, source, primaryInverse);
-  if (view.kind === 'false' || local.kind === 'false') return { kind: 'false' };
-  const nodes = [view, local].flatMap((entry) => entry.kind === 'node' ? [entry.node] : []);
-  return nodes.length === 0 ? { kind: 'true' } : nodes.length === 1 ? { kind: 'node', node: nodes[0] }
-    : { kind: 'node', node: { type: 'group', operator: 'and', children: nodes } };
-}
-
 interface ContainerCursor { v: 1; queryHash: string; revision: string; sourceIndex: number; innerCursor: string | null }
 function encodeContainerCursor(cursor: ContainerCursor): string { return Buffer.from(JSON.stringify(cursor)).toString('base64url'); }
 function decodeContainerCursor(value: string): ContainerCursor {
@@ -3441,16 +3427,20 @@ function decodeContainerCursor(value: string): ContainerCursor {
 }
 
 function mapContainerRow(source: DatabaseViewDataSource, row: DatabaseRow): DatabaseContainerRow {
-  const cells: Record<string, string | null> = {};
-  for (const [canonical, columnId] of Object.entries(source.propertyMap)) cells[canonical] = row.cells[columnId] ?? row.rollups?.[columnId] ?? null;
+  const cells: Record<string, string | null> = {}, formulaErrors: Record<string,string> = {}, formulaColors: Record<string,string> = {};
+  for (const [canonical, columnId] of Object.entries(source.propertyMap)) {
+    cells[canonical] = row.cells[columnId] ?? row.rollups?.[columnId] ?? null;
+    if(row.formulaErrors?.[columnId])formulaErrors[canonical]=row.formulaErrors[columnId];
+    if(row.formulaColors?.[columnId])formulaColors[canonical]=row.formulaColors[columnId];
+  }
   return { id: `${source.sourceId}:${row.id}`, sourceId: source.sourceId, databaseId: source.databaseId, rowId: row.id,
-    sourceName: source.alias, cells, createdAt: row.createdAt, updatedAt: row.updatedAt, revision: row.revision ?? 1 };
+    sourceName: source.alias, cells, formulaErrors, formulaColors, createdAt: row.createdAt, updatedAt: row.updatedAt, revision: row.revision ?? 1 };
 }
 
-export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): DatabaseContainerRowPage {
+export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery, {readOnly = false}: {readOnly?:boolean} = {}): DatabaseContainerRowPage {
   if (!input || typeof input.viewId !== 'string' || !input.viewId) throw new Error('Contenedor de base de datos no válido.');
   if (input.localFilter) assertFilterNode(input.localFilter);
-  const view = getView(input.viewId); const definition = getDatabaseContainer(input.viewId);
+  const view = getView(input.viewId); const definition = getDatabaseContainer(input.viewId, readOnly);
   if (!view || !definition) throw new Error('Vista no encontrada.');
   const sources = input.sourceId ? definition.sources.filter((source) => source.sourceId === input.sourceId) : definition.sources;
   if (input.sourceId && sources.length === 0) throw new Error('La fuente no pertenece a este contenedor.');
@@ -3467,10 +3457,10 @@ export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): Da
   if (cursor && cursor.queryHash !== queryHashValue) throw new Error('El cursor pertenece a otra consulta de contenedor.');
   if (cursor && cursor.revision !== revision) throw new Error('Las fuentes cambiaron; reinicia la paginación del contenedor.');
   const limit = clampDatabaseContainerLimit(input.limit); const translations = sources.map((source) => ({ source,
-    filter: combinedSourceFilter(view.config.filter, input.localFilter, source, primaryInverse) }));
+    filter: combinedDatabaseContainerFilter(view.config.filter, input.localFilter, source, primaryInverse) }));
   let totalCount = 0;
   for (const entry of translations) if (entry.filter.kind !== 'false') totalCount += queryDatabaseRows({ databaseId: entry.source.databaseId,
-    filter: entry.filter.kind === 'node' ? entry.filter.node : null, limit: 1 }).totalCount;
+    filter: entry.filter.kind === 'node' ? entry.filter.node : null, limit: 1 },{readOnly}).totalCount;
   const rows: DatabaseContainerRow[] = []; let sourceIndex = cursor?.sourceIndex ?? 0; let innerCursor = cursor?.innerCursor ?? null;
   let nextCursor: string | null = null;
   while (sourceIndex < translations.length && rows.length < limit) {
@@ -3482,7 +3472,7 @@ export function queryDatabaseContainerRows(input: DatabaseContainerRowQuery): Da
     });
     const page = queryDatabaseRows({ databaseId: entry.source.databaseId,
       filter: entry.filter.kind === 'node' ? entry.filter.node : null, sorts: translatedSorts,
-      cursor: innerCursor, limit: limit - rows.length });
+      cursor: innerCursor, limit: limit - rows.length },{readOnly});
     rows.push(...page.rows.map((row) => mapContainerRow(entry.source, row)));
     if (page.nextCursor) { nextCursor = encodeContainerCursor({ v: DATABASE_CONTAINER_CURSOR_VERSION, queryHash: queryHashValue,
       revision, sourceIndex, innerCursor: page.nextCursor }); break; }

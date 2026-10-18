@@ -69,6 +69,7 @@ function MarkdownComponent({
   onTestimonyLink,
   verify = true,
   allowDataImages = false,
+  localReaderImages = false,
   chatVisuals = false,
 }: {
   content: string;
@@ -94,6 +95,8 @@ function MarkdownComponent({
   verify?: boolean;
   /** Only for trusted local reader assets already confined by the main process. */
   allowDataImages?: boolean;
+  /** Private image URIs are resolved by the scoped native reader, never by a network fetch. */
+  localReaderImages?: boolean;
 }) {
   const documentFigures = useDocumentFigures(content);
   const insertDocumentFigures = () => (tree: any) => {
@@ -344,7 +347,8 @@ function MarkdownComponent({
         rehypePlugins={[rehypeKatex, rehypeGroupParenthesizedCitations, insertDocumentFigures]}
         urlTransform={(value, key) => {
           if (chatVisuals && key === 'src' && /^nodus-image:\/\/chat\/[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(value)) return value;
-          if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i.test(value)) return value;
+          if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|avif|svg\+xml);base64,/i.test(value)) return value;
+          if (localReaderImages && key === 'src' && /^(?:nodus-image|nodus-library|nodus-archive):\/\/[^\s<>]+$/.test(value)) return value;
           return nodusUrlTransform(value);
         }}
         components={components}

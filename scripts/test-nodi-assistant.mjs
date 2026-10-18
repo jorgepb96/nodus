@@ -11,7 +11,7 @@ const read = async (file) => readSource(file);
 test('Nodi owns an independent persisted model and chat history', async () => {
   const [types, settings, prefs, store, ipc, preload] = await Promise.all([
     read('@api'),
-    read('electron/db/settingsRepo.ts'),
+    read('shared/defaultAppSettings.ts'),
     read('electron/db/appPrefs.ts'),
     read('electron/nodiConversations.ts'),
     read('@main'),

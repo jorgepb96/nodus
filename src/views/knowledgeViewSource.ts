@@ -26,7 +26,7 @@ export interface KnowledgeViewSource {
   getGraph(lens: 'ideas' | 'authors'): Promise<GraphData>;
   deleteIdea(id: string): Promise<void>;
   subscribe?(refresh: () => void): () => void;
-  openEvidence?(sourceRef: string, location: string | null): void;
+  openEvidence?(sourceRef: string, location: string | null, quote?: string): void;
   saveIdea?(detail: IdeaDetail): Promise<void>;
   saveEdge?(detail: EdgeDetail): Promise<void>;
 }

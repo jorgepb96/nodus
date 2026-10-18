@@ -69,17 +69,16 @@ try {
     await button.hover();
     await page.waitForFunction(
       (name) => {
-        const candidate = [...document.querySelectorAll('.graph-action-button')]
-          .find((element) => element.getAttribute('aria-label') === name);
-        const tooltip = candidate?.querySelector('[role="tooltip"]');
-        return tooltip && getComputedStyle(tooltip).opacity === '1';
+        const tooltip = document.querySelector('[data-testid="app-tooltip"]');
+        return tooltip?.matches(':popover-open') && tooltip.textContent === name
+          && getComputedStyle(tooltip).opacity === '1';
       },
       label,
     );
     assert.equal(
-      await button.locator('[role="tooltip"]').evaluate((element) => getComputedStyle(element).opacity),
-      '1',
-      `${label} exposes its translated hover label`,
+      await page.getByRole('tooltip').filter({ visible: true }).count(),
+      1,
+      `${label} exposes exactly one translated hover tooltip`,
     );
   }
 

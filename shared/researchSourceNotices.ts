@@ -41,13 +41,16 @@ export function researchSourcePresentation(text: string, existing: readonly stri
       // Whole standalone asides only. Removing a clause inside an argument could
       // silently remove the scope that makes its factual assertion true.
       if ((operational.exec(block)?.index ?? Infinity) < 100 && coverage.test(block) && !/\]\(nodus:\/\//u.test(block)) { remember(block); return ''; }
+      const selfCoverage = /^(?:(?:Nota|Aviso):\s*)?(?:Esta (?:respuesta|síntesis|lectura|explicación)|Este análisis)\s+(?:se limita|se ve limitad[oa]|está limitad[oa])/iu;
       const asides = researchAnswerProofUnits(block).filter(unit =>
-        /^(?:L[oa]s? (?:pasajes?|fragmentos?|textos?|citas?|extractos?)|Las? fuentes|Varios de (?:estos|los) (?:extractos|pasajes|fragmentos)|The (?:retrieved|indexed) (?:passages|excerpts|sources))\b/iu.test(unit.text)
-        && !/\]\(nodus:\/\//u.test(unit.text)
-        && (operational.test(unit.text) && coverage.test(unit.text)
-          || /\b(?:proceden|provienen|procede|proviene|se copia|se transcribe|come from|originate)\b/iu.test(unit.text) && /\b(?:indexad[oa]s?|revisiones anteriores|OCR|indexed|previous revision)\b/iu.test(unit.text)));
+        !/\]\(nodus:\/\//u.test(unit.text)
+        && (selfCoverage.test(unit.text) && /\b(?:evidencias? documental(?:es)? proporcionad[oa]s?|fuentes? (?:proporcionadas?|consultadas?|disponibles)|corpus documental)\b/iu.test(unit.text)
+          || /^(?:L[oa]s? (?:pasajes?|fragmentos?|textos?|citas?|extractos?)|Las? fuentes|Varios de (?:estos|los) (?:extractos|pasajes|fragmentos)|The (?:retrieved|indexed) (?:passages|excerpts|sources))\b/iu.test(unit.text)
+            && (operational.test(unit.text) && coverage.test(unit.text)
+              || /\b(?:proceden|provienen|procede|proviene|se copia|se transcribe|come from|originate)\b/iu.test(unit.text) && /\b(?:indexad[oa]s?|revisiones anteriores|OCR|indexed|previous revision)\b/iu.test(unit.text))));
       let clean = block;
-      for (const unit of [...asides].reverse()) { remember(unit.text); clean = clean.slice(0, unit.start) + clean.slice(unit.end); }
+      asides.forEach(unit => remember(unit.text));
+      for (const unit of [...asides].reverse()) clean = clean.slice(0, unit.start) + clean.slice(unit.end);
       return clean.trim();
     }).join('').replace(/\n{3,}/gu, '\n\n') + (pendingLabel ? `\n\n${pendingLabel}` : '');
   }).trim();

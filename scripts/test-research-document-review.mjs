@@ -74,6 +74,29 @@ try {
     assert.ok(!output.parts[0].text.includes('number'), 'The complete replacement receives fresh proof after a rejected cross-batch dependency');
   }
   {
+    const records = [{ ...evidence[0], authors: ['Editor, A. (ed.)'] }];
+    const output = await run([part('edited-volume', 'The chapter describes a supported result.')], (_options, input) => {
+      assert.equal(input.sources[0].collectiveCredits, true, 'Document proof and semantic review retain explicit editor roles');
+      return input.parts[0].paragraphs ? proof(input) : semantic(input);
+    }, records);
+    assert.equal(output.status, 'verified', 'A volume citation is allowed without claiming that the editor wrote the chapter');
+  }
+  {
+    const prior = context.effort;
+    try {
+      for (const effort of ['standard', 'off']) {
+        context.effort = effort;
+        const output = await run([part('reasoning-room-' + effort)], (options, input) => {
+          const visible = input.parts[0].paragraphs ? 8000 : 1800;
+          if (effort === 'standard') assert.ok(options.maxTokens >= visible + 16_384, 'Reasoning and the visible source proof have separate room');
+          else assert.equal(options.maxTokens, visible, 'Explicit off does not acquire a reasoning allowance');
+          return input.parts[0].paragraphs ? proof(input) : semantic(input);
+        });
+        assert.equal(output.status, 'verified');
+      }
+    } finally { context.effort = prior; }
+  }
+  {
     let firstProof = true;
     const output = await run([part('compound', 'A supported result. A different, unsupported causal claim.')], (options, input) => {
       if (options.system.startsWith('Revise')) return { parts: [{ id: 'compound', text: 'The source documents a supported result.' }] };

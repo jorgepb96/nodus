@@ -2,9 +2,10 @@
 
 The academic vault can opt into a shared research execution across Research Chat,
 Deep Research and Immersion. The existing `legacy` path remains the default.
-Functional tests establish execution guarantees. The source-inspected Chat campaign
-below provides additional case evidence, but does not establish universal accuracy
-or a blind paired advantage over legacy. Promotion requires broader evaluation.
+Functional tests establish execution guarantees. The later ten-pair development
+comparison does not establish an overall advantage over legacy: its masked model
+reviewer preferred legacy in seven cases. Source inspection also found reviewer
+errors. Default replacement requires better quality and latency evidence.
 
 ## Use and rollback
 
@@ -70,18 +71,35 @@ monetary cost. Model requests are reserved durably before dispatch (32 for Chat,
 does not reset it. Discovery in long-form generators initially uses at most about
 one third of the rounds, leaving room for section/station research. There is no
 per-section budget reset. Context-window checks still apply to the complete provider
-request. These limits are initial bounds and require calibration on real workloads.
+request. User retrieval values are advisory targets in V1. The agent sees both
+those targets and the remaining operating allowance. It may investigate beyond a
+target for a concrete unresolved question and an untried useful route; the backend
+grants at most twice the evidence target and a finite round margin (never more
+than 32 rounds), within the actual model window. The original targets remain in
+the context. This allowance is granted once, persisted and never replenished per
+query or continuation. Disabling automatic expansion still disables autonomous
+follow-ups. Word-count and duration guidance do not invalidate grounded content.
+Source permissions, capability switches, cancellation, provider spending and
+technical context/output bounds remain strict.
 
 ## Grounding by surface
 
 | Surface | v1 behavior |
 | --- | --- |
 | Research Chat | Keeps the turn planner, indexed-only policy, context switches, notebook/source restrictions, Concilium and skills. Ordinary prose receives bounded whole-answer review against source-bound premises, citation checks and a separate semantic veto. Changed prose must be reviewed again before publication. |
-| Deep Research | Shares one ledger and budget through discovery and sections. Retains section coverage repair, claim audits and report consistency checks. Later web findings join section evidence and the audit ledger as web receipts, without fictitious local works. |
+| Deep Research | Shares one ledger and budget through discovery and sections. Reviews and revises complete report fields with source-bound premises and an independent semantic veto; does not run the legacy sentence-deletion chain afterward. Later web findings retain their actual web receipts, without fictitious local works. |
 | Immersion | Retains curriculum/panorama/stations/contrasts/exam. Admits initial literal passages to the shared allowance and can investigate each station before writing. Prepared station inputs and completed generated phases survive continuation. Expository prose, positions and quiz explanations/expected answers are verified before saving. |
 
 Source existence is not entailment. Verification requires an authorized ID, a
-literal supporting quote and a valid premise verdict. Generated interpretations
+literal supporting quote and a valid premise verdict. Every sentence-sized span
+receives its own verdict, including when several sentences share a paragraph.
+Citation labels, URLs and literal quotations are opaque to segmentation. A
+backend citation repair attaches to the checked span and preserves the original
+paragraph layout; it cannot place a supporting link at the end of a paragraph to
+legitimize a different unsupported sentence. Complete-field rewrites preserve
+connected prose and require fresh proof. Source qualifications, direction of
+relationships, time perspective and the distinction between a documented limit
+and an inferred cause remain semantic obligations. Generated interpretations
 can support attribution, not independent factual corroboration. Ordinary Chat prose is revised coherently instead of being reduced by deleting
 individual sentences. If review cannot verify a useful answer within its bounds,
 the result states that verification limitation. It must not turn a technical
@@ -93,10 +111,9 @@ verdict is not a proof of truth. Multimodal attachments retain their existing
 answer flow and record `visual_evidence_not_audited`, because a text-only auditor
 cannot verify pixels. Plaintext attachments are explicit evidence and retain
 filename/location citations instead of fabricated vault IDs. Chemistry keeps its
-specialized verifier. Immersion's distractors and open questions are pedagogical
-content: their explanations and expected answers are audited, but this preview
-does not claim independent validation of every question's presuppositions or
-false alternative. Tiny model windows and provider failures may yield incomplete
+specialized verifier. Immersion review includes the selected answer, explanation and factual
+presuppositions of each retained question. False distractors remain intentional
+alternatives; automated approval still does not establish pedagogical quality. Tiny model windows and provider failures may yield incomplete
 verification. These are evaluation cases, not grounds to silently skip checks.
 
 ## Persistence and API
@@ -278,6 +295,28 @@ smaller than a prepared chunk. Retrieval success is recorded separately from
 semantic support. Completion defers outstanding tasks and marks unanswered
 questions unresolved rather than implying every branch was answered.
 
+## Optional source notes
+
+Research answers do not require a source-availability footnote. The writer is
+instructed to answer the question directly and keep substantive qualifications
+beside the claims they qualify. Recognizable operational coverage asides and
+explicit evidence-availability footers are presented separately, verbatim, behind
+an optional alert button. The same projection handles historical legacy messages.
+It never generates a disclaimer or deletes scientific uncertainty, quotations,
+code or the consulted-excerpt scope of a substantive assertion. Self-coverage
+footers inside a cited paragraph also move into the control, in their original
+order; ordinary historical scope qualifications stay beside the argument.
+
+New Chat responses carry optional notes in context statistics, independently of
+the answer, and persist them through the existing history store. An explicit
+empty sidecar preserves supplied-text translation/paraphrase output. Copying or
+saving a Chat answer uses its clean prose; Deep Research and Immersion readers
+and their prose exports use the same presentation rules. Source notes are
+user-opened balloons with keyboard dismissal, focus return and bounded placement.
+The complete checked text remains available to the verification/checkpoint
+pipeline; presentation is not an evidence bypass. Both original and presented
+assistant prose are registered for notebook follow-up provenance.
+
 ## Source-inspected validation
 
 Chat, Deep Research and Immersion use one harness. Mode adapters supply the output
@@ -286,13 +325,59 @@ Authorized evidence, literal proof binding, semantic vetoes, coherent revision,
 checkpoints and technical failure handling remain shared. A mode adapter is active
 only for its selected mode; it does not introduce a separate research agent.
 
+Revisions use short request-local citation destinations, expanded only from the
+frozen source map before fresh verification. Unknown aliases are never guessed.
+Exact literal matches can suggest real corrective locators to the rewriter;
+these remain candidates and never constitute approval. Bibliographic citation
+requests do not force unrequested verbatim quotations.
+
+Unavailable Chat review results are not cached as final answers. Continuation
+retains completed generation, pinned evidence and consumed allowance while
+retrying the failed check; a provider spending limit is recorded as budget rather
+than a claim about the sources. Short continuous Deep Research keeps one argument
+through planner fallback. Longer reports assign objective requirements to body
+movements rather than requiring every introduction and conclusion to answer the
+whole brief.
+
+Immersion proves its station syntheses before optional teaching details. A
+formatting-only topic heading is not treated as a factual assertion merely
+because it carries a known navigation citation; quantitative headings still
+require evidence, and the complete field still receives semantic review. Native
+proof keys carry their own untrusted span descriptions. Completed stages survive
+normal continuation inside their current contract. The tightened chapter/editor
+and institutional-time policy invalidates older verdict contracts; their earlier
+positive judgments cannot bypass the new review. A synthesis must contain
+source-backed substantive content, not only labels or transitions.
+
+Document batching counts actual sentence proof units. Long fields are checked in
+groups of four with stable indices and the complete unverified field as context;
+only the listed spans receive verdicts in each batch. Cross-batch dependencies
+still require their own valid source proofs, and a complete-field semantic veto
+runs after aggregation. Native decoders that
+support it constrain source aliases per field; Google keeps backend-only source
+binding to avoid its decoder complexity limit. An out-of-field, malformed or self-dependent proof is rejected
+locally by the source-bound normalizer and can receive coherent revision, rather
+than being mistaken for an outage of the entire lesson. Unknown field IDs and
+missing review coverage still cannot route a verdict to another field. Transport failures still stop further fan-out.
+
 V1 structured documents review stable field IDs in bounded batches. Every field
 has its own remit and permitted evidence. Commentary on a literal excerpt must
 be supported by that exact excerpt. Quiz review checks the question's factual
 presuppositions and selected answer while treating distractors as alternatives.
-Failed fields receive up to two complete revisions, with fresh proof and semantic
-review before publication. Technical failure stops further review fan-out, retains
-earlier verified fields and records a limited result; it never becomes evidence
+Failed fields receive up to two complete revisions and one final reconstruction
+when useful source-backed units survive. The final reconstruction receives those
+units and the semantic objections, without the rejected draft, and is guided toward
+a compact coherent answer. Optional Immersion details are reviewed only for retained
+station cores; orientation and examination follow the retained outline. Chat and
+structured documents additionally permit one narrowly
+scoped quotation/locator correction after that reconstruction when the only
+remaining failures are literal binding and its dependent synthesis; that result
+also receives complete fresh proof and semantic review. Every reconstruction receives fresh
+proof and semantic review before publication; technical outages never start this
+recovery. It is generated coherent prose, not a sentence-deletion fallback. Technical failure stops further review fan-out, retains
+earlier verified fields and records a failed execution on technical review failure;
+normal continuation can reuse completed generation and retry verification. A failed
+review never becomes evidence
 that the library lacks sources. Unverified optional lesson fields are omitted,
 and a lesson without any verified station cannot be saved as complete.
 
@@ -302,45 +387,78 @@ word guidance applies to the visible report, not independently to every internal
 planning unit. Published citation and word metrics are recounted after review.
 Summaries copy a complete verified paragraph. Cover/navigation snippets cannot
 support substantive claims; bibliographic metadata remains available separately.
+Native structured review explicitly supplies closed schemas on OpenAI,
+OpenRouter and Google. Backend bounds and source binding remain mandatory; an
+unsupported schema is never silently dropped. Google schemas avoid nested numeric
+limits that exceed its decoder complexity, while runtime validators retain those
+limits. Field and sentence identity remain mandatory while source bindings are
+validated by the backend; native schema complexity cannot grant a source.
+Immersion announces readiness after verification succeeds, removes empty contrast
+columns and recounts the works/authors represented in the retained lesson.
 API requests also attempt a free real model-catalogue lookup when the context
 window is unknown, retaining a conservative bound if metadata is unavailable.
 
-The final private campaign covers 25 declared Research Chat questions in two
-rounds of 15 and 10, with targeted repeats after corrections. It covers false
-premises and publications, catalogue counts/types, source filters, context layers,
-indexed-only retrieval, multilingual literal quotations, author/editor roles,
-causality, comparison, and explicit/default presentation. Native requests use
-DeepSeek Flash directly and DeepSeek V4.1 Flash through eligible OpenRouter
-endpoints. No provider privacy setting was weakened to obtain a model.
+An earlier private campaign covered 25 declared Chat questions in rounds of 15
+and 10, with targeted corrections. The selected attempts passed native review,
+resolved their citations and closed their agendas; separate Gemini reviews and
+non-blind source inspection were retained. Those selected development attempts
+averaged 63.8 seconds (median 52.4), and were not fresh runs on the final PR commit.
+Five secondary Mistral reviews exhausted output and remain errors, not passes.
 
-The selected final attempts all pass native review, resolve their citations,
-close the agenda without pending/running states, and respect the requested
-presentation. Every selected answer also has a current valid source-bound Gemini
-review and a separate non-blind source inspection by the coding agent. Review
-export includes complete catalogue operations so a missing export cannot be
-mistaken for an invented count. Actual vector identities and semantic results
-were checked; proxy transport must not accidentally change the identity of an
-existing embedding index.
+A later counterbalanced comparison covers ten additional declared questions in
+both legacy and V1, using direct DeepSeek Flash, standard effort, web off and a
+frozen isolated corpus. Both start from the user's 16k/8 retrieval targets; V1
+may expand to its bounded 32k/16 operating allowance, while legacy keeps 16k/8.
+Thus this is not a comparison with identical actual retrieval consumption.
+The original pair set produced eight native verified V1 answers and two limited
+answers. After targeted corrections, the selected latest attempts contain nine
+native verified answers and one limited answer. Every failed attempt is retained.
+The selection spans recorded code revisions and does not measure final-head accuracy.
 
-These are the latest attempts across recorded development revisions, not 25
-fresh end-to-end runs on the final PR commit. An earlier paired prototype exposed
-harmful sentence-deletion auditing; the coherent review and subsequent fixes
-followed that result. The final campaign does not establish a blind accuracy rate
-or quantify an overall advantage over legacy. Automated reviewers missed defects
-subsequently found by source inspection. Five secondary Mistral reviews exhausted
-output without valid JSON and are recorded as errors, never successful reviews.
+A masked Gemini reviewer received anonymous A/B answers, source excerpts and
+operation records for all ten pairs. It preferred legacy seven times and V1
+three times. Source inspection found an overgeneralization the reviewer had
+passed, and rejected an unsupported original-pagination objection. A technical
+inability to finish verification remains a limited answer regardless of the
+reviewer's label. Model approval and preference are separate from factual accuracy.
+Selected V1 latency averages 159.2 seconds (median 143.6, range 45.3–326.2),
+versus legacy's 38.0 seconds (median 32.2, range 19.2–77.0). These results do not
+justify default promotion or a claim that V1 is already better overall.
 
-The 25 selected runs average 63.8 seconds (median 52.4; range 20.4–197.1).
-Cumulative consumption plus full uncertain reservations across all attempts is
-USD 0.825485075 for DeepSeek, USD 0.755927158 for OpenRouter and USD 0.375065250 for
-Google, within the authorized EUR 1 per API. BGE is excluded as requested. These
-are conservative ledger totals including subsequent routing validation, not provider invoices. The original authorization,
-failed attempts and uncertain reservations were retained. Temporary encrypted
-credential copies were removed after the campaign. No raw answers, source
-excerpts, vault identifiers, credentials or local reports are published here.
+Native long-form trials exercise the product entrypoints, actual provider model
+metadata, the shared source grant and mandatory checks. Recorded failures include
+wrong citation destinations, unsupported source-wide absence claims, proof JSON
+failures, provider interruptions and exhausted run allowances. These are preserved
+as failures, even when earlier verification stages approved many optional fields.
+A useful generated draft is not a completed checked report or lesson. The latest
+Google regeneration saved three verified station cores, eight exact literal cards
+and three reviewed questions, but only 22 of 86 fields passed before the provider
+reservation refused further work. The execution correctly remains failed/budget,
+and unverified optional fields are empty. Independent source inspection still found
+chronology, chapter/editor attribution and malformed-citation problems in approved
+prose. That partial artifact is not accepted as quality evidence for promotion.
+The preceding Deep Research continuation remained limited despite a supported
+historical development; its unsupported opening coverage inference blocked publication.
+A further fresh DeepSeek/OpenRouter report at standard effort also failed: bounded
+proof JSON was truncated while reasoning consumed the output allowance. The final
+shared verifier now reserves reasoning separately from visible proof/revision text,
+within the model's output bound, and keeps explicit off/none unchanged. This is
+covered by functional tests; it is not counted as a subsequent paid quality success.
+The latest regeneration and inspection are recorded in the private artifacts.
+The subsequent shared policy explicitly distinguishes editor credits from chapter
+voice and institutional event time from publication dates. Its metadata transport
+and cache invalidation are covered by functional tests; those tests do not
+establish a new native quality success under the remaining paid allowance.
 
-Long-tail latency, multimodal evidence and broader paired evaluation across Deep
-Research and Immersion remain rollout considerations. V1 stays opt-in.
+All campaigns retain one append-only authorization and cumulative provider ledgers,
+including prior failures and full uncertain reservations. The user extended the
+ceiling from EUR 1 to EUR 2 per provider; the proxy enforces USD 1.75 per provider
+with conservative pricing, tax/exchange margin and no borrowing between providers.
+BGE is excluded as requested. These ledger totals are conservative bounds, not
+provider invoices. Temporary encrypted credential copies are removed by each
+paid parent after its child exits; a parent lease prevents overlapping ownership.
+No private answer, source excerpt, vault identifier, credential or report is
+published here. V1 remains opt-in pending stronger evidence across all surfaces.
 
 ## Private campaign tooling
 
@@ -356,8 +474,10 @@ The macOS sandbox denies access to production Nodus/Zotero profiles, external
 network and unlisted loopback ports. Only the reserving proxy can contact the
 selected providers. Generation budgets are separate per provider, with BGE
 accounted separately when excluded by the authorization. Failed and uncertain
-calls retain their consumption or full reservation. Paid phases are sequential
-so their active-case attribution cannot overlap.
+calls retain their consumption or full reservation. Paid phases must be sequential so their active-case attribution cannot overlap.
+A credential-owner lease now prevents overlapping native QA parents. Historical
+overlapping continuation failures remain in the ledger and are excluded from
+valid comparative measurements; accounting itself has cross-process locks.
 
 The runners and offline reporters are:
 

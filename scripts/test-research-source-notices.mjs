@@ -54,6 +54,13 @@ try {
     const scoped = 'La postmodernidad aparece en 2015 [Fuente](nodus://passage/a), aspecto que no aparece en los pasajes disponibles de 2011.';
     assert.deepEqual(present(scoped), { content: scoped, notices: [] });
   });
+  test('a model self-coverage footer separates from a cited argument without inventing or reordering notes', () => {
+    const first = 'Esta síntesis se limita exclusivamente a las evidencias documentales proporcionadas, las cuales omiten análisis sobre la recepción real del turista individual.';
+    const second = 'Nota: este análisis se ve limitado por la necesidad de una evaluación más exhaustiva del corpus documental previo a los años cuarenta.';
+    assert.deepEqual(present(`${body} ${first} ${second}`), { content: body, notices: [first, second] });
+    const qualification = 'Esta síntesis se limita al caso español de 1960; no establece un efecto generalizable.';
+    assert.deepEqual(present(qualification), { content: qualification, notices: [] });
+  });
   test('a heading on its own has a reversible optional body and never swallows the next heading', () => {
     assert.deepEqual(present(`${body}\n\n## Limitaciones de las fuentes\n\nNo se ha consultado el archivo.`), { content: body, notices: ['## Limitaciones de las fuentes\n\nNo se ha consultado el archivo.'] });
     const text = '## Limitaciones de las fuentes\n\n## Análisis\n\nTexto.';

@@ -6,11 +6,10 @@ import { type ResearchAuditSource } from '@shared/researchClaimAudit';
 import { RESEARCH_ANSWER_REVIEW_POLICY, assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchTitles, canonicalResearchDocumentTypes, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerProofSources, researchAnswerReviewSourceGroups, researchAnswerCatalogueCitationIssues, canonicalResearchCitationGroups, canonicalResearchLiteralQuotes, canonicalResearchParaphraseStyle, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerProofUnits, researchAnswerCitationProjection, researchAnswerSemanticFocus, researchAnswerVerdictsWithFallback, researchChatPresentationInstruction, reviewAndReviseResearchAnswer, validResearchAnswerCoverage, rejectUnprovidedResearchProofs } from '@shared/researchAnswerReview';
 import { RESEARCH_CHAT_PRECISION_RULES } from '@shared/researchChatGrounding';
 import { isResearchEffort, researchReasoningProfile, researchSemanticValidationEffort } from '@shared/researchReasoning';
-import { withinModelOutput } from '@shared/researchRetrievalBudget';
 import { completeJson, completeText } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { thinkingCatalogInfo, withResearchValidationThinking } from './thinkingEffort';
-import { researchGenerationOptions } from './researchGenerationOptions';
+import { researchVerificationOptions } from './researchGenerationOptions';
 import { getSettings } from '../db/settingsRepo';
 import { getDb } from '../db/database';
 import { researchAuthorYearLabel, passagePageCitationLabel } from './researchContextFit';
@@ -79,15 +78,10 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
   const reviewModel = model ?? harness.record.context.model;
   const requestedEffort = harness.record.context.effort;
   const semanticEffort = researchSemanticValidationEffort(researchReasoningProfile(reviewModel, reviewModel ? await thinkingCatalogInfo(reviewModel, signal) : undefined), isResearchEffort(requestedEffort) ? requestedEffort : 'standard');
-  const semanticOptions = reviewModel ? await researchGenerationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 1800, false, signal) : { maxTokens: 1800 };
-  // A native semantic review exhausted 9,992 tokens at DeepSeek low before returning
-  // JSON. Reserve more thinking room without increasing the requested diagnostic size.
-  if (reviewModel && !['none', 'off', 'standard'].includes(semanticEffort)) {
-    const reserve = reviewModel.provider === 'deepseek' || /^deepseek\//u.test(reviewModel.model) ? 16_384 : 8192;
-    semanticOptions.maxTokens = withinModelOutput(Math.max(semanticOptions.maxTokens, 1800 + reserve), reviewModel.provider, reviewModel.model);
-  }
-  const proofRecoveryOptions = reviewModel ? await researchGenerationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 12000, false, signal) : { maxTokens: 12000 };
-  const revisionOptions = reviewModel ? await researchGenerationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 8000, false, signal) : { maxTokens: 8000 };
+  const semanticOptions = reviewModel ? await researchVerificationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 1800, signal) : { maxTokens: 1800 };
+  const proofOptions = reviewModel ? await researchVerificationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 5000, signal) : { maxTokens: 5000 };
+  const proofRecoveryOptions = reviewModel ? await researchVerificationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 12000, signal) : { maxTokens: 12000 };
+  const revisionOptions = reviewModel ? await researchVerificationOptions({ model: reviewModel, thinkingEffort: semanticEffort }, 8000, signal) : { maxTokens: 8000 };
   const precisionRules = chat ? RESEARCH_CHAT_PRECISION_RULES : RESEARCH_CHAT_PRECISION_RULES.split('\n').slice(1).join('\n');
   const normalize = (text: string) => canonicalResearchParaphraseStyle(canonicalResearchUnrequestedQuotes(canonicalResearchLiteralQuotes(canonicalResearchCitationGroups(canonicalResearchDocumentTypes(canonicalResearchTitles(canonicalResearchCitationLabels(text, frozen), titles), bibliography)), frozen), frozen, objective), objective);
   return researchHarnessStage(RESEARCH_ANSWER_REVIEW_POLICY.stage, { answer, sources: frozen, objective, chat, semanticEffort }, async () => {
@@ -107,7 +101,7 @@ export async function repairResearchDraft(answer: string, model?: ModelRef | nul
             : chat && parts.length === 1 ? 'whole chat answer' : 'one prose fragment of a larger answer',
             ...(independent ? { answerContext: researchAnswerProofUnits(text).map(({ text }, index) => ({ index, text })) } : {}), paragraphs, paragraphCount: paragraphs.length, sources: researchAnswerProofSources(independent ? paragraphs.map(part => part.text).join(' ') : text, transport.sources) };
           return researchHarnessStage('review-answer-paragraphs-v9', input, () => completeJson({
-            system: RESEARCH_SOURCE_REVIEW + '\n' + RESEARCH_SOURCE_QUALIFICATION_RULE + '\nEach listed paragraph index is now one sentence-sized proof unit. Check all its clauses, preserving the entire answer context and local proof dependencies; every unit requires its own verdict.', user: JSON.stringify(input), ...(recovery ? proofRecoveryOptions : { maxTokens: independent ? 5000 : 12000 }), temperature: 0, corpusContext: true, signal, noRetry: true,
+            system: RESEARCH_SOURCE_REVIEW + '\n' + RESEARCH_SOURCE_QUALIFICATION_RULE + '\nEach listed paragraph index is now one sentence-sized proof unit. Check all its clauses, preserving the entire answer context and local proof dependencies; every unit requires its own verdict.', user: JSON.stringify(input), ...(recovery || !independent ? proofRecoveryOptions : proofOptions), temperature: 0, corpusContext: true, signal, noRetry: true,
           }, (value): value is Parameters<typeof assessResearchAnswer>[2] => validResearchAnswerCoverage(value, input.paragraphs.length, undefined, input.paragraphs[0]?.index ?? 0, true), reviewModel).then(value => rejectUnprovidedResearchProofs(value, new Set(input.sources.map(source => source.id)))));
         };
         const reusable = repairedProof?.text === text ? repairedProof : undefined;

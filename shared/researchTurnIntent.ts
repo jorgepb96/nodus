@@ -1,5 +1,5 @@
 /** Routing changes invalidate persisted decisions, including completed direct turns. */
-export const RESEARCH_TURN_INTENT_POLICY = 'source-routing-v2';
+export const RESEARCH_TURN_INTENT_POLICY = 'source-routing-v3';
 
 const fold = (text: string) => text.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim();
 const TRANSFORM = /^(?:(?:por favor|please)[,\s]+)?(?:traduce|traducir|parafrasea|parafrasear|reescribe|reformula|resume|resumir|acorta|simplifica|corrige|translate|paraphrase|rewrite|rephrase|summari[sz]e|shorten|proofread|traduis|traduisez|reformule|reformulez|resumez)\b/iu;
@@ -54,7 +54,10 @@ export function researchDirectTurnKind(message: string): ResearchDirectKind | nu
   if (/^(?:hola|hola de nuevo|buenos dias|buenas tardes|buenas noches|gracias|muchas gracias|gracias por (?:todo|la respuesta|tu ayuda)|hello|hi|thanks|thank you|bonjour|merci)[,!\s.]*$/u.test(text)) return 'conversation';
   if (explicitResearchLibraryRequest(message)) return null;
   const instructions = researchTurnInstructionText(message);
-  if (TRANSFORM.test(instructions.trim()) && !/\b(?:busca|consulta|contrasta|verifica|comprueba|search|check|verify|find)\b/iu.test(instructions)) {
+  const header = fold(instructions);
+  const factualCorrection = /\bcorrig(?:e|ir|iendo|as)\b/u.test(header) && (!/\b(?:ortografia|gramatica|redaccion|estilo|puntuacion|erratas|sintaxis)\b/u.test(header) || /\b(?:datos|fechas|hechos|cifras)\b/u.test(header));
+  if (TRANSFORM.test(instructions.trim()) && !factualCorrection
+    && !/\b(?:busca(?:r)?|consulta(?:r)?|contrasta(?:r)?|verifica(?:r)?|comprueba(?:r)?|localiza(?:r)?|encuentra|actualiza(?:r|lo|la)?|anade|agrega|incorpora|incluye|completa|search|check|verify|find|locate|update|add|include)\b/u.test(header)) {
     const boundary = /[:：]\s*|\n\s*\n/u.exec(message);
     const payload = boundary ? message.slice(boundary.index + boundary[0].length).trim() : '';
     if (/\n\s*\n[^]*\b(?:consulta|busca|contrasta|comprueba|search|check|verify)\b/iu.test(payload)) return null;

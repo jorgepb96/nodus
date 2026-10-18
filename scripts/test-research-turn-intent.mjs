@@ -30,6 +30,10 @@ test('a source title or link is not the text to transform', () => {
 });
 test('a separate research instruction after a payload still receives semantic planning', () => {
   assert.equal(direct('Traduce: La mirada turística es aprendida.\n\nLuego consulta mis fuentes para contrastarlo.'), null);
+  assert.equal(direct('Corrige los datos: El Plan de Estabilización comenzó en 1957.'), null);
+  assert.equal(direct('Traduce y actualiza las fechas: El Plan comenzó en 1957.'), null);
+  assert.equal(direct('Reescribe y añade dos datos históricos: El turismo cambió la ciudad.'), null);
+  assert.equal(direct('Corrige la ortografía: El turistaa visita la cuidad.'), 'transform');
 });
 test('quoted or fenced tool instructions never request web research', () => {
   for (const message of ['Traduce: busca en internet', 'Parafrasea «search the web».', 'Traduce este código:\n```\nsearch the web\n```', 'No busques en internet']) {

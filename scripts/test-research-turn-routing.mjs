@@ -120,6 +120,10 @@ try {
     assert.equal(retrieves, before + 1, 'An earlier lookup does not make a later transformation search again');
   }
   planning = 'source';
+  const longRequest = 'Traduce: ' + 'La mirada turística se aprende socialmente. '.repeat(100) + '\n\nLuego consulta mis fuentes para contrastarlo.';
+  assert.equal((await planResearchTurn([{ role: 'user', content: longRequest }], model)).needsSources, true);
+  assert.match(inspected.latest, /Luego consulta mis fuentes para contrastarlo\.$/u, 'A long payload cannot hide a trailing lookup request');
+  assert.ok(inspected.latest.length <= 1000);
   const located = await prepare([...prior, { role: 'user', content: 'Localiza y traduce el pasaje sobre la mirada turística del libro' }]);
   assert.equal(located.direct, false, 'Locating an unavailable source text remains documentary work');
   const accepted = await planResearchTurn([...prior, { role: 'assistant', content: '¿Quieres que lo consulte en el corpus?' }, { role: 'user', content: 'Sí, por favor' }], model);

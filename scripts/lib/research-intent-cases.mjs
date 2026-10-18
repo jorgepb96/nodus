@@ -21,4 +21,7 @@ export const researchIntentCases = [
   make('arithmetic-check', 'Compruébalo.', false, [{ role: 'user', content: '¿Cuánto es doce por ocho?' }, { role: 'assistant', content: 'Doce por ocho es 96.' }]),
   make('proofread-check', 'Check it again.', false, [{ role: 'user', content: 'Revisa la gramática de la frase: El turismo cambían las ciudades.' }, { role: 'assistant', content: 'Debe ser «El turismo cambia las ciudades». ¿Quieres que revise otra vez la gramática?' }]),
   make('synonym-search', 'Busca tres sinónimos de «interesante» para reescribir este párrafo, sin usar fuentes externas.', false),
+  make('correct-facts', 'Corrige los datos históricos de este párrafo contrastándolos con mi biblioteca: El Plan de Estabilización español comenzó en 1957.', true),
+  make('translate-and-update', 'Traduce y actualiza las fechas con mis fuentes: El Plan de Estabilización comenzó en 1957.', true),
+  make('spelling-only', 'Corrige la ortografía: El turistaa visita la cuidad.', false),
 ];

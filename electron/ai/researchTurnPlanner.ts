@@ -65,6 +65,7 @@ const SYSTEM = `You plan the library search for one turn of a research chat. Ret
 {"needsSources":true,"goal":"...","queries":["..."],"authors":["..."],"titles":["..."],"explicitLibrary":false,"kind":"definition|comparison|survey|fact|other","answerMode":"documentary|constructive"}
 - needsSources: false ONLY when the latest task can be completed from supplied text, conversation or ordinary general knowledge: greetings; questions about this conversation; rewriting, translating, shortening, correcting or reformatting supplied text; arithmetic/conversions; general explanations or drafting advice that do not ask what the user's sources establish. A text mentioning a research topic, author, historical period, Zotero, MCP or the word corpus is not by itself a request to retrieve anything. Classify the TASK, not its subject words. Transforming supplied research prose needs no new corpus search and must not add factual content. When needsSources=false return queries=[], authors=[], titles=[], exploration=[] and directKind="transform|conversation|general". If the input to transform is missing, ask for it instead of searching for an unspecified text.
 - needsSources: true when the task requires locating text not supplied, checking claims against evidence, identifying quotations from a work, comparing what sources establish, finding more authors, or retrieving from the library. "Translate the following paragraph" differs from "find and translate the passage in that book". A transformation combined with source verification still needs retrieval. When uncertain about documentary evidence, true.
+- Correcting grammar or spelling in supplied text is a transformation; correcting historical data, adding sourced facts or updating dates is evidence-dependent work. The verb "correct" alone does not establish which one. Time-sensitive facts are not ordinary stable knowledge. Honour the actual task and supplied capabilities, without enabling unavailable sources.
 - Re-evaluate EVERY new user turn. A previous direct/no-search decision is not a persistent restriction. If the user now says "ahora sí, consulta el corpus", "búscalo", "search again" or accepts an offered search, retrieve evidence about the conversation's substantive topic. Conversely an earlier research request does not force a later rewrite/translation to search. The first user turn is included only as a possible topic anchor; a newer explicit topic takes priority. sourceRequestIsExplicit=true requires needsSources=true even if an earlier answer said lookup was unnecessary.
 - goal: the question the user needs answered NOW, stated on its own, in the user's language, with every name and term it depends on. A follow-up ("and what about X?", "use zotero", "look again", "more authors") keeps the topic of the conversation: fold the earlier topic into the goal.
 - A request about WHERE or HOW to search (Zotero, MCP, "my library", "search again", "more authors") is never the topic. Set explicitLibrary true and keep the conversation's topic as the goal.
@@ -107,7 +108,13 @@ function validPlan(value: unknown): value is Omit<ResearchTurnPlan, 'planned' | 
 }
 
 /** Links are the app's citation chips; the planner needs the words around them. */
-const prose = (text: string, limit: number) => text.replace(/\[([^\]]*)\]\(nodus:\/\/[^)]*\)/g, '$1').replace(/nodus:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, limit);
+const prose = (text: string, limit: number) => {
+  const plain = text.replace(/\[([^\]]*)\]\(nodus:\/\/[^)]*\)/g, '$1').replace(/nodus:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();
+  if (plain.length <= limit) return plain;
+  // Long edit inputs must not hide a final "then consult my sources" instruction.
+  const marker = ' […] ', tail = Math.floor(limit / 3);
+  return plain.slice(0, limit - tail - marker.length) + marker + plain.slice(-tail);
+};
 
 /** Plan one turn from the recent conversation. Any failure plans nothing new: the literal
  * message is searched, as before, and a request for the library is still recognised. */

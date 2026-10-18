@@ -227,13 +227,14 @@ each direct translation. The explicitly paid `--phase=intent` campaign uses
 synthetic conversations and the original per-provider authorization; it never
 looks up corpus material or resets its spending ledger.
 
-The final native routing campaign tests 19 synthetic situations three times with
-DeepSeek: all 57 decisions match the expected route, with 45 planning calls and 12
+The final native routing campaign tests 22 synthetic situations three times with
+DeepSeek: all 66 decisions match the expected route, with 51 planning calls and 15
 deterministic decisions. It includes generic explanations, polite translation and
 paraphrase, missing input, quoted tool commands, subsequent/accepted lookups,
 locating text before translation, mixed edit/verification tasks, arithmetic,
-proofreading and synonyms. An earlier 48-decision campaign is retained separately;
-these are repeated cases, not 105 distinct questions or an accuracy guarantee.
+proofreading, synonyms, factual correction versus spelling, and translation with
+date updates. Earlier 48- and 57-decision campaigns are retained separately;
+these are repeated cases, not distinct research questions or an accuracy guarantee.
 Long inputs also retain their tail in the bounded planner context so a final
 lookup instruction cannot disappear behind the text being edited.
 
@@ -306,7 +307,7 @@ output without valid JSON and are recorded as errors, never successful reviews.
 
 The 25 selected runs average 63.8 seconds (median 52.4; range 20.4–197.1).
 Cumulative consumption plus full uncertain reservations across all attempts is
-USD 0.807569075 for DeepSeek, USD 0.755927158 for OpenRouter and USD 0.375065250 for
+USD 0.825485075 for DeepSeek, USD 0.755927158 for OpenRouter and USD 0.375065250 for
 Google, within the authorized EUR 1 per API. BGE is excluded as requested. These
 are conservative ledger totals including subsequent routing validation, not provider invoices. The original authorization,
 failed attempts and uncertain reservations were retained. Temporary encrypted

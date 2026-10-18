@@ -55,8 +55,9 @@ export function researchDirectTurnKind(message: string): ResearchDirectKind | nu
   if (explicitResearchLibraryRequest(message)) return null;
   const instructions = researchTurnInstructionText(message);
   const header = fold(instructions);
-  const factualCorrection = /\bcorrig(?:e|ir|iendo|as)\b/u.test(header) && (!/\b(?:ortografia|gramatica|redaccion|estilo|puntuacion|erratas|sintaxis)\b/u.test(header) || /\b(?:datos|fechas|hechos|cifras)\b/u.test(header));
-  if (TRANSFORM.test(instructions.trim()) && !factualCorrection
+  const factualCorrection = /\b(?:corrig(?:e|iendo|as)|corregir)\b/u.test(header) && (!/\b(?:ortografia|gramatica|redaccion|estilo|puntuacion|erratas|sintaxis)\b/u.test(header) || /\b(?:datos|fechas|hechos|cifras)\b/u.test(header));
+  const compound = LIBRARY.test(header) || /\b(?:y|and|then|luego|despues|ademas|para|mientras|with|while|to)\b|\b(?!following\b)\p{L}+(?:ando|iendo|ing)\b/u.test(header);
+  if (TRANSFORM.test(instructions.trim()) && !factualCorrection && !compound
     && !/\b(?:busca(?:r)?|consulta(?:r)?|contrasta(?:r)?|verifica(?:r)?|comprueba(?:r)?|localiza(?:r)?|encuentra|actualiza(?:r|lo|la)?|anade|agrega|incorpora|incluye|completa|search|check|verify|find|locate|update|add|include)\b/u.test(header)) {
     const boundary = /[:：]\s*|\n\s*\n/u.exec(message);
     const payload = boundary ? message.slice(boundary.index + boundary[0].length).trim() : '';

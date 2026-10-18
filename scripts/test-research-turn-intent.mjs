@@ -33,6 +33,9 @@ test('a separate research instruction after a payload still receives semantic pl
   assert.equal(direct('Corrige los datos: El Plan de Estabilización comenzó en 1957.'), null);
   assert.equal(direct('Traduce y actualiza las fechas: El Plan comenzó en 1957.'), null);
   assert.equal(direct('Reescribe y añade dos datos históricos: El turismo cambió la ciudad.'), null);
+  assert.equal(direct('Reescribe para corregir los datos históricos: El Plan comenzó en 1957.'), null);
+  assert.equal(direct('Reformula contrastando mis fuentes: El turismo creció.'), null);
+  assert.equal(direct('Reescribe verificando su exactitud: El Plan comenzó en 1957.'), null);
   assert.equal(direct('Corrige la ortografía: El turistaa visita la cuidad.'), 'transform');
 });
 test('quoted or fenced tool instructions never request web research', () => {

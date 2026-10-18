@@ -47,6 +47,18 @@ try {
     assert.ok(output.parts.every(item => item.text.includes('nodus://passage/p1')), 'The backend binds real links without buying another proof');
   }
   {
+    const original = { ...model };
+    Object.assign(model, { provider: 'gemini', model: 'gemini-2.5-flash-lite' });
+    const output = await run([part('fixed:field')], (options, input) => {
+      assert.ok(options.responseSchema, 'Supported providers receive a native schema');
+      assert.deepEqual(Object.keys(options.responseSchema.schema.properties.parts.properties), ['fixed:field']);
+      const value = input.parts[0].paragraphs ? proof(input) : semantic(input);
+      return { parts: Object.fromEntries(value.parts.map(({ id, ...field }) => [id, field])) };
+    });
+    assert.equal(output.status, 'verified', 'Fixed native object keys decode to the same runtime proof contract');
+    Object.assign(model, original);
+  }
+  {
     let proofs = 0, semantics = 0, rewrites = 0;
     const output = await run([part('body', 'Today the entire debate follows this footnote.')], (options, input) => {
       if (input.parts[0].paragraphs) { proofs++; return proof(input); }

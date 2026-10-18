@@ -57,7 +57,9 @@ try {
     await run(undefined); await run(a.id); await run(null);
     assert.equal(captured.length, 3);
     assert.equal(captured[0].system, captured[2].system, 'returning to Default restores exact original prompt');
-    assert.ok(captured[1].system.endsWith(captured[0].system), 'full original system and skill instructions remain intact');
+    // V1 appends the current run's operational context, including the selected prompt.
+    const baseSystem = system => system.split('\nNodus Research Harness operational context: ')[0];
+    assert.ok(baseSystem(captured[1].system).endsWith(baseSystem(captured[0].system)), 'full original system and skill instructions remain intact');
     assert.match(captured[0].system, /svg/i, 'enabled skill instructions are included in the invariant');
     assert.match(captured[1].system, /Evidencia y Límites/);
     assert.deepEqual(Object.keys(captured[1]).sort(), Object.keys(captured[0]).sort(), 'tools, budgets and transport options unchanged');
@@ -72,6 +74,8 @@ try {
   assert.doesNotMatch(JSON.stringify(captured[1]), /switched off every source/, 'a single layer left on is not a general-knowledge answer');
   // The indexed texts alone, with the web off: no planner call, the answer is bound to the retrieved passages.
   {
+    // Legacy indexed-only bypass is intentional; V1's scoped agent has dedicated tests.
+    const indexedRequest = { ...request, harnessVersion: 'legacy' };
     const planner = load('electron/ai/researchTurnPlanner.ts');
     const realPlan = planner.planResearchTurn;
     let plans = 0;
@@ -79,7 +83,7 @@ try {
     try {
       captured.length = 0;
       const indexedSelection = layeredSelection({ ideas: false, documents: false, indexed: true });
-      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: indexedSelection }, () => {});
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...indexedRequest, webSearch: 'off', selection: indexedSelection }, () => {});
       const sent = captured.at(-1);
       assert.match(sent.system, /Indexed texts only: answer exclusively from the retrieved passages/, 'the system prompt binds the answer to the passages');
       assert.match(JSON.stringify(sent), /chose indexed texts only/, 'the context tells the model what was searched');
@@ -91,7 +95,7 @@ try {
       assert.equal(plans, 0, 'the turn planner is never asked');
       // 5.12.0's exclusive mode reads as the indexed texts alone.
       captured.length = 0;
-      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: { ...indexedSelection, layers: { ideas: true, documents: true, indexedOnly: true } } }, () => {});
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...indexedRequest, webSearch: 'off', selection: { ...indexedSelection, layers: { ideas: true, documents: true, indexedOnly: true } } }, () => {});
       assert.match(captured.at(-1).system, /Indexed texts only: answer exclusively/, 'a chat saved in the old mode keeps answering from its passages');
       assert.equal(plans, 0);
       // Beside the web the indexed texts are one source among others: the turn is planned. The web
@@ -101,14 +105,14 @@ try {
       const realSearch = ResearchWebGrant.prototype.search;
       let webSearches = 0;
       ResearchWebGrant.prototype.search = async () => { webSearches++; return null; };
-      try { await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'auto', selection: indexedSelection }, () => {}); }
+      try { await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...indexedRequest, webSearch: 'auto', selection: indexedSelection }, () => {}); }
       finally { ResearchWebGrant.prototype.search = realSearch; }
       assert.equal(webSearches, 1, 'a thin library still falls back to the web');
       assert.doesNotMatch(captured.at(-1).system, /Indexed texts only/, 'with the web on the passages are not the only source');
       assert.ok(plans > 0, 'and the turn is planned');
       plans = 0;
       captured.length = 0;
-      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: layeredSelection({ ideas: true, documents: false, indexed: true }) }, () => {});
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...indexedRequest, webSearch: 'off', selection: layeredSelection({ ideas: true, documents: false, indexed: true }) }, () => {});
       assert.doesNotMatch(captured.at(-1).system, /Indexed texts only/, 'with ideas beside them the passages are not the only source');
       assert.ok(plans > 0, 'outside the mode the turn is planned, so the count above is a real absence');
       const { indexedTextsQuery } = load('electron/ai/researchAssistant.ts');

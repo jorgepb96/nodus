@@ -10,3 +10,6 @@
 .research-exploration-control[aria-disabled=true] .research-exploration-option { cursor: default; }
 
 html.theme-active .research-exploration-control { --research-exploration-accent: var(--a-500); }
+
+.research-exploration-tooltip { position: fixed; z-index: 10100; padding: 10px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--research-exploration-accent) 35%, transparent); background: #202126; color: #e4e4e7; box-shadow: 0 8px 28px #0004; font-size: 12px; line-height: 1.5; font-weight: 400; text-align: left; white-space: normal; }
+.research-exploration-tooltip.is-light { background: #fff; color: #27272a; box-shadow: 0 8px 28px #0002; }

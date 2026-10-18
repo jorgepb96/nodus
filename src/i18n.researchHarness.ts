@@ -12,7 +12,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Expanded",
     "Amplitud de investigación": "Research breadth",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Focused searches and fewer readings, with room to resolve important questions.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "More room to explore related questions, compare and connect sources."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "More room to explore related questions, compare and connect sources.",
+    "Suele responder antes y consumir menos.": "Usually responds sooner and uses fewer resources.",
+    "Puede necesitar más tiempo y consumo.": "May take more time and use more resources."
   },
   "fr": {
     "Sobre las fuentes": "À propos des sources",
@@ -27,7 +29,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Élargi",
     "Amplitud de investigación": "Étendue de la recherche",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Des recherches ciblées et moins de lectures, avec une marge pour éclaircir les points importants.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Plus de latitude pour explorer des questions connexes, confronter et relier les sources."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Plus de latitude pour explorer des questions connexes, confronter et relier les sources.",
+    "Suele responder antes y consumir menos.": "Répond généralement plus vite et consomme moins de ressources.",
+    "Puede necesitar más tiempo y consumo.": "Peut prendre plus de temps et consommer davantage de ressources."
   },
   "de": {
     "Sobre las fuentes": "Zu den Quellen",
@@ -42,7 +46,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Erweitert",
     "Amplitud de investigación": "Rechercheumfang",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Gezielte Suchen und weniger Lektüre, mit Spielraum zur Klärung wichtiger Fragen.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mehr Spielraum, um verwandte Fragen zu untersuchen und Quellen zu vergleichen und zu verknüpfen."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mehr Spielraum, um verwandte Fragen zu untersuchen und Quellen zu vergleichen und zu verknüpfen.",
+    "Suele responder antes y consumir menos.": "Antwortet meist schneller und verbraucht weniger Ressourcen.",
+    "Puede necesitar más tiempo y consumo.": "Kann mehr Zeit und Ressourcen benötigen."
   },
   "pt": {
     "Sobre las fuentes": "Sobre as fontes",
@@ -57,7 +63,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Alargado",
     "Amplitud de investigación": "Amplitude da investigação",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Pesquisas focadas e menos leituras, com margem para esclarecer dúvidas importantes.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e relacionar fontes."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e relacionar fontes.",
+    "Suele responder antes y consumir menos.": "Costuma responder mais depressa e consumir menos recursos.",
+    "Puede necesitar más tiempo y consumo.": "Pode precisar de mais tempo e recursos."
   },
   "pt-BR": {
     "Sobre las fuentes": "Sobre as fontes",
@@ -72,7 +80,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Ampliado",
     "Amplitud de investigación": "Amplitude da pesquisa",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Buscas focadas e menos leituras, com margem para esclarecer dúvidas importantes.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e conectar fontes."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Mais margem para explorar questões relacionadas, comparar e conectar fontes.",
+    "Suele responder antes y consumir menos.": "Costuma responder mais rápido e consumir menos recursos.",
+    "Puede necesitar más tiempo y consumo.": "Pode precisar de mais tempo e recursos."
   },
   "it": {
     "Sobre las fuentes": "Informazioni sulle fonti",
@@ -87,7 +97,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Esteso",
     "Amplitud de investigación": "Ampiezza della ricerca",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Ricerche mirate e meno letture, con margine per chiarire dubbi importanti.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Più spazio per esplorare domande correlate, confrontare e collegare le fonti."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "Più spazio per esplorare domande correlate, confrontare e collegare le fonti.",
+    "Suele responder antes y consumir menos.": "Di solito risponde prima e consuma meno risorse.",
+    "Puede necesitar más tiempo y consumo.": "Può richiedere più tempo e risorse."
   },
   "tr": {
     "Sobre las fuentes": "Kaynaklar hakkında",
@@ -102,7 +114,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "Genişletilmiş",
     "Amplitud de investigación": "Araştırma kapsamı",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "Önemli soruları açıklığa kavuşturmak için esneklik sunan odaklı aramalar ve daha az okuma.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "İlgili soruları araştırmak, kaynakları karşılaştırmak ve ilişkilendirmek için daha fazla esneklik."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "İlgili soruları araştırmak, kaynakları karşılaştırmak ve ilişkilendirmek için daha fazla esneklik.",
+    "Suele responder antes y consumir menos.": "Genellikle daha hızlı yanıt verir ve daha az kaynak tüketir.",
+    "Puede necesitar más tiempo y consumo.": "Daha fazla zaman ve kaynak gerektirebilir."
   },
   "zh-CN": {
     "Sobre las fuentes": "关于来源",
@@ -117,7 +131,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "扩展",
     "Amplitud de investigación": "研究广度",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "聚焦搜索并减少阅读，同时保留解决重要疑问的余地。",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空间来探索相关问题、比较并关联来源。"
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空间来探索相关问题、比较并关联来源。",
+    "Suele responder antes y consumir menos.": "通常响应更快，资源消耗更少。",
+    "Puede necesitar más tiempo y consumo.": "可能需要更多时间和资源。"
   },
   "zh-TW": {
     "Sobre las fuentes": "關於來源",
@@ -132,7 +148,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "擴展",
     "Amplitud de investigación": "研究廣度",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "聚焦搜尋並減少閱讀，同時保留釐清重要疑問的餘裕。",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空間來探索相關問題、比較並連結來源。"
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "提供更多空間來探索相關問題、比較並連結來源。",
+    "Suele responder antes y consumir menos.": "通常回應更快，資源消耗更少。",
+    "Puede necesitar más tiempo y consumo.": "可能需要更多時間和資源。"
   },
   "ja": {
     "Sobre las fuentes": "出典について",
@@ -147,7 +165,9 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "拡張",
     "Amplitud de investigación": "調査の範囲",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "検索と参照を絞り込みながら、重要な疑問を解消する余地を残します。",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "関連する問いを探り、出典を比較して結び付ける余地を広げます。"
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "関連する問いを探り、出典を比較して結び付ける余地を広げます。",
+    "Suele responder antes y consumir menos.": "通常はより早く回答し、リソースの消費を抑えます。",
+    "Puede necesitar más tiempo y consumo.": "より多くの時間とリソースが必要になる場合があります。"
   },
   "ko": {
     "Sobre las fuentes": "출처 정보",
@@ -162,6 +182,8 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Ampliado": "확장",
     "Amplitud de investigación": "연구 범위",
     "Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.": "핵심에 집중해 검색과 자료 검토를 줄이되, 중요한 의문을 해결할 여유를 둡니다.",
-    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "관련 질문을 탐색하고 출처를 비교하며 연결할 여유를 늘립니다."
+    "Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.": "관련 질문을 탐색하고 출처를 비교하며 연결할 여유를 늘립니다.",
+    "Suele responder antes y consumir menos.": "대체로 더 빨리 답변하고 리소스를 덜 사용합니다.",
+    "Puede necesitar más tiempo y consumo.": "더 많은 시간과 리소스가 필요할 수 있습니다."
   }
 };

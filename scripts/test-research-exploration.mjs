@@ -84,5 +84,15 @@ try {
     assert.equal(run.budget.evidenceTokenLimit, 32000); assert.equal(run.budget.decisionTokenLimit, 256000);
     return { answer: 'Expanded stays independent of model thinking' };
   });
+  await withResearchHarness({ ...input, request: { ...fastRequest, emptyFixture: true }, context: contextFor(fastRequest) }, async signal => {
+    assert.equal(scope.documents.length, 0);
+    const ai = load('electron/ai/aiClient.ts'); let decisions = 0;
+    ai.completeJson = async () => { decisions++; throw new Error('No library action is available'); };
+    const run = new ResearchCorpusRun(scope, RETRIEVAL_PRESETS.deep, signal);
+    await load('electron/ai/researchActionCoordinator.ts').deepenResearch(run, 'Read the attached file');
+    assert.equal(decisions, 0, 'An empty corpus with web off buys no supervisor call');
+    assert.equal(currentResearchHarness().record.summary.stopReason, 'sources_exhausted');
+    return { answer: 'Attachment context remains available to the writer' };
+  });
   console.log('Research exploration: defaults, stored choices, request overrides, shared budgets, independent thinking, immutable profile and allowance on continuation passed.');
 } finally { fs.rmSync(scratch, { recursive: true, force: true }); }

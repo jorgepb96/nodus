@@ -624,7 +624,8 @@ test('coverage accepts distributed literal spans without treating ellipsis-joine
 test('the real chat stream holds draft content, cancels safely and rechecks scope after verification', async () => {
   const skills = load('electron/chatSkills.ts');
   for (const skill of skills.restoreChatSkills()) skills.saveChatSkill({ ...skill, enabled: { assistant: false, nodi: false } });
-  load('electron/db/settingsRepo.ts').updateSettings({ chatModel: model, synthesisModel: model, promptLanguage: 'en', researchWebSearch: 'off', researchAnswerVerification: 'legacy' });
+  // This fixture exercises the legacy verifier; V1 run/scope transitions have separate coverage.
+  load('electron/db/settingsRepo.ts').updateSettings({ chatModel: model, synthesisModel: model, promptLanguage: 'en', researchWebSearch: 'off', researchAnswerVerification: 'legacy', researchHarnessVersion: 'legacy', researchHarnessRolloutVersion: 1 });
   const { ResearchCorpusRun } = load('electron/ai/researchCorpusRun.ts');
   const previousInvestigate = ResearchCorpusRun.prototype.investigate;
   const previousSnapshot = ResearchCorpusRun.prototype.snapshotFromEvidence;

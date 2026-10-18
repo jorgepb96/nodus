@@ -1080,6 +1080,8 @@ try {
   // The deep-research pipeline degrades gracefully without an AI provider (fallback
   // plan + sections), so it walks every phase and the bridge must fire throughout.
   const deepArgs = {
+    // This transport fixture injects the legacy writer without a provider model.
+    harnessVersion: 'legacy',
     objective: 'Estado del turismo visual en el corpus',
     sectionLimit: 'auto',
     writer: 'nodus',
@@ -1134,11 +1136,13 @@ try {
   // background, one at a time. The second is still waiting when the first is generating,
   // which is exactly when it can be cancelled.
   const firstQueued = await callTool(server, 'nodus_enqueue_deep_research', {
+    harnessVersion: 'legacy', // Queue transport uses the same injected legacy writer as deepArgs.
     objective: 'Informe encolado sobre el corpus',
     sectionLimit: 'single',
     save: true,
   });
   const secondQueued = await callTool(server, 'nodus_enqueue_deep_research', {
+    harnessVersion: 'legacy',
     objective: 'Segundo informe encolado',
     sectionLimit: 'auto',
     save: false,

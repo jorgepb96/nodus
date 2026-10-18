@@ -217,6 +217,11 @@ The budget is a maximum, not a target. Judge what the latest action adds to the 
 async function superviseHarness(run: ResearchCorpusRun, question: string, model?: ModelRef | null): Promise<void> {
   const harness = run.harness!;
   if (!run.budget.settings.autoExpand) return;
+  // Match legacy's empty-corpus exit. Attachment-only turns have no library
+  // action to supervise; an authorized web grant can still investigate.
+  if (!run.scope.documents.length && !run.web?.available) {
+    harness.record.summary.stopReason = 'sources_exhausted'; run.checkpoint(); return;
+  }
   harness.agenda.addQuestion(harness.record.context.mode === 'chat' ? harness.record.context.objective : question);
   const attempted = new Set<string>();
   let note: string | undefined;

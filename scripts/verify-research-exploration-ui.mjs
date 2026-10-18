@@ -59,7 +59,16 @@ try {
     const expanded = control.getByRole('radio', { name: table?.['Ampliado'] ?? 'Ampliado', exact: true });
     assert.equal(await expanded.isChecked(), true);
     assert.equal(await control.getAttribute('aria-label'), table?.['Amplitud de investigación'] ?? 'Amplitud de investigación');
-    assert.equal(await expanded.locator('..').getAttribute('title'), table?.['Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.'] ?? 'Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.');
+    const description = `${table?.['Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.'] ?? 'Más margen para explorar preguntas relacionadas, contrastar y conectar fuentes.'} ${table?.['Puede necesitar más tiempo y consumo.'] ?? 'Puede necesitar más tiempo y consumo.'}`;
+    assert.equal(await expanded.getAttribute('aria-describedby') !== null, true);
+    assert.equal(await page.getByRole('tooltip').innerText(), description, 'Keyboard focus opens translated help');
+    const tipBounds = await page.getByRole('tooltip').boundingBox();
+    assert.ok(tipBounds.x >= 0 && tipBounds.x + tipBounds.width <= 380, 'The tooltip fits narrow screens');
+    await expanded.press('Escape');
+    await page.getByRole('tooltip').waitFor({ state: 'detached' });
+    await page.mouse.move(0, 0);
+    await fast.locator('..').hover();
+    assert.equal(await page.getByRole('tooltip').innerText(), `${table?.['Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.'] ?? 'Búsquedas centradas y menos lecturas, con margen para resolver dudas importantes.'} ${table?.['Suele responder antes y consumir menos.'] ?? 'Suele responder antes y consumir menos.'}`, 'Pointer hover opens translated fast help');
     if (['en', 'de', 'ja'].includes(language)) await page.screenshot({ path: path.join(artifacts, `chat-${language}-narrow.png`), animations: 'disabled' });
     records.push({ language, translated: true, compactChat: true });
   }

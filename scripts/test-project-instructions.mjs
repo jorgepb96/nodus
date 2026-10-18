@@ -72,7 +72,8 @@ try {
     const inherited = await run(custom.id);
     assert.match(inherited, /PROJECT_A/); assert.match(inherited, /CHAT_STYLE/);
     assert.match(inherited, /conversation preferences take precedence/);
-    assert.ok(inherited.endsWith(original), 'application contract stays intact');
+    const baseSystem = system => system.split('\nNodus Research Harness operational context: ')[0];
+    assert.ok(baseSystem(inherited).endsWith(baseSystem(original)), 'application contract stays intact');
     organizer.setConversationProject(chat.id, b.id);
     const moved = await run(); assert.match(moved, /PROJECT_B/); assert.doesNotMatch(moved, /PROJECT_A/);
     organizer.updateChatProject(b.id, { instructions: 'PROJECT_UPDATED' });

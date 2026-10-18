@@ -81,7 +81,8 @@ try {
     return { topic: request.topic };
   };
   load('electron/db/immersionRepo.ts').saveImmersionSession = plan => ({ id: 'fixture', plan });
-  await immersion.generateImmersionSession({ topic, minutes: 60, includeQuiz: false });
+  // This fixture tests the legacy automatic-reader fallback, without model inference.
+  await immersion.generateImmersionSession({ topic, minutes: 60, includeQuiz: false, harnessVersion: 'legacy' });
   assert.equal(calls.length, 3, 'Immersion generation reaches Zotero MCP for the missing original');
   assert.equal(material.passages[0].text, text);
   assert.equal(material.works[0].orientation, 'Existing documentary profile');

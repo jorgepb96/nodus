@@ -65,6 +65,12 @@ export class ResearchHarness {
     this.record.summary.status = status; this.record.summary.stopReason = reason;
     this.persist();
   }
+  /** Exact input lookup for explicitly compatible application-stage contracts.
+   * The caller must validate the cached value against its current output contract. */
+  cachedStage(name: string, input: unknown): { found: boolean; value?: unknown } {
+    this.validate(); const key = `${name}:${hash(input)}`;
+    return Object.hasOwn(this.record.stages, key) ? { found: true, value: structuredClone(this.record.stages[key]) } : { found: false };
+  }
   /** Cache completed semantic phases, never provider reasoning or half-written output. */
   async stage<T>(name: string, input: unknown, generate: () => Promise<T>): Promise<T> {
     this.validate();

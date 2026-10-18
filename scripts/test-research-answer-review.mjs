@@ -100,6 +100,16 @@ try {
   assert.equal(review.canonicalResearchLiteralQuotes('Dice «La mirada incluye \\"signos sociales\\" y no es neutral».', [nestedSource]), 'Dice «La mirada incluye «signos sociales» y no es neutral».');
   assert.equal(review.canonicalResearchParaphraseStyle('Un *relato real* frente a «ficción realista».', 'Usa paráfrasis en lugar de citas.'), 'Un *relato real* frente a *ficción realista*.');
   assert.equal(review.researchAnswerSemanticFocus('Otro libro se titula X.', false, 'No propongas bibliografía alternativa.').length, 1);
+
+  {
+    const heading = '### Intenciones documentadas [Fuente](nodus://passage/p1)';
+    const editorial = { ...verdict, kind: 'nonfactual', premises: [], supported: true, unsupportedParts: [] };
+    assert.equal(review.assessResearchAnswer(heading + '\n\n' + paragraph, [source], envelope([editorial, { ...verdict, index: 1 }]), 'Describe', false).accepted, true, 'A known navigation citation does not turn a topic heading into a factual assertion');
+    assert.equal(review.assessResearchAnswer('### Creció un 25% [Fuente](nodus://passage/p1)', [source], envelope([editorial]), 'Describe', false).accepted, false, 'A quantitative assertion in a heading still needs real proof');
+    assert.equal(review.assessResearchAnswer(heading.replace('/p1', '/unknown'), [source], envelope([editorial]), 'Describe', false).accepted, false, 'Editorial labels cannot introduce unknown source targets');
+    assert.equal(review.researchAnswerProofUnits('**1.** Intenciones documentadas.').length, 1, 'Bold list ordinals cannot become detached proof fragments');
+    assert.equal(review.assessResearchAnswer(heading, [source], envelope([editorial]), 'Describe', true).accepted, false, 'Chat still enforces the user default against unsolicited headings');
+  }
   const protocolError = Object.assign(new Error('bad schema'), { code: 'schema_mismatch' });
   let fallbacks = 0;
   const partitioned = await review.researchAnswerVerdictsWithFallback(['a', 'b'], async (paragraphs, independent) => {

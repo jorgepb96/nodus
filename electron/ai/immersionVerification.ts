@@ -1,5 +1,5 @@
 import type { ImmersionPlan, ImmersionQuizQuestion, ModelRef } from '@shared/types';
-import type { ResearchDocumentPart } from '@shared/researchDocumentReview';
+import type { ResearchDocumentPart, ResearchDocumentReview } from '@shared/researchDocumentReview';
 import { researchExcerptHasProse } from '@shared/researchDocumentReview';
 import { researchAnswerReviewLimitation } from '@shared/researchAnswerReview';
 import { reviewResearchDocument } from './researchDocumentReview';
@@ -43,7 +43,23 @@ export async function verifyImmersionPlan(plan: ImmersionPlan, model: ModelRef |
   plan.contrasts.rows.forEach((row, i) => row.cells.forEach((cell, j) => add(`contrast:${i}:${j}`, cell.stance, `State only ${cell.author}'s evidenced position on this station question, preserving attribution.`, text => { cell.stance = text; })));
   quiz(plan.exam.questions, 'exam', []);
   add('exercise', plan.exam.feynman, 'An instructional synthesis exercise. Verify any factual presuppositions; keep it an instruction, not an asserted historical conclusion.', text => { plan.exam.feynman = text; });
-  const review = await reviewResearchDocument(parts, model, signal);
+  // Prove the lesson's substantive core before spending on optional teaching
+  // details. Both passes share the same harness, evidence and consumed allowance.
+  const coreParts = parts.filter(part => /^station:\d+:synthesis$/u.test(part.id));
+  const core = await reviewResearchDocument(coreParts, model, signal);
+  core.parts = core.parts.map(part => part.status === 'verified' && !part.claims.some(claim => claim.status === 'supported' && claim.kind !== 'nonfactual' && claim.evidence.length)
+    ? { ...part, status: 'limited', text: '', issues: ['non_substantive_synthesis'] } : part);
+  if (core.parts.some(part => part.status !== 'verified')) core.status = 'limited';
+  const details: ResearchDocumentReview = !core.technicalFailure && core.parts.some(part => part.status === 'verified')
+    ? await reviewResearchDocument(parts.filter(part => !coreParts.includes(part)), model, signal)
+    : { parts: [] as typeof core.parts, status: 'limited' as const };
+  const byId = new Map([...core.parts, ...details.parts].map(part => [part.id, part]));
+  const review: ResearchDocumentReview = { parts: parts.map(part => byId.get(part.id) ?? { id: part.id, text: '', status: 'limited', claims: [], issues: [core.technicalFailure ?? 'unverified_field'] }),
+    status: core.status === 'verified' && details.status === 'verified' ? 'verified' : 'limited',
+    ...((core.technicalFailure ?? details.technicalFailure) ? { technicalFailure: core.technicalFailure ?? details.technicalFailure } : {}) };
+  const harness = currentResearchHarness();
+  if (harness) { harness.record.checkpoint.documentReview = { policy: 'immersion-core-first-v1', ...review }; harness.record.checkpoint.validationLimited = review.status !== 'verified'; harness.persist(); }
+
   const verified = new Set(review.parts.filter(part => part.status === 'verified').map(part => part.id));
   for (const part of review.parts) apply.get(part.id)?.(part.status === 'verified' ? part.text : '');
   const keepQuiz = (questions: ImmersionQuizQuestion[]) => questions.filter(question => verified.has(quizParts.get(question) ?? ''));

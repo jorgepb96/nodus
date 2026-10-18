@@ -162,9 +162,9 @@ try {
   {
     const original = reviewer.reviewResearchDocument;
     reviewer.reviewResearchDocument = async parts => {
-      assert.equal(parts.find(part => part.id.includes(':citation:')).strictEvidence, true);
+      if (parts.some(part => part.id.includes(':citation:'))) assert.equal(parts.find(part => part.id.includes(':citation:')).strictEvidence, true);
       return { status: 'limited', parts: parts.map(part => ({ id: part.id, text: part.id === 'station:1:synthesis' || part.id.endsWith('quiz:0') ? '' : part.text,
-        status: part.id === 'station:1:synthesis' || part.id.endsWith('quiz:0') ? 'limited' : 'verified', claims: [], issues: [] })) };
+        status: part.id === 'station:1:synthesis' || part.id.endsWith('quiz:0') ? 'limited' : 'verified', claims: [{ sentence: part.text, kind: 'attributed', status: 'supported', evidence: [{ id: 'p1', quote: 'A sufficiently long literal source statement.' }], reason: 'fixture' }], issues: [] })) };
     };
     const station = id => ({ id, title: 'Station', question: 'What does the source establish?', context: 'Context.', synthesis: 'Lesson.', ideaIds: ['i1'],
       citations: [{ passageId: 'p1', text: 'A sufficiently long literal source statement.', whyItMatters: 'Relevance.', commentary: 'Meaning.' }], positions: [], takeaways: ['A takeaway.'],

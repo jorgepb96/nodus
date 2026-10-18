@@ -1,4 +1,4 @@
-import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
+import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, researchEditorialHeading, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
 export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v34', stage: 'coherent-answer-review-v34' } as const;
@@ -319,6 +319,7 @@ export function researchAnswerProofUnits(text: string): Array<{ text: string; st
       else if (masked[i] === ')' && depth > 0 && --depth === 0) masked = masked.slice(0, opened) + 'x'.repeat(i - opened + 1) + masked.slice(i + 1);
     }
     masked = masked.replace(/\b(?:pp?|págs?|pags?|vol|núm|eds?|coords?)\.\s*(?=\d)/giu, match => match.replace('.', 'x'));
+    masked = masked.replace(/^(\s*(?:#{1,6}\s*)?(?:\*\*|__)?\d{1,2})\.(?=\s|[*_])/gmu, match => match.replace('.', 'x'));
     for (const span of researchQuotedSpans(paragraph).spans.reverse()) masked = masked.slice(0, span.start) + 'x'.repeat(span.end - span.start) + masked.slice(span.end);
     for (const segment of new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(masked)) {
       const raw = paragraph.slice(segment.index, segment.index + segment.segment.length);
@@ -471,7 +472,8 @@ export function assessResearchAnswer(text: string, sources: ResearchAuditSource[
     const cited = [...paragraph.matchAll(/\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu)].map(match => match[1]);
     const supportingIds = new Set(decision.evidence.map(evidence => evidence.id));
     const substantive = !decision.evidence.some(proof => sources.some(source => source.id === proof.id && source.proseSupport === false));
-    const authorized = cited.every(citation => sources.some(source => source.citation === citation && supportingIds.has(source.id)));
+    const editorial = verdict.kind === 'nonfactual' && researchEditorialHeading(paragraph);
+    const authorized = cited.every(citation => sources.some(source => source.citation === citation && (editorial || supportingIds.has(source.id))));
     const citationEvidenceIds = [...new Set(verdict.premises.flatMap(premise => premise.evidence.map(proof => proof.id)))];
     const needsCitation = sources.some(source => Boolean(source.citation) && citationEvidenceIds.includes(source.id));
     const hasCitation = !needsCitation || (proofUnits

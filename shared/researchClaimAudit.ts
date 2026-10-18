@@ -264,6 +264,15 @@ export function dropResearchSentences(markdown: string, drop: (plain: string) =>
   return { markdown: tidy(result), dropped: dropped.reverse() };
 }
 const HAS_CONTENT_MARKER = /\p{N}|nodus:\/\//u;
+/** Topic headings are presentation. Quantities remain factual even in a heading;
+ * actual prose assertions still receive the independent whole-field veto. */
+export function researchEditorialHeading(text: string): boolean {
+  const plain = text.replace(/\[[^\]\n]*\]\(nodus:\/\/[^)\s]+\)/gu, '').replace(/\(\s*\)/gu, '').trim();
+  const heading = /^#{1,6}\s+[^\n]+$/u.test(plain) || /^(?:\*\*[^*\n]+\*\*|__[^_\n]+__)\s*:?$/u.test(plain);
+  const label = plain.replace(/^#{1,6}\s*|[*_]/gu, '').replace(/^\d{1,2}[.)]\s*/u, '');
+  return heading && /\p{L}/u.test(label) && !/\p{N}/u.test(label);
+}
+
 /** The acceptance decision is derived here from the judge's atomic premises. Its
  * `supported` boolean, its unsupported parts and its premises must all agree:
  * a verdict whose parts disagree is not a reliable approval and fails closed. */
@@ -272,7 +281,7 @@ export function decideResearchVerdict(span: string, verdict: Verdict, sources: R
 } {
   const literal = (evidence: { id: string; quote: string }) => sources.some(source => source.id === evidence.id && normalize(source.text).includes(normalize(evidence.quote)));
   if (verdict.kind === 'nonfactual') {
-    if (verdict.premises.length || verdict.unsupportedParts.length || HAS_CONTENT_MARKER.test(span)) return { valid: false, failure: 'nonfactual_with_content', evidence: [] };
+    if (verdict.premises.length || verdict.unsupportedParts.length || HAS_CONTENT_MARKER.test(span) && !researchEditorialHeading(span)) return { valid: false, failure: 'nonfactual_with_content', evidence: [] };
     return verdict.supported ? { valid: true, evidence: [] } : { valid: false, failure: 'judge_rejected', evidence: [] };
   }
   if (!verdict.premises.length) return { valid: false, failure: 'no_premises', evidence: [] };

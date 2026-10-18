@@ -462,8 +462,9 @@ export async function orchestrateImmersion(
     stoppedReason: degradations.length ? degradations.join(' · ') : null,
   };
 
+  const verified = deps.verifyPlan ? await deps.verifyPlan(plan) : plan;
   emit({ phase: 'done', message: msg.done });
-  return deps.verifyPlan ? deps.verifyPlan(plan) : plan;
+  return verified;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

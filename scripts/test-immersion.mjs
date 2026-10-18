@@ -304,12 +304,18 @@ try {
       assert.ok(input.passages[0].id.startsWith('late-station-'));
       return write(input);
     };
-    deps.verifyPlan = async plan => { verified++; return { ...plan, overview: 'Verified overview' }; };
-    const plan = await orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps);
+    const phases = [];
+    deps.verifyPlan = async plan => { assert.ok(!phases.includes('done')); verified++; return { ...plan, overview: 'Verified overview' }; };
+    const plan = await orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps, p => phases.push(p.phase));
+    assert.equal(phases.at(-1), 'done');
     assert.equal(prepared, plan.stations.length);
     assert.equal(verified, 1);
     assert.equal(plan.overview, 'Verified overview');
     assert.ok(plan.stations.every(station => station.citations.some(c => c.text === 'Fresh literal evidence collected for this station.')));
+    phases.length = 0;
+    deps.verifyPlan = async () => { throw new Error('verification unavailable'); };
+    await assert.rejects(() => orchestrateImmersion({ topic: material.topic, language: 'es', minutes: 90, includeQuiz: true, model: null }, deps, p => phases.push(p.phase)), /verification unavailable/);
+    assert.ok(!phases.includes('done'), 'Failed verification never announces a ready lesson');
   }
 
   // ── No material → clean error ───────────────────────────────────────────────

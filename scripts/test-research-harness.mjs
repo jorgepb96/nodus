@@ -81,6 +81,27 @@ try {
   await assert.rejects(() => withResearchHarness({ ...input, request: { conversationId: 'other', runId: id } }, async () => ({})), /not_authorized/);
   await assert.rejects(() => withResearchHarness({ ...input, context: { ...context, scopeId: 'changed' }, request: { ...request, runId: id } }, async () => ({})), /context_changed/);
   assert.equal(runs.getResearchRun(id).summary.status, 'completed', 'a rejected replay does not rewrite a completed execution');
+  let writes = 0;
+  const retryInput = { ...input, request: { ...request, fixture: 'technical-review' } };
+  const incomplete = await withResearchHarness(retryInput, async () => {
+    const h = currentResearchHarness();
+    await h.stage('writer', {}, async () => { writes++; return 'Preserved draft'; });
+    h.record.checkpoint.documentReview = { technicalFailure: 'output_truncated' };
+    h.record.checkpoint.validationLimited = true;
+    return { answer: '' };
+  });
+  assert.equal(incomplete.researchRun.status, 'failed');
+  // Compatibility with earlier preview checkpoints that completed incorrectly.
+  const old = runs.getResearchRun(incomplete.researchRun.id); old.summary.status = 'completed'; runs.saveResearchRun(old);
+  const recovered = await withResearchHarness({ ...retryInput, request: { ...retryInput.request, runId: incomplete.researchRun.id } }, async () => {
+    const h = currentResearchHarness();
+    const answer = await h.stage('writer', {}, async () => { writes++; return 'New draft'; });
+    h.record.checkpoint.documentReview = { status: 'verified' };
+    h.record.checkpoint.validationLimited = false;
+    return { answer };
+  });
+  assert.equal(recovered.answer, 'Preserved draft'); assert.equal(writes, 1);
+  assert.equal(recovered.researchRun.status, 'completed', 'A technical verification failure retries without regenerating completed stages');
   chats.deleteConversation(conversation.id);
   assert.equal(runs.getResearchRun(id), null, 'owner deletion removes checkpoints');
 

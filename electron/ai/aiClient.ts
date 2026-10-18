@@ -530,7 +530,7 @@ function nodusLocalMaxTokens(model: ModelRef, opts: CallOpts, requestedMax: numb
 import { withTranscript as __withTranscript, transcriptFetch as __transcriptFetch } from './transcript';
 
 export interface CallOpts {
-  /** Strict native JSON Schema, explicitly opted into by structured Research Chat only. */
+  /** Strict native JSON Schema, explicitly opted into by supported structured callers. */
   responseSchema?: ResearchNativeResponseSchema;
   /** Backend academic corpus requests only; include all final prompt/output bytes. */
   corpusContext?: boolean;
@@ -960,7 +960,7 @@ function optionalBody(model: ModelRef, jsonMode: boolean, reasoning: ReasoningEf
   if (opts.responseSchema) {
     const responseFormat = structuredResponseFormat(model.provider, opts.responseSchema);
     // If a caller supplies a schema for a provider without this contract, do not pretend
-    // that JSON mode enforces it. Structured Research Chat only opts in for OpenAI/router.
+    // that JSON mode enforces it. The caller must explicitly select a supported native contract.
     if (!responseFormat) throw new AiError('Native structured JSON schema is unavailable for this provider.', false, true, 'bad_request');
     const auditedOpenRouterProvider = process.env.NODUS_AUDIT_OPENROUTER_PROVIDER?.trim();
     return {

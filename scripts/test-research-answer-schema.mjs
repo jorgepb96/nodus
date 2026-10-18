@@ -94,6 +94,7 @@ try {
   assert.deepEqual(schemas.structuredResponseFormat('openai', schema), {
     type: 'json_schema', json_schema: { name: schema.name, strict: true, schema: normalizedSchema },
   });
+  assert.deepEqual(schemas.structuredResponseFormat('gemini', schema), schemas.structuredResponseFormat('openai', schema), 'Google supports an explicit native schema through its compatibility API');
   assert.equal(schemas.structuredResponseFormat('custom', schema), null);
   assert.equal(schemas.mayRetryWithoutStructuredSchema(schema), false);
   assert.equal(schemas.mayRetryWithoutStructuredSchema(undefined), true);
@@ -143,6 +144,11 @@ try {
   assert.deepEqual(requests[0].body.response_format, {
     type: 'json_schema', json_schema: { name: schema.name, strict: true, schema: normalizedSchema },
   }, 'OpenAI receives the same strict schema contract');
+
+  run([{ content: '{"ok":true}' }]);
+  await aiClient.completeJson({ system: 's', user: 'u', maxTokens: 128, responseSchema: schema }, guard,
+    { provider: 'gemini', model: 'gemini-2.5-flash-lite' });
+  assert.deepEqual(requests[0].body.response_format, schemas.structuredResponseFormat('gemini', schema), 'Google receives the explicit schema on the real completion transport');
 
   // A provider refusal is terminal for an opted-in schema request, even when noRetry is
   // false. No plain-body request may be dispatched after it.

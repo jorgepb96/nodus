@@ -118,7 +118,9 @@ export async function withResearchHarness<T extends object>(input: {
   }
   input.validate();
   if (record?.summary.status === 'cancelled') throw new Error('research_run_cancelled');
-  if (record?.summary.status === 'completed' && record.result) return structuredClone(record.result) as T;
+  // Older preview builds completed even when document verification failed
+  // technically. Such a run may retry verification through normal continuation.
+  if (record?.summary.status === 'completed' && record.result && !(record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure) return structuredClone(record.result) as T;
   if (runId && running.has(runId)) throw new Error('research_run_already_running');
   record ??= { context: input.context, request, requestKey, conversationId: request.conversationId, checkpoint: {}, stages: {},
     summary: { id: randomUUID(), conversationId: request.conversationId, version: 'v1', mode: input.context.mode, objective: input.context.objective, status: 'running', questions: [], tasks: [],
@@ -155,7 +157,7 @@ export async function withResearchHarness<T extends object>(input: {
         const reviewedChat = record.context.mode === 'chat' && (record.checkpoint.answerReview as { status?: string } | undefined)?.status === 'verified';
         const sufficient = !record.checkpoint.validationLimited && (record.checkpoint.direct || reviewedChat || harness.agenda.canFinish());
         const reason = (record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure ? 'technical' : record.summary.stopReason;
-        harness.stop('completed', reason === 'sufficient' && !sufficient ? 'sources_exhausted' : reason ?? (sufficient ? 'sufficient' : 'sources_exhausted'));
+        harness.stop(reason === 'technical' ? 'failed' : 'completed', reason === 'sufficient' && !sufficient ? 'sources_exhausted' : reason ?? (sufficient ? 'sufficient' : 'sources_exhausted'));
       }
       const summary = harness.summary();
       // Additive metadata keeps existing result and archive shapes compatible.

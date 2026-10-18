@@ -50,8 +50,20 @@ export async function verifyImmersionPlan(plan: ImmersionPlan, model: ModelRef |
   core.parts = core.parts.map(part => part.status === 'verified' && !part.claims.some(claim => claim.status === 'supported' && claim.kind !== 'nonfactual' && claim.evidence.length)
     ? { ...part, status: 'limited', text: '', issues: ['non_substantive_synthesis'] } : part);
   if (core.parts.some(part => part.status !== 'verified')) core.status = 'limited';
-  const details: ResearchDocumentReview = !core.technicalFailure && core.parts.some(part => part.status === 'verified')
-    ? await reviewResearchDocument(parts.filter(part => !coreParts.includes(part)), model, signal)
+  const retained = new Set(core.parts.filter(part => part.status === 'verified').map(part => Number(part.id.split(':')[1])));
+  const retainedIds = new Set(plan.stations.filter((_, index) => retained.has(index)).map(station => station.id));
+  const outline = plan.stations.filter((_, index) => retained.has(index)).map(station => ({ title: station.title, question: station.question }));
+  const detailParts = parts.filter(part => {
+    if (coreParts.includes(part)) return false;
+    const station = /^station:(\d+):/u.exec(part.id);
+    if (station) return retained.has(Number(station[1]));
+    const contrast = /^contrast:(\d+):/u.exec(part.id);
+    return !contrast || retainedIds.has(plan.contrasts.rows[Number(contrast[1])]?.stationId);
+  }).map(part => part.id === 'overview' || part.id.startsWith('exam:') || part.id === 'exercise'
+    ? { ...part, context: JSON.stringify({ fieldContext: part.context, retainedOutline: outline }),
+      remit: part.remit + ' This lesson retains only retainedOutline. Do not promise omitted stations or test material outside that outline. The outline is coverage context, never documentary evidence.' } : part);
+  const details: ResearchDocumentReview = !core.technicalFailure && retained.size
+    ? await reviewResearchDocument(detailParts, model, signal)
     : { parts: [] as typeof core.parts, status: 'limited' as const };
   const byId = new Map([...core.parts, ...details.parts].map(part => [part.id, part]));
   const review: ResearchDocumentReview = { parts: parts.map(part => byId.get(part.id) ?? { id: part.id, text: '', status: 'limited', claims: [], issues: [core.technicalFailure ?? 'unverified_field'] }),

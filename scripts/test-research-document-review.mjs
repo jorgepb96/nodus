@@ -189,7 +189,11 @@ try {
   {
     const original = reviewer.reviewResearchDocument;
     reviewer.reviewResearchDocument = async parts => {
-      if (parts.some(part => part.id.includes(':citation:'))) assert.equal(parts.find(part => part.id.includes(':citation:')).strictEvidence, true);
+      if (parts.some(part => part.id.includes(':citation:'))) {
+        assert.equal(parts.find(part => part.id.includes(':citation:')).strictEvidence, true);
+        assert.ok(!parts.some(part => part.id.startsWith('station:1:')), 'Optional review never spends on a rejected station');
+        assert.equal(JSON.parse(parts.find(part => part.id === 'overview').context).retainedOutline.length, 1, 'Orientation is scoped to the retained lesson');
+      }
       return { status: 'limited', parts: parts.map(part => ({ id: part.id, text: part.id === 'station:1:synthesis' || part.id.endsWith('quiz:0') ? '' : part.text,
         status: part.id === 'station:1:synthesis' || part.id.endsWith('quiz:0') ? 'limited' : 'verified', claims: [{ sentence: part.text, kind: 'attributed', status: 'supported', evidence: [{ id: 'p1', quote: 'A sufficiently long literal source statement.' }], reason: 'fixture' }], issues: [] })) };
     };

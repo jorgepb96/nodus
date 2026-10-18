@@ -18,7 +18,7 @@ export const RESEARCH_DOCUMENT_REVISION_SCHEMA = object({ parts: array(object({ 
 
 /** Fixed object keys make every requested field mandatory without asking the
  * model to copy/repeat IDs. The decoder restores those exact keys, never guesses. */
-export function researchDocumentFieldSchema(schema: Record<string, unknown>, fields: Array<{ id: string; sourceIds?: string[] }>, quoteKeys: string[] = []) {
+export function researchDocumentFieldSchema(schema: Record<string, unknown>, fields: Array<{ id: string; sourceIds?: string[]; paragraphs?: Array<{ index: number }> }>, quoteKeys: string[] = []) {
   const root = schema as { properties: { parts: { items: { properties: Record<string, unknown>; required: string[] } } } };
   return object({ parts: object(Object.fromEntries(fields.map(field => {
     const item = structuredClone(root.properties.parts.items);
@@ -29,6 +29,11 @@ export function researchDocumentFieldSchema(schema: Record<string, unknown>, fie
       proof.id = { type: 'string', enum: field.sourceIds.length ? field.sourceIds : ['__no_authorized_source__'] };
       proof.quote = { type: 'string', enum: quoteKeys.length ? quoteKeys : ['__no_quote__'] };
     }
+    if (claims && field.paragraphs) {
+      const paragraph = claims.items as unknown as { properties: Record<string, unknown>; required: string[] };
+      delete paragraph.properties.index; paragraph.required = paragraph.required.filter(key => key !== 'index');
+      item.properties.claims = object(Object.fromEntries(field.paragraphs.map(({ index }) => [`p${index}`, paragraph])));
+    }
     return [field.id, item];
   }))) });
 }
@@ -36,5 +41,10 @@ export function decodeResearchDocumentFields(value: unknown): unknown {
   if (!value || typeof value !== 'object' || !('parts' in value)) return value;
   const parts = value.parts;
   if (!parts || typeof parts !== 'object' || Array.isArray(parts)) return value;
-  return { parts: Object.entries(parts).map(([id, part]) => part && typeof part === 'object' ? { ...part, id } : part) };
+  return { parts: Object.entries(parts).map(([id, part]) => {
+    if (!part || typeof part !== 'object') return part;
+    const claims = 'claims' in part && part.claims && typeof part.claims === 'object' && !Array.isArray(part.claims)
+      ? Object.entries(part.claims).map(([key, claim]) => claim && typeof claim === 'object' ? { ...claim, index: /^p\d+$/u.test(key) ? Number(key.slice(1)) : -1 } : claim) : undefined;
+    return { ...part, ...(claims ? { claims } : {}), id };
+  }) };
 }

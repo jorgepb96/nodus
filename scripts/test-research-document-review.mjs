@@ -53,7 +53,7 @@ try {
       assert.ok(options.responseSchema, 'Supported providers receive a native schema');
       assert.deepEqual(Object.keys(options.responseSchema.schema.properties.parts.properties), ['fixed:field']);
       const value = input.parts[0].paragraphs ? proof(input) : semantic(input);
-      return { parts: Object.fromEntries(value.parts.map(({ id, ...field }) => [id, field])) };
+      return { parts: Object.fromEntries(value.parts.map(({ id, claims, ...field }) => [id, { ...field, ...(claims ? { claims: Object.fromEntries(claims.map(({ index, ...claim }) => ['p' + index, claim])) } : {}) }])) };
     });
     assert.equal(output.status, 'verified', 'Fixed native object keys decode to the same runtime proof contract');
     Object.assign(model, original);

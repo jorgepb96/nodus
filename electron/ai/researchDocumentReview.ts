@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v5';
+const POLICY = 'document-review-v6';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -47,10 +47,10 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   const options = target ? await researchGenerationOptions({ model: target, thinkingEffort: effort }, 8000, false, signal) : { maxTokens: 8000 };
   const semanticOptions = target ? await researchGenerationOptions({ model: target, thinkingEffort: effort }, 1800, false, signal) : { maxTokens: 1800 };
   const native = !!target && ['openai', 'openrouter', 'gemini'].includes(target.provider);
-  const documentJson = async <T>(name: string, schema: Record<string, unknown>, fields: Array<{ id: string; sourceIds?: string[] }>, opts: CallOpts, valid: (value: unknown) => value is T, quoteKeys: string[] = []): Promise<T> => {
+  const documentJson = async <T>(name: string, schema: Record<string, unknown>, fields: Array<{ id: string; sourceIds?: string[]; paragraphs?: Array<{ index: number }> }>, opts: CallOpts, valid: (value: unknown) => value is T, quoteKeys: string[] = []): Promise<T> => {
     const decode = (value: unknown) => native ? decodeResearchDocumentFields(value) : value;
     const value = decode(await completeJson({ ...opts, ...(native ? {
-      system: opts.system + '\nNATIVE FIELD CONTRACT: parts is an OBJECT with exactly the requested field IDs as keys, not an array. Each value contains the field result without an id property. Use the supplied native schema. Never duplicate a field per paragraph; claims remains the complete paragraph array for that field.',
+      system: opts.system + '\nNATIVE FIELD CONTRACT: parts is an OBJECT with exactly the requested field IDs as keys, not an array. Each value contains the field result without an id property. When claims is present, it is an OBJECT with exactly p0, p1, etc. for ALL supplied paragraph indices; its values omit index. Use the supplied native schema. Never omit a paragraph or duplicate a field per paragraph.',
       responseSchema: { name, schema: researchDocumentFieldSchema(schema, fields, quoteKeys) },
     } : {}) }, (value): value is unknown => valid(decode(value)), target));
     if (!valid(value)) throw new Error('invalid_document_review_transport');

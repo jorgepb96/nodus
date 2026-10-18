@@ -1,0 +1,182 @@
+[
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-statistics/0",
+    "answerSha256": "8dd0544f0ab2a2ce842f0ea75daf174383c1aa5675138d12f3051d611e9eecd2",
+    "sourcesSha256": "1e5c02d93c3056552c7df267c7d67028218fba2fddb02b64a8b6593e401f9603",
+    "evidenceSha256": "0c5066975b329cc52208c6abdccbcc2e1a7763c14f3fe465af3f228b201c6bbf",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Bruma passages support median18/mean24 and explicit non-equivalence; the answer gives a scoped inability to establish distribution shape rather than inventing skewness. Any difference24-18=6 is correct and labelled. Sample240/six villages/confidence95/correction239-to240 match the cited sources where included. Language repetitions refer to the visible repeated facts, not independent corroboration."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-paper/0",
+    "answerSha256": "361653d3d14414c15e4275b3671e1f2ae03dd1ac5ec925f9aab0498231bb18c1",
+    "sourcesSha256": "fa5187f9e472bee1e5f9d11f676b6e29e7cab54f6763bbae16fa09607ee6f314",
+    "evidenceSha256": "c4871548782f4a750a2fa967f7367dfa8b3fa1272694cdc157f18ff00367af39",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual QLoRA excerpts support the supplied NF4/quantile construction, DQ of constants, paged optimizers preventing checkpointing OOM and storage4bit/BF16 computation. Any extra GPU sizes, memory values and DQ equations match the actual excerpts/original pages. The earlier false future-work assertion is absent; quotations and attributed quantities checked separately."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price/0",
+    "answerSha256": "190a3e17156259c14b614aa899232bc7810f8227defa21539a1014e812b04a41",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "8eb44a19ea70d7c207b07ea62339acc6b0f29df0cba90c813b557fa00dd5d3d1",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes insufficient evidence without inventing a price. Any absence/exclusivity statement is scoped to the frozen authorized Alba excerpt, which was inspected and only contains turbidity530nm/oxygen exclusion/30-day calibration. BGE returns the localized gap with no authorized excerpts; this is not a refusal of an available price fact."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data/0",
+    "answerSha256": "b7358eea56b9a7faf55ca30a711bfcbc761660b006e026a4cb1a58b1b67ca3d2",
+    "sourcesSha256": "04ca96b490de10097e78fce64355c3c6e5cab6da9878bd5205d94a0e2dca9f97",
+    "evidenceSha256": "fd92ec9e2e3bf1d79f29634c16012ada60bc6093c51aee5e3cc0c722f11c3ea3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes inability to identify individual respondent values rather than fabricating data. Any extra aggregate/correction values match the inspected Bruma excerpts. Scoped absence of individual data is checked against authorized excerpts, not claimed for complete documents."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-statistics/0",
+    "answerSha256": "71bc511ccdf4cf63846e8ea592ceafdc1df87e07484ee96b07a830ea6ceea2b6",
+    "sourcesSha256": "42e68b53d630344c50dc23fd56f048d8069a9c3be6fdbf5f411f22c7973d42f3",
+    "evidenceSha256": "84484be8da416f6272f64c8629653ddd6571364da5237cf45a60cd2c53636e0e",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Bruma passages support median18/mean24 and explicit non-equivalence; the answer gives a scoped inability to establish distribution shape rather than inventing skewness. Any difference24-18=6 is correct and labelled. Sample240/six villages/confidence95/correction239-to240 match the cited sources where included. Language repetitions refer to the visible repeated facts, not independent corroboration."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-paper/0",
+    "answerSha256": "976fba460f3de2d6a78f389a70910716f8ec8d47647b42332982eb37701f4915",
+    "sourcesSha256": "1ea19e0d28be2842d378be913ff2c9834a9fafe862867d450dd458e25f00fe58",
+    "evidenceSha256": "3225aa4cc4bd3587bdc9820b05e039a7ff8fc7f958c94bbd3fa51a533569fc0f",
+    "faithful": false,
+    "adequate": true,
+    "notes": "FAIL technical terminology: the Spanish answer says the tensor is desconvoluciona (dequantize). Deconvolution is not dequantization; adding the correct English term in parentheses does not make the Spanish operation faithful. Requested mechanisms/storage-vs-compute are otherwise addressed. Compared the actual QLoRA p4 excerpt and original PDF."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-price/0",
+    "answerSha256": "a64d807ae8fbfe98016d4147ea194edee26d475f98efccc934726281287171ad",
+    "sourcesSha256": "bc2faa71f08c5548943f2af399e850cd885749ab8abb12d6a018460680a4b4ff",
+    "evidenceSha256": "a2419947b18f0381fd3b51a51cfcf370506dd8ef494705ffa332bdee88fba515",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes insufficient evidence without inventing a price. Any absence/exclusivity statement is scoped to the frozen authorized Alba excerpt, which was inspected and only contains turbidity530nm/oxygen exclusion/30-day calibration. BGE returns the localized gap with no authorized excerpts; this is not a refusal of an available price fact."
+  },
+  {
+    "key": "multilingual-e5-small-int8/heldout-absent-data/0",
+    "answerSha256": "23fcb781f2404b807b4fa97273da529bb133754326df72b9d7c4e5d0fb5144ad",
+    "sourcesSha256": "2f47ee45e1a3fea142402435c800a83fff8622fbd648a3bfe71c6b5f1086d86e",
+    "evidenceSha256": "3b723e72ab9d2d20a9d7875bd5864c67e66a2fd9794e8552e4905ecc68b9acc2",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes inability to identify individual respondent values rather than fabricating data. Any extra aggregate/correction values match the inspected Bruma excerpts. Scoped absence of individual data is checked against authorized excerpts, not claimed for complete documents."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-statistics/0",
+    "answerSha256": "71cfbeb20d81ebd82ddbac276fc433da4469f95b9b44f3782c747fb68279bb09",
+    "sourcesSha256": "068c7e7ebf3b7cb173cd5d0da375ea3226b82d4aaae22082540ddde2557c1b6b",
+    "evidenceSha256": "916d633b0c1f33bc8a3520756e31f12cb7e33592088bdfb9bd8a72f499ed5744",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Bruma passages support median18/mean24 and explicit non-equivalence; the answer gives a scoped inability to establish distribution shape rather than inventing skewness. Any difference24-18=6 is correct and labelled. Sample240/six villages/confidence95/correction239-to240 match the cited sources where included. Language repetitions refer to the visible repeated facts, not independent corroboration."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-paper/0",
+    "answerSha256": "e0731f7aa480aae7a52553831ebee1b19ef88416bd27c2415ebf7a14393ee39f",
+    "sourcesSha256": "16523b8ba1e4e9128795c645ec158775702a6505d8448f4ea5d1f3b54fe15d69",
+    "evidenceSha256": "d2e7c3f90e6348933496d9c5711280eddc64577d81c25bad22e41f4b5b029b96",
+    "faithful": false,
+    "adequate": true,
+    "notes": "FAIL technical terminology: informáticamente óptimo changes information-theoretically optimal into an approximate computational claim. The source states optimality in information theory for normal weights, not computational optimality. Main requested QLoRA facets are otherwise supplied."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-price/0",
+    "answerSha256": "a01fc2d30b3510872b0ece091e9829fe64a784add2b69fd05083b721e8f89c16",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "f88816196466e794829e65f17aea4556e47d1b8c03af8c1b9a1c9a7b46612ba3",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes insufficient evidence without inventing a price. Any absence/exclusivity statement is scoped to the frozen authorized Alba excerpt, which was inspected and only contains turbidity530nm/oxygen exclusion/30-day calibration. BGE returns the localized gap with no authorized excerpts; this is not a refusal of an available price fact."
+  },
+  {
+    "key": "gte-multilingual-base-int8/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "f989fa320c60b28a5b8c61cfd79b210726768ddf79ee3833a04c6c4f0eb449e8",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes inability to identify individual respondent values rather than fabricating data. Any extra aggregate/correction values match the inspected Bruma excerpts. Scoped absence of individual data is checked against authorized excerpts, not claimed for complete documents."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-statistics/0",
+    "answerSha256": "db0d1f0c590d0e259adcaeb1a375d2c2fa6576e16c2d6f4c26f4eb487e2496f1",
+    "sourcesSha256": "6ebbad9ebcae54b127d924dcfc3fe1395048adca8d4756c1c0293f18fea59c36",
+    "evidenceSha256": "9c484f3f063fa5982b29033dcc88a2a1598a48ee606ebd66a7a3ee4570184cd4",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual Bruma passages support median18/mean24 and explicit non-equivalence; the answer gives a scoped inability to establish distribution shape rather than inventing skewness. Any difference24-18=6 is correct and labelled. Sample240/six villages/confidence95/correction239-to240 match the cited sources where included. Language repetitions refer to the visible repeated facts, not independent corroboration."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-paper/0",
+    "answerSha256": "58590750bedd85cbbf3adf9e5132e85cef3cd5a19cc1cdd07622853685e897f9",
+    "sourcesSha256": "ff2593c76938116314f8342a0102a66b7f6012746b897915593bfd3bdd05477a",
+    "evidenceSha256": "785e1baaca69ed11c70ca02adbe9238cc63550f6e54e496c71cdc733d1ebef59",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual QLoRA excerpts support the supplied NF4/quantile construction, DQ of constants, paged optimizers preventing checkpointing OOM and storage4bit/BF16 computation. Any extra GPU sizes, memory values and DQ equations match the actual excerpts/original pages. The earlier false future-work assertion is absent; quotations and attributed quantities checked separately."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-price/0",
+    "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "ad9012f0de01761dd14b1b6a0d065a6da2647350122ba122bf23629a387a17fc",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes insufficient evidence without inventing a price. Any absence/exclusivity statement is scoped to the frozen authorized Alba excerpt, which was inspected and only contains turbidity530nm/oxygen exclusion/30-day calibration. BGE returns the localized gap with no authorized excerpts; this is not a refusal of an available price fact."
+  },
+  {
+    "key": "bge-m3-q8_0/heldout-absent-data/0",
+    "answerSha256": "e4f1fc4e26093c9871274a02ed8ab8b4a1d23ca860d9ac0a2179594076b540cc",
+    "sourcesSha256": "a8586cd0234daeedd73435c146e8534ea57da1f5e4b5c16cad04721bec8368f1",
+    "evidenceSha256": "962e59746774da60bc71b23ded11f2360769b644b938a57b5edb6b9866035b3a",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes inability to identify individual respondent values rather than fabricating data. Any extra aggregate/correction values match the inspected Bruma excerpts. Scoped absence of individual data is checked against authorized excerpts, not claimed for complete documents."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-statistics/0",
+    "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "4666cfcc4612a0631418cea6d9889e7f5dbe9577a8b8511a9f029da7d6c4235f",
+    "faithful": false,
+    "adequate": false,
+    "notes": "FAIL availability: the already audited answer gives median 18/mean 24 and a precise inability to establish distribution shape. Both coverage confirmations nonetheless request the same scoped limit, so no answer publishes. Not a successful factual response or correct refusal."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-paper/0",
+    "answerSha256": "08771c8399796a17060df55b9598dee4f683e29d9a308bf193bcb3786437b256",
+    "sourcesSha256": "3d5aebe655327e35433a8245a1bcca03aa4a010e0e186722a596eefc7a83199b",
+    "evidenceSha256": "8855cf55e7dbb9efe99882c610377dae94c978c1b73f2a359803b5cf2352a0bb",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Actual QLoRA excerpts support the supplied NF4/quantile construction, DQ of constants, paged optimizers preventing checkpointing OOM and storage4bit/BF16 computation. Any extra GPU sizes, memory values and DQ equations match the actual excerpts/original pages. The earlier false future-work assertion is absent; quotations and attributed quantities checked separately."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price/0",
+    "answerSha256": "154e196d9477f11af111505813713ee954839ce2f50018a29d0d7aff64e61669",
+    "sourcesSha256": "57d33511582db05d791942ec427fafae153b093ff7aee8e177768d688702278a",
+    "evidenceSha256": "a1a6d90b877c0ee0a2fc2045967aaf09d91e21d6874d34228f6489d5ae8ac4f5",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes insufficient evidence without inventing a price. Any absence/exclusivity statement is scoped to the frozen authorized Alba excerpt, which was inspected and only contains turbidity530nm/oxygen exclusion/30-day calibration. BGE returns the localized gap with no authorized excerpts; this is not a refusal of an available price fact."
+  },
+  {
+    "key": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data/0",
+    "answerSha256": "875266698552893516c96a35abe9180a64253401bb5f64eaad380ee49dcd4c6d",
+    "sourcesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "evidenceSha256": "0814ad4e357151c974601392d885494fc9fbef3e77e5a1656630625a98d9c9bb",
+    "faithful": true,
+    "adequate": true,
+    "notes": "Recognizes inability to identify individual respondent values rather than fabricating data. Any extra aggregate/correction values match the inspected Bruma excerpts. Scoped absence of individual data is checked against authorized excerpts, not claimed for complete documents."
+  }
+]

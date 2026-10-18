@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-d1f054bc08794b03cd830dcc",
+      "answerSha256": "8c02748ff1d16f4102ff5555dfe8c4bfd921435421ecce0797568e4401d6d04e",
+      "sourceHash": "051bc9177bc0a07932abdf0ebde8f5f2f2534cd82979a021ea0f43ebaedf67dd",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_007",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer fully addresses whether the Bruma mean and median should be reported as the same statistic. Source-4 (fixture 14, p. 1) explicitly states that the median was 18, the mean was 24, and they are not equivalent, supporting the negative answer, both numerical values, and the attribution. Its citation exactly matches the supplied source-4 citation. Source-2 and source-5 independently corroborate median 18 and mean 24. No dates, units, or additional calculations are asserted, and no material unsupported claims or unresolved evidence gaps occur."
+    }
+  ]
+}

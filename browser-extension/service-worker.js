@@ -1,17 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Jorge Pérez Burgueño and Nodus contributors
 
-import { extensionOrigin, requestLocalJson } from './lib/connection.js';
+import { extensionOrigin, normalizeConnectorPort, requestLocalJson } from './lib/connection.js';
 import { MAX_ATTACHMENT_BYTES, readResponseWithLimit } from './lib/upload.js';
+import { createCaptureQueue } from './lib/capture-jobs.js';
+import { attachmentOrigins } from './lib/capture-review.js';
 
-const JOB_KEY = 'nodusPendingUploadJob';
-const activeJobs = new Map();
-
-// Warnings raised here are rendered by the popup, so they use its catalog too.
+const JOB_PREFIX = 'nodusCaptureJob:';
+const GRANT_PREFIX = 'nodusCaptureGrant:';
 const msg = (key, substitutions) => chrome.i18n.getMessage(key, substitutions) || key;
 const attachmentName = (attachment) => attachment.title || msg('attachment');
-
-function baseUrl(port) { return `http://127.0.0.1:${port}`; }
+function baseUrl(port) { return `http://127.0.0.1:${normalizeConnectorPort(port)}`; }
+async function api(path, options = {}, port) {
+  const stored = await chrome.storage.local.get({ port: 4321, token: '' });
+  const origin = extensionOrigin(chrome.runtime.getURL);
+  const result = await requestLocalJson(`${baseUrl(port || stored.port)}${path}`, {
+    ...options, headers: { 'Content-Type': 'application/json', Origin: origin, 'X-Nodus-Extension-Origin': origin,
+      ...(stored.token ? { Authorization: `Bearer ${stored.token}` } : {}), ...options.headers },
+  });
+  if (!result.ok) throw new Error(result.data.error || msg('nodusReturnedError', [String(result.status)]));
+  return result.data;
+}
 
 async function uploadAttachment(job, attachment) {
   let sourceUrl;
@@ -28,7 +37,7 @@ async function uploadAttachment(job, attachment) {
   const result = await requestLocalJson(`${baseUrl(job.port)}/api/browser/items/${encodeURIComponent(job.itemId)}/attachments`, {
     method: 'POST', body: bytes,
     headers: {
-      Authorization: `Bearer ${job.token}`,
+      Authorization: `Bearer ${(await chrome.storage.local.get({ token: '' })).token}`,
       Origin: origin,
       'X-Nodus-Extension-Origin': origin,
       'Content-Type': 'application/octet-stream',
@@ -43,58 +52,126 @@ async function uploadAttachment(job, attachment) {
   return result.data;
 }
 
-async function processJob(input) {
-  const boundedUploads = input.pendingUploads.filter((entry) => entry && typeof entry.url === 'string').slice(0, 8);
-  const boundedInput = { ...input, pendingUploads: boundedUploads };
-  const persisted = (await chrome.storage.local.get(JOB_KEY))[JOB_KEY];
-  const job = persisted?.itemId === input.itemId ? { ...boundedInput, ...persisted, pendingUploads: boundedUploads } : { ...boundedInput, completed: [], warnings: [] };
-  const completed = new Set(job.completed || []);
-  const warnings = [...(job.warnings || [])];
-  let attachmentCount = Number(job.attachmentCount || input.attachmentCount || 0);
-  try {
-    for (let index = 0; index < job.pendingUploads.length; index += 1) {
-      if (completed.has(index)) continue;
-      await chrome.storage.local.set({ [JOB_KEY]: { ...job, completed: [...completed], warnings, currentIndex: index } });
-      try {
-        const result = await uploadAttachment(job, job.pendingUploads[index]);
-        attachmentCount = result.attachmentCount ?? attachmentCount + 1;
-        completed.add(index);
-        await chrome.storage.local.set({ [JOB_KEY]: { ...job, completed: [...completed], warnings, attachmentCount, currentIndex: index + 1 } });
-      } catch (error) {
-        warnings.push(error.message || String(error));
-        completed.add(index);
-        await chrome.storage.local.set({ [JOB_KEY]: { ...job, completed: [...completed], warnings, attachmentCount, currentIndex: index + 1 } });
-      }
-    }
-  } finally {
-    const temporaryOrigins = Array.isArray(job.temporaryOrigins) ? job.temporaryOrigins : [];
-    if (temporaryOrigins.length && chrome.permissions?.remove) {
-      try { await chrome.permissions.remove({ origins: temporaryOrigins }); } catch { /* best effort */ }
-    }
-    await chrome.storage.local.remove(JOB_KEY);
+
+async function listJobs() {
+  const stored = await chrome.storage.local.get(null);
+  return Object.entries(stored).filter(([key]) => key.startsWith(JOB_PREFIX)).map(([, job]) => job).sort((a, b) => b.createdAt - a.createdAt);
+}
+const queue = createCaptureQueue({
+  list: listJobs,
+  put: (job) => chrome.storage.local.set({ [`${JOB_PREFIX}${job.id}`]: job }),
+  save: (request, job) => api('/api/browser/save', { method: 'POST', body: JSON.stringify(request) }, job.port),
+  canUpload: (attachment) => chrome.permissions.contains({ origins: attachmentOrigins([attachment]) }),
+  upload: (itemId, attachment, job) => uploadAttachment({ ...job, itemId }, attachment),
+  cleanup: cleanupJobs,
+});
+
+async function cleanupJobs() {
+  const jobs = await listJobs();
+  const needed = new Set(jobs.flatMap((job) => job.entries.flatMap((entry) => attachmentOrigins(entry.uploads.filter((upload) => !['complete', 'failed'].includes(upload.status)).map((upload) => upload.attachment)))));
+  const grants = await chrome.storage.local.get(null);
+  const temporaryOrigins = Object.keys(grants).filter((key) => key.startsWith(GRANT_PREFIX)).map((key) => key.slice(GRANT_PREFIX.length)).filter((origin) => !needed.has(origin));
+  if (temporaryOrigins.length && chrome.permissions?.remove) {
+    await chrome.permissions.remove({ origins: temporaryOrigins });
+    await chrome.storage.local.remove(temporaryOrigins.map((origin) => `${GRANT_PREFIX}${origin}`));
   }
-  return { ok: true, itemId: job.itemId, attachmentCount, warnings };
+  const expired = jobs.filter((job) => job.status === 'complete').slice(20);
+  if (expired.length) await chrome.storage.local.remove(expired.map((job) => `${JOB_PREFIX}${job.id}`));
 }
 
-function startJob(input) {
-  const key = String(input.itemId);
-  if (!activeJobs.has(key)) {
-    const promise = processJob(input).finally(() => activeJobs.delete(key));
-    activeJobs.set(key, promise);
-  }
-  return activeJobs.get(key);
+// Only user-requested operations keep the worker alive; stop as soon as they end.
+// Alarms provide recovery if Chromium still terminates a worker or Chrome restarts.
+async function keepAlive(operation) {
+  const timer = setInterval(() => { void chrome.runtime.getPlatformInfo(); }, 20_000);
+  try { return await operation(); } finally { clearInterval(timer); }
 }
-
-async function resumePersistedJob() {
-  const stored = (await chrome.storage.local.get(JOB_KEY))[JOB_KEY];
-  if (stored?.itemId && Array.isArray(stored.pendingUploads)) await startJob(stored);
+function run(id, retry = false) { return keepAlive(() => queue.run(id, retry)); }
+let pairing = null;
+async function pair(port, pageUrl) {
+  if (!pairing) {
+    pairing = keepAlive(async () => {
+      const paired = await api('/api/browser/pair', { method: 'POST', body: JSON.stringify({
+        extensionVersion: chrome.runtime.getManifest().version, extensionId: chrome.runtime.id, pageUrl,
+      }) }, port);
+      await chrome.storage.local.set({ port, token: paired.token });
+      return paired;
+    }).finally(() => { pairing = null; });
+  }
+  return pairing;
+}
+async function migrateLegacyTransfer() {
+  const legacyKey = 'nodusPendingUploadJob';
+  const stored = (await chrome.storage.local.get(legacyKey))[legacyKey];
+  if (!stored?.itemId || !Array.isArray(stored.pendingUploads)) return;
+  const id = '00000000-0000-4000-8000-000000000001';
+  const existing = (await chrome.storage.local.get(`${JOB_PREFIX}${id}`))[`${JOB_PREFIX}${id}`];
+  if (!existing) {
+    const grants = (Array.isArray(stored.temporaryOrigins) ? stored.temporaryOrigins : [])
+      .filter((origin) => typeof origin === 'string' && /^https?:\/\//.test(origin));
+    const job = {
+      id, title: msg('capturedDocument'), port: normalizeConnectorPort(stored.port),
+      status: 'queued', createdAt: Date.now(), updatedAt: Date.now(),
+      entries: [{
+        title: msg('capturedDocument'), request: null, error: null,
+        result: { ok: true, itemId: stored.itemId, attachmentCount: stored.attachmentCount || 0, warnings: [], pendingUploads: [], disposition: 'updated' },
+        uploads: stored.pendingUploads.slice(0, 8).map((attachment) => ({ attachment, status: 'queued', error: null })),
+      }],
+    };
+    await chrome.storage.local.set({
+      ...Object.fromEntries(grants.map((origin) => [`${GRANT_PREFIX}${origin}`, true])),
+      [`${JOB_PREFIX}${id}`]: job,
+    });
+  }
+  // Old records stored a token in the job. The new worker reads current pairing.
+  await chrome.storage.local.remove(legacyKey);
+}
+const migrated = migrateLegacyTransfer();
+async function resume() {
+  await migrated;
+  await keepAlive(() => queue.resume());
+  // A worker can stop after the final acknowledgement but before cleanup.
+  await cleanupJobs();
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message?.type !== 'nodus:upload-pending' || !message.itemId || !Array.isArray(message.pendingUploads)) return false;
-  startJob(message).then(sendResponse).catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
+  if (!message?.type?.startsWith('nodus:') || (sender.id && sender.id !== chrome.runtime.id)) return false;
+  (async () => {
+    if (message.type === 'nodus:open') return api('/api/browser/open', { method: 'POST', body: JSON.stringify({ itemId: String(message.itemId || '') }) }, normalizeConnectorPort(message.port));
+    if (message.type === 'nodus:pair') return pair(normalizeConnectorPort(message.port), String(message.pageUrl || ''));
+    if (message.type === 'nodus:enqueue') {
+      if (!Array.isArray(message.requests) || !message.requests.length || message.requests.length > 50) throw new Error('Invalid capture batch.');
+      const job = await queue.enqueue(message.requests, { port: normalizeConnectorPort(message.port) });
+      void run(job.id).catch(() => undefined);
+      return { ok: true, job };
+    }
+    if (message.type === 'nodus:jobs') {
+      const jobs = await listJobs();
+      const origins = [...new Set(jobs.filter((job) => job.status !== 'complete').flatMap((job) => job.entries.flatMap((entry) => attachmentOrigins(entry.uploads.filter((upload) => upload.status !== 'complete').map((upload) => upload.attachment)))) )];
+      const missingOrigins = [];
+      for (const origin of origins) if (!(await chrome.permissions.contains({ origins: [origin] }))) missingOrigins.push(origin);
+      return { ok: true, jobs, missingOrigins };
+    }
+    if (message.type === 'nodus:retry') {
+      void run(String(message.id), true).catch(() => undefined);
+      return { ok: true };
+    }
+    return { ok: false };
+  })().then(sendResponse).catch((error) => sendResponse({ ok: false, error: error.message || String(error) }));
   return true;
 });
-
-// Give an interrupted queue another chance after Chrome restarts the browser.
-chrome.runtime.onStartup.addListener(() => { void resumePersistedJob(); });
+chrome.permissions.onAdded.addListener((permissions) => {
+  void (async () => {
+    const jobs = await listJobs();
+    for (const job of jobs.filter((entry) => entry.status !== 'complete')) {
+      const needed = attachmentOrigins(job.entries.flatMap((entry) => entry.uploads.filter((upload) => upload.status !== 'complete').map((upload) => upload.attachment)));
+      const grants = (permissions.origins || []).filter((origin) => needed.includes(origin));
+      if (!grants.length) continue;
+      await chrome.storage.local.set(Object.fromEntries(grants.map((origin) => [`${GRANT_PREFIX}${origin}`, true])));
+      void run(job.id, true).catch(() => undefined);
+    }
+  })();
+});
+chrome.runtime.onStartup.addListener(() => { void resume().catch(() => undefined); });
+chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === 'nodus-capture-recovery') void resume().catch(() => undefined); });
+void chrome.alarms.create('nodus-capture-recovery', { periodInMinutes: 1 });
+void resume().catch(() => undefined);

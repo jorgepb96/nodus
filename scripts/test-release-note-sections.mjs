@@ -10,6 +10,8 @@ const { RELEASE_NOTES, RELEASE_CATEGORIES, RELEASE_SECTION_LABELS, RELEASE_EMPTY
 const languages = ['es','en','fr','de','pt','pt-BR','it','tr','zh-CN','zh-TW','ja','ko'];
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const current = RELEASE_NOTES[0];
+// Five published, categorized highlights for the synthetic ordering checks.
+const sample = RELEASE_NOTES.find(note => note.version === '5.11.0');
 
 test('the modal covers every language available in the interface', async () => {
   const types = await readFile(new URL('../shared/types.ts', import.meta.url), 'utf8');
@@ -17,19 +19,26 @@ test('the modal covers every language available in the interface', async () => {
   assert.ok(declaration, 'the interface language union exists');
   const supported = [...declaration[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
   assert.deepEqual(languages, supported);
-  assert.match(current.highlights[0].en, /Simple, Intermediate, Advanced and Custom/);
-  assert.match(current.highlights[1].en, /12 resumable lessons in the real workspace/);
-  assert.match(current.highlights[2].en, /Bookmarks is the default home page/);
-  assert.equal(current.highlights.filter(highlight => highlight.category === 'new' && /interface profiles/.test(highlight.en)).length, 1, 'each new feature appears once with its final behavior');
+  const minor = RELEASE_NOTES.find(note => note.version === '5.10.0');
+  assert.match(minor.highlights[0].en, /Simple, Intermediate, Advanced and Custom/);
+  assert.match(minor.highlights[1].en, /12 resumable lessons in the real workspace/);
+  assert.match(minor.highlights[2].en, /Bookmarks is the default home page/);
+  assert.equal(minor.highlights.filter(highlight => highlight.category === 'new' && /interface profiles/.test(highlight.en)).length, 1, 'each new feature appears once with its final behavior');
 });
 
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.10.0');
-  assert.equal(current.highlights.length, 18);
-  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','enhancement','enhancement','enhancement','enhancement','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix','fix','fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['academic','academic','browser','general','general','general','general','ai','ai','academic','languages','languages','ai','ai','server','toolkit','academic','general']);
+  assert.equal(current.version, '5.12.1');
+  assert.equal(current.highlights.length, 3);
+  assert.deepEqual(current.highlights.map(h => h.category), ['enhancement','enhancement','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','ai','ai']);
+  assert.match(current.highlights[0].en, /^In Research Chat, Indexed texts no longer switches off the other sources/);
+  assert.equal(current.highlights.filter(highlight => /Full documents/.test(highlight.en)).length, 1, 'the Full documents rename appears once with its final behavior');
+  assert.match(current.highlights[1].en, /^In the Simple interface, a new Research Chat conversation starts with only Indexed texts on/);
+  assert.match(current.highlights[2].en, /^Synthesis routes use the forward step search with precedents again/);
+  // 5.12.0 introduced the Indexed texts mode. Its note stays as published.
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.12.0').highlights[0].en, /^Research Chat has a new Indexed texts mode/);
   for (const lang of languages) for (const highlight of current.highlights) {
     assert.ok(highlight[lang].length > 30, `${lang}: complete note`);
     if (lang !== 'en') assert.notEqual(highlight[lang], highlight.en, `${lang}: native translation`);
@@ -61,27 +70,29 @@ test('only v5 and future releases use the three translated sections, including e
       for (const section of sections) assert.ok(section.highlights.every(h => h.category === section.category));
     }
   }
-  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [current.highlights[10]] };
+  const fixesOnly = { version: '6.0.1', date: current.date, highlights: [sample.highlights[2]] };
   assert.deepEqual(releaseNoteSections(fixesOnly).map(s => s.highlights.length), [0,0,1]);
   assert.equal(releaseNoteMarkdown(fixesOnly).split(RELEASE_EMPTY_SECTION.en).length - 1, 2);
-  assert.throws(() => releaseNoteSections({ ...fixesOnly, highlights: [{ ...current.highlights[0], category: undefined }] }), /uncategorized/);
+  assert.throws(() => releaseNoteSections({ ...fixesOnly, highlights: [{ ...sample.highlights[0], category: undefined }] }), /uncategorized/);
   assert.throws(() => releaseNoteMarkdown({ ...fixesOnly, highlights: [] }), /no highlights/);
 });
 
 test('scope ordering stays inside each section, with stable ties', () => {
-  const a = { ...current.highlights[0], scope: 'toolkit', category: 'new' };
-  const b = { ...current.highlights[1], scope: 'library', category: 'new' };
-  const c = { ...current.highlights[2], scope: 'library', category: 'new' };
-  const d = { ...current.highlights[3], scope: 'toolkit', category: 'enhancement' };
-  const e = { ...current.highlights[4], scope: 'ai', category: 'fix' };
+  const a = { ...sample.highlights[0], scope: 'toolkit', category: 'new' };
+  const b = { ...sample.highlights[1], scope: 'library', category: 'new' };
+  const c = { ...sample.highlights[2], scope: 'library', category: 'new' };
+  const d = { ...sample.highlights[3], scope: 'toolkit', category: 'enhancement' };
+  const e = { ...sample.highlights[4], scope: 'ai', category: 'fix' };
   const note = { ...current, highlights: [a, e, b, d, c] };
   assert.deepEqual(releaseNoteSections(note).flatMap(s => s.highlights), [b, c, a, d, e]);
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) =>
-    `## ${title}\n\n` + current.highlights.slice([0,3,10][i], [3,10,18][i]).map(h => `- ${h.en}`).join('\n\n')
-  ).join('\n\n') + '\n';
+  // 5.12.1 has no new features: that section states it has no changes.
+  const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
+    const entries = current.highlights.slice([0,0,2][i], [0,2,3][i]);
+    return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
+  }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);
   await assert.rejects(generateReleaseNotes('v99.0.0'), /does not match/);
   const dir = await mkdtemp(path.join(os.tmpdir(), 'nodus-release-description-'));

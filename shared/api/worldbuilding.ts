@@ -302,7 +302,8 @@ export interface WorldbuildingApi {
     request: WorldChatRequest,
     handlers: { onDelta: (delta: string) => void }
   ): Promise<WorldChatResult>;
-  cancelWorldChat(): Promise<void>;
+  /** Without a conversation, aborts the stream started last. */
+  cancelWorldChat(conversationId?: string): Promise<void>;
   /** Archived chats only when asked for. */
   listWorldChatConversations(includeArchived?: boolean): Promise<WorldChatConversationSummary[]>;
   getWorldChatConversation(id: string): Promise<WorldChatConversation | null>;

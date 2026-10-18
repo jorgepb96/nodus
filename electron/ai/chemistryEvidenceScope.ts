@@ -16,7 +16,7 @@ export interface ChemistryEvidenceScope {
 
 export function chemistryEvidenceScope(request: ResearchChatRequest): ChemistryEvidenceScope {
   const notebook = requestNotebookScope(request);
-  const documents = researchContextLayers(request.selection, !!notebook || getActiveVault().type === 'academic').documents;
+  const documents = researchContextLayers(request.selection, !!notebook || getActiveVault().type === 'academic').indexed;
   const selected = notebook
     ? new Set(notebook.documents.flatMap(document => document.workId ? [document.workId] : []))
     : resolveResearchSourceWorkIds(request.selection.sourceFilter);

@@ -1,0 +1,4985 @@
+{
+  "format": "nodus.embedding-desktop-capacity/1",
+  "profile": "embeddinggemma-2-text-q8-256-v1",
+  "root": "/private/tmp/nodus-research-DyXiKZ",
+  "source": "/private/tmp/nodus-research-VM32bn",
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true,
+    "allowedLoopbackPorts": []
+  },
+  "counts": [
+    {
+      "count": 1000,
+      "coldMs": 2322.988125,
+      "timings": [
+        355.0062909999997,
+        282.7828750000008,
+        273.95291599999837,
+        284.1039579999997,
+        285.28816599999845,
+        288.205667000002,
+        302.0745419999985,
+        282.1319579999981,
+        263.04233300000124,
+        268.7217500000006,
+        284.59333400000105,
+        267.16670800000065,
+        280.20866600000227,
+        279.164249999998,
+        287.1178749999999,
+        281.0985419999997,
+        281.2732920000017,
+        269.2404170000009,
+        278.3392500000009,
+        270.8407079999997
+      ],
+      "questions": [
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 0.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 1.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 2.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 3.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 4.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 5.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 6.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 7.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 8.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 9.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 10.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 11.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 12.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 13.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 14.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 15.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 16.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 17.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 18.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 19.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 20."
+      ],
+      "queryTokenCounts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31
+      ],
+      "p50Ms": 281.0985419999997,
+      "p95Ms": 302.0745419999985,
+      "maximumFrameGapMs": 116.70000000000005,
+      "baseline": [
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 1.418492,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27765,
+          "type": "Browser",
+          "creationTime": 1791408996755.889,
+          "memory": {
+            "workingSetSize": 506864,
+            "peakWorkingSetSize": 508224
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.063088,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27766,
+          "type": "GPU",
+          "creationTime": 1791408997510.327,
+          "serviceName": "GPU",
+          "memory": {
+            "workingSetSize": 93920,
+            "peakWorkingSetSize": 93920
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.045282,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27767,
+          "type": "Utility",
+          "creationTime": 1791408997513.39,
+          "serviceName": "network.mojom.NetworkService",
+          "name": "Network Service",
+          "memory": {
+            "workingSetSize": 41728,
+            "peakWorkingSetSize": 41728
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.461287,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27768,
+          "type": "Tab",
+          "creationTime": 1791408997806.374,
+          "memory": {
+            "workingSetSize": 240112,
+            "peakWorkingSetSize": 240112
+          },
+          "sandboxed": true
+        }
+      ],
+      "metrics": [
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 16.800924,
+            "percentCPUUsage": 10.019934333958725,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27765,
+          "type": "Browser",
+          "creationTime": 1791408996755.889,
+          "memory": {
+            "workingSetSize": 1272640,
+            "peakWorkingSetSize": 1332928
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.646084,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27766,
+          "type": "GPU",
+          "creationTime": 1791408997510.327,
+          "serviceName": "GPU",
+          "memory": {
+            "workingSetSize": 222640,
+            "peakWorkingSetSize": 348544
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.052397,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27767,
+          "type": "Utility",
+          "creationTime": 1791408997513.39,
+          "serviceName": "network.mojom.NetworkService",
+          "name": "Network Service",
+          "memory": {
+            "workingSetSize": 42224,
+            "peakWorkingSetSize": 42288
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.890386,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27768,
+          "type": "Tab",
+          "creationTime": 1791408997806.374,
+          "memory": {
+            "workingSetSize": 384400,
+            "peakWorkingSetSize": 384656
+          },
+          "sandboxed": true
+        }
+      ],
+      "fullAppRssKiB": 1921904,
+      "runtimeRssGrowthKiB": 1039280,
+      "trace": {
+        "at": "2026-10-07T21:36:46.892Z",
+        "type": "documentary-retrieval",
+        "query": "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 20.",
+        "profile": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1"
+        },
+        "contract": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1",
+          "dim": 256,
+          "protocol": "embeddinggemma2-text/1",
+          "task": {
+            "document": "title: {title|none} | text: ",
+            "query": "task: search result | query: "
+          },
+          "preprocessing": {
+            "maxTokens": 8192,
+            "output": "sentence_embedding",
+            "projection": "onnx-model",
+            "reduction": "matryoshka-prefix",
+            "specialTokens": true,
+            "titleFallback": "none",
+            "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+            "truncation": false,
+            "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+          },
+          "normalization": "l2-after-reduction",
+          "quantization": "onnx-q8",
+          "configVersion": 1
+        },
+        "scopeId": "f9c52bd431cf946e5de145d1a0d482ff00540943d6f4256ff705aad60b3a0187",
+        "vectorKeys": [
+          "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32"
+        ],
+        "retrieval": {
+          "semantic": [
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:570",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:29",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:719",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:620",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:520",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:721",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:717",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:140",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:711",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:22",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:714",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:710",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:0",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:720",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:945",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:19",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:718",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:500",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:510",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:590",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:550",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:360",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:224",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:370",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:30",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:980",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:530",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:574",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:860",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:599",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:571",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:440",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:225",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:201",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:230",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:202",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:260",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:742",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:270",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:541",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:865",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:870",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:371",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:231",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:880",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:722",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:220",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:210",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:690",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:560",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:810",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:519",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:581",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:365",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:750",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:40",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:511",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:701",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            }
+          ],
+          "lexical": [
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:101",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:112",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:123",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:13",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:134",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:145",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:156",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:167",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:178",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:189",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:193",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:2",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:200",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:211",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:222",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:233",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:24",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:244",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:255",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:266",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:277",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:288",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:299",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:310",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:321",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:332",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:343",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:35",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:354",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:365",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:366",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:376",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:387",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:398",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:409",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:420",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:431",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:442",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:453",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:46",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:464",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:475",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:486",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:497",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:508",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:519",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:530",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:539",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:541",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:552",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:563",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:57",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:574",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:585",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:596",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:607",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:618",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:629",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:640",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            }
+          ],
+          "selected": [
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:20"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:20"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:530",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:530"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:530"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:574",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:574"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:574"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:365",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:365"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:365"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:541",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:541"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:541"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:519",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:519"
+              ],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:519"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:101",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:101"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:570",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:570"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:112",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:112"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:920"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:123",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:123"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:29",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:29"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:19",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:19"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:21",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:529",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:531",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:573",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:575",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:364",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:366",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:366"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:540",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:542",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:518",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:520",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:520"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:18",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:22",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:22"
+              ]
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:528",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:532",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:572",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:576",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:363",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "524b1a6396dd53d812ced345f77b12a05aa94dbe790bf9d678ec98d9e72f1c32:367",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            }
+          ]
+        },
+        "limitations": {
+          "incompleteAttachments": [],
+          "lexicalOnly": false
+        }
+      },
+      "memorySamples": [
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 4.949453,
+                "percentCPUUsage": 16.840814343209573,
+                "idleWakeupsPerSecond": 450
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1238112,
+                "peakWorkingSetSize": 1238112
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.520049,
+                "percentCPUUsage": 2.1794894541863696,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348496
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.048169,
+                "percentCPUUsage": 0.013769666250381086,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42160,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.792277,
+                "percentCPUUsage": 1.5786717389189158,
+                "idleWakeupsPerSecond": 17
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 383936,
+                "peakWorkingSetSize": 383936
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 549971,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1243312
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 5.746547,
+                "percentCPUUsage": 27.458881986892944,
+                "idleWakeupsPerSecond": 8
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1255616,
+                "peakWorkingSetSize": 1284064
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.52177,
+                "percentCPUUsage": 0.05928921838827031,
+                "idleWakeupsPerSecond": 58
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348496
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.048374,
+                "percentCPUUsage": 0.007062419385066531,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.797763,
+                "percentCPUUsage": 0.18899827469311034,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384000,
+                "peakWorkingSetSize": 384016
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 562563,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1284064
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 6.339497,
+                "percentCPUUsage": 26.003568007914872,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1262640,
+                "peakWorkingSetSize": 1297488
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.523079,
+                "percentCPUUsage": 0.057406640751084106,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348496
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.048564,
+                "percentCPUUsage": 0.00833248546639114,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.803354,
+                "percentCPUUsage": 0.24519348840472932,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384064,
+                "peakWorkingSetSize": 384080
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 569651,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1297488
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 6.907458,
+                "percentCPUUsage": 25.677470631636815,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1269872,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.52432,
+                "percentCPUUsage": 0.056103479952838715,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348496
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.048764,
+                "percentCPUUsage": 0.009041558620041157,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.80758,
+                "percentCPUUsage": 0.19104813364146966,
+                "idleWakeupsPerSecond": 4
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384096,
+                "peakWorkingSetSize": 384128
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 575891,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 7.473611,
+                "percentCPUUsage": 24.70488692932297,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1269984,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.623245,
+                "percentCPUUsage": 4.316687088294742,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.049021,
+                "percentCPUUsage": 0.011214441058294148,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.811591,
+                "percentCPUUsage": 0.17502321424831216,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384208,
+                "peakWorkingSetSize": 384240
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 575987,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 8.058095,
+                "percentCPUUsage": 25.369902875536926,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270128,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.624809,
+                "percentCPUUsage": 0.0678866587957497,
+                "idleWakeupsPerSecond": 63
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.049227,
+                "percentCPUUsage": 0.008941686315226563,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42240,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.816582,
+                "percentCPUUsage": 0.2166413173319999,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384256,
+                "peakWorkingSetSize": 384288
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 576067,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 8.650811,
+                "percentCPUUsage": 25.481324803962032,
+                "idleWakeupsPerSecond": 21
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270480,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.626392,
+                "percentCPUUsage": 0.06805113249465221,
+                "idleWakeupsPerSecond": 58
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224784,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.049493,
+                "percentCPUUsage": 0.0114347616754935,
+                "idleWakeupsPerSecond": 3
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.822413,
+                "percentCPUUsage": 0.2506594264451498,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384464,
+                "peakWorkingSetSize": 384464
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 577987,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 9.302038,
+                "percentCPUUsage": 26.720820039127638,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270496,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.627979,
+                "percentCPUUsage": 0.06512040915477238,
+                "idleWakeupsPerSecond": 62
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.049725,
+                "percentCPUUsage": 0.009519995272829934,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.827746,
+                "percentCPUUsage": 0.21883750627829335,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384560,
+                "peakWorkingSetSize": 384560
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 577747,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 9.887703,
+                "percentCPUUsage": 25.70564162166338,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270448,
+                "peakWorkingSetSize": 1331632
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.629554,
+                "percentCPUUsage": 0.069128428770067,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.049918,
+                "percentCPUUsage": 0.0084709162283443,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.832382,
+                "percentCPUUsage": 0.20347898144636864,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384608,
+                "peakWorkingSetSize": 384640
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 577731,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1331632
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 10.423107,
+                "percentCPUUsage": 25.197094967019066,
+                "idleWakeupsPerSecond": 19
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270320,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.630748,
+                "percentCPUUsage": 0.05619162001287607,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050133,
+                "percentCPUUsage": 0.010118294629679829,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.83674,
+                "percentCPUUsage": 0.2050939347163134,
+                "idleWakeupsPerSecond": 19
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384624,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 577635,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 10.967124,
+                "percentCPUUsage": 25.065934248211345,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1270576,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.632004,
+                "percentCPUUsage": 0.05786823734086235,
+                "idleWakeupsPerSecond": 63
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050318,
+                "percentCPUUsage": 0.00852342883259433,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.843033,
+                "percentCPUUsage": 0.2899337294332724,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382656,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 577747,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 11.563001,
+                "percentCPUUsage": 25.93313267274335,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272272,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.633557,
+                "percentCPUUsage": 0.06759156415497053,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050554,
+                "percentCPUUsage": 0.01027158774373259,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.847841,
+                "percentCPUUsage": 0.20926110981507726,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382528,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580179,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 12.117875,
+                "percentCPUUsage": 25.717757903401633,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272272,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.634848,
+                "percentCPUUsage": 0.05983477999710791,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050749,
+                "percentCPUUsage": 0.009037886821555962,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.851933,
+                "percentCPUUsage": 0.18965939175510022,
+                "idleWakeupsPerSecond": 15
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382544,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580179,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 12.702206,
+                "percentCPUUsage": 25.83861604695012,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272288,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.636351,
+                "percentCPUUsage": 0.06646348797554781,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 224768,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050952,
+                "percentCPUUsage": 0.008976676560172918,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.85694,
+                "percentCPUUsage": 0.2214107317211224,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382544,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580195,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 13.282266,
+                "percentCPUUsage": 25.746207709570207,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272336,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.637925,
+                "percentCPUUsage": 0.06986017313250531,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222624,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.05116,
+                "percentCPUUsage": 0.009231872685374228,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.861787,
+                "percentCPUUsage": 0.21512850011007192,
+                "idleWakeupsPerSecond": 18
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382560,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580243,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 13.896027,
+                "percentCPUUsage": 26.49578147232314,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272400,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.639302,
+                "percentCPUUsage": 0.05944425449911416,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222624,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051367,
+                "percentCPUUsage": 0.00893587923871489,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.86655,
+                "percentCPUUsage": 0.20560587904175487,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382560,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580307,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 14.482151,
+                "percentCPUUsage": 25.82016754007887,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272400,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.640663,
+                "percentCPUUsage": 0.05995636973652678,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222624,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051601,
+                "percentCPUUsage": 0.010308442702679842,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.871729,
+                "percentCPUUsage": 0.2281546041502199,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 382768,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580307,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 15.076121,
+                "percentCPUUsage": 26.150412087912088,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272416,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.642043,
+                "percentCPUUsage": 0.060756765133717715,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222624,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051793,
+                "percentCPUUsage": 0.00845338311436723,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.876558,
+                "percentCPUUsage": 0.2126143864518538,
+                "idleWakeupsPerSecond": 4
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 383136,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580323,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 15.636655,
+                "percentCPUUsage": 25.79264431961245,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272592,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.643391,
+                "percentCPUUsage": 0.06202720362224145,
+                "idleWakeupsPerSecond": 63
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222640,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052011,
+                "percentCPUUsage": 0.010031031779044899,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.880902,
+                "percentCPUUsage": 0.1998851488647407,
+                "idleWakeupsPerSecond": 4
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 383536,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580707,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 16.227443,
+                "percentCPUUsage": 26.302039740571498,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272624,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.644786,
+                "percentCPUUsage": 0.06210754266053575,
+                "idleWakeupsPerSecond": 57
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222640,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052198,
+                "percentCPUUsage": 0.008325556877355198,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.885599,
+                "percentCPUUsage": 0.20911914404066093,
+                "idleWakeupsPerSecond": 4
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 383984,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580723,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 16.799215,
+                "percentCPUUsage": 26.157903019789117,
+                "idleWakeupsPerSecond": 15
+              },
+              "pid": 27765,
+              "type": "Browser",
+              "creationTime": 1791408996755.889,
+              "memory": {
+                "workingSetSize": 1272640,
+                "peakWorkingSetSize": 1332928
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.646084,
+                "percentCPUUsage": 0.05938198813458209,
+                "idleWakeupsPerSecond": 62
+              },
+              "pid": 27766,
+              "type": "GPU",
+              "creationTime": 1791408997510.327,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 222640,
+                "peakWorkingSetSize": 348544
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052397,
+                "percentCPUUsage": 0.00910401821169633,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27767,
+              "type": "Utility",
+              "creationTime": 1791408997513.39,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.890386,
+                "percentCPUUsage": 0.21899726973949069,
+                "idleWakeupsPerSecond": 4
+              },
+              "pid": 27768,
+              "type": "Tab",
+              "creationTime": 1791408997806.374,
+              "memory": {
+                "workingSetSize": 384400,
+                "peakWorkingSetSize": 384656
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 580739,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1332928
+        }
+      ],
+      "maximumSampledFullAppRssKiB": 1922048,
+      "upperBoundSumProcessPeaksKiB": 2108416,
+      "sqliteBytes": 3543040
+    },
+    {
+      "count": 10000,
+      "coldMs": 2454.176625,
+      "timings": [
+        362.8963330000006,
+        388.05841599999985,
+        365.35508299999856,
+        363.89533299999675,
+        446.78958299999795,
+        557.2228329999998,
+        412.3104999999996,
+        407.6317080000008,
+        375.7045419999995,
+        393.7589590000025,
+        397.96545799999876,
+        362.1462090000023,
+        356.20116699999926,
+        384.2357090000005,
+        433.21208299999853,
+        430.67879100000573,
+        358.6007079999981,
+        355.92604199999914,
+        415.5617920000004,
+        330.1332079999993
+      ],
+      "questions": [
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 0.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 1.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 2.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 3.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 4.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 5.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 6.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 7.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 8.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 9.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 10.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 11.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 12.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 13.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 14.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 15.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 16.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 17.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 18.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 19.",
+        "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 20."
+      ],
+      "queryTokenCounts": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31,
+        31
+      ],
+      "p50Ms": 384.2357090000005,
+      "p95Ms": 446.78958299999795,
+      "maximumFrameGapMs": 100.09999999999991,
+      "baseline": [
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 1.430036,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27813,
+          "type": "Browser",
+          "creationTime": 1791409009644.604,
+          "memory": {
+            "workingSetSize": 508064,
+            "peakWorkingSetSize": 509680
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.063732,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27815,
+          "type": "GPU",
+          "creationTime": 1791409010401.543,
+          "serviceName": "GPU",
+          "memory": {
+            "workingSetSize": 88416,
+            "peakWorkingSetSize": 88416
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.046068,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27816,
+          "type": "Utility",
+          "creationTime": 1791409010405.181,
+          "serviceName": "network.mojom.NetworkService",
+          "name": "Network Service",
+          "memory": {
+            "workingSetSize": 41488,
+            "peakWorkingSetSize": 41488
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.448959,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27818,
+          "type": "Tab",
+          "creationTime": 1791409010716.107,
+          "memory": {
+            "workingSetSize": 239104,
+            "peakWorkingSetSize": 239104
+          },
+          "sandboxed": true
+        }
+      ],
+      "metrics": [
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 18.175113,
+            "percentCPUUsage": 10.227835562159484,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27813,
+          "type": "Browser",
+          "creationTime": 1791409009644.604,
+          "memory": {
+            "workingSetSize": 991792,
+            "peakWorkingSetSize": 1344208
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.667742,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27815,
+          "type": "GPU",
+          "creationTime": 1791409010401.543,
+          "serviceName": "GPU",
+          "memory": {
+            "workingSetSize": 199360,
+            "peakWorkingSetSize": 328304
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.054692,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27816,
+          "type": "Utility",
+          "creationTime": 1791409010405.181,
+          "serviceName": "network.mojom.NetworkService",
+          "name": "Network Service",
+          "memory": {
+            "workingSetSize": 40032,
+            "peakWorkingSetSize": 42288
+          },
+          "sandboxed": true
+        },
+        {
+          "cpu": {
+            "cumulativeCPUUsage": 0.906849,
+            "percentCPUUsage": 0,
+            "idleWakeupsPerSecond": 0
+          },
+          "pid": 27818,
+          "type": "Tab",
+          "creationTime": 1791409010716.107,
+          "memory": {
+            "workingSetSize": 333024,
+            "peakWorkingSetSize": 384544
+          },
+          "sandboxed": true
+        }
+      ],
+      "fullAppRssKiB": 1564208,
+      "runtimeRssGrowthKiB": 687136,
+      "trace": {
+        "at": "2026-10-07T21:37:02.110Z",
+        "type": "documentary-retrieval",
+        "query": "Which device detects water cloudiness using visible green light? Explain its calibration requirement. QA request 20.",
+        "profile": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1"
+        },
+        "contract": {
+          "provider": "nodus",
+          "model": "embeddinggemma-2-text-q8-256-v1",
+          "dim": 256,
+          "protocol": "embeddinggemma2-text/1",
+          "task": {
+            "document": "title: {title|none} | text: ",
+            "query": "task: search result | query: "
+          },
+          "preprocessing": {
+            "maxTokens": 8192,
+            "output": "sentence_embedding",
+            "projection": "onnx-model",
+            "reduction": "matryoshka-prefix",
+            "specialTokens": true,
+            "titleFallback": "none",
+            "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+            "truncation": false,
+            "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+          },
+          "normalization": "l2-after-reduction",
+          "quantization": "onnx-q8",
+          "configVersion": 1
+        },
+        "scopeId": "d6c56e90ec30ff5c2230a3f09848a97d243147f0444ca0853bbd6d0f1ed99c51",
+        "vectorKeys": [
+          "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c"
+        ],
+        "retrieval": {
+          "semantic": [
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2231",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5700",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5520",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2220",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3300",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5580",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:6420",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2820",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5220",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2919",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5711",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2229",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2070",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2240",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1020",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2940",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9151",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5691",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2925",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9670",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2230",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5671",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2211",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2921",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2917",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5181",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5820",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1719",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5170",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2580",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:8820",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5701",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:8805",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2577",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5550",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2770",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2923",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2225",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2931",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5180",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1570",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:4620",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5530",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:6900",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:570",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5340",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:6911",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2750",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2557",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2930",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1620",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1721",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9920",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1720",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2251",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:6902",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            }
+          ],
+          "lexical": [
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2058",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3961",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5864",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:7767",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9670",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1002",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:101",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1013",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1020",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1024",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1035",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1046",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1057",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1068",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1079",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1090",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1101",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1112",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:112",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1123",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1134",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1145",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1156",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1167",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1178",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1189",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1193",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1200",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1211",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1222",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:123",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1233",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1244",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1255",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1266",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1277",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1288",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1299",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:13",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1310",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1321",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1332",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:134",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1343",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1354",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1365",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1366",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1376",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1387",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1398",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1409",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1420",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1431",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1442",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:145",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1453",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1464",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1475",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1486",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a"
+            }
+          ],
+          "selected": [
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:20",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:20"
+              ],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:20"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1020",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1020"
+              ],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1020"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9670",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9670"
+              ],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9670"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2058",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2058"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2231",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2231"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3961",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3961"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5700",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5700"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5864",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5864"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5520",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:5520"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:7767",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:7767"
+              ],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2220",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2220"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3300",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3300"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:19",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:21",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1019",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1021",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9669",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9671",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2057",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2059",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2230",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": [
+                "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2230"
+              ]
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2232",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3960",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:3962",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:18",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:22",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1018",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:1022",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9668",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:9672",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2056",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            },
+            {
+              "id": "f2da5feeca472b92ba50e5d1551ae9116f8c17e289cb773fb9b9e0c44aabd68c:2060",
+              "documentId": "nodus:a19cf3c7-9d93-422a-8003-6a26c0b3ac5a",
+              "lexicalIds": [],
+              "semanticIds": []
+            }
+          ]
+        },
+        "limitations": {
+          "incompleteAttachments": [],
+          "lexicalOnly": false
+        }
+      },
+      "memorySamples": [
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 4.932354,
+                "percentCPUUsage": 15.929034091405251,
+                "idleWakeupsPerSecond": 96
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1250544,
+                "peakWorkingSetSize": 1279648
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.525327,
+                "percentCPUUsage": 2.09942026992215,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328272
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050275,
+                "percentCPUUsage": 0.01913429830475666,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42160,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.769292,
+                "percentCPUUsage": 1.4569417327006107,
+                "idleWakeupsPerSecond": 16
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384176,
+                "peakWorkingSetSize": 384176
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 557347,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1279648
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 5.571274,
+                "percentCPUUsage": 21.82169409463126,
+                "idleWakeupsPerSecond": 8
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1273776,
+                "peakWorkingSetSize": 1295312
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.527149,
+                "percentCPUUsage": 0.062228476187873985,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328272
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050472,
+                "percentCPUUsage": 0.006728325910544004,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.77525,
+                "percentCPUUsage": 0.20348972236870508,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384272,
+                "peakWorkingSetSize": 384288
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 575923,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1295312
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 6.197201,
+                "percentCPUUsage": 20.03617816224411,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1286560,
+                "peakWorkingSetSize": 1319360
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.528932,
+                "percentCPUUsage": 0.05707470223842949,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328272
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050761,
+                "percentCPUUsage": 0.009251055068425797,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.781726,
+                "percentCPUUsage": 0.20729992804042027,
+                "idleWakeupsPerSecond": 13
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384352,
+                "peakWorkingSetSize": 384368
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 588707,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1319360
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 6.771788,
+                "percentCPUUsage": 19.536492518435303,
+                "idleWakeupsPerSecond": 8
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1279296,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.62938,
+                "percentCPUUsage": 3.4152325464372075,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.050988,
+                "percentCPUUsage": 0.007718001234880197,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42176,
+                "peakWorkingSetSize": 42224
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.786257,
+                "percentCPUUsage": 0.1540544436767978,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384400,
+                "peakWorkingSetSize": 384432
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 582323,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 7.317941,
+                "percentCPUUsage": 18.62005411258363,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1279344,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.630988,
+                "percentCPUUsage": 0.054819178530518736,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051207,
+                "percentCPUUsage": 0.007465922665313937,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42240,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.791786,
+                "percentCPUUsage": 0.18848692284615595,
+                "idleWakeupsPerSecond": 3
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384448,
+                "peakWorkingSetSize": 384464
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 582371,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 8.014931,
+                "percentCPUUsage": 19.35691893417109,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1203936,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.633491,
+                "percentCPUUsage": 0.06951433833903223,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 204544,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051448,
+                "percentCPUUsage": 0.006693150435360275,
+                "idleWakeupsPerSecond": 2
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 42224,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.800099,
+                "percentCPUUsage": 0.23087305731139673,
+                "idleWakeupsPerSecond": 36
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 384512,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 582467,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 8.884144,
+                "percentCPUUsage": 19.401590853085814,
+                "idleWakeupsPerSecond": 9
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1001152,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.637492,
+                "percentCPUUsage": 0.08930851415275438,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 201408,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051655,
+                "percentCPUUsage": 0.004620576969437227,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.812137,
+                "percentCPUUsage": 0.26870775631925287,
+                "idleWakeupsPerSecond": 25
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 332688,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706387,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 9.610421,
+                "percentCPUUsage": 21.874864463710008,
+                "idleWakeupsPerSecond": 12
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1001296,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.640064,
+                "percentCPUUsage": 0.07746558624461777,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 201408,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.051892,
+                "percentCPUUsage": 0.007138193007100845,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.820719,
+                "percentCPUUsage": 0.2584815189629415,
+                "idleWakeupsPerSecond": 19
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 330704,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706371,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 10.320804,
+                "percentCPUUsage": 21.649252985376652,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1001472,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.642431,
+                "percentCPUUsage": 0.0721375385830688,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 201408,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052114,
+                "percentCPUUsage": 0.006765784392127797,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.827938,
+                "percentCPUUsage": 0.22000989876923677,
+                "idleWakeupsPerSecond": 20
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 330768,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706339,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 10.98187,
+                "percentCPUUsage": 21.855097647158395,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1001632,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.644446,
+                "percentCPUUsage": 0.06661403661887647,
+                "idleWakeupsPerSecond": 58
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 201408,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.05232,
+                "percentCPUUsage": 0.006810061436010547,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.834376,
+                "percentCPUUsage": 0.21283094915065973,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 330816,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706355,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 11.69958,
+                "percentCPUUsage": 22.646695023286927,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1007376,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.646854,
+                "percentCPUUsage": 0.07598477275251683,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052552,
+                "percentCPUUsage": 0.007320865982712659,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.841211,
+                "percentCPUUsage": 0.21568100290561912,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 330832,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 708627,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 12.363889,
+                "percentCPUUsage": 20.745704763546517,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1006496,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.648835,
+                "percentCPUUsage": 0.06186387324682593,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052801,
+                "percentCPUUsage": 0.007775923492407701,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.849572,
+                "percentCPUUsage": 0.26110304717030625,
+                "idleWakeupsPerSecond": 10
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331168,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706803,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 12.983913,
+                "percentCPUUsage": 21.25728548115032,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1006640,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.65055,
+                "percentCPUUsage": 0.05879731212287438,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.052998,
+                "percentCPUUsage": 0.006753976961053209,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.855513,
+                "percentCPUUsage": 0.2036815587450391,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331200,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706803,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 13.597705,
+                "percentCPUUsage": 21.405036840299186,
+                "idleWakeupsPerSecond": 6
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1011760,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.652402,
+                "percentCPUUsage": 0.06458776822058607,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.053249,
+                "percentCPUUsage": 0.008753599089346696,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.861229,
+                "percentCPUUsage": 0.19934546611127077,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331200,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 711763,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 14.31814,
+                "percentCPUUsage": 23.291651363808008,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1006960,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.654823,
+                "percentCPUUsage": 0.07826967442919068,
+                "idleWakeupsPerSecond": 62
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.053476,
+                "percentCPUUsage": 0.0073387543127305084,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.868133,
+                "percentCPUUsage": 0.22320100763745743,
+                "idleWakeupsPerSecond": 5
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331216,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706819,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 14.93672,
+                "percentCPUUsage": 17.742697895130554,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1007120,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.657285,
+                "percentCPUUsage": 0.07063022124300009,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.053672,
+                "percentCPUUsage": 0.005622915791672118,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.876314,
+                "percentCPUUsage": 0.23469989626270324,
+                "idleWakeupsPerSecond": 2
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331392,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706835,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 15.807609,
+                "percentCPUUsage": 25.132953241554137,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1007296,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.660167,
+                "percentCPUUsage": 0.08315636397211579,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.053878,
+                "percentCPUUsage": 0.005943807360626373,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.884334,
+                "percentCPUUsage": 0.23140400484736567,
+                "idleWakeupsPerSecond": 9
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331488,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706851,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 16.406854,
+                "percentCPUUsage": 20.75114759911461,
+                "idleWakeupsPerSecond": 14
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1007408,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.662204,
+                "percentCPUUsage": 0.07053812590899647,
+                "idleWakeupsPerSecond": 61
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.054112,
+                "percentCPUUsage": 0.008103076675882474,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.890707,
+                "percentCPUUsage": 0.22068886229402834,
+                "idleWakeupsPerSecond": 3
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 331760,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706803,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 17.006684,
+                "percentCPUUsage": 20.92426339671926,
+                "idleWakeupsPerSecond": 6
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 1007792,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.663914,
+                "percentCPUUsage": 0.05964938718103275,
+                "idleWakeupsPerSecond": 59
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199280,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.054304,
+                "percentCPUUsage": 0.006697437671970665,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.896118,
+                "percentCPUUsage": 0.18874861516909588,
+                "idleWakeupsPerSecond": 11
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 332160,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 706291,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 17.613238,
+                "percentCPUUsage": 18.140095462538728,
+                "idleWakeupsPerSecond": 7
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 979728,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.666296,
+                "percentCPUUsage": 0.07123904497809594,
+                "idleWakeupsPerSecond": 62
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199360,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.054489,
+                "percentCPUUsage": 0.005532879059039707,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.902051,
+                "percentCPUUsage": 0.17744092679612208,
+                "idleWakeupsPerSecond": 17
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 332608,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 677091,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        },
+        {
+          "processes": [
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 18.173461,
+                "percentCPUUsage": 21.068111664681034,
+                "idleWakeupsPerSecond": 9
+              },
+              "pid": 27813,
+              "type": "Browser",
+              "creationTime": 1791409009644.604,
+              "memory": {
+                "workingSetSize": 991792,
+                "peakWorkingSetSize": 1344208
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.667742,
+                "percentCPUUsage": 0.054381837218538266,
+                "idleWakeupsPerSecond": 60
+              },
+              "pid": 27815,
+              "type": "GPU",
+              "creationTime": 1791409010401.543,
+              "serviceName": "GPU",
+              "memory": {
+                "workingSetSize": 199360,
+                "peakWorkingSetSize": 328304
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.054692,
+                "percentCPUUsage": 0.007634517949767128,
+                "idleWakeupsPerSecond": 0
+              },
+              "pid": 27816,
+              "type": "Utility",
+              "creationTime": 1791409010405.181,
+              "serviceName": "network.mojom.NetworkService",
+              "name": "Network Service",
+              "memory": {
+                "workingSetSize": 40032,
+                "peakWorkingSetSize": 42288
+              },
+              "sandboxed": true
+            },
+            {
+              "cpu": {
+                "cumulativeCPUUsage": 0.906849,
+                "percentCPUUsage": 0.18044486164640328,
+                "idleWakeupsPerSecond": 3
+              },
+              "pid": 27818,
+              "type": "Tab",
+              "creationTime": 1791409010716.107,
+              "memory": {
+                "workingSetSize": 333024,
+                "peakWorkingSetSize": 384544
+              },
+              "sandboxed": true
+            }
+          ],
+          "main": {
+            "private": 685907,
+            "shared": 5072
+          },
+          "maximumMainRssKiB": 1344208
+        }
+      ],
+      "maximumSampledFullAppRssKiB": 1917632,
+      "upperBoundSumProcessPeaksKiB": 2099344,
+      "sqliteBytes": 33714176
+    }
+  ],
+  "contention": "quiet",
+  "note": "Capacity only: real ONNX vectors are loaded into the production store with explicit QA chunks; extraction and quality are evaluated in the product corpus lane. RSS can fall under memory compression; per-process peaks are also recorded and must not be treated as concurrent resident totals.",
+  "completed": true
+}

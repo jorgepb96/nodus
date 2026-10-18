@@ -1,0 +1,4 @@
+
+> nodus@5.8.1 lint
+> eslint . --ext .ts,.tsx
+

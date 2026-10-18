@@ -374,7 +374,7 @@
     ".github/workflows/pages.yml": {
       "snapshot": "original-files/.github/workflows/pages.yml",
       "originalSha256": "9b36b965f6e2850be4591d45a25c967ed39e23bd71aa3cf169250bf55886ba5b",
-      "restrictedSha256": "f018c585b8774dcc7b103e29c6be9a0a584a702540ebd14931f71a2c075bf7f6"
+      "restrictedSha256": "c9097d33ec920a918a1071879e8ba4cb09ff505c29f7f384b7959e0c0e664bb3"
     },
     ".github/workflows/presenter-lan.yml": {
       "snapshot": "original-files/.github/workflows/presenter-lan.yml",

@@ -1,0 +1,273 @@
+{
+  "format": "nodus.targeted-regression-closeout/1",
+  "at": "2026-10-15T12:17:32.374945+00:00",
+  "sourceCommit": "1ce324c5f214204ec1f30ae67628cc168d3c9e26",
+  "selected": 5,
+  "attempted": 3,
+  "publishedAnswers": 0,
+  "protocolFailures": 3,
+  "unattempted": [
+    "R009",
+    "R014"
+  ],
+  "acceptedRequests": 31,
+  "completedRequests": 27,
+  "abandonedRequests": 4,
+  "qualityAcceptanceEligible": false,
+  "baselineRegraded": false,
+  "paidProviderCalls": 0,
+  "noNewQualityRate": true,
+  "campaigns": [
+    {
+      "root": "/private/tmp/nodus-research-prospective-1015-Et39vF",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/followup-diagnostic-001/campaign.json",
+        "sha256": "e7a1703a4090b56cdf577c92b2c9800846224ce44fd9dee59926fc57817443d5",
+        "bytes": 204198
+      },
+      "manifest": {
+        "path": "/private/tmp/nodus-research-prospective-1015-Et39vF/artifacts/followup-diagnostic-001/manifest.json",
+        "sha256": "77d5f2d7501c05ec0f064e41417489c43eaacfc0f46df65dd6fe976f29244b87",
+        "bytes": 555495
+      },
+      "completed": false,
+      "finishedAt": "2026-10-15T11:45:00.721Z",
+      "answers": [
+        {
+          "caseId": "R005",
+          "status": "protocol-failure",
+          "finishedAt": "2026-10-15T11:45:00.375Z",
+          "accepted": 17,
+          "completions": 16,
+          "receiptsComplete": false
+        }
+      ],
+      "network": {
+        "instrumentedExternalFetchCalls": 0,
+        "instrumentedLoopbackFetchCalls": 2,
+        "fetchCounterCoverage": "main-process global fetch requests only; OS sandbox denies unapproved outbound connections",
+        "bridgeAccepted": 17,
+        "bridgeCompleted": 16,
+        "bridgeAbandoned": 1
+      },
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          62044
+        ]
+      }
+    },
+    {
+      "root": "/private/tmp/nodus-research-prospective-b-1015-1umNeX",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-prospective-b-1015-1umNeX/artifacts/followup-diagnostic-001/campaign.json",
+        "sha256": "2f88b5608c197225ad10c6d117f2bffd385f0948db108d56b41e9650e04fe436",
+        "bytes": 246931
+      },
+      "manifest": {
+        "path": "/private/tmp/nodus-research-prospective-b-1015-1umNeX/artifacts/followup-diagnostic-001/manifest.json",
+        "sha256": "8c0545154f3b97f1b1267b55b0d18b66ae105a4af4759006b5eb4aeeec31bde1",
+        "bytes": 555465
+      },
+      "completed": false,
+      "finishedAt": "2026-10-15T11:55:02.459Z",
+      "answers": [
+        {
+          "caseId": "R007",
+          "status": "protocol-failure",
+          "finishedAt": "2026-10-15T11:55:02.189Z",
+          "accepted": 11,
+          "completions": 9,
+          "receiptsComplete": false
+        }
+      ],
+      "network": {
+        "instrumentedExternalFetchCalls": 0,
+        "instrumentedLoopbackFetchCalls": 2,
+        "fetchCounterCoverage": "main-process global fetch requests only; OS sandbox denies unapproved outbound connections",
+        "bridgeAccepted": 11,
+        "bridgeCompleted": 9,
+        "bridgeAbandoned": 2
+      },
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          62669
+        ]
+      }
+    },
+    {
+      "root": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ",
+      "campaign": {
+        "path": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ/artifacts/followup-diagnostic-001/campaign.json",
+        "sha256": "e06f44cd908ed0f21e80cfbe4574277f09c72e43da7f2472ef2ba9f43d871b06",
+        "bytes": 205140
+      },
+      "manifest": {
+        "path": "/private/tmp/nodus-research-prospective-c-1015-OK5JWJ/artifacts/followup-diagnostic-001/manifest.json",
+        "sha256": "1acf01634d9604d370375de0cc1a5adf128f6fa91d436f3a9fa44f2a61503a9f",
+        "bytes": 555465
+      },
+      "completed": false,
+      "finishedAt": "2026-10-15T11:44:40.497Z",
+      "answers": [
+        {
+          "caseId": "R012",
+          "status": "protocol-failure",
+          "finishedAt": "2026-10-15T11:44:39.962Z",
+          "accepted": 3,
+          "completions": 2,
+          "receiptsComplete": false
+        }
+      ],
+      "network": {
+        "instrumentedExternalFetchCalls": 0,
+        "instrumentedLoopbackFetchCalls": 2,
+        "fetchCounterCoverage": "main-process global fetch requests only; OS sandbox denies unapproved outbound connections",
+        "bridgeAccepted": 3,
+        "bridgeCompleted": 2,
+        "bridgeAbandoned": 1
+      },
+      "isolation": {
+        "writeInsideAllowed": true,
+        "writeOutsideDenied": true,
+        "descendantWriteDenied": true,
+        "externalNetworkDenied": true,
+        "forbiddenLoopbackPortDenied": true,
+        "allowedLoopbackPorts": [
+          62670
+        ]
+      }
+    }
+  ],
+  "failureDiagnosis": {
+    "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-failure-diagnosis-001.json",
+    "sha256": "bc62676facc3258e37b003750e821fc206195f3076def8ef138049b7393ce60d",
+    "bytes": 6697
+  },
+  "frozenPlan": {
+    "path": "/private/tmp/nodus-research-lB0K6I/artifacts/prospective-parallel-plan-001.json",
+    "sha256": "87cf55e9463117667fa9ccf01df46f8926848b7dd63c8a16855cab55e2c0ee95",
+    "bytes": 2538
+  },
+  "nativePackagingCorrection": {
+    "config": {
+      "path": "build/packagedNodeModules.cjs",
+      "sha256": "d3085a414607ca609163f8935d6b5fc864432b1ef65e0db8d0817ddfa5242c55",
+      "bytes": 16186
+    },
+    "actualFileTests": {
+      "path": "scripts/test-packaged-node-modules.mjs",
+      "sha256": "41073042cda62edeafe353c31d7ecc686395b65b8af6c8e26c3e55e47ccb5df1",
+      "bytes": 21431
+    },
+    "passedChecks": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/ci-focused-fixes-003.log",
+      "sha256": "b87cffad593bbb73c2e7de34e1d9f7b3b7b00e6a949176045ea03a55d845ece7",
+      "bytes": 1802
+    },
+    "workflowChecks": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/ci-workflow-fixes-001.log",
+      "sha256": "7ea3d5a26f46ed6c8ee91bf2699ab6105a13e7be9ed042e399c74bf6814ff768",
+      "bytes": 3062
+    },
+    "initialMatcherErratum": "The initial alias patterns used napi-v3; ONNX 1.30 actually ships napi-v6. The first package passed inference, but those patterns did not exclude its foreign native slices. Corrected actual-file tests and the fresh package verify the real napi-v6 paths.",
+    "macIntel": "No darwin/x64 binding in the pinned ONNX 1.30 npm artifact; EmbeddingGemma is unavailable with this dependency set. Native Intel support requires a separate compatible runtime and verification.",
+    "freshPackageReport": {
+      "path": "/private/tmp/nodus-research-2dC5gZ/artifacts/package-smoke.json",
+      "sha256": "f4bfb81d2b904b934d17bd3ea16fb239e1af9816a7e0dc15fef16cc64a1c6198",
+      "bytes": 10587
+    },
+    "freshPackageBuild": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-package-build-003.log",
+      "sha256": "000c38124a6762779bfb95bc270c2558203419bce955decd6c3ef402075c4e2b",
+      "bytes": 20680
+    },
+    "profiles": [
+      "embeddinggemma-2-text-q8-512-v1",
+      "embeddinggemma-2-text-q8-256-v1"
+    ],
+    "runtime": "Electron 43.6.0 / Node 24.20.0",
+    "nativeSlices": [
+      "napi-v6/darwin/arm64/libonnxruntime.1.30.0.dylib",
+      "napi-v6/darwin/arm64/libonnxruntime.1.dylib",
+      "napi-v6/darwin/arm64/onnxruntime_binding.node"
+    ],
+    "foreignNativeSlices": 0,
+    "packageDiskKiBBefore": 1284784,
+    "packageDiskKiBAfter": 1250288,
+    "screenshotInspected": {
+      "path": "/private/tmp/nodus-research-2dC5gZ/artifacts/package-settings.png",
+      "sha256": "816f7ff182917c2a126399c2e3e3e7270239a86880517c233b61e07382466674",
+      "bytes": 46774
+    },
+    "noWeightsBundled": true,
+    "actualArchiveInspection": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/cpu-package-native-slices-001.json",
+      "sha256": "078eeec68779f35bd28ef4b4459925314b17d6871d25be8b04968f423be73f2c",
+      "bytes": 731
+    }
+  },
+  "mergedContextReplay": {
+    "report": {
+      "path": "/private/tmp/nodus-research-merged-context-dvIfGG/artifacts/context-boundary-replay/report.json",
+      "sha256": "89acce8823c02af5ffa518673bca59d4661c293722168e5fd2315ece89b348b6",
+      "bytes": 39327
+    },
+    "recordedSearchDecisions": 8,
+    "divergence": null,
+    "window": 32768,
+    "upperBoundBefore": 45469,
+    "upperBoundAfter": 32489,
+    "sourceLabels": [
+      "fixture 20, p. 1",
+      "fixture 08, p. 1",
+      "fixture 15, p. 1",
+      "fixture 30, p. 1",
+      "fixture 05, p. 1"
+    ],
+    "newGenerationCalls": 0,
+    "scope": "Merged source retains Alba alongside Linde inside the conservative window. Context size differs from the earlier recorded revision; it is not regraded as the original baseline or a new correct answer."
+  },
+  "ci": {
+    "failedPreviousHead": "0411fcaf",
+    "summary": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/ci-0411fcaf-summary-001.json",
+      "sha256": "e97a56e45377bbedc4045a099a2100efed55fc9a3e168fe4bb3efbb2fa7db888",
+      "bytes": 1293
+    },
+    "linux3Failure": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-ci-linux3-001.log",
+      "sha256": "c317c14098f6cff26a3fc8f705c896158f15e3a3840da5b204d327ccb28ac751",
+      "bytes": 613225
+    },
+    "linux6Failure": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/merged-ci-linux6-001.log",
+      "sha256": "aaf87d85223e96d4c103865a642e0f106360fa64097d4737a81870765682795a",
+      "bytes": 118592
+    },
+    "diagnosis": "Old audit fixture expected canonical source IDs on the wire and threw before its truncation behavior. Optional Linux CUDA installer download also timed out. Updated the fixture to use aliases and check canonical restoration, preserved exact bisection assertions, and made CPU CI skip optional CUDA downloads. No tests, routing or deadlines removed.",
+    "correctedRun": 38732872853,
+    "correctedHead": "1ce324c5",
+    "recordedStatus": "in progress",
+    "progressReceipt": {
+      "path": "/private/tmp/nodus-research-lB0K6I/artifacts/ci-1ce324c5-progress-002.json",
+      "sha256": "794e839b00dfdc7d41d2215fdfc7c36a06a7b77b8dc62e033ed7a947af36d6ac",
+      "bytes": 563
+    }
+  },
+  "remaining": [
+    "A reliable prospective answer-quality run is still needed; no deadline extension, response repair or retry of these three attempts was made.",
+    "R007 had an unresolved completeness finding before transport loss; do not attribute all remaining failures solely to infrastructure.",
+    "The closed 80-case baseline utility and absence gates still fail.",
+    "Other native real-weight/package platforms, full comparison/capacity and resource-term clearance remain pending."
+  ]
+}

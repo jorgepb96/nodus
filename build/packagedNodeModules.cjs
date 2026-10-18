@@ -46,6 +46,7 @@ const MAIN_PROCESS_EXTERNALS = [
   '@anthropic-ai/sdk',
   '@google/genai',
   '@huggingface/transformers',
+  '@nodus/embeddinggemma-transformers',
   // ws (pulled in by the SDKs above) optionally requires these native addons via
   // try/catch; keep them external so that fallback works instead of the bundler
   // hard-failing to resolve an uninstalled optional dependency.
@@ -97,6 +98,7 @@ const RUNTIME_RESOLVED_SPECIFIERS = [
 // files by scripts/test-packaged-node-modules.mjs.
 const BROWSER_ONLY_DEPENDENCIES = {
   '@huggingface/transformers': ['onnxruntime-web'],
+  '@nodus/embeddinggemma-transformers': ['onnxruntime-web'],
 };
 
 // The reverse: packages a package imports without declaring them, and so gets
@@ -105,6 +107,7 @@ const BROWSER_ONLY_DEPENDENCIES = {
 // under transformers for onnxruntime-web — and would fail to load without it.
 const UNDECLARED_DEPENDENCIES = {
   '@huggingface/transformers': ['onnxruntime-common'],
+  '@nodus/embeddinggemma-transformers': ['onnxruntime-common'],
 };
 
 // Files inside packages that ARE loaded, but that the packaged app never reads.
@@ -117,9 +120,13 @@ const UNUSED_PACKAGE_FILES = [
   // architecture in one package (~110 MB of it foreign to any given build).
   '!node_modules/onnxruntime-node/bin/napi-v3/!(${platform}){,/**}',
   '!node_modules/onnxruntime-node/bin/napi-v3/${platform}/!(${arch}){,/**}',
+  // EmbeddingGemma uses its pinned runtime nested beneath the alias package.
+  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/!(${platform}){,/**}',
+  '!node_modules/@nodus/embeddinggemma-transformers/node_modules/onnxruntime-node/bin/napi-v6/${platform}/!(${arch}){,/**}',
   // The browser builds of transformers, and a 21 MB copy of the ONNX web runtime.
   // The renderer bundles its own copy into dist/; main loads only the Node builds.
   '!node_modules/@huggingface/transformers/dist/!(transformers.node.mjs|transformers.node.cjs)',
+  '!node_modules/@nodus/embeddinggemma-transformers/dist/!(transformers.node.mjs|transformers.node.cjs)',
   // SQLite's C sources, used only to compile the addon.
   '!node_modules/better-sqlite3/{deps,src}{,/**}',
 ];

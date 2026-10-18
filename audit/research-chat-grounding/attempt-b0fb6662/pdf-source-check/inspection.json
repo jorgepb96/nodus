@@ -1,0 +1,25 @@
+{
+  "format": "nodus.qa-source-page-inspection/1",
+  "source": "public-QLORA001.pdf",
+  "sourceSha256": "33a4e757c19d6ea8d3cca8958fce8fe405e290272e135c99ee66065c775d5bd1",
+  "pages": [
+    5,
+    6
+  ],
+  "method": "Original PDF rendered with pdftoppm at 120 dpi; complete relevant pages visually inspected, alongside layout-preserving pdftotext. Read-only inspection within the isolated corpus root.",
+  "finding": "Page 6 explicitly reports a performed runtime analysis. Its future-work statement concerns circumstances in which paging causes slowdowns. The app extraction loses those qualifiers; the SG18aD b0fb6662 response wrongly broadens future work to the paging analysis itself.",
+  "artifacts": [
+    {
+      "file": "qlora-page5.png",
+      "sha256": "f95b4965ea2b66fbd2989e4670917f90eeb45682ceb18a7c85362b94f170e429"
+    },
+    {
+      "file": "qlora-page6.png",
+      "sha256": "aba3fa6af8df2234b881da4a7e5fbcad780470522b614865b90fa994cf636872"
+    },
+    {
+      "file": "qlora-pages5-6.txt",
+      "sha256": "a99f98be35e95b3ce40e276df6200f2eb13457fecd6afdae2dc12ebdc1c41535"
+    }
+  ]
+}

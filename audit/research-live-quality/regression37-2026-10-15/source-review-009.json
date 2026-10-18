@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-59a69d17f91e9dd4e09520c0",
+      "answerSha256": "f6cd7f090c7ce479c2e690ec9dd5a5212c5e869fa8691eba84b130222a4ab02e",
+      "sourceHash": "1f3a48ec17ef3d946890b5798ef2183379748616b3561841ec574d513141238e",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_009",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer directly and correctly denies that 51% belongs to spaced retrieval. Its cited fixture 02, p. 1 explicitly states that Vega spaced retrieval participants recalled 72% and rereading participants recalled 51%. The citation URI matches supplied source-1. Sources 3, 4, and 5 independently repeat the same attribution and percentages in French, Portuguese, and Italian. Source-2 is unrelated and is not relied upon. Every factual assertion and numerical attribution in the answer is supported; no date, unit conversion, calculation, or additional requested facet is omitted. Evidence is sufficient for the categorical response."
+    }
+  ]
+}

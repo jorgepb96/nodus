@@ -46,6 +46,8 @@ export function WorldChatView({ settings, onNavigate, conversationTarget, onOpen
   const [selection, setSelection] = useState<WorldChatSelection>(() => ({ ...BLANK_SELECTION, entryKeys: [] }));
   const [focus, setFocus] = useState<WorldChatResult['focus']>([]);
   const focusByConversation = useRef(new Map<string, WorldChatResult['focus']>());
+  // The chat on screen: a turn that ends while another chat is open keeps its focus to itself.
+  const shownConversation = useRef<string | null>(null);
   const [entries, setEntries] = useState<WorldEntry[]>([]);
   useEffect(() => { void window.nodus.listWorldEntries().then(setEntries); }, []);
   const openWorldEntry = (kind: string) => { const view = SECTION_OF_KIND[kind]; if (view) onNavigate?.(view); };
@@ -60,7 +62,7 @@ export function WorldChatView({ settings, onNavigate, conversationTarget, onOpen
   const adapter: ResearchChatAdapter = {
     id: 'world', contextKey: JSON.stringify(selection), subtitle: 'Las respuestas se fundamentan en las fichas del vault. Las referencias abren su sección original y el chat nunca modifica el canon.', suggestions: STARTERS,
     canSend: selection.scope !== 'manual' || selection.entryKeys.length > 0,
-    reset: () => { setFocus([]); notebooks.clear(); },
+    reset: () => { shownConversation.current = null; setFocus([]); notebooks.clear(); },
     organizer: surfaceChatOrganizer('world') ?? undefined,
     notebooks: notebooks.notebooks,
     archiveConversation: window.nodus.archiveChatHistoryConversation ? (id, archived) => window.nodus.archiveChatHistoryConversation!('world', id, archived) : undefined,
@@ -86,12 +88,12 @@ export function WorldChatView({ settings, onNavigate, conversationTarget, onOpen
           )}
           <p className="mt-4 rounded-lg bg-neutral-100 p-3 text-[10px] leading-5 text-neutral-500 dark:bg-neutral-900/60">{t('Las respuestas se fundamentan en las fichas del vault. Las referencias abren su sección original y el chat nunca modifica el canon.')}</p></>,
     listConversations: async includeArchived => (await window.nodus.listWorldChatConversations(includeArchived)).map(nativeSummary),
-    getConversation: async id => { const chat = await window.nodus.getWorldChatConversation(id); if (!chat) return null; setSelection(chat.selection); setFocus(chat.focus); focusByConversation.current.set(id, chat.focus); notebooks.follow(chat.notebookId); return { ...nativeSummary(chat), selection: null, messages: chat.messages.map((message, index) => ({ ...message, id: `${id}:${index}`, selectionKey: message.selectionKey ?? JSON.stringify(chat.selection) })) }; },
-    createConversation: input => window.nodus.createWorldChatConversation({ title: input.title ?? 'Research chat', model: input.model ?? null, selection, projectId: input.projectId, folderId: input.folderId, notebookId: input.notebookId }),
+    getConversation: async id => { const chat = await window.nodus.getWorldChatConversation(id); if (!chat) return null; shownConversation.current = id; setSelection(chat.selection); setFocus(chat.focus); focusByConversation.current.set(id, chat.focus); notebooks.follow(chat.notebookId); return { ...nativeSummary(chat), selection: null, messages: chat.messages.map((message, index) => ({ ...message, id: `${id}:${index}`, selectionKey: message.selectionKey ?? JSON.stringify(chat.selection) })) }; },
+    createConversation: async input => { const chat = await window.nodus.createWorldChatConversation({ title: input.title ?? 'Research chat', model: input.model ?? null, selection, projectId: input.projectId, folderId: input.folderId, notebookId: input.notebookId }); shownConversation.current = chat.id; return chat; },
     saveConversationMessages: (id, messages, options) => window.nodus.saveWorldChatConversation(id, messages, selection, focusByConversation.current.get(id) ?? [], options.model ?? null),
     deleteConversation: id => window.nodus.deleteWorldChatConversation(id),
-    researchChatStream: async (request, handlers) => { const result = await window.nodus.worldChatStream({ conversationId: request.conversationId, attachmentIds: request.attachmentIds, question: request.messages.at(-1)!.content, history: request.messages.slice(0, -1), focusKeys: selection.scope === 'manual' ? selection.entryKeys : selection.keepFocus ? focus.map(item => `${item.kind}:${item.id}`) : [], model: request.model, thinkingEffort: request.thinkingEffort, systemPromptId: request.systemPromptId }, handlers); if (request.conversationId) focusByConversation.current.set(request.conversationId, result.focus); setFocus(result.focus); return { answer: result.noMaterial ? t('No he encontrado nada de tu mundo en esa pregunta. Nombra un personaje, un lugar, una escena o una ley y vuelvo a mirar.') : result.text, aborted: result.aborted }; },
-    cancelResearchChat: () => window.nodus.cancelWorldChat(),
+    researchChatStream: async (request, handlers) => { const result = await window.nodus.worldChatStream({ conversationId: request.conversationId, attachmentIds: request.attachmentIds, question: request.messages.at(-1)!.content, history: request.messages.slice(0, -1), focusKeys: selection.scope === 'manual' ? selection.entryKeys : selection.keepFocus ? focus.map(item => `${item.kind}:${item.id}`) : [], model: request.model, thinkingEffort: request.thinkingEffort, systemPromptId: request.systemPromptId }, handlers); if (request.conversationId) focusByConversation.current.set(request.conversationId, result.focus); if (shownConversation.current === request.conversationId) setFocus(result.focus); return { answer: result.noMaterial ? t('No he encontrado nada de tu mundo en esa pregunta. Nombra un personaje, un lugar, una escena o una ley y vuelvo a mirar.') : result.text, aborted: result.aborted }; },
+    cancelResearchChat: conversationId => window.nodus.cancelWorldChat(conversationId),
     renderMessage: (message, streaming) => <ChatMarkdown content={message.content} streaming={streaming} verify={false} onWorldEntry={kind => openWorldEntry(kind)} />,
   };
   return <ResearchAssistantModal settings={settings} embedded adapter={adapter} initialConversationTarget={conversationTarget} onOpenSavedNote={onOpenSavedNote} />;

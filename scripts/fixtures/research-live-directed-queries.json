@@ -1,0 +1,81 @@
+{
+  "format": "nodus.research-live-directed-queries/1",
+  "provenance": {
+    "historicalManifestSha256": "59f2a847cb79e789a3e7b7b12e4e358d48f9d6518feaac3bfc94383cb7d357f4",
+    "description": "Exact eight historical positive question identities only; no source excerpts, answers, generation requests or credentials."
+  },
+  "cases": [
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/policy",
+      "name": "policy",
+      "positive": true,
+      "question": "Distingue lo que Linde permite restaurar y lo que excluye, sin mezclarlo con la retención de eventos.",
+      "promptLanguage": "es",
+      "sourceHash": "4c9e6c6831770174652983048fd0e682f1a81944bc953feb621aad521df10de3",
+      "sourceCount": 16
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/negation",
+      "name": "negation",
+      "positive": true,
+      "question": "Compare the interpretation limits of Vega and Bruma, distinguishing measured outcomes from unsupported conclusions.",
+      "promptLanguage": "en",
+      "sourceHash": "5197616b8ae820531a8bd2d1eaadbedd13f17ac9d08623889375566925d56af1",
+      "sourceCount": 18
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/correction",
+      "name": "correction",
+      "positive": true,
+      "question": "Which total should I use for Bruma after the correction, and which earlier total does it replace?",
+      "promptLanguage": "en",
+      "sourceHash": "88b685cb5a013a84eba40d5281de6c7e6b9c768e0e6dc1f42d0b16b44ce02190",
+      "sourceCount": 8
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/dates",
+      "name": "dates",
+      "positive": true,
+      "question": "Identifica por separado los años de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+      "promptLanguage": "es",
+      "sourceHash": "be59097bcd496a3ac97b3fe144942b629042d3596da65e1a735d667553922386",
+      "sourceCount": 18
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/statistics",
+      "name": "statistics",
+      "positive": true,
+      "question": "Quelles sont la médiane et la moyenne consignées pour Bruma, et que permettent-elles de conclure sur la distribution ?",
+      "promptLanguage": "fr",
+      "sourceHash": "e92c4c435a91d00e578764aa9386bb795911f48ef8b691356be62c6ccc16e18d",
+      "sourceCount": 10
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/paper",
+      "name": "paper",
+      "positive": true,
+      "question": "Explica cómo NF4, la doble cuantización y los optimizadores paginados ahorran memoria en QLoRA; distingue almacenamiento y cómputo y cita el artículo.",
+      "promptLanguage": "es",
+      "sourceHash": "fd274d01696e3354f2e1b6cc0f3d84db0b16b142c47175e176710a38eab12fef",
+      "sourceCount": 14
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/calculation",
+      "name": "calculation",
+      "positive": true,
+      "question": "Compara en una tabla los grupos de Vega, calcula la diferencia en puntos porcentuales e indica qué resultado se midió.",
+      "promptLanguage": "es",
+      "sourceHash": "b85af38fd3c06da162f8e680dbdf71910aa1df985ebd78845428147786be2df9",
+      "sourceCount": 13
+    },
+    {
+      "id": "embeddinggemma-2-text-q8-512-v1/sensor",
+      "name": "sensor",
+      "positive": true,
+      "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+      "promptLanguage": "en",
+      "sourceHash": "5f9575679327424680669aaecb035ffb34081762e5407d7b2bb2458947eac80d",
+      "sourceCount": 1
+    }
+  ]
+}

@@ -46,11 +46,18 @@ export function applyMetadataEdits(metadata, edits, labels = METADATA_LABELS) {
   return {
     ...(metadata || {}),
     title,
-    creators: parseCreators(edits?.creators),
+    creators: String(edits?.creators || '').trim() === formatCreators(metadata?.creators).trim()
+      ? (metadata?.creators || []).map((creator) => ({ ...creator }))
+      : parseCreators(edits?.creators).map((creator, index, parsed) => {
+      const originals = metadata?.creators || [];
+      const matching = originals.find((original) => formatCreators([original]) === formatCreators([creator]));
+      const previous = matching || (parsed.length === originals.length ? originals[index] : null);
+      return previous?.creatorType ? { ...creator, creatorType: previous.creatorType } : creator;
+    }),
     ...(date ? { date } : { date: undefined }),
     year: /(?:^|\D)(1[0-9]{3}|20[0-9]{2}|2100)(?:\D|$)/.test(date)
       ? Number(/(?:^|\D)(1[0-9]{3}|20[0-9]{2}|2100)(?:\D|$)/.exec(date)[1])
-      : metadata?.year ?? null,
+      : null,
     ...(publicationTitle ? { publicationTitle } : { publicationTitle: undefined }),
     ...(doi ? { doi } : { doi: undefined }),
   };

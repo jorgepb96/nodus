@@ -1,0 +1,168 @@
+ensure a discrete zeropoint of 0 and to use all 2k bits for a k-bit datatype, we create an asymmetric
+data type by estimating the quantiles qi of two ranges qi : 2k−1 for the negative part and 2k−1 + 1 for
+the positive part and then we unify these sets of qi and remove one of the two zeros that occurs in both
+sets. We term the resulting data type that has equal expected number of values in each quantization bin
+k-bit NormalFloat (NFk), since the data type is information-theoretically optimal for zero-centered
+normally distributed data. The exact values of this data type can be found in Appendix E.
+Double Quantization We introduce Double Quantization (DQ), the process of quantizing the
+quantization constants for additional memory savings. While a small blocksize is required for precise
+4-bit quantization [13], it also has a considerable memory overhead. For example, using 32-bit
+constants and a blocksize of 64 for W, quantization constants add 32/64 = 0.5 bits per parameter on
+average. Double Quantization helps reduce the memory footprint of quantization constants.
+More specifically, Double Quantization treats quantization constants cFP32
+                                                                         2   of the first quantization
+as inputs to a second quantization. This second step yields the quantized quantization constants
+cFP8
+ 2    and the second level of quantization constants cFP32
+                                                       1   . We use 8-bit Floats with a blocksize of
+256 for the second quantization as no performance degradation is observed for 8-bit quantization,
+in line with results from Dettmers and Zettlemoyer [13]. Since the cFP32
+                                                                       2    are positive, we subtract
+the mean from c2 before quantization to center the values around zero and make use of symmetric
+quantization. On average, for a blocksize of 64, this quantization reduces the memory footprint per
+parameter from 32/64 = 0.5 bits, to 8/64 + 32/(64 · 256) = 0.127 bits, a reduction of 0.373 bits
+per parameter.
+Paged Optimizers use the NVIDIA unified memory 3 feature wich does automatic page-to-page
+transfers between the CPU and GPU for error-free GPU processing in the scenario where the GPU
+occasionally runs out-of-memory. The feature works like regular memory paging between CPU RAM
+and the disk. We use this feature to allocate paged memory for the optimizer states which are then
+automatically evicted to CPU RAM when the GPU runs out-of-memory and paged back into GPU
+memory when the memory is needed in the optimizer update step.
+QL O RA. Using the components described above, we define QL O RA for a single linear layer in
+the quantized base model with a single LoRA adapter as follows:
+
+                   YBF16 = XBF16 doubleDequant(cFP32
+                                                1    , ck-bit
+                                                        2 ,W
+                                                              NF4
+                                                                  ) + XBF16 LBF16
+                                                                             1    LBF16
+                                                                                   2    ,            (5)
+
+where doubleDequant(·) is defined as:
+          doubleDequant(cFP32
+                         1    , ck-bit
+                                 2 ,W
+                                       k-bit
+                                             ) = dequant(dequant(cFP32
+                                                                  1    , ck-bit
+                                                                          2 ), W
+                                                                                 4bit
+                                                                                      ) = WBF16 ,    (6)
+
+We use NF4 for W and FP8 for c2 . We use a blocksize of 64 for W for higher quantization precision
+and a blocksize of 256 for c2 to conserve memory.
+                                                                                              ∂E
+For parameter updates only the gradient with respect to the error for the adapters weights ∂L    i
+                                                                                                   are
+                                  ∂E                               ∂E                              ∂X
+needed, and not for 4-bit weights ∂W . However, the calculation of ∂Li entails the calculation of ∂W
+which proceeds via equation (5) with dequantization from storage WNF4 to computation data type
+                                   ∂X
+WBF16 to calculate the derivative ∂W   in BFloat16 precision.
+To summarize, QL O RA has one storage data type (usually 4-bit NormalFloat) and a computation
+data type (16-bit BrainFloat). We dequantize the storage data type to the computation data type
+to perform the forward and backward pass, but we only compute weight gradients for the LoRA
+parameters which use 16-bit BrainFloat.
+
+4       QLoRA vs. Standard Finetuning
+We have discussed how QLoRA works and how it can significantly reduce the required memory for
+finetuning models. The main question now is whether QLoRA can perform as well as full-model
+finetuning. Furthermore, we want to analyze the components of QLoRA including the impact of
+NormalFloat4 over standard Float4. The following sections will discuss the experiments that aimed
+at answering these questions.
+    3
+        https://docs.nvidia.com/cuda/cuda-c-programming-guide
+
+
+
+
+                                                                5
+Experimental setup. We consider three architectures (encoder, encoder-decoder, and decoder only)
+and compare QLoRA with 16-bit adapter-finetuning and with full-finetuning for models up to 3B. Our
+evaluations include GLUE [58] with RoBERTa-large [38], Super-NaturalInstructions (TKInstruct)
+[61] with T5 [49], and 5-shot MMLU [24] after finetuning LLaMA on Flan v2 [39] and Alpaca
+[55]. To additionally study the advantages of NF4 over other 4-bit data types, we use the setup of
+Dettmers and Zettlemoyer [13] and measure post-quantization zero-shot accuracy and perplexity
+across different models (OPT [72], LLaMA [57], BLOOM [52], Pythia [7]) for model sizes 125m -
+13B. We provide more details in the results section for each particular setup to make the results more
+readable. Full details in Appendix A.
+While paged optimizers are critical to do 33B/65B
+QL O RA tuning on a single 24/48GB GPU, we do
+                                                                                     64
+not provide hard measurements for Paged Optimiz-
+ers since the paging only occurs when processing
+                                                                                     63
+mini-batches with long sequence lengths, which is
+                                                            RougeL
+rare. We do, however, perform an analysis of the
+                                                                                     62
+runtime of paged optimizers for 65B models on
+                                                                                                                                                   bits
+48GB GPUs and find that with a batch size of 16,                                                                                                      4
+                                                                                     61                                                               16
+paged optimizers provide the same training speed
+as regular optimizers. Future work should measure                                    60
+and characterize under what circumstances slow-
+downs occur from the paging process.                                                       QL             N           n
+                                                                                                                     tio        rs)          ca
+                                                                                             oRA-A  QLoR                     ou         rd-
+                                                                                                   ll   A-F QLoR
+                                                                                                                           a(              Alp a
+Default LoRA hyperparameters do not match 16-                                                               F   A-A    Alp
+                                                                                                                           ac      nfo
+                                                                                                                   tte n         Sta
+bit performance When using the standard prac-                               Model
+tice of applying LoRA to query and value attention
+projection matrices [28], we are not able to replicate Figure 2: RougeL for LLaMA 7B models on the
+full finetuning performance for large base models. Alpaca dataset. Each point represents a run with a
+As shown in Figure 2 for LLaMA 7B finetuning on different random seed. We improve on the Stanford
+Alpaca, we find that the most critical LoRA hyper- Alpaca fully finetuned default hyperparameters to
+parameter is how many LoRA adapters are used in construct a strong 16-bit baseline for comparisons.
+                                                       Using LoRA on all transformer layers is critical to
+total and that LoRA on all linear transformer block match 16-bit performance.
+layers are required to match full finetuning perfor-
+mance. Other LoRA hyperparameters, such as the
+projection dimension r, do not affect performance (see Appendix A).
+Similarly, we find that default hyperparameters for
+fully finetuned baselines are undertuned. We do a
+                                                                                            4-bit LLaMA
+hyperparameter search over learning rates 1e-6 to                                   0.67
+
+
+5e-5 and batch sizes 8 to 128 to find robust baselines.                             0.66
+
+
+
+
+                                                           Mean zeroshot accuracy
+Results for 7B LLaMA finetuning on Alpaca are                                       0.65
+shown in Figure 2.
+                                                                                    0.64
+
+4-bit NormalFloat yields better performance                                         0.63
+
+than 4-bit Floating Point While the 4-bit                                           0.62
+NormalFloat (NF4) data type is information-                                                                                                  Data type
+                                                                                    0.61                                                      Float
+theoretically optimal, it still needs to be determined                                                                                        NFloat
+if this property translates to empirical advantages.                                0.60                                                      NFloat + DQ
+
+We follow the setup from Dettmers and Zettlemoyer                                      1010                                      1011
+                                                                                                                Total model bits
+[13] where quantized LLMs (OPT [72], BLOOM
+[52], Pythia [7], LLaMA) of different sizes (125M         Figure 3: Mean zero-shot accuracy over Wino-
+to 65B) with different data types are evaluated on        grande, HellaSwag, PiQA, Arc-Easy, and Arc-
+language modeling and a set of zero-shot tasks. In        Challenge using LLaMA models with different 4-bit
+Figure 3 and Table 2 we see that NF4 improves per-        data types. The NormalFloat data type significantly
+formance significantly over FP4 and Int4 and that         improves the bit-for-bit accuracy gains compared
+double quantization reduces the memory footprint          to regular 4-bit Floats. While Double Quantization
+without degrading performance.                            (DQ) only leads to minor gains, it allows for a more
+                                                          fine-grained control over the memory footprint to fit
+k-bit QL O RA matches 16-bit full finetuning and          models of certain size (33B/65B) into certain GPUs
+16-bit LoRA performance Recent findings have              (24/48GB).
+established that 4-bit quantization for inference is
+
+
+                                                    6
+

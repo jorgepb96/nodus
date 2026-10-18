@@ -1,4 +1,7 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -16,6 +19,7 @@ import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -110,6 +114,7 @@ export const EN: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS["en"],
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS["en"],
   ...RESEARCH_ATTACHMENT_TRANSLATIONS['en'],
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['en'],
   ...VAULT_FILE_DROP_TRANSLATIONS['en'],
   "Research chat": "Research chat",
   "Elige al menos una base de datos.": "Choose at least one database.",
@@ -125,6 +130,7 @@ export const EN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.en,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.en,
   ...MODEL_SETTINGS_TRANSLATIONS.en,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['en'],
   ...DICTIONARY_TRANSLATIONS.en,
   'Tamaño de Nodi': 'Nodi size',
   'El 100 % conserva el tamaño original de Nodi y es el máximo. Puedes reducirlo hasta el 40 %.': "100% keeps Nodi's original size and is the maximum. You can reduce it to 40%.",
@@ -9229,4 +9235,7 @@ export const EN: Record<string, string> = {
   "El informe ya no está disponible.": "The report is no longer available.",
   "No se pudo guardar el estado de lectura.": "The reading position could not be saved.",
   "Exportación preparada": "Export ready",
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["en"],
 };
+
+Object.assign(EN, SIGN_TRANSLATIONS['en']);

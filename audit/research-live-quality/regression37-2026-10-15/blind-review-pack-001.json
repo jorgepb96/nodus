@@ -1,0 +1,43 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-77bd8ce916e067e448c0dfc2",
+      "answerSha256": "f3e566ece1540ff49e81d3423dafef860878168f9fae29926d3d9bd4f6748b27",
+      "sourceHash": "09ee2314afe8d9a0a4306db3a0f15ca8f08cd454a6bfc178016d9f3c056de033",
+      "question": "Explica cómo NF4, la doble cuantización y los optimizadores paginados ahorran memoria en QLoRA; distingue almacenamiento y cómputo y cita el artículo.",
+      "language": "es",
+      "answer": "NF4 es un tipo de 4 bits con bins que reciben igual número esperado de valores; el artículo lo describe como óptimo desde el punto de vista de la información para datos normalmente distribuidos y centrados en cero. [public QLORA001](nodus://review-source/review-77bd8ce916e067e448c0dfc2/2) El modelo base de 4 bits ocupa 5.048 MB. [public QLORA001, p. 4](nodus://review-source/review-77bd8ce916e067e448c0dfc2/1)\n\nLa doble cuantización cuantiza las constantes de cuantización para ahorrar memoria adicional. [public QLORA001](nodus://review-source/review-77bd8ce916e067e448c0dfc2/2) Con constantes de 32 bits y bloques de 64 pesos, estas añaden 32/64 = 0,5 bits por parámetro en promedio. [public QLORA001](nodus://review-source/review-77bd8ce916e067e448c0dfc2/2)\n\nLos optimizadores paginados evitan que los picos de memoria durante el checkpointing de gradientes causen errores de falta de memoria, una dificultad para ajustar modelos grandes en una sola máquina. [public QLORA001, p. 4](nodus://review-source/review-77bd8ce916e067e448c0dfc2/1)\n\nLa distinción es entre almacenamiento y cómputo: QLoRA almacena los pesos normalmente en 4 bits y, al usarlos, los descuantiza a BFloat16; después realiza la multiplicación matricial en 16 bits. [public QLORA001, p. 4](nodus://review-source/review-77bd8ce916e067e448c0dfc2/1)\n\nEl artículo presenta NF4 y la doble cuantización como técnicas para el ajuste fino de alta fidelidad en 4 bits, y añade los optimizadores paginados para evitar errores de memoria por picos durante el checkpointing. [public QLORA001, p. 4](nodus://review-source/review-77bd8ce916e067e448c0dfc2/1)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "public QLORA001, p. 4",
+          "text": "Source title: public QLORA001\nSource locator: p. 4\nEvidence provenance: source\nVerbatim excerpt:\nLoRA weights combined. In comparison, the 4-bit base model consumes 5,048 MB of memory. This highlights that gradient checkpointing is important but also that aggressively reducing the amount of LoRA parameter yields only minor memory benefits. This means we can use more adapters without significantly increasing the overall training memory footprint (see Appendix G for a detailed breakdown). As discussed later, this is crucial for recovering full 16-bit precision performance. ## 3 QLORA Finetuning QLORA achieves high-fidelity 4-bit finetuning via two techniques we propose—4-bit NormalFloat (NF4) quantization and Double Quantization. Additionally, we introduce Paged Optimizers, to prevent memory spikes during gradient checkpointing from causing out-of-memory errors that have traditionally made finetuning on a single machine difficult for large models. QLORA has one low-precision storage data type, in our case usually 4-bit, and one computation data type that is usually BFloat16. In practice, this means whenever a QLORA weight tensor is used, we dequantize the tensor to BFloat16, and then perform a matrix multiplication in 16-bit. We now discuss the components of QLORA followed by a formal definition of QLORA. 4-bit NormalFloat Quantization The NormalFloat (NF) data type builds on Quantile Quantization [15] which is an information-theoretically optimal data type that ensures each quantization bin has an equal number of values assigned from the input tensor. Quantile quantization works by estimating the quantile of the input tensor through the empirical cumulative distribution function. The main limitation of quantile quantization is that the process of quantile estimation is expensive. Therefore fast quantile approximation algorithms, such as SRAM quantiles [15], are used to estimate them. Due to the approximate nature of these quantile estimation algorithms, the data type has large quantization errors for",
+          "page": null,
+          "citation": "nodus://review-source/review-77bd8ce916e067e448c0dfc2/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "public QLORA001",
+          "text": "Source title: public QLORA001\nEvidence provenance: source\nVerbatim excerpt:\nensure a discrete zeropoint of 0 and to use all 2\nk\nbits for a k-bit datatype, we create an asymmetric\ndata type by estimating the quantiles qi of two ranges qi: 2\nk−1\nfor the negative part and 2\nk−1\n+ 1 for\nthe positive part and then we unify these sets of qi and remove one of the two zeros that occurs in both\nsets. We term the resulting data type that has equal expected number of values in each quantization bin\nk-bit NormalFloat (NFk), since the data type is information-theoretically optimal for zero-centered\nnormally distributed data. The exact values of this data type can be found in Appendix E.\nDouble Quantization We introduce Double Quantization (DQ), the process of quantizing the\nquantization constants for additional memory savings. While a small blocksize is required for precise\n4-bit quantization [13], it also has a considerable memory overhead. For example, using 32-bit\nconstants and a blocksize of 64 for W, quantization constants add 32/64 = 0.5 bits per parameter on\naverage. Double Quantizatio",
+          "page": null,
+          "citation": "nodus://review-source/review-77bd8ce916e067e448c0dfc2/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 21, p. 1",
+          "text": "Source title: fixture 21\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+          "page": null,
+          "citation": "nodus://review-source/review-77bd8ce916e067e448c0dfc2/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 01, p. 1",
+          "text": "Source title: fixture 01\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro · archive 1 La escuela de Puerto Claro abrió su biblioteca en 1912. En 1913 abrió el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-77bd8ce916e067e448c0dfc2/4"
+        }
+      ]
+    }
+  ]
+}

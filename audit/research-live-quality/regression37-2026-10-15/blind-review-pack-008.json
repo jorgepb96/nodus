@@ -1,0 +1,57 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-0f4fec41eb1075d09b2e5e56",
+      "answerSha256": "c7754f8bc4e5f9479d7712acaf044390e5207ba76be5f92f47764151dc8f93ac",
+      "sourceHash": "967aa5b2956b842f34d009f2ee24d3889b290c91a315c534c153fcc86386909e",
+      "question": "Are deleted objects and closed accounts equally recoverable in Linde?",
+      "language": "en",
+      "answer": "No. The /restore endpoint recovers deleted items, but not closed accounts. [fixture 20, p. 1](nodus://review-source/review-0f4fec41eb1075d09b2e5e56/1)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 20, p. 1",
+          "text": "Source title: fixture 20\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Linde · archive 20 The Linde API retains events for 14 days. The /restore endpoint recovers deleted items, but not closed accounts. Version 2 changed retention from 7 to 14 days.",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 30, p. 1",
+          "text": "Source title: fixture 30\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Linde · archive 30 · Evidence: L’API Linde conserva gli eventi per 14 giorni. /restore recupera elementi eliminati, non account chiusi. La versione 2 ha cambiato il limite da 7 a 14 giorni. 2. Document: Version · Evidence: Retention days 3. Document: 1 · Evidence: 7 4. Document: 2 · Evidence: 14",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 15, p. 1",
+          "text": "Source title: fixture 15\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nLinde · archive 15 # Linde · archive 15 L’API Linde conserve les événements 14 jours. /restore récupère les éléments supprimés, pas les comptes fermés. La version 2 a remplacé 7 jours par 14.",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 25, p. 1",
+          "text": "Source title: fixture 25\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 05, p. 1",
+          "text": "Source title: fixture 05\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nLinde - archive 5 A API Linde conserva eventos durante 14 dias. /restore recupera itens eliminados, mas no contas encerradas. A versbo 2 alterou o prazo de 7 para 14 dias. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/5"
+        },
+        {
+          "sourceRef": "source-6",
+          "title": "fixture 10, p. 1",
+          "text": "Source title: fixture 10\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nLinde · archive 10 Die Linde-API speichert Ereignisse 14 Tage. /restore stellt gelöschte Elemente, aber keine geschlossenen Konten wieder her. Version 2 erhöhte die Frist von 7 auf 14 Tage.",
+          "page": null,
+          "citation": "nodus://review-source/review-0f4fec41eb1075d09b2e5e56/6"
+        }
+      ]
+    }
+  ]
+}

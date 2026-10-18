@@ -19,7 +19,7 @@ const STUBS = {
   '../capabilities/registry': 'export const capabilityRegistry = () => ({ providers: new Map() });',
   '../reactionIndex': 'export const reactionIndexService = () => ({ localDirectory: async () => null });',
   './moleculeInspection': 'export const chemistryRunner = () => ({ runner: {}, dispose: async () => {} });',
-  './aiClient': 'export const embed = async () => null;',
+  './aiClient': 'export const embedQuery = async () => null;',
   './chemistryStock': 'export const chemistryStockDirectory = () => null;',
   // The monomer library resolves its directory through electron's app, which a bundle run under
   // plain node cannot load; without this stub the whole file fails before a test runs.

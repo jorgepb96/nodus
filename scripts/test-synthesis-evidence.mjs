@@ -3,6 +3,7 @@ import { build } from 'esbuild';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import fs from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -233,4 +234,58 @@ test('a purchasable disconnection keeps the vendors that stock every precursor',
   assert.equal(entry.proposals[0].purchasable, true);
   assert.deepEqual(entry.proposals[0].vendors, ['mcule']);
   assert.equal('purchasable' in entry.proposals[1], false);
+});
+
+// THE INPUT THE APPLICATION SENDS A TOOL HAS TO BE THE SHAPE THAT TOOL DECLARES.
+//
+// Why this is here. `invokeForwardSteps` sent `{ indexDir, forwardSteps: { molecule, ... } }` from
+// the day it was written (2026-10-14) until 2026-10-17. That is the shape of the PYTHON worker's
+// stdin, one layer further in than the tool's own input — the package builds it itself. The tool
+// reads `input.molecule`, found nothing, and threw on every call. The caller catches and logs
+// "forward-step support unavailable", so the only symptom was route reports with no forward-step
+// support in them, which is indistinguishable from an index that had nothing to offer.
+//
+// Read from the source text rather than by calling the function, because calling it needs the
+// capability registry, a worker and the reaction index. The property being guarded is the literal
+// shape, so the literal is what is checked.
+const forwardStepsInputLiteral = async () => {
+  const source = await readFile(path.join(root, 'electron/ai/synthesisEvidence.ts'), 'utf8');
+  const start = source.indexOf('export async function invokeForwardSteps(');
+  assert.ok(start > 0, 'invokeForwardSteps is still named that');
+  const body = source.slice(start, start + 4000);
+  const line = /const input = \{([^\n]*)\};/.exec(body);
+  assert.ok(line, 'invokeForwardSteps still builds its input as one object literal');
+  return line[1];
+};
+
+test('the forward-step search sends the tool its own input shape, not the python stdin shape', async () => {
+  const literal = await forwardStepsInputLiteral();
+  assert.ok(!/\bforwardSteps\s*:/.test(literal),
+    `the input nests a forwardSteps wrapper, which is the python stdin shape and not the tool's input: ${literal}`);
+  assert.match(literal, /\bmolecule\b/, 'the tool requires `molecule` at the top level');
+});
+
+test('every key the forward-step input carries is one the package declares', async (t) => {
+  const marketplace = [
+    process.env.NODUS_MARKETPLACE_DIR,
+    path.resolve(root, '../marketplace'),
+    path.resolve(root, '../../../../marketplace'),
+  ].filter(Boolean).find(candidate => fs.existsSync(path.join(candidate, 'plugins/chemistry-studio/capabilities/chemistry/capability.json')));
+  if (!marketplace) { t.skip('no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'); return; }
+
+  const capability = JSON.parse(fs.readFileSync(path.join(marketplace, 'plugins/chemistry-studio/capabilities/chemistry/capability.json'), 'utf8'));
+  const tool = capability.tools.find(entry => entry.id === 'propose-forward-steps');
+  assert.ok(tool, 'the package still declares propose-forward-steps');
+  const declared = new Set(Object.keys(tool.inputSchema.properties ?? {}));
+
+  // The keys of the literal: an explicit `key:`, or a shorthand `key` standing between commas. A
+  // conditional spread, `...(reagents.length ? { reagents: ... } : {})`, contributes its key
+  // through the first form, and `reagents.length` is not one because of the dot.
+  const literal = await forwardStepsInputLiteral();
+  const sent = new Set();
+  for (const match of literal.matchAll(/(?:^|[,{])\s*([A-Za-z_]\w*)\s*(?=:)/g)) sent.add(match[1]);
+  for (const match of literal.matchAll(/(?:^|,)\s*([A-Za-z_]\w*)\s*(?=,|$)/g)) sent.add(match[1]);
+  assert.ok(sent.size, `no keys were read out of the input literal: ${literal}`);
+  for (const key of sent) assert.ok(declared.has(key), `the input sends \`${key}\`, which propose-forward-steps does not declare (it declares ${[...declared].join(', ')})`);
+  for (const key of tool.inputSchema.required ?? []) assert.ok(sent.has(key), `the input omits \`${key}\`, which propose-forward-steps requires`);
 });

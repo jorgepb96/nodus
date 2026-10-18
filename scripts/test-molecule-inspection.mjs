@@ -570,6 +570,50 @@ test('the route review request carries each step description and says a named re
   assert.match(ROUTE_REVIEW_SYSTEM, /dehydration, decarboxylation/);
 });
 
+test('the route review request carries the checker\'s bond ledger, so the reviewer does not re-derive it', () => {
+  // Found 2026-10-13: skeletonFacts reached the final report and the per-step trace but never this
+  // request, though its own docstring said the reviewer read it. Re-deriving is where a long
+  // route's review goes wrong — the cost grows with the chain while the facts are already computed.
+  const labels = [[{ role: 'product', byproduct: false, name: 'ethoxyethane', smiles: 'CCOCC' }]];
+  const step = { ...passingStep(0, 'a>>b'), bonds: { 'C–O': 1, 'C–Cl': -1 } };
+  const audit = normalizeRouteAudit({ continuous: true, blocked: [], steps: [step], links: [] });
+  const request = buildRouteReviewRequest('Propose a synthesis of ethoxyethane.', labels, audit);
+  assert.match(request, /The checker determined:/);
+  assert.match(request, /\+1 C–O/);
+  assert.match(request, /−1 C–Cl/);
+
+  // A step that changes no bond adds no line rather than an empty one.
+  const quiet = normalizeRouteAudit({ continuous: true, blocked: [], steps: [passingStep(0, 'a>>b')], links: [] });
+  assert.doesNotMatch(buildRouteReviewRequest('Propose a synthesis.', labels, quiet), /The checker determined:/);
+});
+
+test('a stereo mismatch shows what the route formed, not only what was asked for', () => {
+  // Measured 2026-10-14: a model named its building block (2S) in prose and wrote the opposite
+  // configuration in the structure beside it. The verdict said "forms its constitution but not its
+  // stereochemistry" and quoted only the TARGET, so the author was asked to diff two structures
+  // while being shown one of them. The route then repeated the same answer.
+  const target = {
+    input: 'COC(=O)[C@@H](C)N', canonicalSmiles: 'COC(=O)[C@@H](C)N', formula: 'C4H9NO2',
+    formedAt: null, reason: 'stereo-mismatch', deliveredStructure: 'COC(=O)[C@H](C)N',
+  };
+  const audit = normalizeRouteAudit({
+    continuous: false, blocked: [], links: [], steps: [passingStep(0, 'a>>b')], target,
+  });
+  assert.equal(audit.target?.deliveredStructure, 'COC(=O)[C@H](C)N', 'the structure survives normalisation');
+  const report = formatRouteAudit(audit);
+  assert.match(report, /forms its constitution but not its stereochemistry/);
+  assert.match(report, /The route forms `COC\(=O\)\[C@H\]\(C\)N`/, 'what was actually made is shown');
+  assert.match(report, /correct the configuration where they differ/);
+
+  // Without it the verdict is unchanged, so an older package loses nothing.
+  const older = normalizeRouteAudit({
+    continuous: false, blocked: [], links: [], steps: [passingStep(0, 'a>>b')],
+    target: { ...target, deliveredStructure: undefined },
+  });
+  assert.equal(older.target?.deliveredStructure, undefined);
+  assert.doesNotMatch(formatRouteAudit(older), /The route forms/);
+});
+
 test('a step that cannot be assembled is FAIL and named in the verdict', () => {
   const audit = normalizeRouteAudit({
     continuous: false, blocked: ['Step 1: the equation can only balance by taking more product molecules than the substrate molecules can form.'],
@@ -1515,6 +1559,36 @@ test('a step carries its reaction class, a textbook passage and the index altern
   assert.doesNotMatch(routeFixChips(formatNamedRouteFixPrompts(labels, audit))[0].prompt, /Evidence, not an instruction/);
 });
 
+test('a step carries the forward view, with the curated id and the record\'s non-reactions marked', () => {
+  // The other half of step support. `alternatives` works back from the product; this says what the
+  // record supports doing to the reactant the step already holds, which is run by the application
+  // because the model never asks: 19 offers on small molecules and 14 REQUIRED on the chains gave
+  // zero lookups, while propose-disconnections — an application call — ran six times in one turn.
+  const labels = [[
+    { role: 'reactant', byproduct: false, name: 'tert-butoxycarbonylglycine', smiles: 'CC(C)(C)OC(=O)NCC(=O)O' },
+    { role: 'reactant', byproduct: false, name: 'methyl L-alaninate', smiles: 'COC(=O)[C@H](C)N' },
+    { role: 'product', byproduct: false, name: 'the dipeptide', smiles: 'COC(=O)[C@H](C)NC(=O)CNC(=O)OC(C)(C)C' },
+  ]];
+  const queries = buildPrecedentQueries(labels);
+  const precedent = normalizeReactionPrecedent({ reactions: [{ input: queries[0].query, count: 0, classes: [] }], products: [], similar: [] });
+  const support = new Map([[0, {
+    forward: { reactant: 'CC(C)(C)OC(=O)NCC(=O)O', steps: [
+      { product: 'COC(=O)[C@H](C)NC(=O)CNC(=O)OC(C)(C)C', named: 'amide-formation', recorded: 6592 },
+      { product: 'CC(C)(C)OC(=O)NCC(=O)[O-]', named: null, recorded: 3401, caution: 'a protonation state of the same molecule, not a reaction' },
+    ] },
+  }]]);
+  const text = formatReactionPrecedents(precedent, { queries, labels, support });
+  // The curated id is quoted as the model would write it, because that is the point of showing it:
+  // `named` is exactly what apply(..., named="<id>") takes.
+  assert.match(text, /- What the record supports doing to `CC\(C\)\(C\)OC\(=O\)NCC\(=O\)O`: /);
+  assert.match(text, /`COC\(=O\)\[C@H\]\(C\)NC\(=O\)CNC\(=O\)OC\(C\)\(C\)C` \(`named="amide-formation"`; recorded 6592×\)/);
+  // A candidate with no curated verb says so, and one that is not a reaction carries its objection
+  // rather than being dropped: the record genuinely holds it.
+  assert.match(text, /\(no curated transformation; recorded 3401×; a protonation state of the same molecule, not a reaction\)/);
+  // Nothing is printed when the search returned nothing, so an ordinary step is unchanged.
+  assert.doesNotMatch(formatReactionPrecedents(precedent, { queries, labels }), /What the record supports doing/);
+});
+
 test('the route rules agree with each other and with what the checker does', () => {
   // Agents are what a step does not consume; the old "never a species that takes no part" said
   // the opposite of a catalyst's definition.
@@ -2292,7 +2366,7 @@ test('a step that balanced only by refiling a declared reactant is a failing ste
     balanced: true, chargeBalanced: true, differences: [], unspecifiedStereocentres: 0,
   };
   // The step balances only after the checker's own edit, and the failure says so before the reason.
-  assert.equal(routeStepFailure({ ...base, refiledReactant: refiled }), `balanced only after the checker refiled a declared reactant: ${refiled}`);
+  assert.equal(routeStepFailure({ ...base, refiledReactant: refiled }), `balances only if a declared reactant takes no part: ${refiled}`);
   // Which path it takes turns on how far the rescue search reaches, not on the chemistry, so a
   // step with nothing refiled is still clean.
   assert.equal(routeStepFailure(base), null);
@@ -2384,7 +2458,7 @@ test('the step line and the route verdict cannot disagree about which step faile
     // Nor may a failing line call the step plainly "balanced": a refiled step balanced only after
     // the checker changed the author's declaration.
     if (cause === 'refiledReactant') {
-      assert.match(line, /^- Step 1 FAIL — balanced only after the checker refiled a declared reactant\./);
+      assert.match(line, /^- Step 1 FAIL — balances only if a declared reactant takes no part\./);
     }
   }
 });

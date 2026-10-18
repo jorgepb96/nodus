@@ -16,7 +16,8 @@ and automatic local connection status. Do not use screenshots containing private
 
 - **activeTab:** read bibliographic metadata from only the tab on which the user clicks the icon.
 - **scripting:** execute the bundled, deterministic metadata collector in that active tab.
-- **storage:** retain the loopback port, pairing token, and last chosen collection on the device.
+- **storage:** retain the loopback port, pairing token, last chosen collection, and pending save jobs on the device. Completed history is limited to 20 jobs.
+- **alarms:** recover only user-confirmed save jobs interrupted by browser or service-worker shutdown.
 - **127.0.0.1 / localhost:** send the reviewed capture to the local Nodus desktop app.
 - **Optional website access:** download only an attachment selected by the user when its site
   requires the active browser session and Nodus's public download has failed. Chrome presents this

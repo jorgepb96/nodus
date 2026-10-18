@@ -6,7 +6,7 @@ export const TROUBLESHOOTING_DOC_TOPICS: readonly NodusDocTopic[] = [
     id: 'troubleshooting-index',
     area: 'troubleshooting',
     title: { es: 'Cómo diagnosticar un problema en Nodus', en: 'How to diagnose a problem in Nodus' },
-    keywords: ['problema', 'error', 'no funciona', 'falla', 'diagnostico', 'logs', 'registros', 'cola', 'queue', 'informe', 'soporte', 'ayuda', 'no se que pasa'],
+    keywords: ['problema', 'error', 'no funciona', 'falla', 'diagnostico', 'logs', 'registros', 'cola', 'queue', 'informe', 'soporte', 'ayuda', 'no se que pasa', 'va mal'],
     body: {
       es: `- Orden de diagnóstico recomendado: mirar la cola de tareas («Cola y tareas» en la cabecera) para ver qué está fallando y desde dónde se abren los registros; revisar el estado de la obra en la Biblioteca; y, si el fallo es de un ajuste o de un modelo, comprobar Ajustes > Modelos IA y Ajustes > Proveedores.
 - Registros de procesamiento: un único archivo local, excluido de copias y sincronización, con la categoría del fallo (modelo, JSON, embeddings, proveedor, conexión, extracción, OCR, indexado, cola, almacenamiento o sistema), el detalle crudo del proveedor, los reintentos y el estado HTTP. Se abren desde la cola («Logs» / «Registros de procesamiento») y se pueden exportar.

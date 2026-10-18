@@ -59,6 +59,33 @@ try {
   assert.equal(normalized[3], undefined, 'verdicts without premises are malformed');
   assert.deepEqual(normalized[4].premises[0].evidence, [], 'an over-short quote is dropped, never accepted');
   assert.equal(applyResearchProseVerdicts('The north field measured 23 units.', sources, [normalized[4]]).claims[0].failure, 'premise_without_literal_evidence');
+  const meanSource = { id: 'mean', text: 'Source title: Bruma\nVerbatim excerpt:\nLa mediana fue 18 y la media 24; no son equivalentes.', label: 'Bruma', citation: 'nodus://passage/mean' };
+  const shortMean = verdict(0, [premise('The mean was 24', 'la media 24', { id: 'mean' })]);
+  const expandedMean = normalizeResearchProseVerdicts({ claims: [shortMean] }, 1, [meanSource]);
+  assert.equal(expandedMean[0].premises[0].evidence[0].quote, 'La mediana fue 18 y la media 24; no son equivalentes.');
+  assert.equal(expandedMean[0].premises[0].evidence[0].originalQuote, 'la media 24', 'trace retains the original short literal span');
+  const acceptedMean = applyResearchProseVerdicts('The mean was 24.', [meanSource], expandedMean);
+  assert.equal(acceptedMean.claims[0].status, 'supported', 'a unique authorized short literal anchor can be verified in its complete source sentence');
+  assert.equal(acceptedMean.claims[0].evidence[0].originalQuote, 'la media 24');
+  for (const [name, evidence, authorized] of [
+    ['unknown-source', { id: 'elsewhere', quote: 'la media 24' }, [meanSource]],
+    ['number-only', { id: 'mean', quote: '12345678' }, [{ ...meanSource, text: 'Verbatim excerpt:\nID 12345678.' }]],
+    ['ambiguous-repeat', { id: 'mean', quote: 'la media 24' }, [{ ...meanSource, text: `${meanSource.text} la media 24.` }]],
+    ['word-fragment', { id: 'mean', quote: 'la media 24' }, [{ ...meanSource, text: 'Verbatim excerpt:\nUna xla media 24x es incorrecta.' }]],
+    ['duplicate-source-id', { id: 'mean', quote: 'la media 24' }, [meanSource, meanSource]],
+    ['model-trace-forgery', { id: 'mean', quote: 'la media 24', originalQuote: 'fabricated' }, [{ ...meanSource, text: 'Verbatim excerpt:\nla media 24; later sentence.' }]],
+    ['no-safe-right-boundary', { id: 'mean', quote: 'la media 24' }, [{ ...meanSource, text: 'Verbatim excerpt:\nLa media 24; the excerpt ends without a full stop' }]],
+  ]) {
+    const raw = verdict(0, [{ ...premise('x', evidence.quote, { id: evidence.id }), evidence: [evidence] }]);
+    const rejected = normalizeResearchProseVerdicts({ claims: [raw] }, 1, authorized);
+    assert.deepEqual(rejected[0].premises[0].evidence, [], `${name}: unsafe short quote expansion is rejected`);
+  }
+  const untrustedTrace = normalizeResearchProseVerdicts({ claims: [verdict(0, [{ ...premise('x', 'A long enough exact source quote.', { id: 'inside' }),
+    evidence: [{ id: 'inside', quote: 'A long enough exact source quote.', originalQuote: 'forged by provider' }] }])] }, 1, sources);
+  assert.equal(untrustedTrace[0].premises[0].evidence[0].originalQuote, undefined, 'model-supplied trace metadata is not preserved');
+  const decimalSource = { ...meanSource, text: 'Verbatim excerpt:\nValue 3.14 is recorded in the source. Later sentence.' };
+  const decimal = normalizeResearchProseVerdicts({ claims: [verdict(0, [premise('x', 'Value 3.14', { id: 'mean' })])] }, 1, [decimalSource]);
+  assert.equal(decimal[0].premises[0].evidence[0].quote, 'Value 3.14 is recorded in the source.', 'a decimal point is not mistaken for a sentence boundary');
   assert.equal(normalized.length <= 5, true, 'indexes outside the batch are ignored');
   assert.equal(validResearchProseVerdicts({ claims: Array(9).fill({}) }), false, 'an oversized batch is rejected');
   const unavailable = applyResearchProseVerdicts(text, sources, []);

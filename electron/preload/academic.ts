@@ -4,16 +4,18 @@
 import { ipcRenderer } from 'electron';
 import type { QueueProgress, ReprocessProgress, EmbeddingPipelineProgress, PassageEmbeddingProgress, SemanticBridgeProgress, ChapterRelationsProgress, DocumentIndexProgress } from '@shared/types';
 import type { AcademicApi } from '@shared/api/academic';
+import { chatStreamRegistry } from './chatStreams';
 
 // The stream currently in flight for each cancellable channel, so the Stop
 // button can abort it without the renderer having to juggle request ids. One
-// stream at a time per surface (the composer is disabled while sending).
-let activeChatRequestId: string | null = null;
+// stream at a time per surface (the composer is disabled while sending), except
+// the chats, which may answer in several conversations at once.
+const researchChatStreams = chatStreamRegistry();
 /** How long a finished research turn still accepts its late activity events. */
 const ACTIVITY_GRACE_MS = 2000;
 let activeLibraryReaderChatRequestId: string | null = null;
 let activeStudyImproveRequestId: string | null = null;
-let activeStudyAssistantRequestId: string | null = null;
+const studyAssistantStreams = chatStreamRegistry();
 let activeStudySttRequestId: string | null = null;
 
 export const academicApi: AcademicApi = {
@@ -423,15 +425,16 @@ export const academicApi: AcademicApi = {
     const onDelta = (_e: unknown, id: string, delta: string) => { if (id === requestId) handlers.onDelta(delta); };
     const onReasoning = (_e: unknown, id: string, delta: string) => { if (id === requestId) handlers.onReasoning?.(delta); };
     ipcRenderer.on('study:assistant:delta', onDelta); ipcRenderer.on('study:assistant:reasoning', onReasoning);
-    activeStudyAssistantRequestId = requestId;
+    const untrack = studyAssistantStreams.track(requestId, request.conversationId);
     try { return await ipcRenderer.invoke('study:assistant:stream', requestId, request); }
     finally {
-      if (activeStudyAssistantRequestId === requestId) activeStudyAssistantRequestId = null;
+      untrack();
       ipcRenderer.removeListener('study:assistant:delta', onDelta); ipcRenderer.removeListener('study:assistant:reasoning', onReasoning);
     }
   },
-  cancelStudyAssistant: async () => {
-    if (activeStudyAssistantRequestId) await ipcRenderer.invoke('study:assistant:cancel', activeStudyAssistantRequestId);
+  cancelStudyAssistant: async (conversationId) => {
+    const requestId = studyAssistantStreams.find(conversationId);
+    if (requestId) await ipcRenderer.invoke('study:assistant:cancel', requestId);
   },
   exportStudyAssistantConversation: (id) => ipcRenderer.invoke('study:assistant:export', id),
   listStudyQuestions: (filters) => ipcRenderer.invoke('study:questions:list', filters),
@@ -636,13 +639,13 @@ export const academicApi: AcademicApi = {
     ipcRenderer.on('research:chatStream:delta', onDelta);
     ipcRenderer.on('research:chatStream:reasoning', onReasoning);
     ipcRenderer.on('research:chatStream:replace', onReplace);
-    activeChatRequestId = requestId;
+    const untrack = researchChatStreams.track(requestId, request.conversationId);
     try {
       const response = await ipcRenderer.invoke('research:chatStream', requestId, request);
       handlers.onStats?.(response.stats);
       return response;
     } finally {
-      if (activeChatRequestId === requestId) activeChatRequestId = null;
+      untrack();
       // Activity events and the invoke reply travel on different IPC pipes, so the reply can
       // overtake the last events of the turn. Keep listening briefly for those stragglers.
       setTimeout(() => ipcRenderer.removeListener('research:chatStream:activity', onActivity), ACTIVITY_GRACE_MS);
@@ -652,8 +655,9 @@ export const academicApi: AcademicApi = {
       ipcRenderer.removeListener('research:chatStream:replace', onReplace);
     }
   },
-  cancelResearchChat: async () => {
-    if (activeChatRequestId) await ipcRenderer.invoke('research:chatStream:cancel', activeChatRequestId);
+  cancelResearchChat: async (conversationId) => {
+    const requestId = researchChatStreams.find(conversationId);
+    if (requestId) await ipcRenderer.invoke('research:chatStream:cancel', requestId);
   },
 
   getWritingWorkshopSnapshot: (brief) => ipcRenderer.invoke('writing:snapshot', brief),

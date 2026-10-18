@@ -1,0 +1,18 @@
+
+> nodus@5.10.0 test:research:focused
+> node --test scripts/test-research-calculation-audit.mjs scripts/test-embeddinggemma-availability.mjs scripts/test-research-luna-lifecycle.mjs
+
+Intel availability: real manager denies both profiles before download/worker, catalog filters them, legacy E5 retained, platform matrix and all UI/runtime translations passed (simulated Intel).
+✔ scripts/test-embeddinggemma-availability.mjs (255.929334ms)
+Recorded R007: baseline loss reproduced; bounded fresh label audit preserves arithmetic only on independent approval; literal evidence, inference dependencies, rejection and exhaustion remain strict. No model calls.
+✔ scripts/test-research-calculation-audit.mjs (2215.748334ms)
+QA lifecycle: cross-process admission, complete local transport, observed queue/read/post-read/delivery timing, phase-specific expiry, unchanged total deadline, retained requests and terminal rejection passed. Zero model generations.
+✔ scripts/test-research-luna-lifecycle.mjs (454.485875ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2226.582833

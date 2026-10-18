@@ -757,14 +757,14 @@ export function getGlobalLibraryItem(itemId: string): LibraryItemRecord | null {
 }
 
 /** Shared duplicate lookup for capture/import entry points. */
-export function findGlobalLibraryItemByMetadata(metadata: LibraryItemMetadata): {
+export function findGlobalLibraryItemByMetadata(metadata: LibraryItemMetadata, allowUrlMatch = true, captureRequestId?: string): {
   item: LibraryItemRecord;
-  matchedBy: 'identifier' | 'bibliography' | 'url';
+  matchedBy: 'request' | 'identifier' | 'bibliography' | 'url';
 } | null {
   const current = service();
   if (!current) return null;
   if (!current.catalog.status(current.root, current.deviceId).lastRebuiltAt) current.catalog.rebuild(current.store);
-  const match = current.catalog.findItemIdByMetadata(metadata);
+  const match = current.catalog.findItemIdByMetadata(metadata, allowUrlMatch, captureRequestId);
   if (!match) return null;
   const storageId = current.catalog.itemStorageId(match.itemId);
   const item = storageId ? current.store.readMaterializedItem(storageId) : null;

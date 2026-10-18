@@ -68,7 +68,7 @@ export function researchCorpusInventory(): { documents: ResearchCorpusDocument[]
     let authors: string[] = [];
     try { const parsed = JSON.parse(work.authors_json); if (Array.isArray(parsed)) authors = parsed.filter(value => typeof value === 'string'); } catch { /* Legacy metadata. */ }
     documents.push({ id, workId: work.nodus_id, libraryItemId: null, title: work.title, authors, year: work.year, attachmentId: null,
-      revision: researchFingerprint([work.zotero_version, work.zotero_fingerprint, work.resolved_text_hash]),
+      revision: researchFingerprint([work.zotero_version, work.zotero_fingerprint, work.resolved_text_hash, work.title]),
       permissionRevision: researchFingerprint([vault.id, work.nodus_id, work.zotero_key, work.archived]),
       origin: zotero ? { kind: 'zotero', libraryType: match ? 'group' : 'user', libraryId: match?.[1] ?? userId, itemKey: match?.[2] ?? work.zotero_key } : { kind: 'nodus', id },
       coverage: work.resolved_source_type === 'abstract_only' ? 'abstract' : work.resolved_text_chars > 0 ? 'fulltext' : 'metadata' });

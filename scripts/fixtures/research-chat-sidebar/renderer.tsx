@@ -66,7 +66,7 @@ function App() {
   return <><div style={{ display: 'flex', gap: 16 }}><aside style={{ width: 280, height: 640, display: 'flex', flexDirection: 'column' }} data-testid="research-history-sidebar" className="research-chat-history">
     <ResearchChatSidebar
       conversations={conversations} projects={projects} notebooks={notebooks}
-      supportsProjects notebooksOn activeId={null} activeProjectId={null} activeNotebookId={null} sending={false} archivedCount={0} showArchived={false}
+      supportsProjects notebooksOn activeId={null} activeProjectId={null} activeNotebookId={null} archivedCount={0} showArchived={false}
       onToggleArchived={() => log('toggleArchived')}
       onNewConversation={() => log('new')}
       onNewNotebook={() => log('newNotebook')}
@@ -86,6 +86,12 @@ function App() {
       onArchiveConversation={async conversation => log('archive', conversation.id)}
       onDeleteConversation={conversation => log('delete', conversation.id)}
       onMoveConversation={folderActions.onMoveConversation}
+      onDeleteConversations={selected => log('deleteMany', selected.map(item => item.id))}
+      onArchiveConversations={async (selected, archived) => log('archiveMany', selected.map(item => item.id), archived)}
+      onMoveConversations={async (selected, projectId) => {
+        log('moveMany', selected.map(item => item.id), projectId);
+        setConversations(current => current.map(item => selected.some(chosen => chosen.id === item.id) ? { ...item, projectId, folderId: null } : item));
+      }}
       onUpdateProject={async (target, patch) => { log('updateProject', target.id, patch); setProjects(current => current.map(item => item.id === target.id ? { ...item, ...patch } : item)); }}
       onDeleteProject={async target => { log('deleteProject', target.id); setProjects(current => current.filter(item => item.id !== target.id)); }}
       folderTree={folderTree}
@@ -142,7 +148,7 @@ function SurfaceHistory({ kind }: { kind: 'course' | 'notebook' }) {
     <ResearchChatSidebar
       conversations={conversations} projects={[project(`${kind}-p1`, 'Examen')]} notebooks={entries}
       supportsProjects notebooksOn notebookKind={kind} notebookCollections={false} notebookLocksMoves={kind !== 'course'}
-      activeId={null} activeProjectId={null} activeNotebookId={null} sending={false} archivedCount={0} showArchived={false}
+      activeId={null} activeProjectId={null} activeNotebookId={null} archivedCount={0} showArchived={false}
       onToggleArchived={() => undefined} onNewConversation={() => undefined} onNewProject={async () => null}
       onOpenConversation={id => log('open', id)} onOpenProject={id => log('openProject', id)} onOpenNotebook={id => log('notebook', id)}
       {...editing}

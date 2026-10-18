@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-0f4fec41eb1075d09b2e5e56",
+      "answerSha256": "c7754f8bc4e5f9479d7712acaf044390e5207ba76be5f92f47764151dc8f93ac",
+      "sourceHash": "967aa5b2956b842f34d009f2ee24d3889b290c91a315c534c153fcc86386909e",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_008",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "The answer directly resolves the requested comparison: deleted items and closed accounts are not equally recoverable. Source 1 explicitly states that /restore recovers deleted items, but not closed accounts, and the answer cites exactly that source's supplied citation and title. Sources 2, 3, 4, 5, and 6 corroborate the same distinction in Italian, French, Spanish, Portuguese, and German. The negation concerning closed accounts is preserved. The question requests no retention periods, version history, dates, units, or calculations, and the answer makes no such additional assertions. Supplied evidence is sufficient; no uncertainty qualification is needed."
+    }
+  ]
+}

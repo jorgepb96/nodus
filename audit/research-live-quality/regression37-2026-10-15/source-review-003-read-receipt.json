@@ -1,0 +1,14 @@
+{
+  "packetSHA256": "2cfe557d7017255c749f2472f9cc07ede25509f2208f15239e621520130e5876",
+  "packetBytes": 3838,
+  "parts": [
+    {
+      "byteOffset": 0,
+      "byteLength": 3838,
+      "sha256": "2cfe557d7017255c749f2472f9cc07ede25509f2208f15239e621520130e5876"
+    }
+  ],
+  "timestamp": "2026-10-15T19:46:17.543Z",
+  "model": "unknown",
+  "effort": "unknown"
+}

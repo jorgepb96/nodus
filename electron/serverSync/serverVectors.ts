@@ -1,3 +1,4 @@
+import { isEmbeddingGemma2, embeddingGemma2Contract } from '@shared/embeddingGemma2';
 import type Database from 'better-sqlite3';
 
 /**
@@ -117,7 +118,9 @@ export function buildVectorSet(db: Database.Database, kind: VectorKind): { buffe
   if (ids.length === 0) return null;
 
   const count = ids.length;
-  const header = Buffer.from(JSON.stringify({ format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count }), 'utf8');
+  const embeddingContract = provider === 'nodus' && isEmbeddingGemma2(model) ? embeddingGemma2Contract(model) : undefined;
+  if (embeddingContract && embeddingContract.dim !== dim) throw new Error('embedding_contract_dimension_mismatch');
+  const header = Buffer.from(JSON.stringify({ embeddingContract, format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count }), 'utf8');
   const idTable = Buffer.from(JSON.stringify(ids), 'utf8');
   const headerLength = Buffer.alloc(4);
   headerLength.writeUInt32LE(header.length, 0);

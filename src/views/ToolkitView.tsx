@@ -1,3 +1,4 @@
+import { ToolkitSignView } from './ToolkitSignView';
 import { ACADEMIC_ALWAYS_VISIBLE, academicCustomizationPatch } from '../academicInterfaceProfiles';
 // Nodus Tools combines nested file utilities and existing standalone research
 // views. Standalone cards reuse their sidebar visibility; nested tools use pins.
@@ -158,7 +159,9 @@ export function ToolkitView({
     <div className="theme-workspace-surface toolkit-workspace h-full overflow-y-auto px-6 py-6 max-md:px-4">
       {/* Las herramientas tienen página propia; cualquier otra página
           cae en el catálogo en lugar de dejar el panel en blanco. */}
-      {page === 'backups' ? (
+      {page === 'sign' ? (
+        <ToolkitSignView onBack={() => onNavigate('home')} />
+      ) : page === 'backups' ? (
         <ToolkitBackupsView onBack={() => onNavigate('home')} />
       ) : page === 'convert' ? (
         <ToolkitConvertView onBack={() => onNavigate('home')} />

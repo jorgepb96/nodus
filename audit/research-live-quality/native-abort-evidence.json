@@ -1,0 +1,120 @@
+{
+  "format": "nodus.embeddinggemma-native-abort-evidence/1",
+  "sourceCrashReportSha256": "05b576594936c328f013c6ceb8da4ab41cddeb13d8f60b9cb580e92b403b1c8c",
+  "sourceReportName": "Electron-2026-10-13-103654.ips",
+  "pid": 64728,
+  "parentPid": 64708,
+  "procLaunch": "2026-10-13 10:29:59.5544 +0200",
+  "captureTime": "2026-10-13 10:36:18.1336 +0200",
+  "exception": {
+    "codes": "0x0000000000000000, 0x0000000000000000",
+    "rawCodes": [
+      0,
+      0
+    ],
+    "type": "EXC_CRASH",
+    "signal": "SIGABRT"
+  },
+  "termination": {
+    "flags": 0,
+    "code": 6,
+    "namespace": "SIGNAL",
+    "indicator": "Abort trap: 6",
+    "byProc": "Electron",
+    "byPid": 64728
+  },
+  "applicationSpecificInformation": {
+    "libsystem_c.dylib": [
+      "abort() called"
+    ]
+  },
+  "faultingThread": 52,
+  "frames": [
+    {
+      "symbol": "__pthread_kill",
+      "symbolLocation": 8,
+      "imageName": "libsystem_kernel.dylib",
+      "imagePathSuffix": "/usr/lib/system/libsystem_kernel.dylib"
+    },
+    {
+      "symbol": "pthread_kill",
+      "symbolLocation": 296,
+      "imageName": "libsystem_pthread.dylib",
+      "imagePathSuffix": "/usr/lib/system/libsystem_pthread.dylib"
+    },
+    {
+      "symbol": "abort",
+      "symbolLocation": 148,
+      "imageName": "libsystem_c.dylib",
+      "imagePathSuffix": "/usr/lib/system/libsystem_c.dylib"
+    },
+    {
+      "symbol": "__abort_message",
+      "symbolLocation": 132,
+      "imageName": "libc++abi.dylib",
+      "imagePathSuffix": "/usr/lib/libc++abi.dylib"
+    },
+    {
+      "symbol": "demangling_terminate_handler()",
+      "symbolLocation": 272,
+      "imageName": "libc++abi.dylib",
+      "imagePathSuffix": "/usr/lib/libc++abi.dylib"
+    },
+    {
+      "symbol": "_objc_terminate()",
+      "symbolLocation": 172,
+      "imageName": "libobjc.A.dylib",
+      "imagePathSuffix": "/usr/lib/libobjc.A.dylib"
+    },
+    {
+      "symbol": "std::__terminate(void (*)())",
+      "symbolLocation": 16,
+      "imageName": "libc++abi.dylib",
+      "imagePathSuffix": "/usr/lib/libc++abi.dylib"
+    },
+    {
+      "symbol": "__cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*)",
+      "symbolLocation": 88,
+      "imageName": "libc++abi.dylib",
+      "imagePathSuffix": "/usr/lib/libc++abi.dylib"
+    },
+    {
+      "symbol": "__cxa_throw",
+      "symbolLocation": 92,
+      "imageName": "libc++abi.dylib",
+      "imagePathSuffix": "/usr/lib/libc++abi.dylib"
+    },
+    {
+      "symbol": "Napi::Error::ThrowAsJavaScriptException() const",
+      "symbolLocation": 224,
+      "imageName": "onnxruntime_binding.node",
+      "imagePathSuffix": "/Users/USER/*/onnxruntime_binding.node"
+    },
+    {
+      "symbol": "Napi::InstanceWrap<InferenceSessionWrap>::InstanceMethodCallbackWrapper(napi_env__*, napi_callback_info__*)",
+      "symbolLocation": 84,
+      "imageName": "onnxruntime_binding.node",
+      "imagePathSuffix": "/Users/USER/*/onnxruntime_binding.node"
+    },
+    {
+      "symbol": "napi_is_detached_arraybuffer",
+      "symbolLocation": 292,
+      "imageName": "Electron Framework",
+      "imagePathSuffix": "Frameworks/Electron Framework.framework/Versions/A/Electron Framework"
+    },
+    {
+      "symbol": null,
+      "symbolLocation": null,
+      "imageName": null,
+      "imagePathSuffix": ""
+    },
+    {
+      "symbol": null,
+      "symbolLocation": null,
+      "imageName": null,
+      "imagePathSuffix": ""
+    }
+  ],
+  "inference": "Native abort in ONNX binding on an embedding worker thread terminated Electron main; exact triggering error/document not established. No OOM diagnosis is claimed.",
+  "privacy": "Derived receipt omits unrelated threads, hardware/process UUIDs and full user paths. Original report remains on the host."
+}

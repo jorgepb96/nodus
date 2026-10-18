@@ -417,7 +417,7 @@ async function fetchModels(provider: AiProvider, key: string | null, signal?: Ab
     case 'deepseek':
       return withDeepSeekThinkingOff(await listOpenAiStyle(`${researchTestProviderBase(provider) ?? 'https://api.deepseek.com'}/models`, key, false, { signal, fullCatalog }));
     case 'openrouter':
-      return listOpenRouter(signal, fullCatalog);
+      return listOpenRouter(signal, fullCatalog, key);
     case 'groq':
       return listOpenAiStyle('https://api.groq.com/openai/v1/models', key, !fullCatalog, { signal, fullCatalog });
     case 'cerebras':
@@ -704,9 +704,11 @@ async function listOpenAiEmbeddingModels(key: string | null): Promise<ModelInfo[
     .sort(byId);
 }
 
-async function listOpenRouter(signal?: AbortSignal, fullCatalog = false): Promise<ModelInfo[]> {
+async function listOpenRouter(signal?: AbortSignal, fullCatalog = false, qaKey?: string | null): Promise<ModelInfo[]> {
   // OpenRouter's model list is public (no key required).
-  const res = await fetch('https://openrouter.ai/api/v1/models', signal ? { signal } : undefined);
+  const qaBase = researchTestProviderBase('openrouter');
+  const res = await fetch(qaBase ? `${qaBase}/models` : 'https://openrouter.ai/api/v1/models',
+    { ...(signal ? { signal } : {}), ...(qaBase ? { headers: { Authorization: `Bearer ${qaKey ?? ''}` } } : {}) });
   if (!res.ok) throw new Error(`OpenRouter /models HTTP ${res.status}`);
   const data = (await res.json()) as {
     data?: { id: string; name?: string; context_length?: number; top_provider?: { context_length?: number }; reasoning?: { mandatory?: boolean; supported_efforts?: ModelInfo['researchReasoningLevels'] }; supported_parameters?: string[]; architecture?: { input_modalities?: string[] } }[];

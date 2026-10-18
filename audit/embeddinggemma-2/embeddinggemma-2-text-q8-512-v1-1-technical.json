@@ -1,0 +1,3713 @@
+{
+  "name": "technical",
+  "repetition": 1,
+  "question": "¿Puede /restore de Linde recuperar una cuenta cerrada?",
+  "scope": "dynamic",
+  "started": 1791325057680,
+  "finished": 1791325078167,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Puede /restore de Linde recuperar una cuenta cerrada?",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "d52180c2-1cdb-4bd6-a9c2-1d19c2c39859"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "debc47d6-4029-4fbc-b12f-46b04d1e603f",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "**Respuesta corta: no.** El endpoint `/restore` de Linde recupera elementos eliminados, pero no cuentas cerradas.\n\n## Qué dice la evidencia\n\nLas fuentes consultadas coinciden en el mismo enunciado, repetido en seis idiomas distintos dentro del archivo sintético de QA:\n\n- «La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas» ([fixture 25](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Afbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07%3A0)).\n- La misma formulación en portugués: «/restore recupera itens eliminados, mas não contas encerradas» ([fixture 05](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Ae661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde%3A0)).\n- En inglés: «The /restore endpoint recovers deleted items, but not closed accounts» ([fixture 20](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3A675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8%3A0)).\n- En francés: «/restore récupère les éléments supprimés, pas les comptes fermés» ([fixture 15](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3A95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf%3A0)); en alemán: «/restore stellt gelöschte Elemente, aber keine geschlossenen Konten wieder her» ([fixture 10](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Acc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68%3A0)); y en italiano: «/restore recupera elementi eliminati, non account chiusi» ([fixture 30](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Afc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23%3A0)).\n\n## Matiz sobre el plazo de retención\n\nEl mismo enunciado fija la ventana de conservación de eventos en 14 días, y aclara que la versión 2 amplió ese límite desde 7 días ([fixture 25](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Afbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07%3A0), [fixture 20](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3A675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8%3A0)). Ese plazo aplica a los eventos retenidos; la imposibilidad de restaurar cuentas cerradas se presenta como una limitación independiente del endpoint, no como una consecuencia de que haya expirado la ventana.\n\n## Naturaleza y límites de esta evidencia\n\nNo hay contradicciones registradas sobre este punto: las seis versiones lingüísticas son variantes de redacción del mismo texto, no corroboraciones independientes. Proceden de documentos sin autor ni año identificados en el archivo consultado, y el propio material se autodescribe como «Nodus QA synthetic archive» ([fixture 05](nodus://passage/documentary%3A78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46%3Ae661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde%3A0)), es decir, datos de prueba y no documentación oficial del producto. Por tanto, la respuesta es consistente con las fuentes disponibles, pero estas no constituyen verificación independiente: si necesitas certeza operativa sobre el comportamiento real de la API, habría que contrastarlo con la documentación oficial de Linde, que no aparece en este corpus. La búsqueda de este turno se hizo sobre los índices locales de la biblioteca; no se consultó Zotero mediante MCP. Los demás pasajes recuperados (ensayo Vega, Puerto Claro, RWKV, DPO, Llama) no abordan la pregunta y no los uso como apoyo.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 40,
+      "documents": 40,
+      "summaries": 0,
+      "passages": 15,
+      "contextChars": 28965,
+      "truncated": true,
+      "researchTraversal": {
+        "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+        "sourceCount": 40,
+        "rounds": 5,
+        "evidenceTokens": 6487,
+        "decisionTokens": 32117,
+        "matchedDocumentIds": [
+          "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+          "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+          "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+          "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+          "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+          "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+          "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+          "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+          "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+          "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "title": "fixture 30",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+            "title": "fixture 06",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+            "title": "public DPO00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+            "title": "fixture 19",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+            "title": "fixture 11",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+            "title": "fixture 04",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+            "title": "fixture 27",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+            "title": "public LLAMA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+            "title": "public HUGGPT01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+            "title": "fixture 09",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+            "title": "fixture 16",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+            "title": "fixture 23",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+            "title": "fixture 03",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:6371903d-ce21-488a-ab90-277744134b85",
+            "title": "fixture 29",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "title": "fixture 10",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "title": "fixture 15",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+            "title": "fixture 18",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+            "title": "public RWKV0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+            "title": "public SAM00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+            "title": "fixture 02",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+            "title": "fixture 14",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+            "title": "fixture 01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "title": "fixture 05",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+            "title": "fixture 13",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+            "title": "fixture 08",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+            "title": "public SELF0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+            "title": "public QLORA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+            "title": "public ARENA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+            "title": "fixture 17",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "title": "fixture 25",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+            "title": "public LORA0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+            "title": "fixture 28",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+            "title": "fixture 22",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "title": "fixture 20",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+            "title": "fixture 07",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+            "title": "fixture 12",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+            "title": "fixture 26",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+            "title": "public AGENT001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+            "title": "fixture 24",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:fe95f764-0dc5-487a-b1da-cc585b903931",
+            "title": "fixture 21",
+            "reasons": []
+          }
+        ],
+        "limitations": [
+          "repeated_action"
+        ],
+        "partial": true,
+        "queries": [
+          {
+            "query": "¿Puede el comando /restore de Linde recuperar una cuenta cerrada?",
+            "sources": [
+              "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+              "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+              "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+              "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+              "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+              "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+              "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+              "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+              "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+              "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+              "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+              "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+              "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+              "nodus:6371903d-ce21-488a-ab90-277744134b85",
+              "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+              "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+              "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+              "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+              "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+              "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+              "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+              "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+              "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+              "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+              "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+              "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+              "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+              "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+              "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+              "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+              "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+              "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+              "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+              "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+              "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+              "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+              "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+              "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+              "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+            ],
+            "candidates": 90,
+            "partial": true
+          },
+          {
+            "query": "Linde /restore recuperar cuenta cerrada",
+            "sources": [
+              "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+              "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+              "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+              "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+              "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+              "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+              "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+              "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+              "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+              "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+              "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+              "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+              "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+              "nodus:6371903d-ce21-488a-ab90-277744134b85",
+              "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+              "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+              "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+              "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+              "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+              "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+              "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+              "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+              "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+              "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+              "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+              "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+              "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+              "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+              "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+              "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+              "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+              "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+              "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+              "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+              "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+              "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+              "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+              "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+              "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+            ],
+            "candidates": 62,
+            "partial": true
+          },
+          {
+            "query": "Linde restore closed account recovery",
+            "sources": [
+              "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+              "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+              "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+              "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+              "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+              "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+              "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+              "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+              "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+              "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+              "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+              "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+              "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+              "nodus:6371903d-ce21-488a-ab90-277744134b85",
+              "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+              "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+              "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+              "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+              "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+              "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+              "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+              "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+              "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+              "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+              "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+              "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+              "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+              "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+              "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+              "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+              "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+              "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+              "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+              "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+              "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+              "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+              "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+              "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+              "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+            ],
+            "candidates": 81,
+            "partial": true
+          },
+          {
+            "query": "Linde /restore cuenta cerrada recuperar",
+            "sources": [
+              "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+              "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+              "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+              "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+              "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+              "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+              "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+              "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+              "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+              "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+              "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+              "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+              "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+              "nodus:6371903d-ce21-488a-ab90-277744134b85",
+              "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+              "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+              "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+              "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+              "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+              "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+              "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+              "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+              "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+              "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+              "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+              "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+              "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+              "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+              "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+              "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+              "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+              "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+              "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+              "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+              "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+              "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+              "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+              "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+              "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+            ],
+            "candidates": 62,
+            "partial": true
+          },
+          {
+            "query": "Linde restore closed account recover",
+            "sources": [
+              "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+              "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+              "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+              "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934",
+              "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a",
+              "nodus:19d1eabe-7105-48d7-a4c9-a6b7ea193b7b",
+              "nodus:1de02926-7465-4654-ac38-290952fb0ba3",
+              "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+              "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a",
+              "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186",
+              "nodus:45fca75c-6ec1-44b7-98fb-40e76a07c4c8",
+              "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56",
+              "nodus:618e2449-dd12-41c4-a029-f45f02e3b31a",
+              "nodus:6371903d-ce21-488a-ab90-277744134b85",
+              "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+              "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+              "nodus:902b7445-7ab6-4240-8725-f934ece57bed",
+              "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+              "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf",
+              "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+              "nodus:a1095d17-4ecb-4686-89d0-7ce9c087e569",
+              "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+              "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+              "nodus:a637a1f4-055f-4068-8b26-1c50445df6da",
+              "nodus:ac8891f1-58fb-4864-86f4-22384f681231",
+              "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e",
+              "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+              "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1",
+              "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db",
+              "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+              "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56",
+              "nodus:cab1cbd6-acdb-4ed0-8e09-2fc6b3012dde",
+              "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140",
+              "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+              "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+              "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+              "nodus:f62e5436-cc8e-46cf-9b5d-d9039564b8ad",
+              "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf",
+              "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92",
+              "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+            ],
+            "candidates": 86,
+            "partial": true
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "nodus_id": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+        "libraryItemId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+        "attachmentId": "local:c77fef81-adc0-4514-9837-914656d983a2",
+        "revision": "29f0b5b81bfd560a35a0ee8f9a9abdc1290e074ea941a0cf55f65dbe93c99a11",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:c77fef81-adc0-4514-9837-914656d983a2:local:c77fef81-adc0-4514-9837-914656d983a2",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 25",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "nodus_id": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+        "libraryItemId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+        "attachmentId": "local:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+        "revision": "1f4e8fa944ec0609f86031d39b4b2a29c4f92f0dd8b4855810420658f34d1b9e",
+        "historical": false,
+        "provenance": "source",
+        "text": "Linde - archive 5 A API Linde conserva eventos durante 14 dias. /restore recupera itens eliminados, mas nXXlo contas encerradas. A verslXx]o 2 alterou o prazo de 7 para 14 dias. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2:local:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 05",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "nodus_id": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+        "libraryItemId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+        "attachmentId": "local:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+        "revision": "dfd508b826d6ea3f208db1b532b13dfb99eeeaf04b3121f87e3e117fa0ddb0f6",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Linde · archive 20 The Linde API retains events for 14 days. The /restore endpoint recovers deleted items, but not closed accounts. Version 2 changed retention from 7 to 14 days.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847:local:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 20",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "nodus_id": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+        "libraryItemId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+        "attachmentId": "local:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+        "revision": "5d3420367780740bab8dd392cea3a14f6d0e30bef098d92e3ceb78ca5dcbb7f3",
+        "historical": false,
+        "provenance": "source",
+        "text": "Linde · archive 15 # Linde · archive 15 L’API Linde conserve les événements 14 jours. /restore récupère les éléments supprimés, pas les comptes fermés. La version 2 a remplacé 7 jours par 14.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644:local:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 15",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "nodus_id": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+        "libraryItemId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+        "attachmentId": "local:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+        "revision": "0bb357995c2b4b04bee0b080b5f0226a560562927ffb0f1c7358e5461b1a66a6",
+        "historical": false,
+        "provenance": "source",
+        "text": "Linde · archive 10 Die Linde-API speichert Ereignisse 14 Tage. /restore stellt gelöschte Elemente, aber keine geschlossenen Konten wieder her. Version 2 erhöhte die Frist von 7 auf 14 Tage.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b:local:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 10",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "nodus_id": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+        "libraryItemId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+        "attachmentId": "local:0467af22-bb47-425e-83c2-f831045b6972",
+        "revision": "4bcc92ced4b6fe5470fed9d013d53e919d8e3d8546592af3b9cb290e3018f613",
+        "historical": false,
+        "provenance": "source",
+        "text": "Campos: Document · Evidence 1. Document: Linde · archive 30 · Evidence: L’API Linde conserva gli eventi per 14 giorni. /restore recupera elementi eliminati, non account chiusi. La versione 2 ha cambiato il limite da 7 a 14 giorni. 2. Document: Version · Evidence: Retention days 3. Document: 1 · Evidence: 7 4. Document: 2 · Evidence: 14",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:0467af22-bb47-425e-83c2-f831045b6972:local:0467af22-bb47-425e-83c2-f831045b6972",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 30",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:17:40.330Z",
+      "type": "documentary-retrieval",
+      "query": "¿Puede el comando /restore de Linde recuperar una cuenta cerrada?",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "vectorKeys": [
+        "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d",
+        "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e",
+        "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e",
+        "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d",
+        "63b7fcf93e3032b5c004346886c236d68d5db41707dab72d6c4636b2ab906589",
+        "23b37eef3e77663c18d135abaa40dcfab1e67e464fdd3ef7a4521f2c441a2109",
+        "5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d",
+        "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad",
+        "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4",
+        "f3c29d2dec9a1054c9be060a4f6bc4b36f06ecadc18f320cf31675405293c63f",
+        "d556c8682df41a23d9947cc54f0b7ead7b84fc708bc6528694a7b1d14cc1cf93",
+        "67bf5f683609fbce95708c4e5a7379207990c7df5c66714009c7a577013cfb14",
+        "a2d356204fbf761d1fae871dc7192607677c821c3b2afcbe7cba375de5025a1a",
+        "0434b0b64012499930a11f63a29615ad5dcd40e8c6f610a4887ae3444f8a049c",
+        "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3",
+        "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36",
+        "93fc3c1757336c4f536296f01f5a84f23c54e6f62df7296198cc8a84f9ea415e",
+        "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd",
+        "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036",
+        "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b",
+        "667c84a7d4c66c6ec7293ac027f50055c7019a1ee281a0bc057b3d765b7da5a9",
+        "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b",
+        "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861",
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453",
+        "677c06c18a6555d37b7385f256bbf1d1f4179628becdc119bde8b705f66cd882",
+        "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7",
+        "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9",
+        "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7",
+        "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1",
+        "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5",
+        "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e",
+        "0fd8a50daae91252fd4890f4cb90912b0b567b000f6e13c55658ab9c466ecdc1",
+        "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8",
+        "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba",
+        "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255",
+        "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2",
+        "0313d07f83e9f0602690e153f5596f771b63ae4e50d1a598bad2e447eaf80c24",
+        "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3",
+        "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4",
+        "5760b38a3641df0806bb40f10cac0e29358692acd3d8b0c3685ab2e6d9b9827b"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:29",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:28",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb"
+          },
+          {
+            "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:58",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:29",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:51",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:52",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:32",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:28",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:33",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:36",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:58",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:16",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:20",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:43",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:46",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:13",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:38",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:34",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:39",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:19",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:6",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:43",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:56",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:38",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:30",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:61",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:23",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:44",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:32",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:31",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:55",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:37",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:45",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:0",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:45",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:56",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:55",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8:0",
+            "documentId": "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140"
+          },
+          {
+            "id": "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d:20",
+            "documentId": "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:44",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:26",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:34",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:48",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:27",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb"
+          },
+          {
+            "id": "a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+            "documentId": "nodus:fe95f764-0dc5-487a-b1da-cc585b903931"
+          },
+          {
+            "id": "cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+            "documentId": "nodus:a637a1f4-055f-4068-8b26-1c50445df6da"
+          },
+          {
+            "id": "79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "61434d2ac6d333a8f0819e7671caafa2f8f906a9b013e047f7e18de96b2dc4bb:0",
+            "documentId": "nodus:0b14c58d-2d08-41ca-9baf-27380ca11934"
+          },
+          {
+            "id": "7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+            "documentId": "nodus:38f38919-3f94-42b0-a6fd-693d13a8e186"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:46",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "ffcf9c920890d5944aa0cb8d09f7f97a2cc0628e2ea5715337636e8aca4cc998:0",
+            "documentId": "nodus:6371903d-ce21-488a-ab90-277744134b85"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:48",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:47",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "e57ec5cf74e8f92932b7eaa6b63af44ae5f86b5524d9be72be5aeec99fde3b12:0",
+            "documentId": "nodus:14bbea3d-24df-47ad-a84a-3a43bfec9f6a"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:38",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "d40b7add32ebceb6ccec15b3a837a8d939aeafd264cdf7a96f010a23eae98cda:0",
+            "documentId": "nodus:4b8ec2cd-143e-445b-bb6b-7e944d73be56"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:28",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:16",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:17",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:17",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:11",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:5",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "bd42dace144b7f34f422945da6da492239bc72a9c9b89545a6324fea8c73602e:41",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:12",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:27",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:11",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "bd42dace144b7f34f422945da6da492239bc72a9c9b89545a6324fea8c73602e:44",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:8",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:30",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:35",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:36",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:41",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "bd42dace144b7f34f422945da6da492239bc72a9c9b89545a6324fea8c73602e:50",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:35",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:34",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          }
+        ],
+        "selected": [
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "lexicalIds": [
+              "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0"
+            ],
+            "semanticIds": [
+              "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0"
+            ]
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "lexicalIds": [
+              "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0"
+            ],
+            "semanticIds": [
+              "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0"
+            ]
+          },
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "lexicalIds": [
+              "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0"
+            ],
+            "semanticIds": [
+              "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0"
+            ]
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "lexicalIds": [
+              "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0"
+            ],
+            "semanticIds": [
+              "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0"
+            ]
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "lexicalIds": [
+              "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0"
+            ],
+            "semanticIds": [
+              "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0"
+            ]
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "lexicalIds": [
+              "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0"
+            ],
+            "semanticIds": [
+              "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0"
+            ]
+          },
+          {
+            "id": "ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+            "lexicalIds": [
+              "ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0"
+            ],
+            "semanticIds": [
+              "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0"
+            ]
+          },
+          {
+            "id": "79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+            "lexicalIds": [
+              "79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0"
+            ],
+            "semanticIds": [
+              "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0"
+            ]
+          },
+          {
+            "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+            "lexicalIds": [
+              "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:45"
+            ],
+            "semanticIds": [
+              "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:17:40.419Z",
+      "type": "research-evidence-selection",
+      "query": "¿Puede el comando /restore de Linde recuperar una cuenta cerrada?",
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "sharedCandidates": [
+        {
+          "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "provenance": "source"
+        },
+        {
+          "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "provenance": "source"
+        },
+        {
+          "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "provenance": "source"
+        },
+        {
+          "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "provenance": "source"
+        },
+        {
+          "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "provenance": "source"
+        },
+        {
+          "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "provenance": "source"
+        },
+        {
+          "id": "ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+          "provenance": "source"
+        },
+        {
+          "id": "79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+          "provenance": "source"
+        },
+        {
+          "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:45",
+          "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:17:41.803Z",
+      "type": "documentary-retrieval",
+      "query": "Linde /restore recuperar cuenta cerrada",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "vectorKeys": [
+        "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d",
+        "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e",
+        "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e",
+        "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d",
+        "63b7fcf93e3032b5c004346886c236d68d5db41707dab72d6c4636b2ab906589",
+        "23b37eef3e77663c18d135abaa40dcfab1e67e464fdd3ef7a4521f2c441a2109",
+        "5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d",
+        "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad",
+        "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4",
+        "f3c29d2dec9a1054c9be060a4f6bc4b36f06ecadc18f320cf31675405293c63f",
+        "d556c8682df41a23d9947cc54f0b7ead7b84fc708bc6528694a7b1d14cc1cf93",
+        "67bf5f683609fbce95708c4e5a7379207990c7df5c66714009c7a577013cfb14",
+        "a2d356204fbf761d1fae871dc7192607677c821c3b2afcbe7cba375de5025a1a",
+        "0434b0b64012499930a11f63a29615ad5dcd40e8c6f610a4887ae3444f8a049c",
+        "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3",
+        "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36",
+        "93fc3c1757336c4f536296f01f5a84f23c54e6f62df7296198cc8a84f9ea415e",
+        "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd",
+        "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036",
+        "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b",
+        "667c84a7d4c66c6ec7293ac027f50055c7019a1ee281a0bc057b3d765b7da5a9",
+        "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b",
+        "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861",
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453",
+        "677c06c18a6555d37b7385f256bbf1d1f4179628becdc119bde8b705f66cd882",
+        "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7",
+        "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9",
+        "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7",
+        "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1",
+        "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5",
+        "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e",
+        "0fd8a50daae91252fd4890f4cb90912b0b567b000f6e13c55658ab9c466ecdc1",
+        "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8",
+        "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba",
+        "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255",
+        "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2",
+        "0313d07f83e9f0602690e153f5596f771b63ae4e50d1a598bad2e447eaf80c24",
+        "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3",
+        "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4",
+        "5760b38a3641df0806bb40f10cac0e29358692acd3d8b0c3685ab2e6d9b9827b"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb"
+          },
+          {
+            "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:29",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:58",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:36",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:29",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:28",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:52",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:33",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:32",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1:0",
+            "documentId": "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db"
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0"
+          },
+          {
+            "id": "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+            "documentId": "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:28",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:19",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:45",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:39",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:51",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:46",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:20",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:13",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8:0",
+            "documentId": "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:0",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:23",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4:0",
+            "documentId": "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:15",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:50",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:38",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:34",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:37",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:32",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:38",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:43",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:37",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:34",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:1",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:28",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:32",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:31",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:0",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:45",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:53",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:41",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:44",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:43",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:56",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:27",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          }
+        ],
+        "selected": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "lexicalIds": [
+              "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0"
+            ],
+            "semanticIds": [
+              "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0"
+            ]
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "lexicalIds": [
+              "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0"
+            ],
+            "semanticIds": [
+              "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0"
+            ]
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "lexicalIds": [
+              "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0"
+            ],
+            "semanticIds": [
+              "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0"
+            ]
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "lexicalIds": [
+              "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0"
+            ],
+            "semanticIds": [
+              "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0"
+            ]
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "lexicalIds": [
+              "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0"
+            ],
+            "semanticIds": [
+              "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0"
+            ]
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "lexicalIds": [
+              "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0"
+            ],
+            "semanticIds": [
+              "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0"
+            ]
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+            "lexicalIds": [
+              "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+            "lexicalIds": [],
+            "semanticIds": [
+              "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0"
+            ]
+          },
+          {
+            "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+            "lexicalIds": [],
+            "semanticIds": [
+              "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0"
+            ]
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+            "lexicalIds": [],
+            "semanticIds": [
+              "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:17:41.892Z",
+      "type": "research-evidence-selection",
+      "query": "Linde /restore recuperar cuenta cerrada",
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "sharedCandidates": [
+        {
+          "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "provenance": "source"
+        },
+        {
+          "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "provenance": "source"
+        },
+        {
+          "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "provenance": "source"
+        },
+        {
+          "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "provenance": "source"
+        },
+        {
+          "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "provenance": "source"
+        },
+        {
+          "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "provenance": "source"
+        },
+        {
+          "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+          "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+          "provenance": "source"
+        },
+        {
+          "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+          "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+          "provenance": "source"
+        },
+        {
+          "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+          "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+          "provenance": "source"
+        },
+        {
+          "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+          "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:17:43.474Z",
+      "type": "documentary-retrieval",
+      "query": "Linde restore closed account recovery",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "vectorKeys": [
+        "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d",
+        "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e",
+        "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e",
+        "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d",
+        "63b7fcf93e3032b5c004346886c236d68d5db41707dab72d6c4636b2ab906589",
+        "23b37eef3e77663c18d135abaa40dcfab1e67e464fdd3ef7a4521f2c441a2109",
+        "5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d",
+        "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad",
+        "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4",
+        "f3c29d2dec9a1054c9be060a4f6bc4b36f06ecadc18f320cf31675405293c63f",
+        "d556c8682df41a23d9947cc54f0b7ead7b84fc708bc6528694a7b1d14cc1cf93",
+        "67bf5f683609fbce95708c4e5a7379207990c7df5c66714009c7a577013cfb14",
+        "a2d356204fbf761d1fae871dc7192607677c821c3b2afcbe7cba375de5025a1a",
+        "0434b0b64012499930a11f63a29615ad5dcd40e8c6f610a4887ae3444f8a049c",
+        "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3",
+        "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36",
+        "93fc3c1757336c4f536296f01f5a84f23c54e6f62df7296198cc8a84f9ea415e",
+        "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd",
+        "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036",
+        "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b",
+        "667c84a7d4c66c6ec7293ac027f50055c7019a1ee281a0bc057b3d765b7da5a9",
+        "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b",
+        "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861",
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453",
+        "677c06c18a6555d37b7385f256bbf1d1f4179628becdc119bde8b705f66cd882",
+        "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7",
+        "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9",
+        "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7",
+        "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1",
+        "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5",
+        "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e",
+        "0fd8a50daae91252fd4890f4cb90912b0b567b000f6e13c55658ab9c466ecdc1",
+        "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8",
+        "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba",
+        "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255",
+        "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2",
+        "0313d07f83e9f0602690e153f5596f771b63ae4e50d1a598bad2e447eaf80c24",
+        "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3",
+        "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4",
+        "5760b38a3641df0806bb40f10cac0e29358692acd3d8b0c3685ab2e6d9b9827b"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:36",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:46",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:32",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:29",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:45",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:13",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:19",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:15",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:33",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:28",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:58",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:20",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:33",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:37",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:29",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:39",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:38",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:52",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:38",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:34",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:22",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:23",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:19",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:34",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:0",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:30",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:21",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:37",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:43",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:0",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:31",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:43",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:28",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:51",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:44",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:37",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:0",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:32",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:30",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1:0",
+            "documentId": "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:28",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:38",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:92",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:32",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:37",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:41",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:60",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:61",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:50",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:13",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:11",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:4",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:9",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:2",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:9",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:8",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:49",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:10",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:11",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:52",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:10",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:11",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:13",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:21",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:22",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          }
+        ],
+        "selected": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "lexicalIds": [
+              "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0"
+            ],
+            "semanticIds": [
+              "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0"
+            ]
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "lexicalIds": [
+              "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0"
+            ],
+            "semanticIds": [
+              "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0"
+            ]
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "lexicalIds": [
+              "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0"
+            ],
+            "semanticIds": [
+              "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0"
+            ]
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "lexicalIds": [
+              "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0"
+            ],
+            "semanticIds": [
+              "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0"
+            ]
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "lexicalIds": [
+              "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0"
+            ],
+            "semanticIds": [
+              "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0"
+            ]
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "lexicalIds": [
+              "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0"
+            ],
+            "semanticIds": [
+              "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0"
+            ]
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+            "lexicalIds": [
+              "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0"
+            ],
+            "semanticIds": [
+              "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:0"
+            ]
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+            "lexicalIds": [],
+            "semanticIds": [
+              "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:17:43.567Z",
+      "type": "research-evidence-selection",
+      "query": "Linde restore closed account recovery",
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "sharedCandidates": [
+        {
+          "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "provenance": "source"
+        },
+        {
+          "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "provenance": "source"
+        },
+        {
+          "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "provenance": "source"
+        },
+        {
+          "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "provenance": "source"
+        },
+        {
+          "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "provenance": "source"
+        },
+        {
+          "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "provenance": "source"
+        },
+        {
+          "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+          "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+          "provenance": "source"
+        },
+        {
+          "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+          "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:17:46.197Z",
+      "type": "documentary-retrieval",
+      "query": "Linde /restore cuenta cerrada recuperar",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "vectorKeys": [
+        "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d",
+        "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e",
+        "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e",
+        "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d",
+        "63b7fcf93e3032b5c004346886c236d68d5db41707dab72d6c4636b2ab906589",
+        "23b37eef3e77663c18d135abaa40dcfab1e67e464fdd3ef7a4521f2c441a2109",
+        "5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d",
+        "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad",
+        "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4",
+        "f3c29d2dec9a1054c9be060a4f6bc4b36f06ecadc18f320cf31675405293c63f",
+        "d556c8682df41a23d9947cc54f0b7ead7b84fc708bc6528694a7b1d14cc1cf93",
+        "67bf5f683609fbce95708c4e5a7379207990c7df5c66714009c7a577013cfb14",
+        "a2d356204fbf761d1fae871dc7192607677c821c3b2afcbe7cba375de5025a1a",
+        "0434b0b64012499930a11f63a29615ad5dcd40e8c6f610a4887ae3444f8a049c",
+        "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3",
+        "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36",
+        "93fc3c1757336c4f536296f01f5a84f23c54e6f62df7296198cc8a84f9ea415e",
+        "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd",
+        "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036",
+        "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b",
+        "667c84a7d4c66c6ec7293ac027f50055c7019a1ee281a0bc057b3d765b7da5a9",
+        "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b",
+        "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861",
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453",
+        "677c06c18a6555d37b7385f256bbf1d1f4179628becdc119bde8b705f66cd882",
+        "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7",
+        "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9",
+        "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7",
+        "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1",
+        "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5",
+        "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e",
+        "0fd8a50daae91252fd4890f4cb90912b0b567b000f6e13c55658ab9c466ecdc1",
+        "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8",
+        "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba",
+        "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255",
+        "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2",
+        "0313d07f83e9f0602690e153f5596f771b63ae4e50d1a598bad2e447eaf80c24",
+        "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3",
+        "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4",
+        "5760b38a3641df0806bb40f10cac0e29358692acd3d8b0c3685ab2e6d9b9827b"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:29",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:36",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:58",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:29",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:28",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:52",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:33",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1:0",
+            "documentId": "nodus:c14c63f7-21eb-43fb-bafe-600b348e57db"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:51",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:32",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0"
+          },
+          {
+            "id": "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+            "documentId": "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:19",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:39",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:28",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:45",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8:0",
+            "documentId": "nodus:cb153b51-3acf-49c5-a86f-31ac1916e140"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:13",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:20",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:46",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:15",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:53",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:43",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:44",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:23",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4:0",
+            "documentId": "nodus:fdc1896d-798a-4ea6-a63a-3c9361bb1c92"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:32",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:38",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:33",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:34",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:37",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:34",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:38",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:56",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:31",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:0",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:37",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:32",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:28",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:41",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:1",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:0",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:27",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:92",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:22",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          }
+        ],
+        "selected": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "lexicalIds": [
+              "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0"
+            ],
+            "semanticIds": [
+              "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0"
+            ]
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "lexicalIds": [
+              "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0"
+            ],
+            "semanticIds": [
+              "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0"
+            ]
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "lexicalIds": [
+              "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0"
+            ],
+            "semanticIds": [
+              "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0"
+            ]
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "lexicalIds": [
+              "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0"
+            ],
+            "semanticIds": [
+              "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0"
+            ]
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "lexicalIds": [
+              "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0"
+            ],
+            "semanticIds": [
+              "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0"
+            ]
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "lexicalIds": [
+              "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0"
+            ],
+            "semanticIds": [
+              "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0"
+            ]
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+            "lexicalIds": [
+              "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37"
+            ],
+            "semanticIds": []
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+            "lexicalIds": [],
+            "semanticIds": [
+              "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0"
+            ]
+          },
+          {
+            "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+            "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+            "lexicalIds": [],
+            "semanticIds": [
+              "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0"
+            ]
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+            "lexicalIds": [],
+            "semanticIds": [
+              "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0"
+            ]
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+            "lexicalIds": [],
+            "semanticIds": [
+              "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59"
+            ]
+          },
+          {
+            "id": "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+            "documentId": "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+            "lexicalIds": [],
+            "semanticIds": [
+              "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:17:46.280Z",
+      "type": "research-evidence-selection",
+      "query": "Linde /restore cuenta cerrada recuperar",
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "sharedCandidates": [
+        {
+          "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "provenance": "source"
+        },
+        {
+          "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "provenance": "source"
+        },
+        {
+          "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "provenance": "source"
+        },
+        {
+          "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "provenance": "source"
+        },
+        {
+          "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "provenance": "source"
+        },
+        {
+          "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "provenance": "source"
+        },
+        {
+          "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+          "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359",
+          "provenance": "source"
+        },
+        {
+          "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+          "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb",
+          "provenance": "source"
+        },
+        {
+          "id": "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b:0",
+          "documentId": "nodus:a2400892-26c8-4c9b-adb3-15d24c7ade8e",
+          "provenance": "source"
+        },
+        {
+          "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+          "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b",
+          "provenance": "source"
+        },
+        {
+          "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+          "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+          "provenance": "source"
+        },
+        {
+          "id": "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+          "documentId": "nodus:e91bf5fd-c36b-46d1-b22b-eb685e1c55ff",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:17:49.018Z",
+      "type": "documentary-retrieval",
+      "query": "Linde restore closed account recover",
+      "profile": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1"
+      },
+      "contract": {
+        "provider": "nodus",
+        "model": "embeddinggemma-2-text-q8-512-v1",
+        "dim": 512,
+        "protocol": "embeddinggemma2-text/1",
+        "task": {
+          "document": "title: {title|none} | text: ",
+          "query": "task: search result | query: "
+        },
+        "preprocessing": {
+          "maxTokens": 8192,
+          "output": "sentence_embedding",
+          "projection": "onnx-model",
+          "reduction": "matryoshka-prefix",
+          "specialTokens": true,
+          "titleFallback": "none",
+          "tokenizer": "daa72c51243991dfcaf9f9137d2c573d8f7790c0",
+          "truncation": false,
+          "weights": "daa72c51243991dfcaf9f9137d2c573d8f7790c0"
+        },
+        "normalization": "l2-after-reduction",
+        "quantization": "onnx-q8",
+        "configVersion": 1
+      },
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "vectorKeys": [
+        "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d",
+        "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e",
+        "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e",
+        "a2733ddd48a4df3e6b1f8b1e4d235c45fbd973d57d1ba80ec73156aba67eb99d",
+        "63b7fcf93e3032b5c004346886c236d68d5db41707dab72d6c4636b2ab906589",
+        "23b37eef3e77663c18d135abaa40dcfab1e67e464fdd3ef7a4521f2c441a2109",
+        "5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d",
+        "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad",
+        "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4",
+        "f3c29d2dec9a1054c9be060a4f6bc4b36f06ecadc18f320cf31675405293c63f",
+        "d556c8682df41a23d9947cc54f0b7ead7b84fc708bc6528694a7b1d14cc1cf93",
+        "67bf5f683609fbce95708c4e5a7379207990c7df5c66714009c7a577013cfb14",
+        "a2d356204fbf761d1fae871dc7192607677c821c3b2afcbe7cba375de5025a1a",
+        "0434b0b64012499930a11f63a29615ad5dcd40e8c6f610a4887ae3444f8a049c",
+        "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3",
+        "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36",
+        "93fc3c1757336c4f536296f01f5a84f23c54e6f62df7296198cc8a84f9ea415e",
+        "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd",
+        "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036",
+        "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b",
+        "667c84a7d4c66c6ec7293ac027f50055c7019a1ee281a0bc057b3d765b7da5a9",
+        "ed39a2d430a0028656d8ca4fec60d8bdc4581a5069e54efee7ad4795c2ba3b5b",
+        "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861",
+        "eb9a8d19e5428a02f54e3af4e16e844291458ab13b219b3c131af82ca31e6453",
+        "677c06c18a6555d37b7385f256bbf1d1f4179628becdc119bde8b705f66cd882",
+        "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7",
+        "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9",
+        "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7",
+        "982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1",
+        "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5",
+        "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e",
+        "0fd8a50daae91252fd4890f4cb90912b0b567b000f6e13c55658ab9c466ecdc1",
+        "4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8",
+        "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba",
+        "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255",
+        "14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2",
+        "0313d07f83e9f0602690e153f5596f771b63ae4e50d1a598bad2e447eaf80c24",
+        "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3",
+        "2ad7c8aefc9c926789d3db7de651b3ac52fbe3b0a7b1b680fabf553840d195a4",
+        "5760b38a3641df0806bb40f10cac0e29358692acd3d8b0c3685ab2e6d9b9827b"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:36",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:46",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:13",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:45",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:32",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:29",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:15",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:19",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:33",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:20",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:52",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:35",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:58",
+            "documentId": "nodus:26f6af0c-39ec-4ef7-9e83-b3c9e4ebd91a"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:28",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:38",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:33",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:29",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:37",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:39",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:45",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:22",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:36",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:34",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:43",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:23",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:38",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "7d998bf49536e59b499fc670c895e2cc386a9ee07f9f0e74951a7d0e1f8297e7:44",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:51",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:30",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:21",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:34",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:0",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:37",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:19",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:0",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:43",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:32",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:53",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:37",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:0",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:44",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:31",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:24",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:28",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:1",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+            "documentId": "nodus:06f70e0f-d117-418d-9cc5-ca6a13f3dc3b"
+          },
+          {
+            "id": "3cfb1ad7c16f0e3dfde2ecc3eb4b5eda371ce88ffb3d55bd1486f95d39507ac9:32",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+            "documentId": "nodus:cfff732e-2c31-4032-95c4-3e7712ebfbdb"
+          },
+          {
+            "id": "3f8cafc85498f40fe6eefb9bd2175f2d4cf22a0c12c15435e51605a7b1b2a4cd:41",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "599ad2b29e45ba8a90a2f80d494908cb6edc49197531a5ecb8137f05d9e562f7:28",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "16d5f3f150bae6ce45e9dc23402d67d056a9812e93c8460aa8a8826a62fc5036:46",
+            "documentId": "nodus:94424777-c022-4ce9-a5e6-4e98b1b58adf"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847"
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972"
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644"
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b"
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2"
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:50",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:49",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:60",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:61",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:38",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+            "documentId": "nodus:903c67d3-119e-4be8-908f-aef4ffeb2359"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:8",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:11",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:4",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:35",
+            "documentId": "nodus:bf297f1b-519e-4066-9334-12291e7fe881"
+          },
+          {
+            "id": "47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:9",
+            "documentId": "nodus:c9dbbed0-8f51-46a1-a71d-8e1e6fdb4d56"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:7",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:9",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:2",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "b7d23a428b5c6e788a0364ecf5e5a8cfacdb5ef41b39f92e2eec4e0769b180dc:39",
+            "documentId": "nodus:bfb2ac1b-e230-4b30-bc01-d145f0b5a3e1"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:9",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:8",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:10",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:11",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:52",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:10",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:11",
+            "documentId": "nodus:fdae6310-aab7-4198-81d6-6d700c9564cf"
+          },
+          {
+            "id": "bf2e5546c705cbb5784f43f079244d3242dcd0f7d179f89ec69e9128f54ba93f:13",
+            "documentId": "nodus:b53e4f4b-c69e-45aa-af27-7856b6a6d87e"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:21",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:22",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408"
+          }
+        ],
+        "selected": [
+          {
+            "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+            "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+            "lexicalIds": [
+              "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0"
+            ],
+            "semanticIds": [
+              "40d81cb0dba96fcb35cab833f7ef9a14f4eaf5c5cba968b653689538fc7cb2ba:0"
+            ]
+          },
+          {
+            "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+            "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+            "lexicalIds": [
+              "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0"
+            ],
+            "semanticIds": [
+              "b8799238053460f26e97f080a753f5a4b0f7e3e0f5dfad688ecfb7d402dcac4d:0"
+            ]
+          },
+          {
+            "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+            "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+            "lexicalIds": [
+              "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0"
+            ],
+            "semanticIds": [
+              "7105b455a9f1fad3f6d32e4a72e208bdab0df73bef25da38e5c22d84ed30ef36:0"
+            ]
+          },
+          {
+            "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+            "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+            "lexicalIds": [
+              "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0"
+            ],
+            "semanticIds": [
+              "c5d221aadb2c41c05a1abd01b4008adac4f94cfb8705653993c39be649e853c3:0"
+            ]
+          },
+          {
+            "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+            "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+            "lexicalIds": [
+              "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0"
+            ],
+            "semanticIds": [
+              "9f5920a50f5c1b5262cf0e3728989830475e3c9c4e3b20072249f57f93ed5861:0"
+            ]
+          },
+          {
+            "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+            "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+            "lexicalIds": [
+              "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0"
+            ],
+            "semanticIds": [
+              "1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0"
+            ]
+          },
+          {
+            "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+            "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+            "lexicalIds": [
+              "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0"
+            ],
+            "semanticIds": [
+              "a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:0"
+            ]
+          },
+          {
+            "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+            "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+            "lexicalIds": [],
+            "semanticIds": [
+              "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59"
+            ]
+          },
+          {
+            "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+            "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+            "lexicalIds": [],
+            "semanticIds": [
+              "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:17:49.115Z",
+      "type": "research-evidence-selection",
+      "query": "Linde restore closed account recover",
+      "scopeId": "78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46",
+      "sharedCandidates": [
+        {
+          "id": "675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "documentId": "nodus:cd1d2562-61f8-4530-a8f3-0b7eae8c0847",
+          "provenance": "source"
+        },
+        {
+          "id": "fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "documentId": "nodus:0467af22-bb47-425e-83c2-f831045b6972",
+          "provenance": "source"
+        },
+        {
+          "id": "95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "documentId": "nodus:74f7123c-3bb8-4744-a6bf-b72ab1ef0644",
+          "provenance": "source"
+        },
+        {
+          "id": "cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "documentId": "nodus:701e8d31-3974-4c97-8187-5f9a6864fe5b",
+          "provenance": "source"
+        },
+        {
+          "id": "e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "documentId": "nodus:a26e6d71-499d-45df-a8d3-30d1839f0bd2",
+          "provenance": "source"
+        },
+        {
+          "id": "fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "documentId": "nodus:c77fef81-adc0-4514-9837-914656d983a2",
+          "provenance": "source"
+        },
+        {
+          "id": "37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+          "documentId": "nodus:071d3e77-069f-4d1e-b437-c35ed91e1408",
+          "provenance": "source"
+        },
+        {
+          "id": "e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+          "documentId": "nodus:237dc40c-a193-4361-96a1-717882fefdb6",
+          "provenance": "source"
+        },
+        {
+          "id": "1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+          "documentId": "nodus:9dc0249b-05d8-4a7a-9a18-f66fa000bed0",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+        "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+        "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+      "title": "fixture 25",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 25\nOBRA ENLAZADA\n1\nfixture 25\nEVIDENCIA ANCLADA\n1\n# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+      "title": "fixture 05",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 05\nOBRA ENLAZADA\n1\nfixture 05\nEVIDENCIA ANCLADA\n1\nLinde - archive 5 A API Linde conserva eventos durante 14 dias. /restore recupera itens eliminados, mas nXXlo contas encerradas. A verslXx]o 2 alterou o prazo de 7 para 14 dias. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+      "title": "fixture 20",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 20\nOBRA ENLAZADA\n1\nfixture 20\nEVIDENCIA ANCLADA\n1\n# Linde · archive 20 The Linde API retains events for 14 days. The /restore endpoint recovers deleted items, but not closed accounts. Version 2 changed retention from 7 to 14 days.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+      "title": "fixture 15",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 15\nOBRA ENLAZADA\n1\nfixture 15\nEVIDENCIA ANCLADA\n1\nLinde · archive 15 # Linde · archive 15 L’API Linde conserve les événements 14 jours. /restore récupère les éléments supprimés, pas les comptes fermés. La version 2 a remplacé 7 jours par 14.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+      "title": "fixture 10",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 10\nOBRA ENLAZADA\n1\nfixture 10\nEVIDENCIA ANCLADA\n1\nLinde · archive 10 Die Linde-API speichert Ereignisse 14 Tage. /restore stellt gelöschte Elemente, aber keine geschlossenen Konten wieder her. Version 2 erhöhte die Frist von 7 auf 14 Tage.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+      "title": "fixture 30",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 30\nOBRA ENLAZADA\n1\nfixture 30\nEVIDENCIA ANCLADA\n1\nCampos: Document · Evidence 1. Document: Linde · archive 30 · Evidence: L’API Linde conserva gli eventi per 14 giorni. /restore recupera elementi eliminati, non account chiusi. La versione 2 ha cambiato il limite da 7 a 14 giorni. 2. Document: Version · Evidence: Retention days 3. Document: 1 · Evidence: 7 4. Document: 2 · Evidence: 14\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+      "title": "fixture 25",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 25\nOBRA ENLAZADA\n1\nfixture 25\nEVIDENCIA ANCLADA\n1\n# Linde · archive 25 La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+      "title": "fixture 20",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 20\nOBRA ENLAZADA\n1\nfixture 20\nEVIDENCIA ANCLADA\n1\n# Linde · archive 20 The Linde API retains events for 14 days. The /restore endpoint recovers deleted items, but not closed accounts. Version 2 changed retention from 7 to 14 days.\np. 1"
+    },
+    {
+      "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+      "title": "fixture 05",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 05\nOBRA ENLAZADA\n1\nfixture 05\nEVIDENCIA ANCLADA\n1\nLinde - archive 5 A API Linde conserva eventos durante 14 dias. /restore recupera itens eliminados, mas nXXlo contas encerradas. A verslXx]o 2 alterou o prazo de 7 para 14 dias. *Source: Nodus QA synthetic archive.*\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-SG18aD/artifacts/chat-1-technical.png"
+}

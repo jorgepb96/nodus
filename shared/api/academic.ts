@@ -562,7 +562,8 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   updateStudyAssistantConversation(id: string, patch: StudyAssistantConversationPatch): Promise<StudyAssistantConversation | null>;
   deleteStudyAssistantConversation(id: string): Promise<void>;
   streamStudyAssistant(request: StudyAssistantRequest, handlers: StudyAssistantStreamHandlers): Promise<StudyAssistantResponse>;
-  cancelStudyAssistant(): Promise<void>;
+  /** Without a conversation, aborts the stream started last. */
+  cancelStudyAssistant(conversationId?: string): Promise<void>;
   exportStudyAssistantConversation(id: string): Promise<{ path: string } | null>;
   listStudyQuestions(filters?: StudyQuestionFilters): Promise<StudyQuestion[]>;
   getStudyQuestion(id: string): Promise<StudyQuestion | null>;
@@ -731,11 +732,12 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   researchChat(request: ResearchChatRequest): Promise<ResearchChatResponse>;
   researchChatStream(request: ResearchChatRequest, handlers: ResearchChatStreamHandlers): Promise<ResearchChatResponse>;
   /**
-   * Abort the research-chat stream currently in flight. The pending
+   * Abort the research-chat stream of that conversation (without one, the stream
+   * started last). Other conversations keep answering. The pending
    * {@link researchChatStream} promise then resolves with whatever partial
    * answer had streamed so far (never rejects), so the UI can keep the text.
    */
-  cancelResearchChat(): Promise<void>;
+  cancelResearchChat(conversationId?: string): Promise<void>;
 
   // writing workshop
   getWritingWorkshopSnapshot(brief: WritingWorkshopBrief): Promise<WritingWorkshopSnapshot>;

@@ -1,0 +1,80 @@
+{
+  "format": "nodus.regression37-secondary-source-inspection/1",
+  "recordedAt": "2026-10-15T21:17:59.207Z",
+  "reviewer": "parent assistant",
+  "blinded": false,
+  "model": "unknown",
+  "effort": "unknown",
+  "externalHumanReview": false,
+  "primaryJudgmentsChanged": false,
+  "generatorFeedbackSent": false,
+  "interpretation": "Supplemental source inspection by the parent, who knows case roles. Does not replace the independent blinded judgments or create a second attempt.",
+  "inspections": [
+    {
+      "reviewId": "review-77f45f61da95c5c52e3e293e",
+      "answerSha256": "78d6c27fdde372638d8f01f4e9e3d0739fef255a1cf2439767ca83e5731f73d8",
+      "sourceHash": "1f8228b3cda4bccd69856722add0286121d3065925f0b150cb0494f5c77d595b",
+      "packetSha256": "2cfe557d7017255c749f2472f9cc07ede25509f2208f15239e621520130e5876",
+      "packetBytes": 3838,
+      "packetFile": "blind-review-pack-003.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Both requested quantities are covered: turbidity from 530 nm visible light, oxygen explicitly excluded. The cited English passage supports every assertion; parallel-language passages agree."
+    },
+    {
+      "reviewId": "review-a09cdf7f494d90f0a68ccc73",
+      "answerSha256": "1d7ea68d3c6d32fdcbfb03273e8b3213644a4b779c1a604120e0b5ec60096525",
+      "sourceHash": "537c01fc48289ad64d10338008e4476d5827f6796b696f7c7866715706ec567a",
+      "packetSha256": "3bb877abf4d477b297b0c5c668b39515cfe8d5e15219d3bf323033ed6239fa33",
+      "packetBytes": 4385,
+      "packetFile": "blind-review-pack-004.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "The requested table has two group rows with 72% and 51%; the explicitly labelled subtraction gives 21 percentage points. Recall is identified as the measured outcome. The cited passage supplies both premises."
+    },
+    {
+      "reviewId": "review-7b4031d9369a2b27ba3901ad",
+      "answerSha256": "cf9a54f5f8cc242491da3217658037a32383b76f440907fa66ab82ff9463bb2d",
+      "sourceHash": "c0813454f2ba0c437b404250be292c69abf3096453120e1c4d63b24fd988aa22",
+      "packetSha256": "b41f4ee882e136f7ad8e25d91134c78092e2aab0640626c4a244d297aec9cc06",
+      "packetBytes": 5107,
+      "packetFile": "blind-review-pack-005.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Correctly distinguishes recall from unmeasured intelligence and refuses an IQ conclusion. The 72%/51% values and limitation are directly supported. The unrelated SAM candidate is not cited or used."
+    },
+    {
+      "reviewId": "review-12f8cca9842ef1b5308c4715",
+      "answerSha256": "834ba80f194ceaddc71bbfb7eb14483c2c0a8838b00fb0693a979d78dbe99ad4",
+      "sourceHash": "642530b7ca5ac80d67f98947c75e768017ffc9899c9fbde32550915dfa7e8d1a",
+      "packetSha256": "23fe680af52bd6730521a9ce94816ed339a2f003478ee2401dad140d03bb2e61",
+      "packetBytes": 3717,
+      "packetFile": "blind-review-pack-006.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Explicitly rejects an oxygen reading, identifies turbidity and 530 nm, and cites the passage that directly states the exclusion. No outside physical inference is asserted."
+    },
+    {
+      "reviewId": "review-d1f054bc08794b03cd830dcc",
+      "answerSha256": "8c02748ff1d16f4102ff5555dfe8c4bfd921435421ecce0797568e4401d6d04e",
+      "sourceHash": "051bc9177bc0a07932abdf0ebde8f5f2f2534cd82979a021ea0f43ebaedf67dd",
+      "packetSha256": "9f38ad5236afd962167418b8bc5ac7cf71a38dffd7eff57371a8d5ea702546ba",
+      "packetBytes": 5572,
+      "packetFile": "blind-review-pack-007.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Distinguishes median 18 from mean 24 and cites the English passage explicitly saying they are not equivalent. Irrelevant long-log and Vega passages are not used as evidence."
+    },
+    {
+      "reviewId": "review-0f4fec41eb1075d09b2e5e56",
+      "answerSha256": "c7754f8bc4e5f9479d7712acaf044390e5207ba76be5f92f47764151dc8f93ac",
+      "sourceHash": "967aa5b2956b842f34d009f2ee24d3889b290c91a315c534c153fcc86386909e",
+      "packetSha256": "8a823e23301a55ad4698b70f2fa7afbaaca42379152d90b5e222ab20379caa05",
+      "packetBytes": 3862,
+      "packetFile": "blind-review-pack-008.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Correctly states that /restore recovers deleted items but not closed accounts. The cited English source and multilingual corroboration support the exact distinction; no retention-version claim is invented."
+    }
+  ]
+}

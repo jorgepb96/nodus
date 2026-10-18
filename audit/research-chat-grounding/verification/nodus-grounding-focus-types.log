@@ -1,0 +1,4 @@
+
+> nodus@5.8.0 typecheck
+> tsc --noEmit -p tsconfig.json && tsc --noEmit -p electron/tsconfig.json
+

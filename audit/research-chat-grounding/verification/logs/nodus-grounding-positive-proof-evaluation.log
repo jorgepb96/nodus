@@ -1,0 +1,4 @@
+
+> nodus@5.8.0 audit:research:grounding
+> node scripts/embeddinggemma-grounding-campaign.mjs --stage=evaluation --budget-usd=8
+

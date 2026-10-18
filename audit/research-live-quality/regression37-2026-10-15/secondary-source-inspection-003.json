@@ -1,0 +1,37 @@
+{
+  "format": "nodus.regression37-secondary-source-inspection/1",
+  "recordedAt": "2026-10-15T21:28:57.523Z",
+  "reviewer": "parent assistant",
+  "blinded": false,
+  "model": "unknown",
+  "effort": "unknown",
+  "externalHumanReview": false,
+  "primaryJudgmentsChanged": false,
+  "generatorFeedbackSent": false,
+  "interpretation": "Supplemental parent source inspection; primary blinded judgments and frozen generated answers remain unchanged. Scope/presentation caveats are retained rather than converted into a global quality claim.",
+  "inspections": [
+    {
+      "reviewId": "review-77bd8ce916e067e448c0dfc2",
+      "answerSha256": "f3e566ece1540ff49e81d3423dafef860878168f9fae29926d3d9bd4f6748b27",
+      "sourceHash": "09ee2314afe8d9a0a4306db3a0f15ca8f08cd454a6bfc178016d9f3c056de033",
+      "packetSha256": "8d738079209282d7241d35f742252f84d131bc4922373b11106235a8be56696d",
+      "packetBytes": 6861,
+      "packetFile": "blind-review-pack-001.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "scopeCaveat": "Topic coverage is not an exhaustive technical explanation of paging mechanics; memory number is a paper-specific example.",
+      "note": "NF4 four-bit bins, zero-centred normal optimality, quantized constants, 32/64 = 0.5 bits of overhead, 5,048 MB in the cited example, paged-optimizer purpose, and four-bit storage versus BF16/16-bit computation are supported by the supplied QLoRA excerpts. The answer does not mislabel the overhead as net savings. Scope caveat: it describes the purpose of paged optimizers without elaborating CPU/GPU paging mechanics; the numerical memory example should be read as belonging to the cited paper, not as a size-independent QLoRA requirement."
+    },
+    {
+      "reviewId": "review-2bac502846422e47f020b016",
+      "answerSha256": "543fb8e4a6f99f989740cc44f752505583749d68c7dd3cbee4577a9e2f83c9d7",
+      "sourceHash": "b364e29374a49d86c62bdcbf102e295e64dfc76a2fbe62c15883f7e75f32fcef",
+      "packetSha256": "90a4b67071093885e7738acb4e064fd62d2cd4ab1a102c384f0953a48fa3de85",
+      "packetBytes": 3801,
+      "packetFile": "blind-review-pack-002.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Both Vega groups and values are correct; 72 minus 51 is explicitly labelled as 21 percentage points. The two-row table agrees with the prose and identifies recall, with intelligence explicitly excluded. Every cited assertion resolves to the same supporting source."
+    }
+  ]
+}

@@ -3,11 +3,12 @@
 import { ipcRenderer } from 'electron';
 
 import type { WorldbuildingApi } from '@shared/api/worldbuilding';
+import { chatStreamRegistry } from './chatStreams';
 
-// Tracks the world-chat stream in flight so cancelWorldChat can abort it without the
-// renderer juggling request ids. It sat in preload.ts beside the other chat streams;
-// it belongs with the bindings that are its only users.
-let activeWorldChatRequestId: string | null = null;
+// Tracks the world-chat streams in flight so cancelWorldChat can abort the one of the chat
+// it was pressed in. It sat in preload.ts beside the other chat streams; it belongs with
+// the bindings that are its only users.
+const worldChatStreams = chatStreamRegistry();
 
 export const worldbuildingApi: WorldbuildingApi = {
   // Worldbuilding characters — the person-side bridges above (portrait, names,
@@ -135,11 +136,11 @@ export const worldbuildingApi: WorldbuildingApi = {
       if (id === requestId) handlers.onDelta(delta);
     };
     ipcRenderer.on('worldChat:delta', onDelta);
-    activeWorldChatRequestId = requestId;
+    const untrack = worldChatStreams.track(requestId, request.conversationId);
     try {
       return await ipcRenderer.invoke('worldChat:stream', requestId, request);
     } finally {
-      if (activeWorldChatRequestId === requestId) activeWorldChatRequestId = null;
+      untrack();
       ipcRenderer.removeListener('worldChat:delta', onDelta);
     }
   },
@@ -161,8 +162,9 @@ export const worldbuildingApi: WorldbuildingApi = {
   manuscriptProgress: () => ipcRenderer.invoke('manuscript:progress'),
   reviewWorldProse: (sceneId) => ipcRenderer.invoke('manuscript:review', sceneId),
   exportManuscript: (options) => ipcRenderer.invoke('manuscript:export', options),
-  cancelWorldChat: async () => {
-    if (activeWorldChatRequestId) await ipcRenderer.invoke('worldChat:cancel', activeWorldChatRequestId);
+  cancelWorldChat: async (conversationId) => {
+    const requestId = worldChatStreams.find(conversationId);
+    if (requestId) await ipcRenderer.invoke('worldChat:cancel', requestId);
   },
   recomputeSceneDays: () => ipcRenderer.invoke('scenes:recomputeDays'),
   listWorldMaps: () => ipcRenderer.invoke('maps:list'),

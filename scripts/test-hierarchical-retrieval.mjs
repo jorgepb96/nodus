@@ -43,7 +43,7 @@ await build({
         ]}
         export function lexicalDocumentSearch(){return [{...base,kind:'document',nodusId:'work-doc',title:'Obra documental',sourceId:'overview',text:'Tesis macro',similarity:0,lexicalScore:4,explanation:'léxica'}]}
       `);
-      stub(/\.\/aiClient$/, 'ai', `export async function embed(){return [1,0,0]}`);
+      stub(/\.\/aiClient$/, 'ai', `export async function embedQuery(){return [1,0,0]}`);
     },
   }],
 });

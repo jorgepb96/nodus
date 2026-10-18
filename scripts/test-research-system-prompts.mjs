@@ -41,7 +41,7 @@ try {
   skills.saveChatSkill({ ...svgSkill, enabled: { assistant: true, nodi: false } });
   const ai = load('electron/ai/aiClient.ts');
   const captured = [];
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.completeTextStream = async (options, onDelta) => { captured.push(options); onDelta('Respuesta de prueba.'); return 'Respuesta de prueba.'; };
   const db = load('electron/db/databasesRepo.ts').createDatabase('Datos');
   const article = load('electron/db/worldEncyclopediaRepo.ts').createWorldArticle({ title: 'Observatorio', body: 'Tiene tres cúpulas.' });
@@ -66,10 +66,60 @@ try {
   const { withResearchContextLayers } = load('shared/researchContextLayers.ts');
   const layeredSelection = layers => withResearchContextLayers({ ideas: true, themes: true, contradictions: true, gaps: true, readingPath: true, authors: true, documents: true, passages: true, graph: true, graphParts: {} }, layers);
   captured.length = 0;
-  await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, selection: layeredSelection({ ideas: false, documents: false }) }, () => {});
-  await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, selection: layeredSelection({ ideas: true, documents: false }) }, () => {});
+  await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, selection: layeredSelection({ ideas: false, documents: false, indexed: false }) }, () => {});
+  await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, selection: layeredSelection({ ideas: true, documents: false, indexed: false }) }, () => {});
   assert.match(JSON.stringify(captured[0]), /switched off every source.*general knowledge/, 'with every layer off the model is told to answer from general knowledge and say so');
   assert.doesNotMatch(JSON.stringify(captured[1]), /switched off every source/, 'a single layer left on is not a general-knowledge answer');
+  // The indexed texts alone, with the web off: no planner call, the answer is bound to the retrieved passages.
+  {
+    const planner = load('electron/ai/researchTurnPlanner.ts');
+    const realPlan = planner.planResearchTurn;
+    let plans = 0;
+    planner.planResearchTurn = async (...args) => { plans++; return realPlan(...args); };
+    try {
+      captured.length = 0;
+      const indexedSelection = layeredSelection({ ideas: false, documents: false, indexed: true });
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: indexedSelection }, () => {});
+      const sent = captured.at(-1);
+      assert.match(sent.system, /Indexed texts only: answer exclusively from the retrieved passages/, 'the system prompt binds the answer to the passages');
+      assert.match(JSON.stringify(sent), /chose indexed texts only/, 'the context tells the model what was searched');
+      assert.doesNotMatch(JSON.stringify(sent), /research_log|switched off every source/, 'no agent log and not a general-knowledge answer');
+      const context = JSON.parse(sent.user).contexto_modular_seleccionado;
+      assert.deepEqual([context.ideas_generadas ?? [], context.temas_principales ?? [], context.huecos ?? [], context.contradicciones ?? []], [[], [], [], []], 'no ideas and no graph');
+      assert.equal(context.orientacion_documental, undefined, 'no document profiles');
+      assert.equal(context.pasajes_web, undefined, 'no web');
+      assert.equal(plans, 0, 'the turn planner is never asked');
+      // 5.12.0's exclusive mode reads as the indexed texts alone.
+      captured.length = 0;
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: { ...indexedSelection, layers: { ideas: true, documents: true, indexedOnly: true } } }, () => {});
+      assert.match(captured.at(-1).system, /Indexed texts only: answer exclusively/, 'a chat saved in the old mode keeps answering from its passages');
+      assert.equal(plans, 0);
+      // Beside the web the indexed texts are one source among others: the turn is planned. The web
+      // step's own search is not under test here, and a real one would leave for the network.
+      captured.length = 0;
+      const { ResearchWebGrant } = load('electron/ai/researchWebStep.ts');
+      const realSearch = ResearchWebGrant.prototype.search;
+      let webSearches = 0;
+      ResearchWebGrant.prototype.search = async () => { webSearches++; return null; };
+      try { await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'auto', selection: indexedSelection }, () => {}); }
+      finally { ResearchWebGrant.prototype.search = realSearch; }
+      assert.equal(webSearches, 1, 'a thin library still falls back to the web');
+      assert.doesNotMatch(captured.at(-1).system, /Indexed texts only/, 'with the web on the passages are not the only source');
+      assert.ok(plans > 0, 'and the turn is planned');
+      plans = 0;
+      captured.length = 0;
+      await load('electron/ai/researchAssistant.ts').streamResearchChat({ ...request, webSearch: 'off', selection: layeredSelection({ ideas: true, documents: false, indexed: true }) }, () => {});
+      assert.doesNotMatch(captured.at(-1).system, /Indexed texts only/, 'with ideas beside them the passages are not the only source');
+      assert.ok(plans > 0, 'outside the mode the turn is planned, so the count above is a real absence');
+      const { indexedTextsQuery } = load('electron/ai/researchAssistant.ts');
+      const first = 'define libro de viaje vs relato de viaje vs literatura de viaje';
+      assert.equal(indexedTextsQuery([{ role: 'user', content: first }]), first, 'a first message is searched as it is');
+      assert.equal(indexedTextsQuery([{ role: 'user', content: first }, { role: 'assistant', content: 'Respuesta.' }, { role: 'user', content: '¿y qué más dice sobre eso?' }]),
+        `${first}\n¿y qué más dice sobre eso?`, 'a short follow-up searches the topic it continues');
+      const standalone = 'Compara cómo definen el relato de viaje los estudios hispánicos de los años noventa frente a los publicados después de dos mil diez';
+      assert.equal(indexedTextsQuery([{ role: 'user', content: first }, { role: 'assistant', content: 'Respuesta.' }, { role: 'user', content: standalone }]), standalone, 'a full new question is searched on its own');
+    } finally { planner.planResearchTurn = realPlan; }
+  }
   load('electron/db/database.ts').closeDb();
   const vaults =load('electron/vaults/vaultRegistry.ts');
   const previousVault = vaults.getActiveVault().id;

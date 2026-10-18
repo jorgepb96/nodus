@@ -1,0 +1,60 @@
+{
+  "closedAt": "2026-10-07T23:47:28.084Z",
+  "measuredRevision": "82dac50f",
+  "paidCampaignClosed": true,
+  "noFurtherPaidRuns": true,
+  "authorizedFinalLimitUsd": 8,
+  "cumulativeAccountedUsd": 7.820690549999996,
+  "cumulativeCommittedUsd": 7.955946299999995,
+  "calls": 6336,
+  "unknownReservations": [
+    {
+      "id": "f795dc81-1188-4f4b-8754-ccf11f947573",
+      "maximumUsd": 0.006838624999999999,
+      "reservedAt": "2026-10-06T21:53:57.672Z"
+    },
+    {
+      "id": "bdbf0599-989b-4144-93f2-7a4499ddb82c",
+      "maximumUsd": 0.05028912499999999,
+      "reservedAt": "2026-10-07T08:23:25.650Z"
+    },
+    {
+      "id": "0fa9dbd6-375b-4ef4-bcbf-545674dd45fc",
+      "maximumUsd": 0.024599375,
+      "reservedAt": "2026-10-07T08:38:54.054Z"
+    },
+    {
+      "id": "4edef783-06f5-44b6-a9ee-e5a9afe4f880",
+      "maximumUsd": 0.0027275,
+      "reservedAt": "2026-10-07T09:26:39.693Z"
+    },
+    {
+      "id": "da35f41d-2047-4a00-964e-a74071aba22f",
+      "maximumUsd": 0.048078499999999996,
+      "reservedAt": "2026-10-07T23:05:51.498Z"
+    },
+    {
+      "id": "b30ae019-6fcb-4b68-92ac-d41bf9225808",
+      "maximumUsd": 0.0027226250000000002,
+      "reservedAt": "2026-10-07T23:05:54.486Z"
+    }
+  ],
+  "ledger": {
+    "file": "cost-ledger-closed-82dac50f.json",
+    "sha256": "bf0ce289beb18f089cdde39c69635491654a4e81c46124c4fff0821b9de8b4a5"
+  },
+  "providerModels": [
+    [
+      "deepseek",
+      "deepseek-flash"
+    ]
+  ],
+  "remoteEmbeddingCalls": 0,
+  "processProof": {
+    "coordinatorExited": true,
+    "harnessesClosed": true,
+    "remainingQaRunners": [],
+    "remainingTestElectronApps": []
+  },
+  "note": "Final original-campaign cap remains USD 8. All prior calls and all six unresolved reservations are preserved. Closure is an audit record, not a new authorization or a billing invoice. No more paid QA runs are started."
+}

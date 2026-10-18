@@ -342,11 +342,22 @@ export class LibraryOperations {
       if (collection.source !== 'nodus') throw new Error('Las colecciones importadas son de solo lectura en Nodus.');
     }
     let updated = 0; const indexed: LibraryItemRecord[] = [];
-    for (const item of this.store.scanMaterializedItems().records) {
-      if (!canonicalItemIds.has(item.id) || item.deletedAt) continue;
-      const collectionIds = [...new Set([...item.collectionIds.filter((id) => !remove.has(id)), ...add])];
-      const desired = { ...item, collectionIds };
-      if (comparable(item) !== comparable(desired)) { indexed.push(this.store.upsertItem(desired, item.clock.revision)); updated += 1; }
+    for (const snapshot of this.store.scanMaterializedItems().records) {
+      if (!canonicalItemIds.has(snapshot.id) || snapshot.deletedAt) continue;
+      // Extraction may update an attachment while the corpus scan is in progress.
+      // Rebase this idempotent collection patch onto the latest record; never
+      // overwrite its newer files or extraction state with the scan's snapshot.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const item = this.store.readMaterializedItem(snapshot.storageId);
+        if (!item || item.deletedAt) break;
+        const collectionIds = [...new Set([...item.collectionIds.filter((id) => !remove.has(id)), ...add])];
+        const desired = { ...item, collectionIds };
+        if (comparable(item) === comparable(desired)) break;
+        try { indexed.push(this.store.upsertItem(desired, item.clock.revision)); updated += 1; break; }
+        catch (error) {
+          if (attempt === 2 || !(error instanceof Error) || !error.message.includes('El documento cambió en otro dispositivo.')) throw error;
+        }
+      }
     }
     if (indexed.length) this.catalog.indexItems(indexed, this.store);
     return updated;

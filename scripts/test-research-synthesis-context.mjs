@@ -25,7 +25,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
   const dbModule = load('electron/db/database.ts');
   const db = dbModule.getDb();
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.localModelContextWindow = async () => null;
   const molecule = load('electron/ai/moleculeInspection.ts');
   molecule.inspectResearchMolecules = async () => [];
@@ -129,9 +129,10 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     // Retrieval reads only ORD's disconnections. The gather's slower phases (the route search's
     // budget, the textbook schemes' second level) used to hold it back for their whole length.
     let retrievalStarted;
+    const embedQuery = ai.embedQuery;
     const embedMany = ai.embedMany;
-    ai.embed = async () => { retrievalStarted?.(); return null; };
-    ai.embedMany = async (texts) => { retrievalStarted?.(); return texts.map(() => null); };
+    ai.embedQuery = async () => { retrievalStarted?.(); return null; };
+    ai.embedMany = async queries => { retrievalStarted?.(); return queries.map(() => null); };
     const recorded = evidence.gatherSynthesisEvidence;
     evidence.gatherSynthesisEvidence = async (question, options) => {
       const retrieving = new Promise(resolve => { retrievalStarted = resolve; });
@@ -145,14 +146,13 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     const service = load('electron/ai/researchNotebookService.ts');
     const researchWindow = ai.researchModelContextWindow;
     try {
-      const payload = await build(request);
-      assert.ok(payload.evidencia_para_la_ruta.textbook_passages.some(p => p.text.includes('SELECTED_ONLY')), 'the whole evidence still reaches the prompt');
-      // The academic library's own path: an authorized scope, the corpus run and its window fit,
-      // with a window large enough that retrieval has a budget at all.
       ai.researchModelContextWindow = async () => ({ tokens: 400_000, known: true });
-      const scoped = await build(service.authorizeNotebookRequest({ ...request, selection: { ...selection, sourceFilter: { enabled: false } } }));
-      assert.ok(scoped.evidencia_para_la_ruta.textbook_passages.length, 'the whole evidence reaches the scoped prompt too');
-    } finally { evidence.gatherSynthesisEvidence = recorded; ai.embed = async () => null; ai.embedMany = embedMany; ai.researchModelContextWindow = researchWindow; }
+      // Exact local-model budgeting intentionally waits for the complete gather. This concurrency
+      // contract belongs to the authorized corpus path, which can size the prompt after early ORD
+      // evidence and start retrieval beside the remaining gather phases.
+      const scoped = await build(service.authorizeNotebookRequest(request));
+      assert.ok(scoped.evidencia_para_la_ruta.textbook_passages.length, 'the whole evidence reaches the scoped prompt');
+    } finally { evidence.gatherSynthesisEvidence = recorded; ai.embedQuery = embedQuery; ai.embedMany = embedMany; ai.researchModelContextWindow = researchWindow; }
   });
 
   test('a run of corrections keeps the route request in the replayed conversation', async () => {
@@ -239,7 +239,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
     const controller = new AbortController();
     let started;
     const ready = new Promise(resolve => { started = resolve; });
-    ai.embed = async (_query, signal) => {
+    ai.embedQuery = async (_query, signal) => {
       assert.equal(signal, controller.signal);
       started();
       return new Promise((_resolve, reject) => {
@@ -255,7 +255,7 @@ if (requireElectronRuntime(fileURLToPath(import.meta.url), '--native-synthesis-c
       } finally { clearTimeout(timer); }
       controller.abort();
       await assert.rejects(pending, { name: 'AbortError' });
-    } finally { ai.embed = async () => null; }
+    } finally { ai.embedQuery = async () => null; }
   });
 
   test('cancellation reaches concurrent route tools, and one gather opens one runner', async () => {

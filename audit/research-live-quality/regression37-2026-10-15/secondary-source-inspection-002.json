@@ -1,0 +1,59 @@
+{
+  "format": "nodus.regression37-secondary-source-inspection/1",
+  "recordedAt": "2026-10-15T21:24:47.254Z",
+  "reviewer": "parent assistant",
+  "blinded": false,
+  "model": "unknown",
+  "effort": "unknown",
+  "externalHumanReview": false,
+  "primaryJudgmentsChanged": false,
+  "generatorFeedbackSent": false,
+  "interpretation": "Supplemental parent source inspection; primary blinded judgments and frozen generated answers remain unchanged.",
+  "inspections": [
+    {
+      "reviewId": "review-59a69d17f91e9dd4e09520c0",
+      "answerSha256": "f6cd7f090c7ce479c2e690ec9dd5a5212c5e869fa8691eba84b130222a4ab02e",
+      "sourceHash": "1f3a48ec17ef3d946890b5798ef2183379748616b3561841ec574d513141238e",
+      "packetSha256": "72fa81e04a4c71ab332ea0241bb6db62d768ef032b272c09209a84e04f62cd20",
+      "packetBytes": 4836,
+      "packetFile": "blind-review-pack-009.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Correctly assigns 51% to rereading and 72% to spaced retrieval, rejecting the swapped-group premise. The cited Vega passage supports both values; unrelated agent-memory material is not used."
+    },
+    {
+      "reviewId": "review-49d9b19cdc36edc0e8c191ee",
+      "answerSha256": "6256d48380a0c8629744fa25020db8a03809673b572510d11fdb1d162ad2e208",
+      "sourceHash": "a8d360abd6032608b3fac5e9a4ddcd565c9b87a20b98690ed7d4eccc0aa3ea54",
+      "packetSha256": "daedbd5a4036e1b6327ed53a3394c936180d276c2ac65c259b168cdcb73c71c2",
+      "packetBytes": 3853,
+      "packetFile": "blind-review-pack-010.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "Correctly distinguishes a 530 nm light wavelength from the separately stated 30-day calibration period. Both facets are supported by the cited Alba passage."
+    },
+    {
+      "reviewId": "review-9393736aac972c9fc1a06581",
+      "answerSha256": "78f58e7827f3ef0f3889c3d5fa0d7040a4fd409051c500bccf091a8a92a4f3a8",
+      "sourceHash": "5a072edb3be60f29074598bbb877e9c78f187204a51989d25b1bfadc4748428d",
+      "packetSha256": "1bb694fa702790a49106312319631768a6363d1129d574669fafd653aa50171c",
+      "packetBytes": 3701,
+      "packetFile": "blind-review-pack-011.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "presentationIssue": "Stray U+E200 cite U+E202 opener before an otherwise valid resolvable citation",
+      "note": "The German answer correctly states turbidity, green light and 530 nm. The approved citation points to the equivalent supplied English passage; the named OCR archive is also supplied. A stray provider citation opener precedes the valid link: this is a presentation defect, not an unsupported factual assertion. Source-specific citation preference is not established by this content-grade pass."
+    },
+    {
+      "reviewId": "review-e5493255de64369b15aded7f",
+      "answerSha256": "d89f04cfd2983ad5471199e6dd4347f44cbaf23d46d7043223e7f37a9de3dd3a",
+      "sourceHash": "77cf3fa09adb00059cefc78262424bcb5d140d595e3e59ed3204dd8b35a49fa7",
+      "packetSha256": "167dea4f59daa19a6dd51b27191791d07049b817d9693f460cc15d0430535fb1",
+      "packetBytes": 3844,
+      "packetFile": "blind-review-pack-012.json",
+      "sourceSupportConfirmed": true,
+      "requestedFacetsCovered": true,
+      "note": "The German answer gives 14 days for version 2 and 7 days previously. Its cited German source explicitly supports the version transition and units."
+    }
+  ]
+}

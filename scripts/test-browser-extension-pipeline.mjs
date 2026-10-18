@@ -52,14 +52,16 @@ test('attachment response reads enforce the 64 MiB transfer limit', async () => 
   assert.equal(cancelled, true);
 });
 
-test('popup requests optional origins only after save returns pending uploads', () => {
+test('authorization runs directly from a fresh click and durable jobs own transfers', () => {
   const popup = readFileSync(path.join(root, 'browser-extension/popup.js'), 'utf8');
-  const save = popup.slice(popup.indexOf('async function saveCapture('), popup.indexOf('async function save()'));
-  assert.ok(save.indexOf("api('/api/browser/save'") < save.indexOf('requestAttachmentPermissions(pendingUploads)'));
-  assert.match(popup, /chrome\.permissions\.remove/);
-  assert.match(popup, /nodus:upload-pending/);
+  const click = popup.slice(popup.indexOf("$('authorize-button').onclick"), popup.indexOf("$('settings-button').onclick"));
+  assert.match(click, /chrome\.permissions\.request/);
+  assert.doesNotMatch(click.split('chrome.permissions.request')[0], /await /);
+  assert.match(popup, /nodus:enqueue/);
   const worker = readFileSync(path.join(root, 'browser-extension/service-worker.js'), 'utf8');
-  assert.match(worker, /chrome\.permissions\?\.remove/, 'the worker revokes temporary origins even if the popup closes');
+  assert.match(worker, /chrome\.permissions\?\.remove/);
+  assert.match(worker, /nodus:pair/);
+  assert.match(worker, /nodusCaptureJob:/);
 });
 
 test('MV3 package declares a module service worker and no remote executable code', () => {
@@ -69,6 +71,9 @@ test('MV3 package declares a module service worker and no remote executable code
   assert.match(worker, /chrome\.storage\.local/);
   assert.match(worker, /chrome\.runtime\.onStartup/);
   assert.match(worker, /temporaryOrigins/);
-  assert.match(worker, /slice\(0, 8\)/, 'worker bounds an untrusted pending upload list');
+  const queue = readFileSync(path.join(root, 'browser-extension/lib/capture-jobs.js'), 'utf8');
+  assert.match(queue, /slice\(0, 8\)/, 'queue bounds pending uploads');
+  assert.ok(manifest.permissions.includes('alarms'));
+  assert.match(worker, /chrome\.alarms\.onAlarm/);
   assert.doesNotMatch(worker, /https?:\/\/[^`'" ]+\.js/);
 });

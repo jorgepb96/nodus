@@ -28,7 +28,7 @@ import {getStudyQuestion,listStudyQuestionVersions} from '../db/studyQuestionsRe
 import {getStudyAssessment,getStudyAttempt,listStudyAttempts} from '../db/studyAssessmentsRepo';
 import {getStoredStudyRubric} from '../db/studyGradingRepo';
 import {validateMobileStudyChatOriginal,type MobileStudyChatOriginal} from '@shared/mobileStudyChat';
-import { embed, embedMany } from './aiClient';
+import { embedQuery, embedMany } from './aiClient';
 
 type Row = Record<string, unknown>;
 type ProgressListener = (progress: StudySearchProgress) => void;
@@ -345,7 +345,7 @@ export async function retrieveStudyAssistantEntries(
   const store = ensureLexicalIndex();
   const candidates = studyChatCandidates(store.entries.filter(entry=>entry.kind!=='transcript'||mobileDomainAllowed('study-recordings')),options,sourceKeys);
   const hasVectors = candidates.some((entry) => entry.embedding?.length);
-  const queryVector = hasVectors ? await embed(query).catch(() => null) : null;
+  const queryVector = hasVectors ? await embedQuery(query).catch(() => null) : null;
   return orderStudyChatEntries(query,candidates,options,sourceKeys,queryVector,limit);
 }
 
@@ -505,7 +505,7 @@ export async function searchStudyCorpus(query: string, options: StudySearchOptio
   if (clean.length < 2) return { results: [], semanticAvailable: false, correctedQuery: null, suggestions: [], elapsedMs: 0 };
   const store = ensureLexicalIndex();
   const hasVectors = store.entries.some((entry) => entry.embedding?.length);
-  const queryVector = hasVectors ? await embed(clean).catch(() => null) : null;
+  const queryVector = hasVectors ? await embedQuery(clean).catch(() => null) : null;
   const results = rankStudySearchEntries(clean, store.entries, options, queryVector);
   const suggestions = results.length < 5 ? suggestStudySearchCorrections(clean, store.entries) : [];
   const correctedQuery = suggestions.length && clean.split(/\s+/).length === 1 ? suggestions[0] : null;

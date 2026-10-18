@@ -1,0 +1,1864 @@
+{
+  "format": "research-openrouter-paired/1",
+  "startedAt": "2026-10-12T13:37:58.809Z",
+  "completed": true,
+  "model": "mistralai/mistral-small-3.2-24b-instruct",
+  "sourceVersion": {
+    "workingTreeDirty": true,
+    "commit": "cde00ce0725931b0c08a616b6295de599a8b4193",
+    "files": {
+      "electron/ai/researchChatGrounding.ts": "e308b14e106b3314d9b537b28216f66ab9ad77817f8c8541ac3918a6a8dded6f",
+      "electron/ai/researchStructuredAnswer.ts": "9be44fdffce613e5f907d5301c764833f4ef20f5bf22beccc0a883110d068c64",
+      "electron/ai/researchClaimAudit.ts": "644f3ea8c12262aa64d646c39d965b6557473a9386ca4e13fa97d6ad980010ee",
+      "shared/researchChatGrounding.ts": "19c49739b940f52549db4b039e6377c6a8938adf3245b1a7343ca4f38ea2ce3d",
+      "shared/researchClaimAudit.ts": "31332562d228a2f57a27d72e49a902f5cec35b19c3694360aa00edbb2b7fe2c3",
+      "shared/researchAnswerPlan.ts": "1e4355d1b2ab094cbc95b27dfcc02be294317f01cbe74125f8557d19a2b49190",
+      "shared/researchAnswerStructure.ts": "3a147ed9377878727cc44cfb542f31e038d3c76d559d220cfb85d5de825257f5",
+      "electron/ai/providers.ts": "e2a7a3367181a47c773b0cfe5493af7a3a0872ccd19d23ea5c70001703f40994",
+      "electron/qa/researchProviderProxy.ts": "44d70fbefd94428771f4db283b2619bb7e3f376b9adfc806963d39cdf589e41a",
+      "electron/bootstrap.ts": "181763d7a4d276926627aad4435cb305f56dfa9ba5e2a61442e1c5f8a44636b6",
+      "scripts/lib/tsRuntimeHooks.mjs": "9d198653650e913a83477088959e103708f93511be793b0ae16745ca64343908",
+      "scripts/research-openrouter-proxy.mjs": "3e061e05aa28e55ad79f3b13fc4f9cc5e1ebeba346730a681a5646dec77c6b01",
+      "scripts/research-openrouter-budget.mjs": "2d373a0daa605c87850e7a631f26b6e902442772f8a3f3fa72a1160194a19b3b",
+      "scripts/research-openrouter-campaign.mjs": "fb2ee523babb2e9fab0ba190b4b4381e839ab5c6a3f4be39ffed194136ae0606"
+    }
+  },
+  "answers": [
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "legacy",
+      "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+      "error": {
+        "message": "electronApplication.evaluate: Error: No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo.\n    at checked (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:102:19)\n    at repair (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:138:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async groundResearchChatAnswer (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 140806,
+      "traces": [
+        {
+          "at": "2026-10-12T13:40:27.300Z",
+          "type": "research-answer-grounding",
+          "status": "failed",
+          "question": "Identifica por separado los a\u00f1os de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "sources": [
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:0",
+              "label": "fixture 01, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0",
+              "text": "Source title: fixture 01\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 1 La escuela de Puerto Claro abri\u00f3 su biblioteca en 1912. En 1913 abri\u00f3 el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:1",
+              "label": "fixture 13, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A1",
+              "text": "Source title: fixture 13\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentraci\u00f3n de ox\u00edgeno. Debe calibrarse cada 30 d\u00edas."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:2",
+              "label": "fixture 11, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2",
+              "text": "Source title: fixture 11\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laborat\u00f3rio abriu em 1913, n\u00e3o a biblioteca."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:3",
+              "label": "fixture 06, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3",
+              "text": "Source title: fixture 06\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro: archive 6 La scuola di Puerto Claro apr] la biblioteca nel 1912. || laboratorio apr] nel 1913, non la biblioteca. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:4",
+              "label": "fixture 21, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4",
+              "text": "Source title: fixture 21\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro \u00b7 archive 21 L\u2019\u00e9cole de Puerto Claro a ouvert sa biblioth\u00e8que en 1912. Le laboratoire a ouvert en 1913, pas la biblioth\u00e8que. Catal\u00e0: El canal Cer\u00e7 transporta 42 litres per minut; la mesura \u00e9s de cabal, no de pressi\u00f3."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:5",
+              "label": "fixture 26, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5",
+              "text": "Source title: fixture 26\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro \u00b7 archive 26 The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:6",
+              "label": "fixture 16, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6",
+              "text": "Source title: fixture 16\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 16 # Puerto Claro \u00b7 archive 16 Die Schule in Puerto Claro er\u00f6ffnete ihre Bibliothek 1912. Das Labor er\u00f6ffnete 1913, nicht die Bibliothek."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:7",
+              "label": "public QLORA001, pp. 19\u201320",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A7",
+              "text": "Source title: public QLORA001\nSource locator: pp. 19\u201320\nEvidence provenance: source\nVerbatim excerpt:\n[p. 19] 2022. [48] G. Qin and J. Eisner. Learning how to ask: Querying lms with mixtures of soft prompts. arXiv preprint arXiv:2104.06599, 2021. [49] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena, Y. Zhou, W. Li, and P. J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. J. Mach. Learn. Res., 21(1), jan 2020. ISSN 1532-4435. [50] V. Sanh, A. Webson, C. Raffel, S. H. Bach, L. Sutawika, Z. Alyafeai, A. Chaffin, A. Stiegler, T. L. Scao, A. Raja, et al. Multitask prompted training enables zero-shot task generalization. arXiv preprint arXiv:2110.08207, 2021. [51] M. Sap, R. LeBras, D. Fried, and Y. Choi. Neural theory-of-mind? on the limits of social intelligence in large lms. arXiv preprint arXiv:2210.13312, 2022. [52] T. L. Scao, A. Fan, C. Akiki, E. Pavlick, S. Ili\u00b4c, D. Hesslow, R. Castagn\u00e9, A. S. Luccioni, F. Yvon, M. Gall\u00e9, et al. Bloom: A 176b-parameter open-access multilingual language model. arXiv preprint arXiv:2211.05100, 2022. [53] S. Shaphiro and M. Wilk. An analysis of variance test for normality. Biometrika, 52(3):591\u2013611, 1965. [54] Y.-L. Sung, V. Nair, and C. A. Raffel. Training neural networks with fixed sparse masks. Advances in Neural Information Processing Systems, 34:24193\u201324205, 2021. [p. 20] R. Taori, I. Gulrajani, T. Zhang, Y. Dubois, X. Li, C. Guestrin, P. Liang, and T. B. Hashimoto. Stanford alpaca: An instruction-following llama model. https://github.com/tatsu-lab/ stanford_alpaca, 2023. [56] R. Thoppilan, D. De Freitas, J. Hall, N. Shazeer, A. Kulshreshtha, H.-T. Cheng, A. Jin, T. Bos, L. Baker, Y. Du, et al. Lamda: Language models for dialog applications. arXiv preprint arXiv:2201.08239, 2022. [57] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Rozi\u00e8re, N. Goyal, E. Hambro,"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:8",
+              "label": "fixture 25, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A8",
+              "text": "Source title: fixture 25\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Linde \u00b7 archive 25 La API Linde conserva eventos durante 14 d\u00edas. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versi\u00f3n 2 cambi\u00f3 el l\u00edmite de 7 a 14 d\u00edas."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:9",
+              "label": "fixture 07, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A9",
+              "text": "Source title: fixture 07\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:10",
+              "label": "public ARENA001, p. 12",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A10",
+              "text": "Source title: public ARENA001\nSource locator: p. 12\nEvidence provenance: source\nVerbatim excerpt:\n2506 | | 1719 1513 1573 | 1767 1631 2058 1656 1554 1573 1620 1556 1571 1529 1920 1729 1653 1974 1770 1585 1644 1491 1612 1892 1681 1758 1578 1855 1783 1846 1632 1657 1832 1919 1587 | | | 1000 1107 1144 1256 1128 1212 1121 | 1177 1035 1393 1092 1233 1325 1252 1143 1242 1204 1108 1056 1265 1200 1284 1081 1322 1435 1433 1435 1268 | 1316 1163 1176 | | 966 1014 743 441 472 408 667 970 848 786 651 813 825 729 768 525 779 786 627 548 627 476 650 549 442 439 396 428 425 382 323 418 337 326 368 380 357 393 412 489 372 482 535 384 327 326 324 359 405 340 406 932 421 343 366 | 338 480 613 404 409 431 377 439 472 444 341 325 354 539 580 529 481 352 326 657 684 657 626 628 340 504 501 514 566 506 362 537 625 509 465 531 537 364 708 536 563 598 515 394 321 328 483 688 535 439 432 469 662 548 530 516 722 518 640 961 805 724 705 951 874 782 | | | 0 223 228 194 293 285 309 246 186 184 290 301 222 199 293 266 296 278 216 205 245 312 216 134 131 206 191 172 256 288 225 96 149 222 220 184 200 144 111 125 65 248 233 138 103 92 101 89 139 134 120 98 60 97 125 106 123 112 124 56 239 310 | 310 299 301 | | | May 2023 Jun 2023 Jul 2023 Aug 2023 Figure 9."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:11",
+              "label": "public QLORA001, p. 10",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A11",
+              "text": "Source title: public QLORA001\nSource locator: p. 10\nEvidence provenance: source\nVerbatim excerpt:\n70.7% | 4.3% | | FLAN v2 | 65B | 4-bit | 41 GB | 37.0% | 59.6% | 48.4% | 4.6% | | Guanaco | 33B | 4-bit | 21 GB | 96.5% | 99.2% | 97.8% 4.4% | | | Open Assistant | 33B | 16-bit | 66 GB | 91.2% | 98.7% | 94.9% | 4.5% | | Alpaca | 33B | 4-bit | 21 GB | 67.2% | 79.7% | 73.6% | 4.2% | | FLAN v2 | 33B | 4-bit | 21 GB | 26.3% | 49.7% | 38.0% | 3.9% | | Vicuna | 13B | 16-bit | 26 GB | 91.2% | 98.7% | 94.9% 4.5% | | | Guanaco | 13B | 4-bit | 10 GB | 87.3% | 93.4% | 90.4% | 5.2% | | Alpaca | 13B | 4-bit | 10 GB | 63.8% | 76.7% | 69.4% | 4.2% | | HH-RLHF | 13B | 4-bit | 10 GB | 55.5% | 69.1% | 62.5% | 4.7% | | Unnatural Instr. | 13B | 4-bit | 10 GB | 50.6% | 69.8% | 60.5% | 4.2% | | Chip2 | 13B | 4-bit | 10 GB | 49.2% | 69.3% | 59.5% | 4.7% | | Longform | 13B | 4-bit | 10 GB | 44.9% | 62.0% | 53.6% | 5.2% | | Self-Instruct | 13B | 4-bit | 10 GB | 38.0% | 60.5% | 49.1% | 4.6% | | FLAN v2 | 13B | 4-bit | 10 GB | 32.4% | 61.2% | 47.0% | 3.6% | | Guanaco | 7B | 4-bit | 5 GB | 84.1% | 89.8% | 87.0% 5.4% | | |"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:12",
+              "label": "fixture 22, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A12",
+              "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega \u00b7 archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:13",
+              "label": "fixture 23, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A13",
+              "text": "Source title: fixture 23\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Alba \u00b7 archive 23 O sensor Alba mede turbidez com luz verde de 530 nm. N\u00e3o mede oxig\u00e9nio. Deve ser calibrado a cada 30 dias. Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:14",
+              "label": "fixture 28, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A14",
+              "text": "Source title: fixture 28\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document \u00b7 Evidence 1. Document: Alba \u00b7 archive 28 \u00b7 Evidence: Der Alba-Sensor misst Tr\u00fcbung mit gr\u00fcnem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage. 2. Document: Source type \u00b7 Evidence: synthetic archive"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:15",
+              "label": "fixture 08, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A15",
+              "text": "Source title: fixture 08\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba: archive 8 The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:16",
+              "label": "public QLORA001, p. 17",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A16",
+              "text": "Source title: public QLORA001\nSource locator: p. 17\nEvidence provenance: source\nVerbatim excerpt:\nJones, N. Joseph, B. Mann, N. DasSarma, et al. A general language assistant as a laboratory for alignment. arXiv preprint arXiv:2112.00861, 2021. [3] S. H. Bach, V. Sanh, Z.-X. Yong, A. Webson, C. Raffel, N. V. Nayak, A. Sharma, T. Kim, M. S. Bari, T. Fevry, et al. Promptsource: An integrated development environment and repository for natural language prompts. arXiv preprint arXiv:2202.01279, 2022. [4] Y. Bai, A. Jones, K. Ndousse, A. Askell, A. Chen, N. DasSarma, D. Drain, S. Fort, D. Ganguli, T. Henighan, et al. Training a helpful and harmless assistant with reinforcement learning from human feedback. arXiv preprint arXiv:2204.05862, 2022. [5] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon, et al. Constitutional ai: Harmlessness from ai feedback. arXiv preprint arXiv:2212.08073, 2022. [6] E. M. Bender, T. Gebru, A. McMillan-Major, and S. Shmitchell. On the dangers of stochastic parrots: Can language models be too big? In Proceedings of the 2021 ACM conference on fairness, accountability, and transparency, pages 610\u2013623, 2021. [7] S. Biderman, H. Schoelkopf, Q. Anthony, H. Bradley, K. O\u2019Brien, E. Hallahan, M. A. Khan, S. Purohit, U. S. Prashanth, E. Raff, et al. Pythia: A suite for analyzing large language models across training and scaling. arXiv preprint arXiv:2304.01373, 2023. [8] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill, et al. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258, 2021. [9] T. Chen, B. Xu, C. Zhang, and C. Guestrin. Training deep nets with sublinear memory cost. arXiv preprint arXiv:1604.06174, 2016. [10] W.-L. Chiang, Z. Li, Z. Lin,"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:17",
+              "label": "public ARENA001, pp. 10\u201311",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A17",
+              "text": "Source title: public ARENA001\nSource locator: pp. 10\u201311\nEvidence provenance: source\nVerbatim excerpt:\n[p. 10] URL https://aclanthology.org/2023. A diafindings-emnlp.311. | | Karpinska, M., Akoury, N., and Iyyer, M. The perils of | Liu, T.-Y. et al. Learning to rank for information retrieval. | | using Mechanical Turk to evaluate open-ended text gen- | Foundations and Trends\u00ae in Information Retrieval, 3(3): | | eration. In Moens, M.-F., Huang, X., Specia, L., and Yih, S. W.-t. (eds.), Proceedings of the 2021 Confer- | 225\u2013331, 2009. | | ence on Empirical Methods in Natural Language Pro- | McInnes, L., Healy, J., and Melville, J. Umap: Uniform | | cessing, pp. 1265\u20131285, Online and Punta Cana, Domini- | manifold approximation and projection for dimension | | can Republic, November 2021. Association for Computa- | reduction, 2020. | | 97. URL https://aclanthology.org/2021. OpenAI. | Gpt-4 technical report. arXiv preprint | | emnlp-main.97. | arXiv:2303.08774, 2023. | [p. 11] | Oren, Y., Meister, N., Chatterji, N., Ladhak, F., and | 2023.acl-long.754. URL https://aclanthology. | | - | - | | Hashimoto, T. B. Proving test set contamination in black box language models. arXiv preprint arXiv:2310.17623, | org/2023.acl-long.754. bounded random variables by betting. arXiv preprint | | Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, J., and Lowe, R. Training language models to follow theoretic statistics and safe anytime-valid inference. Statistical Science, 38(4):576\u2013601, 2023. Rao, P. V. and Kupper, L. L. Ties in paired-comparison Journal of the American Statistical Association, 62(317): models. Transactions on Machine Learning Research, Sz\u00f6r\u00e9nyi, B., Busa-Fekete, R., Paul, A., and H\u00fcllermeier, E. Online rank elicitation for plackettluce: A dueling bandits approach. In Cortes, C., R. (eds.), Advances in Neural Information Processing Systems, volume 28. Curran Associates, Inc., 2015. URL https://proceedings.neurips. pdf. tuned chat models. arXiv preprint arXiv:2307.09288, and applications."
+            }
+          ],
+          "draft": "La biblioteca de Puerto Claro abri\u00f3 en 1912. El laboratorio de Puerto Claro abri\u00f3 en 1913.\n\n**Fuentes:**\n- La escuela de Puerto Claro abri\u00f3 su biblioteca en 1912. En 1913 abri\u00f3 el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.* (fixture 01)\n- A escola de Puerto Claro abriu a biblioteca em 1912. O laborat\u00f3rio abriu em 1913, n\u00e3o a biblioteca. (fixture 11)\n- La scuola di Puerto Claro apr] la biblioteca nel 1912. || laboratorio apr] nel 1913, non la biblioteca. (fixture 06)\n- L\u2019\u00e9cole de Puerto Claro a ouvert sa biblioth\u00e8que en 1912. Le laboratoire a ouvert en 1913, pas la biblioth\u00e8que. (fixture 21)\n- The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library. (fixture 26)\n- Die Schule in Puerto Claro er\u00f6ffnete ihre Bibliothek 1912. Das Labor er\u00f6ffnete 1913, nicht die Bibliothek. (fixture 16)",
+          "sourceRedraft": true,
+          "focusedDraft": "La biblioteca de Puerto Claro abri\u00f3 en 1912, mientras que el laboratorio abri\u00f3 en 1913. Esta informaci\u00f3n est\u00e1 respaldada por m\u00faltiples fuentes, como el archivo 1, el archivo 11, el archivo 21, el archivo 26 y el archivo 16.",
+          "failedAudit": {
+            "markdown": "",
+            "claims": [
+              {
+                "sentence": "La biblioteca de Puerto Claro abri\u00f3 en 1912 [fixture 01, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0) [fixture 11, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2) [fixture 06, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3) [fixture 21, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4) [fixture 26, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5) [fixture 16, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6).",
+                "kind": "fact",
+                "status": "unverified",
+                "evidence": [],
+                "reason": "verification_unavailable"
+              },
+              {
+                "sentence": "El laboratorio de Puerto Claro abri\u00f3 en 1913 [fixture 01, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0) [fixture 11, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2) [fixture 06, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3) [fixture 21, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4) [fixture 26, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5) [fixture 16, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6).",
+                "kind": "fact",
+                "status": "unverified",
+                "evidence": [],
+                "reason": "verification_unavailable"
+              }
+            ]
+          },
+          "error": "No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo."
+        }
+      ]
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-dates",
+      "arm": "structured",
+      "sourceHash": "386fbc0a2a3d7e2579d910bf8237dda9a940d94c153f6e8279a43df64380dcf1",
+      "error": {
+        "message": "electronApplication.evaluate: Error: No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo.\n    at groundResearchChatAnswer (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:63:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous>:329:30",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 34993,
+      "traces": [
+        {
+          "at": "2026-10-12T13:41:01.920Z",
+          "type": "research-answer-plan",
+          "status": "invalid",
+          "question": "Identifica por separado los a\u00f1os de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "issues": [
+            {
+              "path": "facets[0]",
+              "code": "facet_shape",
+              "message": "Facet must contain only questionQuote and evidence."
+            },
+            {
+              "path": "facets[1]",
+              "code": "facet_shape",
+              "message": "Facet must contain only questionQuote and evidence."
+            }
+          ]
+        },
+        {
+          "at": "2026-10-12T13:41:02.296Z",
+          "type": "research-answer-grounding",
+          "status": "failed",
+          "question": "Identifica por separado los a\u00f1os de apertura de la biblioteca y del laboratorio de Puerto Claro.",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "sources": [
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:0",
+              "label": "fixture 01, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A0",
+              "text": "Source title: fixture 01\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 1 La escuela de Puerto Claro abri\u00f3 su biblioteca en 1912. En 1913 abri\u00f3 el laboratorio; no la biblioteca. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:1",
+              "label": "fixture 13, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A1",
+              "text": "Source title: fixture 13\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentraci\u00f3n de ox\u00edgeno. Debe calibrarse cada 30 d\u00edas."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:2",
+              "label": "fixture 11, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A2",
+              "text": "Source title: fixture 11\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 11 A escola de Puerto Claro abriu a biblioteca em 1912. O laborat\u00f3rio abriu em 1913, n\u00e3o a biblioteca."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:3",
+              "label": "fixture 06, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A3",
+              "text": "Source title: fixture 06\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro: archive 6 La scuola di Puerto Claro apr] la biblioteca nel 1912. || laboratorio apr] nel 1913, non la biblioteca. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:4",
+              "label": "fixture 21, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A4",
+              "text": "Source title: fixture 21\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro \u00b7 archive 21 L\u2019\u00e9cole de Puerto Claro a ouvert sa biblioth\u00e8que en 1912. Le laboratoire a ouvert en 1913, pas la biblioth\u00e8que. Catal\u00e0: El canal Cer\u00e7 transporta 42 litres per minut; la mesura \u00e9s de cabal, no de pressi\u00f3."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:5",
+              "label": "fixture 26, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A5",
+              "text": "Source title: fixture 26\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Puerto Claro \u00b7 archive 26 The school in Puerto Claro opened its library in 1912. Its laboratory opened in 1913, not its library."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:6",
+              "label": "fixture 16, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A6",
+              "text": "Source title: fixture 16\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nPuerto Claro \u00b7 archive 16 # Puerto Claro \u00b7 archive 16 Die Schule in Puerto Claro er\u00f6ffnete ihre Bibliothek 1912. Das Labor er\u00f6ffnete 1913, nicht die Bibliothek."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:7",
+              "label": "public QLORA001, pp. 19\u201320",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A7",
+              "text": "Source title: public QLORA001\nSource locator: pp. 19\u201320\nEvidence provenance: source\nVerbatim excerpt:\n[p. 19] 2022. [48] G. Qin and J. Eisner. Learning how to ask: Querying lms with mixtures of soft prompts. arXiv preprint arXiv:2104.06599, 2021. [49] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena, Y. Zhou, W. Li, and P. J. Liu. Exploring the limits of transfer learning with a unified text-to-text transformer. J. Mach. Learn. Res., 21(1), jan 2020. ISSN 1532-4435. [50] V. Sanh, A. Webson, C. Raffel, S. H. Bach, L. Sutawika, Z. Alyafeai, A. Chaffin, A. Stiegler, T. L. Scao, A. Raja, et al. Multitask prompted training enables zero-shot task generalization. arXiv preprint arXiv:2110.08207, 2021. [51] M. Sap, R. LeBras, D. Fried, and Y. Choi. Neural theory-of-mind? on the limits of social intelligence in large lms. arXiv preprint arXiv:2210.13312, 2022. [52] T. L. Scao, A. Fan, C. Akiki, E. Pavlick, S. Ili\u00b4c, D. Hesslow, R. Castagn\u00e9, A. S. Luccioni, F. Yvon, M. Gall\u00e9, et al. Bloom: A 176b-parameter open-access multilingual language model. arXiv preprint arXiv:2211.05100, 2022. [53] S. Shaphiro and M. Wilk. An analysis of variance test for normality. Biometrika, 52(3):591\u2013611, 1965. [54] Y.-L. Sung, V. Nair, and C. A. Raffel. Training neural networks with fixed sparse masks. Advances in Neural Information Processing Systems, 34:24193\u201324205, 2021. [p. 20] R. Taori, I. Gulrajani, T. Zhang, Y. Dubois, X. Li, C. Guestrin, P. Liang, and T. B. Hashimoto. Stanford alpaca: An instruction-following llama model. https://github.com/tatsu-lab/ stanford_alpaca, 2023. [56] R. Thoppilan, D. De Freitas, J. Hall, N. Shazeer, A. Kulshreshtha, H.-T. Cheng, A. Jin, T. Bos, L. Baker, Y. Du, et al. Lamda: Language models for dialog applications. arXiv preprint arXiv:2201.08239, 2022. [57] H. Touvron, T. Lavril, G. Izacard, X. Martinet, M.-A. Lachaux, T. Lacroix, B. Rozi\u00e8re, N. Goyal, E. Hambro,"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:8",
+              "label": "fixture 25, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A8",
+              "text": "Source title: fixture 25\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Linde \u00b7 archive 25 La API Linde conserva eventos durante 14 d\u00edas. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versi\u00f3n 2 cambi\u00f3 el l\u00edmite de 7 a 14 d\u00edas."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:9",
+              "label": "fixture 07, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A9",
+              "text": "Source title: fixture 07\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:10",
+              "label": "public ARENA001, p. 12",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A10",
+              "text": "Source title: public ARENA001\nSource locator: p. 12\nEvidence provenance: source\nVerbatim excerpt:\n2506 | | 1719 1513 1573 | 1767 1631 2058 1656 1554 1573 1620 1556 1571 1529 1920 1729 1653 1974 1770 1585 1644 1491 1612 1892 1681 1758 1578 1855 1783 1846 1632 1657 1832 1919 1587 | | | 1000 1107 1144 1256 1128 1212 1121 | 1177 1035 1393 1092 1233 1325 1252 1143 1242 1204 1108 1056 1265 1200 1284 1081 1322 1435 1433 1435 1268 | 1316 1163 1176 | | 966 1014 743 441 472 408 667 970 848 786 651 813 825 729 768 525 779 786 627 548 627 476 650 549 442 439 396 428 425 382 323 418 337 326 368 380 357 393 412 489 372 482 535 384 327 326 324 359 405 340 406 932 421 343 366 | 338 480 613 404 409 431 377 439 472 444 341 325 354 539 580 529 481 352 326 657 684 657 626 628 340 504 501 514 566 506 362 537 625 509 465 531 537 364 708 536 563 598 515 394 321 328 483 688 535 439 432 469 662 548 530 516 722 518 640 961 805 724 705 951 874 782 | | | 0 223 228 194 293 285 309 246 186 184 290 301 222 199 293 266 296 278 216 205 245 312 216 134 131 206 191 172 256 288 225 96 149 222 220 184 200 144 111 125 65 248 233 138 103 92 101 89 139 134 120 98 60 97 125 106 123 112 124 56 239 310 | 310 299 301 | | | May 2023 Jun 2023 Jul 2023 Aug 2023 Figure 9."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:11",
+              "label": "public QLORA001, p. 10",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A11",
+              "text": "Source title: public QLORA001\nSource locator: p. 10\nEvidence provenance: source\nVerbatim excerpt:\n70.7% | 4.3% | | FLAN v2 | 65B | 4-bit | 41 GB | 37.0% | 59.6% | 48.4% | 4.6% | | Guanaco | 33B | 4-bit | 21 GB | 96.5% | 99.2% | 97.8% 4.4% | | | Open Assistant | 33B | 16-bit | 66 GB | 91.2% | 98.7% | 94.9% | 4.5% | | Alpaca | 33B | 4-bit | 21 GB | 67.2% | 79.7% | 73.6% | 4.2% | | FLAN v2 | 33B | 4-bit | 21 GB | 26.3% | 49.7% | 38.0% | 3.9% | | Vicuna | 13B | 16-bit | 26 GB | 91.2% | 98.7% | 94.9% 4.5% | | | Guanaco | 13B | 4-bit | 10 GB | 87.3% | 93.4% | 90.4% | 5.2% | | Alpaca | 13B | 4-bit | 10 GB | 63.8% | 76.7% | 69.4% | 4.2% | | HH-RLHF | 13B | 4-bit | 10 GB | 55.5% | 69.1% | 62.5% | 4.7% | | Unnatural Instr. | 13B | 4-bit | 10 GB | 50.6% | 69.8% | 60.5% | 4.2% | | Chip2 | 13B | 4-bit | 10 GB | 49.2% | 69.3% | 59.5% | 4.7% | | Longform | 13B | 4-bit | 10 GB | 44.9% | 62.0% | 53.6% | 5.2% | | Self-Instruct | 13B | 4-bit | 10 GB | 38.0% | 60.5% | 49.1% | 4.6% | | FLAN v2 | 13B | 4-bit | 10 GB | 32.4% | 61.2% | 47.0% | 3.6% | | Guanaco | 7B | 4-bit | 5 GB | 84.1% | 89.8% | 87.0% 5.4% | | |"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:12",
+              "label": "fixture 22, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A12",
+              "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega \u00b7 archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:13",
+              "label": "fixture 23, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A13",
+              "text": "Source title: fixture 23\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Alba \u00b7 archive 23 O sensor Alba mede turbidez com luz verde de 530 nm. N\u00e3o mede oxig\u00e9nio. Deve ser calibrado a cada 30 dias. Latine: Navis Aster triginta amphoras portat; viginti vacuae sunt."
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:14",
+              "label": "fixture 28, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A14",
+              "text": "Source title: fixture 28\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document \u00b7 Evidence 1. Document: Alba \u00b7 archive 28 \u00b7 Evidence: Der Alba-Sensor misst Tr\u00fcbung mit gr\u00fcnem Licht bei 530 nm. Er misst keinen Sauerstoff. Die Kalibrierung erfolgt alle 30 Tage. 2. Document: Source type \u00b7 Evidence: synthetic archive"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:15",
+              "label": "fixture 08, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A15",
+              "text": "Source title: fixture 08\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba: archive 8 The Alba sensor uses green light at 530 nm to measure turbidity. It does not measure oxygen concentration. Calibration is required every 30 days. *Source: Nodus QA synthetic archive.*"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:16",
+              "label": "public QLORA001, p. 17",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A16",
+              "text": "Source title: public QLORA001\nSource locator: p. 17\nEvidence provenance: source\nVerbatim excerpt:\nJones, N. Joseph, B. Mann, N. DasSarma, et al. A general language assistant as a laboratory for alignment. arXiv preprint arXiv:2112.00861, 2021. [3] S. H. Bach, V. Sanh, Z.-X. Yong, A. Webson, C. Raffel, N. V. Nayak, A. Sharma, T. Kim, M. S. Bari, T. Fevry, et al. Promptsource: An integrated development environment and repository for natural language prompts. arXiv preprint arXiv:2202.01279, 2022. [4] Y. Bai, A. Jones, K. Ndousse, A. Askell, A. Chen, N. DasSarma, D. Drain, S. Fort, D. Ganguli, T. Henighan, et al. Training a helpful and harmless assistant with reinforcement learning from human feedback. arXiv preprint arXiv:2204.05862, 2022. [5] Y. Bai, S. Kadavath, S. Kundu, A. Askell, J. Kernion, A. Jones, A. Chen, A. Goldie, A. Mirhoseini, C. McKinnon, et al. Constitutional ai: Harmlessness from ai feedback. arXiv preprint arXiv:2212.08073, 2022. [6] E. M. Bender, T. Gebru, A. McMillan-Major, and S. Shmitchell. On the dangers of stochastic parrots: Can language models be too big? In Proceedings of the 2021 ACM conference on fairness, accountability, and transparency, pages 610\u2013623, 2021. [7] S. Biderman, H. Schoelkopf, Q. Anthony, H. Bradley, K. O\u2019Brien, E. Hallahan, M. A. Khan, S. Purohit, U. S. Prashanth, E. Raff, et al. Pythia: A suite for analyzing large language models across training and scaling. arXiv preprint arXiv:2304.01373, 2023. [8] R. Bommasani, D. A. Hudson, E. Adeli, R. Altman, S. Arora, S. von Arx, M. S. Bernstein, J. Bohg, A. Bosselut, E. Brunskill, et al. On the opportunities and risks of foundation models. arXiv preprint arXiv:2108.07258, 2021. [9] T. Chen, B. Xu, C. Zhang, and C. Guestrin. Training deep nets with sublinear memory cost. arXiv preprint arXiv:1604.06174, 2016. [10] W.-L. Chiang, Z. Li, Z. Lin,"
+            },
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-dates:17",
+              "label": "public ARENA001, pp. 10\u201311",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-dates%3A17",
+              "text": "Source title: public ARENA001\nSource locator: pp. 10\u201311\nEvidence provenance: source\nVerbatim excerpt:\n[p. 10] URL https://aclanthology.org/2023. A diafindings-emnlp.311. | | Karpinska, M., Akoury, N., and Iyyer, M. The perils of | Liu, T.-Y. et al. Learning to rank for information retrieval. | | using Mechanical Turk to evaluate open-ended text gen- | Foundations and Trends\u00ae in Information Retrieval, 3(3): | | eration. In Moens, M.-F., Huang, X., Specia, L., and Yih, S. W.-t. (eds.), Proceedings of the 2021 Confer- | 225\u2013331, 2009. | | ence on Empirical Methods in Natural Language Pro- | McInnes, L., Healy, J., and Melville, J. Umap: Uniform | | cessing, pp. 1265\u20131285, Online and Punta Cana, Domini- | manifold approximation and projection for dimension | | can Republic, November 2021. Association for Computa- | reduction, 2020. | | 97. URL https://aclanthology.org/2021. OpenAI. | Gpt-4 technical report. arXiv preprint | | emnlp-main.97. | arXiv:2303.08774, 2023. | [p. 11] | Oren, Y., Meister, N., Chatterji, N., Ladhak, F., and | 2023.acl-long.754. URL https://aclanthology. | | - | - | | Hashimoto, T. B. Proving test set contamination in black box language models. arXiv preprint arXiv:2310.17623, | org/2023.acl-long.754. bounded random variables by betting. arXiv preprint | | Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, J., and Lowe, R. Training language models to follow theoretic statistics and safe anytime-valid inference. Statistical Science, 38(4):576\u2013601, 2023. Rao, P. V. and Kupper, L. L. Ties in paired-comparison Journal of the American Statistical Association, 62(317): models. Transactions on Machine Learning Research, Sz\u00f6r\u00e9nyi, B., Busa-Fekete, R., Paul, A., and H\u00fcllermeier, E. Online rank elicitation for plackettluce: A dueling bandits approach. In Cortes, C., R. (eds.), Advances in Neural Information Processing Systems, volume 28. Curran Associates, Inc., 2015. URL https://proceedings.neurips. pdf. tuned chat models. arXiv preprint arXiv:2307.09288, and applications."
+            }
+          ],
+          "stage": "structured-draft",
+          "error": "No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo."
+        }
+      ]
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "structured",
+      "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+      "error": {
+        "message": "electronApplication.evaluate: Error: No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo.\n    at checked (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:102:19)\n    at groundResearchChatAnswer (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:116:18)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous>:329:30",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 21577,
+      "traces": [
+        {
+          "at": "2026-10-12T13:41:15.554Z",
+          "type": "research-answer-plan",
+          "status": "complete",
+          "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "plan": {
+            "facets": [
+              {
+                "id": "f1",
+                "questionQuote": "Which quantity does Alba determine using visible light",
+                "evidence": [
+                  {
+                    "sourceId": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+                    "quote": "El sensor Alba usa luz verde a 530 nm para medir turbidez."
+                  }
+                ],
+                "evidenceStatus": "established"
+              },
+              {
+                "id": "f2",
+                "questionQuote": "and which quantity does it explicitly exclude",
+                "evidence": [
+                  {
+                    "sourceId": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+                    "quote": "No mide concentraci\u00f3n de ox\u00edgeno."
+                  }
+                ],
+                "evidenceStatus": "established"
+              }
+            ],
+            "format": "prose"
+          }
+        },
+        {
+          "at": "2026-10-12T13:41:19.917Z",
+          "type": "research-answer-structure",
+          "status": "complete",
+          "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "facetIds": [
+            "f1",
+            "f2"
+          ],
+          "tables": 0,
+          "repair": false
+        },
+        {
+          "at": "2026-10-12T13:41:23.874Z",
+          "type": "research-answer-grounding",
+          "status": "failed",
+          "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "sources": [
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+              "label": "fixture 13, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0",
+              "text": "Source title: fixture 13\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentraci\u00f3n de ox\u00edgeno. Debe calibrarse cada 30 d\u00edas."
+            }
+          ],
+          "draft": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm.\n\nEl sensor Alba excluye expl\u00edcitamente la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+          "sourceRedraft": false,
+          "focusedDraft": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm.\n\nEl sensor Alba excluye expl\u00edcitamente la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+          "failedAudit": {
+            "markdown": "",
+            "claims": [
+              {
+                "sentence": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm.",
+                "kind": "fact",
+                "status": "unverified",
+                "evidence": [],
+                "reason": "verification_unavailable"
+              },
+              {
+                "sentence": "El sensor Alba excluye expl\u00edcitamente la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+                "kind": "fact",
+                "status": "unverified",
+                "evidence": [],
+                "reason": "verification_unavailable"
+              }
+            ]
+          },
+          "error": "No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo."
+        }
+      ]
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-sensor",
+      "arm": "legacy",
+      "sourceHash": "0590960d507d68801d21615d5896c647742286913799be2e84c49aaeb31893fa",
+      "error": {
+        "message": "electronApplication.evaluate: Error: No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo.\n    at groundResearchChatAnswer (/Users/jorgepb96/.codex/worktrees/ffb6/nodus/electron/ai/researchChatGrounding.ts:309:15)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async <anonymous>:329:30",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 28300,
+      "traces": [
+        {
+          "at": "2026-10-12T13:41:52.175Z",
+          "type": "research-answer-grounding",
+          "status": "failed",
+          "question": "Which quantity does Alba determine using visible light, and which quantity does it explicitly exclude?",
+          "model": {
+            "provider": "openrouter",
+            "model": "mistralai/mistral-small-3.2-24b-instruct"
+          },
+          "sources": [
+            {
+              "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+              "label": "fixture 13, p. 1",
+              "citation": "nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0",
+              "text": "Source title: fixture 13\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nAlba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentraci\u00f3n de ox\u00edgeno. Debe calibrarse cada 30 d\u00edas."
+            }
+          ],
+          "draft": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm. Explicitamente excluye la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.\n\n**Cita:**\n\"Alba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez. No mide concentraci\u00f3n de ox\u00edgeno. Debe calibrarse cada 30 d\u00edas.\"",
+          "sourceRedraft": true,
+          "focusedDraft": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm. Explicitamente excluye la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+          "initial": {
+            "markdown": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm. [fixture 13, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0) Explicitamente excluye la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno. [fixture 13, p. 1](nodus://passage/qa-replay%3Aembeddinggemma-2-text-q8-512-v1%2Fheldout-sensor%3A0)",
+            "claims": [
+              {
+                "sentence": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm.",
+                "kind": "fact",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+                    "quote": "Alba \u00b7 archive 13 El sensor Alba usa luz verde a 530 nm para medir turbidez."
+                  }
+                ],
+                "reason": "La afirmaci\u00f3n est\u00e1 respaldada por la cita literal del texto de origen.",
+                "premises": [
+                  {
+                    "text": "El sensor Alba determina la turbidez utilizando luz verde a 530 nm.",
+                    "type": "fact",
+                    "entailed": true
+                  }
+                ]
+              },
+              {
+                "sentence": "Explicitamente excluye la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+                "kind": "fact",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "id": "qa-replay:embeddinggemma-2-text-q8-512-v1/heldout-sensor:0",
+                    "quote": "No mide concentraci\u00f3n de ox\u00edgeno."
+                  }
+                ],
+                "reason": "La afirmaci\u00f3n est\u00e1 respaldada por la cita literal del texto de origen.",
+                "premises": [
+                  {
+                    "text": "El sensor Alba expl\u00edcitamente excluye la medici\u00f3n de la concentraci\u00f3n de ox\u00edgeno.",
+                    "type": "fact",
+                    "entailed": true
+                  }
+                ]
+              }
+            ]
+          },
+          "repairs": [],
+          "coverageAttempts": [],
+          "coverageConfirmations": [],
+          "coverageSchemaFailures": [],
+          "coverageLimitComparisons": [],
+          "error": "No se pudo verificar la respuesta contra sus fuentes. Int\u00e9ntalo de nuevo."
+        }
+      ]
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-calculation",
+      "arm": "legacy",
+      "sourceHash": "92015a84f8c61948e2c2ca8b474a8424663e9eac48fb878a05ee3fb8e249041f",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 134993,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-calculation",
+      "arm": "structured",
+      "sourceHash": "92015a84f8c61948e2c2ca8b474a8424663e9eac48fb878a05ee3fb8e249041f",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-correction",
+      "arm": "structured",
+      "sourceHash": "8014306bcd0939a0832596a08fd22fd5a7219b21f03b3fb9976b72a8c279fbd9",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-correction",
+      "arm": "legacy",
+      "sourceHash": "8014306bcd0939a0832596a08fd22fd5a7219b21f03b3fb9976b72a8c279fbd9",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-statistics",
+      "arm": "legacy",
+      "sourceHash": "9572d86ff5bf45ffefbfe8559158ffab46fb696ccb8b566ba5a07b01115d18d5",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-statistics",
+      "arm": "structured",
+      "sourceHash": "9572d86ff5bf45ffefbfe8559158ffab46fb696ccb8b566ba5a07b01115d18d5",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-negation",
+      "arm": "structured",
+      "sourceHash": "e1440877c52c2c9eca8a7b04e6cd318c374f0497a7ff4cb73e97385d317fc4f3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-negation",
+      "arm": "legacy",
+      "sourceHash": "e1440877c52c2c9eca8a7b04e6cd318c374f0497a7ff4cb73e97385d317fc4f3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-policy",
+      "arm": "legacy",
+      "sourceHash": "6a5ea517abca18881591e16740423082e3a2e10ff2af9d48c9f22c567a35e0b3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-policy",
+      "arm": "structured",
+      "sourceHash": "6a5ea517abca18881591e16740423082e3a2e10ff2af9d48c9f22c567a35e0b3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-paper",
+      "arm": "structured",
+      "sourceHash": "261f0b4308143a91fd878f582c51d93a47b7432f807bf7189db6adbb97d40653",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-paper",
+      "arm": "legacy",
+      "sourceHash": "261f0b4308143a91fd878f582c51d93a47b7432f807bf7189db6adbb97d40653",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price",
+      "arm": "legacy",
+      "sourceHash": "0657db7d50bf729f804db5ef856b59a755ae459969c793c4480ac413d8cc824e",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 3,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-price",
+      "arm": "structured",
+      "sourceHash": "0657db7d50bf729f804db5ef856b59a755ae459969c793c4480ac413d8cc824e",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor",
+      "arm": "structured",
+      "sourceHash": "514560ecbc8752111705791bb6a673085de5cb352226674b535f8952a741c2e0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-donor",
+      "arm": "legacy",
+      "sourceHash": "514560ecbc8752111705791bb6a673085de5cb352226674b535f8952a741c2e0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding",
+      "arm": "legacy",
+      "sourceHash": "88dea16a8b132db651f120731f3a53df4c668c3e97b75ec69865ca665a931f6c",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-funding",
+      "arm": "structured",
+      "sourceHash": "88dea16a8b132db651f120731f3a53df4c668c3e97b75ec69865ca665a931f6c",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data",
+      "arm": "structured",
+      "sourceHash": "110258db47ba228f57ed2698097b4e0f42483b43a3cbfccaf859434b7d6b078b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-512-v1/heldout-absent-data",
+      "arm": "legacy",
+      "sourceHash": "110258db47ba228f57ed2698097b4e0f42483b43a3cbfccaf859434b7d6b078b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-dates",
+      "arm": "legacy",
+      "sourceHash": "a585e917915b5281d8dc49b3f0bfc38ad15a5f9f606cb1ddbd054289acc75695",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-dates",
+      "arm": "structured",
+      "sourceHash": "a585e917915b5281d8dc49b3f0bfc38ad15a5f9f606cb1ddbd054289acc75695",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-sensor",
+      "arm": "structured",
+      "sourceHash": "db424669f9d17cc5d72d0e3fc09034d3b7a76ccd4bb10a6929fe648939f9d190",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-sensor",
+      "arm": "legacy",
+      "sourceHash": "db424669f9d17cc5d72d0e3fc09034d3b7a76ccd4bb10a6929fe648939f9d190",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-calculation",
+      "arm": "legacy",
+      "sourceHash": "91b4edd09a70fba613e2323069c35ad886171b06c1acb9df30b4efb091ee4b58",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-calculation",
+      "arm": "structured",
+      "sourceHash": "91b4edd09a70fba613e2323069c35ad886171b06c1acb9df30b4efb091ee4b58",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-correction",
+      "arm": "structured",
+      "sourceHash": "ae10dff76e52fb910c6c6eea7d504bea8c75734b9a90c876146a30bad2319b86",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-correction",
+      "arm": "legacy",
+      "sourceHash": "ae10dff76e52fb910c6c6eea7d504bea8c75734b9a90c876146a30bad2319b86",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-statistics",
+      "arm": "legacy",
+      "sourceHash": "568182d5575b4077075056f6320c9b327167205fd75c3b200da95fa6becbbb9b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-statistics",
+      "arm": "structured",
+      "sourceHash": "568182d5575b4077075056f6320c9b327167205fd75c3b200da95fa6becbbb9b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-negation",
+      "arm": "structured",
+      "sourceHash": "a63e1cd44a0db1a622f5a47966009ce5ea6b32162acf5993c3599ae12546faf1",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-negation",
+      "arm": "legacy",
+      "sourceHash": "a63e1cd44a0db1a622f5a47966009ce5ea6b32162acf5993c3599ae12546faf1",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-policy",
+      "arm": "legacy",
+      "sourceHash": "56504305250288188a2341401a73c5581b0e52751979694dbdec5ba12304ce40",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-policy",
+      "arm": "structured",
+      "sourceHash": "56504305250288188a2341401a73c5581b0e52751979694dbdec5ba12304ce40",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-paper",
+      "arm": "structured",
+      "sourceHash": "bb1d1f7fa72a2651ef1cf6b68187a0b357a751b7d685aff890028d381bd94856",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-paper",
+      "arm": "legacy",
+      "sourceHash": "bb1d1f7fa72a2651ef1cf6b68187a0b357a751b7d685aff890028d381bd94856",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-price",
+      "arm": "legacy",
+      "sourceHash": "f58267ba9ab4c67239b48524ec95e76d6916143d020b912b0e2bcdbb933aabec",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-price",
+      "arm": "structured",
+      "sourceHash": "f58267ba9ab4c67239b48524ec95e76d6916143d020b912b0e2bcdbb933aabec",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-donor",
+      "arm": "structured",
+      "sourceHash": "de3a2eb7d67af204d1bc110e03ae8854293c5d574a9105dc5a7c584af166a85d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-donor",
+      "arm": "legacy",
+      "sourceHash": "de3a2eb7d67af204d1bc110e03ae8854293c5d574a9105dc5a7c584af166a85d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-funding",
+      "arm": "legacy",
+      "sourceHash": "37258ccaa41854a61b304d00b173494ec469b38ac8739335b6e5759c02f46026",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-funding",
+      "arm": "structured",
+      "sourceHash": "37258ccaa41854a61b304d00b173494ec469b38ac8739335b6e5759c02f46026",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-data",
+      "arm": "structured",
+      "sourceHash": "6ef2c1e75fd0576ffc15d32d67db40cd645cf704b9d40db19c56810dbf6665e0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "multilingual-e5-small-int8/heldout-absent-data",
+      "arm": "legacy",
+      "sourceHash": "6ef2c1e75fd0576ffc15d32d67db40cd645cf704b9d40db19c56810dbf6665e0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-dates",
+      "arm": "legacy",
+      "sourceHash": "a3d66401ccfd06c47158619f1302e8575c7beaf08b116dda0faa77ad3c1e41b4",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-dates",
+      "arm": "structured",
+      "sourceHash": "a3d66401ccfd06c47158619f1302e8575c7beaf08b116dda0faa77ad3c1e41b4",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-sensor",
+      "arm": "structured",
+      "sourceHash": "61708637378d5df0b78bc101d19bfd9f0a906d3422a628f69ee651580dd4fcbb",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-sensor",
+      "arm": "legacy",
+      "sourceHash": "61708637378d5df0b78bc101d19bfd9f0a906d3422a628f69ee651580dd4fcbb",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-calculation",
+      "arm": "legacy",
+      "sourceHash": "a49a7164534d2268f9f036c62283583698f262cd5e9a61be4a39a92dd1c6e904",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-calculation",
+      "arm": "structured",
+      "sourceHash": "a49a7164534d2268f9f036c62283583698f262cd5e9a61be4a39a92dd1c6e904",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-correction",
+      "arm": "structured",
+      "sourceHash": "026a2e1fd05e2778af6590f4044198fb55141ee858ee21bae8b82302ffec3e52",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-correction",
+      "arm": "legacy",
+      "sourceHash": "026a2e1fd05e2778af6590f4044198fb55141ee858ee21bae8b82302ffec3e52",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-statistics",
+      "arm": "legacy",
+      "sourceHash": "f60b521a7a5e6f066cebafb3fba1e49ebc204e37460bf495e05285994979089b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-statistics",
+      "arm": "structured",
+      "sourceHash": "f60b521a7a5e6f066cebafb3fba1e49ebc204e37460bf495e05285994979089b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-negation",
+      "arm": "structured",
+      "sourceHash": "d1fa8a2f1d49d6674d4857a303eea3e264bb54a1eb36b0e721ced43f0f578f6d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-negation",
+      "arm": "legacy",
+      "sourceHash": "d1fa8a2f1d49d6674d4857a303eea3e264bb54a1eb36b0e721ced43f0f578f6d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-policy",
+      "arm": "legacy",
+      "sourceHash": "bd919f5f85ee2ee1bf3299820d58a224baaafa619fe7f380dbd4e9aa0c27fe11",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-policy",
+      "arm": "structured",
+      "sourceHash": "bd919f5f85ee2ee1bf3299820d58a224baaafa619fe7f380dbd4e9aa0c27fe11",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-paper",
+      "arm": "structured",
+      "sourceHash": "a60e65b751969b48026ee33c9a1231f1cb0af57fa3d7de08700bc9bb29dc9a6d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-paper",
+      "arm": "legacy",
+      "sourceHash": "a60e65b751969b48026ee33c9a1231f1cb0af57fa3d7de08700bc9bb29dc9a6d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-price",
+      "arm": "legacy",
+      "sourceHash": "354f66a49c95699a743508b702850f84a87f60b13653bdf582ca76a855a63ed6",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-price",
+      "arm": "structured",
+      "sourceHash": "354f66a49c95699a743508b702850f84a87f60b13653bdf582ca76a855a63ed6",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-donor",
+      "arm": "structured",
+      "sourceHash": "517f5060c9aff12e9354cdc92c8fbe51353aef45abc844ccb1d61c5a30dfae94",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-donor",
+      "arm": "legacy",
+      "sourceHash": "517f5060c9aff12e9354cdc92c8fbe51353aef45abc844ccb1d61c5a30dfae94",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-funding",
+      "arm": "legacy",
+      "sourceHash": "98286e811de77025a0aec892e336d3be0b9a7a087bf97ccfe1cf57d61b0ef04b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-funding",
+      "arm": "structured",
+      "sourceHash": "98286e811de77025a0aec892e336d3be0b9a7a087bf97ccfe1cf57d61b0ef04b",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-data",
+      "arm": "structured",
+      "sourceHash": "fd2dba2680c001c6253b6838f000b4d2c8c778dc4ddac27bdc5ab048f379f799",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "gte-multilingual-base-int8/heldout-absent-data",
+      "arm": "legacy",
+      "sourceHash": "fd2dba2680c001c6253b6838f000b4d2c8c778dc4ddac27bdc5ab048f379f799",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-dates",
+      "arm": "legacy",
+      "sourceHash": "300cada7b60a51717a956708f1e342c2469367f408cbf11d16b1ecc6338a85bf",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-dates",
+      "arm": "structured",
+      "sourceHash": "300cada7b60a51717a956708f1e342c2469367f408cbf11d16b1ecc6338a85bf",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-sensor",
+      "arm": "structured",
+      "sourceHash": "d0f7b6ac8913444a0c11646f8dcf188040e998bca403d0a119d902d02b3d8c93",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-sensor",
+      "arm": "legacy",
+      "sourceHash": "d0f7b6ac8913444a0c11646f8dcf188040e998bca403d0a119d902d02b3d8c93",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-calculation",
+      "arm": "legacy",
+      "sourceHash": "62c826fab85d4c0846ecaa6ce8d52c86944b76e519f2fb4eaa3036b98c84d653",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-calculation",
+      "arm": "structured",
+      "sourceHash": "62c826fab85d4c0846ecaa6ce8d52c86944b76e519f2fb4eaa3036b98c84d653",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-correction",
+      "arm": "structured",
+      "sourceHash": "b1b704c38820e6f4bdebba0d00e983fd73eb3d9af345941c4a735cd72107338f",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-correction",
+      "arm": "legacy",
+      "sourceHash": "b1b704c38820e6f4bdebba0d00e983fd73eb3d9af345941c4a735cd72107338f",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-statistics",
+      "arm": "legacy",
+      "sourceHash": "2a2c82327c57f30c01e3d3030217b7570277ce31514b97c44d1738f71308e016",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-statistics",
+      "arm": "structured",
+      "sourceHash": "2a2c82327c57f30c01e3d3030217b7570277ce31514b97c44d1738f71308e016",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-negation",
+      "arm": "structured",
+      "sourceHash": "c9f91acfa8ab4b02df8af3f59d1c087e4ded800b9ec6cd54c7469945c83d7d5a",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-negation",
+      "arm": "legacy",
+      "sourceHash": "c9f91acfa8ab4b02df8af3f59d1c087e4ded800b9ec6cd54c7469945c83d7d5a",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-policy",
+      "arm": "legacy",
+      "sourceHash": "3844c8d3dd131696b8d6767f9b0717e55edcef34b35c748a1ce21928047efef2",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-policy",
+      "arm": "structured",
+      "sourceHash": "3844c8d3dd131696b8d6767f9b0717e55edcef34b35c748a1ce21928047efef2",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-paper",
+      "arm": "structured",
+      "sourceHash": "4c796c02da8b16fd8f78e6b8f34f3ca102f7e187c47cf12639edc6a48a827a01",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-paper",
+      "arm": "legacy",
+      "sourceHash": "4c796c02da8b16fd8f78e6b8f34f3ca102f7e187c47cf12639edc6a48a827a01",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-price",
+      "arm": "legacy",
+      "sourceHash": "2c6d5d5f615a8528bab49119cdd34c5152ce1da61538e9db7b701a3db4e3a9b4",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-price",
+      "arm": "structured",
+      "sourceHash": "2c6d5d5f615a8528bab49119cdd34c5152ce1da61538e9db7b701a3db4e3a9b4",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-donor",
+      "arm": "structured",
+      "sourceHash": "3fb98728e268188cf84105312e295e4db5dceac277395eb8da6a5673a2a7ef6e",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-donor",
+      "arm": "legacy",
+      "sourceHash": "3fb98728e268188cf84105312e295e4db5dceac277395eb8da6a5673a2a7ef6e",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-funding",
+      "arm": "legacy",
+      "sourceHash": "68f4ad2335ccf4edefd15db2b25fd6e4280efb33b3fc1769955c5339b0e12512",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-funding",
+      "arm": "structured",
+      "sourceHash": "68f4ad2335ccf4edefd15db2b25fd6e4280efb33b3fc1769955c5339b0e12512",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-data",
+      "arm": "structured",
+      "sourceHash": "cce321c4ec1d2405e31b4d23aa933737230eccebdaec00f068b9fd5cca7f6ca1",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "bge-m3-q8-0/heldout-absent-data",
+      "arm": "legacy",
+      "sourceHash": "cce321c4ec1d2405e31b4d23aa933737230eccebdaec00f068b9fd5cca7f6ca1",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-dates",
+      "arm": "legacy",
+      "sourceHash": "4212ca373b1f883d9af22c1914e3f3cb6bae65c65e8b6dae1a1e6de2585de9a0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-dates",
+      "arm": "structured",
+      "sourceHash": "4212ca373b1f883d9af22c1914e3f3cb6bae65c65e8b6dae1a1e6de2585de9a0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-sensor",
+      "arm": "structured",
+      "sourceHash": "8b0924310869310fa295136cbd15757dbe335829142b05c47719892009dbae3d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-sensor",
+      "arm": "legacy",
+      "sourceHash": "8b0924310869310fa295136cbd15757dbe335829142b05c47719892009dbae3d",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-calculation",
+      "arm": "legacy",
+      "sourceHash": "b358b637cc5fcb7aaa77089c46a3660bd30421c5ab94fcf684ee265e3bfe9db3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-calculation",
+      "arm": "structured",
+      "sourceHash": "b358b637cc5fcb7aaa77089c46a3660bd30421c5ab94fcf684ee265e3bfe9db3",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-correction",
+      "arm": "structured",
+      "sourceHash": "27aadb14f9967c5d8b9c62aeea6186da4a4de190eb497ad310b26ae1ab44ec26",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-correction",
+      "arm": "legacy",
+      "sourceHash": "27aadb14f9967c5d8b9c62aeea6186da4a4de190eb497ad310b26ae1ab44ec26",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-statistics",
+      "arm": "legacy",
+      "sourceHash": "5ad155b54975b43a67d72ef890ef819140c026c43313e65fc3e9b9da211b0950",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-statistics",
+      "arm": "structured",
+      "sourceHash": "5ad155b54975b43a67d72ef890ef819140c026c43313e65fc3e9b9da211b0950",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-negation",
+      "arm": "structured",
+      "sourceHash": "1409aa5992e6e7ea2e1929ba319af9aaa91dec0fe174bacc80a47bb21da37284",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-negation",
+      "arm": "legacy",
+      "sourceHash": "1409aa5992e6e7ea2e1929ba319af9aaa91dec0fe174bacc80a47bb21da37284",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 2,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-policy",
+      "arm": "legacy",
+      "sourceHash": "016eeafc9b7a65c6034b88caf329868e29eb52cce44152f9d38837fe48a483d0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-policy",
+      "arm": "structured",
+      "sourceHash": "016eeafc9b7a65c6034b88caf329868e29eb52cce44152f9d38837fe48a483d0",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-paper",
+      "arm": "structured",
+      "sourceHash": "d7b04f717e8437a55c64a4d9692922d162e05aee7773540c2b106b1c2911ce4c",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-paper",
+      "arm": "legacy",
+      "sourceHash": "d7b04f717e8437a55c64a4d9692922d162e05aee7773540c2b106b1c2911ce4c",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price",
+      "arm": "legacy",
+      "sourceHash": "b60499f4076ffabc6b50771b43048dff949d6c7dae0055f190a4614c32c90543",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-price",
+      "arm": "structured",
+      "sourceHash": "b60499f4076ffabc6b50771b43048dff949d6c7dae0055f190a4614c32c90543",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-donor",
+      "arm": "structured",
+      "sourceHash": "5f49fd407563c65114bb48753b746bfaf3119cd59860f4c091347b0b50bf24ca",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-donor",
+      "arm": "legacy",
+      "sourceHash": "5f49fd407563c65114bb48753b746bfaf3119cd59860f4c091347b0b50bf24ca",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 2,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-funding",
+      "arm": "legacy",
+      "sourceHash": "750a6472932505e9a594dc9ce1002ddc1b68c3ce93d83e1dcf192342effee168",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 1,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-funding",
+      "arm": "structured",
+      "sourceHash": "750a6472932505e9a594dc9ce1002ddc1b68c3ce93d83e1dcf192342effee168",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data",
+      "arm": "structured",
+      "sourceHash": "b39c15c14962f6d39fc813b607f33905a7b2065cfa35d637b4f6f103d3b379e5",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    },
+    {
+      "caseId": "embeddinggemma-2-text-q8-256-v1/heldout-absent-data",
+      "arm": "legacy",
+      "sourceHash": "b39c15c14962f6d39fc813b607f33905a7b2065cfa35d637b4f6f103d3b379e5",
+      "error": {
+        "message": "electronApplication.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /private/tmp/nodus-research-cIUq9o/electron-isolated --inspect=0 --remote-debugging-port=0 --no-sandbox --disable-gpu /Users/jorgepb96/.codex/worktrees/ffb6/nodus\n<launched> pid=80231\n[pid=80231][err] Debugger listening on ws://127.0.0.1:53846/3a183698-0193-4ba8-bd69-a26ba79b695d\n[pid=80231][err] For help, see: https://nodejs.org/learn/getting-started/debugging\n[pid=80231][err] Debugger attac",
+        "classification": "generation-or-verification-unavailable"
+      },
+      "durationMs": 0,
+      "traces": []
+    }
+  ],
+  "pending": [],
+  "acceptance": null,
+  "root": "/private/tmp/nodus-research-cIUq9o",
+  "isolation": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true
+  },
+  "preflight": {
+    "ready": true
+  },
+  "runtime": {
+    "versions": {
+      "node": "24.18.1",
+      "acorn": "8.16.0",
+      "ada": "3.4.4",
+      "amaro": "1.1.9",
+      "ares": "1.34.6",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "148",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.69.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.4",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.1",
+      "tz": "2025c",
+      "undici": "7.29.0",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.0.245.28-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "43.4.0",
+      "chrome": "150.0.7871.224"
+    },
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "runtimeBundleHash": "86038ce714a3c51833d699429a34bbc9ac59a61b841bfcbfe68f2de962321b5d",
+  "cost": {
+    "closedAt": "2026-10-12T13:44:07.468Z",
+    "limitUsd": 0.49788477,
+    "campaignCeilingUsd": 0.5,
+    "priorUnknownUsd": 0.00211523,
+    "calls": 33,
+    "accountedUpperBoundUsd": 0.09076114,
+    "cumulativeCampaignUpperBoundUsd": 0.09287637
+  },
+  "finishedAt": "2026-10-12T13:44:07.470Z"
+}

@@ -1,0 +1,2623 @@
+{
+  "format": "nodus.embedding-manual-reviews/1",
+  "reviewer": "Codex, revisión manual contra pasajes originales; no revisión humana externa",
+  "method": "Muestra inicial: las 24 respuestas principales de E5 y las 12 de la primera repetición de 512. Revisiones dirigidas de tabla, síntesis, estadística y ausencia de evidencia en los otros perfiles. Se evalúan metadatos e inferencias; no se generaliza el porcentaje a respuestas sin revisar.",
+  "reviews": [
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "single-source",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Atribuye también al catalán la fecha que el pasaje afirma en francés; el bloque catalán habla del caudal.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "7dcd4537167a84a8b88c1a8f2157bb623e016b648951253317cbd11c73f852d4",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "follow-up",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "e70cee941f36f757293cd2f403f761af20b20181df622dd5f7b700ffaa9638a8",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "cross-language",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "29cee0c5718a47749c2627ece026356a95e242faec2932cde0438195be1d2757",
+      "evidence": [
+        {
+          "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "negation",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "f97a33920f34df82729cc6d7d08784f698275f47ce0792cbcf294ee2f7528b67",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9c7f7bb661430a41a0ca03d5959067663172ec2f8eb43b47a14f6dd509b61bc0:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:49833638b41b6dbab8df62dda81c6cf4b61bacd831256876db96dad3df620038:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:b7f99ba8394f88efc859946f15734f3c733d531d6d9019d6e288151d16d5bb50:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "table",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Etiqueta como inglés un registro español.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "cb9ac0308dc367952ea6915aa6dcb1d63f4023f3dfd20c4c3901261c6f82c5da",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "contradiction",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "78a60424d15ff5920fa1dec0013f29767562336942d4444455c31e66ad84df8d",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:5bc2dbe2309cec679b823b63c65f28c19cd0539818ae71ac9d7ece181573baf3:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "scoped:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:0e535472f4a274f1a84709d78492632da5227a5456cacafe6f16a1d1a98c6659:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "synthesis",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Identificación errónea del idioma y añade limitaciones/metodología no declaradas.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "e57fb6aa31020dfa5b416c3f595c1885e5f2c4fa0107a54a7de1eefe0b00efec",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9c7f7bb661430a41a0ca03d5959067663172ec2f8eb43b47a14f6dd509b61bc0:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:49833638b41b6dbab8df62dda81c6cf4b61bacd831256876db96dad3df620038:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:b8fb38449b336430f7f5e9ab4fb90553fb101d0aa7effa7ac74ef85634e9c795:0",
+          "textSha256": "d8daf10a25a1ca39318c7d2dfc2c9381f608c34693fea8b1517e2feb64f72a49"
+        },
+        {
+          "id": "scoped:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9c79471b39ade9f707458d37cc71321c05be20fd09caf9b1e2630cc5ded7e15d:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "method",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Deriva asimetría positiva/cola derecha de media mayor que mediana; esos resúmenes no la determinan.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "a78076376a700f03a1e477f6d8248f5abf732f036a6455d3a722fb646e984bf5",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:5bc2dbe2309cec679b823b63c65f28c19cd0539818ae71ac9d7ece181573baf3:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "scoped:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "public-paper",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "f5e7473f98cd59fbc49d87cc64f16ab3cd480de490efc1ece83f18bf89880fee",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+          "textSha256": "5ba81b88417b98e2017688e6eea30e4a825959fb82395bf8d09136d8b6ce9cb8"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+          "textSha256": "0083ed2135253423f285012952140bd3fc9b661353c1ab7f2b2ebdea6937a59b"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+          "textSha256": "b7241549d39ac5f333024a2449cbea6739de30fb65ab5f7df8b7406b00213fe9"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+          "textSha256": "810b81895c8f4744b80b979196cc6bffb8f57d8da27a09cb19bed2ccf5e688e8"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+          "textSha256": "6eeb977a18c49433304a2d331b392c20450e82810652358d26f60bdcb04a4bfa"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+          "textSha256": "7c3c29c7c22286f6f3a8635f8a4adee32f7b210ec88b8a88f058e1b7c6c8674d"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "technical",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Convierte retención de eventos en límite temporal de restauración; la fuente no vincula ambas políticas.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "4264b71cfc47b24bf0cc08e51a91f30f1ae0dc34bc55d2c9c7b79e4319e4a6f2",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:dc7acb76d0c54c9937af722dd681fde918a4a95cb287cb1ec88571e0b9625c36:0",
+          "textSha256": "162a7aec7c9f415e9fbd589818e0d684593b311b110d28c5d9358fb0dec669e5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:164ebd19214a3c2f13af659a9733e33ba23eab41d80855b70e73b8ba9a001376:0",
+          "textSha256": "f56204bb089f0573dad0b7690858695b6a92908582df0d726a0198ef83fea3c7"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:cea24d401949301062a59979872f573528c763873d47e8e61178049c859e7184:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:e64f069ab4ac3ce6b798c65f861e845ef903bbd5de93aa747aad79b377978efe:0",
+          "textSha256": "8fdd6d42e93ab64053057b3e0eae7630fe3ae3b9a2c817a1ed7174396b3ec418"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:701e547df2bd7ff57e7b52569410331ac921785d83e2cd7e143714a129040f65:0",
+          "textSha256": "f9dd244c525b1bf53fab101455ce186bd142bc5ff86a68fb87050114bec7219c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:0e535472f4a274f1a84709d78492632da5227a5456cacafe6f16a1d1a98c6659:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "insufficient-evidence",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "da252cc00e5a3fd61ea680a3504fbaeba56867150baaff5202ca6bfbaadb872c",
+      "evidence": [
+        {
+          "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "insufficient-evidence-2",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "e96e9101de85426b27803efbe63f621bc3c46d9eb386dd471a186c82e224245c",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "single-source",
+      "repetition": 1,
+      "supported": false,
+      "notes": "La fecha es correcta; atribuye al catalán una afirmación que allí solo aparece en francés.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "2e3c120aba4a3ddf1f3f6c740097ef4856fcbf0ba93cc7b0745596c9ba57570c",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "follow-up",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "69b62fbba9bc8ebc87408beb3010e37b996c60591dbd23be84f3175795caf396",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "cross-language",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "23b90e67aa2cdb97fce55f0adba632454cb509c7970555e2426b19e4758815fa",
+      "evidence": [
+        {
+          "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "negation",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "9a74dc4bbd6a6d01a13b0802bde80cf9d35b48ea0829ac4ac1927ebd8c040f0e",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9c7f7bb661430a41a0ca03d5959067663172ec2f8eb43b47a14f6dd509b61bc0:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:49833638b41b6dbab8df62dda81c6cf4b61bacd831256876db96dad3df620038:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "scoped:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "table",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Etiqueta como inglés un registro español y cuenta cinco idiomas mientras describe seis variantes.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "59890b6ed5556e191838c10468d4ab01a0a75c25f9f68d8827f6f2e42506d851",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:fca4e383f503471865ec3e7527ed88928ffe28d714c7e25d5c2a4e994d744448:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:786e16f8420ecf9b1040d5379cd9b3aace1c83e544f06401d28842a2e1d0a138:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "contradiction",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "f01d11dd0de3ab3a0b5651e03ee77fcd453fc2cf1a610c0076884cf1e1ed4e7d",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:5bc2dbe2309cec679b823b63c65f28c19cd0539818ae71ac9d7ece181573baf3:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "synthesis",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Llama portugués al pasaje alemán y afirma que usar la media sería un error sin datos de la distribución.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "2bf4fe48ce07d8cced7f2df1853e76a2c544757dd76386bcb3be3ac3d7d2f3c7",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9cae6666d00f16954fa20faa4f8357c91f710b949a212329387003423f722093:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9c7f7bb661430a41a0ca03d5959067663172ec2f8eb43b47a14f6dd509b61bc0:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:f69e074ddbc9248ca28bb916fbef589f6fc1123526c81fc4c0f589957fd7dc58:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:49833638b41b6dbab8df62dda81c6cf4b61bacd831256876db96dad3df620038:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:0a387ff92f0c9186a523e91dee44348b52f65a34bb083acff8e2602e61616cdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "scoped:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:b8fb38449b336430f7f5e9ab4fb90553fb101d0aa7effa7ac74ef85634e9c795:0",
+          "textSha256": "d8daf10a25a1ca39318c7d2dfc2c9381f608c34693fea8b1517e2feb64f72a49"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:9c79471b39ade9f707458d37cc71321c05be20fd09caf9b1e2630cc5ded7e15d:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:11b09209854d370c5cc535757577f3b75344058ae886fe274f60bfe1046aab26:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:b86b12b2d3a4d8a7ec30a3cd7db5316b58a5f132d272c4c9e1fc35792b121211:23",
+          "textSha256": "ac315ae8cfec1ae518e1021b4294e5873de19f637a6473ca62284249a2c54c4b"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:b2681c926c3173b0dc148f222c0e3a5c8330706d2655a50de07f285d0aaa126f:86",
+          "textSha256": "4bdea5611a3da12cbd2328cdcdac04c99e72d9c5b34a191d057c031b5a494ff8"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "method",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Reconoce que la fuente no lo confirma pero acaba dando el sesgo como razón de la divergencia.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "badf1950602a4beb042aadbf730d62692e9d0dfb16ad48d56641ba6e8cd75dfb",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:079916622efc95a3c8b97b1e5040277f86bc84ea77358175ddd476acd8943859:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:21f0e355712b3948bd09f8b39705932e3b928531e70d5d68cea085b80d0484e8:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:196ac8a256d531dd0f60e47f3d16013293bdc822335eacea14d3e422c4210291:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:bf1b685e7b55c1fabde98641c6a99695447db22ab87cc285846dcb496a41b14b:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:48128bc6708ec381f358d5c87aa70c22ae4ce3cf3d8220b0b0e6960e759a5e74:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:5bc2dbe2309cec679b823b63c65f28c19cd0539818ae71ac9d7ece181573baf3:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "public-paper",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "7b4853186cf4b22d45c828543fa5a6d038e53888d9c53583b548f20b423d73c8",
+      "evidence": [
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:1",
+          "textSha256": "5ba81b88417b98e2017688e6eea30e4a825959fb82395bf8d09136d8b6ce9cb8"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:0",
+          "textSha256": "0083ed2135253423f285012952140bd3fc9b661353c1ab7f2b2ebdea6937a59b"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:3",
+          "textSha256": "810b81895c8f4744b80b979196cc6bffb8f57d8da27a09cb19bed2ccf5e688e8"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:6",
+          "textSha256": "6eeb977a18c49433304a2d331b392c20450e82810652358d26f60bdcb04a4bfa"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:4",
+          "textSha256": "563ec5f5d0d7934f78d66421754ee215d533f6721e8e528c1a15afac92b6e0c6"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:10",
+          "textSha256": "d42aa24f1cdc8c17f126c4b29eb950534cf3234bf780944b394167ef6b259fbf"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:19f5b9cc013201432df64855ca25d766317fc9cd507ab1d6ed5fd608c639d082:10",
+          "textSha256": "b7241549d39ac5f333024a2449cbea6739de30fb65ab5f7df8b7406b00213fe9"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:57",
+          "textSha256": "7c3c29c7c22286f6f3a8635f8a4adee32f7b210ec88b8a88f058e1b7c6c8674d"
+        },
+        {
+          "id": "documentary:10b310eaef31f189ca7e2830174723ccd7df39bbfe8359fa406fa2fff7df8585:edb630b1c1933dacebfc01afcd30477580af33735b175827245839a64f5d4bea:12",
+          "textSha256": "d66246019ec269a22300d7b84a94822191377f93341d894c94313fb6b03247b6"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "technical",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Recuento de cinco idiomas incorrecto: enumera seis; vincula retención y restauración sin soporte.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "9d012d1597d2a76eb05b29b963f0eba16676e8f5894782a62b938ca10d7d8b91",
+      "evidence": [
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:7f89159740306ffffde9b7857d824565fc601b56f2f7bb9dd44c666440b8244b:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:164ebd19214a3c2f13af659a9733e33ba23eab41d80855b70e73b8ba9a001376:0",
+          "textSha256": "f56204bb089f0573dad0b7690858695b6a92908582df0d726a0198ef83fea3c7"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:dc7acb76d0c54c9937af722dd681fde918a4a95cb287cb1ec88571e0b9625c36:0",
+          "textSha256": "162a7aec7c9f415e9fbd589818e0d684593b311b110d28c5d9358fb0dec669e5"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:e64f069ab4ac3ce6b798c65f861e845ef903bbd5de93aa747aad79b377978efe:0",
+          "textSha256": "8fdd6d42e93ab64053057b3e0eae7630fe3ae3b9a2c817a1ed7174396b3ec418"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:701e547df2bd7ff57e7b52569410331ac921785d83e2cd7e143714a129040f65:0",
+          "textSha256": "f9dd244c525b1bf53fab101455ce186bd142bc5ff86a68fb87050114bec7219c"
+        },
+        {
+          "id": "documentary:c375b07e0059e511737a2bb50ff5c0f6e6271f459bfd086c889193b26c410a06:cea24d401949301062a59979872f573528c763873d47e8e61178049c859e7184:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "insufficient-evidence",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "8adf4abc92fb3790a4f5d98a02d34d710d80d284aa0b7a1ab318381cd85e6614",
+      "evidence": [
+        {
+          "id": "documentary:f0fdb9e1521eae5a21d61985b4f6df334a452618124f79866e790306482efcc7:dca6dac9cb709ffadde3b429de84dd5e38bf55d2c0edfd651f193b9e88d88c4e:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "multilingual-e5-small-int8",
+      "name": "insufficient-evidence-2",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "88f40c43b0886d012cd013cca8f3383dea0eb4c2072748975bbc1e389de101f6",
+      "evidence": [
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:fff6930f195d6dea41c39e7b45505c538af8fe8647c1f14761d5a806897a3b17:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:09b9b8ccd94c46c0bfc8349c0d6e4af96b012f40704601a290fb306684d86d54:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:05cbc79bc4a33794946a26c3b8df03a1226f3707711232fed73d906bedb440a4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:aca1b051c0004d799f950ccf654339e9afe31bfe5281abbf749d728bffec28ae:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:626dc364aa140adc0e8c71b8aa072be4e470b4e654e3a2a00603f3d02765cf6f:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8938cd56c5b7ca60d4357e903e739d03644b7614cbab331d87f23a91e8e71981:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "scoped:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:d6a1dcb6115182caa1ac8f32c67996056478172c0d276fff8c011503837eb814",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:12a281d97fa3e0b4987c3fc2cc6c89320f758bceba1e3a98c8fa13f2f4cd10e8:0",
+          "textSha256": "d8daf10a25a1ca39318c7d2dfc2c9381f608c34693fea8b1517e2feb64f72a49"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:8345cabcf8c8cef77574dd62c73189125463eaa722257fced1ce492fb3874bca:0",
+          "textSha256": "48152e464236844ee27fdfa1ec25c0d7f0ce86754dea4c03c370a14128ae1bde"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:88463547d7da7d102226994e6d3b704010e7fcbf0e69d7b15013676fca2356d3:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:6c46ecdf82050645c39517df7b49cd5b6fc29c358a0f4086d87c0d3743f503b3:30395875e52ed2f361a54069b80a151ae4a2411cfd4f0f831e249249aac6bd7a:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "single-source",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "af996b55ceaa8805af6b6c8c388b4d294105c3c12b031249ddb662af17aeb4d7",
+      "evidence": [
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:e57ec5cf74e8f92932b7eaa6b63af44ae5f86b5524d9be72be5aeec99fde3b12:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a586c60a6f780682c9a6dba8df50f5f5e74c4606dbb78deefea663079c0643c9:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79fbc252869d7d3d18ca17ba6cbcdedef46ad66895b10fd5131b3f2911a5b9c4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:4744ccb8bf503477f16fefbdd368378bab981f15388947b5d05de5231214a79f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "follow-up",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "86e99c76ca52bdac7b766c3d0f5e1649dde61c6b80ea59edcd298c54e47a70ec",
+      "evidence": [
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:e57ec5cf74e8f92932b7eaa6b63af44ae5f86b5524d9be72be5aeec99fde3b12:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a586c60a6f780682c9a6dba8df50f5f5e74c4606dbb78deefea663079c0643c9:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:4744ccb8bf503477f16fefbdd368378bab981f15388947b5d05de5231214a79f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79fbc252869d7d3d18ca17ba6cbcdedef46ad66895b10fd5131b3f2911a5b9c4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "cross-language",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "05392fb1178594f7d4f8d3526ee11b6c41b9f4fd5796c7fabf00cf15d470fae8",
+      "evidence": [
+        {
+          "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "negation",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "9cd7fb74a6e4336f5cf2ba8b95e42a85572d290eb88bd038b712b59c858e05f8",
+      "evidence": [
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:9b844c0eefccf6f1ec9f777093e1f14b67f2fd4af60a5c330403c0fa8c814bf5:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:bcb9bdb5ab6adf9c0fff3e13b401faeaedb9c417cefb356ca363ea402dd8c254:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:9aaa5a3c4578ea511be65b4ee2fb388828c6a30c36647491bf4c371fac6bbff3:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:df15ae4d3eaf3f72ce55eeb8f15630a2b19b19e9882fab45220e73795fafac65:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:5eba4064d35afb8d1c834b39e14dc11dd11d6d354929c067f317fe0f51244630:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:12",
+          "textSha256": "4b729a197574480c8a4b04ee8172e7b9e26be91c320812383dded650256311d0"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:e970d02b43cf669a8a32f2b4abbab7dfa29799b05327fb2eb2f1d72333c2b5e3:49",
+          "textSha256": "c3e71e2701eb9bae7b0c57575a0d259c09dc12db08ad8c5bb1aed835ca1953c5"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "table",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Cuenta cinco idiomas y enumera seis; atribuye solo a léxico resultados con contribución semántica en trazas.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "49f35d930443732effaa6f021f11b8570993788e7565883c00e01eed2a9bb25a",
+      "evidence": [
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:df15ae4d3eaf3f72ce55eeb8f15630a2b19b19e9882fab45220e73795fafac65:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:bcb9bdb5ab6adf9c0fff3e13b401faeaedb9c417cefb356ca363ea402dd8c254:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:982e0de518c1b431b2f3ae58433e037bffaa0aed2f4ccf04b83602195b3dc2a1:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:4971b6a35a06accc3cbcc50dad40ab546253336dcbae35053d3ea57c203663d8:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "scoped:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:61434d2ac6d333a8f0819e7671caafa2f8f906a9b013e047f7e18de96b2dc4bb:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:d99781e808e91e48c9fdea44091e86558f0e9a013ece8f1e090ff45b93e4babb:30",
+          "textSha256": "9d0c8d7f6b3c842322fafb84757a3b28a82475df1fc5ce721b2ca7f9ad8ef548"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:22",
+          "textSha256": "f5adfbc672571a319e14148073ab5862f720b3f0a4e1e104687726a80554ef49"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "contradiction",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "2c2fcbcf057136f875b867d1f66e91afa4b9ed409f0b15870c5d8f999fdf2878",
+      "evidence": [
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:61434d2ac6d333a8f0819e7671caafa2f8f906a9b013e047f7e18de96b2dc4bb:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:9ab1d2a0152a8bc5d7aff4bd12a8f2b8d115dc2ec994fec57e77457fae6b893e:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:c02ddc2ce461540728cfdbd4df28e04844d5b76e5d156433d149b67d89d98640:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:c8ef43ab2e2684b4ba0334a039e451ee41b25312ea813d708f55a5f3ff32c188:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ffcf9c920890d5944aa0cb8d09f7f97a2cc0628e2ea5715337636e8aca4cc998:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:5064d578059943af3690156d1340d67793e632941036f04e55f66a1356732e2d:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "synthesis",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Afirma que ambos corpus tienen cifras superadas aunque solo Bruma tiene revisión; inventa el diseño de muestreo.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "daddaafbbf91871c42c560eaf5d901557342c83d454f189966f2c845dd5a7704",
+      "evidence": [
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:9b844c0eefccf6f1ec9f777093e1f14b67f2fd4af60a5c330403c0fa8c814bf5:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:9aaa5a3c4578ea511be65b4ee2fb388828c6a30c36647491bf4c371fac6bbff3:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:bcb9bdb5ab6adf9c0fff3e13b401faeaedb9c417cefb356ca363ea402dd8c254:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:9ab1d2a0152a8bc5d7aff4bd12a8f2b8d115dc2ec994fec57e77457fae6b893e:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:df15ae4d3eaf3f72ce55eeb8f15630a2b19b19e9882fab45220e73795fafac65:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:5eba4064d35afb8d1c834b39e14dc11dd11d6d354929c067f317fe0f51244630:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:61434d2ac6d333a8f0819e7671caafa2f8f906a9b013e047f7e18de96b2dc4bb:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:c02ddc2ce461540728cfdbd4df28e04844d5b76e5d156433d149b67d89d98640:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:c8ef43ab2e2684b4ba0334a039e451ee41b25312ea813d708f55a5f3ff32c188:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1e7f01bdb21cc1fd4fd3baa39b6f40f15a930801d7afba7ed3ff3f07bd33b1a5:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:12",
+          "textSha256": "4b729a197574480c8a4b04ee8172e7b9e26be91c320812383dded650256311d0"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "method",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Infere una cola alta sin datos; llega a decir que el 95% demuestra un intervalo calculado.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "6a2600c2d53e372a4060d6a38de63311caef0c8c8a6eb162b1047dc99b6d06f6",
+      "evidence": [
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:9ab1d2a0152a8bc5d7aff4bd12a8f2b8d115dc2ec994fec57e77457fae6b893e:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:c02ddc2ce461540728cfdbd4df28e04844d5b76e5d156433d149b67d89d98640:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:c8ef43ab2e2684b4ba0334a039e451ee41b25312ea813d708f55a5f3ff32c188:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:ffcf9c920890d5944aa0cb8d09f7f97a2cc0628e2ea5715337636e8aca4cc998:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:66e21e22f1ebe0625bdbf60e2af5184b827f86cb73ec5faa112828903c9f6255:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "scoped:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:61434d2ac6d333a8f0819e7671caafa2f8f906a9b013e047f7e18de96b2dc4bb:11",
+          "textSha256": "ac787b4f1f1ed8285c4fc8ad6b6a237d24609c68ea433f5f510ed1e1dd0c1aa8"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "public-paper",
+      "repetition": 0,
+      "supported": false,
+      "notes": "La explicación de doble desquantización cambia incorrectamente el destino intermedio a NF4: el resultado es BF16.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "6c2848f9526a4f407f372592bbf35ba381f877199b05b8a237f377e9b69aecc0",
+      "evidence": [
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:0",
+          "textSha256": "0083ed2135253423f285012952140bd3fc9b661353c1ab7f2b2ebdea6937a59b"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:1",
+          "textSha256": "5ba81b88417b98e2017688e6eea30e4a825959fb82395bf8d09136d8b6ce9cb8"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:3",
+          "textSha256": "810b81895c8f4744b80b979196cc6bffb8f57d8da27a09cb19bed2ccf5e688e8"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:6",
+          "textSha256": "6eeb977a18c49433304a2d331b392c20450e82810652358d26f60bdcb04a4bfa"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:10",
+          "textSha256": "d42aa24f1cdc8c17f126c4b29eb950534cf3234bf780944b394167ef6b259fbf"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:23",
+          "textSha256": "adfa5baea0360d5b60315f7a81a34d952becc68527f9517913e20ae73cf755a7"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:47f01b819e1ecfe3c9277d3df36c1df3a8fef0b7e81b789dfb5d877e4c677b2b:24",
+          "textSha256": "3bc4394f5e203995d7d4c741e9b53ba86ccfdbc1c2becd3b8ef035f04875e1f6"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:53",
+          "textSha256": "83d725ab5301a6f73b259b04d9b67020072bfb4659b1469ba88b96dcf0fbc6d4"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:2f37c2180ccb415a5ad29d5f586ec1f1763e866de88a3aad8be0dc24ec3e815e:61",
+          "textSha256": "609f33296bf899b55c7f2934a47539cf8e9885497c987ebd41c3aa20e39094a9"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:57",
+          "textSha256": "7c3c29c7c22286f6f3a8635f8a4adee32f7b210ec88b8a88f058e1b7c6c8674d"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:cfdfc54f0eec9846a487c423f9cb54c770f4d053fd2864e96b8e3a7b51c645cb:23",
+          "textSha256": "ac315ae8cfec1ae518e1021b4294e5873de19f637a6473ca62284249a2c54c4b"
+        },
+        {
+          "id": "scoped:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:f615a99defd159dcad972b3cfb956f1ea8f391bac733ff328e42ffb45a3ef1af:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "technical",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Afirma restauración dentro de 14 días; solo la retención de eventos tiene ese plazo.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "a23d15d1e9dff85ed83e2c89d75431dfc31365175f9f015de52c58bee9ea49f3",
+      "evidence": [
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fbccb7ff3612d283e7bae388db6100e71002eb821965768c22fa6eacb02ffc07:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:675879258dcb3e6a835b42863551a6db292065a442a236cf765cf78e9f4937a8:0",
+          "textSha256": "f56204bb089f0573dad0b7690858695b6a92908582df0d726a0198ef83fea3c7"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:95afb0f98bc130f1dc8d780686f3b7c7e0f754f158f307ee93cb450e65b657bf:0",
+          "textSha256": "162a7aec7c9f415e9fbd589818e0d684593b311b110d28c5d9358fb0dec669e5"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:cc2bc7187edf8af865a07705765f129559817376e3763ae12245b90be2789e68:0",
+          "textSha256": "8fdd6d42e93ab64053057b3e0eae7630fe3ae3b9a2c817a1ed7174396b3ec418"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:fc8f8c7272fa2d9ff4f125062dfd320d09c5005a23030d33c84ccd9240b83c23:0",
+          "textSha256": "f9dd244c525b1bf53fab101455ce186bd142bc5ff86a68fb87050114bec7219c"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e661cadd9869d6310ac452888c6113170eb8f2087b0b00abcfdd8aed7b067bde:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        },
+        {
+          "id": "scoped:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1d8054029e99a5e3a726df408aad2e82405877f366c3a7686bb8476f0709af3b:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:14842f05c2569b8d9b25fef34de5eb41a54477d009ed95553588468a20f61ba2:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:1bf1741ed427433b63fa91f4c24a2ec064ca7f6cae0f0061f94653d5f7edac4e:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:0afe0e1473ace2888063fec061f5b2b1868f11fcf2f28932bd31ed4a6270779e:37",
+          "textSha256": "1e4dacf41f4935ed3d51f5c21f96709907053aa7a17d02e473fc76e512007f1f"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:37176225006b63db9086cc3d3dfcdc65d1314cb7b4fd1248830f39c9b3eaa14b:0",
+          "textSha256": "052d55ae3801e8d02fd8024d75b20f12ec71851dece596ec7af7cee70af7e4fa"
+        },
+        {
+          "id": "documentary:78278955b26cc982df2f3d215880592b6234164a69bbff726506daa251653a46:e13f58cdb4b0248f6b3d04b01263633785c1b07ba87ca5a4912d0313a96c73ad:59",
+          "textSha256": "3c890dadaa419318d46bf6cc1611d885496eea35d6d106a356e7300f145d945e"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "insufficient-evidence",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "f819e5b80f935d75df38c582540cf3f6bc7701f597f1197c3acf511bd94f0ad1",
+      "evidence": [
+        {
+          "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "insufficient-evidence-2",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los hechos de la respuesta coinciden con los pasajes citados; comprobadas negaciones, cifras y alcance.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "807e824b45729e7c765cff3315901446888f318567bd38e7c4965ad574c7baa4",
+      "evidence": [
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a586c60a6f780682c9a6dba8df50f5f5e74c4606dbb78deefea663079c0643c9:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:e57ec5cf74e8f92932b7eaa6b63af44ae5f86b5524d9be72be5aeec99fde3b12:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79fbc252869d7d3d18ca17ba6cbcdedef46ad66895b10fd5131b3f2911a5b9c4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:4744ccb8bf503477f16fefbdd368378bab981f15388947b5d05de5231214a79f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "table",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Los porcentajes, diferencia de 21 puntos y cinco idiomas de los pasajes citados coinciden.",
+      "answerSha256": "e2ad0319f6317e216b11cd5afc08cb491587a8a7db4d18dc7005edac87a51580",
+      "evidence": [
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "scoped:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:ceff5ff2fe984d354a67c9beca56fac646a915261fbc953a5751905e8559348c:19bb755cb11b021a46975946b3beb44f665035817fadc52eda5513182dd73702:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "synthesis",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Atribuye a Bruma confusión/conmutación indebida de estadísticos, aunque la fuente afirma que no son equivalentes.",
+      "answerSha256": "ad1a8e3054e25d8592273a45d4facbf39c3d9a0993ba8ee6a03f40d4bb515181",
+      "evidence": [
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+          "textSha256": "2e07eebaae86ec50ee2fab4ae82239172d877500086dc4ecfad99d1a6f627e08"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+          "textSha256": "0ef75dc7d08ec0a60b808e8b25fc1f898e471d1ba2c106c3b91a19a2f9ddab0e"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "method",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Añade una versión catalana de Bruma que no existe en los pasajes; la cautela sobre asimetría es correcta.",
+      "answerSha256": "9d37659951e232ea0651a309c1e45575a1a967772515b728473bb555c9c17301",
+      "evidence": [
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "insufficient-evidence",
+      "repetition": 0,
+      "supported": true,
+      "insufficientEvidenceRecognized": true,
+      "notes": "Reconoce correctamente ausencia de precio/donante y distingue los datos técnicos o fechas conocidos. Comprobadas las cifras y negaciones de los pasajes citados.",
+      "answerSha256": "cb493365e6afff24cda811beabec68764c9ccb916f076532ed71743e7491b5a6",
+      "evidence": [
+        {
+          "id": "documentary:13da71db747d11dec5df2f44992ecaa7e37dce873e045a429f25641a1d9b075b:917481643bdd35ab1abe02c0d04205700eacba157456ebea02a2e82d2ccfbaed:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "insufficient-evidence-2",
+      "repetition": 0,
+      "supported": true,
+      "insufficientEvidenceRecognized": true,
+      "notes": "Reconoce correctamente ausencia de precio/donante y distingue los datos técnicos o fechas conocidos. Comprobadas las cifras y negaciones de los pasajes citados.",
+      "answerSha256": "66e55c3290ffd79eb5fd617895896d724f15a3be6c9ee4a2f4bac606c0a5bace",
+      "evidence": [
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:0447357890a32046b90a869792e966695692002d10a45075244ba5e47a314f62:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:f3f0df12ad53e58fd6e87116cd8d3df29a39970b9c4cdb48a864172cb2834d56:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:add3a29da93388269ecb87a7ec16c4b55aae8b045273e08f3460a9027f72cb2f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:92635012b17838843c9dc2fbca11093bd8d37a6351cbb45c5ca05d7df2eeb964:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "scoped:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:75a253a65b1e0fcb642dacc5564c3f2063188387cb8bdcbfb518d6ad09270b15:0",
+          "textSha256": "d8daf10a25a1ca39318c7d2dfc2c9381f608c34693fea8b1517e2feb64f72a49"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+          "textSha256": "48152e464236844ee27fdfa1ec25c0d7f0ce86754dea4c03c370a14128ae1bde"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:c8a1d7a2c229f8af041510994529cca6aa0412f70b78b094099d6750f0473741:0",
+          "textSha256": "fcd92b2f5ddb788e5d9ad8da25afc5f5489b4daf8222d0b52d24412519063836"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:59",
+          "textSha256": "3c890dadaa419318d46bf6cc1611d885496eea35d6d106a356e7300f145d945e"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f:45",
+          "textSha256": "391814d32b79a4a3d0471a2383807e5268508903f3425ca46a8e3cb0a2a26cbb"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8:61",
+          "textSha256": "b1fc3c9f5ba5a538c9d35e636fbde9db259185150ed1eb94da2203775a0ab76a"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "insufficient-evidence",
+      "repetition": 1,
+      "supported": true,
+      "insufficientEvidenceRecognized": true,
+      "notes": "Reconoce correctamente ausencia de precio/donante y distingue los datos técnicos o fechas conocidos. Comprobadas las cifras y negaciones de los pasajes citados.",
+      "answerSha256": "067766cfe0165c593a6213a9cfca92c3bbb525516124f208319ea9481ac51aae",
+      "evidence": [
+        {
+          "id": "documentary:13da71db747d11dec5df2f44992ecaa7e37dce873e045a429f25641a1d9b075b:917481643bdd35ab1abe02c0d04205700eacba157456ebea02a2e82d2ccfbaed:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "bge-m3-q8_0",
+      "name": "insufficient-evidence-2",
+      "repetition": 1,
+      "supported": true,
+      "insufficientEvidenceRecognized": true,
+      "notes": "Reconoce correctamente ausencia de precio/donante y distingue los datos técnicos o fechas conocidos. Comprobadas las cifras y negaciones de los pasajes citados.",
+      "answerSha256": "a197b85dc95466cc926865f0d9b3cc4acb000213f37daaf91cc1ace7869b80fe",
+      "evidence": [
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:0447357890a32046b90a869792e966695692002d10a45075244ba5e47a314f62:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:f3f0df12ad53e58fd6e87116cd8d3df29a39970b9c4cdb48a864172cb2834d56:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:add3a29da93388269ecb87a7ec16c4b55aae8b045273e08f3460a9027f72cb2f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:92635012b17838843c9dc2fbca11093bd8d37a6351cbb45c5ca05d7df2eeb964:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:75a253a65b1e0fcb642dacc5564c3f2063188387cb8bdcbfb518d6ad09270b15:0",
+          "textSha256": "d8daf10a25a1ca39318c7d2dfc2c9381f608c34693fea8b1517e2feb64f72a49"
+        },
+        {
+          "id": "documentary:c33dff496297687de4a028c5ef2b026ceda30b7b18bebd0a04aa2eb80c134de9:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "table",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Tabla correcta: seis idiomas, 72% frente a 51%, diferencia de 21 puntos y ausencia de medición de inteligencia.",
+      "answerSha256": "a135b295214c6e417c6a6b2c4bee20fc0657cd4690a1d8d8941b187d60705435",
+      "evidence": [
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:45d91fe2bd9eb9f5557b9839ba775721f7f048285cbe0cd7b6143a7d02a79f06:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:183833a5eb2a4dd9c7e28040f5239e6ca369021c3306a5d232049c2568aa4ca4:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:479fe95ada11fc6dc250f3387f2c49959cf2cfbe4444ebe0c8211cb31dbc015f:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:3d6a52431e9c3b698e5557c9cfa7026728b88121e55453d740d125570cafd526:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:8cc050502872163ae126411bd9f79d52710b448aedbdc2aac2b481914cd613e3:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:c16f4d3690f649507ed0e5a3de4ad4525356e480447dc8383874acbd4d3d7366:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "scoped:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:53d798297a64ddc2de79e78076ac63dc7ed111f8a1b5a92c7ba4c677dd93bd01",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:86b887d5d442244be7f83da32fffb41056eb3fbb4a6a1053d737a8a48d3c2b63:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:42aff95b285607f12c25f2a21df75a3a634b1fd8b92dc099fa20a0c656b3c5c1:fd2a0ce708543a51cf1640102f90dd1f25f15d1e9c13ff072fb760860b918916:0",
+          "textSha256": "f9dd244c525b1bf53fab101455ce186bd142bc5ff86a68fb87050114bec7219c"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "synthesis",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Dice que Bruma describe método y no resultado, pese a reportar resultados 18/24; convierte falta de medición en diagnóstico del diseño no disponible.",
+      "answerSha256": "0691fc5bf839c4b10eb34468d494730ff2d7169ec8372d34b8209745b5f30a74",
+      "evidence": [
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:126c52ff6d0f6aa3eda918c432f909ae6d382fb4a4370c866806e2516d598574:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:d35b095685b665b10d6f10781af691a327205edfbd57ab3f2fe188a202a2b8b7:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:479fe95ada11fc6dc250f3387f2c49959cf2cfbe4444ebe0c8211cb31dbc015f:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:183833a5eb2a4dd9c7e28040f5239e6ca369021c3306a5d232049c2568aa4ca4:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:0448b803c94716465bd6eb7e7efd0e6bbad0c0b26f57d978b70250aca88c5c40:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:4af971824e4d4fc47723055c3196d5704c49fdf7fe0bdc30c31041a906429e67:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:86b887d5d442244be7f83da32fffb41056eb3fbb4a6a1053d737a8a48d3c2b63:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:8be3a4cbe120ba76f4a8a4a9ea13212b03ec93d96e526b89a851f469b27bb873:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:33b7ab71714ee08dc0456b59d007ed3291b6661fec33fc75ff3b83d5feafa17e:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:f1e9543abff1ac05a624dea79f63c2db47af6735eb8bf580b07ffa033ede4394:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "scoped:ef1e30dd306302b71f83fabbb628058892079c40b0822c0b4522fd7659a64433:53d798297a64ddc2de79e78076ac63dc7ed111f8a1b5a92c7ba4c677dd93bd01",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "method",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Afirma una versión catalana de Bruma ausente de las fuentes; reconoce la falta de distribución pero propone una cola derecha no demostrada.",
+      "answerSha256": "1c44438c52bd92f6ac09f6a0493e3cd734df6912c6982d42c80b414deaaa534f",
+      "evidence": [
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:16de85475c54e0a31409896c04f7a10c23d41b98d911be40ac1a5dc4bb54e9a8:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:4af971824e4d4fc47723055c3196d5704c49fdf7fe0bdc30c31041a906429e67:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:86b887d5d442244be7f83da32fffb41056eb3fbb4a6a1053d737a8a48d3c2b63:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:09d92da9bf3fd0560413cbcdf495e67ae00365dbc5be00279ce2be1f6100984d:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:33b7ab71714ee08dc0456b59d007ed3291b6661fec33fc75ff3b83d5feafa17e:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:8be3a4cbe120ba76f4a8a4a9ea13212b03ec93d96e526b89a851f469b27bb873:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:16de85475c54e0a31409896c04f7a10c23d41b98d911be40ac1a5dc4bb54e9a8:2",
+          "textSha256": "f37105ef6bc311da6128a7791a4662dbb8ad325e926638b9a87cd262c97d29f7"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:16de85475c54e0a31409896c04f7a10c23d41b98d911be40ac1a5dc4bb54e9a8:11",
+          "textSha256": "ac787b4f1f1ed8285c4fc8ad6b6a237d24609c68ea433f5f510ed1e1dd0c1aa8"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "table",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Las seis versiones citadas contienen 72 % frente a 51 %; distingue traducciones de estudios independientes.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "df6583a707bc3cf109d4cb17afca9dd14cfe451b8c6c10726fa9110a357f934a",
+      "evidence": [
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:7cc96781ed18a6b94e8e8ee080848024f2c2d1ebb4886b6771a74658fee86469:22",
+          "textSha256": "f5adfbc672571a319e14148073ab5862f720b3f0a4e1e104687726a80554ef49"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:d0cb1b8686436bf03c5f9ba5897e84928632ef69a7b788f6dcf666b7d12fc8ba:59",
+          "textSha256": "c5f321d85807e676704fa2586a721035c39152c0344275caaf3bc088993b5d98"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4ac2930c12a7c570f58d3ef7cd413aa5bb2c362796712eb3bbd8e69f4f88c48f:29",
+          "textSha256": "aa9732d916fd198bd3498b5e0d112860529b78f200edb7e409a883a8fda5b4fa"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:483d09776c9759ad0e9c1dc8059f86cd2af67cc9d4cee61f652044780d7a8a6a:42",
+          "textSha256": "5e7c762c4f827d5058c287ea830b1e4d2781038eae5cebef7f5e6e65603939c1"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:61",
+          "textSha256": "609f33296bf899b55c7f2934a47539cf8e9885497c987ebd41c3aa20e39094a9"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "synthesis",
+      "repetition": 0,
+      "supported": false,
+      "notes": "Afirma que media 24 y mediana 18 determinan una distribución asimétrica; los dos estadísticos no bastan para demostrarlo y los archivos no describen la distribución.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "4fa17a041a01f7c5ab614a96f7a0f39240fd5827d3f6bd8477eae694a33618b3",
+      "evidence": [
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:66898fccf4a5ad1f38fa0b516350c3334cc73aee8968a8da976f93e2a58827c8:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "scoped:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:24",
+          "textSha256": "dda756d6c55dd273f7b10fde6d0ea37a5211e14ba1f685049d618727213fbb77"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+          "textSha256": "4b729a197574480c8a4b04ee8172e7b9e26be91c320812383dded650256311d0"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:118",
+          "textSha256": "a54ebf8b49311a5949c03fbcc87818548cf23188e83c6f9968fd122d4b454423"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "method",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Separa conocimiento estadístico general, patrón habitual e inferencia del registro documental. Reconoce explícitamente que faltan forma, cuartiles y extremos para explicar la diferencia; conserva 18/24 y 239→240.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "e8771f0aaec300e1dfb97b3c800a9609e9aa8eedb592bc99a495ac4a6d67f540",
+      "evidence": [
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:75601d9d90c74d9ac932a1918aaa3fe696f5a8e29be04fd991f6bbfad0ae8b77:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:66898fccf4a5ad1f38fa0b516350c3334cc73aee8968a8da976f93e2a58827c8:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "scoped:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "insufficient-evidence",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Declara que faltan precio y moneda; conserva turbidez, 530 nm, ausencia de medición de oxígeno y calibración cada 30 días.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "2856a1795812377ad55e66596bbf403f97b37480d6cfdf1b472265242163beb2",
+      "evidence": [
+        {
+          "id": "documentary:8f2e2f9b9a2600606f4f06591dcfa40f643f0099dabc0ca562468bd36e55eea0:c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "insufficient-evidence-2",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Reconoce ausencia de donante; distingue fecha de biblioteca/laboratorio y el bloque catalán ajeno al asunto.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "deea43152cb223aa82bc27f84301eab4517b5a97e9789d9aa9383cd10d4fea3a",
+      "evidence": [
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:f541e4ac45fa8592c19452223097db524d82d5d0f680143c46efb272f9d800f2:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c191fec542aca78220ba0d332a08b03e34fa16dc6c2d702161d8b86ce7d6410:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:2db9e4db109f370a8549e2ae275320d048ec4b80a655b8a97d7a555e46f5f1f3:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:a95ff0c792583f46565d924f811f6249c1fb3040d9cff1817fee157c9146dcac:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:75601d9d90c74d9ac932a1918aaa3fe696f5a8e29be04fd991f6bbfad0ae8b77:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:76c6e98c78770e3ae66cca60938d083c26d1a5f1b6bd52db7a4a9cdf800495ff:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:9c2ec58725af3e83123dfb17ce84c092840ebfd147a90285671df3044f1eb2a7:5",
+          "textSha256": "b58ca5d1043410a11ede7c6a21106685dec1bdd0b496c69d83c3d51f9be4dc36"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:ba212198dad73b43e84dfec6c0f81a575aaeea385ca72e951a319fc1a55dfdef:39",
+          "textSha256": "805c1e706c6e3d9a47e7421295a04f5b2ea6bfea0f6ade3b6330f24954ff7a0b"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6dbcd937d880bd96672abec0bd5df762c0e5ee35e0701ecabd1e34052932a4f9:53",
+          "textSha256": "83d725ab5301a6f73b259b04d9b67020072bfb4659b1469ba88b96dcf0fbc6d4"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:c02d922172b1bdb0b5892860aa8e06893828fd1891912edf65f520bf562958a4:38",
+          "textSha256": "efc2e869f86fa060ad9787ec1c664dcc782d83cdb548909a5d9285a7dee905be"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "insufficient-evidence",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Reconoce que falta el dato solicitado y conserva los hechos técnicos y fechas de los pasajes.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "5c2c67abf11b96bab64f80f23a9b550ab728ad97ca43bbf73eadc162022cfd84",
+      "evidence": [
+        {
+          "id": "documentary:19e868620a46cc17e40c960d663b99f39fa8ad542221df7148971d6ec682772b:60b1c649f334c2b4b672fbb0957f11b1a3d9623acea095fa7c3b85e0157af458:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "insufficient-evidence-2",
+      "repetition": 0,
+      "supported": true,
+      "notes": "Reconoce que falta el dato solicitado y conserva los hechos técnicos y fechas de los pasajes.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "2a596da7031d66d28f6b4d59ceefbcc3fe6c73f8d044ca2691786de340714167",
+      "evidence": [
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:5d812f0a613c9d59b0fd420770fc47dee24666923045812718af63f5e1dcb21e:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:2b4124f080201d8c2573015bf9e6b4d44c092d032ffdf32eeb13c3f758976e86:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:9f5b202168301de318e31869e6de9060cf8119c5d7896f40ba660a239b836b0d:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:13400aabbaea72dfbc51513cc3761bcde77aa9dfa7a7e1872dc52e40566e3041:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:c90a1587e96f3f8dfef569533cab190de0f06d7ee07bc06e78657eacfc157dec:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:1a5419ce43341bea8841a278787bbf24d5e8feeefd7649d7ac38700808aeb6be:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "insufficient-evidence",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Reconoce que falta el dato solicitado y conserva los hechos técnicos y fechas de los pasajes.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "0105bb256dee2f480bd3e020605fe30ff30b0e29eed21421138d5b09cd5cae73",
+      "evidence": [
+        {
+          "id": "documentary:19e868620a46cc17e40c960d663b99f39fa8ad542221df7148971d6ec682772b:60b1c649f334c2b4b672fbb0957f11b1a3d9623acea095fa7c3b85e0157af458:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "gte-multilingual-base-int8",
+      "name": "insufficient-evidence-2",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Reconoce correctamente ausencia de donante, pero llama gallego-portugués al pasaje portugués; no hay gallego en ese registro.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "4c53df04a9d1acb217eeb0f2d4be9f22140fddcab1c0085708bd3dec720fc2bc",
+      "evidence": [
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:5d812f0a613c9d59b0fd420770fc47dee24666923045812718af63f5e1dcb21e:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:2b4124f080201d8c2573015bf9e6b4d44c092d032ffdf32eeb13c3f758976e86:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:9f5b202168301de318e31869e6de9060cf8119c5d7896f40ba660a239b836b0d:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:13400aabbaea72dfbc51513cc3761bcde77aa9dfa7a7e1872dc52e40566e3041:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:1a5419ce43341bea8841a278787bbf24d5e8feeefd7649d7ac38700808aeb6be:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:c90a1587e96f3f8dfef569533cab190de0f06d7ee07bc06e78657eacfc157dec:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:b45984e259d24163bfc5ba52b48551c67783aeaec350d9240838f22cb5545774:0",
+          "textSha256": "d74d7ebdb200e501de1af3252d1dbdfdd800b212ee591281df52230805a504d9"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:6cfe62dffdf62fcac392ebbc70844a15708a74c3dcbbfcf366488a3807cb0f27:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:7fea96dd64b2513421181d342053a16cb45ecc232786d905226e0f8afaea678a:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:d5996413b666ce4e7dc50b60846f5db8300c3c476a97c73732b121f42d9250a9:45d91fe2bd9eb9f5557b9839ba775721f7f048285cbe0cd7b6143a7d02a79f06:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "insufficient-evidence",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Reconoce que falta el dato solicitado y conserva los hechos técnicos y fechas de los pasajes.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "a016f6fea87a3109e2ef7d93f874797882722c46616749d48ebf015caa843058",
+      "evidence": [
+        {
+          "id": "documentary:a47ee3afc37b1762e50a33565aec1a3fbd53e7575b51eec553eecdf0e89410d3:cd3f5c65315a284b0b27fa6b09ce914bae3bf4f53cacd8d6fcffe8e9709879eb:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-512-v1",
+      "name": "insufficient-evidence-2",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Reconoce que falta el dato solicitado y conserva los hechos técnicos y fechas de los pasajes.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "65048ebaf8ec24270cdc8fe422e4d80dd8b04228313419fc19ba5aa330b128c7",
+      "evidence": [
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79abbae88ed29e18f22703e915529f640bd6e3dc99f3afc260762c9d310fc6ce:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a2d7900aa02f985bd73160e1ec0abec916decdf0379481cbe16a05e9833590d0:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a586c60a6f780682c9a6dba8df50f5f5e74c4606dbb78deefea663079c0643c9:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:e57ec5cf74e8f92932b7eaa6b63af44ae5f86b5524d9be72be5aeec99fde3b12:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:79fbc252869d7d3d18ca17ba6cbcdedef46ad66895b10fd5131b3f2911a5b9c4:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:4744ccb8bf503477f16fefbdd368378bab981f15388947b5d05de5231214a79f:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:ce34be62f4e64bd67814a4cf354a630700db6204d6a75df37f85216dc451c53c:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:7eadaec208d03a58edf33ed36bf60f972a4b794dc7d5b0d545d86ba91b6c6bce:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:ffcf9c920890d5944aa0cb8d09f7f97a2cc0628e2ea5715337636e8aca4cc998:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:fa11b96e269e6745a4181b6cb43034e1d6689678f83d74504d79560c28be5f8e:5",
+          "textSha256": "b58ca5d1043410a11ede7c6a21106685dec1bdd0b496c69d83c3d51f9be4dc36"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:148010b8e0eea8976f8f40c83f75e6602d864cbcdf26fda33d19ca653f38cbb4:25",
+          "textSha256": "d4aad09cbf01eeb84166c9f346c5c5c2b4f8a546e127cd56faff9f056895e53d"
+        },
+        {
+          "id": "documentary:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:a7c2cbe5b5dc8c9cf35f7202e265c96ba584be47fa55d22ca644c7d591d2752e:38",
+          "textSha256": "efc2e869f86fa060ad9787ec1c664dcc782d83cdb548909a5d9285a7dee905be"
+        },
+        {
+          "id": "scoped:d5b10fa3471e1c459fadef9d4866878048600d8392170f2a47d771517f1ccace:f8211fcf3299019c17aaba1dba8de8fcb1aedd6ec5c7505a73ed629679156b46",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "table",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Las seis cifras y el cálculo 21 pp son correctos; una etiqueta cita «Vega archivo 01» pese a enlazar el archivo 02. El archivo 01 pertenece a Puerto Claro, no a Vega. Se marca el error de atribución aunque la URL resuelva.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "42a36e16b03a66f2d1ee9bfabfe35bc507cfb31213e1f044a08a7b05504b9b93",
+      "evidence": [
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:1ad76b2c2fe732fb2a4b855eb8399a2228b0004418ed67b0369d6f7c3942a7c2:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:3f3518b0dc2e0ac8ebef181f3063cd79e4cfc888f33069a9161ae31f6d7cfa15:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:9210d5309bc7543ec6319e63c7f911b101c888959d32176fbc88ba7d26d9ba03:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "scoped:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:6b92232a9f652a2be062dee38a7767ec9bc1ea917ae58fcd3c57af9d79713f15:6c191fec542aca78220ba0d332a08b03e34fa16dc6c2d702161d8b86ce7d6410:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "synthesis",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Atribuye la cautela explícita de no equivalencia a las versiones alemana y francesa, que en los pasajes citados solo consignan 18 y 24; la cautela literal está en español e inglés.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "815edcf9d640004f5960666c8150ba4ed561a779a4149810613bb53f466a5a42",
+      "evidence": [
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:90e517949455f8e9d4fed12684fe49f0b7895dfcb6974bacfa984dec9a7d9ae5:0",
+          "textSha256": "61d15786c7f380be1705c0639de3de3a504c61aafa0bf5d8c294a2af4921ed89"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:31bb6dd670d18d15959a00a9683176e7ced58323e56c82894a7945412e25adda:0",
+          "textSha256": "d3001f61d03073256c50f07deb307b4e16487e1373c585ba8b41eff9eb6f9d46"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:8e3cd186466d81ecb7a0823c76ca809d188b3cbbb36082d092ed63b6eb4692e6:0",
+          "textSha256": "30391b90bb747c6ac4d9d0e00bbb910e0f11816219a2076955ed3360060f03bb"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:136db46c793e2f708429394d8d5e7feb15e6c76d1cf5643d536eaf6eb2c2cd52:0",
+          "textSha256": "3c7d68b8eb5b6899f56316c3e8b03834905a1080ba257a8b2c5931b1c286d552"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:4cc9d36f16bf98659102efc37f9b062242477c46cc134672d159773678852858:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:c3ac11f0e3f7be04dc4d1ae26174dca815511ea79c7b2e23fa41e9583e7dc889:0",
+          "textSha256": "de2423452514eba802cc89eaec046223032b5e6dee703dc7983911fa241220d4"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:66898fccf4a5ad1f38fa0b516350c3334cc73aee8968a8da976f93e2a58827c8:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "scoped:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:b022043783f5228590d2a590254586bbcd0b32d4ff88ac2eea0c19a4e6ddbbe1",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:105ae4a11c8922befee23288c6ff564bb734aedef4df74d894d492df88e40151:24",
+          "textSha256": "dda756d6c55dd273f7b10fde6d0ea37a5211e14ba1f685049d618727213fbb77"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:ba1e528d109900789848b49dbe499a549740e4c5802aa9886a39316e50b48690:118",
+          "textSha256": "a54ebf8b49311a5949c03fbcc87818548cf23188e83c6f9968fd122d4b454423"
+        },
+        {
+          "id": "documentary:25294bf943903e5dbaf84ac1d97e7e9505aa28c6c302c6e46540ec0871bdad78:cd1250c10361a22e31a78334d3edbe61e165f86afd4225730c9ce2a37ed789f4:12",
+          "textSha256": "4b729a197574480c8a4b04ee8172e7b9e26be91c320812383dded650256311d0"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "method",
+      "repetition": 1,
+      "supported": false,
+      "notes": "Separa correctamente conocimiento general e hipótesis de asimetría, pero atribuye la marca literal «Nodus QA synthetic archive» al archivo 19; ninguno de sus tres pasajes citados contiene esa frase.",
+      "insufficientEvidenceRecognized": null,
+      "answerSha256": "c2d1742ccd605a863c24a0bfb7b4c3e45473066c31c4684e2a7ac6fb8a3e88fe",
+      "evidence": [
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:0",
+          "textSha256": "66b21d1fb497efc567076be74fe1e99e088934ce733a9d6deff0f7660428198d"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:5db14a9d66fda1c4cf51d2524d6171b26aafad96bd256cfa00a2ee520d758329:0",
+          "textSha256": "75d6b4473a536769605f3db8a890fe46a24adc09c5d065e50b998f89f3176867"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:7b0cef61d45363917424a6cae2296544f4932fdbdaeb0b9444d1d42cc898e079:0",
+          "textSha256": "78e42e4c978570b1c85b5efb9ede1e02a6491870481f44511dae29d97f48cd2c"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:66898fccf4a5ad1f38fa0b516350c3334cc73aee8968a8da976f93e2a58827c8:0",
+          "textSha256": "6803229686208a9aa6ae551faeabc76d5b9a0b246020caa4614870cdcec67464"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:75601d9d90c74d9ac932a1918aaa3fe696f5a8e29be04fd991f6bbfad0ae8b77:0",
+          "textSha256": "b614970fd29b124bfbebf4bd81e6debf2fa1a197e9ff18751e1b771b69018916"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:3bc55fc4cbc5b423796178a9fe78a16ac8a090a949c83b5e2be5f0840ccd12c4:0",
+          "textSha256": "3929b5439d8a261fc5b2a710ad32c66329d8e7f96455d4a60dbcd6de33e32ef5"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:12",
+          "textSha256": "15c861191b25543ee915e17194b548b5c1d8114845f6327df403ec4478955d70"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c258ca83620398953f812713bed4db17a963c14d499ea74b1140f6bd3e73299:15",
+          "textSha256": "7b41390538fbea6ef21c499c5b881964cf4d98459d19c68ff04b82a927534fe0"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:76bafa6c1ffeed2d8cacd8d166f969822ec13b3a001b1b0031d4015084b1fbdf:0",
+          "textSha256": "7f77b850d114cffb0cf2a367135093daedd589727e7541ba97524cbf75dc9521"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "insufficient-evidence",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Reconoce la ausencia del dato solicitado, conserva las cifras y no rellena precio o donante mediante conjeturas. Distingue evidencia recuperada de afirmaciones sobre la realidad.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "a5cc5542317d8912f6dc032eca576755e5bf856593a168d840b916be886fdebd",
+      "evidence": [
+        {
+          "id": "documentary:8f2e2f9b9a2600606f4f06591dcfa40f643f0099dabc0ca562468bd36e55eea0:c42d87686fde80344433a6414d619417f430cc7b132091b8ed06ff783b0dd20c:0",
+          "textSha256": "59fc59ceb2def63e3480ee219a4fa44263d24e5276c09b2c869695680f1d72aa"
+        }
+      ]
+    },
+    {
+      "profile": "embeddinggemma-2-text-q8-256-v1",
+      "name": "insufficient-evidence-2",
+      "repetition": 1,
+      "supported": true,
+      "notes": "Reconoce la ausencia del dato solicitado, conserva las cifras y no rellena precio o donante mediante conjeturas. Distingue evidencia recuperada de afirmaciones sobre la realidad.",
+      "insufficientEvidenceRecognized": true,
+      "answerSha256": "38ec49e8fdb07cd3d61201ea31e5c60d360477047c2970cf9a9405f655157519",
+      "evidence": [
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:7a790798aac675ce609e353b23cc91a6a36887261d2e37fa1d36d40aee39b791:0",
+          "textSha256": "68a58e431bcad6c8f473024ef5cc9ede71ce959433d44d5434288f7223850643"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:f541e4ac45fa8592c19452223097db524d82d5d0f680143c46efb272f9d800f2:0",
+          "textSha256": "f2f5ff10f907c58765519882249fe3c8bd979824fff5f6c6770209ff8e19a5ff"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:6c191fec542aca78220ba0d332a08b03e34fa16dc6c2d702161d8b86ce7d6410:0",
+          "textSha256": "a46571c09a31adca9ffb6d28070bfa901108eb8d463266f8e8bcc636953f0370"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:2db9e4db109f370a8549e2ae275320d048ec4b80a655b8a97d7a555e46f5f1f3:0",
+          "textSha256": "5e881b36828ed3223416d951e78ea85e983ff7e6e3291841e8f1fb7b1fe81daa"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:a95ff0c792583f46565d924f811f6249c1fb3040d9cff1817fee157c9146dcac:0",
+          "textSha256": "f3d3d21458eebbe0247a69e8055f01b728f4f420ca1138692f12b08ab8f84bca"
+        },
+        {
+          "id": "documentary:1e0a477dd224186d607fd504690c2d8a51cf010e985a82b346a8a23e8bb69d74:f14067e382da5fa1a675c6acc557b524f76abcad1a073adddb00d17199ac36ae:0",
+          "textSha256": "4c18412c3ded1a5974cccf13c62914451e7bc686cf32e21af64b4aa49f3dce64"
+        }
+      ]
+    }
+  ]
+}

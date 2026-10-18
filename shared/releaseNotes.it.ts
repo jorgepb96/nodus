@@ -1,3 +1,7 @@
+import { RELEASE_5_12_0_HIGHLIGHTS } from './releaseNotes5120';
+import { RELEASE_5_12_1_HIGHLIGHTS } from './releaseNotes5121';
+import { RELEASE_5_11_1_HIGHLIGHTS } from './releaseNotes5111';
+import { RELEASE_5_11_0_HIGHLIGHTS } from './releaseNotes5110';
 import { RELEASE_5_10_0_HIGHLIGHTS } from './releaseNotes5100';
 import { RELEASE_5_9_0_HIGHLIGHTS } from './releaseNotes590';
 import { RELEASE_5_8_1_HIGHLIGHTS } from './releaseNotes581';
@@ -181,6 +185,10 @@ const RELEASE_5_1_0_IT = [
 ];
 
 export const RELEASE_NOTES_IT: Record<string, string[]> = {
+  "5.12.1": RELEASE_5_12_1_HIGHLIGHTS.map(highlight => highlight['it']),
+  "5.12.0": RELEASE_5_12_0_HIGHLIGHTS.map(highlight => highlight['it']),
+  "5.11.1": RELEASE_5_11_1_HIGHLIGHTS.map(highlight => highlight['it']),
+  "5.11.0": RELEASE_5_11_0_HIGHLIGHTS.map(highlight => highlight['it']),
   "5.10.0": RELEASE_5_10_0_HIGHLIGHTS.map(highlight => highlight['it']),
   "5.9.1": RELEASE_5_9_0_HIGHLIGHTS.map(highlight => highlight['it']),
   "5.9.0": RELEASE_5_9_0_HIGHLIGHTS.map(highlight => highlight['it']),

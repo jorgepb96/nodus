@@ -142,6 +142,7 @@ export const DEFAULT_APP_SETTINGS: Omit<AppSettings, 'providerKeys' | 'lockedPro
   codexReasoningEfforts: {},
   researchEffortByModel: {},
   researchWebSearch: 'auto',
+  researchAnswerVerification: 'off',
   openRouterThroughput: true,
   providerFreeTier: {},
   unpaywallEmail: '',

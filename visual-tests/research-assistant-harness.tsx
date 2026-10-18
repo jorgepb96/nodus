@@ -6,9 +6,10 @@ import { StudyChatView } from '../src/views/StudyChatView';
 import { WorldChatView } from '../src/views/WorldChatView';
 import ReactDOM from 'react-dom/client';
 import { ResearchAssistantModal } from '../src/views/ResearchAssistantModal';
+import { AcademicInterfaceContext } from '../src/components/AcademicInterfaceContext';
 import { setActiveLang } from '../src/i18n';
 import { normalizeUiLanguage } from '../shared/uiLanguage';
-import type { AppSettings } from '../shared/types';
+import type { AcademicInterfaceProfile, AppSettings } from '../shared/types';
 import '../src/index.css';
 import '../src/mobileWeb/mobile.css';
 import '../src/mobileWeb/phone.css';
@@ -43,6 +44,13 @@ if (params.get('concilium')) {
 const win = window as any;
 win.requests = []; win.updates = []; win.saved = [];
 const conversations = new Map<string, any>();
+// Explicit synthetic history for the phone merge regression; no production bridge or provider.
+win.deletedConversationIds = [];
+if (params.get('phoneMerge') === '1') for (let i = 1; i <= 3; i++) {
+  const id = `phone-merge-${i}`;
+  conversations.set(id, { id, title: `QA phone chat ${i}`, messages: [], messageCount: 0,
+    created_at: '2026-10-18T10:00:00Z', updated_at: '2026-10-18T10:00:00Z', archived: false });
+}
 const systemPrompts = new Map<string, any>();
 const promptSelections = new Map<string, string>();
 const nativeConversations = new Map<string, any>();
@@ -143,6 +151,7 @@ window.nodus = new Proxy({
     conversations.set(id, conversation); return conversation;
   },
   listConversations: async () => [...conversations.values()],
+  deleteConversation: async (id: string) => { win.deletedConversationIds.push(id); conversations.delete(id); },
   getConversation: async (id: string) => conversations.get(id),
   saveConversationMessages: async (id: string, messages: any[], meta: any) => {
     win.saved.push({ id, messages, meta }); Object.assign(conversations.get(id), meta, { messages, messageCount: messages.length });
@@ -161,4 +170,4 @@ setActiveLang(params.get('concilium') ? 'en' : language);
 document.documentElement.className = `${params.get('theme') === 'dark' ? 'dark' : 'light'} ${vaultType} ${params.get('device') === 'phone' ? 'nodus-phone' : ''}`;
 if (params.get('fallback') === 'chat') delete (settings as any).synthesisModel;
 const onEvidence = (id: string) => { win.openedEvidence = id; };
-ReactDOM.createRoot(document.getElementById('root')!).render(<div className={params.get('device') === 'phone' ? 'mobile-surface' : undefined} style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} />}</div>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<div className={params.get('device') === 'phone' ? 'mobile-surface' : undefined} style={{ height: '100vh', '--vault-accent': params.get('accent') || vaultTypeColor(vaultType) } as React.CSSProperties}>{view === 'database' ? <DatabasesChatView settings={settings} initialDatabaseId="database-1" /> : view === 'study' || view === 'teaching' ? <StudyChatView settings={settings} variant={view === 'teaching' ? 'teaching' : 'study'} onOpenDocument={onEvidence} onOpenMaterial={onEvidence} onOpenRecording={onEvidence} /> : view === 'world' ? <WorldChatView settings={settings} onNavigate={onEvidence} /> : <AcademicInterfaceContext.Provider value={params.get('profile') as AcademicInterfaceProfile | null}><ResearchAssistantModal settings={settings} embedded={view === 'embedded'} isGenealogy={params.get('genealogy') === '1'} isAcademic={vaultType === 'academic'} onClose={() => {}} /></AcademicInterfaceContext.Provider>}</div>);

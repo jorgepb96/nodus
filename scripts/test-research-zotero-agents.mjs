@@ -24,7 +24,7 @@ try {
     preparation: { text: 'missing', lexical: 'missing', embeddings: 'missing', reason: null } }] });
   preparation.retrieveSharedDocumentaryEvidence = async () => ({ evidence: [], traversal: { rounds: 1, candidates: 0, partial: false } });
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   ai.completeJson = async () => ({ action: 'finish' });
   load('electron/zotero/zoteroClient.ts').itemChildren = async () => [{ key: 'ATTACH01', contentType: 'text/plain', version: 1, library: { type: 'user', id: '0' } }];
   globalThis.fetch = async url => {

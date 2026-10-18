@@ -115,6 +115,32 @@ export function formatCompatibility(steps: StepCompatibility[], cite: (ids: stri
   return `\n${lines.join('\n').trimEnd()}\n`;
 }
 
+/** What one step was run WITH, as text, for the reagent classifier: its conditions line, then the
+ *  names of its agents, then the names of its reactants.
+ *
+ *  The reactants are the part that was missing. A reagent the step CONSUMES belongs under
+ *  Reactants — the route rules say so in as many words, "if a coupling reagent is used up, list it
+ *  as a reactant and name what it becomes" — and the classifier reads text, so a reagent filed
+ *  there was invisible to it. Measured on a seven-residue SPPS route whose steps carried no
+ *  `Conditions:` line at all: the piperidine of a deprotection and the DIC of a coupling were both
+ *  reactants, every step's text was its agent names alone, and the two hazards those steps carry
+ *  (a diketopiperazine that takes the peptide off the resin, an arginine closing its own lactam)
+ *  were never raised. The structures had always been sent; it was the step's own words that were
+ *  being dropped.
+ *
+ *  Byproducts and products are deliberately excluded: they are what the step MADE, not what it was
+ *  run with, and reading them back as reagents would invent conditions the step never had. */
+export function compatibilityReagentText(
+  conditions: string | undefined,
+  entries: { role: string; name?: string; byproduct?: boolean }[],
+): string {
+  const named = (role: string) => entries
+    .filter((entry) => entry.role === role && !entry.byproduct && entry.name?.trim())
+    .map((entry) => entry.name!.trim());
+  return [conditions ?? '', ...named('agent'), ...named('reactant')]
+    .filter(Boolean).join('; ').slice(0, 2000);
+}
+
 /** The high-severity hazards of one step, one compact line each, for a fix prompt. */
 export function compatibilityFixLines(step: StepCompatibility | undefined): string[] {
   return (step?.hazards ?? []).filter((hazard) => hazard.severity === 'high')

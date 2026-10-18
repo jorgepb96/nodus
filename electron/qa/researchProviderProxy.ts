@@ -24,5 +24,6 @@ export function researchTestProviderModels(provider: string, kind: 'chat' | 'emb
   if (!process.env.NODUS_RESEARCH_PROVIDER_PROXY || !['deepseek', 'openrouter'].includes(provider)) return null;
   // Chat metadata must come through the free live catalogue route too.
   if (provider === 'deepseek' && kind === 'chat') return null;
+  if (provider === 'openrouter' && kind === 'chat' && process.env.NODUS_RESEARCH_OPENROUTER_CHAT_QA === '1') return null;
   return (RESEARCH_TEST_MODELS[kind][provider] ?? []).map(id => ({ id, name: id }));
 }

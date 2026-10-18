@@ -85,14 +85,6 @@
   "saved": {
     "message": "Enregistré dans Nodus"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ fichier(s) sont maintenant joints. La préparation de la lecture propre se poursuit dans Nodus.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Ouvrir dans Nodus"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "Sélectionnez au moins une référence."
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ références enregistrées avec $FILES$ fichier(s) joint(s).",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Déjà dans Nodus"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "Code source AGPL"
+  },
+  "jobHistory": {
+    "message": "Enregistrements et téléchargements"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ références · $FILES$ fichiers",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ fichier(s) en attente",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "Téléchargement…"
+  },
+  "jobNeedsPermission": {
+    "message": "Autorisation nécessaire"
+  },
+  "jobFailed": {
+    "message": "Intervention nécessaire"
+  },
+  "jobComplete": {
+    "message": "Terminé"
+  },
+  "jobQueued": {
+    "message": "Enregistrement en attente"
+  },
+  "jobContinues": {
+    "message": "L’enregistrement continue après la fermeture de cette fenêtre."
+  },
+  "authorizeDownloads": {
+    "message": "Autoriser et télécharger"
+  },
+  "retry": {
+    "message": "Réessayer"
   }
 }

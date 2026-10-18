@@ -62,6 +62,7 @@ import {
 } from '../browser/authPrompt';
 import { browserMediaStates, setMediaNotifier } from '../browser/media';
 import { getSystemVolume, setSystemVolume } from '../toolkit/presenter/systemAudio';
+import { enqueueBrowserCaptures, listBrowserCaptureJobs, retryBrowserCaptureJob, resumeBrowserCaptureJobs } from '../browser/captureJobs';
 import { activePageIsPdf, captureActivePage, importPdfIntoItem, saveCapture } from '../browser/capture';
 import {
   activeBrowserDownloadCount,
@@ -160,6 +161,10 @@ async function syncActiveBrowserNodiContext(): Promise<boolean> {
 }
 
 export function registerBrowserIpc({ h, getWindow }: IpcContext): void {
+  void resumeBrowserCaptureJobs().catch(() => undefined);
+  h('browser:captureJobs:list', async (event) => { assertUiSender(event, getWindow); return listBrowserCaptureJobs(); });
+  h('browser:captureJobs:enqueue', async (event, requests: unknown) => { assertUiSender(event, getWindow); return enqueueBrowserCaptures(requests); });
+  h('browser:captureJobs:retry', async (event, id: string) => { assertUiSender(event, getWindow); return retryBrowserCaptureJob(String(id)); });
   /** Push the whole browser state; the renderer re-renders from it wholesale. */
   const broadcast = () => {
     const window = getWindow();

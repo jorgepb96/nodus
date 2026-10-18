@@ -34,7 +34,7 @@ try {
   const ai = load('electron/ai/aiClient.ts');
   const queries = ['zeta', 'kappa', 'omega'];
   let inFlight = 0, widest = 0;
-  ai.embed = async query => {
+  ai.embedQuery = async query => {
     inFlight += 1; widest = Math.max(widest, inFlight);
     await new Promise(resolve => setTimeout(resolve, 20));
     inFlight -= 1;

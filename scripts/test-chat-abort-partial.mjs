@@ -1,4 +1,6 @@
-// A user-triggered stop must keep what the model already produced.
+// A user-triggered stop keeps published text on ordinary chat surfaces.
+// Documentary Research Chat holds its draft until verification and therefore
+// returns no unchecked partial text on stop.
 //
 // The transport resolves with the partial text once its signal aborts (that contract is
 // covered by the provider tests); these orchestrators must then return that partial text
@@ -28,12 +30,20 @@ try {
     synthesisModel: { provider: 'google', model: 'test-text-model' },
     nodiModel: { provider: 'google', model: 'test-text-model' },
     promptLanguage: 'en',
+    // This regression exercises the legacy verified documentary publication gate;
+    // verification is experimental and disabled by default in ordinary chats.
+    researchAnswerVerification: 'legacy',
     // This suite isolates cancellation of the answer transport. A staged SearXNG
     // runtime must not turn its empty synthetic corpus into a live web search.
     researchWebSearch: 'off',
   });
 
   const ai = load('electron/ai/aiClient.ts');
+  ai.completeJson = async (_options, validate) => {
+    const plan = { goal: 'Summarise the observatory.', queries: ['observatory design'], authors: [], titles: [], explicitLibrary: false, kind: 'fact', answerMode: 'documentary' };
+    assert.ok(validate(plan));
+    return plan;
+  };
   const PARTIAL = 'Partial answer kept after the user pressed stop.';
   // The real transport streams deltas and, on abort, resolves with the accumulated
   // text instead of throwing. A per-run controller lets the stub fire the stop at the
@@ -83,10 +93,11 @@ try {
   const owner = (surface, id) => assets.chatAssetOwner(surface, id, vaults.getActiveVault().id);
 
   const researchSelection = { ideas: false, themes: false, contradictions: false, gaps: false, readingPath: false, authors: false, documents: false, passages: false, graph: false, graphParts: {} };
+  const verifiedResearchSelection = { ...researchSelection, sourceFilter: { enabled: true, authorIds: [], workIds: [] } };
   const surfaces = [
     {
       name: 'research assistant',
-      run: (signal) => research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn], selection: researchSelection }, () => {}, signal).then((result) => ({ text: result.answer, aborted: result.aborted })),
+      run: (signal) => research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn], selection: verifiedResearchSelection }, () => {}, signal).then((result) => ({ text: result.answer, aborted: result.aborted })),
     },
     {
       name: 'nodi',
@@ -114,11 +125,54 @@ try {
     aborter = new AbortController();
     const result = await surface.run(aborter.signal);
     check(`${surface.name}: the stop reaches the provider`, aborter.signal.aborted);
-    check(`${surface.name}: keeps the partial answer`, result.text.includes('Partial answer kept'));
+    if (surface.name === 'research assistant') check(`${surface.name}: withholds the unverified documentary draft`, result.text === '');
+    else check(`${surface.name}: keeps the partial answer`, result.text.includes('Partial answer kept'));
     check(`${surface.name}: never replaces the answer with the abort error`, !/AbortError|aborted a request/i.test(result.text));
     if (result.aborted !== null) check(`${surface.name}: reports the turn as aborted`, result.aborted === true);
-    console.log(`${surface.name}: the partial answer survives the stop`);
+    console.log(`${surface.name}: cancellation preserves its publication contract`);
   }
+
+  // Main's reduced-effort cutoff retry and this branch's publication gate must
+  // coexist: an ordinary turn can stream, while verified documentary prose is
+  // held through both attempts and reaches its auditor only after completion.
+  aborter = null;
+  const grounding = load('electron/ai/researchChatGrounding.ts');
+  let auditCalls = 0;
+  grounding.groundResearchChatAnswer = async (answer, _context, _question, _model, _language, _signal, options) => {
+    auditCalls++;
+    return options?.structured ? 'Structured verified answer.' : answer;
+  };
+  for (const verification of ['off', 'legacy']) {
+    settings.updateSettings({ researchAnswerVerification: verification });
+    const sent = [], delivered = [];
+    const beforeAudits = auditCalls;
+    ai.completeTextStream = async (options, delta) => {
+      sent.push({ effort: options.researchEffort, maxTokens: options.maxTokens });
+      delta('Provisional documentary draft.', 'content');
+      delta('Thinking.', 'reasoning');
+      if (sent.length === 1) throw new ai.AiError('Output ceiling reached.', false, false, 'output_truncated');
+      return 'Completed documentary answer.';
+    };
+    const result = await research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn],
+      selection: verifiedResearchSelection, model: { provider: 'openai', model: 'gpt-6.1-sol' }, thinkingEffort: 'high' },
+    (text, kind) => delivered.push({ text, kind }), new AbortController().signal);
+    check(`${verification}: cutoff has exactly one retry`, sent.length === 2);
+    check(`${verification}: retry reduces effective thinking`, sent[0].effort === 'high' && sent[1].effort === 'medium');
+    check(`${verification}: retry retains its output allowance`, sent[0].maxTokens === sent[1].maxTokens);
+    check(`${verification}: returns completed answer`, result.answer === 'Completed documentary answer.');
+    check(`${verification}: reasoning can stream`, delivered.some(delta => delta.kind === 'reasoning'));
+    check(`${verification}: documentary draft follows publication gate`,
+      delivered.some(delta => delta.kind === 'content') === (verification === 'off'));
+    check(`${verification}: verification remains independent`, auditCalls - beforeAudits === (verification === 'legacy' ? 1 : 0));
+  }
+  settings.updateSettings({ researchAnswerVerification: 'structured' });
+  const beforeStructured = auditCalls;
+  ai.completeTextStream = async () => { throw new Error('Structured verification must not enter the ordinary stream writer'); };
+  const structured = await research.streamResearchChat({ conversationId: researchConversation.id, messages: [turn],
+    selection: verifiedResearchSelection, model: { provider: 'openai', model: 'gpt-6.1-sol' }, thinkingEffort: 'high' },
+  () => {}, new AbortController().signal);
+  check('structured: uses its independently verified writer once', auditCalls === beforeStructured + 1);
+  check('structured: preserves the verified result', structured.answer === 'Structured verified answer.');
 
   // The owner registry must exist for the surfaces that key their assets by conversation.
   for (const [surface, id] of [['assistant', researchConversation.id], ['nodi', nodiConversation.id], ['world-assistant', worldConversation.id], ['database', dbConversation.id], ['study', studyConversation.id]]) {

@@ -1,0 +1,73 @@
+{
+  "format": "nodus.failed32-controls5-execution/1",
+  "createdAt": "2026-10-15T18:10:09.504Z",
+  "planFile": "/private/tmp/nodus-research-lB0K6I/artifacts/failed32-controls5-plan-001.json",
+  "planSha256": "7fe041d2ab5376d6b250526825282fccc1be9b780b4c07db8417ed3ff786f2ec",
+  "generatorPoolRoot": "/private/tmp/nodus-research-hlWqiL",
+  "nodeBinary": "/Users/jorgepb96/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+  "repo": "/Users/jorgepb96/.codex/worktrees/ffb6/nodus",
+  "sourceCommit": "d73b72b1f0f25a4d5e54ff110dce9527a9e5c4f6",
+  "groups": [
+    {
+      "name": "a",
+      "caseIds": [
+        "R002",
+        "R006",
+        "R008",
+        "R010",
+        "R013",
+        "R015",
+        "R018",
+        "R022",
+        "R029",
+        "R032",
+        "R034",
+        "R044",
+        "R051",
+        "R055",
+        "R059",
+        "R068",
+        "R070",
+        "R072",
+        "R074"
+      ],
+      "root": "/private/tmp/nodus-research-regression37-a-EWTVvC",
+      "qualificationFile": "/private/tmp/nodus-regression37-qualification-a.json",
+      "sourceContexts": "/private/tmp/nodus-research-regression37-a-EWTVvC/artifacts/qualified-case-sources.json",
+      "preregistration": "/private/tmp/nodus-research-lB0K6I/artifacts/preregistration.json",
+      "output": "/private/tmp/nodus-research-regression37-a-EWTVvC/artifacts/failed32-controls5-001",
+      "producerLog": "/private/tmp/nodus-research-regression37-a-EWTVvC/artifacts/regression-producer.log",
+      "generatorState": "start first for actual-request preflight"
+    },
+    {
+      "name": "b",
+      "caseIds": [
+        "R005",
+        "R007",
+        "R009",
+        "R012",
+        "R014",
+        "R017",
+        "R021",
+        "R023",
+        "R031",
+        "R033",
+        "R035",
+        "R047",
+        "R054",
+        "R058",
+        "R064",
+        "R069",
+        "R071",
+        "R073"
+      ],
+      "root": "/private/tmp/nodus-research-regression37-b-gol1AU",
+      "qualificationFile": "/private/tmp/nodus-regression37-qualification-b.json",
+      "sourceContexts": "/private/tmp/nodus-research-regression37-b-gol1AU/artifacts/qualified-case-sources.json",
+      "preregistration": "/private/tmp/nodus-research-lB0K6I/artifacts/preregistration.json",
+      "output": "/private/tmp/nodus-research-regression37-b-gol1AU/artifacts/failed32-controls5-001",
+      "producerLog": "/private/tmp/nodus-research-regression37-b-gol1AU/artifacts/regression-producer.log",
+      "generatorState": "wait for root after first actual request completion"
+    }
+  ]
+}

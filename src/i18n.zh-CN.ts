@@ -1,4 +1,7 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -16,6 +19,7 @@ import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -114,6 +118,7 @@ export const ZH_CN: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS["zh-CN"],
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS["zh-CN"],
   ...RESEARCH_ATTACHMENT_TRANSLATIONS['zh-CN'],
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['zh-CN'],
   ...VAULT_FILE_DROP_TRANSLATIONS['zh-CN'],
   ...RESEARCH_PROMPT_TRANSLATIONS['zh-CN'],
   ...RESEARCH_SOURCE_TRANSLATIONS["zh-CN"],
@@ -127,6 +132,7 @@ export const ZH_CN: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS['zh-CN'],
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS['zh-CN'],
   ...MODEL_SETTINGS_TRANSLATIONS['zh-CN'],
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['zh-CN'],
   ...DICTIONARY_TRANSLATIONS['zh-CN'],
   ...PAGE_TRANSLATIONS['zh-CN'],
   ...DATABASE_PROPERTY_TRANSLATIONS['zh-CN'],
@@ -8007,4 +8013,7 @@ export const ZH_CN: Record<string, string> = {
   "No se pudo guardar el estado de lectura.": "无法保存阅读状态。",
   "Exportación preparada": "导出已准备就绪",
   "El código ha caducado. Genera otro código y QR para vincular el móvil.": "代码已过期。请生成新的代码和二维码来配对手机。",
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["zh-CN"],
 };
+
+Object.assign(ZH_CN, SIGN_TRANSLATIONS['zh-CN']);

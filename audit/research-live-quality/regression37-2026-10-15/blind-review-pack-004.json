@@ -1,0 +1,57 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-a09cdf7f494d90f0a68ccc73",
+      "answerSha256": "1d7ea68d3c6d32fdcbfb03273e8b3213644a4b779c1a604120e0b5ec60096525",
+      "sourceHash": "537c01fc48289ad64d10338008e4476d5827f6796b696f7c7866715706ec567a",
+      "question": "Make a two-row table for Vega’s spaced-retrieval and rereading groups, report each recall percentage, calculate the difference in percentage points, and name the measured outcome.",
+      "language": "en",
+      "answer": "Spaced retrieval participants recalled 72%. [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1)\n\nRereading participants recalled 51%. [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1)\n\nCalculation: 72% − 51% = 21 percentage points. [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1)\n\nThe measured outcome was recall, reported as the percentage participants recalled. [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1)\n\n| Group | Recall |\n| --- | --- |\n| Spaced retrieval | 72% [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1) |\n| Rereading | 51% [fixture 02, p. 1](nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1) |",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 02, p. 1",
+          "text": "Source title: fixture 02\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "fixture 17, p. 1",
+          "text": "Source title: fixture 17\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 12, p. 1",
+          "text": "Source title: fixture 12\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 07, p. 1",
+          "text": "Source title: fixture 07\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 22, p. 1",
+          "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/5"
+        },
+        {
+          "sourceRef": "source-6",
+          "title": "fixture 27, p. 1",
+          "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-a09cdf7f494d90f0a68ccc73/6"
+        }
+      ]
+    }
+  ]
+}

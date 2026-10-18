@@ -98,6 +98,36 @@ try {
   operations.setTagColor('women', '#7c3aed');
   assert.equal(operations.listTagRecords().find((tag) => tag.name === 'women').color, '#7c3aed');
 
+  // A corpus scan can become stale while the extraction writer commits a file.
+  // Collection assignment must preserve that newer extraction and retry a CAS.
+  const collection = operations.createCollection('Concurrent extraction');
+  const originalScan = store.scanMaterializedItems.bind(store);
+  const originalUpsert = store.upsertItem.bind(store);
+  let advancedDuringScan = false, conflictedOnce = false;
+  store.scanMaterializedItems = (...args) => {
+    const snapshot = originalScan(...args);
+    if (!advancedDuringScan) {
+      advancedDuringScan = true;
+      const current = store.readMaterializedItem(reference.storageId);
+      originalUpsert({ ...current, extraction: { ...current.extraction, status: 'ready', textChars: 730 } }, current.clock.revision);
+    }
+    return snapshot;
+  };
+  store.upsertItem = (desired, expected) => {
+    if (desired.id === reference.id && !conflictedOnce) {
+      conflictedOnce = true;
+      const current = store.readMaterializedItem(reference.storageId);
+      originalUpsert({ ...current, metadata: { ...current.metadata, abstract: 'Concurrent OCR result' } }, current.clock.revision);
+    }
+    return originalUpsert(desired, expected);
+  };
+  assert.equal(operations.patchItemCollections([reference.id], { add: [collection.id] }), 1);
+  store.scanMaterializedItems = originalScan; store.upsertItem = originalUpsert;
+  const collected = store.readMaterializedItem(reference.storageId);
+  assert(collected.collectionIds.includes(collection.id));
+  assert.equal(collected.extraction.textChars, 730);
+  assert.equal(collected.metadata.abstract, 'Concurrent OCR result');
+
   const duplicate = operations.duplicateItem(reference.id);
   assert.notEqual(duplicate.id, reference.id);
   assert.equal(duplicate.source, 'nodus');

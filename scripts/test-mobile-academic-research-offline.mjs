@@ -22,7 +22,17 @@ try{
  db.prepare("UPDATE works SET title='Actual subsequent Mac edit' WHERE nodus_id='owned'").run();assert.deepEqual(await withMobileOperation(()=>saveMobileDeepResearchReport({request,source:checkpoint.context,report,requestId:id},'actual-isolated-grant'),['corpus','writing']),saved,'lost ACK receipt precedes subsequent source revision checks');assert.throws(()=>withMobileOperation(()=>saveMobileDeepResearchReport({request,source:checkpoint.context,report,requestId:'88029bdb-f7fc-48be-9f88-d4edcd014678'},'actual-isolated-grant'),['corpus','writing']),/source_conflict/);
  // Existing prepared passage libraries remain usable without a DocumentaryStore/index rebuild.
  require('../electron/db/passagesRepo.ts').replaceWorkPassages('owned','actual',[{text:fact,pageLabel:'3',pageNumber:3,sourceRef:'legacy-prepared',embedding:null}]);
- writer.close();writer=null;fs.renameSync(path.join(runtime.app.getPath('userData'),'documentary'),path.join(runtime.app.getPath('userData'),'documentary-hidden'));
+ // A changed source must not re-label a legacy passage with the old published revision.
+ const staleScope=require('../electron/ai/researchCorpusRun.ts').resolveAcademicRunScope(notebook.id);
+ assert(staleScope.documents[0].indexedSource);assert.notEqual(staleScope.documents[0].indexedSource.revision,staleScope.documents[0].revision);
+ const legacyPassageId=db.prepare("SELECT passage_id FROM passages WHERE nodus_id='owned'").get().passage_id;
+ assert.equal(require('../electron/citations/scopedLegacyCitations.ts').recordScopedLegacyPassage(staleScope,legacyPassageId,staleScope.documents),null,'the stale publication must reject a legacy receipt for the changed source');
+ // Simulate a real shutdown before opening a profile with only legacy passages. Closing
+ // our explicit writer alone leaves the canonical preparation singleton pinned to the
+ // old publication, even if its directory is renamed underneath that live connection.
+ writer.close();writer=null;await require('../electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+ fs.renameSync(path.join(runtime.app.getPath('userData'),'documentary'),path.join(runtime.app.getPath('userData'),'documentary-hidden'));
+ const legacyScope=require('../electron/ai/researchCorpusRun.ts').resolveAcademicRunScope(notebook.id);assert.equal(legacyScope.documents[0].indexedSource,undefined,'a legacy-only profile has no stale published revision');
  const legacyCapture=await withMobileOperation(()=>mobileDeepResearchSource({request,generationId:id,stage:'academicSnapshot',input:[],history:[],replies:{}}),['corpus','writing']);source=legacyCapture.value;source.context.sourceScope='device_downloads';assert.equal(source.passages.length,0);assert.equal(source.legacyPassages.length,1);assert.equal(source.legacyPassages[0].receipt.text,fact);assert(source.legacyPassages[0].receipt.passage_id.startsWith(`scoped:${source.scope.id}:`));
  canonicalPassage=source.legacyPassages[0].receipt.passage_id;citation=`[Autora (1782)](nodus://passage/${encodeURIComponent(canonicalPassage)})`;checkpoint={id:'98029bdb-f7fc-48be-9f88-d4edcd014678',entityKey:'legacy-prepared-fixture',request,state:'running',createdAt:new Date().toISOString(),calls:{}};
  const legacyReport=await autonomousAcademicResearch(call,checkpoint,async()=>{},new AbortController(),()=>{});assert(legacyReport.draft.draftMarkdown.includes(encodeURIComponent(canonicalPassage)),'canonical orchestration cites the actual scoped legacy receipt without a Mac retrieval call');

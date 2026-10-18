@@ -1,8 +1,9 @@
-import type {ResearchContextLayers,WritingWorkshopBrief,WritingWorkshopIdeaCandidate,WritingWorkshopPassageCandidate,WritingWorkshopSnapshot,ModelRef} from './types';
+import {researchIndexedTextsAlone,type ResearchCorpusLayers} from './researchContextLayers';
+import type {WritingWorkshopBrief,WritingWorkshopIdeaCandidate,WritingWorkshopPassageCandidate,WritingWorkshopSnapshot,ModelRef} from './types';
 import type {ResearchDocumentRead,ResearchEvidence,ResearchTraversal,ResolvedResearchScope,RetrievalSettings} from './researchCorpus';
 import {validateResearchDocumentRead} from './researchCorpus';
 import {ResearchRetrievalBudget} from './researchRetrievalBudget';
-import {textWithPageStarts} from './retrievalChunks';
+import {RETRIEVAL_CHUNK_MAX_BYTES,textWithPageStarts} from './retrievalChunks';
 import {searchResearchCatalog,type ResearchCatalogHit,type ResearchCatalogQuery} from './researchCatalog';
 import type {SectionRetrievalInput} from '../electron/ai/deepResearchCore';
 import type {ScopedReceiptRow} from '../electron/citations/scopedLegacyCitations';
@@ -12,6 +13,7 @@ import type {ResearchWebGrant} from '../electron/ai/researchWebStep';
 import type {ResearchTurnPlan} from '../electron/ai/researchTurnPlanner';
 export interface ResearchChatAgent {plan:ResearchTurnPlan;question:string;minSources:number;compact:boolean;correction?:boolean}
 export interface ResearchCorpusRunHost {
+ recordEmbeddingTrace?:(event:Parameters<typeof import('../electron/qa/embeddingTrace').recordEmbeddingTrace>[0])=>void;
  getActiveVault:()=>Pick<ReturnType<typeof import('../electron/vaults/vaultRegistry').getActiveVault>,'id'>;
  getResearchNotebook:(id:string)=>{revision:number}|null;
  researchCorpusInventory:()=>{documents:ResolvedResearchScope['documents']};
@@ -51,6 +53,7 @@ export interface ResearchCorpusRunHost {
  * cannot turn into a new permission, provider or original extraction tool. */
 export function portableResearchCorpusRun(host:ResearchCorpusRunHost) {
  const {getActiveVault,getResearchNotebook,researchCorpusInventory,assertResearchDocument,assertResearchDocumentPermission,documentsById,researchFingerprint,resolveResearchSourceScope,scopedIdeaEvidencePassages,getResearchPreparationInventory,retrieveSharedDocumentaryEvidence,retrieveHierarchical,selectPassageEvidence,embed,embedMany,insertScopedReceipts,recordScopedSourcePassage,recordScopedLegacyPassage,getSettings,readAutomaticResearchZotero,pinZoteroOriginals,getGlobalLibraryItem,globalLibraryAttachmentPath,readResearchOriginalInWorker,getDocumentaryPassageDetail,getScopedLegacyPassageDetail,extractCitationRefs,researchActivityStep,startResearchActivity,manualIdeaIds,lexicalIdeas,ideaWorkIds,graph,deepenResearch}=host;
+ const recordEmbeddingTrace=host.recordEmbeddingTrace??(()=>{});
  const documentaryCitationId=(scopeId:string,passageId:string)=>`documentary:${scopeId}:${passageId}`;
 class ResearchCorpusRun {
   readonly budget: ResearchRetrievalBudget;
@@ -68,7 +71,7 @@ class ResearchCorpusRun {
   web?: ResearchWebGrant;
   /** Research Chat and Dictionary: the layers the user left on in the context balloon. Deep Research
    * reads both. A layer that is off is never consulted, not merely left out of the prompt. */
-  layers: ResearchContextLayers = { ideas: true, documents: true };
+  layers: ResearchCorpusLayers = { ideas: true, documents: true, indexed: true };
   /** Whether the supervisor made at least one decision in this run. */
   supervised = false;
   /** Research Chat only. See ResearchChatAgent. */
@@ -146,27 +149,43 @@ class ResearchCorpusRun {
     }
     // Leave room for an actual decision and bounded original read. Otherwise a
     // successful first retrieval would consume the entire expansion allowance.
-    const queries = this.agent ? [...new Set([query, ...this.agent.plan.queries])].slice(0, 3) : [query];
-    const opening = Math.floor((this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens) / 3 / queries.length);
-    const limit = this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
+    // Indexed-text-only turns keep main's single-query path and skip the supervisor.
+    const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled);
+    const plannedQueries = this.agent && !alone ? this.agent.plan.queries.slice(0, 4).map(each => each.trim()).filter(Boolean) : [];
+    const allQueries = [...new Set([query, ...plannedQueries])];
+    // Every planned facet gets a literal probe in the first round. Additional
+    // semantic probes need room for an entire prepared chunk; fragmenting a small
+    // opening allowance over five queries can otherwise admit no evidence at all.
+    // Reserve the existing two-thirds allowance when full documents permit
+    // decisions and original reads. Other mixed-layer turns retain three probes.
+    const openingBudget = Math.floor((this.budget.evidenceTokenLimit - this.budget.usedEvidenceTokens) / 3);
+    const queryLimit = this.agent && !alone
+      ? this.layers.documents ? Math.min(Math.max(1, Math.floor(openingBudget / RETRIEVAL_CHUNK_MAX_BYTES)),
+        Math.max(1, this.budget.settings.autoExpand ? this.budget.settings.rounds - this.budget.rounds - 1 : 1)) : 3
+      : 1;
+    const queries = allQueries.slice(0, queryLimit);
+    const opening = Math.floor(openingBudget / queries.length);
+    const limit = this.layers.documents && this.budget.settings.autoExpand && this.budget.settings.rounds > 1 ? Math.max(256, opening) : undefined;
     // Each of the chat's opening queries widens the search, the first included; one that fails
     // (a retrieval timeout on a loaded machine) costs its own evidence, not the turn. A run with no
     // agent has only the one query, and its failure is still the run's.
-    // The opening queries are embedded in one request rather than one round trip each. A batch
-    // that fails leaves each search to embed its own query, as before.
-    const vectors = queries.length > 1 && (this.layers.ideas || this.layers.documents) ? await researchActivityStep('scope', 'embed', () => embedMany(queries, this.signal)).catch(() => []) : [];
+    // All planned facets also enter the lexical lane of the first search, without adding
+    // semantic probes. Only the budgeted `queries` are embedded, in one ordered batch.
+    const vectors = queries.length > 1 && (this.layers.ideas || this.layers.indexed)
+      ? await researchActivityStep('scope', 'embed', () => embedMany(queries, this.signal, { role: 'query' })).catch(() => [])
+      : [];
     for (const [index, each] of queries.entries()) {
-      try { await this.retrieve(each, 1, limit, vectors[index]); }
+      try { await this.retrieve(each, 1, limit, vectors[index], index === 0 ? plannedQueries : undefined); }
       catch (error) {
         this.validate();
-        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '') || (index === 0 && !this.agent)) throw error;
+        if (/not_authorized|scope_changed/.test(error instanceof Error ? error.message : '') || (index === 0 && (!this.agent || alone))) throw error;
         this.budget.partial = true; this.limitations.add('research_read_unavailable');
       }
     }
     // The supervisor's decisions read documents: nothing to decide with the documents off.
     if (this.layers.documents && !this.agent?.correction) await deepenResearch(this, query, model);
   }
-  async retrieve(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null): Promise<void> {
+  async retrieve(query: string, expandRounds = 2, roundLimit?: number, embedded?: number[] | null, lexicalQueries?: string[]): Promise<void> {
     this.validate();
     if (!this.budget.nextRound()) {
       this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: 0, partial: true });
@@ -174,8 +193,10 @@ class ResearchCorpusRun {
     }
     const settings = this.budget.settings;
     if (!this.scope.documents.length) return;
-    const { ideas: readIdeas, documents: readDocuments } = this.layers;
-    if (!readIdeas && !readDocuments) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
+    // The indexed texts are the passages found by search; full documents add what reads the works
+    // in depth: their profiles, the passages around each hit and the quotes their ideas carry.
+    const { ideas: readIdeas, documents: readDocuments, indexed: readIndexed } = this.layers;
+    if (!readIdeas && !readIndexed) { this.traversal.push({ query, sources: [], candidates: 0, partial: false }); return; }
     const vector = embedded !== undefined ? embedded : await researchActivityStep('scope', 'embed', () => embed(query, this.signal)).catch(() => {
       this.limitations.add('embedding_provider_unavailable'); return null;
     });
@@ -183,19 +204,24 @@ class ResearchCorpusRun {
     const current = this.inventory().byId;
     const stableWorks = this.pinRevisions ? this.scope.documents.filter(document => (!document.indexedSource || document.indexedSource.revision === document.revision) && current.get(document.id)?.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []) : this.workIds;
     const stableIdeas = stableWorks.length === this.workIds.length ? this.ideaIds : [];
+    // Without full documents no profiles route the search, so the document lanes (support and
+    // routed passages) stay empty too.
     const hierarchy = await retrieveHierarchical(query, { embedding: vector, nodusIds: stableWorks, ideaIds: stableIdeas,
-      documentLimit: readDocuments ? settings.candidates : 0, ideaLimit: readIdeas ? settings.passagesPerRound : 0, passageLimit: readDocuments ? settings.candidates : 0,
-      minIdeaSimilarity: -1, minPassageSimilarity: -1, minDocumentSimilarity: -1 });
+      documentLimit: readDocuments ? settings.candidates : 0, ideaLimit: readIdeas ? settings.passagesPerRound : 0, passageLimit: readIndexed ? settings.candidates : 0,
+      minIdeaSimilarity: -1, minPassageSimilarity: -1, minDocumentSimilarity: -1,
+      lexicalPassageQueries: lexicalQueries?.length ? [query, ...lexicalQueries] : undefined });
     const usedBeforeRound = this.budget.usedEvidenceTokens;
     const remaining = Math.min(roundLimit ?? Infinity, this.budget.evidenceTokenLimit - usedBeforeRound);
     const acceptRound = (id: string, text: string) => this.budget.usedEvidenceTokens - usedBeforeRound + new TextEncoder().encode(text).length <= remaining && this.budget.accept(id, text);
-    const expansion = settings.autoExpand ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
-    const shared = readDocuments && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(this.scope, query,
-      { ...settings, rounds: expansion, evidenceTokens: remaining }, vector, this.signal, undefined, () => this.inventory().documents) : { evidence: [], traversal: { rounds: 1, candidates: 0, partial: true } };
+    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
+    const shared = readIndexed && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(this.scope, query,
+      { ...settings, rounds: expansion, evidenceTokens: remaining }, vector, this.signal, undefined,
+      () => this.inventory().documents, lexicalQueries) : { evidence: [], traversal: { rounds: 1, candidates: 0, partial: true } };
     for (let round = 1; round < shared.traversal.rounds; round++) this.budget.nextRound();
     this.validate();
     // Interleave independent native/shared lanes, retaining source diversity.
     const candidates = shared.evidence.map(item => this.passage(item));
+    // The quotes analysed ideas carry are derived from the graph, not the indexed text.
     const separable = readDocuments ? scopedIdeaEvidencePassages(query, stableWorks, settings.candidates) : [];
     const inventory = this.inventory().documents;
     const legacy = selectPassageEvidence([...hierarchy.passages, ...separable], settings.passagesPerRound, { preferLexical: true, preferSourceDiversity: true }).flatMap(hit => {
@@ -238,6 +264,11 @@ class ResearchCorpusRun {
     this.budget.candidates += hierarchy.passages.length + separable.length + shared.traversal.candidates;
     this.budget.partial ||= shared.traversal.partial;
     this.traversal.push({ query, sources: this.scope.documents.map(document => document.id), candidates: hierarchy.passages.length + separable.length + shared.traversal.candidates, partial: this.budget.partial });
+    recordEmbeddingTrace({ type: 'research-evidence-selection', query, scopeId: this.scope.id,
+      sharedCandidates: shared.evidence.map(item => ({ id: item.id, documentId: item.documentId, provenance: item.provenance })),
+      legacyCandidates: legacy.map(item => ({ id: item.id, reason: item.reason })),
+      selectedPassages: [...this.evidence.keys()], selectedIdeas: [...this.ideas.keys()],
+      limitations: [...this.limitations], partial: this.budget.partial });
   }
   async readDocument(documentId: string, operation: ResearchDocumentRead): Promise<{ evidence: ResearchEvidence[]; scopeId: string; partial: boolean }> {
     this.validate();

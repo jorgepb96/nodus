@@ -1,4 +1,7 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -16,6 +19,7 @@ import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -113,6 +117,7 @@ export const FR: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS["fr"],
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS["fr"],
   ...RESEARCH_ATTACHMENT_TRANSLATIONS['fr'],
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['fr'],
   ...VAULT_FILE_DROP_TRANSLATIONS['fr'],
   "Research chat": "Research chat",
   "Elige al menos una base de datos.": "Choisissez au moins une base de données.",
@@ -128,6 +133,7 @@ export const FR: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.fr,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.fr,
   ...MODEL_SETTINGS_TRANSLATIONS.fr,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['fr'],
   ...DICTIONARY_TRANSLATIONS.fr,
   'Tamaño de Nodi': 'Taille de Nodi',
   'El 100 % conserva el tamaño original de Nodi y es el máximo. Puedes reducirlo hasta el 40 %.': '100 % conserve la taille d’origine de Nodi et constitue le maximum. Vous pouvez la réduire jusqu’à 40 %.',
@@ -8993,4 +8999,7 @@ export const FR: Record<string, string> = {
   "No se pudo guardar el estado de lectura.": "Impossible d’enregistrer la position de lecture.",
   "Exportación preparada": "Exportation prête",
   "El código ha caducado. Genera otro código y QR para vincular el móvil.": "Le code a expiré. Générez un nouveau code et QR pour associer le téléphone.",
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["fr"],
 };
+
+Object.assign(FR, SIGN_TRANSLATIONS['fr']);

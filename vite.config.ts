@@ -313,6 +313,12 @@ export default defineConfig({
       databaseAggregateWorkerBuild,
       databaseDeepResearchWorkerBuild,
       vectorScanWorkerBuild,
+      { ...vectorScanWorkerBuild, vite: { ...vectorScanWorkerBuild.vite, build: { ...vectorScanWorkerBuild.vite.build,
+        rollupOptions: { ...vectorScanWorkerBuild.vite.build.rollupOptions,
+          input: path.join(__dirname, 'electron/workers/embeddingGemma2Worker.ts'),
+          output: { format: 'cjs' as const, entryFileNames: 'embeddingGemma2Worker.cjs', inlineDynamicImports: true },
+        },
+      } } },
       utilityBuild('backupUtilityWorker', 'electron/export/backupUtilityWorker.ts'),
       utilityBuild('openBackupWorker', 'electron/export/openBackupWorker.ts'),
       // One bootstrap for every trusted capability: a plugin ships a module, not a process.

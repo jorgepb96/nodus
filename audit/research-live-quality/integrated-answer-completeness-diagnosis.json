@@ -1,0 +1,96 @@
+{
+  "format": "nodus.integrated-answer-completeness-diagnosis/1",
+  "recordedAt": "2026-10-13T15:46:19.276273+00:00",
+  "recordedProductionHead": "b187ea2133aa0a006dcb0c31e96f3f0fb80d575a",
+  "artifacts": [
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/live-answer-campaign-integrated-001/campaign.json",
+      "sha256": "6d8952cc460fa75ef9b6bcbea626ac2b9591c765cdf8ea26b8116276e53d5558"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/integrated-answer-review-closed-002/evaluation.json",
+      "sha256": "91a6296bca9a546f3fba7499e44de4ebc4bd10bdc3738449f30223ee531797b1"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/integrated-independent-reviews-closed-001.json",
+      "sha256": "d9da01ccd09af586bd5e5699e3ca2566a268f7c5ec46dbf8d3115a80a66e9ae3"
+    },
+    {
+      "path": "/private/tmp/nodus-research-JrC222/artifacts/live-answer-stop.json",
+      "sha256": "691aeac16c50259f444de249f36a41876337fd14ae64e593fa40d7a7272d4bf6"
+    }
+  ],
+  "campaign": {
+    "plannedCases": 80,
+    "completedCases": 3,
+    "unstartedCases": 77,
+    "acceptedProviderRequests": 42,
+    "completedProviderRequests": 42,
+    "abandonedRequests": 0,
+    "sourceHashDrift": [],
+    "sourceHashesVerified": true,
+    "finalAcceptance": "pending",
+    "cannotInferPopulationQuality": true
+  },
+  "independentReview": {
+    "reviewedPositiveCases": 3,
+    "materialUnsupportedClaims": 0,
+    "correctAndComplete": 2,
+    "incompleteCaseIds": [
+      "R002"
+    ],
+    "method": "Independent fresh Codex Luna model-assisted review against actual answer-specific sources; not external human review."
+  },
+  "causalFinding": {
+    "caseId": "R002",
+    "omittedQualification": "Intelligence was not measured.",
+    "qualificationPresentInAuthorizedSource": true,
+    "qualificationPresentInInitialWriter": true,
+    "mixedClaimRejectedReason": "unqualified_inference",
+    "publishedAnswerOmittedQualification": true,
+    "negativeCriticDetectedOmission": true,
+    "structuredFullQuestionProofGenericallyAddressedFacets": true,
+    "fullQuestionProofAddedUnplannedOmission": false,
+    "cause": "After an initial audit accepted the intelligence qualification but rejected two other statements, the first rewrite again combined that qualification with an unlabelled inference. Its fresh audit removed that compound. Structured mode then forced positive coverage despite a critic identifying the specific missing qualification; generic approved facet spans bypassed complaint adjudication.",
+    "qualificationPresentInInitialAuditedAnswer": true,
+    "initialRepairTrigger": [
+      "inference_without_supported_premises on the calculated percentage difference",
+      "inference_without_supported_premises on a broader interpretation-limit sentence"
+    ],
+    "qualificationRejectedStage": "First repair audit, not the initial audit"
+  },
+  "erratum": {
+    "originalStopReceiptPreserved": true,
+    "originalPreliminaryDiagnosis": "Lost independently added unplanned obligation",
+    "correction": "Actual trace contains no unplanned omission. The defect was negative-critic bypass; persistent obligations close a related repair-forgetting path but are not claimed as the original causal trigger."
+  },
+  "correction": {
+    "scope": "Generic documentary Research Chat for every embedding provider; vectors and contracts unchanged.",
+    "mechanisms": [
+      "Separate full-question and structured negative-complaint adjudication.",
+      "Dismissed negative complaints bind exact answer spans to current supported audited claims and same-source literal evidence.",
+      "Only independently source-validated omissions become persistent requirements.",
+      "After repair, a dedicated proof must discharge every carried requirement using newly audited claims; general approval cannot forget it.",
+      "Recover original-source factual parts as separate sentences; never automatically approve proposed premises from rejected compounds.",
+      "Repair documentary citation labels via the existing vault/notebook/revision navigation authorization gate; remove unresolved empty links and adjacent duplicate targets."
+    ],
+    "remainingSemanticJudgment": "Literal quote/claim binding is mechanical provenance, not proof of entailment; semantic relevance is still model-assessed.",
+    "newRealAnswerCampaignRequired": true
+  },
+  "funding": {
+    "paidProviderCallsThisCorrection": 0,
+    "deepseekClosed": true,
+    "credentialAccess": false,
+    "newConditionalEuroAllowanceUsed": 0
+  },
+  "validation": {
+    "groundingCommand": "npm run test:research:grounding",
+    "outerTestInventoryPassed": 27,
+    "newRequirementUnitTestsPassed": 13,
+    "newOrchestrationTestsPassed": 6,
+    "citationSanitizerPassed": true,
+    "typecheckPassed": true,
+    "lintPassed": true,
+    "productionBuild": "passed"
+  }
+}

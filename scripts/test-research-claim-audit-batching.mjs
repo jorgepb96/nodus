@@ -15,13 +15,13 @@ const original = ai.completeJson;
 const model = { provider: 'deepseek', model: 'deepseek-flash' };
 const sentences = Array.from({ length: 8 }, (_, i) => `Plot ${i + 1} measured ${20 + i} units.`);
 const sources = [{ id: 'source', text: sentences.join(' '), label: 'Synthetic field record', citation: 'nodus://passage/source' }];
-const verdict = ({ index, text }) => ({ index, kind: 'fact', premises: [{ text, type: 'fact', entailed: true, evidence: [{ id: 'source', quote: text }], from: [] }], unsupportedParts: [], explicitInference: false, supported: true, reason: 'literal source' });
+const verdict = ({ index, text }) => ({ index, kind: 'fact', premises: [{ text, type: 'fact', entailed: true, evidence: [{ id: 'source-1', quote: text }], from: [] }], unsupportedParts: [], explicitInference: false, supported: true, reason: 'literal source' });
 const calls = [];
 let behavior;
 ai.completeJson = async (options, guard, selected) => {
   const input = JSON.parse(options.user);calls.push(input);
   assert.deepEqual(selected, model);
-  assert.deepEqual(input.sources, sources);
+  assert.deepEqual(input.sources, [{ ...sources[0], id: 'source-1' }], 'every split uses the exact same request-local source alias');
   assert.equal(options.maxTokens, 6000);
   assert.equal(options.noRetry, true);
   assert.deepEqual(input.sentences.map(s => s.index), input.sentences.map((_, i) => i));
@@ -38,6 +38,7 @@ try {
   assert.equal(result.claims.length, 8);
   assert.deepEqual(result.claims.map(c => c.premises[0].text), sentences, 'split verdicts stay attached to their original sentences');
   assert.ok(result.claims.every(c => c.status === 'supported'));
+  assert.ok(result.claims.every(c => c.evidence[0].id === 'source'), 'every split verdict restores the canonical source identity');
   for (const s of sentences) assert.ok(result.markdown.includes(s), 'all original positions survive reindexing');
 
   calls.length = 0;

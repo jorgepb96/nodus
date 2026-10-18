@@ -77,6 +77,47 @@ try {
   const vault=vaults.createVault('Native live failures','academic');
   await vaults.withOwningVault(vault.id,()=>db.withVaultDatabase(vault.id,async()=>boundary.withMobileOperation(async()=>{
     const grant=randomUUID(),request=question('research'),identity={jobId:randomUUID(),deviceGrant:grant,idempotencyKey:request.requestId};
+    // Actual Mac configuration -> strict validator -> production SQL history.
+    // Only generation adapters are replaced; these are contract tests, not paid E2E.
+    const configuration=await live.mobileLiveChatConfiguration('research');
+    assert.equal(configuration.selection.layers.indexed,true);
+    assert.equal(configuration.researchAnswerVerification,'off');
+    const settingsRepo=require('../electron/db/settingsRepo.ts');
+    settingsRepo.updateSettings({researchAnswerVerification:'structured'});
+    assert.equal((await live.mobileLiveChatConfiguration('research')).researchAnswerVerification,'structured');
+    settingsRepo.updateSettings({researchAnswerVerification:'off'});
+    const {withResearchContextLayers,researchContextLayers}=require('../shared/researchContextLayers.ts');
+    const selections=[
+      [configuration.selection,'off',{ideas:true,documents:true,indexed:true},'off'],
+      [{...configuration.selection,layers:{ideas:false,documents:false,indexed:true,web:false}},'auto',{ideas:false,documents:false,indexed:true},'off'],
+      [{...configuration.selection,layers:{ideas:false,documents:true,indexed:false,web:true}},'off',{ideas:false,documents:true,indexed:true},'auto'],
+      [{...configuration.selection,layers:{ideas:true,documents:false}},undefined,{ideas:true,documents:false,indexed:false},undefined],
+      [{...configuration.selection,layers:{indexedOnly:true}},'auto',{ideas:false,documents:false,indexed:true},'off'],
+      [{...configuration.selection,layers:{indexedOnly:true,web:true}},'off',{ideas:false,documents:false,indexed:true},'auto'],
+      [{...configuration.selection,layers:undefined,documents:false,passages:false},undefined,{ideas:true,documents:true,indexed:true},undefined],
+    ];
+    for(const [selection,web,expected,expectedWeb] of selections){
+      const packet=question('research');packet.generation.selection=selection;
+      if(web!==undefined)packet.generation.webSearch=web;
+      else delete packet.generation.webSearch; // question() defaults off; explicitly exercise omitted legacy web.
+      const original=structuredClone(packet);let observed;
+      behavior=async(kind,input,delta)=>{observed=input;delta('Normalized source-scoped answer');return response(kind,'Normalized source-scoped answer');};
+      const result=await live.streamMobileCompanionChat(packet,{jobId:randomUUID(),deviceGrant:grant,idempotencyKey:packet.requestId},()=>{});
+      assert.deepEqual(researchContextLayers(observed.selection,true),expected);assert.equal(observed.webSearch,expectedWeb);
+      assert.deepEqual(observed.selection,withResearchContextLayers(selection,expected));
+      assert.deepEqual(result.document.data.selection,observed.selection);
+      assert.deepEqual(packet,original,'Do not mutate the frozen packet or its retry identity.');
+    }
+    const attemptsBefore=providerCalls;
+    for(const layers of [{ideas:true,documents:true,indexed:'true'},{ideas:true,documents:true,web:'off'},{ideas:true,documents:true,indexedOnly:1},{ideas:true,documents:true,indexed:true,grant:'all'},{indexed:true}]){
+      const packet=question('research');packet.generation.selection={...configuration.selection,layers};
+      await assert.rejects(live.streamMobileCompanionChat(packet,{jobId:randomUUID(),deviceGrant:grant,idempotencyKey:packet.requestId},()=>{}),error=>error.code==='invalid_live_chat_selection');
+    }
+    const noGrant=question('research');noGrant.generation.selection=configuration.selection;
+    await assert.rejects(boundary.withMobileOperation(()=>live.streamMobileCompanionChat(noGrant,{jobId:randomUUID(),deviceGrant:grant,idempotencyKey:noGrant.requestId},()=>{}),['corpus']),error=>error.code==='permission_denied');
+    const invented=question('research');invented.generation.verificationMode='structured';
+    await assert.rejects(live.streamMobileCompanionChat(invented,{jobId:randomUUID(),deviceGrant:grant,idempotencyKey:invented.requestId},()=>{}),error=>error.code==='invalid_live_chat_options');
+    assert.equal(providerCalls,attemptsBefore,'Rejected shapes and insufficient domains must not start generation.');
     await assert.rejects(live.streamMobileCompanionChat(request,{...identity,deviceGrant:''},()=>{}),error=>error.code==='live_chat_job_required');
     await assert.rejects(live.streamMobileCompanionChat({...request,generation:{model:{provider:'codex',model:'fixture',apiKey:'must-never-leave-Mac'}}},identity,()=>{}),error=>error.code==='invalid_live_chat_model');
     await assert.rejects(boundary.withMobileOperation(()=>live.streamMobileCompanionChat(request,identity,()=>{}),['corpus']),error=>error.code==='permission_denied');

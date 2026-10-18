@@ -1,0 +1,989 @@
+{
+  "format": "nodus.research-live-answer-shard-evaluation/1",
+  "productionRevision": "51ddac9de08c95fd0dd0475668c97fd40f06c868",
+  "quality": {
+    "policy": "research-answer-quality/3",
+    "status": "pending",
+    "answerQualityStatus": "measured",
+    "preregistration": {
+      "minimumAnswerableSample": 60
+    },
+    "sampleSufficiency": {
+      "minimumAnswerableSamplePerArm": 60,
+      "sufficientForEveryArm": true,
+      "arms": {
+        "structured": {
+          "minimumAnswerableSample": 60,
+          "observedAnswerablePlanned": 60,
+          "sufficient": true
+        }
+      }
+    },
+    "denominators": {
+      "planned": 80,
+      "reviewed": 80
+    },
+    "arms": {
+      "structured": {
+        "denominators": {
+          "answerablePlanned": 60,
+          "publishedAnswers": 48,
+          "insufficientEvidencePlanned": 20
+        },
+        "metrics": {
+          "answerableCorrectAndComplete": {
+            "passed": 35,
+            "planned": 60,
+            "rate": 0.5833333333333334
+          },
+          "publishedAnswersWithoutMaterialUnsupportedClaims": {
+            "passed": 48,
+            "planned": 48,
+            "rate": 1
+          },
+          "insufficientEvidenceHandling": {
+            "passed": 13,
+            "planned": 20,
+            "rate": 0.65
+          }
+        },
+        "thresholds": {
+          "answerableCorrectAndComplete": false,
+          "publishedAnswersWithoutMaterialUnsupportedClaims": true,
+          "insufficientEvidenceHandling": false
+        },
+        "sampleSufficiency": {
+          "minimumAnswerableSample": 60,
+          "observedAnswerablePlanned": 60,
+          "sufficient": true
+        },
+        "acceptance": false
+      }
+    },
+    "answerQualityAcceptance": false,
+    "productInvariants": {
+      "status": "pending",
+      "acceptance": null,
+      "reason": "Product runtime citation-resolution and scope/contract isolation receipts were not supplied."
+    },
+    "acceptance": null,
+    "limitations": [
+      "Per-arm planned denominators are structured: 60 answerable / 20 insufficient-evidence; these counts limit statistical interpretation.",
+      "Unexecuted, transport-failed, and withheld answerable items remain in the answerable denominator and score as failures.",
+      "Fidelity is conditional on published answers; its denominator and answerable utility are reported separately.",
+      "This answer-quality policy does not score passage-level retrieval or packaged-platform availability.",
+      "Meeting these directed-sample targets does not establish a population-level rate or universal industry standard."
+    ]
+  },
+  "campaignFinished": true,
+  "concluded": 80,
+  "notExecuted": 0,
+  "parts": [
+    {
+      "id": "preserved",
+      "evidenceSha256": "d4c8b8a9ebb7c959c44eef2be5f20897e70e3379ee816dd0d3f4cf0cf5f9c127",
+      "planned": 2
+    },
+    {
+      "id": "shard-01",
+      "evidenceSha256": "7cba168a5385640148d1af2bbaca829778212d1ea813394aaf9285b8ac70a41d",
+      "planned": 26
+    },
+    {
+      "id": "shard-02",
+      "evidenceSha256": "7080ffebec437d30986060253d571dcd1758d22f184f0763c53ec4decd8adf92",
+      "planned": 26
+    },
+    {
+      "id": "shard-03",
+      "evidenceSha256": "dabef71fcac2a5c4cf74ac2656fc299b47fd74227f5945a59144e1dceb0775f0",
+      "planned": 26
+    }
+  ],
+  "caseOutcomes": [
+    {
+      "caseId": "R001",
+      "reviewId": "review-143aa3dfb9921d96f7d72bef",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "finished": true,
+      "outcome": "answered",
+      "answerSha256": "5456d7eaaea2f68c0154ac6ea1b0027016d64f1b8222675720499ad3578f5cf1",
+      "sourceHash": "1446e8483e2e81bd144b5e9b7b50d74bb5e5bf8d696ee93c91996c863a0ad25a"
+    },
+    {
+      "caseId": "R002",
+      "reviewId": "review-3a9c95db729a0a5e6bd4930b",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "finished": true,
+      "outcome": "protocol-failure",
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "reviewId": "review-49b3726c89a31f93fe44f436",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "89b8100d2051ac292485e1136bc1c9ddab07b327b383b1892eba1d1e54469564",
+      "sourceHash": "7edf8884795965f112b24c34f2eab8378521fff0d308dedfca03ad537df5cc59",
+      "caseId": "R003",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-266be2d8d72fe61e016acf3f",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R006",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-8d608e23587d759fe15dc779",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R009",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-fdf5ad53c18903174fc61e9d",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R012",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-d2c351a0c7a792583c149d4f",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "b9dcf27d3e8bca6d53b7c54886e7b8c32a8e53d607ba6e3555e64748a9950698",
+      "caseId": "R015",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-3e77d20be058822e110dbf71",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "486f28e4ad7150879e7deecfa6213b05e365f34532246d451283804185b5f337",
+      "sourceHash": "1bd98a4bbda8678b23f92a60e41d9a7d44ffcd4cd0e903652c85bcf8da5726e6",
+      "caseId": "R018",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-f95e4a27b286e0fc466f15fa",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R021",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-42a748c938f089009ccfe53a",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "044f4f595b4e0d3c202ee8272965b8bd85c9b0db59bf578d470306d63be4e036",
+      "sourceHash": "bcfc87539aa073c7fbe2484e5f3e1a4692b584a259c9eba751c65692341b2b3a",
+      "caseId": "R024",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-6e563ce84f0f6d71265026e3",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "be3c867fd94b02cd8162a96cbe9df913a1108f71eb5310ec65105d795a4f10ff",
+      "sourceHash": "aca29cbc16a04e1a731f457f0938394ee00db2af0487cc5e5f9cf0f3b03e960f",
+      "caseId": "R027",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-cdd2f6bb3c764debb0c228dd",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "fa2376b7e767fc60d7694cda7b663ec6ced02a320ebc8a07566b43192f673daf",
+      "sourceHash": "7724c1d5bd7b802b5784af63b65336747fc7186afef42c71c5f270938190affb",
+      "caseId": "R030",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-ba7f1ac51a0a28b8e22b0228",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "859ad8ad262a81e3ba48fbe34ddc94884703ca645e3e754558b1063d5e686f13",
+      "sourceHash": "8626bfbd4419cd06dc6654033bb371ad95459f961d505994b82756c945d2924a",
+      "caseId": "R033",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-72d961ae5854d6f35f4946c4",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "ca74a5623dc53fdb3785d04a94ae527bfec432f151bccb33459a2ea08e8b4ff5",
+      "sourceHash": "31b705adef1b3cff6425e0563b3edb3374a6403ba24ec6675245407297ef43cc",
+      "caseId": "R036",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-e6b37d91531c6c0764b41ab5",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "865f8983eefbe8affa12dd3a67cfa32835d49f55b0061102379f55db603708ae",
+      "sourceHash": "526b77e36e69ef2c49349ad075f4bdf79dc993a6f21677d418935e172ced257f",
+      "caseId": "R039",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-8695d4e9a4100af74498e45b",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "2e205ad5f189927079e9a755374c28f2d71e2a99c95b7305f9e573367a04f243",
+      "sourceHash": "1b213dd2cc2d6e70f9e48def87f8f73aecd80cc44d3431eceb89eb569fc09498",
+      "caseId": "R042",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-6378bc84a1a1276fd7e7ab1e",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "2dd6a8e2dcdb7823616e63bb22b0f284937be6eec87ab1005cfd27f6d9aa19e5",
+      "sourceHash": "36202c936fc123e6c8a6665c0095aa00ece4af48992d8f6c8819bce6b26d9344",
+      "caseId": "R045",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-ac7eee45a62d213aed46b0c2",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "e6f0b410e18a2a7b543cdf6db625b16fdddee92f4183e2a1ea9ece12cbb6d602",
+      "sourceHash": "1b8a5ee276cc04c9b9121317c27d3824c638dd6fb4060793feb88c2caa0d8c50",
+      "caseId": "R048",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-9eaa9bc7df04188de1f85154",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R051",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-cf3aa0589ff4cc27a1aff13d",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R054",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-a7c86b51e4815313779e1ab7",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "8b3a0c8204b930d3bd5ca50bf614a7a909908a379e5ff3907c64ed6c7bd9fb1d",
+      "sourceHash": "8cb6cbcf06220b291667e60ce882ec1b5df200784d085f9627fb0c799ee448fc",
+      "caseId": "R057",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-99f805f4c487572bc4224d80",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "6f50b0456f40bb1d629d16af475016405f28a2927842eb06a13088e5a32f727e",
+      "sourceHash": "452f3cde58aefc16b69035bcd0ff8c97e62d7fdd8116241a6fe92643641ae5f2",
+      "caseId": "R060",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-79314393e4ff4f47fe3b6ff9",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "15a4051d04e8f8be09cef3d6223c0708bb4fb6b0b5f58d3b8381ccdf0539a8a0",
+      "caseId": "R063",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-5e7ff5aa00f6f568ee717425",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+      "sourceHash": "070222c7204d0be671f928fe48607534f08b82005a08cc35196212e0e3b248d6",
+      "caseId": "R066",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-b0ff0061f08ab97e0b4c9021",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R069",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-50fac7278540307e52d0f104",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "12756f01b28dc218c1a12e00453bed81017bf62db1f6ffcb39e10552228d15f1",
+      "caseId": "R072",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-711054defe87b12e951d905f",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "6246953f5885f8319aefc08efeae13dcf5ce087c25abad3ecfa8b744f9cd68ac",
+      "caseId": "R075",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-ea52f4e14f09a878a6af4639",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "6f1f9001a61debf898471941bad63881619408e8905256fa10965b2c376fa70f",
+      "caseId": "R078",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-519e58ff9d05d360102ca1f7",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "ed8d4e77d8365d7a8d70c871dbf19238b26374b020ded3d4aa6b62aff74f6293",
+      "sourceHash": "c487fed074c7f0b40365d094188e5a8a4c7f2418347f18659fe5c92e05f329a7",
+      "caseId": "R004",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-724617e1b1988837b104216c",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R007",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-6d963e15965a14fd5bb36517",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R010",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-5ea0f9b88ce406ea3d11fe12",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "e37e0af2e574cb16a89cfe9f0135b0962965aae1413de23f1356aaab2ff7a253",
+      "caseId": "R013",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-c8f80b3eca80c3f08ad4e71b",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "7096f3b810fa472f2a4074be7400f3e7e0861c12cbf88405f012f29c7e18e733",
+      "sourceHash": "251e7d2fe7d7f1f48c25293ccd9d441572d0ba52a07d6804da6a163bca0b59b7",
+      "caseId": "R016",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-30d4e8b7992f438054567a00",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "ffffff92f683ad344c1096327db1d01cc14d2d6c5d3d43aec736c2b36556e66b",
+      "sourceHash": "747420df0744ae93ea0665f0ead7e2570b629aff76999bf034e3005955799129",
+      "caseId": "R019",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-10721d8e6bbf82bc6bc6d68f",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "12c22138039c6236fbc4d75289c2e2fa15296c9548e59d57ae06130cf09dd7dc",
+      "sourceHash": "1c1e5b4350594fa1c427dde65e4fd851e521e6b9fd6c94927bd0b735a40d7536",
+      "caseId": "R022",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-6db73cc6a5ac3567a0eec724",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "8bfbffabda5f760130806927c93a74a0171c1085d433c8d4f9d1aa041f6e940b",
+      "sourceHash": "8f6f9da651bb8c1602fd81fcea73891595b397c2303d820a2fe07e3e298eaaf4",
+      "caseId": "R025",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-70ab972854677b6899fc7427",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "74b61f1a4bfd7ccbc93557fb1b8e78a637acac0b935c188bd9fa6b70e41e2e7c",
+      "sourceHash": "a3646a33ec126d18f1b697ba51c3d69e4e06b3c8e56fd963f2e809d05ca68161",
+      "caseId": "R028",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-8e59ae407e444e2560d52395",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R031",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-e7b9cd266351bfe67d1b3c11",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R034",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-b500e771dc7f3dddbaa5eff9",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "78a7040610cbe5e6980789aedd16d513db06a7e73bcef33d2994143cd732afea",
+      "sourceHash": "8700d4625f4f3b8b5b94b79841f8dc084735f55f5437b847892ff8e729bdc8da",
+      "caseId": "R037",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-62e79db7246cd443d69a2227",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "f0f87a2396a773757bd77bd6fead00a6de44d9e7fa8dfbb3196c8990fd5d6774",
+      "sourceHash": "53444e764cbb06ca6fe29a255305eb3e95583a0445d557b36365f21901294f67",
+      "caseId": "R040",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-b0de5bc3e541a0470b4cc553",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "4189699b545f8e8dee7a26e58638f46ded0c542e5b659a982181e04b2ff36d3d",
+      "sourceHash": "d0ae11b758e2ab0b64b0ab2cfdd2e9bc368e6f434a95a60b9c5182195501553e",
+      "caseId": "R043",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-16e511161374bbc0aa69f9a5",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "6b396c0f4c884455ec185a6d925676c55cb66f164a3ebe9c95c3d3744dd61502",
+      "sourceHash": "66403ef7989ea254fd3e836f4aa5fa4c5a42c67091a6def027a1156d1e114cb2",
+      "caseId": "R046",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-853c245e0f90fa06d5ac8472",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "c46c97e955bcb1567807ee77b76c70d92e92e8c99718090bda5a4422f0522d28",
+      "sourceHash": "7af2bef015b25394bae7c2d10e164e8b49241fb97f0832c2ea5926a4d81b2939",
+      "caseId": "R049",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-ad084bc254037be945ad3225",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "cbe462792a28c13620e5bba833229ac6fb0b112a11aa39c3a4c4d21058168ba9",
+      "sourceHash": "f6b1d04742f7d9cc11e00006e1ad9dacb75e2989409c13e8959e45a88af68c40",
+      "caseId": "R052",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-a85c1cbf2a1c0c89252f2b71",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R055",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-92e4f2e7de2f1dfabd7fe5a0",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R058",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-efcb6bdb07abee1cbbd1bc67",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+      "sourceHash": "5d0537432385523ba153f09aec00479fb81be57f8eb2927d9ba1604d59defc19",
+      "caseId": "R061",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-749360e8f5411d84f7281422",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R064",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-63d6bb2f096be5d7f7939dee",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "beb86843db565ef2cee10ae1df4e174ec6e35b000b07cf25583f5103bf6f2167",
+      "caseId": "R067",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-efe68842a053505c3dc53075",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "f702958d3e055e25da607f9473009f98e2f26562368501ad39dfe7535cc8a14e",
+      "sourceHash": "1ae35bdcf55abed1a2365b05a506315d9aaa3df454a3b7abfa777a665d204d75",
+      "caseId": "R070",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-20d7b8c7e20c52a6bbdae924",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4c71492e298a8219d23c8cf04e4d27834f9027f52ffacd73a0caba0aade370df",
+      "caseId": "R073",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-d695c4e78fee7dd74403db1e",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+      "sourceHash": "70e63775c30e81ef4bf80f67e49446984a8a437d94ac9b7fdaf5bf9cb78cbad5",
+      "caseId": "R076",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-1677dfedca67f0399c836698",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "df0170cb4e8b8144b3bcbb7ecce036985d5f5074a1738257bf760b9f0f279424",
+      "sourceHash": "e656d0f3276bb2407cee65e6290d93dfab695c80820954c393cb1535c1bc41b4",
+      "caseId": "R079",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-eabc3ab6a04381c56b21d950",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R005",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-8c14b86f3dd9a77b5937b3b4",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "b8d28b07044e8bb6cb7e879254a81157d69b85c362e9efb914061592f2fba9b0",
+      "caseId": "R008",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-caa62a431c917ce2120c6f12",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "467102fc74b66faa3c6b5fcdb351b70614af3cd9db5eb6a43e7d08abdd045d71",
+      "sourceHash": "100757772336adf07638c3c23732f40b284bddb7363bc24ed5ed0e8d646a7356",
+      "caseId": "R011",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-c34a0b41bd1e9191526e86b6",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R014",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-9ad2c313b939a1a8f01e2b74",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "5bbe61d65460e376f998f863395b8ef9d3c74f5289e36f1c378d31e84c8cbb70",
+      "caseId": "R017",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-db2f1f6d484ae60c26e2ddab",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "aa9ad80c57bfe95cd5ecb6b765798d2e9f6788f01f5be8912da360438084e8f2",
+      "sourceHash": "bd132cdd73030b35050469bb33674d033204cd893ce0248bdc630bd6e3e87483",
+      "caseId": "R020",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-2fee0699c76846904680bdb3",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "b4122c8483e1729b2900c827b31a73cf96ec29ef44fd8d346740452b93410f52",
+      "caseId": "R023",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-dd348888dec7d3aaf026f28c",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "ea0163721635aa90fb50a1607e54087a98219e239766601114ae6e59431afd31",
+      "sourceHash": "ac824a3454d81d3504258a90213a57360076aa52e82b8a716ca2600547c6ddd7",
+      "caseId": "R026",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-7394c0a7a2be544f04138baa",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R029",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-8246ef302984515de0ce552e",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R032",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-5b6a214ff474ebb71f2d9257",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "cb5cd15de0f5a250064a6708ba86dd11e65c7706d86104ff8d86a53232499337",
+      "caseId": "R035",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-aea501d48676f236e94d738d",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "31099d404cb758f3a44d15f9aca8929464699b5197567c5d9bf5677306967a63",
+      "sourceHash": "989f2fd8ffa8430b70a66d2b70645450cc6dfc6048466175d79e890b26730d32",
+      "caseId": "R038",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-474d37eebb086b3b09c3fb30",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "4f89a343f3c7e8a1ceb5d8d66e6df06a21daa7d920db2a9a09c7e191d3e6b671",
+      "sourceHash": "436a9b4e65ff5a925ff8642a0d8bb98f5f8df0510c51daf808d3d7f48f02c00a",
+      "caseId": "R041",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-af585e5299212f5bc01b097a",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "2eb3e2b895e6c50ac4c8a78dd8943939334af1e5130a462cd857ff02e7eb0017",
+      "sourceHash": "f39a69ed353e0e9b95f475abd63f822abeeea6e531646139a215ebae8bb311b2",
+      "caseId": "R044",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-612bee35a77f7e683bf907ee",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R047",
+      "finished": true,
+      "outcome": "verification-withheld"
+    },
+    {
+      "reviewId": "review-e371fbb740a44e06bb4e0d2d",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "94665ba8a53d275b3b7087328ab4922489629ec6796690b6a1a1f72e36d1c2ab",
+      "sourceHash": "597b32032d41813674c9ee8551722d611c69a22663824f0605cc1d8a11f80ae5",
+      "caseId": "R050",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-47571d3ba4b8289546ab3feb",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "be9aeebf42d59be3f9be20dff7037adabf7ddb7e445a6bf830deb1b4bf63fc6f",
+      "sourceHash": "a5b0a7e05a4bddb9f6de16d126d9691c070babaf78bfc5c1ee6ef4f3c73ea870",
+      "caseId": "R053",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-737e9a33dbe94b7e6996551c",
+      "arm": "structured",
+      "positive": true,
+      "answered": true,
+      "answerSha256": "ed1a2c0d23f13e93609897102abee8162e42765104c81996e961d9759b04ae37",
+      "sourceHash": "9b8b7ec8d533160df342cd7c75676b54a14bdc330b1c1282e8750fb433dbd45b",
+      "caseId": "R056",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-f5b4d1d73d873ccade21c92f",
+      "arm": "structured",
+      "positive": true,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R059",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-f9163324bb61d178dfff004d",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "602d39573d46b5419080f770b71e3dfd53f4104c497ed0a705be3f049023aa0c",
+      "caseId": "R062",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-8c3aa19465287c11fddbf7f1",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "23554c4f915b94bff862a0a6d8dec1a0a8a396d2726ced5d998b7c65f33aa63a",
+      "caseId": "R065",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-82341925a4f8ead71ed3b544",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "a37b333b72ea7c90ab95fe3714c4685c36aa75c46d348e4c112fb75c814395ad",
+      "caseId": "R068",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-cc50bd1820a13e996537dbd1",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "71e7ac669ee250efca7632e9f5d6851d7053f99014439d713a3bee0a866017d2",
+      "caseId": "R071",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-979924c45ab6b1809cd583c5",
+      "arm": "structured",
+      "positive": false,
+      "answered": false,
+      "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "caseId": "R074",
+      "finished": true,
+      "outcome": "protocol-failure"
+    },
+    {
+      "reviewId": "review-16d8eb41f009387c24705489",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "3b46518c414a1795f56c05ecd66ab5be12afae2200b66bc015a8367cd75bb299",
+      "caseId": "R077",
+      "finished": true,
+      "outcome": "answered"
+    },
+    {
+      "reviewId": "review-a2f330b0edb475501e6137b3",
+      "arm": "structured",
+      "positive": false,
+      "answered": true,
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "97c072051d484f28d019647d8a5cbc4f4b69954d202324af9cc1c255cc75a1f1",
+      "caseId": "R080",
+      "finished": true,
+      "outcome": "answered"
+    }
+  ],
+  "fullReport": {
+    "path": "/private/tmp/nodus-research-lB0K6I/artifacts/evaluation-80-independent-001.json",
+    "sha256": "d25b99db8b3e582b4209e7fae10ff8bc83f39f4ae81e92ca318590e8b9555caa"
+  }
+}

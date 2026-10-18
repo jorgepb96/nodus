@@ -1,0 +1,267 @@
+{
+  "format": "nodus.recorded-prose-audit/1",
+  "caseId": "R007",
+  "provenance": {
+    "requestId": "b4b3f514-3831-406b-b00d-edffb91436ca",
+    "requestSha256": "9f8a8de5d4b8ab45a23a342d9625b2f87b97ef0d0a24ce1f687a4160bd0f5060",
+    "rawCompletionSha256": "b3a15e4f3df2439cbe864f12ee7ce9fe091907fcfb94339d307e61eb00ffd5fd",
+    "nature": "Exact captured audit input and raw verdict; test retry responses are synthetic, not new quality results.",
+    "writerRequestId": "a8cd76f1-c754-45a1-9b22-cf9d763dcfd5",
+    "writerRawCompletionSha256": "87dfb64dffb148b0ea72903e7e19449cf4f72c40f16c7699273c5d685fccc363"
+  },
+  "input": {
+    "sentences": [
+      {
+        "index": 0,
+        "text": "En el ensayo Vega, el grupo de recuperación espaciada recordó el 72% y el de relectura, el 51%. [fixture 02, p. 1](nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0)",
+        "context": ""
+      },
+      {
+        "index": 1,
+        "text": "Cálculo: 72% − 51% = 21 puntos porcentuales, a favor de la recuperación espaciada. [fixture 02, p. 1](nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0)",
+        "context": "En el ensayo Vega, el grupo de recuperación espaciada recordó el 72% y el de relectura, el 51%."
+      },
+      {
+        "index": 2,
+        "text": "El resultado medido fue el recuerdo; la inteligencia no se midió. [fixture 02, p. 1](nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0)",
+        "context": "Cálculo: 72% − 51% = 21 puntos porcentuales, a favor de la recuperación espaciada."
+      },
+      {
+        "index": 3,
+        "text": "| Grupo | Recuerdo |",
+        "context": "El resultado medido fue el recuerdo; la inteligencia no se midió."
+      },
+      {
+        "index": 4,
+        "text": "| --- | --- |",
+        "context": "| Grupo | Recuerdo |"
+      },
+      {
+        "index": 5,
+        "text": "| Recuperación espaciada | 72% |",
+        "context": "| --- | --- |"
+      },
+      {
+        "index": 6,
+        "text": "| Relectura | 51% |",
+        "context": "| Recuperación espaciada | 72% |"
+      }
+    ],
+    "sources": [
+      {
+        "id": "source-1",
+        "label": "fixture 07, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3A9c3bcc01ae89d9a2cc17016a4bbe051e1b66c1eeee3676eb54a7fac9f71eb574%3A0",
+        "text": "Source title: fixture 07\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*"
+      },
+      {
+        "id": "source-2",
+        "label": "fixture 12, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3A5ddf2ea66ca19f4a8f82d10ed8b7927b201ea46cfed28315a99e24b3e2f0e057%3A0",
+        "text": "Source title: fixture 12\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata."
+      },
+      {
+        "id": "source-3",
+        "label": "fixture 17, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3A0298a7c95e1b1d438b50fe964f10225671d52eefc11cc0281d54f428d978a526%3A0",
+        "text": "Source title: fixture 17\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida."
+      },
+      {
+        "id": "source-4",
+        "label": "fixture 02, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Aa2bef17c349863bccde89c2537e5b32e21c76f4e18e67696730949f48f14af9a%3A0",
+        "text": "Source title: fixture 02\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*"
+      },
+      {
+        "id": "source-5",
+        "label": "fixture 27, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3Afcfbf05fb8788777512eb2d0ff0e28a4105f40604c2900d603425b6b5595061b%3A0",
+        "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive"
+      },
+      {
+        "id": "source-6",
+        "label": "fixture 22, p. 1",
+        "citation": "nodus://passage/documentary%3A5b2a4de535298fab650a8c35381e86c65e00e2de583b3da78987df1ccd38341e%3A5e648e716818287a93fa80e1f17711b0be3251768224834875e72c97948fb662%3A0",
+        "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna."
+      }
+    ]
+  },
+  "verdict": {
+    "claims": [
+      {
+        "index": 0,
+        "kind": "fact",
+        "premises": [
+          {
+            "text": "En el ensayo Vega, el grupo de recuperación espaciada recordó el 72%.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          },
+          {
+            "text": "En el ensayo Vega, el grupo de relectura recordó el 51%.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          }
+        ],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "Las dos cifras y los grupos correspondientes constan en la fuente."
+      },
+      {
+        "index": 1,
+        "kind": "inference",
+        "premises": [
+          {
+            "text": "La recuperación espaciada obtuvo el 72%.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          },
+          {
+            "text": "La relectura obtuvo el 51%.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          },
+          {
+            "text": "La diferencia entre 72% y 51% es 21 puntos porcentuales y favorece a la recuperación espaciada.",
+            "type": "inference",
+            "entailed": true,
+            "evidence": [],
+            "from": [
+              0,
+              1
+            ]
+          }
+        ],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "La resta de las dos cifras citadas da 21 puntos porcentuales y la cifra mayor corresponde a la recuperación espaciada."
+      },
+      {
+        "index": 2,
+        "kind": "fact",
+        "premises": [
+          {
+            "text": "El resultado medido fue el recuerdo.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          },
+          {
+            "text": "La inteligencia no se midió.",
+            "type": "absence",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "Intelligence was not measured."
+              }
+            ],
+            "from": []
+          }
+        ],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "La fuente informa resultados de recuerdo y declara explícitamente que no se midió la inteligencia."
+      },
+      {
+        "index": 3,
+        "kind": "nonfactual",
+        "premises": [],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "Son etiquetas organizativas de una tabla."
+      },
+      {
+        "index": 4,
+        "kind": "nonfactual",
+        "premises": [],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "Es un separador de formato de tabla."
+      },
+      {
+        "index": 5,
+        "kind": "fact",
+        "premises": [
+          {
+            "text": "El grupo de recuperación espaciada obtuvo 72% en recuerdo.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          }
+        ],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "La fuente atribuye el 72% de recuerdo al grupo de recuperación espaciada."
+      },
+      {
+        "index": 6,
+        "kind": "fact",
+        "premises": [
+          {
+            "text": "El grupo de relectura obtuvo 51% en recuerdo.",
+            "type": "fact",
+            "entailed": true,
+            "evidence": [
+              {
+                "id": "source-4",
+                "quote": "In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%."
+              }
+            ],
+            "from": []
+          }
+        ],
+        "unsupportedParts": [],
+        "explicitInference": false,
+        "supported": true,
+        "reason": "La fuente atribuye el 51% de recuerdo al grupo de relectura."
+      }
+    ]
+  }
+}

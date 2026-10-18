@@ -79,7 +79,7 @@ try {
   const embeddedMain = await pdf.embedPng(tile(0, 0, 160, 160));
   const embeddedRight = await pdf.embedPng(tile(160, 0, 60, 220));
   const embeddedBottom = await pdf.embedPng(tile(0, 160, 160, 60));
-  for (let pageNumber = 1; pageNumber <= 4; pageNumber += 1) {
+  for (let pageNumber = 1; pageNumber <= 6; pageNumber += 1) {
     const page = pdf.addPage([595, 842]);
     page.drawText('REVISTA DE HISTORIA · 2026', { x: 80, y: 810, size: 8, font });
     page.drawText(String(pageNumber), { x: 290, y: 18, size: 8, font });
@@ -128,7 +128,7 @@ try {
       page.drawText('La conclusión mantiene separado el original del texto limpio [1].', { x: 70, y: 725, size: 11, font });
       page.drawText('Referencias', { x: 70, y: 680, size: 16, font: bold });
       page.drawText('[1] Pérez, J. Una referencia de prueba. 2026.', { x: 70, y: 650, size: 10, font });
-    } else {
+    } else if (pageNumber === 4) {
       // The layout that broke the Documentary Index on real papers: the tail of a left-column
       // sentence and the head of the one beside it share a baseline, and grouping fragments by
       // height alone stitched them together — "We introduce two simple global hyperaccuracy".
@@ -150,6 +150,25 @@ try {
       ];
       leftColumn.forEach((text, index) => page.drawText(text, { x: 50, y: 720 - index * 18, size: 10, font }));
       rightColumn.forEach((text, index) => page.drawText(text, { x: 320, y: 720 - index * 18, size: 10, font }));
+    } else if (pageNumber === 5) {
+      // A captioned table reaches the bottom of the page and continues without
+      // a source footer. The next page must retain wrapped cells and stop before
+      // its first clearly separated body paragraph.
+      page.drawText('Table 3. Continued measurements', { x: 70, y: 220, size: 11, font: bold });
+      [['Measure', 'Value'], ['Alpha', '10'], ['Beta', '20']].forEach((row, rowIndex) => row.forEach((cell, column) => page.drawText(cell, {
+        x: [70, 300][column], y: 195 - rowIndex * 18, size: 10, font,
+      })));
+    } else {
+      [['Gamma', '30'], ['Delta', '40'], ['Epsilon', '50']].forEach((row, rowIndex) => row.forEach((cell, column) => page.drawText(cell, {
+        x: [70, 300][column], y: 760 - rowIndex * 20, size: 10, font,
+      })));
+      // This single-column line is a wrapped value for the preceding row.
+      page.drawText('wrapped', { x: 70, y: 700, size: 10, font });
+      page.drawText('detail', { x: 115, y: 700, size: 10, font });
+      // A one-item PDF text line without a paragraph gap stays prose even while
+      // it falls inside the table's broad continuation region.
+      page.drawText('single-item note stays prose.', { x: 70, y: 685, size: 10, font });
+      page.drawText('The following paragraph describes the measurements in prose.', { x: 70, y: 650, size: 10, font });
     }
   }
   const pdfBytes = Buffer.from(await pdf.save());
@@ -226,10 +245,25 @@ try {
   assert.equal(assets.filter((file) => file.startsWith('table-') && file.endsWith('.png')).length, 1, 'complex tables use one faithful visual while retaining a hidden text transcript');
   const sourceMap = JSON.parse(await readFile(path.join(folder, extractedRecord.files.sourceMap), 'utf8'));
   const quality = JSON.parse(await readFile(path.join(folder, extractedRecord.files.qualityReport), 'utf8'));
-  assert.equal(sourceMap.pages.length, 4);
+  assert.equal(sourceMap.pages.length, 6);
   assert.equal(sourceMap.source.sha256, originalHash);
   assert.equal(sourceMap.reader.sha256, createHash('sha256').update(markdown).digest('hex'));
   assert.ok(sourceMap.blocks.every((block) => markdown.slice(block.markdown.start, block.markdown.end).length > 0));
+  const continuedTableBlock = sourceMap.blocks.find((block) => block.kind === 'table' && block.anchors.some((anchor) => anchor.page === 6));
+  assert.ok(continuedTableBlock, 'the continued table retains a page-6 source locator');
+  const continuedTableText = markdown.slice(continuedTableBlock.markdown.start, continuedTableBlock.markdown.end);
+  for (const value of ['Gamma', '30', 'Delta', '40', 'Epsilon', '50', 'wrapped detail']) {
+    assert.ok(continuedTableText.includes(value), `continued table preserves ${value} in its table transcription`);
+  }
+  assert.doesNotMatch(continuedTableText, /single-item note stays prose/);
+  assert.ok(sourceMap.blocks.some((block) => block.kind === 'paragraph'
+    && block.anchors.some((anchor) => anchor.page === 6)
+    && markdown.slice(block.markdown.start, block.markdown.end).includes('single-item note stays prose')),
+  'a zero-cell line inside the broad table region remains searchable prose');
+  const bodyAfterContinuedTable = sourceMap.blocks.find((block) => block.kind === 'paragraph'
+    && block.anchors.some((anchor) => anchor.page === 6)
+    && markdown.slice(block.markdown.start, block.markdown.end).includes('paragraph describes the measurements'));
+  assert.ok(bodyAfterContinuedTable, 'body prose after a visual paragraph gap stays outside the table');
   assert.equal(quality.doubleSpaces, 0);
   assert.equal(quality.softHyphens, 0);
   assert.equal(quality.brokenWordLineWraps, 0);

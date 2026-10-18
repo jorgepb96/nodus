@@ -85,14 +85,6 @@
   "saved": {
     "message": "Nodus'a kaydedildi"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ dosya artık eklendi. Temiz okuma hazırlığı Nodus’ta sürüyor.",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Nodus'ta aç"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "En az bir kaynak seçin."
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ kaynak, $FILES$ ekli dosyayla kaydedildi.",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Zaten Nodus’taydı"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "AGPL kaynak kodu"
+  },
+  "jobHistory": {
+    "message": "Kayıtlar ve indirmeler"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ kaynak · $FILES$ dosya",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ dosya bekliyor",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "İndiriliyor…"
+  },
+  "jobNeedsPermission": {
+    "message": "İzin gerekiyor"
+  },
+  "jobFailed": {
+    "message": "İşlem gerekiyor"
+  },
+  "jobComplete": {
+    "message": "Tamamlandı"
+  },
+  "jobQueued": {
+    "message": "Kayıt sıraya alındı"
+  },
+  "jobContinues": {
+    "message": "Bu pencereyi kapatsanız da kayıt devam eder."
+  },
+  "authorizeDownloads": {
+    "message": "İzin ver ve indir"
+  },
+  "retry": {
+    "message": "Yeniden dene"
   }
 }

@@ -9,7 +9,7 @@ import type {
 } from '@shared/libraryTypes';
 import { canonicalJson } from './libraryRecord';
 
-export const LIBRARY_EXTRACTION_PIPELINE = 'nodus-clean-markdown/11';
+export const LIBRARY_EXTRACTION_PIPELINE = 'nodus-clean-markdown/12';
 
 const COMPONENTS: LibraryAnalysisComponent[] = ['extraction', 'light', 'deep', 'passages', 'ideas', 'embeddings', 'summary'];
 const CONTENT_DERIVATIVES: LibraryAnalysisComponent[] = ['deep', 'passages', 'ideas', 'embeddings', 'summary'];

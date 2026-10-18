@@ -1,0 +1,81 @@
+TAP version 13
+# Subtest: an answer with invoked skills keeps its larger allowance when the window is known
+ok 1 - an answer with invoked skills keeps its larger allowance when the window is known
+  ---
+  duration_ms: 40.927666
+  ...
+# Subtest: the documented output ceiling is recorded only where it is sourced
+ok 2 - the documented output ceiling is recorded only where it is sourced
+  ---
+  duration_ms: 5.974459
+  ...
+# Subtest: the answer budget plus its thinking reserve stays inside what the model will emit
+ok 3 - the answer budget plus its thinking reserve stays inside what the model will emit
+  ---
+  duration_ms: 7.812959
+  ...
+# Subtest: the budget can be asked before a row is written
+ok 4 - the budget can be asked before a row is written
+  ---
+  duration_ms: 6.870875
+  ...
+# PASS: 148 extraction/engine cases; 19 document types, 9 image formats, 4 engines × 15 providers × text/vision, 32 C0 text/binary checks, drop IPC, mixed/duplicate drops, invalid paths, original bytes, persistence, deletion, isolation, scanned PDF, corrupt files and context limits. Inference intercepted; no paid calls.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-attachments.mjs
+ok 2 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-attachments.mjs
+  ---
+  duration_ms: 11227.386417
+  ...
+# [perf][deep] AI concurrency change 0ms provider=openai model=unknown-model active=1 queued=0 currentLimit=1 maximumLimit=1 reason=initial-safe-limit
+# [perf][deep] AI queue wait 6ms provider=openai model=unknown-model class=interactive requestHash=0eef69b5df1ded2737ca8cf465bc11d5ad13886510ffc0deb70aabfabdfd1602
+# (node:60838) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `Electron --trace-deprecation ...` to show where the warning was created)
+# [perf][deep] AI inference 18ms provider=openai model=unknown-model class=interactive requestHash=0eef69b5df1ded2737ca8cf465bc11d5ad13886510ffc0deb70aabfabdfd1602
+# [perf][deep] AI response metadata 0ms provider=openai model=unknown-model class=interactive requestHash=0eef69b5df1ded2737ca8cf465bc11d5ad13886510ffc0deb70aabfabdfd1602
+# [perf][deep] AI concurrency change 0ms provider=deepseek model=deepseek-flash active=1 queued=0 currentLimit=4 maximumLimit=8 reason=initial-safe-limit
+# [perf][deep] AI queue wait 5ms provider=deepseek model=deepseek-flash class=interactive requestHash=7bb33f9a2529ad8fef40cd1058703e60f57bd03eeb533e23c50c067e58d85f25
+# [perf][deep] AI inference 4ms provider=deepseek model=deepseek-flash class=interactive requestHash=7bb33f9a2529ad8fef40cd1058703e60f57bd03eeb533e23c50c067e58d85f25
+# [perf][deep] AI response metadata 0ms provider=deepseek model=deepseek-flash class=interactive requestHash=7bb33f9a2529ad8fef40cd1058703e60f57bd03eeb533e23c50c067e58d85f25
+# [perf][deep] AI queue wait 4ms provider=deepseek model=deepseek-flash class=interactive requestHash=2c22eeb099669b49fd4831afb9da6ef48c303e9bb1d78d7b78f5eb42b021c713
+# [perf][deep] AI inference 2ms provider=deepseek model=deepseek-flash class=interactive requestHash=2c22eeb099669b49fd4831afb9da6ef48c303e9bb1d78d7b78f5eb42b021c713
+# [perf][deep] AI response metadata 0ms provider=deepseek model=deepseek-flash class=interactive requestHash=2c22eeb099669b49fd4831afb9da6ef48c303e9bb1d78d7b78f5eb42b021c713
+# Evidence request: real retrieval, JSON expansion, complete citations, large-window recovery and dispatch passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-evidence-request.mjs
+ok 3 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-evidence-request.mjs
+  ---
+  duration_ms: 7471.145333
+  ...
+# [research] request refused before sending: needs ~12888 (bytes as tokens) > window 4096 for deepseek/deepseek-flash; system 1771; user 8045; output 2048; user fields: history=8004, evidence=6, tools=2
+# [research] request refused before sending: needs ~12888 (bytes as tokens) > window 4096 for deepseek/deepseek-flash; system 1771; user 8045; output 2048; user fields: history=8004, evidence=6, tools=2
+# [research] request refused before sending: needs ~12888 (bytes as tokens) > window 4096 for deepseek/deepseek-flash; system 1771; user 8045; output 2048; user fields: history=8004, evidence=6, tools=2
+# [perf][deep] JSON retry 0ms attempt=1 jsonMode=true invariantRequest=true status=error error=El modelo no tiene suficiente contexto para esta petición. Reduce el tamaño de la tarea, aumenta el contexto del modelo (Context Length / num_ctx si es local) o usa un modelo con más contexto. retry=false
+# [research] request refused before sending: needs ~37843 (bytes as tokens) > window 32768 for custom/unknown; system 1771; user 33000; output 2048
+# [perf][deep] AI concurrency change 0ms provider=deepseek model=deepseek-flash active=1 queued=0 currentLimit=4 maximumLimit=8 reason=initial-safe-limit
+# [perf][deep] AI queue wait 4ms provider=deepseek model=deepseek-flash class=interactive requestHash=795f06b7a84fbc7c93a8daf5e0edba4d65b50a74f4521b8ca1e6ec89e2d3125b
+# (node:60839) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+# (Use `Electron --trace-deprecation ...` to show where the warning was created)
+# [perf][deep] AI inference 9ms provider=deepseek model=deepseek-flash class=interactive requestHash=795f06b7a84fbc7c93a8daf5e0edba4d65b50a74f4521b8ca1e6ec89e2d3125b
+# [perf][deep] AI response metadata 0ms provider=deepseek model=deepseek-flash class=interactive requestHash=795f06b7a84fbc7c93a8daf5e0edba4d65b50a74f4521b8ca1e6ec89e2d3125b
+# [perf][deep] AI queue wait 3ms provider=deepseek model=deepseek-flash class=interactive requestHash=66f6b6be381f3bd114fe22030053f6c59abc0de8307068182437c79f02ee34ac
+# [perf][deep] AI inference 2ms provider=deepseek model=deepseek-flash class=interactive requestHash=66f6b6be381f3bd114fe22030053f6c59abc0de8307068182437c79f02ee34ac
+# [perf][deep] AI response metadata 0ms provider=deepseek model=deepseek-flash class=interactive requestHash=66f6b6be381f3bd114fe22030053f6c59abc0de8307068182437c79f02ee34ac
+# Research context: run isolation, multilingual accounting, output/history reserve, provider metadata and pre-dispatch rejection passed.
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-request-budget.mjs
+ok 4 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-request-budget.mjs
+  ---
+  duration_ms: 3479.646209
+  ...
+# scope receipts: 600 recorded and resolved, 88 of them past the old 512 limit
+# Subtest: /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-scope-receipts.mjs
+ok 5 - /Users/jorgepb96/.codex/worktrees/ffb6/nodus/scripts/test-research-scope-receipts.mjs
+  ---
+  duration_ms: 11089.880667
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11234.298459

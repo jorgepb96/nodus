@@ -24,7 +24,7 @@ const STUBS = {
   '../capabilities/registry': `export const capabilityRegistry = () => ({ providers: new Map(globalThis.__ord.provider ? [['nodus:chemistry', globalThis.__ord.provider]] : []) });`,
   '../reactionIndex': `export const reactionIndexService = () => ({ localDirectory: async () => { if (globalThis.__ord.indexError) throw globalThis.__ord.indexError; return globalThis.__ord.indexDir; } });`,
   './moleculeInspection': `export const chemistryRunner = () => ({ runner: { invoke: async (request) => { globalThis.__ord.calls += 1; return globalThis.__ord.invoke(request); } }, dispose: async () => {} });`,
-  './aiClient': `export const embed = async () => null;`,
+  './aiClient': `export const embedQuery = async () => null;`,
   // No stock lists imported: disconnections are requested without a stock directory.
   './chemistryStock': `export const chemistryStockDirectory = () => null; export const chemistryStockLists = () => [];`,
   // The monomer library resolves its directory through electron's app, which a bundle run under
@@ -417,7 +417,11 @@ test('large-target decomposition searches every distinct fragment, including unn
 
 test('older packages, missing artifacts, failed or incomplete decompositions keep whole-target searches', async () => {
   for (const response of [
-    { artifacts: [] }, decompositionArtifact(decomposition({ atoms: 149 })),
+    // Below DECOMPOSE_ABOVE_ATOMS, which moved 150 -> 80 on 2026-10-14 once the middle of the
+    // range was measured: a whole-target pass carried ORD precedent for no chain at any length
+    // while costing roughly the square of the size. The case this pins is unchanged — too
+    // small to be worth cutting is searched whole — only the number it is just below.
+    { artifacts: [] }, decompositionArtifact(decomposition({ atoms: 79 })),
     decompositionArtifact(decomposition({ linkBonds: 1 })),
     decompositionArtifact(decomposition({ units: null })),
     decompositionArtifact(decomposition({ atoms: undefined })),

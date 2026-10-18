@@ -85,14 +85,6 @@
   "saved": {
     "message": "Nodus に保存しました"
   },
-  "savedSummary": {
-    "message": "$ATTACHMENTCOUNT$ 個のファイルを添付しました。クリーンリーディングの準備は Nodus で続きます。",
-    "placeholders": {
-      "attachmentCount": {
-        "content": "$1"
-      }
-    }
-  },
   "openInNodus": {
     "message": "Nodus で開く"
   },
@@ -174,17 +166,6 @@
   },
   "selectAtLeastOne": {
     "message": "少なくとも 1 件の参考文献を選択してください。"
-  },
-  "savedBatchSummary": {
-    "message": "$COUNT$ 件の参考文献を保存し、$FILES$ 個のファイルを添付しました。",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      },
-      "files": {
-        "content": "$2"
-      }
-    }
   },
   "alreadySaved": {
     "message": "Nodus に登録済み"
@@ -304,5 +285,54 @@
   },
   "privacySourceLink": {
     "message": "AGPL ソースコード"
+  },
+  "jobHistory": {
+    "message": "保存とダウンロード"
+  },
+  "jobProgress": {
+    "message": "$SAVED$/$TOTAL$ 件の文献 · $FILES$ 個のファイル",
+    "placeholders": {
+      "saved": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "files": {
+        "content": "$3"
+      }
+    }
+  },
+  "jobPending": {
+    "message": "$COUNT$ 個のファイルが保留中",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobDownloading": {
+    "message": "ダウンロード中…"
+  },
+  "jobNeedsPermission": {
+    "message": "許可が必要"
+  },
+  "jobFailed": {
+    "message": "確認が必要"
+  },
+  "jobComplete": {
+    "message": "完了"
+  },
+  "jobQueued": {
+    "message": "保存を予約しました"
+  },
+  "jobContinues": {
+    "message": "このウィンドウを閉じても保存は続きます。"
+  },
+  "authorizeDownloads": {
+    "message": "許可してダウンロード"
+  },
+  "retry": {
+    "message": "再試行"
   }
 }

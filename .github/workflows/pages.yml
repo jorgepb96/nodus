@@ -1,7 +1,11 @@
 name: Website
 
-# Automatic validation is selected by CI; this entry point is explicitly manual.
+# Automatic validation is selected by CI. Besides manual runs, one daily deploy
+# keeps the release download counters that the README and the site read current.
 on:
+  schedule:
+    # 23:00 UTC is midnight in Spain in winter (01:00 in summer).
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 permissions:

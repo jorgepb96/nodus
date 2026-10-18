@@ -1,0 +1,15 @@
+{
+  "reviews": [
+    {
+      "reviewId": "review-a09cdf7f494d90f0a68ccc73",
+      "answerSha256": "1d7ea68d3c6d32fdcbfb03273e8b3213644a4b779c1a604120e0b5ec60096525",
+      "sourceHash": "537c01fc48289ad64d10338008e4476d5827f6796b696f7c7866715706ec567a",
+      "reviewer": "/root/followup_dispatcher/serial_source_review_004",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "insufficientEvidenceHandled": true,
+      "notes": "All requested facets are satisfied. The two data rows identify spaced retrieval at 72% and rereading at 51%, matching source-1 (fixture 02, p. 1), which explicitly says participants recalled those percentages. The calculation 72% minus 51% equals 21 percentage points and uses the correct difference unit. The named outcome, recall as a percentage, is directly supported. Every citation resolves to supplied source-1 and supports its associated claim or the transparent calculation. Sources 2\u20136 corroborate the group percentages. The answer makes no intelligence claim; the supplied sources explicitly say intelligence was not measured. No dates or other numerical assertions require verification, and no requested facet lacks evidence."
+    }
+  ]
+}

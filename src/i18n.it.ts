@@ -1,4 +1,7 @@
+import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
+import { SIGN_TRANSLATIONS } from './i18n.sign';
 import { CHAT_ORGANIZATION_HELP_TRANSLATIONS } from './i18n.chatOrganizationHelp';
+import { RESEARCH_CHAT_SELECTION_TRANSLATIONS } from './i18n.researchChatSelection';
 import { ACADEMIC_INTERFACE_TRANSLATIONS } from './i18n.academicInterface';
 import { BACKUPS_TRANSLATIONS } from './i18n.backups';
 import { SCRIPTOR_AI_TRANSLATIONS } from './i18n.scriptorAi';
@@ -16,6 +19,7 @@ import { BOOKMARK_SORT_TRANSLATIONS } from './i18n.bookmarkSort';
 import { CONCILIUM_TRANSLATIONS } from './i18n.concilium';
 import { DRIFT_TRANSLATIONS } from './i18n.drift';
 import { RESEARCH_ATTACHMENT_TRANSLATIONS } from './i18n.researchAttachments';
+import { RESEARCH_VERIFICATION_TRANSLATIONS } from './i18n.researchVerification';
 import { VAULT_FILE_DROP_TRANSLATIONS } from './i18n.vaultFileDrop';
 import { DOCUMENT_SKILLS_TRANSLATIONS } from './i18n.documentSkills';
 import { RESEARCH_PROMPT_TRANSLATIONS } from './i18n.researchPrompts';
@@ -108,6 +112,7 @@ export const IT: Record<string, string> = {
   ...RESEARCH_ACTIVITY_TRANSLATIONS["it"],
   ...RESEARCH_CHAT_HISTORY_TRANSLATIONS["it"],
   ...RESEARCH_ATTACHMENT_TRANSLATIONS['it'],
+  ...RESEARCH_VERIFICATION_TRANSLATIONS['it'],
   ...VAULT_FILE_DROP_TRANSLATIONS['it'],
   "Research chat": "Research chat",
   "Elige al menos una base de datos.": "Scegli almeno un database.",
@@ -123,6 +128,7 @@ export const IT: Record<string, string> = {
   ...ADAPTIVE_CONCURRENCY_TRANSLATIONS.it,
   ...DATABASE_DEEP_RESEARCH_TRANSLATIONS.it,
   ...MODEL_SETTINGS_TRANSLATIONS.it,
+  ...EMBEDDING_GEMMA2_TRANSLATIONS['it'],
   ...DICTIONARY_TRANSLATIONS.it,
   'Tamaño de Nodi': 'Dimensione di Nodi',
   'El 100 % conserva el tamaño original de Nodi y es el máximo. Puedes reducirlo hasta el 40 %.': 'Il 100% mantiene la dimensione originale di Nodi ed è il massimo. Puoi ridurlo fino al 40%.',
@@ -8406,4 +8412,7 @@ export const IT: Record<string, string> = {
   "No se pudo guardar el estado de lectura.": "Impossibile salvare lo stato di lettura.",
   "Exportación preparada": "Esportazione pronta",
   "El código ha caducado. Genera otro código y QR para vincular el móvil.": "Il codice è scaduto. Genera un altro codice e QR per collegare il cellulare.",
+  ...RESEARCH_CHAT_SELECTION_TRANSLATIONS["it"],
 };
+
+Object.assign(IT, SIGN_TRANSLATIONS['it']);

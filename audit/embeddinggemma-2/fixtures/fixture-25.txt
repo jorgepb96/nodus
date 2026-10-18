@@ -1,0 +1,3 @@
+Linde · archive 25
+
+La API Linde conserva eventos durante 14 días. El endpoint /restore recupera elementos borrados, pero no cuentas cerradas. La versión 2 cambió el límite de 7 a 14 días.

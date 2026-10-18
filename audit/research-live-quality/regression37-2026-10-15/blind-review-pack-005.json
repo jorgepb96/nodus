@@ -1,0 +1,57 @@
+{
+  "format": "nodus.research-answer-blind-review-pack/1",
+  "reviews": [
+    {
+      "reviewId": "review-7b4031d9369a2b27ba3901ad",
+      "answerSha256": "cf9a54f5f8cc242491da3217658037a32383b76f440907fa66ab82ff9463bb2d",
+      "sourceHash": "c0813454f2ba0c437b404250be292c69abf3096453120e1c4d63b24fd988aa22",
+      "question": "Can Vega establish a difference in IQ, or only recall?",
+      "language": "en",
+      "answer": "No. The Vega excerpt says intelligence was not measured, so it cannot establish an IQ difference. [fixture 02, p. 1](nodus://review-source/review-7b4031d9369a2b27ba3901ad/1)\n\nIt reports recall: spaced retrieval participants recalled 72%, compared with 51% for rereading. [fixture 02, p. 1](nodus://review-source/review-7b4031d9369a2b27ba3901ad/1)",
+      "sources": [
+        {
+          "sourceRef": "source-1",
+          "title": "fixture 02, p. 1",
+          "text": "Source title: fixture 02\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/1"
+        },
+        {
+          "sourceRef": "source-2",
+          "title": "public SAM00001, p. 24",
+          "text": "Source title: public SAM00001\nSource locator: p. 24\nEvidence provenance: source\nVerbatim excerpt:\nMask quality rating (e) NDD20 [100] box input (ViTDet-H [62] baseline): LVIS v1 [44] 2e-05 (0.11, 0.42) N/A N/A ## Table 8: Statistical tests showing significance that SAM has higher mask quality ratings than baseline and single-output SAM. P-values are calculated by paired t-test, while confidence intervals for the difference in mean scores are calculated by paired bootstrap on 10k samples. All p-values are significant, and all confidence intervals exclude zero. ## Results. Fig. 18 shows histograms over ratings for each dataset in the single-point experiments. We run statistical | 6.3 ± 0.16, RITM | 8.3 ± 0.09, SAM | | - | - | | 7.5 ± 0.13, SAM - single output | 8.5 ± 0.13, GT | | 2 3 4 | 5 6 7 8 9 10 | | 7.1 ± 0.12, RITM | 8.3 ± 0.08, SAM | | 7.9 ± 0.11, SAM - single output | 8.4 ± 0.09, GT | | 6.1 ± 0.15, RITM | 7.2 ± 0.13, SAM | | 7.7 ± 0.12, SAM - single output | 8.8 ± 0.09, GT | Mask quality rating (b) VISOR [28, 27] Percent of ratings ## 1 2 3 4 5 6 7 8 9 10 Mask quality rating (f) OVIS [81] ## For instance segmentation, Fig. 11 of the main text shows the histogram for ratings. To compare to COCO ground truth, we additionally include 794 ratings of COCO ground truth masks that were collected during our testing of the human review process. These masks were presented to raters using an identical setup as the LVIS results. For fair comparison, results for LVIS in Fig. 11 were subsampled to the same 794 inputs",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/2"
+        },
+        {
+          "sourceRef": "source-3",
+          "title": "fixture 17, p. 1",
+          "text": "Source title: fixture 17\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/3"
+        },
+        {
+          "sourceRef": "source-4",
+          "title": "fixture 27, p. 1",
+          "text": "Source title: fixture 27\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/4"
+        },
+        {
+          "sourceRef": "source-5",
+          "title": "fixture 22, p. 1",
+          "text": "Source title: fixture 22\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/5"
+        },
+        {
+          "sourceRef": "source-6",
+          "title": "fixture 12, p. 1",
+          "text": "Source title: fixture 12\nSource locator: p. 1\nEvidence provenance: source\nVerbatim excerpt:\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+          "page": null,
+          "citation": "nodus://review-source/review-7b4031d9369a2b27ba3901ad/6"
+        }
+      ]
+    }
+  ]
+}

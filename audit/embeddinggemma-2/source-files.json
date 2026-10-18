@@ -1,0 +1,502 @@
+[
+  {
+    "file": ".gitattributes",
+    "sha256": "2f403681bd9346b8054315fc57f2852f3d2d1c4da37c7897d818288857a4e4e2"
+  },
+  {
+    "file": "docs/embeddinggemma-2.md",
+    "sha256": "f0c8af5d3e446a6462a5fb805b47b3ac48edd752f33bf070b683885adf5ad387"
+  },
+  {
+    "file": "electron/ai/aiClient.ts",
+    "sha256": "f05de32a6673296c4dc4854baac62403cbef8fef60f5f8670cb2cc3bf239e2d7"
+  },
+  {
+    "file": "electron/ai/deepScan.ts",
+    "sha256": "d36abd6ddea7238c683efbef363ebecb427e87bb724113c705d427609793de84"
+  },
+  {
+    "file": "electron/ai/dictionary.ts",
+    "sha256": "13420e4b36466fb97f92e84b9207507d297057732f3519a11a9fc273d11533ce"
+  },
+  {
+    "file": "electron/ai/documentProfile.ts",
+    "sha256": "1e4ee3f8f745651918994b17be2734ebc24cb1fe6402d81f644ba89e89591c6f"
+  },
+  {
+    "file": "electron/ai/documentaryExtraction.ts",
+    "sha256": "6dc8bbd51d78d898a1816e6f71e7cbfe2ae4e2bf739337df13c48bb501588ff0"
+  },
+  {
+    "file": "electron/ai/documentaryPreparation.ts",
+    "sha256": "94901195fbd594ca3e199ca9ddf52bf4b9614caab580a931f38042c5de184a87"
+  },
+  {
+    "file": "electron/ai/embeddingGemma2Host.ts",
+    "sha256": "e10bb751e5d01e0d06a098ccd4a95e9a25d0e3bcacd21a9b9500e2521c08974a"
+  },
+  {
+    "file": "electron/ai/embeddingPipeline.ts",
+    "sha256": "6f0f82f795421c14c2dc277582e3e9bd7e919dae6ad055bc426492eb33c528ba"
+  },
+  {
+    "file": "electron/ai/folderIdeaSuggestions.ts",
+    "sha256": "97c51b77511d9a5183afeb3c33441fa6b7eabbb5c4efd48ed8bde0b702283121"
+  },
+  {
+    "file": "electron/ai/genealogyChatContext.ts",
+    "sha256": "e8ad0c7750ce43b95235dce598661141085879b862c49edbed4388604fce9699"
+  },
+  {
+    "file": "electron/ai/genealogyDeepResearch.ts",
+    "sha256": "e0baee2b59acf66f189151e608d8692ec52c14db82677e5abb0d8c928a2e3b14"
+  },
+  {
+    "file": "electron/ai/hierarchicalRetrieval.ts",
+    "sha256": "a506cb7796ef9cb18e9d3108db3b37375fc50a5fc2e69acb78ca6e416f315915"
+  },
+  {
+    "file": "electron/ai/hybridCorpusSearch.ts",
+    "sha256": "0b087bd8144d4c26061d2d897ccf032f0507fb9dacc43e50b581b0c39b74338e"
+  },
+  {
+    "file": "electron/ai/immersion.ts",
+    "sha256": "920c60d3dd93e27136b0c2ff7dd6a31b494ec6baad12e62a981da59d43caf42b"
+  },
+  {
+    "file": "electron/ai/liveRelations.ts",
+    "sha256": "1cb5673ad3b5437285e3fda66cb6fdadd801ab5c4cf858667724f2a69e18aee0"
+  },
+  {
+    "file": "electron/ai/manuscriptVerifier.ts",
+    "sha256": "115a84761d7e7c984a5b7fa704351583dfd9ec7cf779816327789344bc9c4fe4"
+  },
+  {
+    "file": "electron/ai/nodusLocalAi.ts",
+    "sha256": "f537b4d74e80b4013785af7caf7566879c254302779f26a2a878d3f8634f9961"
+  },
+  {
+    "file": "electron/ai/primarySourceSearch.ts",
+    "sha256": "cd0efa645d91ba6ae3247d55d30b71e44fa77fa9bade71ac0364885b1610c5ab"
+  },
+  {
+    "file": "electron/ai/primarySourcesChatContext.ts",
+    "sha256": "1af29dc957b52159a7fed74af85f7f531c01c0c5fc4f92c0afce7a4aedac4cc7"
+  },
+  {
+    "file": "electron/ai/researchAssistant.ts",
+    "sha256": "780662cb7e6ba729ac72fd8c7e95b5a6cbd48b738d934e40ef4a830e46e9f16c"
+  },
+  {
+    "file": "electron/ai/researchCorpusInventory.ts",
+    "sha256": "15d007f64a2d47bf66520ca5becce41bba913a626d4f757c3fea864dba6c6280"
+  },
+  {
+    "file": "electron/ai/researchCorpusRun.ts",
+    "sha256": "d0577568148383aba045b06eab3ef8297329c3711c435e60f8d0c0e14e1fce61"
+  },
+  {
+    "file": "electron/ai/researchMap.ts",
+    "sha256": "734c8f6e9285786499b245200341a724eac53194d409112ca5340c56bcf31ac2"
+  },
+  {
+    "file": "electron/ai/researchPreparationPreflight.ts",
+    "sha256": "ad08d3ac8203b414cc9e2aa6ad7c3f684fbe9b9f2ca90e5df77c769e8cf2fbcd"
+  },
+  {
+    "file": "electron/ai/researchWebStep.ts",
+    "sha256": "24dd5a45c67acfa8e84def6af3fed564ccfb1b31cb41c507833ddc3b09a294d7"
+  },
+  {
+    "file": "electron/ai/semanticSearch.ts",
+    "sha256": "a5c58af51f1096bb5598600b8cff2e7992749eb4d11e46b9906cf6a01cec0919"
+  },
+  {
+    "file": "electron/ai/strictEmbeddings.ts",
+    "sha256": "bf9211d479c2486684249308e22c59ea4c917e1d8bce7b0cc16f74c569e2e35c"
+  },
+  {
+    "file": "electron/ai/studyGuide.ts",
+    "sha256": "dd8d90906621c48c29342695a4bc0cdcad187be55b4f9510250cec6779782c5d"
+  },
+  {
+    "file": "electron/ai/studyKnowledge.ts",
+    "sha256": "c9910d9f55bcf1d573c6c49273c196df5d7220cb718c25ebbfaa370bddeb0fde"
+  },
+  {
+    "file": "electron/ai/studyMaterialIndex.ts",
+    "sha256": "063429bb675e6f255371f11db4c98b5726fe7ae8800dddb3cbe05fe60fc8ed01"
+  },
+  {
+    "file": "electron/ai/studySearch.ts",
+    "sha256": "b19267d8733ecc12cc7d545cc092b0a41ed5e6151ed1c18f29a312a0ebcfbeab"
+  },
+  {
+    "file": "electron/ai/summaryScan.ts",
+    "sha256": "dd18819e100d9e05a0ebb0427c9149e6fc9eb736a564e617761c1adf9c483795"
+  },
+  {
+    "file": "electron/ai/synthesisEvidence.ts",
+    "sha256": "46c20d9d13170824022f667c11c84c3a17308cb94660b6c52536db49b4fde29f"
+  },
+  {
+    "file": "electron/ai/writingWorkshop.ts",
+    "sha256": "924e050f339e9bb3bbef4732fbc5572d5034201c22fb93e7d8b37139e06f8408"
+  },
+  {
+    "file": "electron/archive/archiveDiscovery.ts",
+    "sha256": "31030f40194462c1e87b55b58d9edf82af1720e60608e8d1b7da66dd0cb321c8"
+  },
+  {
+    "file": "electron/db/manualIdeasRepo.ts",
+    "sha256": "69c6daedc477fb1f5609c85ec28e3c11eacb1bf957734f9b617b1cf48dec85ad"
+  },
+  {
+    "file": "electron/db/settingsRepo.ts",
+    "sha256": "489512bc8ca1d250cefc47290113c0918b87e19fcd3f2316d1428f0f3925da13"
+  },
+  {
+    "file": "electron/db/workSummariesRepo.ts",
+    "sha256": "353cd09ef16514abbe718896114a8b1da5c03f48941699db8f58656e6b0b1b39"
+  },
+  {
+    "file": "electron/ipc/academic.ts",
+    "sha256": "5f52cb0da420a3b35183ca48a6e0259a6a3de170439a26340e6f238696bd137f"
+  },
+  {
+    "file": "electron/ipc/testimonies.ts",
+    "sha256": "32c2cb415b9d206819ae52f2e3dad87567005e538deca48541b14c6aea67df31"
+  },
+  {
+    "file": "electron/library/libraryExtractionQueue.ts",
+    "sha256": "1b6976db12b5be549498bc77af1c13b57fef2f5feb764423faada0d9333d6f8f"
+  },
+  {
+    "file": "electron/library/libraryExtractionWorkerHost.ts",
+    "sha256": "a685d682c6e0e218ce061726a56f82ef843c2a5e0a31b4580036318acbb078bf"
+  },
+  {
+    "file": "electron/library/libraryOperations.ts",
+    "sha256": "ed2e40702e5c14a96c83cf1c75de1527bafb3894e896e88eec6610a938300da1"
+  },
+  {
+    "file": "electron/mcp/tools.ts",
+    "sha256": "28cf102031ac7f15e3e86cc28767a49274124de94f3cee1ad362684eadf97faf"
+  },
+  {
+    "file": "electron/qa/embeddingTrace.ts",
+    "sha256": "c4a78faf572696afc5b69062ef371519aacef8a40742f94b346b255c5847810d"
+  },
+  {
+    "file": "electron/serverSync/serverVectors.ts",
+    "sha256": "eb3e6b25fb88763bc77ff63b2b1a9efffced237666c6de0e4f485cb125c70b4c"
+  },
+  {
+    "file": "electron/vaults/vaultRegistry.ts",
+    "sha256": "1e48874ad818499cb117b752b6c57fb495b907129f38fdb838aaea4e0f770a73"
+  },
+  {
+    "file": "electron/workers/backgroundProcess.ts",
+    "sha256": "f1c50addded4c17943ed987dbef3fee57b37c9e4aa321d5063e4ef5fe444149e"
+  },
+  {
+    "file": "electron/workers/documentaryRetrievalWorker.ts",
+    "sha256": "3a4c41878b9f09f22182a828d81b293e57f5b579dc35376d5a88908d43072895"
+  },
+  {
+    "file": "electron/workers/embeddingGemma2Worker.ts",
+    "sha256": "739102de7882130c753312dad68098fdcf812676c25c0caf87b4dbcbbe02270a"
+  },
+  {
+    "file": "legal/EMBEDDINGGEMMA_2_NOTICE.md",
+    "sha256": "e8fe50ba71aea45dcba0f56b07a75bbb3718d78066bb52adc6d0c73afaf5911f"
+  },
+  {
+    "file": "package-lock.json",
+    "sha256": "21258d542653578f9feafc2faf4ba9ff7da75be8478724088211a5c5e0ddb435"
+  },
+  {
+    "file": "package.json",
+    "sha256": "1f61b75b45c004ad18da17902d2271c4426a1a8ed63cf65c190d7c81f1dd3e09"
+  },
+  {
+    "file": "scripts/e2e-embeddinggemma.mjs",
+    "sha256": "d3dd65953fa29fb04f34e9b8587426e958f09ea0d8b8de7d6637be98835798c8"
+  },
+  {
+    "file": "scripts/e2e-smoke.mjs",
+    "sha256": "d6ce96e0f88cfa517e95dfcd0728e073bdffffba88dcc4d66bae517457465950"
+  },
+  {
+    "file": "scripts/embeddinggemma-corpus.mjs",
+    "sha256": "bd7ef31390754ebbc05dfd75e553b020bd5c1b3b228d67547725e0b1f15631c3"
+  },
+  {
+    "file": "scripts/embeddinggemma-desktop-capacity.mjs",
+    "sha256": "399e7f57249c88b954bfee03f7f0dd65ef191af15f08c8b96e9cac661a704721"
+  },
+  {
+    "file": "scripts/embeddinggemma-legacy-worker.cjs",
+    "sha256": "a8b6e7e9dd6d24ee1b57b53f1a862249959254556f8a6366cd5c1710fec109ee"
+  },
+  {
+    "file": "scripts/embeddinggemma-native-server.mjs",
+    "sha256": "13270b9f6c025de2d718431a8e97ad01eefa0bd8a2cce339846bee19afecece8"
+  },
+  {
+    "file": "scripts/embeddinggemma-package-smoke.mjs",
+    "sha256": "3c5cd989ca905008487f37b847e30ef82956a2674e81b56478f1eb90b3f3acf2"
+  },
+  {
+    "file": "scripts/embeddinggemma-product-campaign.mjs",
+    "sha256": "bdf9f0b776364df9c56dfb7298b371f6149319d3420cd881491697932f8c4216"
+  },
+  {
+    "file": "scripts/embeddinggemma-qa.mjs",
+    "sha256": "f23a2e5bd4d918fb27b9acbbfba85ffc7e365e0bf64679fdb3567d3e5b77bd70"
+  },
+  {
+    "file": "scripts/embeddinggemma-report.mjs",
+    "sha256": "2c0bb00928ac55519e7342d5d9e27437477c981b36241c86389588626c80694f"
+  },
+  {
+    "file": "scripts/embeddinggemma-restart-preparation.mjs",
+    "sha256": "58fa2c79af2a24074ef4ea1579860207f689129ce5632ebcd7baae387d6b13b1"
+  },
+  {
+    "file": "scripts/lib/embedding-academic-analysis.mjs",
+    "sha256": "9cedc98d53c99e0c29d4bee64bf3e8edc7dbc6c1b69b233890b2b795f91344fe"
+  },
+  {
+    "file": "scripts/lib/embedding-native-failures.mjs",
+    "sha256": "3c224910ca0a659b16dd6fd99412c1a4fb3e4eeb1c099f3e0cd3c740ab15b6bc"
+  },
+  {
+    "file": "scripts/lib/embedding-product-chat.mjs",
+    "sha256": "6fed289ebec74837e01666482bf8ef9fbbbd4ef96e94191ec5df35a07e7993a4"
+  },
+  {
+    "file": "scripts/lib/embedding-product-lifecycle.mjs",
+    "sha256": "502de9f054da518be617d9477040839c5694205235feed8f5bce535d6bf32317"
+  },
+  {
+    "file": "scripts/lib/embedding-product-retrieval.mjs",
+    "sha256": "406f782c36606cd550da6c1bee5a8bfba764da32cfa2d2ba99c58611a8c88db4"
+  },
+  {
+    "file": "scripts/lib/research-app-harness.mjs",
+    "sha256": "c3bb665c5cf677b575786246e7b08208f3463c6e5d00f7f4136187e1ce72913d"
+  },
+  {
+    "file": "scripts/research-isolation.mjs",
+    "sha256": "fa57f4278a36b3438a717e6d5cd7cfc48c84e5406069b2357928483d9dc9500d"
+  },
+  {
+    "file": "scripts/research-provider-proxy.mjs",
+    "sha256": "6534d863b2039c97bcc74fa4bc94f64300a80c2e9e88e3dd58b22b1c8e5cf137"
+  },
+  {
+    "file": "scripts/research-test-credentials.mjs",
+    "sha256": "aec30ea7a9d9a0f52bbd191bb748cab72b00f5e80c278dab4f02fd72cf06b036"
+  },
+  {
+    "file": "scripts/test-documentary-throughput.mjs",
+    "sha256": "9c1076cc239b4767a64f81b773248e91033dc372f31237b07e251fc43ed35388"
+  },
+  {
+    "file": "scripts/test-embeddinggemma-execution.mjs",
+    "sha256": "73cbb4d7f91f0ac071b1ed78ab898a092f8abf229ae7e6a5d7a4887698269b5d"
+  },
+  {
+    "file": "scripts/test-embeddinggemma-host.mjs",
+    "sha256": "5cd962232542bb57d95ef324cb35fea68c42acf7787a681b332b48fa4048bb18"
+  },
+  {
+    "file": "scripts/test-embeddinggemma-server.mjs",
+    "sha256": "cf2806e8d12223a1c752cc0f2814f3b2b543b2fdac4122be09405c5d7610ea9f"
+  },
+  {
+    "file": "scripts/test-embeddinggemma2.mjs",
+    "sha256": "0f67c83ef11ce8d4f36ca9635acb3d7093c475193050af74ea199bf290abe445"
+  },
+  {
+    "file": "scripts/test-hierarchical-retrieval.mjs",
+    "sha256": "37642c16c065755482902c662031341208730849b756c8c2e3af4327e377b828"
+  },
+  {
+    "file": "scripts/test-hybrid-corpus-search.mjs",
+    "sha256": "186008ac584439c38898a828398a27d54c81536ffa65c9497a4beee78aa491f5"
+  },
+  {
+    "file": "scripts/test-library-item-management.mjs",
+    "sha256": "ec3ce206f16e7c4fab093d7a99d44e04ba767c2b856424d6fde7001bcb0338f8"
+  },
+  {
+    "file": "scripts/test-local-ai-models.mjs",
+    "sha256": "78867edcb3e31f5f234c1cbcc5eb9bb79364371023ab4a0f4cebda6284d0b76b"
+  },
+  {
+    "file": "scripts/test-mcp.mjs",
+    "sha256": "f7b6bd8ff71d08dd4bd68e6ecd114a5a5858f6da5f6ace3fc27c284edbbccfef"
+  },
+  {
+    "file": "scripts/test-project-instructions.mjs",
+    "sha256": "ad982edd6adbd84e409593851b6ed6960bda679dedc9aa4f2cbf0f696ea40077"
+  },
+  {
+    "file": "scripts/test-research-actions.mjs",
+    "sha256": "5219da1c1b2d11b7f3a75119d190df781e8091ae128809eb57c4c65320a6f3b1"
+  },
+  {
+    "file": "scripts/test-research-chat-agent.mjs",
+    "sha256": "4333833ff430f7708c2e0b3a2793fc3231247c9daa6fac1d0a8d6d54c0c64ec3"
+  },
+  {
+    "file": "scripts/test-research-concilium.mjs",
+    "sha256": "877aed8c47cf81886fea32802e6ac8fc395e35f9f6d5e5838ffd8d4a3cd97bd6"
+  },
+  {
+    "file": "scripts/test-research-corpus-run.mjs",
+    "sha256": "8d7ccf7fa368b4152b7271664394071cbe5a3e33fbba3c1f34934597804ff3b4"
+  },
+  {
+    "file": "scripts/test-research-notebook-status.mjs",
+    "sha256": "623b5c790854d2287ee5d53264f387ee365ca7c1c8aba8ac25e517a57b4a8036"
+  },
+  {
+    "file": "scripts/test-research-null-idea-statement.mjs",
+    "sha256": "6df0e73f6ba6bea8165177029834ed6d81463ea2725b8036fedd9cb5c8b4324b"
+  },
+  {
+    "file": "scripts/test-research-provider-proxy.mjs",
+    "sha256": "8ff9895bfb496196f63cf45c46ffdd4d05b83fd63db2e534d73e29555977053a"
+  },
+  {
+    "file": "scripts/test-research-source-filters.mjs",
+    "sha256": "243a6829e7ec359776e3680878ba42e9c87cf09836a52fa05bc0a2ead1787d85"
+  },
+  {
+    "file": "scripts/test-research-synthesis-context.mjs",
+    "sha256": "07fc0783a7c55910c75d35ef64c58c5b4ec55d173e0784c726f43de0eded11e9"
+  },
+  {
+    "file": "scripts/test-research-system-prompts.mjs",
+    "sha256": "31bf94c8e0a49de4891740fad26414ef3c70b3149e7ca2837a7478ddebb391d8"
+  },
+  {
+    "file": "scripts/test-research-zotero-agents.mjs",
+    "sha256": "30954954d715f13bbb62264f8ba1de2aaaa3778b3fc3adb6b7478fc0aa3a2f79"
+  },
+  {
+    "file": "scripts/test-synthesis-evidence-without-ord.mjs",
+    "sha256": "b93574576189c299797409d4e7d74773d7928eea1e06d546296a67a03ba0ab4e"
+  },
+  {
+    "file": "scripts/test-textbook-rerank.mjs",
+    "sha256": "7c569c3e563f378de786e729627e778d997186d1fa28be04eab01ec01b6aa20a"
+  },
+  {
+    "file": "scripts/test-writing-workshop-retrieval-modes.mjs",
+    "sha256": "372a3ccd4e650dc4d7dd0ff20c27ca601e3617ba61b3b9cbc162795cd9723fcb"
+  },
+  {
+    "file": "server/lib/core/vectors.mjs",
+    "sha256": "3ef0ddd9e9d6e9c12eced4b62e6b116490a25a3d2fa8a9149fc3dac403bb37ea"
+  },
+  {
+    "file": "server/lib/routes/api.mjs",
+    "sha256": "c3fe5adffdc84bdcc4e0ca859f69f5dde33b92e246cd8337b8d1b8e866e7bb83"
+  },
+  {
+    "file": "shared/documentaryFormats.ts",
+    "sha256": "aefd42bb9410aed1a1de07fece609aa9f83f1356aabe80e83246ad7fcae7ef86"
+  },
+  {
+    "file": "shared/embeddingGemma2.ts",
+    "sha256": "50399a61b94311c6d143ee715241a717881e9657ba04e00d8db0f7929f34f8cc"
+  },
+  {
+    "file": "shared/embeddingGemma2Errors.ts",
+    "sha256": "bf081477de1145a72daf56381000647b252c45827da163f31b38e2f38f2fd2ad"
+  },
+  {
+    "file": "shared/localAiModels.ts",
+    "sha256": "77071db74c41cc8d2343e4fdab292f45088db7e5c92af8519282381136b2f486"
+  },
+  {
+    "file": "shared/mainProcessErrors.ts",
+    "sha256": "020553ba366cfb8e98c9af591e1a716b37c4ee1811930d84bcc02312d9d990db"
+  },
+  {
+    "file": "shared/researchCorpus.ts",
+    "sha256": "740ecef724821e8d7f1ba67b68437c599ea216f725899f459e77215fb0af7e1c"
+  },
+  {
+    "file": "site/sitemap.xml",
+    "sha256": "8361805aa204b6a37256db926c1f26f1ba553c1bebfbec09e16d3e75d268aff1"
+  },
+  {
+    "file": "src/components/EmbeddingModelControl.tsx",
+    "sha256": "98a0932d1df56d844b890a4485a4b60fb180b66a500e090c66086c1e78998e64"
+  },
+  {
+    "file": "src/components/LocalAiModelsSettings.tsx",
+    "sha256": "d14c851ece46e9a51f25ec4573386f7bdd10924792d56fcb6b0d3b8900150925"
+  },
+  {
+    "file": "src/components/ResearchNotebookControl.tsx",
+    "sha256": "8e590c45b6432bdd384cd6b103b5b72f9686a2184d2f7eab615c103485487056"
+  },
+  {
+    "file": "src/i18n.de.ts",
+    "sha256": "8f02e827b99f82a120a74938ad490c74a61239cf4a7ac02a1f4160dca0487628"
+  },
+  {
+    "file": "src/i18n.embeddingGemma2.ts",
+    "sha256": "4e7cc52c1168d0a4d4b869ac747ee03fda7aec65f356f1fb9b0ddc8818650453"
+  },
+  {
+    "file": "src/i18n.en.ts",
+    "sha256": "f5f1a700b17a35777adbcc643283a42ef2781f7a471ea3e488f4dda5dd3a292e"
+  },
+  {
+    "file": "src/i18n.fr.ts",
+    "sha256": "99060a834da0dbe9fd4669e4cdacbb3868cb090181970cb7ffadfaf0dc38ce71"
+  },
+  {
+    "file": "src/i18n.it.ts",
+    "sha256": "548ef60c6d6e9d5be285e2381bd527d1e77284ff867d7255671e5b9df256b76b"
+  },
+  {
+    "file": "src/i18n.ja.ts",
+    "sha256": "d4fa6d1449d16dea7ff18c1614f949c481d2df5eb75954397ad9fc7682b29516"
+  },
+  {
+    "file": "src/i18n.ko.ts",
+    "sha256": "dac5b22a643c76bc4d161207398b03b79d6254ad93a7dbc21e6aa517d138eb15"
+  },
+  {
+    "file": "src/i18n.pt-BR.ts",
+    "sha256": "3bfdcad38468f903e3078ae45b076b73f0c6b2135b75712861f81e351ab01267"
+  },
+  {
+    "file": "src/i18n.pt.ts",
+    "sha256": "54f0dff484615a9ff19e837623267730af801e8e80859c335a6180431b7303c7"
+  },
+  {
+    "file": "src/i18n.tr.ts",
+    "sha256": "dda5033493a788b2b2fa88a6d0882ee69c8ee2640bd16b11a22aa4023008c503"
+  },
+  {
+    "file": "src/i18n.zh-CN.ts",
+    "sha256": "1123241e1e665c88e85b74510d10d0d8f35110c08c234dc56d6e76a15ec8e43d"
+  },
+  {
+    "file": "src/i18n.zh-TW.ts",
+    "sha256": "db54b4eff219b98850812433cd32a4323c650e33f321743b193b1375a7e42acc"
+  },
+  {
+    "file": "vite.config.ts",
+    "sha256": "1b19fb0e9c810a4552192b9abc45e569b56def7be20a838a2bcee4aa7ed973ef"
+  }
+]

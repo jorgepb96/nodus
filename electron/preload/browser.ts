@@ -136,6 +136,9 @@ export const browserApi = {
     ipcRenderer.on('browser:media', listener);
     return () => ipcRenderer.removeListener('browser:media', listener);
   },
+  listBrowserCaptureJobs: () => ipcRenderer.invoke('browser:captureJobs:list'),
+  enqueueBrowserCaptures: (requests: BrowserConnectorCaptureRequest[]) => ipcRenderer.invoke('browser:captureJobs:enqueue', requests),
+  retryBrowserCaptureJob: (id: string) => ipcRenderer.invoke('browser:captureJobs:retry', id),
   captureBrowserPage: (): Promise<BrowserCapturePreview | null> => ipcRenderer.invoke('browser:capturePage'),
   saveBrowserCapture: (request: BrowserConnectorCaptureRequest, includeSnapshot: boolean): Promise<BrowserConnectorSaveResult> =>
     ipcRenderer.invoke('browser:saveCapture', request, includeSnapshot),

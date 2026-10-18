@@ -7,6 +7,7 @@ import type {StudyAssistantRequest} from '../../shared/studyAssistant';
 import {isResearchEffort} from '../../shared/researchReasoning';
 import {validateConcilium} from '../../shared/researchConcilium';
 import {DEFAULT_RESEARCH_CHAT_SELECTION} from '../../shared/researchChatDefaults';
+import {researchContextLayers,researchContextWeb,withResearchContextLayers} from '../../shared/researchContextLayers';
 import {validateRetrievalSettings} from '../../shared/researchCorpus';
 import {PROVIDER_LABELS,AI_PROVIDERS} from '../../shared/providers';
 import type {ModelRef} from '../../shared/types';
@@ -40,6 +41,7 @@ export async function mobileLiveChatConfiguration(kind:string,selected?:ModelRef
   const profile=researchReasoningProfile(model,info);
   return {version:1,vaultId:getActiveVault().id,kind,model,providers:AI_PROVIDERS.map(id=>({id,name:PROVIDER_LABELS[id]})),favorites:settings.favorites,
     selection:structuredClone(DEFAULT_RESEARCH_CHAT_SELECTION),webSearch:settings.researchWebSearch,
+    researchAnswerVerification:settings.researchAnswerVerification??'off',
     thinkingEffort:researchEffortFor(settings.researchEffortByModel,model,info),efforts:researchEffortChoices(profile),
     catalogueStatus:catalog?.status??'unreadable',skills:listChatSkills().map(skill=>({id:skill.id,name:skill.name}))};
 }
@@ -63,7 +65,12 @@ function validate(raw:unknown,identity:MobileChatJobIdentity):MobileLiveChatRequ
   if(generation.selection!==undefined) {
     const s=generation.selection,flags=['ideas','themes','contradictions','gaps','readingPath','authors','documents','passages','graph'];
     if(!object(s)||Object.keys(s).some(key=>![...flags,'graphParts','layers','retrieval','sourceFilter','notebookId'].includes(key))||flags.some(key=>typeof s[key]!=='boolean')||!object(s.graphParts)||Object.keys(s.graphParts).some(key=>!['ideaNodes','themeNodes','ideaEdges','authorGraph'].includes(key))||['ideaNodes','themeNodes','ideaEdges','authorGraph'].some(key=>typeof (s.graphParts as Record<string,unknown>)[key]!=='boolean'))throw new MobileChatFailure(400,'invalid_live_chat_selection');
-    if(s.layers!==undefined&&(!object(s.layers)||Object.keys(s.layers).some(key=>!['ideas','documents'].includes(key))||typeof s.layers.ideas!=='boolean'||typeof s.layers.documents!=='boolean'))throw new MobileChatFailure(400,'invalid_live_chat_selection');
+    if(s.layers!==undefined) {
+      const layers=s.layers;
+      if(!object(layers)||Object.keys(layers).some(key=>!['ideas','documents','indexed','web','indexedOnly'].includes(key))
+        ||['ideas','documents','indexed','web','indexedOnly'].some(key=>layers[key]!==undefined&&typeof layers[key]!=='boolean')
+        ||(layers.indexedOnly!==true&&(typeof layers.ideas!=='boolean'||typeof layers.documents!=='boolean')))throw new MobileChatFailure(400,'invalid_live_chat_selection');
+    }
     if(s.notebookId!=null&&(typeof s.notebookId!=='string'||!s.notebookId||s.notebookId.length>256))throw new MobileChatFailure(400,'invalid_live_chat_selection');
     if(s.sourceFilter!==undefined) {
       const f=s.sourceFilter;
@@ -75,6 +82,14 @@ function validate(raw:unknown,identity:MobileChatJobIdentity):MobileLiveChatRequ
   if(!Array.isArray(messages)||messages.some(message=>!object(message)))throw new MobileChatFailure(400,'invalid_live_chat_question');
   const question=messages.at(-1);
   if(!question||question.role!=='user'||!uuid(question.id)||typeof question.content!=='string'||!question.content.trim()||messages!.some(message=>message.id===request.answerId))throw new MobileChatFailure(400,'invalid_live_chat_question');
+  if(request.kind==='research'&&request.generation.selection) {
+    const selection=request.generation.selection;
+    const layers=researchContextLayers(selection,getActiveVault().type==='academic');
+    const savedWeb=selection.layers?.web;
+    const legacyIndexedOnly=selection.layers?.indexedOnly===true;
+    return {...request,generation:{...request.generation,selection:withResearchContextLayers(selection,layers),
+      ...(savedWeb!==undefined||legacyIndexedOnly?{webSearch:researchContextWeb(selection,request.generation.webSearch!=='off')?'auto':'off'}:{})}};
+  }
   return request;
 }
 

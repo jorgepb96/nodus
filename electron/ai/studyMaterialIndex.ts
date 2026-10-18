@@ -134,7 +134,7 @@ async function performIndex(materialId: string, force: boolean): Promise<StudyMa
       emit(materialId);
       return { materialId, status: 'indexed', indexed: true, visualDescriptionGenerated, error: null };
     }
-    const vector = await embed(text);
+    const vector = await embed(text, undefined, { role: 'document', title: material.title });
     if (!vector) {
       const error = 'No hay un modelo de embeddings disponible o la indexación no pudo completarse.';
       setStudyMaterialIndexFailure(materialId, 'unavailable', error); emit(materialId);

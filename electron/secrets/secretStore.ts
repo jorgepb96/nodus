@@ -2,6 +2,7 @@ import { app } from 'electron';
 import { harnessApiKey, safeStorage } from './safeStorageGate';
 import fs from 'node:fs';
 import path from 'node:path';
+import { validateIsolatedRoot } from '../qa/isolatedProfile';
 import type { AiProvider } from '@shared/types';
 import { AI_PROVIDERS, SECRET_PROVIDERS as PROVIDERS } from '@shared/providers';
 import { activeVaultDir, getActiveVault, listVaults, vaultDir } from '../vaults/vaultRegistry';
@@ -236,6 +237,25 @@ function retireHistoricalFile(file: string): void {
 
 export type ApiKeyStorageState = 'available' | 'locked' | 'missing';
 
+/** During an explicitly isolated QA launch, startup may need settings before the
+ * first window exists. Reading key availability there can prompt for Keychain
+ * authorization too early. Defer only that nonessential metadata lookup; actual
+ * getApiKey reads still use safeStorage normally when a provider is needed.
+ * An invalid opt-in fails closed so this can never become a production bypass. */
+function deferQaCredentialStatus(): boolean {
+  const flag = process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS;
+  if (flag === undefined) return false;
+  if (flag !== '1') throw new Error('Invalid NODUS_QA_DEFER_CREDENTIAL_STATUS value');
+  const isolatedRoot = process.env.NODUS_ISOLATED_ROOT;
+  const qaRoot = process.env.NODUS_QA_ROOT;
+  if (!isolatedRoot || !qaRoot) throw new Error('Deferred credential status requires an isolated QA profile');
+  const root = validateIsolatedRoot(isolatedRoot);
+  if (path.resolve(qaRoot) !== root || path.resolve(app.getPath('userData')) !== path.join(root, 'profile')) {
+    throw new Error('Deferred credential status profile does not match its QA manifest');
+  }
+  return true;
+}
+
 export function apiKeyStorageState(provider: AiProvider): ApiKeyStorageState {
   if (getApiKey(provider) !== null) return 'available';
   const blobs = [...apiKeyCandidateFiles(provider), ...archivedApiKeyFiles(provider)];
@@ -243,6 +263,9 @@ export function apiKeyStorageState(provider: AiProvider): ApiKeyStorageState {
 }
 
 export function lockedApiKeyProviders(): AiProvider[] {
+  // In deferred QA mode these are pending metadata, not a claim that no locked
+  // ciphertext exists. The renderer opens before this status is queried.
+  if (deferQaCredentialStatus()) return [];
   return PROVIDERS.filter((provider) => apiKeyStorageState(provider) === 'locked');
 }
 
@@ -634,6 +657,8 @@ export function clearBackupRecoveryKey(): void {
 
 /** Map of provider -> whether a key is stored, for the renderer (no keys exposed). */
 export function providerKeyMap(): Record<AiProvider, boolean> {
+  // Report no key as available until an actual provider read needs to decrypt it.
+  if (deferQaCredentialStatus()) return Object.fromEntries(AI_PROVIDERS.map((provider) => [provider, false])) as Record<AiProvider, boolean>;
   return Object.fromEntries(AI_PROVIDERS.map((p) => [p, p === 'codex' || p === 'github-copilot' ? false : hasApiKey(p)])) as Record<AiProvider, boolean>;
 }
 

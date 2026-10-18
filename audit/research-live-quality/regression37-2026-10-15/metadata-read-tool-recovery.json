@@ -1,0 +1,15 @@
+{
+  "format": "nodus.metadata-read-tool-recovery/1",
+  "at": "2026-10-15T19:07:44.644Z",
+  "root": "/private/tmp/nodus-research-regression37-serial-Bgzxr9",
+  "reason": "Confirmed child010 copied82a1 instead of82a0 in immutable metadata pathname before begin/read/generation",
+  "allowed": "Same child may correct only an objectively confirmed metadata pathname typo before reading-started and before any read-audit or raw file exists, while original request remains live. Persist exact followup and live-state evidence before delivery.",
+  "forbidden": [
+    "New child or new request",
+    "Recovery after terminal event",
+    "Any request/content/gold/answer advice",
+    "Changing model, deadlines, receipts or raw output",
+    "Repeating a generated answer"
+  ],
+  "metric": "Record assisted metadata reads separately. Application messages and all generation/grounding criteria unchanged."
+}

@@ -2,6 +2,7 @@ import { COMPANION_RUNTIME_ERRORS, COMPANION_RUNTIME_ERROR_PATTERNS } from './co
 import { BACKUPS_RUNTIME_ERRORS, BACKUPS_RUNTIME_ERROR_PATTERNS } from './backupsErrors';
 import type { AppLanguage } from './types';
 import { SCRIPTOR_RUNTIME_ERRORS, SCRIPTOR_RUNTIME_ERROR_PATTERNS } from './scriptorErrors';
+import { EMBEDDING_GEMMA2_ERRORS, EMBEDDING_GEMMA2_ERROR_PATTERNS } from './embeddingGemma2Errors';
 import { CLOUDFLARE_SYNC_ERRORS, CLOUDFLARE_SYNC_ERROR_PATTERNS } from './cloudflareSyncErrors';
 import { STT_RUNTIME_ERRORS, STT_RUNTIME_ERROR_PATTERNS } from './sttErrors';
 
@@ -65,6 +66,48 @@ export const MAIN_PROCESS_ERRORS: Record<string, MainErrorTranslations> = {
   "La página de ideas solicitada no es válida.": {"en": "The requested page of ideas is invalid.", "fr": "La page d’idées demandée n’est pas valide.", "de": "Die angeforderte Ideenseite ist ungültig.", "pt": "A página de ideias pedida não é válida.", "pt-BR": "A página de ideias solicitada não é válida.", "it": "La pagina di idee richiesta non è valida.", "tr": "İstenen fikir sayfası geçersiz.", "zh-CN": "请求的想法页面无效。", "zh-TW": "請求的想法頁面無效。", "ja": "要求されたアイデアのページは無効です。", "ko": "요청한 아이디어 페이지가 올바르지 않습니다."},
   "La mejora no devolvió texto. El original no se ha modificado.": {"en": "The improvement returned no text. The original has not been changed.", "fr": "L’amélioration n’a renvoyé aucun texte. L’original n’a pas été modifié.", "de": "Die Überarbeitung lieferte keinen Text. Das Original wurde nicht verändert.", "pt": "A melhoria não devolveu texto. O original não foi alterado.", "pt-BR": "A melhoria não retornou texto. O original não foi alterado.", "it": "Il miglioramento non ha restituito testo. L’originale non è stato modificato.", "tr": "İyileştirme metin döndürmedi. Özgün metin değiştirilmedi.", "zh-CN": "改进操作未返回文本，原文未被修改。", "zh-TW": "改進操作未傳回文字，原文未被修改。", "ja": "改善結果にテキストがありません。原文は変更されていません。", "ko": "개선 결과에 텍스트가 없습니다. 원문은 변경되지 않았습니다."},
 
+  ...EMBEDDING_GEMMA2_ERRORS,
+  'EmbeddingGemma: falta configuración del proceso aislado.': {
+    en: 'EmbeddingGemma: isolated process configuration is missing.', fr: 'EmbeddingGemma : la configuration du processus isolé est manquante.',
+    de: 'EmbeddingGemma: Die Konfiguration des isolierten Prozesses fehlt.', pt: 'EmbeddingGemma: falta a configuração do processo isolado.',
+    'pt-BR': 'EmbeddingGemma: falta a configuração do processo isolado.', it: 'EmbeddingGemma: manca la configurazione del processo isolato.',
+    tr: 'EmbeddingGemma: yalıtılmış süreç yapılandırması eksik.', 'zh-CN': 'EmbeddingGemma：缺少隔离进程配置。',
+    'zh-TW': 'EmbeddingGemma：缺少隔離程序設定。', ja: 'EmbeddingGemma: 分離プロセスの設定がありません。', ko: 'EmbeddingGemma: 격리된 프로세스 설정이 없습니다.',
+  },
+  'EmbeddingGemma: operación de proceso desconocida.': {
+    en: 'EmbeddingGemma: unknown process operation.', fr: 'EmbeddingGemma : opération de processus inconnue.',
+    de: 'EmbeddingGemma: Unbekannter Prozessvorgang.', pt: 'EmbeddingGemma: operação de processo desconhecida.',
+    'pt-BR': 'EmbeddingGemma: operação de processo desconhecida.', it: 'EmbeddingGemma: operazione di processo sconosciuta.',
+    tr: 'EmbeddingGemma: bilinmeyen süreç işlemi.', 'zh-CN': 'EmbeddingGemma：未知的进程操作。',
+    'zh-TW': 'EmbeddingGemma：未知的程序操作。', ja: 'EmbeddingGemma: 不明なプロセス操作です。', ko: 'EmbeddingGemma: 알 수 없는 프로세스 작업입니다.',
+  },
+  'EmbeddingGemma: solicitud de proceso inválida.': {
+    en: 'EmbeddingGemma: invalid process request.', fr: 'EmbeddingGemma : requête de processus non valide.',
+    de: 'EmbeddingGemma: Ungültige Prozessanfrage.', pt: 'EmbeddingGemma: pedido de processo inválido.',
+    'pt-BR': 'EmbeddingGemma: solicitação de processo inválida.', it: 'EmbeddingGemma: richiesta di processo non valida.',
+    tr: 'EmbeddingGemma: geçersiz süreç isteği.', 'zh-CN': 'EmbeddingGemma：无效的进程请求。',
+    'zh-TW': 'EmbeddingGemma：無效的程序請求。', ja: 'EmbeddingGemma: プロセス要求が無効です。', ko: 'EmbeddingGemma: 프로세스 요청이 잘못되었습니다.',
+  },
+  'EmbeddingGemma: configuración de proceso inválida.': {
+    en: 'EmbeddingGemma: invalid process configuration.', fr: 'EmbeddingGemma : configuration de processus non valide.',
+    de: 'EmbeddingGemma: Ungültige Prozesskonfiguration.', pt: 'EmbeddingGemma: configuração de processo inválida.',
+    'pt-BR': 'EmbeddingGemma: configuração de processo inválida.', it: 'EmbeddingGemma: configurazione di processo non valida.',
+    tr: 'EmbeddingGemma: geçersiz süreç yapılandırması.', 'zh-CN': 'EmbeddingGemma：无效的进程配置。',
+    'zh-TW': 'EmbeddingGemma：無效的程序設定。', ja: 'EmbeddingGemma: プロセス設定が無効です。', ko: 'EmbeddingGemma: 프로세스 구성이 잘못되었습니다.',
+  },
+  'No se pudo verificar la respuesta contra sus fuentes. Inténtalo de nuevo.': {
+    en: 'The answer could not be verified against its sources. Please try again.',
+    fr: 'La réponse n’a pas pu être vérifiée par rapport à ses sources. Réessayez.',
+    de: 'Die Antwort konnte nicht anhand ihrer Quellen überprüft werden. Bitte versuche es erneut.',
+    pt: 'Não foi possível verificar a resposta com as suas fontes. Tenta novamente.',
+    'pt-BR': 'Não foi possível verificar a resposta com suas fontes. Tente novamente.',
+    it: 'Non è stato possibile verificare la risposta rispetto alle sue fonti. Riprova.',
+    tr: 'Yanıt kaynaklarıyla doğrulanamadı. Lütfen yeniden deneyin.',
+    'zh-CN': '无法根据来源核实回答。请重试。',
+    'zh-TW': '無法根據來源核實回答。請重試。',
+    ja: '回答を出典に照らして検証できませんでした。もう一度お試しください。',
+    ko: '답변을 출처와 대조하여 검증하지 못했습니다. 다시 시도해 주세요.',
+  },
   ...CLOUDFLARE_SYNC_ERRORS,
   ...STT_RUNTIME_ERRORS,
   ...BACKUPS_RUNTIME_ERRORS,
@@ -4750,6 +4793,7 @@ function localProviderDetail(detail: string): MainErrorTranslations | null {
 export const MAIN_PROCESS_ERROR_PATTERNS: { pattern: RegExp; translate: (...groups: string[]) => MainErrorTranslations }[] = [
   ...COMPANION_RUNTIME_ERROR_PATTERNS,
   { pattern: /^La copia publicada no incluye la tabla (.+)\. Descarga una publicación compatible\.$/, translate: table => ({ "en": "The published copy lacks table {table}. Download a compatible publication.".replace('{table}', table), "fr": "La copie publiée ne contient pas la table {table}. Téléchargez une publication compatible.".replace('{table}', table), "de": "Die veröffentlichte Kopie enthält die Tabelle {table} nicht. Laden Sie eine kompatible Veröffentlichung herunter.".replace('{table}', table), "pt": "A cópia publicada não inclui a tabela {table}. Descarregue uma publicação compatível.".replace('{table}', table), "pt-BR": "A cópia publicada não inclui a tabela {table}. Baixe uma publicação compatível.".replace('{table}', table), "it": "La copia pubblicata non include la tabella {table}. Scarica una pubblicazione compatibile.".replace('{table}', table), "tr": "Yayımlanan kopyada {table} tablosu yok. Uyumlu bir yayın indirin.".replace('{table}', table), "zh-CN": "已发布的副本不包含表 {table}，请下载兼容的发布内容。".replace('{table}', table), "zh-TW": "已發佈的副本不包含資料表 {table}，請下載相容的發佈內容。".replace('{table}', table), "ja": "公開済みのコピーにテーブル {table} がありません。互換性のある公開内容をダウンロードしてください。".replace('{table}', table), "ko": "게시된 사본에 {table} 테이블이 없습니다. 호환되는 게시 내용을 다운로드하세요.".replace('{table}', table) }) },
+  ...EMBEDDING_GEMMA2_ERROR_PATTERNS,
   ...STT_RUNTIME_ERROR_PATTERNS,
   ...BACKUPS_RUNTIME_ERROR_PATTERNS,
   ...SCRIPTOR_RUNTIME_ERROR_PATTERNS,

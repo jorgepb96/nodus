@@ -1,0 +1,10 @@
+{
+  "revision": "2b23d7d7",
+  "executed": 12,
+  "reviewed": 12,
+  "positivePassed": 4,
+  "positiveEvaluated": 12,
+  "reason": "Coordinator and both QA child/app processes stopped after repeated positive-coverage schema failures on source-supported simple answers. Captured proof failures are retained as availability failures. The invalid verifier payload was not previously logged, so the precise invalid field is not claimed; the generic whole-question complaint schema was ambiguous. The next revision explicitly decomposes positive coverage into literal question facets and rejects unknown/empty/duplicate proof records. In-flight unknown usage stays fully reserved; no reservation or prior call is released.",
+  "budgetReset": false,
+  "forcedInterruption": true
+}

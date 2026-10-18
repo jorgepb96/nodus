@@ -271,6 +271,7 @@ export function ModelPicker({
   triggerModelOnly = false,
   ariaLabel,
   className = '',
+  models: choices,
 }: {
   settings: AppSettings;
   value: ModelRef | null;
@@ -287,8 +288,10 @@ export function ModelPicker({
   /** Accessible control name; the current provider and model are appended as its value. */
   ariaLabel?: string;
   className?: string;
+  /** The models to offer instead of the favorites, for a surface with its own list. */
+  models?: ModelRef[];
 }) {
-  const favorites = settings.favorites ?? [];
+  const favorites = choices ?? settings.favorites ?? [];
   const capability = requiredCapability ?? (requireExtraction ? 'extraction' : null);
   const blocked = (m: ModelRef) => capability ? !modelRefSupportsCapability(m, capability) : false;
   const optionText = (m: ModelRef) => (blocked(m) ? `${modelLabel(m)} — ${t('rol no certificado')}` : modelLabel(m));

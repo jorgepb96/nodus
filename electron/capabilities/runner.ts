@@ -124,9 +124,13 @@ export function createCapabilityAdapters(context: TrustedTurnContext): Capabilit
           }
           return null;
         };
+        const supportedVersions = [...new Set([path.join(locks, target), locks].flatMap(dir => {
+          try { return fs.readdirSync(dir).flatMap(name => /^lock-(\d+\.\d+)\.json$/.exec(name)?.[1] ?? []); }
+          catch { return []; }
+        }))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
         return ensurePythonRuntime(runtime, runtimeId, {
           download: lockDownloader(runtime, services!, signal),
-          minVersion: declared.minVersion, selectLock, signal,
+          minVersion: declared.minVersion, selectLock, supportedVersions, signal,
         });
       },
       run: (runtime, request, signal) => runInPythonRuntime(runtime, request, signal),

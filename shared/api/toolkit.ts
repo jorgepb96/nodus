@@ -1,3 +1,4 @@
+import type { SignApi } from '../signTypes';
 // The toolkit slice of the window.nodus contract. NodusApi extends it, so the
 // renderer surface stays flat and every call site is unchanged.
 import type { Presentation, PresenterImportResult, PresenterImportSelection, PresenterLibrary, PresenterFolderDeleteMode, PptxNotes } from '../presenterTypes';
@@ -14,7 +15,7 @@ import type {
 
 import type { BackupCatalog, BackupCatalogQuery, BackupCatalogPage, BackupPreset, OpenBackupOptions, OpenBackupPreview, OpenBackupProgress, OpenBackupResult } from '../backups';
 
-export interface ToolkitApi {
+export interface ToolkitApi extends SignApi {
   getBackupCatalog(vaultIds: string[]): Promise<BackupCatalog>;
   getBackupCatalogRecords(query: BackupCatalogQuery): Promise<BackupCatalogPage>;
   previewOpenBackup(options: OpenBackupOptions): Promise<OpenBackupPreview>;

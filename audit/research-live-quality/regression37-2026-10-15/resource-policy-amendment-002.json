@@ -1,0 +1,95 @@
+{
+  "format": "nodus.regression37-resource-policy-amendment/1",
+  "recordedAt": "2026-10-15T20:13:11.512Z",
+  "supersedes": "resource-policy.json macosPolicy only",
+  "reason": "PRIO_DARWIN_BG also throttles disk I/O. Preserve nice 10 and serial scheduling while allowing normal tokenizer/model reads; graphic helper remains background with nice 19.",
+  "scope": "Only serial QA supervisor/producer descendants; no other sessions",
+  "helperSha256": "3bbe38b96c40b53c57a748c6df8440a9d4d6c93862230092b974c1b986b77da5",
+  "applied": {
+    "at": "2026-10-15T20:12:56.402Z",
+    "version": 2,
+    "scope": "Only serial QA supervisor/producer descendants; no other sessions",
+    "reason": "Keep CPU priority low without imposing background disk throttling on tokenizer/model reads. One app, memory gate and pauses unchanged.",
+    "results": [
+      {
+        "pid": 80637,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10350,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10349,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10422,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10471,
+        "role": "graphics",
+        "policy": "background",
+        "applied": true,
+        "graphicsNiceApplied": true,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10472,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 10499,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      },
+      {
+        "pid": 11750,
+        "role": "qa-control-or-runtime",
+        "policy": "ordinary-io-preserve-nice10",
+        "applied": true,
+        "graphicsNiceApplied": null,
+        "exitCode": 0,
+        "error": null
+      }
+    ]
+  },
+  "maxNativeQaApplications": 1,
+  "maxActiveApplicationGenerators": 1,
+  "maxIndependentSourceReviewers": 1,
+  "minimumClosedAppPauseMs": 30000,
+  "minimumMacosReportedMemoryFreePercentBeforeLaunch": 20,
+  "noCaseRestartOrRetry": true,
+  "productionSourceOrInputChanges": false
+}

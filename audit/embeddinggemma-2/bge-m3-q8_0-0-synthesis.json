@@ -1,0 +1,3384 @@
+{
+  "name": "synthesis",
+  "repetition": 0,
+  "question": "Relaciona las limitaciones del ensayo Vega y de la encuesta Bruma.",
+  "scope": "dynamic",
+  "started": 1791324983991,
+  "finished": 1791325008192,
+  "request": {
+    "attachmentIds": [],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Relaciona las limitaciones del ensayo Vega y de la encuesta Bruma.",
+        "attachments": []
+      }
+    ],
+    "selection": {
+      "ideas": true,
+      "themes": true,
+      "contradictions": true,
+      "gaps": true,
+      "readingPath": true,
+      "authors": true,
+      "documents": true,
+      "passages": true,
+      "graph": true,
+      "graphParts": {
+        "ideaNodes": true,
+        "themeNodes": true,
+        "ideaEdges": true,
+        "authorGraph": true
+      },
+      "layers": {
+        "ideas": true,
+        "documents": true
+      },
+      "notebookId": "a75901bd-2251-4f39-9ba5-92d2be1ece03"
+    },
+    "model": {
+      "provider": "deepseek",
+      "model": "deepseek-flash"
+    },
+    "conversationId": "159a7831-22a2-4936-817d-8ba398f5603b",
+    "thinkingEffort": "low",
+    "webSearch": "off",
+    "systemPromptId": null
+  },
+  "response": {
+    "answer": "# Limitaciones del ensayo Vega y de la encuesta Bruma: puntos en común y diferencias\n\nAntes de comparar conviene una advertencia sobre el propio material. Las fuentes recuperadas para esta consulta son archivos sintéticos de laboratorio: varios pasajes llevan la marca «Nodus QA synthetic archive» ([fixture 02, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Ae4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52%3A0)), y el catálogo no registró ninguna obra titulada «Vega» ni «Bruma», por lo que los documentos originales llegan bajo etiquetas de tipo «fixture». Ninguna de las obras listadas tiene autor declarado, así que cito por el rótulo del propio documento y no por un apellido que no consta.\n\n## Lo que dice cada archivo\n\n**Vega (ensayo de recuperación).** El resultado se repite, con idénticas cifras, en las versiones inglesa, francesa, italiana, portuguesa y alemana: el grupo de recuperación espaciada recordó el 72 % frente al 51 % del grupo de relectura ([fixture 02, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Ae4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52%3A0)), [fixture 27, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def%3A0)). La limitación se enuncia de forma explícita y constante: **no se midió la inteligencia** ([fixture 07, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68%3A0)), [fixture 12, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c%3A0)), [fixture 17, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Add429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004%3A0)). Esa ausencia acota lo que el ensayo puede sostener: la diferencia de recuerdo entre condiciones es un resultado de rendimiento, no una explicación de por qué se produce ni una medida de capacidad individual.\n\n**Bruma (encuesta).** El diseño declara 240 personas de seis aldeas y un nivel de confianza del 95 % ([fixture 29, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e%3A0)), con mediana 18 y media 24. La limitación no es una variable omitida, sino una **confusión entre estadísticos**: el propio archivo advierte que mediana y media «no son equivalentes» ([fixture 14, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Aa339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e%3A0)). Además hay un problema de procedencia del dato: un memorándum preliminar contaba 239 registros y la corrección final fija 240 participantes, quedando **superseded** el total preliminar ([fixture 24, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519%3A0)), [fixture 09, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e%3A0)).\n\n## Cómo se relacionan las limitaciones\n\n1. **Mismo patrón de avería conceptual, distinta forma.** Los dos casos fallan al no mantener separado lo que se mide de lo que se interpreta: Vega no mide el constructo que se le querría atribuir (la inteligencia) ([fixture 22, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5%3A0)), y Bruma funde dos estadísticos que describen cosas distintas ([fixture 19, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Ab88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935%3A0)). La diferencia está en dónde se sitúa el hueco: en Vega es una variable dependiente ausente; en Bruma, una propiedad del resumen estadístico.\n\n2. **La corrección de registros afecta a Bruma, no a Vega.** Bruma arrastra una cifra preliminar invalidada (239 → 240) que cualquier lectura que cite la versión antigua estaría usando fuera de vigencia ([fixture 04, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Aa53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf%3A0)). Vega no tiene ese tipo de enmienda documental, pero sí un problema distinto y quizá peor para la inferencia: el mismo resultado aparece replicado literalmente en múltiples idiomas y formatos, lo que **no equivale a réplicas independientes** — es un único hallazgo repetido.\n\n3. **Limitación compartida de evidencia disponible.** En ambos casos la propia trazabilidad es débil: son archivos sintéticos ([fixture 03, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Af953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67%3A0)), sin autor y sin metadatos catalográficos. Y en Bruma, buena parte del material adjunto consiste en secciones administrativas que se declaran sin aportación de resultados adicionales, lo que infla el volumen sin añadir evidencia ([fixture 19, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Ab88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935%3A0)).\n\n## Un paralelo útil en el mismo corpus\n\nEl patrón «no es lo mismo» reaparece en otros archivos: la escuela de Puerto Claro abrió su biblioteca en 1912 y el laboratorio en 1913, y el propio texto aclara que no fue la biblioteca la que se abrió después ([fixture 21, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3A073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90%3A0)); y el archivo revisado de Orbe prescribe 89 días de retención, sustituyendo la regla anterior de 73 días ([Orbe revised station, p. 1](nodus://passage/documentary%3Ad4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3%3Af43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9%3A0)). Es la misma clase de cautela metodológica que exigen Vega y Bruma: distinguir entidades, constructos y versiones antes de extraer conclusiones.\n\n## Conclusión y alcance de la búsqueda\n\nVega y Bruma comparten una limitación de fondo —la imposibilidad de sostener inferencias más allá de lo efectivamente medido—, pero la manifiestan en planos distintos: Vega por un constructo no medido y por la aparente reiteración de un solo resultado; Bruma por la conmutación indebida de media y mediana y por arrastrar un recuento preliminar ya invalidado. La búsqueda de este turno no encontró obras catalogadas con esos títulos ni con autores asignados, y el registro de investigación advierte que una búsqueda adicional solo repetiría la anterior, de modo que esta síntesis se apoya únicamente en los pasajes citados, no en literatura externa.",
+    "stats": {
+      "sections": [
+        "Ideas generadas",
+        "Pasajes de texto completo"
+      ],
+      "works": 41,
+      "documents": 41,
+      "summaries": 0,
+      "passages": 20,
+      "contextChars": 32493,
+      "truncated": true,
+      "researchTraversal": {
+        "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+        "sourceCount": 41,
+        "rounds": 4,
+        "evidenceTokens": 6447,
+        "decisionTokens": 21356,
+        "matchedDocumentIds": [
+          "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+          "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+          "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+          "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+          "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+          "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+          "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+          "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+          "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+          "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+          "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+          "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+          "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+          "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+          "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+          "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+          "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+          "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+          "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+          "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+          "nodus:23169623-e236-43d0-a87e-d544506e61da"
+        ],
+        "readDocumentIds": [],
+        "catalogDocumentIds": [],
+        "attemptedDocumentIds": [],
+        "contextDocumentIds": [
+          "nodus:ae9b128e-7242-4761-abbb-24328a448383"
+        ],
+        "sourceCoverage": [
+          {
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+            "title": "fixture 08",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+            "title": "fixture 27",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:07fba572-fc99-4a24-b038-edb94a36f7b9",
+            "title": "fixture 05",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3",
+            "title": "public RWKV0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+            "title": "fixture 29",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da",
+            "title": "Orbe revised station",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+            "title": "fixture 18",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+            "title": "fixture 03",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+            "title": "fixture 28",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+            "title": "fixture 19",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396",
+            "title": "public HUGGPT01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+            "title": "fixture 14",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+            "title": "fixture 04",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:66a9a67d-d465-4ac7-befd-f2c94e4fdbc0",
+            "title": "fixture 10",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:74aa8b7c-40dc-471e-957d-63db533a1370",
+            "title": "fixture 16",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+            "title": "fixture 09",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5",
+            "title": "public ARENA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:81257f31-4653-42f7-b9f2-e56f654f3900",
+            "title": "fixture 06",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd",
+            "title": "public SAM00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84",
+            "title": "fixture 25",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:8b6c6e43-c20d-4629-ad06-30805bd0c11d",
+            "title": "fixture 26",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+            "title": "fixture 07",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e",
+            "title": "public QLORA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+            "title": "fixture 21",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8",
+            "title": "public SELF0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+            "title": "fixture 12",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+            "title": "fixture 23",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+            "title": "fixture 13",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e",
+            "title": "public LLAMA001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb",
+            "title": "public AGENT001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+            "title": "fixture 17",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c66740b8-adf8-4aa0-aaac-13b06e80ebf4",
+            "title": "fixture 20",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:c69e33d0-0754-457a-a601-3c634a755593",
+            "title": "fixture 30",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+            "title": "fixture 01",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd",
+            "title": "fixture 15",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+            "title": "fixture 22",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901",
+            "title": "public LORA0001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d",
+            "title": "public DPO00001",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f21f43ee-7940-423e-83f1-cad4b4444bdb",
+            "title": "fixture 11",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+            "title": "fixture 24",
+            "reasons": []
+          },
+          {
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+            "title": "fixture 02",
+            "reasons": []
+          }
+        ],
+        "limitations": [
+          "repeated_action"
+        ],
+        "partial": true,
+        "queries": [
+          {
+            "query": "Relacionar las limitaciones del ensayo Vega y de la encuesta Bruma.",
+            "sources": [
+              "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+              "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+              "nodus:07fba572-fc99-4a24-b038-edb94a36f7b9",
+              "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3",
+              "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+              "nodus:23169623-e236-43d0-a87e-d544506e61da",
+              "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+              "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+              "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+              "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+              "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396",
+              "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+              "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+              "nodus:66a9a67d-d465-4ac7-befd-f2c94e4fdbc0",
+              "nodus:74aa8b7c-40dc-471e-957d-63db533a1370",
+              "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+              "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5",
+              "nodus:81257f31-4653-42f7-b9f2-e56f654f3900",
+              "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd",
+              "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84",
+              "nodus:8b6c6e43-c20d-4629-ad06-30805bd0c11d",
+              "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+              "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e",
+              "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+              "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8",
+              "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+              "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+              "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+              "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e",
+              "nodus:c0343c00-d441-4154-b538-fa556461b6fb",
+              "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+              "nodus:c66740b8-adf8-4aa0-aaac-13b06e80ebf4",
+              "nodus:c69e33d0-0754-457a-a601-3c634a755593",
+              "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+              "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd",
+              "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+              "nodus:e949e23d-2e3e-47af-844d-3ef14878e901",
+              "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d",
+              "nodus:f21f43ee-7940-423e-83f1-cad4b4444bdb",
+              "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+              "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+            ],
+            "candidates": 105,
+            "partial": true
+          },
+          {
+            "query": "limitaciones ensayo Vega",
+            "sources": [
+              "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+              "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+              "nodus:07fba572-fc99-4a24-b038-edb94a36f7b9",
+              "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3",
+              "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+              "nodus:23169623-e236-43d0-a87e-d544506e61da",
+              "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+              "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+              "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+              "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+              "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396",
+              "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+              "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+              "nodus:66a9a67d-d465-4ac7-befd-f2c94e4fdbc0",
+              "nodus:74aa8b7c-40dc-471e-957d-63db533a1370",
+              "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+              "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5",
+              "nodus:81257f31-4653-42f7-b9f2-e56f654f3900",
+              "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd",
+              "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84",
+              "nodus:8b6c6e43-c20d-4629-ad06-30805bd0c11d",
+              "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+              "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e",
+              "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+              "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8",
+              "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+              "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+              "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+              "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e",
+              "nodus:c0343c00-d441-4154-b538-fa556461b6fb",
+              "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+              "nodus:c66740b8-adf8-4aa0-aaac-13b06e80ebf4",
+              "nodus:c69e33d0-0754-457a-a601-3c634a755593",
+              "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+              "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd",
+              "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+              "nodus:e949e23d-2e3e-47af-844d-3ef14878e901",
+              "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d",
+              "nodus:f21f43ee-7940-423e-83f1-cad4b4444bdb",
+              "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+              "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+            ],
+            "candidates": 61,
+            "partial": true
+          },
+          {
+            "query": "encuesta Bruma limitaciones",
+            "sources": [
+              "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+              "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+              "nodus:07fba572-fc99-4a24-b038-edb94a36f7b9",
+              "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3",
+              "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+              "nodus:23169623-e236-43d0-a87e-d544506e61da",
+              "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+              "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+              "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+              "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+              "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396",
+              "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+              "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+              "nodus:66a9a67d-d465-4ac7-befd-f2c94e4fdbc0",
+              "nodus:74aa8b7c-40dc-471e-957d-63db533a1370",
+              "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+              "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5",
+              "nodus:81257f31-4653-42f7-b9f2-e56f654f3900",
+              "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd",
+              "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84",
+              "nodus:8b6c6e43-c20d-4629-ad06-30805bd0c11d",
+              "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+              "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e",
+              "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+              "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8",
+              "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+              "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+              "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+              "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e",
+              "nodus:c0343c00-d441-4154-b538-fa556461b6fb",
+              "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+              "nodus:c66740b8-adf8-4aa0-aaac-13b06e80ebf4",
+              "nodus:c69e33d0-0754-457a-a601-3c634a755593",
+              "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+              "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd",
+              "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+              "nodus:e949e23d-2e3e-47af-844d-3ef14878e901",
+              "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d",
+              "nodus:f21f43ee-7940-423e-83f1-cad4b4444bdb",
+              "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+              "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+            ],
+            "candidates": 87,
+            "partial": true
+          },
+          {
+            "query": "Vega ensayo limitaciones",
+            "sources": [
+              "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+              "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+              "nodus:07fba572-fc99-4a24-b038-edb94a36f7b9",
+              "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3",
+              "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+              "nodus:23169623-e236-43d0-a87e-d544506e61da",
+              "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+              "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+              "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+              "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+              "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396",
+              "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+              "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+              "nodus:66a9a67d-d465-4ac7-befd-f2c94e4fdbc0",
+              "nodus:74aa8b7c-40dc-471e-957d-63db533a1370",
+              "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+              "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5",
+              "nodus:81257f31-4653-42f7-b9f2-e56f654f3900",
+              "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd",
+              "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84",
+              "nodus:8b6c6e43-c20d-4629-ad06-30805bd0c11d",
+              "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+              "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e",
+              "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+              "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8",
+              "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+              "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+              "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+              "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e",
+              "nodus:c0343c00-d441-4154-b538-fa556461b6fb",
+              "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+              "nodus:c66740b8-adf8-4aa0-aaac-13b06e80ebf4",
+              "nodus:c69e33d0-0754-457a-a601-3c634a755593",
+              "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+              "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd",
+              "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+              "nodus:e949e23d-2e3e-47af-844d-3ef14878e901",
+              "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d",
+              "nodus:f21f43ee-7940-423e-83f1-cad4b4444bdb",
+              "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+              "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+            ],
+            "candidates": 61,
+            "partial": true
+          }
+        ]
+      }
+    }
+  },
+  "citations": [
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+        "nodus_id": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+        "libraryItemId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+        "attachmentId": "local:f761bfb7-af66-4972-a647-d4c808c28bc5",
+        "revision": "93a8974ac01e14e26cd21fe42215d1e49191ee20e0bd01ea0cf57a1900bc58c0",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:f761bfb7-af66-4972-a647-d4c808c28bc5:local:f761bfb7-af66-4972-a647-d4c808c28bc5",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 02",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+        "nodus_id": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+        "libraryItemId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+        "attachmentId": "local:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+        "revision": "3c17bc1c9335c041d265e7f599c71467335fb09741c53391f380979d44c3631f",
+        "historical": false,
+        "provenance": "source",
+        "text": "Campos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a:local:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 27",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+        "nodus_id": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+        "libraryItemId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+        "attachmentId": "local:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+        "revision": "8dd706fdfb32444c6ba0fe72eb3a49b8b5f52567195e4c7a88587be6a19208ac",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12:local:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 07",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+        "nodus_id": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+        "libraryItemId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+        "attachmentId": "local:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+        "revision": "1f49871d615b4f8e3c7be98fa9a21fa32d5fc267f1b987b9c6fc875d897b63ab",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938:local:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 12",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+        "nodus_id": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+        "libraryItemId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+        "attachmentId": "local:c4b9d71a-189d-423d-a289-d168f4068714",
+        "revision": "1972e5eed5e7048a87909eb389c8c08b89f81ff7c01c6917fb2d8ba95af914df",
+        "historical": false,
+        "provenance": "source",
+        "text": "Vega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:c4b9d71a-189d-423d-a289-d168f4068714:local:c4b9d71a-189d-423d-a289-d168f4068714",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 17",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+        "nodus_id": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+        "libraryItemId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+        "attachmentId": "local:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+        "revision": "03e2bc8eff51a8046b1a7fa879fd4e3523d0eb64ac3a050f10279c809fb5f88b",
+        "historical": false,
+        "provenance": "source",
+        "text": "Campos: Document · Evidence 1. Document: Bruma · archive 29 · Evidence: O inquérito Bruma incluiu 240 pessoas de seis aldeias. A confiança foi de 95%. A mediana foi 18 e a média 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. 2. Document: Statistic · Evidence: Value 3. Document: Median · Evidence: 18 4. Document: Mean · Evidence: 24 5. Document: Sample · Evidence: 240",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917:local:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 29",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+        "nodus_id": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+        "libraryItemId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+        "attachmentId": "local:502f23cf-4361-45f5-acbb-d80677177a37",
+        "revision": "d44e5ab0ed9280eaa5d77bbf489923a58da3d44f320b09ba467259d9eb7cb854",
+        "historical": false,
+        "provenance": "source",
+        "text": "Bruma · archive 14 The Bruma survey included 240 people from six villages. Confidence was 95%. The median was 18 and the mean 24; they are not equivalent. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:502f23cf-4361-45f5-acbb-d80677177a37:local:502f23cf-4361-45f5-acbb-d80677177a37",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 14",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+        "nodus_id": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+        "libraryItemId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+        "attachmentId": "local:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+        "revision": "18e2d66e5f2e1d4082291b0a72ab1f5abad6928c7a021dff541fdb81a9dbf304",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Bruma · archive 24 L’indagine Bruma comprendeva 240 persone di sei villaggi. La confidenza era del 95%. La mediana era 18, la media 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. Mixed: The Mistral observatory cerró durante cinco días por mantenimiento, not due to bad weather.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d:local:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 24",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+        "nodus_id": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+        "libraryItemId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+        "attachmentId": "local:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+        "revision": "5f9197d6ba5a04ad17d9789754582dae270bf2e3257fad3123bc807de0818ab5",
+        "historical": false,
+        "provenance": "source",
+        "text": "Bruma · archive 9 L’enquête Bruma comprenait 240 personnes de six villages. Le niveau de confiance était de 95%. La médiane était 18 et la moyenne 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc:local:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 09",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+        "nodus_id": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+        "libraryItemId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+        "attachmentId": "local:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+        "revision": "ed2e58198f230ff42521092ae5e87d14dbb63902272e90996a387f0b2467bb8f",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3:local:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 22",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+        "nodus_id": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+        "libraryItemId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+        "attachmentId": "local:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+        "revision": "9c7666223866aacfbf326f92dbe33743c9679425c04be515713fd9fef768e545",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Bruma · archive 19 La encuesta Bruma incluyó 240 personas de seis pueblos. El intervalo de confianza fue del 95%. La mediana fue 18 y la media 24; no son equivalentes. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. ## Archive section 2 Bruma field log 1: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 1 contains no additional outcome claim. ## Archive section 3 Bruma field log 2: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 2 contains no additional outcome claim. ## Archive section 4 Bruma field log 3: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 3 contains no additional outcome claim. ## Archive section 5 Bruma field log 4: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 4 contains no additional outcome claim. ## Archive section 6 Bruma field log 5: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 5 contains no additional outcome claim. ## Archive section 7 Bruma field log 6: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 6 contains no additional outcome claim. ## Archive section 8 Bruma field log 7: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 7 contains no additional outcome",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1:local:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 19",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+        "nodus_id": "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+        "libraryItemId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+        "attachmentId": "local:562c4980-828c-4103-ac5b-82f8be55d449",
+        "revision": "c87546ceae51b7582d8c1f081e359a658ec32cd4c5157c0a7ba88ef97ab7074a",
+        "historical": false,
+        "provenance": "source",
+        "text": "Bruma - archive 4 Die Bruma-Umfrage umfasste 240 Personen aus sechs Dórfern. Das Konfidenzniveau betrug 95%, Der Median war 18, der Mittelwert 24, Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:562c4980-828c-4103-ac5b-82f8be55d449:local:562c4980-828c-4103-ac5b-82f8be55d449",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 04",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+        "nodus_id": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+        "libraryItemId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+        "attachmentId": "local:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+        "revision": "0471f352473db99133c200787560286cde5096dcb909bc2357b58d14d55de5bc",
+        "historical": false,
+        "provenance": "source",
+        "text": "Alba - archive 3 Le capteur Alba utilise une lumilx]re verte [XX 530 nm pour mesurer la turbidit/X]. Il ne mesure pas l'oxyglXlne. II doit Xitre [Xltalonn/X] tous les 30 jours. *Source: Nodus QA synthetic archive.*",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6:local:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 03",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+        "nodus_id": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+        "libraryItemId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+        "attachmentId": "local:a30c1239-7663-4193-bbbe-514b851c3ac7",
+        "revision": "4559a8a6a308d4814173119db0fbce5f681d3a37a7344625ed8b7fb2554725d7",
+        "historical": false,
+        "provenance": "source",
+        "text": "# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:a30c1239-7663-4193-bbbe-514b851c3ac7:local:a30c1239-7663-4193-bbbe-514b851c3ac7",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "fixture 21",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+      "resolvable": true,
+      "passage": {
+        "passage_id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+        "nodus_id": "nodus:23169623-e236-43d0-a87e-d544506e61da",
+        "libraryItemId": "nodus:23169623-e236-43d0-a87e-d544506e61da",
+        "attachmentId": "local:cd046b33-c309-4db8-a21a-a0254500459c",
+        "revision": "3451958ba809bfe8331acf7928a3c42f120bef8c5c9443c513e8e2ff593def86",
+        "historical": false,
+        "provenance": "source",
+        "text": "The revised Orbe calibration file prescribes retention for 89 days. It supersedes the former 73-day rule.",
+        "page_label": "p. 1",
+        "source_ref": "library:nodus:23169623-e236-43d0-a87e-d544506e61da:local:cd046b33-c309-4db8-a21a-a0254500459c",
+        "page_number": 1,
+        "chunk_index": 0,
+        "work": {
+          "title": "Orbe revised station",
+          "authors": [],
+          "year": null,
+          "zotero_key": ""
+        }
+      }
+    }
+  ],
+  "traces": [
+    {
+      "at": "2026-10-06T22:16:26.151Z",
+      "type": "documentary-retrieval",
+      "query": "Relacionar las limitaciones del ensayo Vega y de la encuesta Bruma.",
+      "profile": {
+        "provider": "nodus",
+        "model": "bge-m3-q8_0"
+      },
+      "contract": null,
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "vectorKeys": [
+        "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5",
+        "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b",
+        "3292c5b2abe9e2dd1002e6a4efe05e423c562ad7185cae88e1694e50c68d658d",
+        "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321",
+        "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424",
+        "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9",
+        "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3",
+        "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67",
+        "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883",
+        "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6",
+        "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f",
+        "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281",
+        "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe",
+        "67c360d0b3bbc1a3e6687b1aeba6fe21d085b3a9208c787a225ac0573a230b90",
+        "419ecfc52ab73d18eb107bed775150ee6b9950a427617b0bd466f8641e34ab3e",
+        "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b",
+        "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da",
+        "55a3e2498d400679f7bdd0afdb50df5c82d89cbf109e968a0883a8d158179e3e",
+        "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc",
+        "a628f8d9217e25926371b20cb3249dfad000911bfb296332e319c0940faaa993",
+        "7dd6149c665404fd7bf4386de2446c74caa7f566279c43d724b13c84b4df3f3c",
+        "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca",
+        "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2",
+        "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43",
+        "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8",
+        "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103",
+        "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c",
+        "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d",
+        "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637",
+        "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e",
+        "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e",
+        "51395ba8f92ad0092dfddb6d26efa339afd8eca21fe060f1f6eb5d2bd62eaffe",
+        "c5dc5c50e65138c4b73fb7d776602de5016268690a9ca73d034cc797c48e1d28",
+        "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f",
+        "54c0a1d65085e7bae0ba6817b3ca887eb4f80cb0fa9f9d00fe08b935cd52bea8",
+        "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63",
+        "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d",
+        "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54",
+        "d55860e96ed6b058914deb1d653ac3f2753df5fd345f81bcf2ffdb1a98d7d6da",
+        "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14",
+        "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          },
+          {
+            "id": "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          },
+          {
+            "id": "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b"
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88"
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c"
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6"
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383"
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:39",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:49",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:118",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:27",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:10",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:18",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:54",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:25",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:59",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43:0",
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:34",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:49",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:52",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:9",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:21",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:90",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:117",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:48",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:48",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:16",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:52",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:25",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:85",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:18",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:52",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:50",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "55a3e2498d400679f7bdd0afdb50df5c82d89cbf109e968a0883a8d158179e3e:0",
+            "documentId": "nodus:81257f31-4653-42f7-b9f2-e56f654f3900"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:26",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8:59",
+            "documentId": "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:10",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:47",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:19",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:45",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:55",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:17",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:61",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:56",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:31",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:24",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f:0",
+            "documentId": "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:53",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:49",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:13",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          },
+          {
+            "id": "073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7"
+          },
+          {
+            "id": "b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0",
+            "documentId": "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2"
+          },
+          {
+            "id": "19bb755cb11b021a46975946b3beb44f665035817fadc52eda5513182dd73702:0",
+            "documentId": "nodus:8827edf7-8418-4fca-a1ef-0d6220c26f84"
+          },
+          {
+            "id": "5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "1a779f1b0f54a7760e95199e9c5f2f4528671e7cd430ce9e92f1e9098018d124:35",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "2a8638ad86b78d113053e970a7adfd280cb8fa83ee3314d66c394f240a378685:46",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "2a8638ad86b78d113053e970a7adfd280cb8fa83ee3314d66c394f240a378685:48",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "51886a9cce58950755b50cd022580be1a2f5a93f80ca842b80cce0a99cfe27db:44",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "1a779f1b0f54a7760e95199e9c5f2f4528671e7cd430ce9e92f1e9098018d124:30",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "f812148533f6082cbfa5b620f8d2cbc2a4e086cd66ddeebdc94c5e46ed1e8b33:45",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "add3a29da93388269ecb87a7ec16c4b55aae8b045273e08f3460a9027f72cb2f:0",
+            "documentId": "nodus:81257f31-4653-42f7-b9f2-e56f654f3900"
+          },
+          {
+            "id": "f812148533f6082cbfa5b620f8d2cbc2a4e086cd66ddeebdc94c5e46ed1e8b33:41",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "f812148533f6082cbfa5b620f8d2cbc2a4e086cd66ddeebdc94c5e46ed1e8b33:44",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:11",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:14",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:17",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:2",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:20",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:23",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:5",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:8",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:26",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:1",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:10",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:12",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:13",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:15",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:16",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:18",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:19",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:21",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:22",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:24",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:25",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:3",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:4",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:6",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:7",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:9",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "f5a522860359c50e440b41984c301670698a9c380f197ed5e89f30a5c28e89c2:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4"
+          },
+          {
+            "id": "920fbfcc74775a8f7d5d45e355c23af3779bdab6e5ccdea12264955c551dfe6e:0",
+            "documentId": "nodus:e37ca57b-7013-47bf-9142-f6e82d96cdfd"
+          },
+          {
+            "id": "4029462e8d359df9a666bc33fc1a21b278161ebbd812c9542fc3dffac78ce9de:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6"
+          },
+          {
+            "id": "36c1d3f91439c1bf1656f058439d1c629003b601c0cf3cf0cae7eb904dc1206c:0",
+            "documentId": "nodus:c69e33d0-0754-457a-a601-3c634a755593"
+          },
+          {
+            "id": "2a8638ad86b78d113053e970a7adfd280cb8fa83ee3314d66c394f240a378685:47",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "c522507524efa1aeb6959a9ea4242bf28f38f08cf91b5771c3c3d49d3424b3aa:50",
+            "documentId": "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8"
+          },
+          {
+            "id": "23e5967a0d05794cb99e0beafa497d7e45f09315503ac4888211105357aafeef:44",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "23e5967a0d05794cb99e0beafa497d7e45f09315503ac4888211105357aafeef:40",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "23e5967a0d05794cb99e0beafa497d7e45f09315503ac4888211105357aafeef:45",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "23e5967a0d05794cb99e0beafa497d7e45f09315503ac4888211105357aafeef:43",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          }
+        ],
+        "selected": [
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+            "lexicalIds": [
+              "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0"
+            ],
+            "semanticIds": [
+              "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0"
+            ]
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+            "lexicalIds": [
+              "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0"
+            ],
+            "semanticIds": [
+              "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0"
+            ]
+          },
+          {
+            "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+            "lexicalIds": [
+              "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0"
+            ],
+            "semanticIds": [
+              "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0"
+            ]
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+            "lexicalIds": [
+              "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0"
+            ],
+            "semanticIds": [
+              "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0"
+            ]
+          },
+          {
+            "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+            "lexicalIds": [
+              "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0"
+            ],
+            "semanticIds": [
+              "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0"
+            ]
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+            "lexicalIds": [
+              "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0"
+            ],
+            "semanticIds": [
+              "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0"
+            ]
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+            "lexicalIds": [
+              "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0"
+            ],
+            "semanticIds": [
+              "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0"
+            ]
+          },
+          {
+            "id": "5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+            "lexicalIds": [
+              "5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0"
+            ],
+            "semanticIds": [
+              "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424:0"
+            ]
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+            "lexicalIds": [
+              "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0"
+            ],
+            "semanticIds": [
+              "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0"
+            ]
+          },
+          {
+            "id": "073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+            "lexicalIds": [
+              "073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0"
+            ],
+            "semanticIds": [
+              "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43:0"
+            ]
+          },
+          {
+            "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+            "lexicalIds": [
+              "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0"
+            ],
+            "semanticIds": [
+              "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0"
+            ]
+          },
+          {
+            "id": "b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0",
+            "documentId": "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+            "lexicalIds": [
+              "b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0"
+            ],
+            "semanticIds": [
+              "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:16:26.227Z",
+      "type": "research-evidence-selection",
+      "query": "Relacionar las limitaciones del ensayo Vega y de la encuesta Bruma.",
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "sharedCandidates": [
+        {
+          "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+          "provenance": "source"
+        },
+        {
+          "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+          "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+          "provenance": "source"
+        },
+        {
+          "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+          "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+          "provenance": "source"
+        },
+        {
+          "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+          "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+          "provenance": "source"
+        },
+        {
+          "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+          "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+          "provenance": "source"
+        },
+        {
+          "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+          "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+          "provenance": "source"
+        },
+        {
+          "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+          "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+          "provenance": "source"
+        },
+        {
+          "id": "5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+          "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917",
+          "provenance": "source"
+        },
+        {
+          "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+          "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+          "provenance": "source"
+        },
+        {
+          "id": "073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+          "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7",
+          "provenance": "source"
+        },
+        {
+          "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+          "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+          "provenance": "source"
+        },
+        {
+          "id": "b6cc78564fe77904c6d1fad2abc1c7b67a630e2527b541733a33a026189c48eb:0",
+          "documentId": "nodus:ca6d8c66-ce44-4d41-b4b4-d0c736bbe2b2",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+        "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:16:26.661Z",
+      "type": "documentary-retrieval",
+      "query": "limitaciones ensayo Vega",
+      "profile": {
+        "provider": "nodus",
+        "model": "bge-m3-q8_0"
+      },
+      "contract": null,
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "vectorKeys": [
+        "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5",
+        "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b",
+        "3292c5b2abe9e2dd1002e6a4efe05e423c562ad7185cae88e1694e50c68d658d",
+        "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321",
+        "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424",
+        "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9",
+        "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3",
+        "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67",
+        "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883",
+        "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6",
+        "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f",
+        "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281",
+        "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe",
+        "67c360d0b3bbc1a3e6687b1aeba6fe21d085b3a9208c787a225ac0573a230b90",
+        "419ecfc52ab73d18eb107bed775150ee6b9950a427617b0bd466f8641e34ab3e",
+        "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b",
+        "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da",
+        "55a3e2498d400679f7bdd0afdb50df5c82d89cbf109e968a0883a8d158179e3e",
+        "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc",
+        "a628f8d9217e25926371b20cb3249dfad000911bfb296332e319c0940faaa993",
+        "7dd6149c665404fd7bf4386de2446c74caa7f566279c43d724b13c84b4df3f3c",
+        "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca",
+        "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2",
+        "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43",
+        "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8",
+        "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103",
+        "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c",
+        "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d",
+        "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637",
+        "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e",
+        "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e",
+        "51395ba8f92ad0092dfddb6d26efa339afd8eca21fe060f1f6eb5d2bd62eaffe",
+        "c5dc5c50e65138c4b73fb7d776602de5016268690a9ca73d034cc797c48e1d28",
+        "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f",
+        "54c0a1d65085e7bae0ba6817b3ca887eb4f80cb0fa9f9d00fe08b935cd52bea8",
+        "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63",
+        "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d",
+        "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54",
+        "d55860e96ed6b058914deb1d653ac3f2753df5fd345f81bcf2ffdb1a98d7d6da",
+        "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14",
+        "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          },
+          {
+            "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88"
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b"
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383"
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4"
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c"
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:34",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:11",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:61",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:10",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:25",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:57",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:60",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:27",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:9",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:118",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:2",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:45",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:18",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          },
+          {
+            "id": "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+            "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:48",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:21",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:7",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:52",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:33",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:12",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:10",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:12",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:28",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f:52",
+            "documentId": "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:31",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:53",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:16",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:34",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:56",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:9",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:18",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:52",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:11",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:49",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:47",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43:0",
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7"
+          },
+          {
+            "id": "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:76",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:107",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:106",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:55",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:73",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:48",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f:24",
+            "documentId": "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          }
+        ],
+        "selected": [
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+            "lexicalIds": [
+              "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0"
+            ],
+            "semanticIds": [
+              "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0"
+            ]
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+            "lexicalIds": [
+              "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0"
+            ],
+            "semanticIds": [
+              "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0"
+            ]
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+            "lexicalIds": [
+              "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0"
+            ],
+            "semanticIds": [
+              "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0"
+            ]
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+            "lexicalIds": [
+              "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0"
+            ],
+            "semanticIds": [
+              "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0"
+            ]
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+            "lexicalIds": [
+              "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0"
+            ],
+            "semanticIds": [
+              "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0"
+            ]
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+            "lexicalIds": [
+              "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0"
+            ],
+            "semanticIds": [
+              "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0"
+            ]
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+            "lexicalIds": [],
+            "semanticIds": [
+              "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0"
+            ]
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+            "lexicalIds": [],
+            "semanticIds": [
+              "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0"
+            ]
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+            "lexicalIds": [],
+            "semanticIds": [
+              "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0"
+            ]
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+            "lexicalIds": [],
+            "semanticIds": [
+              "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0"
+            ]
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+            "lexicalIds": [],
+            "semanticIds": [
+              "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0"
+            ]
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+            "lexicalIds": [],
+            "semanticIds": [
+              "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:16:26.727Z",
+      "type": "research-evidence-selection",
+      "query": "limitaciones ensayo Vega",
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "sharedCandidates": [
+        {
+          "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+          "provenance": "source"
+        },
+        {
+          "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+          "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+          "provenance": "source"
+        },
+        {
+          "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+          "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+          "provenance": "source"
+        },
+        {
+          "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+          "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+          "provenance": "source"
+        },
+        {
+          "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+          "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+          "provenance": "source"
+        },
+        {
+          "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+          "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+          "provenance": "source"
+        },
+        {
+          "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+          "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+          "provenance": "source"
+        },
+        {
+          "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+          "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+          "provenance": "source"
+        },
+        {
+          "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+          "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+          "provenance": "source"
+        },
+        {
+          "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+          "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+          "provenance": "source"
+        },
+        {
+          "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+          "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+          "provenance": "source"
+        },
+        {
+          "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+          "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+        "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:16:27.185Z",
+      "type": "documentary-retrieval",
+      "query": "encuesta Bruma limitaciones",
+      "profile": {
+        "provider": "nodus",
+        "model": "bge-m3-q8_0"
+      },
+      "contract": null,
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "vectorKeys": [
+        "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5",
+        "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b",
+        "3292c5b2abe9e2dd1002e6a4efe05e423c562ad7185cae88e1694e50c68d658d",
+        "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321",
+        "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424",
+        "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9",
+        "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3",
+        "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67",
+        "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883",
+        "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6",
+        "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f",
+        "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281",
+        "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe",
+        "67c360d0b3bbc1a3e6687b1aeba6fe21d085b3a9208c787a225ac0573a230b90",
+        "419ecfc52ab73d18eb107bed775150ee6b9950a427617b0bd466f8641e34ab3e",
+        "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b",
+        "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da",
+        "55a3e2498d400679f7bdd0afdb50df5c82d89cbf109e968a0883a8d158179e3e",
+        "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc",
+        "a628f8d9217e25926371b20cb3249dfad000911bfb296332e319c0940faaa993",
+        "7dd6149c665404fd7bf4386de2446c74caa7f566279c43d724b13c84b4df3f3c",
+        "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca",
+        "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2",
+        "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43",
+        "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8",
+        "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103",
+        "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c",
+        "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d",
+        "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637",
+        "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e",
+        "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e",
+        "51395ba8f92ad0092dfddb6d26efa339afd8eca21fe060f1f6eb5d2bd62eaffe",
+        "c5dc5c50e65138c4b73fb7d776602de5016268690a9ca73d034cc797c48e1d28",
+        "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f",
+        "54c0a1d65085e7bae0ba6817b3ca887eb4f80cb0fa9f9d00fe08b935cd52bea8",
+        "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63",
+        "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d",
+        "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54",
+        "d55860e96ed6b058914deb1d653ac3f2753df5fd345f81bcf2ffdb1a98d7d6da",
+        "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14",
+        "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          },
+          {
+            "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b"
+          },
+          {
+            "id": "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383"
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6"
+          },
+          {
+            "id": "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          },
+          {
+            "id": "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c"
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88"
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4"
+          },
+          {
+            "id": "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:39",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:90",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:49",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6:0",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:49",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:24",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:15",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:23",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:0",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:35",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:52",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:13",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:54",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:25",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:118",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:49",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:59",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:48",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:52",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:87",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43:0",
+            "documentId": "nodus:a30c1239-7663-4193-bbbe-514b851c3ac7"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:36",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:48",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:21",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:52",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:17",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:40",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:60",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:57",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+            "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:16",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:84",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:19",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e:88",
+            "documentId": "nodus:c0343c00-d441-4154-b538-fa556461b6fb"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:56",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:47",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:19",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "c5dc5c50e65138c4b73fb7d776602de5016268690a9ca73d034cc797c48e1d28:0",
+            "documentId": "nodus:c69e33d0-0754-457a-a601-3c634a755593"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:10",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:16",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:5",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:45",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:25",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:11",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:14",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:17",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:2",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:20",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:23",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:5",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:8",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:26",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:1",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:10",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:12",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:13",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:15",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:16",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:18",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:19",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:21",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:22",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:24",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:25",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:3",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:4",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:6",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:7",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:9",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1"
+          },
+          {
+            "id": "a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          }
+        ],
+        "selected": [
+          {
+            "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+            "lexicalIds": [
+              "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0"
+            ],
+            "semanticIds": [
+              "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0"
+            ]
+          },
+          {
+            "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+            "lexicalIds": [
+              "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0"
+            ],
+            "semanticIds": [
+              "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0"
+            ]
+          },
+          {
+            "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+            "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+            "lexicalIds": [
+              "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0"
+            ],
+            "semanticIds": [
+              "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6:0"
+            ]
+          },
+          {
+            "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+            "lexicalIds": [
+              "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0"
+            ],
+            "semanticIds": [
+              "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0"
+            ]
+          },
+          {
+            "id": "a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+            "lexicalIds": [
+              "a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0"
+            ],
+            "semanticIds": [
+              "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0"
+            ]
+          },
+          {
+            "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+            "lexicalIds": [],
+            "semanticIds": [
+              "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0"
+            ]
+          },
+          {
+            "id": "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+            "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da",
+            "lexicalIds": [],
+            "semanticIds": [
+              "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:16:27.247Z",
+      "type": "research-evidence-selection",
+      "query": "encuesta Bruma limitaciones",
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "sharedCandidates": [
+        {
+          "id": "a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+          "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37",
+          "provenance": "source"
+        },
+        {
+          "id": "04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+          "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc",
+          "provenance": "source"
+        },
+        {
+          "id": "b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+          "documentId": "nodus:3a69c4d8-6b21-45c4-b28e-5fbab117b2d1",
+          "provenance": "source"
+        },
+        {
+          "id": "03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+          "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d",
+          "provenance": "source"
+        },
+        {
+          "id": "a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+          "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449",
+          "provenance": "source"
+        },
+        {
+          "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+          "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+          "provenance": "source"
+        },
+        {
+          "id": "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+          "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+        "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    },
+    {
+      "at": "2026-10-06T22:16:28.690Z",
+      "type": "documentary-retrieval",
+      "query": "Vega ensayo limitaciones",
+      "profile": {
+        "provider": "nodus",
+        "model": "bge-m3-q8_0"
+      },
+      "contract": null,
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "vectorKeys": [
+        "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5",
+        "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b",
+        "3292c5b2abe9e2dd1002e6a4efe05e423c562ad7185cae88e1694e50c68d658d",
+        "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321",
+        "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424",
+        "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9",
+        "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3",
+        "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67",
+        "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883",
+        "33aec54484250a1efabbe174d31e1ee638f6c9cdc3b7467092feb34080283ed6",
+        "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f",
+        "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281",
+        "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe",
+        "67c360d0b3bbc1a3e6687b1aeba6fe21d085b3a9208c787a225ac0573a230b90",
+        "419ecfc52ab73d18eb107bed775150ee6b9950a427617b0bd466f8641e34ab3e",
+        "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b",
+        "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da",
+        "55a3e2498d400679f7bdd0afdb50df5c82d89cbf109e968a0883a8d158179e3e",
+        "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc",
+        "a628f8d9217e25926371b20cb3249dfad000911bfb296332e319c0940faaa993",
+        "7dd6149c665404fd7bf4386de2446c74caa7f566279c43d724b13c84b4df3f3c",
+        "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca",
+        "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2",
+        "f79737f274d7234b6c58c1eff5d070c1f3fc6ec8d96fd4ca66211ba436bd2b43",
+        "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8",
+        "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103",
+        "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c",
+        "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d",
+        "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637",
+        "ad45cba97320cca153b66cb472db977eecaa9958d064a1d863de0de2a00b534e",
+        "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e",
+        "51395ba8f92ad0092dfddb6d26efa339afd8eca21fe060f1f6eb5d2bd62eaffe",
+        "c5dc5c50e65138c4b73fb7d776602de5016268690a9ca73d034cc797c48e1d28",
+        "da37457cbdcb8b17f328453fc3ee39e7a186a6a5c0861a63bd3536b087972d3f",
+        "54c0a1d65085e7bae0ba6817b3ca887eb4f80cb0fa9f9d00fe08b935cd52bea8",
+        "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63",
+        "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d",
+        "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54",
+        "d55860e96ed6b058914deb1d653ac3f2753df5fd345f81bcf2ffdb1a98d7d6da",
+        "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14",
+        "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1"
+      ],
+      "retrieval": {
+        "semantic": [
+          {
+            "id": "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          },
+          {
+            "id": "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88"
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b"
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383"
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4"
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c"
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:61",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:11",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:118",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "fa8c36eacff4bc25da905f78ddeae3cfcf8e3a07e2004af3948960bbd6c3ad14:0",
+            "documentId": "nodus:f4460528-aa8c-49ab-92a6-6bd7cd33db8d"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:25",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:34",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:27",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:18",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:10",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:9",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:57",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:60",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:2",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "30efed7c018bad1247e5678946f1d9f1ec74265daaac0763af3ab86270abc28f:52",
+            "documentId": "nodus:4a9fd1a6-4851-44c5-977e-0ab51c2b0396"
+          },
+          {
+            "id": "1ed6c1f6f8649ca9ad14ed3e42e00306d874f3a1e32c45b1173fccd3ddc1a424:0",
+            "documentId": "nodus:20021672-a2b1-4b8b-9ee8-f13d9fda2917"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:21",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:45",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:28",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:31",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:53",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "eefce35b40013e9cec88950ddf02d667a009558977e3229f256b41e7de042281:0",
+            "documentId": "nodus:502f23cf-4361-45f5-acbb-d80677177a37"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:52",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:48",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:52",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:12",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:9",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "de398c5d33f1e5858abfe1dcbd6940004a7bc10af3447dca872d0efb36331e7b:0",
+            "documentId": "nodus:78e1cc6d-3e63-4799-ac4e-359df02316fc"
+          },
+          {
+            "id": "1926d3e5537ca07030c26dd029ecf9a5c1041571cbfa3d2f9fc763f0d88da9fe:0",
+            "documentId": "nodus:562c4980-828c-4103-ac5b-82f8be55d449"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:34",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:52",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:48",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+            "documentId": "nodus:23169623-e236-43d0-a87e-d544506e61da"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:48",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:7",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8:1",
+            "documentId": "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:33",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:56",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:49",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:10",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          },
+          {
+            "id": "73823de85e3cc6577aee9403ea8d05aebb877084c00272d08f80ab7e70ba79da:25",
+            "documentId": "nodus:7e250045-336e-436e-ae7f-0a3faeb5a9e5"
+          },
+          {
+            "id": "1bd9817c0176e7051519b8f3ee98b0a6838889f7aed71a8f048d8b1a4c3cd6fc:76",
+            "documentId": "nodus:82a437f9-5f89-4016-becf-d6d5a04751cd"
+          },
+          {
+            "id": "14960da99efa6532a6a4a6be190ba23087f9d7de32bfbf661aa0f0eaae9c43a2:17",
+            "documentId": "nodus:9ee26f50-92e6-4167-8baa-66dd48462c2e"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:12",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "88f309747686eb90270e81d4b34aa7c9b8be88fb6bde2448479a653a2e8f1637:59",
+            "documentId": "nodus:bd5a18b0-0fb4-4ff6-bde8-0b0a342a1b1e"
+          },
+          {
+            "id": "31a52775e35d7cf4313585d53bf4cbef5a27d423d23d14f3cc6219d3434f41b8:54",
+            "documentId": "nodus:a43b5099-c6db-4610-a860-ce13b3d590c8"
+          },
+          {
+            "id": "6a7214154a64b99abfd9d3bca31e75dbc06b83921b40bd900f15eff435de0321:49",
+            "documentId": "nodus:12d23cc8-d990-42aa-861a-b592ac2744e3"
+          },
+          {
+            "id": "e09c5808f192e9d80c38bfea2a3aa4ccbe61e1246ef229d60f5c06ecb5832e54:47",
+            "documentId": "nodus:ee135ae9-dc45-4dbc-b819-a9948aa2015d"
+          },
+          {
+            "id": "0d2be68d34684d3d70cf8dd63d63ceb7cbbfcf57495dd7c1538ee11b1fc1d81d:55",
+            "documentId": "nodus:e949e23d-2e3e-47af-844d-3ef14878e901"
+          }
+        ],
+        "lexical": [
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12"
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714"
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938"
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5"
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3"
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a"
+          }
+        ],
+        "selected": [
+          {
+            "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+            "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+            "lexicalIds": [
+              "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0"
+            ],
+            "semanticIds": [
+              "7b3d24f0742d2b4cdfffa0acaa27749bde851cf3c5ed0abcf2bd718f167a25ca:0"
+            ]
+          },
+          {
+            "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+            "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+            "lexicalIds": [
+              "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0"
+            ],
+            "semanticIds": [
+              "596d8b604882c650afd8658fb0a116f54908b07c89a62d9bd224c122062c706e:0"
+            ]
+          },
+          {
+            "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+            "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+            "lexicalIds": [
+              "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0"
+            ],
+            "semanticIds": [
+              "78b32479f84538408e9b4f0a9d984a9f609dbe7bb3730e6c0e5575115c5936c1:0"
+            ]
+          },
+          {
+            "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+            "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+            "lexicalIds": [
+              "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0"
+            ],
+            "semanticIds": [
+              "18d20658e32fe625a93e74e27ce5fd783153626c19ead27d9e6976545c975103:0"
+            ]
+          },
+          {
+            "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+            "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+            "lexicalIds": [
+              "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0"
+            ],
+            "semanticIds": [
+              "67a06f708aaad2307eea86142cf8ddcdffb8f10742ee5826be2b4c223846a83b:0"
+            ]
+          },
+          {
+            "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+            "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+            "lexicalIds": [
+              "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0"
+            ],
+            "semanticIds": [
+              "05fac354909420846c528443705b5738fff1234ba4bc90b9586f98250a8e4b63:0"
+            ]
+          },
+          {
+            "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+            "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+            "lexicalIds": [],
+            "semanticIds": [
+              "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0"
+            ]
+          },
+          {
+            "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+            "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+            "lexicalIds": [],
+            "semanticIds": [
+              "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0"
+            ]
+          },
+          {
+            "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+            "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+            "lexicalIds": [],
+            "semanticIds": [
+              "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0"
+            ]
+          },
+          {
+            "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+            "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+            "lexicalIds": [],
+            "semanticIds": [
+              "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0"
+            ]
+          },
+          {
+            "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+            "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+            "lexicalIds": [],
+            "semanticIds": [
+              "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0"
+            ]
+          },
+          {
+            "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+            "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+            "lexicalIds": [],
+            "semanticIds": [
+              "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0"
+            ]
+          }
+        ]
+      },
+      "limitations": {
+        "incompleteAttachments": [],
+        "lexicalOnly": false
+      }
+    },
+    {
+      "at": "2026-10-06T22:16:28.755Z",
+      "type": "research-evidence-selection",
+      "query": "Vega ensayo limitaciones",
+      "scopeId": "d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3",
+      "sharedCandidates": [
+        {
+          "id": "213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+          "documentId": "nodus:9c4f9eed-5948-4424-a559-7ee9dcb14a12",
+          "provenance": "source"
+        },
+        {
+          "id": "dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+          "documentId": "nodus:c4b9d71a-189d-423d-a289-d168f4068714",
+          "provenance": "source"
+        },
+        {
+          "id": "e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+          "documentId": "nodus:f761bfb7-af66-4972-a647-d4c808c28bc5",
+          "provenance": "source"
+        },
+        {
+          "id": "5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+          "documentId": "nodus:a5eceae7-29ee-4e4d-9215-8b5feb7ac938",
+          "provenance": "source"
+        },
+        {
+          "id": "10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+          "documentId": "nodus:078be61b-6d03-4dc6-8a7e-7e819907d62a",
+          "provenance": "source"
+        },
+        {
+          "id": "7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+          "documentId": "nodus:e5b6790a-9453-47d5-a54d-755a4c8830f3",
+          "provenance": "source"
+        },
+        {
+          "id": "0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+          "documentId": "nodus:ae530fe5-14ad-4e01-8b69-bc65593f5c88",
+          "provenance": "source"
+        },
+        {
+          "id": "b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+          "documentId": "nodus:00877005-54a1-42a6-b0b2-60d4ac7de94b",
+          "provenance": "source"
+        },
+        {
+          "id": "7078793a06df46d3b2e383081c2fb36abd35c6b46b0cde8f56a9ae5e839beb9d:0",
+          "documentId": "nodus:ae9b128e-7242-4761-abbb-24328a448383",
+          "provenance": "source"
+        },
+        {
+          "id": "a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+          "documentId": "nodus:3644eb3e-22ed-4e2e-9d60-0ecacf46e8d4",
+          "provenance": "source"
+        },
+        {
+          "id": "db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+          "documentId": "nodus:3a5314e1-2df3-4537-8c3a-91ad2daba18c",
+          "provenance": "source"
+        },
+        {
+          "id": "f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+          "documentId": "nodus:3836ce86-c318-4d3b-95ae-47bd66942ed6",
+          "provenance": "source"
+        }
+      ],
+      "legacyCandidates": [
+        {
+          "id": "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+          "reason": "source"
+        }
+      ],
+      "selectedPassages": [
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+        "scoped:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b6598cb91dacacbdb9f1fa6ba08dd8bf02d271179bb00719352822a1a49006b3",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:0f8e462977f8e851b03eaaa0b7db3f4ec891b374351d5a04d2c3f0881aa8184c:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b3ef6bf08c5ecfd009fd0730458f66f32080e411d4203b736a3f796c79921bd5:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a43dda2d881c255aa2419546efa632ca6ce6cb2bbd9ebfd0b76213ad0c9d29e3:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:db0f994159ab7310ebfdc21fca013aff6ab54bf84b838cfd429b58b1b6917883:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+        "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0"
+      ],
+      "selectedIdeas": [
+        "g-0001"
+      ],
+      "limitations": [],
+      "partial": true
+    }
+  ],
+  "manualReview": "pending",
+  "openedCitations": [
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+      "title": "fixture 02",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 02\nOBRA ENLAZADA\n1\nfixture 02\nEVIDENCIA ANCLADA\n1\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:e4de9c6e02e80754e7cbf96d1b997bd705541b787e22fc894e8328edb046df52:0",
+      "title": "fixture 02",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 02\nOBRA ENLAZADA\n1\nfixture 02\nEVIDENCIA ANCLADA\n1\nVega · archive 2 In the Vega trial, spaced retrieval participants recalled 72%; rereading participants recalled 51%. Intelligence was not measured. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:10420449a3f3ff974e1051c176d0933b0a1dd390894986cd44101ede2b910def:0",
+      "title": "fixture 27",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 27\nOBRA ENLAZADA\n1\nfixture 27\nEVIDENCIA ANCLADA\n1\nCampos: Document · Evidence 1. Document: Vega · archive 27 · Evidence: Dans l’essai Vega, le rappel espacé a atteint 72%, contre 51% pour la relecture. L’intelligence n’a pas été mesurée. 2. Document: Source type · Evidence: synthetic archive\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:213af87c4d1cb27c1caa371d4d3166ac560a003f554611b59e804324aea7fb68:0",
+      "title": "fixture 07",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 07\nOBRA ENLAZADA\n1\nfixture 07\nEVIDENCIA ANCLADA\n1\nVega - archive 7 En el ensayo Vega, el grupo que practicx] recuperaci[x]n espaciada recordX] el 72%; el grupo de relectura, el 51%. No se midiX] inteligencia. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5bce8c212c965345b79ad4760ca461fe8d51ac4f7aae8654fc70334a7f05ff3c:0",
+      "title": "fixture 12",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 12\nOBRA ENLAZADA\n1\nfixture 12\nEVIDENCIA ANCLADA\n1\nVega · archive 12 Nello studio Vega, il recupero distribuito raggiunse il 72%, la rilettura il 51%. L’intelligenza non fu misurata.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:dd429bfced3e5475ab3efc69e311bf0288025bac64dc19685a5981a25e018004:0",
+      "title": "fixture 17",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 17\nOBRA ENLAZADA\n1\nfixture 17\nEVIDENCIA ANCLADA\n1\nVega · archive 17 # Vega · archive 17 No ensaio Vega, a recuperação espaçada atingiu 72%, e a releitura, 51%. A inteligência não foi medida.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:5ff6797952410fbdb7acd55c6dcb53ec294e06115b75bfa642cc24b80636867e:0",
+      "title": "fixture 29",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 29\nOBRA ENLAZADA\n1\nfixture 29\nEVIDENCIA ANCLADA\n1\nCampos: Document · Evidence 1. Document: Bruma · archive 29 · Evidence: O inquérito Bruma incluiu 240 pessoas de seis aldeias. A confiança foi de 95%. A mediana foi 18 e a média 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. 2. Document: Statistic · Evidence: Value 3. Document: Median · Evidence: 18 4. Document: Mean · Evidence: 24 5. Document: Sample · Evidence: 240\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a339f83bfe020e9dcfd08acf357ce31c6d9aeff398e800e10db26e522f12187e:0",
+      "title": "fixture 14",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 14\nOBRA ENLAZADA\n1\nfixture 14\nEVIDENCIA ANCLADA\n1\nBruma · archive 14 The Bruma survey included 240 people from six villages. Confidence was 95%. The median was 18 and the mean 24; they are not equivalent. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:03255ce0c86e3527d76f80fb25a3f1d6d1113c2780a328f9ad4c4782dc861519:0",
+      "title": "fixture 24",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 24\nOBRA ENLAZADA\n1\nfixture 24\nEVIDENCIA ANCLADA\n1\n# Bruma · archive 24 L’indagine Bruma comprendeva 240 persone di sei villaggi. La confidenza era del 95%. La mediana era 18, la media 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. Mixed: The Mistral observatory cerró durante cinco días por mantenimiento, not due to bad weather.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:04799e47750dc7b015afa8502efa287a01c440b5f6b11f4cc509cbbd0550f26e:0",
+      "title": "fixture 09",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 09\nOBRA ENLAZADA\n1\nfixture 09\nEVIDENCIA ANCLADA\n1\nBruma · archive 9 L’enquête Bruma comprenait 240 personnes de six villages. Le niveau de confiance était de 95%. La médiane était 18 et la moyenne 24. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:7986d037c5fb0713385916d430768a17003278cc8c0cdf4578c1a749112a2ce5:0",
+      "title": "fixture 22",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 22\nOBRA ENLAZADA\n1\nfixture 22\nEVIDENCIA ANCLADA\n1\n# Vega · archive 22 Im Vega-Versuch erreichte verteiltes Abrufen 72%, erneutes Lesen 51%. Intelligenz wurde nicht gemessen. Euskara: Haize estazioak hamazazpi gradu neurtu zituen eguerdian, ez hezetasuna.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+      "title": "fixture 19",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 19\nOBRA ENLAZADA\n1\nfixture 19\nEVIDENCIA ANCLADA\n1\n# Bruma · archive 19 La encuesta Bruma incluyó 240 personas de seis pueblos. El intervalo de confianza fue del 95%. La mediana fue 18 y la media 24; no son equivalentes. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. ## Archive section 2 Bruma field log 1: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 1 contains no additional outcome claim. ## Archive section 3 Bruma field log 2: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 2 contains no additional outcome claim. ## Archive section 4 Bruma field log 3: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 3 contains no additional outcome claim. ## Archive section 5 Bruma field log 4: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 4 contains no additional outcome claim. ## Archive section 6 Bruma field log 5: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 5 contains no additional outcome claim. ## Archive section 7 Bruma field log 6: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 6 contains no additional outcome claim. ## Archive section 8 Bruma field log 7: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 7 contains no additional outcome\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:a53488bc643e45d04bfd952f2656df2519c6de83819624f810272a72561b3abf:0",
+      "title": "fixture 04",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 04\nOBRA ENLAZADA\n1\nfixture 04\nEVIDENCIA ANCLADA\n1\nBruma - archive 4 Die Bruma-Umfrage umfasste 240 Personen aus sechs Dórfern. Das Konfidenzniveau betrug 95%, Der Median war 18, der Mittelwert 24, Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f953415ea1ac2cee2ecb48e234d43a0ec580763700e3b87c7734a6f064237e67:0",
+      "title": "fixture 03",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 03\nOBRA ENLAZADA\n1\nfixture 03\nEVIDENCIA ANCLADA\n1\nAlba - archive 3 Le capteur Alba utilise une lumilx]re verte [XX 530 nm pour mesurer la turbidit/X]. Il ne mesure pas l'oxyglXlne. II doit Xitre [Xltalonn/X] tous les 30 jours. *Source: Nodus QA synthetic archive.*\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:b88e8d723c18d008e3da6c1cd837487f32e674743d15e2360bf5e2fdb4ec6935:0",
+      "title": "fixture 19",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 19\nOBRA ENLAZADA\n1\nfixture 19\nEVIDENCIA ANCLADA\n1\n# Bruma · archive 19 La encuesta Bruma incluyó 240 personas de seis pueblos. El intervalo de confianza fue del 95%. La mediana fue 18 y la media 24; no son equivalentes. Bruma archive: preliminary memorandum counted 239 records. The final correction records 240 participants; the preliminary total is superseded. ## Archive section 2 Bruma field log 1: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 1 contains no additional outcome claim. ## Archive section 3 Bruma field log 2: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 2 contains no additional outcome claim. ## Archive section 4 Bruma field log 3: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 3 contains no additional outcome claim. ## Archive section 5 Bruma field log 4: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 4 contains no additional outcome claim. ## Archive section 6 Bruma field log 5: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 5 contains no additional outcome claim. ## Archive section 7 Bruma field log 6: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 6 contains no additional outcome claim. ## Archive section 8 Bruma field log 7: this record describes survey methods, confidence intervals, missing responses, and separate definitions of the mean and median. Administrative review 7 contains no additional outcome\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:073f2f3cf305dc906297eaed93fd84c8a13b2b7576218471d02985bbaaccab90:0",
+      "title": "fixture 21",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nfixture 21\nOBRA ENLAZADA\n1\nfixture 21\nEVIDENCIA ANCLADA\n1\n# Puerto Claro · archive 21 L’école de Puerto Claro a ouvert sa bibliothèque en 1912. Le laboratoire a ouvert en 1913, pas la bibliothèque. Català: El canal Cerç transporta 42 litres per minut; la mesura és de cabal, no de pressió.\np. 1"
+    },
+    {
+      "id": "documentary:d4139b3e602504fe7287df5384d6e693f62c56471e7dd2a8b2a5550c3d4f8dc3:f43d17685253d27010943a53f0687d778f3eaeda640d0f960562a49828c70ac9:0",
+      "title": "Orbe revised station",
+      "locator": "p. 1",
+      "content": "Pasaje de texto completo\np. 1\nVer página 1\nOrbe revised station\nOBRA ENLAZADA\n1\nOrbe revised station\nEVIDENCIA ANCLADA\n1\nThe revised Orbe calibration file prescribes retention for 89 days. It supersedes the former 73-day rule.\np. 1"
+    }
+  ],
+  "screenshot": "/private/tmp/nodus-research-DFNIdJ/artifacts/chat-0-synthesis.png"
+}

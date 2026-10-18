@@ -1,6 +1,6 @@
 # Nodus Research Connector privacy policy
 
-Last updated: 11 August 2026
+Last updated: 15 October 2026
 
 Nodus Research Connector has one purpose: capture a document or web reference chosen by the user and save it in the user's local Nodus Library.
 
@@ -10,16 +10,17 @@ Only after the user clicks the Nodus toolbar icon, the extension reads the activ
 
 ## Processing and storage
 
-Captured data is sent to the Nodus desktop application through the loopback address `127.0.0.1`. The pairing token and last selected collection are stored in Chrome's local extension storage. Nodus stores accepted records and files in the user's configured `nodus-library` folder.
+Captured data is sent to the Nodus desktop application through the loopback address `127.0.0.1`. The pairing token, port, last selected collection and user-confirmed save jobs are stored in Chrome's local extension storage. Pending jobs retain the reviewed capture until Nodus acknowledges it; completed history is limited to 20 jobs and contains progress, reference titles, attachment URLs and errors rather than full page snapshots. Nodus stores accepted records and files in the user's configured `nodus-library` folder.
 
 The extension does not send captured content, browsing activity, credentials, or library data to Nodus developers. It contains no analytics, advertising, tracking, or telemetry code. Bibliographic identifier enrichment performed by the desktop application may contact the public metadata providers documented by Nodus (for example Crossref, Open Library, PubMed, or arXiv).
 
 ## Permissions
 
 - `activeTab` and `scripting`: inspect only the tab on which the user clicked the extension.
-- `storage`: retain the local pairing token, port, and last collection.
+- `storage`: retain the local pairing token, port, last collection and save progress.
+- `alarms`: resume previously confirmed jobs after an interruption; no new pages are read.
 - `http://127.0.0.1/*` and `http://localhost/*`: communicate with the local Nodus desktop application.
-- Optional per-site HTTP/HTTPS access: retrieve a user-selected attachment only when Nodus first fails to download it without the browser session. Chrome asks for the exact site at that point; newly granted access is revoked after the transfer. An on-demand Manifest V3 service worker lets that user-confirmed transfer finish if the popup closes.
+- Optional per-site HTTP/HTTPS access: retrieve a user-selected attachment only when Nodus first fails to download it without the browser session. The user clicks “Authorize and download” to request that exact site; newly granted access is revoked after the transfer. An on-demand Manifest V3 service worker lets that user-confirmed transfer finish if the popup closes.
 
 Users can revoke site permissions in Chrome, forget the pairing from the extension settings, disable the connector in Nodus, or delete captured records from the Nodus Library.
 

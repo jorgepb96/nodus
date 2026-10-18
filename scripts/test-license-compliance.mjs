@@ -30,6 +30,8 @@ test('packaging generates and exposes the legal bundle', () => {
       // download when it is.
       ['build/capability-bootstrap', 'capability-bootstrap'],
       ['build/zotero-mcp', 'zotero-mcp'],
+      // Nodus Sign's optional engine adapter and its hash-pinned lock, outside the asar.
+      ['electron/assets/sign', 'sign'],
     ],
   );
   // Whatever else that folder gains, the shipped copy must never carry a live deployment's state:

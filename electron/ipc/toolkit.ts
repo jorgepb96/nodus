@@ -1,3 +1,4 @@
+import { registerSignIpc } from './sign';
 import { getBackupCatalog, getBackupCatalogRecords, previewOpenBackup, runOpenBackup, cancelOpenBackup, saveBackupPreset, deleteBackupPreset } from '../export/openBackupService';
 import type { BackupCatalogQuery, BackupPreset, OpenBackupOptions } from '@shared/backups';
 // toolkit channels, moved verbatim out of the monolithic registerIpc.
@@ -53,6 +54,7 @@ function presenterFileStem(name: unknown): string {
 }
 
 export function registerToolkitIpc({ h, getWindow }: IpcContext): void {
+  registerSignIpc({ h, getWindow });
   h('backups:catalog', async (e, ids: string[]) => { assertNotBrowserIpcSender(e); return getBackupCatalog(ids); });
   h('backups:records', async (e, query: BackupCatalogQuery) => { assertNotBrowserIpcSender(e); return getBackupCatalogRecords(query); });
   h('backups:preview', async (e, options: OpenBackupOptions) => { assertNotBrowserIpcSender(e); return previewOpenBackup(options); });

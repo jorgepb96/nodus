@@ -1,0 +1,549 @@
+{
+  "format": "nodus.root-source-inspection-cohort/1",
+  "externalHumanReview": false,
+  "returnedResponsesInspected": 20,
+  "doesNotChangeQualificationOrScores": true,
+  "originalSelection": {
+    "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-review-selection-corrected-001.json",
+    "sha256": "5070d0c7a13f081b4023063e08a6d67fc66671a0fc2e30078328a76b2bd93b1c"
+  },
+  "supplementRule": {
+    "at": "2026-10-15T09:03:24.925Z",
+    "originalSelection": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-review-selection-corrected-001.json",
+    "originalSelectionSha256": "5070d0c7a13f081b4023063e08a6d67fc66671a0fc2e30078328a76b2bd93b1c",
+    "preserveEveryOriginalSelectedCase": true,
+    "reviewAllMaterialGroundingFailuresAdditionally": true,
+    "reason": "Some selected cases have no published answer or invalid dispatch proof. Preserve those outcomes and additionally inspect twenty actual published responses against sources.",
+    "supplementRule": "After all eighty cases conclude, retain original selected published responses, including raw responses with invalid proof explicitly labeled non-qualifying. Sort all remaining published case IDs ascending by SHA256(preregistrationSha256 + colon + caseId), tie-break case ID, and take enough to reach twenty published responses. No correctness or favorable result used in ordering.",
+    "seed": "db0e5757f96630787f17b80923eb2288c93e07483934f229e5ec31535d7a274c",
+    "rootModelInspectionIsNotExternalHumanReview": true,
+    "qualityAcceptanceDenominatorsUnchanged": true
+  },
+  "originalSelectedOutcomes": [
+    {
+      "caseId": "R009",
+      "status": "verification-withheld",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R010",
+      "status": "protocol-failure",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R001",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R005",
+      "status": "verification-withheld",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R011",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R017",
+      "status": "answered",
+      "qualifiedPublished": false,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R015",
+      "status": "protocol-failure",
+      "qualifiedPublished": false,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R013",
+      "status": "answered",
+      "qualifiedPublished": false,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R025",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R032",
+      "status": "protocol-failure",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R036",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R042",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R048",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R053",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R059",
+      "status": "protocol-failure",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R058",
+      "status": "protocol-failure",
+      "qualifiedPublished": false,
+      "returnedAnswer": false
+    },
+    {
+      "caseId": "R066",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R061",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R080",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    },
+    {
+      "caseId": "R063",
+      "status": "answered",
+      "qualifiedPublished": true,
+      "returnedAnswer": true
+    }
+  ],
+  "entries": [
+    {
+      "format": "nodus.manual-source-review/1",
+      "recordedAt": "2026-10-13T16:30:02.624173+00:00",
+      "caseId": "R001",
+      "reviewer": "Root Codex model-assisted source inspection; not external human review",
+      "selectionManifest": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-review-selection-corrected-001.json",
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R001.json",
+        "sha256": "4ce4154ba1d1af958f61513783a8073b8c5e8f9baff00a065e5ebf162384efcd"
+      },
+      "reviewId": "review-143aa3dfb9921d96f7d72bef",
+      "answerSha256": "5456d7eaaea2f68c0154ac6ea1b0027016d64f1b8222675720499ad3578f5cf1",
+      "sourceHash": "1446e8483e2e81bd144b5e9b7b50d74bb5e5bf8d696ee93c91996c863a0ad25a",
+      "correct": true,
+      "complete": true,
+      "noMaterialUnsupportedClaims": true,
+      "sourceFindings": [
+        "Source-1 explicitly says /restore recovers deleted items, excluding closed accounts. Both predicates are stated in the published answer.",
+        "The answer does not conflate the 14-day event-retention window with restoration permission.",
+        "Other supplied fixtures restate the same policy in other languages; the answer does not present them as independent corroboration."
+      ],
+      "presentationLimitations": [
+        "Displayed locator is duplicated as p. p. 1 in a repaired model citation; the citation target resolves to the correct page.",
+        "Repeated same-target citations separated by sentence punctuation remain visible; the adjacent-whitespace duplicate sanitizer intentionally does not remove per-sentence citations."
+      ],
+      "presentationFollowup": "Record separately; do not alter pinned generation code mid-campaign or change substantive quality judgment.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-R001-corrected-001.json",
+        "sha256": "6038d78ba0ad1482d2447e9f33858234f597b76b9e3b97da0d0ede1598e18fb2"
+      },
+      "qualifiedPublished": true
+    },
+    {
+      "caseId": "R004",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R004.json",
+      "packetSha256": "162b453d96119a0fbf21cdbb1f476b4ce2188952d450818fadb7e8d5cc3a2614",
+      "recordSha256": "18100f8931556f9dbb896b6184509883b452afb294934bffa89801e0adb8eccc",
+      "groundingTraceSha256": "a7ef5bd044ca1dbbb6776707dca5c88900161fc87f01e890367e2c6fcf51be0b",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Requested years clearly distinguished: library1912, laboratory1913, confirmed across translations. Both Spanish claims cited to fixture01.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R004.json",
+        "sha256": "162b453d96119a0fbf21cdbb1f476b4ce2188952d450818fadb7e8d5cc3a2614"
+      }
+    },
+    {
+      "reviewId": "review-caa62a431c917ce2120c6f12",
+      "answerSha256": "467102fc74b66faa3c6b5fcdb351b70614af3cd9db5eb6a43e7d08abdd045d71",
+      "sourceHash": "100757772336adf07638c3c23732f40b284bddb7363bc24ed5ed0e8d646a7356",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all eight excerpts. Library 1912 and laboratory one year later in 1913 are explicit in cited source 1. Cosmetic duplicate citation and page prefix remain.",
+      "caseId": "R011",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-002.json",
+        "sha256": "32a6d09331ce33ea46748c886ab4b246cc4384a545d3808c02647f15dd69ee7c"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R011.json",
+        "sha256": "560feebe9ac927d9b11de15df4bab029155002e9916c2e79c2d3dcf74b3eb47d"
+      }
+    },
+    {
+      "caseId": "R013",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R013.json",
+      "packetSha256": "617568ec11698c125e9684f9f4732d0312fad4f4c31b306957575549d5b8e2bb",
+      "recordSha256": "aa66f85322280a8d033bdcf92bfc9b5ad3a243786cca2beeaf37893e8f57e34e",
+      "groundingTraceSha256": "d1abbb1dd0345fa45538e98df603305214f61cedf7a5b3fe181ce3c71678feb9",
+      "qualifiedPublished": false,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "English fixture 08 and five translations explicitly say turbidity at 530 nm and no oxygen measurement; labelled inference follows those premises. Invalid execution proof remains excluded.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R013.json",
+        "sha256": "617568ec11698c125e9684f9f4732d0312fad4f4c31b306957575549d5b8e2bb"
+      }
+    },
+    {
+      "caseId": "R015",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R015.json",
+      "packetSha256": "26c2557c461e2570a9dce92640020b71e8c1954af214afd2c4645a5ce6c12ec5",
+      "recordSha256": "039a37a8161c48e00ffc88f4b90cd7c0e1c6d1844d68db9d499ed45fa558d4c2",
+      "groundingTraceSha256": "1e937275d6d80907a52925b8b9bee83a501fc7f4d32a881afecb7484b23545c2",
+      "qualifiedPublished": false,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "All Linde excerpts distinguish restore of deleted items from closed accounts; answer directly captures difference. Protocol failure remains negative.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R015.json",
+        "sha256": "26c2557c461e2570a9dce92640020b71e8c1954af214afd2c4645a5ce6c12ec5"
+      }
+    },
+    {
+      "caseId": "R017",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R017.json",
+      "packetSha256": "df544da06b3427dd12f3fe756b5a54013d666b6155105483a3314358da5d6b59",
+      "recordSha256": "4689dfff07068559d0fb53a0614c90af7289256e8477b1d98a43a6c978ab5480",
+      "groundingTraceSha256": "ea9bbd26587daaa70521a15a193d4f24e1bb0139589ba8bf5f306242bc337973",
+      "qualifiedPublished": false,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "51% belongs to rereading, 72% to spaced retrieval; English fixture 02 and translations agree. Duplicate/page-label presentation defect only. Invalid execution proof remains excluded.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R017.json",
+        "sha256": "df544da06b3427dd12f3fe756b5a54013d666b6155105483a3314358da5d6b59"
+      }
+    },
+    {
+      "caseId": "R020",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R020.json",
+      "packetSha256": "0fddce952345d449cd0cfea2fbe0088096c4305106fd043a22d7925ac2343f29",
+      "recordSha256": "5f0925037ca4fe5e3e9eecf7a43d4ceec564b1e198019bb289534a208ab853ca",
+      "groundingTraceSha256": "40ca5863ddb149d0c3975047e5c07606bb8f6cef5ec0e66b8c88d50cc1d5aeaf",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "English archive20 explicitly changed7to14days in version2, so seven is old. Other translations agree.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R020.json",
+        "sha256": "0fddce952345d449cd0cfea2fbe0088096c4305106fd043a22d7925ac2343f29"
+      }
+    },
+    {
+      "reviewId": "review-6db73cc6a5ac3567a0eec724",
+      "answerSha256": "8bfbffabda5f760130806927c93a74a0171c1085d433c8d4f9d1aa041f6e940b",
+      "sourceHash": "8f6f9da651bb8c1602fd81fcea73891595b397c2303d820a2fe07e3e298eaaf4",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all nineteen excerpts. German answer gives requested property, green light and 530nm; directly supported by cited source 4.",
+      "caseId": "R025",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-002.json",
+        "sha256": "32a6d09331ce33ea46748c886ab4b246cc4384a545d3808c02647f15dd69ee7c"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R025.json",
+        "sha256": "1987faf73d797ed013bd0ced803ae10aecf787203d713597b030ead2d1d0de1b"
+      }
+    },
+    {
+      "caseId": "R027",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R027.json",
+      "packetSha256": "c3335d15c5e754e7cd65ff1971115fd68de63e485d86dad1e187b649f926faf9",
+      "recordSha256": "6b00bb6d9bdc6b6abedf57049f9d1820c523f8731cb5d23d1c8a4875dc3042aa",
+      "groundingTraceSha256": "7e2a2bf22a514393c22b74964c43c0b52219062d852a89f31365cd2cc41641a2",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Requested Spanish archive19 explicitly gives 240 people and six villages; preliminary239 is superseded by240. Both requested counts correct.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R027.json",
+        "sha256": "c3335d15c5e754e7cd65ff1971115fd68de63e485d86dad1e187b649f926faf9"
+      }
+    },
+    {
+      "reviewId": "review-72d961ae5854d6f35f4946c4",
+      "answerSha256": "ca74a5623dc53fdb3785d04a94ae527bfec432f151bccb33459a2ea08e8b4ff5",
+      "sourceHash": "31b705adef1b3cff6425e0563b3edb3374a6403ba24ec6675245407297ef43cc",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all six excerpts. LLaMA training method, Chinchilla inspiration, public-only datasets and trillions of tokens supported by cited approach section and abstract. Broad method question answered.",
+      "caseId": "R036",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-003.json",
+        "sha256": "682b1f97dfc1913456adeeadd3842aa5d3da9fb3b7079d9eb43ee8f5fde6eea5"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R036.json",
+        "sha256": "a77436e1473c05daff253b49e993858675688b05382d19a1228f411554770161"
+      }
+    },
+    {
+      "caseId": "R039",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R039.json",
+      "packetSha256": "5e181f8a3807af5e2e4fa0332aed47778f02dbf8b914c1327aa9a08fe0246a99",
+      "recordSha256": "a7953a573104c220efdddd9fb3eba18b413f69d3e146a843247a427ad6b2da1e",
+      "groundingTraceSha256": "02efed8f37d56adbd5daa229b463d578dcd2e32803a3b0e51b68ad86bb5a4dc6",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "All fourteen excerpts read. QLoRA abstract on page1 supports frozen4-bit base gradient flow into LoRA, NF4, double quantization and paged optimizers. Spanish summary accurate and sufficiently complete for method question.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R039.json",
+        "sha256": "5e181f8a3807af5e2e4fa0332aed47778f02dbf8b914c1327aa9a08fe0246a99"
+      }
+    },
+    {
+      "reviewId": "review-8695d4e9a4100af74498e45b",
+      "answerSha256": "2e205ad5f189927079e9a755374c28f2d71e2a99c95b7305f9e573367a04f243",
+      "sourceHash": "1b213dd2cc2d6e70f9e48def87f8f73aecd80cc44d3431eceb89eb569fc09498",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all fourteen excerpts. French answer gives 240 people and six villages, from the specifically requested archive 14. Superseded 239 total not used. Duplicate citations and page prefix cosmetic.",
+      "caseId": "R042",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-003.json",
+        "sha256": "682b1f97dfc1913456adeeadd3842aa5d3da9fb3b7079d9eb43ee8f5fde6eea5"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R042.json",
+        "sha256": "6689cee2089ec83aa7611753f03f17f51e9f69ff6a1e8600931bd64aa0242c01"
+      }
+    },
+    {
+      "caseId": "R044",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R044.json",
+      "packetSha256": "21c2b555fcfe0fd3f92edf883dce02a962c2c0635155480e74af9b3d510f940b",
+      "recordSha256": "261eeb667f8812c03be22dbd25ac4d13312b4ee63be002ed70ff90f83c33a1ca",
+      "groundingTraceSha256": "123d1f77a0cdad559c7730183a963e54e76220ae6e8262a9054823a9e26745e7",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Requested English archive20 explicitly gives version2 change from7 to14days; French answer accurately states fourteen.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R044.json",
+        "sha256": "21c2b555fcfe0fd3f92edf883dce02a962c2c0635155480e74af9b3d510f940b"
+      }
+    },
+    {
+      "reviewId": "review-ac7eee45a62d213aed46b0c2",
+      "answerSha256": "e6f0b410e18a2a7b543cdf6db625b16fdddee92f4183e2a1ea9ece12cbb6d602",
+      "sourceHash": "1b8a5ee276cc04c9b9121317c27d3824c638dd6fb4060793feb88c2caa0d8c50",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all ten excerpts. Italian answer 1912 directly supported by specifically requested Portuguese archive 11, no confusion with laboratory 1913.",
+      "caseId": "R048",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-004.json",
+        "sha256": "cc4b98e07291a573eb26dc724469a058bd5e4033b91e4d02729929f1e583c21b"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R048.json",
+        "sha256": "b7578841d60dbf29ab62df3802bd8d136a53d924ec8212c41f79bdadd7ecea4a"
+      }
+    },
+    {
+      "reviewId": "review-47571d3ba4b8289546ab3feb",
+      "answerSha256": "be9aeebf42d59be3f9be20dff7037adabf7ddb7e445a6bf830deb1b4bf63fc6f",
+      "sourceHash": "a5b0a7e05a4bddb9f6de16d126d9691c070babaf78bfc5c1ee6ef4f3c73ea870",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all thirteen excerpts. Portuguese 14-day answer supported by specifically requested German archive 10 and Spanish archive 25; no confusion with prior 7-day version. Cosmetic page prefix duplication.",
+      "caseId": "R053",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-004.json",
+        "sha256": "cc4b98e07291a573eb26dc724469a058bd5e4033b91e4d02729929f1e583c21b"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R053.json",
+        "sha256": "9977ea5f48bd1dd6bc3b831821b0556cd8fc7d4504ba4d9f032f5d6daf0ce032"
+      }
+    },
+    {
+      "reviewId": "review-efcb6bdb07abee1cbbd1bc67",
+      "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+      "sourceHash": "5d0537432385523ba153f09aec00479fb81be57f8eb2927d9ba1604d59defc19",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all six excerpts. They identify library/laboratory opening years but no book donor. Answer explicitly limits inability to available excerpts and invents no identity or global corpus absence. This inspection is limited to bound excerpts.",
+      "caseId": "R061",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-005.json",
+        "sha256": "20159dcbec8679d8bad4732f4154fc4babb51a8165778fee2f1519363a4ba82e"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R061.json",
+        "sha256": "8908ba21e698b51f2725f9acbf15ba3a0468d0382a5bc973176dffd7fe0e9357"
+      }
+    },
+    {
+      "reviewId": "review-79314393e4ff4f47fe3b6ff9",
+      "answerSha256": "eeaccfe460bcbd685f0809515163eb922976592d335ec14dc1ccdc25259a1dbb",
+      "sourceHash": "15a4051d04e8f8be09cef3d6223c0708bb4fb6b0b5f58d3b8381ccdf0539a8a0",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all sixteen excerpts. Alba excerpts specify optical turbidity measurement and calibration, no retail price. Other excerpts describe unrelated research and fixtures. Scoped insufficiency answer invents no price and makes no global absence claim.",
+      "caseId": "R063",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-006.json",
+        "sha256": "eda6f284d2155854f199794b24b19b3879743c6b46b3b3cb5d0b35553cb61214"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R063.json",
+        "sha256": "b2759457d019104d123c058b93f1a0486a1fde0426a883bd96dfe214544abb42"
+      }
+    },
+    {
+      "reviewId": "review-5e7ff5aa00f6f568ee717425",
+      "answerSha256": "8bee7be0503dad5919e6479c73d43c9922d8a9d2a034aeae38a2e02fef322a9b",
+      "sourceHash": "070222c7204d0be671f928fe48607534f08b82005a08cc35196212e0e3b248d6",
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "Read all fourteen excerpts. Puerto Claro sources specify inauguration years, not number of books. Unrelated excerpts give no such count. Scoped insufficiency answer is appropriate and invents no count. Inspection limited to bound excerpts.",
+      "caseId": "R066",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-006.json",
+        "sha256": "eda6f284d2155854f199794b24b19b3879743c6b46b3b3cb5d0b35553cb61214"
+      },
+      "qualifiedPublished": true,
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R066.json",
+        "sha256": "ad6ac5eb1d9ca326d5fc3a7d5e659d072c1ba7d747434e285be0aaa9c666c661"
+      }
+    },
+    {
+      "caseId": "R073",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R073.json",
+      "packetSha256": "0b83af2a055fc0be47baa520ad667082ec14f81c5490426824db5840fc6626d1",
+      "recordSha256": "9412c80ed3e48800bd92cd144d764095b2900fe809ab9b4ba727f79437485b05",
+      "groundingTraceSha256": "a7d2992403773ba069f18418bcdab67dae93ebc1198b1c72d7a7ef6ca8662ba2",
+      "qualifiedPublished": false,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "All fourteen excerpts read. Alba sources give turbidity wavelength and calibration interval, no maximum operating temperature. Scoped abstention correct; protocol failure remains negative.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R073.json",
+        "sha256": "0b83af2a055fc0be47baa520ad667082ec14f81c5490426824db5840fc6626d1"
+      }
+    },
+    {
+      "caseId": "R080",
+      "packetPath": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R080.json",
+      "packetSha256": "e7b8e52cece1f33d8017679989bfebc5f48c514332c30a6c2f57575a57e1a93f",
+      "recordSha256": "60041a896b3f139ea730ec03e3bed2ddedf06ebd8e8fd2425125d1978b8dbdec",
+      "groundingTraceSha256": "783d924a85adce599d215d4405d543b0d6231e8cc51a8ec2e19a82cf3a46ca7d",
+      "qualifiedPublished": true,
+      "correct": true,
+      "complete": true,
+      "fidelity": true,
+      "notes": "All twelve bound excerpts read: Linde sources give retention and restore behavior but no database engine. Scoped insufficiency does not invent an implementation.",
+      "inspectionReceipt": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/root-source-inspection-20261015-007.json",
+        "sha256": "da1dec4285c14b01d1218077147f1c6e175f4d4304d4dfe9b72e603d2bedccf7"
+      },
+      "packet": {
+        "path": "/private/tmp/nodus-research-lB0K6I/artifacts/manual-source-review-80-001/R080.json",
+        "sha256": "e7b8e52cece1f33d8017679989bfebc5f48c514332c30a6c2f57575a57e1a93f"
+      }
+    }
+  ]
+}

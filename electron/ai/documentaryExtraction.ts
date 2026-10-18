@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import { isDocumentaryTextMime } from '@shared/documentaryFormats';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
@@ -67,7 +68,7 @@ export async function extractTraditionalResearchWork(userId: string, key: string
   try {
     for (const attachment of attachments) {
       signal?.throwIfAborted();
-      if (!attachment || !attachment.contentType || !/^(application\/(pdf|epub\+zip|vnd.openxmlformats-officedocument.wordprocessingml.document)|text\/)/.test(attachment.contentType)) continue;
+      if (!attachment || !attachment.contentType || !isDocumentaryTextMime(attachment.contentType)) continue;
       const source = await attachmentFilePath(userId, attachment.key, attachment.library, signal);
       if (!source) continue;
       const stat = await fs.promises.stat(source);
@@ -111,7 +112,7 @@ export async function extractGlobalResearchAttachments(itemId: string, signal?: 
   try {
     for (const attachment of item.attachments) {
       signal?.throwIfAborted();
-      if (!/^(application\/(pdf|epub\+zip|vnd.openxmlformats-officedocument.wordprocessingml.document)|text\/)/.test(attachment.mimeType ?? '')) continue;
+      if (!isDocumentaryTextMime(attachment.mimeType)) continue;
       const source = globalLibraryAttachmentPath(itemId, attachment.id);
       const stat = await fs.promises.stat(source);
       if (stat.size > 256 * 1024 * 1024) throw new Error('documentary_attachment_too_large');

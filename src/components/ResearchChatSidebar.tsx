@@ -1,5 +1,5 @@
 import { isPhoneSurface } from '../mobileWeb/phoneLayout';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { ChatConversationSummary, ResearchChatProject } from '@shared/types';
 import type { ChatHistoryNotebookEntry } from '../views/researchChatAdapter';
@@ -72,7 +72,8 @@ export interface ResearchChatSidebarProps {
   notebookLocksMoves?: boolean;
   activeId: string | null;
   activeProjectId: string | null;
-  sending: boolean;
+  /** Chats still answering. They keep running while the user opens or starts other chats. */
+  runningIds?: ReadonlySet<string>;
   archivedCount: number;
   showArchived: boolean;
   onToggleArchived: () => void;
@@ -91,6 +92,10 @@ export interface ResearchChatSidebarProps {
   onArchiveConversation?: (conversation: ChatConversationSummary) => Promise<void>;
   onDeleteConversation: (conversation: ChatConversationSummary) => void;
   onMoveConversation: (conversation: ChatConversationSummary, projectId: string | null) => Promise<void>;
+  /** Several chats at once, from the multiple selection. Delete asks for confirmation first. */
+  onDeleteConversations?: (conversations: ChatConversationSummary[]) => void;
+  onArchiveConversations?: (conversations: ChatConversationSummary[], archived: boolean) => Promise<void>;
+  onMoveConversations?: (conversations: ChatConversationSummary[], projectId: string | null) => Promise<void>;
   onEditProjectInstructions: (project: ResearchChatProject) => void;
   onUpdateProject: (project: ResearchChatProject, patch: { name?: string; icon?: string | null; color?: string | null; instructions?: string }) => Promise<void>;
   onDeleteProject: (project: ResearchChatProject) => Promise<void>;
@@ -101,7 +106,7 @@ export interface ResearchChatSidebarProps {
 
 /** The research chat history: tools, search, then Projects, Notebooks, Pinned and the other chats. */
 export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
-  const { conversations, projects, notebooks, supportsProjects, notebooksOn, activeId, activeProjectId, activeNotebookId, sending } = props;
+  const { conversations, projects, notebooks, supportsProjects, notebooksOn, activeId, activeProjectId, activeNotebookId, runningIds } = props;
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -112,6 +117,13 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
   const [deletingProject, setDeletingProject] = useState<ResearchChatProject | null>(null);
   const [deletingNotebook, setDeletingNotebook] = useState<ChatHistoryNotebookEntry | null>(null);
   const [organizationHelpOpen, setOrganizationHelpOpen] = useState(false);
+  // Multiple selection: a click toggles a chat, Shift + click selects every chat between it
+  // and the last one clicked, in the order the list shows them.
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectionAnchor = useRef<string | null>(null);
+  const [moveMenu, setMoveMenu] = useState<DOMRect | null>(null);
+  const bulk = !!(props.onDeleteConversations || props.onArchiveConversations || props.onMoveConversations);
   const courses = props.notebookKind === 'course';
   const labels = notebookLabels(courses);
   const locksMoves = props.notebookLocksMoves ?? true;
@@ -188,6 +200,36 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
     if (next.has(id)) next.delete(id); else next.add(id);
     return next;
   });
+  const chatOrder = useMemo(() => [...new Set(rows.flatMap(row => row.kind === 'chat' ? [row.conversation.id] : []))], [rows]);
+  const selected = useMemo(() => conversations.filter(conversation => selectedIds.has(conversation.id)), [conversations, selectedIds]);
+  const toggleSelected = (id: string, range: boolean) => {
+    const anchor = selectionAnchor.current;
+    setSelectedIds(current => {
+      const next = new Set(current);
+      if (range && anchor && anchor !== id && chatOrder.includes(anchor) && chatOrder.includes(id)) {
+        const [from, to] = [chatOrder.indexOf(anchor), chatOrder.indexOf(id)].sort((a, b) => a - b);
+        for (const chat of chatOrder.slice(from, to + 1)) next.add(chat);
+      } else if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (!range) selectionAnchor.current = id;
+  };
+  const endSelection = () => { setSelecting(false); setSelectedIds(new Set()); selectionAnchor.current = null; setMoveMenu(null); };
+  const allVisibleSelected = chatOrder.length > 0 && chatOrder.every(id => selectedIds.has(id));
+  const allArchived = selected.length > 0 && selected.every(conversation => conversation.archived);
+  // A notebook's chats stay in their notebook, as in the single-chat menu.
+  const movable = (conversation: ChatConversationSummary) => supportsProjects && !(locksMoves && inNotebook(conversation));
+  const bulkMove = (projectId: string | null) => {
+    const moving = selected.filter(movable);
+    const kept = selected.length - moving.length;
+    setMoveMenu(null);
+    run(async () => {
+      if (moving.length) await props.onMoveConversations!(moving, projectId);
+      setSelectedIds(new Set());
+      if (kept) setNotice(tx('{n} chat(s) de cuadernos se quedan en su cuaderno.', { n: kept }));
+    });
+  };
   const run = (action: () => Promise<unknown>) => {
     setNotice(null);
     void action().catch((reason: unknown) => {
@@ -205,10 +247,13 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
     <>
       <div className="research-chat-history-tools">
         <div className="flex items-center gap-1">
-          <button type="button" className="research-chat-history-tool" data-testid="research-new-conversation" onClick={props.onNewConversation} disabled={sending} aria-label={t('Nueva conversación')} title={t('Nueva conversación')}><Icon name="plus" size={16} /></button>
+          <button type="button" className="research-chat-history-tool" data-testid="research-new-conversation" onClick={props.onNewConversation} aria-label={t('Nueva conversación')} title={t('Nueva conversación')}><Icon name="plus" size={16} /></button>
           {notebooksOn && props.onNewNotebook && <button type="button" className="research-chat-history-tool" data-testid="research-new-notebook" onClick={props.onNewNotebook} aria-label={t('Nuevo cuaderno')} title={t('Nuevo cuaderno')}><Icon name="notebook" size={16} /></button>}
           {supportsProjects && <button type="button" className="research-chat-history-tool" data-testid="research-new-project" onClick={newProject} aria-label={t('Nuevo proyecto')} title={t('Nuevo proyecto')}><Icon name="folderPlus" size={16} /></button>}
-          {supportsProjects && notebooksOn && !courses && <button type="button" className="research-chat-history-tool ml-auto" data-testid="chat-organization-help-trigger" onClick={() => setOrganizationHelpOpen(true)} aria-label={t('Cuadernos y proyectos')} title={t('Cuadernos y proyectos')} aria-haspopup="dialog"><Icon name="help" size={16} /></button>}
+          {bulk && conversations.length > 0 && <button type="button" className={`research-chat-history-tool ml-auto ${selecting ? 'is-on' : ''}`} data-testid="research-chat-select-mode"
+            aria-pressed={selecting} onClick={() => selecting ? endSelection() : setSelecting(true)}
+            aria-label={selecting ? t('Terminar selección') : t('Seleccionar varios chats')} title={selecting ? t('Terminar selección') : t('Seleccionar varios chats')}><Icon name="listChecks" size={16} /></button>}
+          {supportsProjects && notebooksOn && !courses && <button type="button" className={`research-chat-history-tool ${bulk && conversations.length > 0 ? '' : 'ml-auto'}`} data-testid="chat-organization-help-trigger" onClick={() => setOrganizationHelpOpen(true)} aria-label={t('Cuadernos y proyectos')} title={t('Cuadernos y proyectos')} aria-haspopup="dialog"><Icon name="help" size={16} /></button>}
         </div>
         <label className="research-chat-search">
           <Icon name="search" size={14} aria-hidden="true" />
@@ -217,6 +262,28 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
             title={notebooksOn ? labels.search : supportsProjects ? t('Buscar chats y proyectos…') : t('Buscar chats…')}
             aria-label={t('Buscar en el historial')} />
         </label>
+        {selecting && <div className="research-chat-selection" role="toolbar" aria-label={t('Chats seleccionados')} data-testid="research-chat-selection">
+          <div className="research-chat-selection-row">
+          <button type="button" className="research-chat-selection-count" data-testid="research-chat-select-all" aria-pressed={allVisibleSelected}
+            title={allVisibleSelected ? t('Quitar la selección') : t('Seleccionar todos')}
+            onClick={() => { setSelectedIds(allVisibleSelected ? new Set() : new Set(chatOrder)); selectionAnchor.current = null; }}>
+            <span className={`research-history-check ${allVisibleSelected ? 'is-checked' : selected.length ? 'is-mixed' : ''}`} aria-hidden="true">{allVisibleSelected ? <Icon name="check" size={11} /> : selected.length ? <Icon name="minus" size={11} /> : null}</span>
+            <span>{tx('{n} seleccionado(s)', { n: selected.length })}</span>
+          </button>
+          <span className="flex shrink-0 items-center gap-0.5">
+            {props.onArchiveConversations && <button type="button" className="research-history-action" data-testid="research-chat-bulk-archive" disabled={!selected.length}
+              aria-label={allArchived ? t('Desarchivar') : t('Archivar')} title={allArchived ? t('Desarchivar') : t('Archivar')}
+              onClick={() => run(async () => { await props.onArchiveConversations!(selected, !allArchived); setSelectedIds(new Set()); })}><Icon name="archive" size={14} /></button>}
+            {supportsProjects && props.onMoveConversations && <button type="button" className="research-history-action" data-testid="research-chat-bulk-move" disabled={!selected.length}
+              aria-label={t('Mover a proyecto')} title={t('Mover a proyecto')} aria-haspopup="menu"
+              onClick={event => setMoveMenu(event.currentTarget.getBoundingClientRect())}><Icon name="folderMove" size={14} /></button>}
+            {props.onDeleteConversations && <button type="button" className="research-history-action is-danger" data-testid="research-chat-bulk-delete" disabled={!selected.length}
+              aria-label={t('Eliminar')} title={t('Eliminar')}
+              onClick={() => props.onDeleteConversations!(selected)}><Icon name="trash" size={14} /></button>}
+          </span>
+          </div>
+          <p className="research-chat-selection-hint">{t('Clic para seleccionar. Mayús + clic selecciona un intervalo.')}</p>
+        </div>}
         {notice && <p role="alert" className="text-[11px] text-amber-500">{notice}</p>}
       </div>
       <div className="flex-1 min-h-0 flex flex-col" {...(supportsProjects ? outsideDropProps(folderActions, run) : {})}>
@@ -283,25 +350,33 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
           const key = `chat:${row.nested ? 'nested' : 'top'}:${conversation.id}`;
           const pinned = !!conversation.pinnedAt && !conversation.archived;
           return (
-            <div className={`research-history-row group ${row.nested ? 'is-nested' : ''} ${conversation.id === activeId ? 'is-active' : ''} ${pinned ? 'is-pinned' : ''} ${menu?.kind === 'chat' && menu.row === key ? 'is-menu-open' : ''}`}
+            <div className={`research-history-row group ${row.nested ? 'is-nested' : ''} ${conversation.id === activeId ? 'is-active' : ''} ${pinned ? 'is-pinned' : ''} ${menu?.kind === 'chat' && menu.row === key ? 'is-menu-open' : ''} ${selecting && selectedIds.has(conversation.id) ? 'is-selected' : ''}`}
               data-testid={`research-conversation-${conversation.id}`} data-marquee-host
               style={row.depth === undefined ? undefined : { paddingLeft: 14 + row.depth * 14 + 18 }}
-              {...(supportsProjects && !(locksMoves && inNotebook(conversation)) && renaming !== key ? chatDragProps(conversation) : {})}>
-              {renaming === key
+              {...(!selecting && supportsProjects && !(locksMoves && inNotebook(conversation)) && renaming !== key ? chatDragProps(conversation) : {})}>
+              {selecting ? <button type="button" role="checkbox" aria-checked={selectedIds.has(conversation.id)} className="research-history-main" data-testid={`research-select-${conversation.id}`}
+                  // Shift + click would otherwise select the text between the two rows.
+                  onMouseDown={(event: MouseEvent) => { if (event.shiftKey) event.preventDefault(); }}
+                  onClick={event => toggleSelected(conversation.id, event.shiftKey)}>
+                  <span className={`research-history-check ${selectedIds.has(conversation.id) ? 'is-checked' : ''}`} aria-hidden="true">{selectedIds.has(conversation.id) && <Icon name="check" size={11} />}</span>
+                  <MarqueeText text={conversation.title} className={`min-w-0 flex-1 ${conversation.archived ? 'italic text-neutral-500' : ''}`} />
+                </button>
+              : renaming === key
                 ? <RenameField value={conversation.title} onDone={title => { setRenaming(null); if (title && title !== conversation.title && props.onRenameConversation) run(() => props.onRenameConversation!(conversation, title)); }} />
                 : <button type="button" className="research-history-main" aria-current={conversation.id === activeId ? 'page' : undefined}
                   aria-label={tx('Abrir {name}', { name: conversation.title })}
                   title={`${formatRelative(conversation.updated_at)} · ${tx('{n} mensaje(s)', { n: conversation.messageCount })}`}
-                  onClick={() => { if (!sending) props.onOpenConversation(conversation.id); }}>
+                  onClick={() => props.onOpenConversation(conversation.id)}>
                   <MarqueeText text={conversation.title} className={`min-w-0 flex-1 ${conversation.archived ? 'italic text-neutral-500' : ''}`} />
+                  {runningIds?.has(conversation.id) && <span className="research-history-running" role="img" aria-label={t('Generando…')} title={t('Generando…')} data-testid={`research-conversation-running-${conversation.id}`} />}
                 </button>}
-              <span className="research-history-row-actions">
+              {!selecting && <span className="research-history-row-actions">
                 {supportsProjects && !conversation.archived && <button type="button" className={`research-history-action ${pinned ? 'is-on' : ''}`} aria-pressed={pinned}
                   aria-label={pinned ? t('Quitar de destacados') : t('Destacar chat')} title={pinned ? t('Quitar de destacados') : t('Destacar chat')}
                   onClick={event => { event.stopPropagation(); run(() => props.onPinConversation(conversation, !pinned)); }}><Icon name="pin" size={14} /></button>}
                 <button type="button" className="research-history-action" aria-label={t('Más acciones')} title={t('Más acciones')} aria-haspopup="menu"
                   onClick={event => { event.stopPropagation(); setMenu({ kind: 'chat', conversation, row: key, anchor: event.currentTarget.getBoundingClientRect() }); }}><Icon name="moreVertical" size={14} /></button>
-              </span>
+              </span>}
             </div>
           );
         }}
@@ -315,6 +390,14 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
       )}
       {menu?.kind === 'chat' && <ChatMenu {...props} conversation={menu.conversation} anchor={menu.anchor} onClose={() => setMenu(null)}
         onRename={() => setRenaming(menu.row)} run={run} />}
+      {moveMenu && <FloatingMenu anchor={moveMenu} label={t('Mover a proyecto')} onClose={() => setMoveMenu(null)}>
+        {selected.some(conversation => conversation.projectId) && <MenuItem icon="x" label={t('Sacar del proyecto')} onSelect={() => bulkMove(null)} />}
+        {projects.map(item => <MenuItem key={item.id} icon={item.icon ?? 'folder'} color={item.color} label={item.name} onSelect={() => bulkMove(item.id)} />)}
+        <MenuItem icon="folderPlus" label={t('Nuevo proyecto')} onSelect={() => {
+          setMoveMenu(null);
+          run(async () => { const created = await props.onNewProject(); if (created) bulkMove(created.id); });
+        }} />
+      </FloatingMenu>}
       {menu?.kind === 'project' && <FloatingMenu anchor={menu.anchor} label={menu.project.name} onClose={() => setMenu(null)}>
         <MenuItem icon="brain" label={t('Instrucciones del proyecto')} onSelect={() => { setMenu(null); props.onEditProjectInstructions(menu.project); }} />
         <MenuItem icon="edit" label={t('Renombrar')} onSelect={() => { setMenu(null); setRenaming(`project:${menu.project.id}`); }} />

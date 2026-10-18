@@ -19,7 +19,7 @@ import {getLibraryReaderRawContent} from '../libraryReader/libraryReaderStore';
 import {libraryMarkdownWithPageMarkers,readDocumentarySourceMap} from '../library/librarySourcePages';
 import { resolveWorkText } from '../extraction/textExtractor';
 import { LOCAL_USER_ID } from '../zotero/zoteroClient';
-import { completeJson, completeText, embed } from './aiClient';
+import { completeJson, completeText, embedQuery } from './aiClient';
 const MAX_DOC_SOURCES = 24;
 const MAX_WORK_SOURCES = 10;
 const DOC_SNIPPET = 300;
@@ -110,7 +110,7 @@ export async function buildGenealogySourcePool(objective: string, focusPersonId?
   if (focusPerson) for (const item of listItemsForPerson(focusPerson.personId)) addDoc(item);
 
   const queryText = focusPerson ? `${objective.trim()}\n${focusPerson.displayName}`.trim() : objective.trim();
-  const objVec = queryText ? await embed(queryText) : null;
+  const objVec = queryText ? await embedQuery(queryText) : null;
   if (objVec) for (const item of await findArchiveItemsSimilar(objVec, { limit: MAX_DOC_SOURCES, minSimilarity: 0.2 })) addDoc(item);
   // Fallback / backfill: recent documents so the report always has primary material.
   for (const item of listItems({}).slice(0, MAX_DOC_SOURCES)) addDoc(item);

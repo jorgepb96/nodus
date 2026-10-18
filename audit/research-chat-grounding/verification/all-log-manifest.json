@@ -1,0 +1,311 @@
+{
+  "measuredRevision": "82dac50f",
+  "note": "All retained logs, including unsuccessful historical runs. Current validation is identified in verification.json; paid quality failed and was budget-stopped.",
+  "logs": [
+    {
+      "file": "eight-dollar-budget-tests.log",
+      "sha256": "6a0cdcccaa8a1c7da1b7d4f7df129ebd6b2d29ffc08b0c09d9cae7b779d152bb",
+      "bytes": 2255
+    },
+    {
+      "file": "focused-full-tests.log",
+      "sha256": "8203394d5143e659b4d1d81e2a9f09d11a89a997df4056a17ee68b1e23bd078f",
+      "bytes": 1585715
+    },
+    {
+      "file": "limit-equivalence-build.log",
+      "sha256": "d8a078f34bceab33c0e7e71ead838233c405a52dcd96c7652e6bbda3bdc79334",
+      "bytes": 63855
+    },
+    {
+      "file": "limit-equivalence-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "limit-equivalence-package-build.log",
+      "sha256": "649bbe20e3b5eaf9e271e147194cbb76e3323184c7ed81e40c8ceb6d4776510d",
+      "bytes": 13261
+    },
+    {
+      "file": "limit-equivalence-package-smoke.log",
+      "sha256": "ae537468fdfd8317e18152f79bc6678c72ee6b3c8c3d30f6391e812f3be0d8d2",
+      "bytes": 80
+    },
+    {
+      "file": "limit-equivalence-tests.log",
+      "sha256": "e145d7a95e3538e4dfc2ec7f5d8fd5fd0994d974ae683ad1e2ddb914f6208910",
+      "bytes": 7312
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-build.log",
+      "sha256": "d622722a1a3292685fa45c18fcef56dbe632b238a469b8ffee788755bd8013bb",
+      "bytes": 63851
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-evaluation.log",
+      "sha256": "74d93165524a9b9e964e6186654ca6119b4fa9aa64d59871771c14bae6c784d4",
+      "bytes": 1374
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-final-build.log",
+      "sha256": "ed263814c646d6e271b8146727332e259d3e8fd75ea8dcdc0c6a04d349227a59",
+      "bytes": 63856
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-final-tests.log",
+      "sha256": "d197c39bbaf3b04a0cc6035f4e072d9f0866de8b260f023f88251fcffd218eee",
+      "bytes": 8218
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-inner-tests.log",
+      "sha256": "b5aa615fb4798f060469adcda15fcded55988120bb6faf792804f31ba0c0d899",
+      "bytes": 4122
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-package-smoke.log",
+      "sha256": "bf192e2583d98fee6e0b5af72345de580529e799084fe8e6cf7920d1cdddd761",
+      "bytes": 340
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-package.log",
+      "sha256": "3cd127c17bedb02cb589e6cb8a682e0e69836d44cd2c00b0eadc1ccad29bc0e0",
+      "bytes": 13225
+    },
+    {
+      "file": "logs/nodus-grounding-facet-proof-tests.log",
+      "sha256": "6ef2c7902e2b8e54aba1f90491f1333998c96317de22fb9e543056e0de588607",
+      "bytes": 7994
+    },
+    {
+      "file": "logs/nodus-grounding-final-budget-tests.log",
+      "sha256": "06cd7d132bb186aac99d478f95cfe3abae05dfb53b799124dcf8cded6e515da4",
+      "bytes": 1514
+    },
+    {
+      "file": "logs/nodus-grounding-focused-full-tests.log",
+      "sha256": "8203394d5143e659b4d1d81e2a9f09d11a89a997df4056a17ee68b1e23bd078f",
+      "bytes": 1585715
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-build.log",
+      "sha256": "7f695b6f993066a2a86e643b00958f1a4077c61f943668d72ff32b465a7a55e9",
+      "bytes": 63852
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-evaluation.log",
+      "sha256": "6e2ed1ad691c9166974e3f08493383c80e56f3d2651cff6e80400c8af11f9fd3",
+      "bytes": 128
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-final-build.log",
+      "sha256": "a7bc221d4cf9e6b2851b9a44d816b8fa2892f4ab449a9c4f8480982f94a9538e",
+      "bytes": 63852
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-final-tests.log",
+      "sha256": "5bb18f4a1298a88a9ed25da8d9f868482033a664666b8741a351679a2af304cf",
+      "bytes": 8007
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-inner-tests.log",
+      "sha256": "c53d00292658e51ada5130fabfcd9ab5d419133f61e944e8cc1979fb4ff29e9d",
+      "bytes": 3916
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-package.log",
+      "sha256": "574fd0dac3f89cb75d2984feac17d3ab533bc155a209d696bcda2b080ab64374",
+      "bytes": 13243
+    },
+    {
+      "file": "logs/nodus-grounding-positive-proof-tests.log",
+      "sha256": "4ac7f81b3dc035af0a7d1f04225b54b297d43ad5d664450537fa8dda188c9ed7",
+      "bytes": 7999
+    },
+    {
+      "file": "logs/nodus-grounding-queue-isolated-rerun.log",
+      "sha256": "c33612042b1b18303cccbf1bcb580c6817658cede19f81a7986eaf98a92bb5d1",
+      "bytes": 6608
+    },
+    {
+      "file": "logs/nodus-grounding-semantic-repair-build.log",
+      "sha256": "dc779874e4e515aee78e0b78ee78730f809aff36aae40bbb6ca416a438756029",
+      "bytes": 63854
+    },
+    {
+      "file": "logs/nodus-grounding-semantic-repair-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-semantic-repair-final-tests.log",
+      "sha256": "a8fde9a515645fd2d0d2c1ea44e52732363e0e92d78eb61c14b9909313b94884",
+      "bytes": 7525
+    },
+    {
+      "file": "logs/nodus-grounding-semantic-repair-package-smoke.log",
+      "sha256": "3ca537018cedf2d57634e464a75a665d2309dac736f725aa57b2547b4b641939",
+      "bytes": 80
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-build.log",
+      "sha256": "73e92c64054d905959deba29cda2a012738cb1d92b9a971fc1d7733fd56347e8",
+      "bytes": 63853
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-final-tests.log",
+      "sha256": "e70d5bee84d31c4a01ec783e6d8363f0aaf5d338ad5878ffe2b0cd6f020ee905",
+      "bytes": 4070
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-inner-tests.log",
+      "sha256": "e6a5191676bf7669371079b4e50d496fff7842da5b8fdfb970d06f798a84f1f0",
+      "bytes": 3585
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-package-smoke.log",
+      "sha256": "fe7d1efb2dd0a211d626763c579e0fb766231811e320e01f58a49ab42b159d27",
+      "bytes": 343
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-package.log",
+      "sha256": "8d7e467afc3c1ec3dced62289a642736eb71d54926e9da3828dffedbddecd625",
+      "bytes": 13243
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-suite.log",
+      "sha256": "813e1b977c74e733b8ffa722f885ac66c8425b9ea1f42ecb164978ed9a1a6a6e",
+      "bytes": 7665
+    },
+    {
+      "file": "logs/nodus-grounding-source-redraft-tests.log",
+      "sha256": "c5006b7d6482408558d80081b1b7ef9593dc1b26652bc80759e7c1eeb52e7e41",
+      "bytes": 10798
+    },
+    {
+      "file": "nodus-grounding-cancellation-concilium-final.log",
+      "sha256": "882930d0d43f6fe340d4899161c7167d0542fffabb8726c74db6da34c60fcecf",
+      "bytes": 1213
+    },
+    {
+      "file": "nodus-grounding-capacity-256-desktop.log",
+      "sha256": "aa98c8c03a22fbda2a872e6434c173b3868fd1bc203abcb77ed16f7a823c8f68",
+      "bytes": 251
+    },
+    {
+      "file": "nodus-grounding-capacity-256-native.log",
+      "sha256": "483a3ea73bdcde74ee287bacc812df5096f0a5e11ae2401b52af9df90d3f0bb1",
+      "bytes": 2034
+    },
+    {
+      "file": "nodus-grounding-delivery-e2e.log",
+      "sha256": "5e19914053d742d5b0f00460f99bfe208e56134d81314c816b445a9a57d90c60",
+      "bytes": 5471
+    },
+    {
+      "file": "nodus-grounding-focus-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "nodus-grounding-focus-tests.log",
+      "sha256": "9a2b100789564dc03fc9f911468a752e4067809cfb4a45b5dc3f4c7f17c05e8f",
+      "bytes": 6782
+    },
+    {
+      "file": "nodus-grounding-focus-types.log",
+      "sha256": "a057d123e87a4a020bf5a247d992b6f46559fb809b8531fff06cf6ee629d7d98",
+      "bytes": 100
+    },
+    {
+      "file": "nodus-grounding-full-final-locale.log",
+      "sha256": "894730af8ec064ea6440954809369c9e130995dfddea86477b6e9b5143980122",
+      "bytes": 1582028
+    },
+    {
+      "file": "nodus-grounding-full-regression.log",
+      "sha256": "ebe6ca07df39a66f29d85e461b77137daa7551baa599b6974cdd1cf86d4e8fec",
+      "bytes": 1591586
+    },
+    {
+      "file": "nodus-grounding-full-typed-repair.log",
+      "sha256": "7f0a211911c8335a01b75120914958e82265c64dfc98e38bb81dfefb1dc754ce",
+      "bytes": 1580394
+    },
+    {
+      "file": "nodus-grounding-package-final-locale-build.log",
+      "sha256": "20b9a570859919a3498ad3316e71227a013baa1170e08ff773bd11a37d0521b4",
+      "bytes": 13231
+    },
+    {
+      "file": "nodus-grounding-package-final-locale-smoke.log",
+      "sha256": "e6d8900698863fa6e1a3838f5764a9a12bc05fa1edcd096deba7277262b8a3fd",
+      "bytes": 341
+    },
+    {
+      "file": "nodus-grounding-proof-schema-final-tests.log",
+      "sha256": "d2e98f99555d4aa6d08a35eac68591a22c3aee0e9d3788b6598af92c9aa52519",
+      "bytes": 7008
+    },
+    {
+      "file": "nodus-grounding-tariff-final-tests.log",
+      "sha256": "5e974b653623d4cff704472176858964f69ee5b8218c797619bce8867e895f23",
+      "bytes": 1991
+    },
+    {
+      "file": "queue-isolated-rerun.log",
+      "sha256": "c33612042b1b18303cccbf1bcb580c6817658cede19f81a7986eaf98a92bb5d1",
+      "bytes": 6608
+    },
+    {
+      "file": "semantic-repair-build.log",
+      "sha256": "dc779874e4e515aee78e0b78ee78730f809aff36aae40bbb6ca416a438756029",
+      "bytes": 63854
+    },
+    {
+      "file": "semantic-repair-final-lint.log",
+      "sha256": "043eea672920979e44556277aea6c3d7ac07494464dbfa052abde216dd881339",
+      "bytes": 47
+    },
+    {
+      "file": "semantic-repair-final-tests.log",
+      "sha256": "a8fde9a515645fd2d0d2c1ea44e52732363e0e92d78eb61c14b9909313b94884",
+      "bytes": 7525
+    },
+    {
+      "file": "semantic-repair-package-build.log",
+      "sha256": "09704aaa9a90c1afd9e53f24be3f1c68d7a1f0fd45308ae5393a60ef4ee8c989",
+      "bytes": 13249
+    },
+    {
+      "file": "semantic-repair-package-smoke.log",
+      "sha256": "3ca537018cedf2d57634e464a75a665d2309dac736f725aa57b2547b4b641939",
+      "bytes": 80
+    }
+  ]
+}

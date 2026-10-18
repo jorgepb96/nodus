@@ -235,7 +235,7 @@ test('Manifest V3 package minimizes permission and contains no remote executable
     const catalog = JSON.parse(readFileSync(path.join(root, `browser-extension/_locales/${locale}/messages.json`), 'utf8'));
     assert.equal(catalog.extensionName.message, 'Nodus Research Connector', `${locale} carries the product name untranslated`);
   }
-  assert.deepEqual(manifest.permissions, ['activeTab', 'scripting', 'storage']);
+  assert.deepEqual(manifest.permissions, ['activeTab', 'scripting', 'storage', 'alarms']);
   assert.equal(manifest.host_permissions.includes('<all_urls>'), false);
   assert.deepEqual(manifest.optional_host_permissions, ['https://*/*', 'http://*/*']);
   assert.match(manifest.content_security_policy.extension_pages, /script-src 'self'/);

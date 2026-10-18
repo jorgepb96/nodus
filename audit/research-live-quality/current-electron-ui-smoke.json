@@ -1,0 +1,538 @@
+{
+  "root": "/private/tmp/nodus-research-3c1rXt",
+  "proof": {
+    "writeInsideAllowed": true,
+    "writeOutsideDenied": true,
+    "descendantWriteDenied": true,
+    "externalNetworkDenied": true,
+    "forbiddenLoopbackPortDenied": true
+  },
+  "completed": true,
+  "modelCalls": 0,
+  "productionFixtures": false,
+  "safeStorage": "disabled by an empty isolated harness key file",
+  "startedAt": "2026-10-13T08:01:04.020Z",
+  "sourceVersion": {
+    "commit": "72a47e758085325e0d034809b16ced87e13abd5b",
+    "workingTreeDirty": true,
+    "builtFiles": {
+      "dist-electron/_commonjsHelpers-Cna7Dz8G.js": "d67b00e81b24ecc359e7d13229a4bff6ff7eefbad487b4f9a45897b529ab65d2",
+      "dist-electron/application.js": "da7104b0b8ca9c82d91aea644d350ce92db454673de7fefe79b014eab6e0b44a",
+      "dist-electron/authorNames-BcG0Ao2N.js": "957bf3fc6f82a5f35901d62b3ae8b096bee725b4ee7389fb761d6ab30f499605",
+      "dist-electron/backgroundParentPort-BG_CN8Ao.js": "a5c24a5f78347150d206740c3838408f3a24e4371424ec5e4821ab29aaee82fa",
+      "dist-electron/backgroundUtility.js": "e52a9956044b0ae9b98437caaced0ce5861f3a12301198e192fef21b4e0e0e75",
+      "dist-electron/backupUtilityWorker-hjh3hjBm.js": "b9a5a8d4e16ce1ef22d91eb405ded23dff2a29111ed7f588a87e11b8c05dd9af",
+      "dist-electron/backupUtilityWorker.js": "3ac60a31a4fa85e730cad9b7ac649daa833182f64d12739b86f47ce6fc346229",
+      "dist-electron/capabilityWorkerBootstrap.js": "5fc2ff30d52385bf500c510e52814bf056493eb757652b2ab4b0d9d5a411d5b0",
+      "dist-electron/compassStore-RTxqRxRF.js": "a2c2f0e7c17cdfeca5d96cd75f8479cf2e804438f12e974446cac956696d0749",
+      "dist-electron/compassWorker.js": "466562909ae10cb1122bcf2b7c61f11ed7fcb98da5ad9a729368343dacd9ac9c",
+      "dist-electron/computeWorker.js": "9b00c7797da2f656b91d753cd8dbecd3f8a27d61804bc8d1792d890f20d986f9",
+      "dist-electron/documentaryChunkWorker.js": "69e3328c885a66726d4dab665f489d3144439f0cd3ca0bda4b93968b16f27bfe",
+      "dist-electron/documentaryMaintenanceWorker.js": "6664cae3961207e0cb20756f590027df5e84caa33f45cab6ab3d84b122cce649",
+      "dist-electron/documentaryRetrievalWorker.js": "81feb3d8e54faaf79446b630b466c58a63ede01cc9a0357a4b88d935713349fd",
+      "dist-electron/documentaryStore-W9mP8JHP.js": "03c743061389161a2f9a1c17e2999784133830d5e5cdc814ebbab6efd6ea6c30",
+      "dist-electron/index-CVlDSVyR.js": "78402c2356bd2e0942d95fe065bd229c6f45fa2309c9dea5ac5f9b9f6c07b89e",
+      "dist-electron/isolatedProfile-MSlOY2gB.js": "5cc79afd9a17325d997c90542d8323d30f4b54f53a262a837fa5021aaaf7879b",
+      "dist-electron/libraryExtractionEngine-GrryzTVj.js": "718997e98a03e70c11d0ee6a43508045b8b00e77dd3c554b9dc00c9b11aa94c1",
+      "dist-electron/libraryExtractionWorker.js": "9ae0755c609ad43beb2818c48dc310a5209952e76730315b73219a49f2810180",
+      "dist-electron/libraryFileUtils-BDA2K8Cp.js": "5348814687c5456ac47122218759f3c8bf85187ce3de6bb0016353c6a52117e6",
+      "dist-electron/libraryOperationWorker.js": "85b1f7a21af2219e89b900ea29458a0dc204d79be756322891ff61bbe10fd3b7",
+      "dist-electron/libraryOperations-CoAjKVQE.js": "5f69d788a27c468cd74e48adb08af4804dedfa17d7717adaa83b09271725f23a",
+      "dist-electron/libraryReaderWorker.js": "2ee4298271a1874816a9e87074976093a8f95165947f68b25ad79aefd8f00c31",
+      "dist-electron/libraryStorage-DVI_0FFH.js": "3087ad25529f5e99aa3df00ce74769176268b949b74356749dfbec8c7258e1a1",
+      "dist-electron/main-hZCtaIum.js": "f75a40466e59afb319b5b7753f24914b26b81dd23244408f9b469a572bc4a0b2",
+      "dist-electron/main.js": "dd9b7fc8ab74965f94b8a87e3366004adec2151743f1f92fe6e543a23753a9df",
+      "dist-electron/migrationRecoveryUtilityWorker-BJk5e4Qa.js": "5a67f5ba7eff4bbdc27a0300ddb52e6d358fddcc5cbd6f36e8b3ebb6e89c9cde",
+      "dist-electron/migrationRecoveryUtilityWorker.js": "621eaf8d41cbbef018761ade82565f7f0e43efe0998ffe96752f03bf1ace2186",
+      "dist-electron/openBackupWorker.js": "e9b29887817b8c4a37be426698e47ed40c808469e14f99d15995a8641ea9cb85",
+      "dist-electron/pdfjsLoader-II96y941.js": "735f5cb407036b848cadde1b3c3406c7d7b623e1f1124c3ae070124706e79f81",
+      "dist-electron/recoveryProbeUtilityWorker-CnxBRRzi.js": "8630f89da44a5ea5bdefd1bbb751f5ec5fe2e4331d9b16e32fbbff5d6eb8e643",
+      "dist-electron/recoveryProbeUtilityWorker.js": "cfe56d0b52c012d0f69c6353d1602290d9e35b012d831074921b7fa1683ffd9e",
+      "dist-electron/retrievalChunks-CyZ1W41k.js": "df97fa118690dcf3672e3865ec0ce3b180b1b2a5667267e80069dbf244ed08d3",
+      "dist-electron/serverPublishWorker.js": "6e2b16d794005562e6c7ef3cec1ceec214e6a5ca50a40e1ff8ed860929f3ab5b",
+      "dist-electron/serverReplicaWorker.js": "106c835bad08d2272f6acc0e9bb0cc828b2995363b765d9966bb183c760ad410",
+      "dist-electron/similarityCore-DVrHig9o.js": "b0f8e8f7ddc220debcde14e167e6dde4e3ac5d540fda24d882e6f49f39f1d794",
+      "dist-electron/tabular-D7FpBB_s.js": "23603ddde9b2b94681ba15b9b89f93d7f844bef3f8d3edb232f24b9ead9ee7b0",
+      "dist-electron/webExtractionWorker.js": "becb6ec10c3e05ad7a5ae2af0ed83743ec43428e2f9b3009827dc09ae502af45",
+      "dist-electron/webPageExtract-DoZh0XvF.js": "3fb8a275451e44f2fa68b3c046ab67b6f72c47b6312d7202250e57b07dd287ca"
+    }
+  },
+  "runtime": {
+    "versions": {
+      "node": "24.20.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "148",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.6",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2025c",
+      "undici": "7.29.0",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.0.245.31-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "43.6.0",
+      "chrome": "150.0.7871.250"
+    },
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "notebooks": {
+    "passed": true,
+    "collections": 3,
+    "sources": 3,
+    "preparedPassages": 1,
+    "layouts": [
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 320,
+          "y": 125.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 80,
+          "y": 45.5,
+          "width": 640,
+          "height": 549
+        },
+        "keyboardFocusContained": true
+      }
+    ]
+  },
+  "verification": {
+    "passed": true,
+    "default": "off",
+    "enabled": "structured",
+    "disabled": "off",
+    "modelCalls": 0
+  },
+  "activity": {
+    "passed": true,
+    "mode": "deterministic IPC/UI fixture, no live model or Zotero calls",
+    "turns": 4,
+    "layouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 224.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 293.5
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "box": {
+          "x": 942,
+          "y": 224.8359375,
+          "width": 318,
+          "height": 446.6640625
+        }
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "box": {
+          "x": 462,
+          "y": 218,
+          "width": 318,
+          "height": 293.5
+        }
+      }
+    ],
+    "webLayouts": [
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": 45.9453125,
+            "bottom": 84.7890625
+          },
+          {
+            "layer": "profiles",
+            "top": 85.7890625,
+            "bottom": 124.6328125
+          },
+          {
+            "layer": "ideas",
+            "top": 125.6328125,
+            "bottom": 164.4765625
+          },
+          {
+            "layer": "nodus",
+            "top": 165.4765625,
+            "bottom": 204.3203125
+          },
+          {
+            "layer": "context",
+            "top": 205.3203125,
+            "bottom": 235.3203125
+          },
+          {
+            "layer": "graph",
+            "top": 236.3203125,
+            "bottom": 266.3203125
+          },
+          {
+            "layer": "zotero",
+            "top": 267.3203125,
+            "bottom": 306.1640625
+          },
+          {
+            "layer": "attachments",
+            "top": 307.1640625,
+            "bottom": 337.1640625
+          },
+          {
+            "layer": "tools",
+            "top": 338.1640625,
+            "bottom": 368.1640625
+          },
+          {
+            "layer": "web",
+            "top": 369.1640625,
+            "bottom": 1183.0390625
+          },
+          {
+            "layer": "response",
+            "top": 1184.0390625,
+            "bottom": 1214.0390625
+          }
+        ],
+        "webBottom": 1183.0390625,
+        "detailBottom": 1177.0390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 454,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "light",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -451.5546875,
+            "bottom": -412.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -411.7109375,
+            "bottom": -372.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -371.8671875,
+            "bottom": -333.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -332.0234375,
+            "bottom": -293.1796875
+          },
+          {
+            "layer": "context",
+            "top": -292.1796875,
+            "bottom": -262.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -261.1796875,
+            "bottom": -231.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -230.1796875,
+            "bottom": -191.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -190.3359375,
+            "bottom": -160.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -159.3359375,
+            "bottom": -129.3359375
+          },
+          {
+            "layer": "web",
+            "top": -128.3359375,
+            "bottom": 685.5390625
+          },
+          {
+            "layer": "response",
+            "top": 686.5390625,
+            "bottom": 716.5390625
+          }
+        ],
+        "webBottom": 685.5390625,
+        "detailBottom": 679.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 242,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -503.5546875,
+            "bottom": -464.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -463.7109375,
+            "bottom": -424.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -423.8671875,
+            "bottom": -385.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -384.0234375,
+            "bottom": -345.1796875
+          },
+          {
+            "layer": "context",
+            "top": -344.1796875,
+            "bottom": -314.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -313.1796875,
+            "bottom": -283.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -282.1796875,
+            "bottom": -243.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -242.3359375,
+            "bottom": -212.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -211.3359375,
+            "bottom": -181.3359375
+          },
+          {
+            "layer": "web",
+            "top": -180.3359375,
+            "bottom": 633.5390625
+          },
+          {
+            "layer": "response",
+            "top": 634.5390625,
+            "bottom": 664.5390625
+          }
+        ],
+        "webBottom": 633.5390625,
+        "detailBottom": 627.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 454,
+        "scrollHeight": 1179
+      },
+      {
+        "theme": "dark",
+        "viewport": {
+          "width": 800,
+          "height": 640
+        },
+        "bounds": [
+          {
+            "layer": "scope",
+            "top": -663.5546875,
+            "bottom": -624.7109375
+          },
+          {
+            "layer": "profiles",
+            "top": -623.7109375,
+            "bottom": -584.8671875
+          },
+          {
+            "layer": "ideas",
+            "top": -583.8671875,
+            "bottom": -545.0234375
+          },
+          {
+            "layer": "nodus",
+            "top": -544.0234375,
+            "bottom": -505.1796875
+          },
+          {
+            "layer": "context",
+            "top": -504.1796875,
+            "bottom": -474.1796875
+          },
+          {
+            "layer": "graph",
+            "top": -473.1796875,
+            "bottom": -443.1796875
+          },
+          {
+            "layer": "zotero",
+            "top": -442.1796875,
+            "bottom": -403.3359375
+          },
+          {
+            "layer": "attachments",
+            "top": -402.3359375,
+            "bottom": -372.3359375
+          },
+          {
+            "layer": "tools",
+            "top": -371.3359375,
+            "bottom": -341.3359375
+          },
+          {
+            "layer": "web",
+            "top": -340.3359375,
+            "bottom": 473.5390625
+          },
+          {
+            "layer": "response",
+            "top": 474.5390625,
+            "bottom": 504.5390625
+          }
+        ],
+        "webBottom": 473.5390625,
+        "detailBottom": 467.5390625,
+        "width": 390,
+        "scrollWidth": 390,
+        "height": 242,
+        "scrollHeight": 1179
+      }
+    ],
+    "requestFiltering": true,
+    "simultaneousOperations": true,
+    "keyboard": true,
+    "minimizeExpand": true,
+    "neverClosed": true,
+    "failure": true,
+    "cancellation": true
+  },
+  "pdf": {
+    "passed": true,
+    "notebookId": "a9700050-cb78-484e-946c-a5534e390460",
+    "physicalPage": 1,
+    "originalRead": {
+      "passed": true,
+      "noCampaignCreated": true,
+      "physicalPage": 1
+    },
+    "marker": "PACKAGED73"
+  },
+  "paths": {
+    "userData": "/private/tmp/nodus-research-3c1rXt/profile",
+    "sessionData": "/private/tmp/nodus-research-3c1rXt/sessions",
+    "temp": "/private/tmp/nodus-research-3c1rXt/tmp",
+    "appData": "/private/tmp/nodus-research-3c1rXt/app-data",
+    "downloads": "/private/tmp/nodus-research-3c1rXt/downloads"
+  },
+  "databaseOpens": 16,
+  "initialDatabaseOpens": 8,
+  "finishedAt": "2026-10-13T08:01:32.286Z",
+  "buildUnchanged": true
+}

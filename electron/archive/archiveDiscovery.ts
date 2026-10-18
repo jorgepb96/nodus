@@ -20,7 +20,7 @@ import { currentEmbeddingConfig, embeddingTextHash } from '../db/ideasRepo';
 import { getDb } from '../db/database';
 import { getPrimarySourcePolicySettings } from '../db/primarySourceGovernanceRepo';
 import { getActiveVault } from '../vaults/vaultRegistry';
-import { embed } from '../ai/aiClient';
+import { embedDocument, embedQuery } from '../ai/aiClient';
 import { archiveEmbeddingText, documentHasGenealogyAnchor, nameAppearsInText, personProfileText } from '@shared/archiveDiscovery';
 import { decidePrimarySourcePolicy } from '@shared/primarySourcesTypes';
 import type { DocumentLinkSuggestion, PersonLinkSuggestion } from '@shared/types';
@@ -64,7 +64,7 @@ export async function embedArchiveItem(itemId: string): Promise<boolean> {
   if (!item) return false;
   const text = archiveEmbeddingText(item);
   if (!text) return false;
-  const vec = await embed(text);
+  const vec = await embedDocument(text);
   if (!vec) return false;
   const config = currentEmbeddingConfig();
   setItemEmbedding(itemId, vec, config.provider, config.model, embeddingTextHash(text));
@@ -147,7 +147,7 @@ export async function suggestDocumentsForPerson(personId: string): Promise<Docum
   const events = listEvents({ personId }).map((e) => ({ type: e.type, date: e.date, place: e.placeName }));
   const places = [...new Set(events.map((e) => e.place).filter((p): p is string => Boolean(p)))];
   const profile = personProfileText({ name: person.displayName, variants, birthDate: person.birthDate, deathDate: person.deathDate, events, places });
-  const vec = profile ? await embed(profile) : null;
+  const vec = profile ? await embedQuery(profile) : null;
   if (vec) {
     const similar = await findArchiveItemsSimilar(vec, {
       limit: 8,

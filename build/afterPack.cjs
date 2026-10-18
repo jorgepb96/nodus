@@ -81,6 +81,8 @@ exports.default = async function afterPack(context) {
   verifyPackagedNativeRuntime(appPath, Arch[context.arch]);
   assertBinaryArchitecture('Apple Calendar', path.join(resourcesPath, 'apple-calendar', 'nodus-apple-calendar.node'), Arch[context.arch]);
 
+  assertBinaryArchitecture('Trackpad', path.join(resourcesPath, 'trackpad-native', 'nodus-trackpad.node'), Arch[context.arch]);
+
   assertBinaryArchitecture('Presenter', path.join(resourcesPath, 'presenter-native', 'nodus-presenter-native'), Arch[context.arch]);
 
   if (process.env.NODUS_REQUIRE_MACOS_SIGNING === 'true') {

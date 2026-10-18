@@ -22,7 +22,7 @@ try {
   db.prepare("INSERT INTO ideas(global_id,type,label,statement) VALUES ('full','claim','relato de viaje','El relato de viaje es un género factual.')").run();
   for (const id of ['empty', 'full']) db.prepare("INSERT INTO idea_occurrences(global_id,nodus_id,role,confidence) VALUES (?,'w','principal',1)").run(id);
   const ai = load('electron/ai/aiClient.ts');
-  ai.embed = async () => null;
+  ai.embedQuery = async () => null;
   const preparation = load('electron/ai/documentaryPreparation.ts');
   preparation.retrieveSharedDocumentaryEvidence = async () => ({ evidence: [], traversal: { rounds: 1, candidates: 0, partial: false } });
   const scope = load('electron/ai/researchNotebookService.ts').resolveAcademicResearchScope();

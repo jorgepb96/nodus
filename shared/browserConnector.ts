@@ -24,6 +24,12 @@ export interface BrowserConnectorCaptureRequest {
   pageUrl: string;
   metadataSource: 'highwire' | 'json-ld' | 'coins' | 'dublin-core' | 'open-graph' | 'direct-file' | 'generic';
   metadata: LibraryItemMetadata;
+  /** Reviewed values must not be replaced by another provider lookup on save. */
+  metadataReviewed?: boolean;
+  /** Idempotency key retained across worker restarts and uncertain responses. */
+  captureRequestId?: string;
+  /** Several independent records share the listing URL. */
+  sourceIsResultPage?: boolean;
   collectionId?: string | null;
   tags?: string[];
   attachments?: BrowserConnectorAttachmentCandidate[];
@@ -53,10 +59,31 @@ export interface BrowserConnectorSaveResult {
   disposition: BrowserConnectorSaveDisposition;
   /** True when the capture matched an existing record instead of creating one. */
   deduplicated: boolean;
-  matchedBy?: 'identifier' | 'bibliography' | 'url';
+  matchedBy?: 'request' | 'identifier' | 'bibliography' | 'url';
   title: string;
   attachmentCount: number;
   extractionStatus: string | null;
   warnings: string[];
   pendingUploads: BrowserConnectorPendingUpload[];
+}
+
+export interface BrowserCaptureJob {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  status: 'queued' | 'saving' | 'downloading' | 'needs-permission' | 'failed' | 'complete';
+  port?: number;
+  temporaryOrigins?: string[];
+  entries: Array<{
+    title: string;
+    request: BrowserConnectorCaptureRequest | null;
+    result: BrowserConnectorSaveResult | null;
+    error: string | null;
+    uploads: Array<{
+      attachment: BrowserConnectorPendingUpload;
+      status: 'queued' | 'downloading' | 'needs-permission' | 'failed' | 'complete';
+      error: string | null;
+    }>;
+  }>;
 }

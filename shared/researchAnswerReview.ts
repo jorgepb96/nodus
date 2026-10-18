@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v29', stage: 'coherent-answer-review-v29' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v30', stage: 'coherent-answer-review-v30' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {

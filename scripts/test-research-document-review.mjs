@@ -99,6 +99,19 @@ try {
     assert.equal(output.researchRun.stopReason, 'technical', 'Technical failure cannot be called sufficient coverage');
   }
   {
+    for (const authoredKind of ['user-note', 'generated-report']) {
+      scope.documents.push({ id: 'authored', workId: 'w1', title: 'Saved note/report', authors: [], year: null, origin: { kind: 'nodus', id: 'authored' }, authoredKind });
+      try {
+        const output = await run([part('authored-fact')], (options, input) => {
+          if (options.system.startsWith('Revise')) return { parts: [{ id: 'authored-fact', text: 'An independently established fact.' }] };
+          assert.equal(input.sources[0].attributionOnly, true, 'Indexing a saved note/report cannot turn it into independent documentary evidence');
+          return proof(input);
+        });
+        assert.equal(output.status, 'limited', 'A fact verdict cannot launder authored interpretations');
+      } finally { scope.documents.pop(); }
+    }
+  }
+  {
     let calls = 0;
     const output = await run([part('field')], (_options, input) => {
       calls++; const value = proof(input); value.parts[0].claims[0].premises[0].evidence[0].id = 'invented'; return value;

@@ -31,6 +31,10 @@ export function researchReviewEvidence(additionalSources: ResearchAuditSource[] 
   if (!harness || !run) throw new Error('research_review_without_authorized_corpus');
   const sources: ResearchAuditSource[] = [...run.evidence.values()].map(item => ({ id: item.id, workId: item.nodus_id,
     proseSupport: researchExcerptHasProse(item.summary ?? ''),
+    // A saved note/report remains an attributed interpretation even when its
+    // text is retrieved through the same passage index as published documents.
+    attributionOnly: run.scope.documents.some(document => document.authoredKind
+      && [document.workId, document.noteId, document.id].includes(item.nodus_id)),
     collectiveCredits: Boolean(item.authors?.length && item.authors.every(author => /\((?:eds?\.?|coords?\.?)\)/iu.test(author))),
     text: `Record metadata:\nTitle: ${item.label}\nAuthors: ${item.authors?.join("; ")}\nYear: ${item.year}\nPage: ${item.pageLabel}\nVerbatim excerpt:\n${item.summary ?? ''}`,
     label: [item.authors?.join('; '), item.year, item.pageLabel].filter(Boolean).join(', ') || item.label, citation: item.citation,

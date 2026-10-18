@@ -201,6 +201,32 @@ the observed latency/cost tradeoff. Until then the default stays legacy.
 
 ## Coherent answer verification
 
+### Source-free turns and later lookup requests
+
+Routing follows the current task rather than the topic words in the text. Clear
+provided-text transformations and social turns bypass planning and corpus-run
+construction; generic explanations and ambiguous requests receive one bounded
+semantic planning call. A no-search plan accepts empty queries and contributes
+no authors, titles, source context, research agenda or citation-recovery retries.
+Source-only instructions apply to documentary work, not to translating supplied
+text. Editing preserves meaning, qualifications and existing reference targets.
+
+Quoted/fenced text and transformation payloads cannot grant library/web access.
+Mentioning Zotero or MCP is not itself a lookup request. A new explicit search
+instruction overrides a mistaken no-search model decision and retains the
+authorized conversation's topic, even after several edits. Conversely a previous
+search does not force the next translation to research again. Missing source text
+that must first be located remains documentary work; missing unspecified edit
+input calls for clarification. Routing policy is part of the context fingerprint
+so old decisions cannot be reused after the policy changes.
+
+`test-research-turn-intent.mjs` covers lexical boundaries, while
+`test-research-turn-routing.mjs` exercises three complete transition attempts,
+authorized history, actual evidence admission and a single final writing call for
+each direct translation. The explicitly paid `--phase=intent` campaign uses
+synthetic conversations and the original per-provider authorization; it never
+looks up corpus material or resets its spending ledger.
+
 The review binds each factual clause to its own cited source. Local literal
 excerpt keys are restored by the backend; a model cannot invent supporting
 quotation text or use a citation ID as proof by itself. Paragraph deductions may

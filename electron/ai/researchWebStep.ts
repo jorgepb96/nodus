@@ -12,6 +12,7 @@ import { WebExtractionHost } from '../websearch/webExtraction';
 import { recordWebPassage } from '../db/researchWebRepo';
 import { PICK_SYSTEM, PLAN_SYSTEM, RATE_SYSTEM, REFORMULATE_SYSTEM, validPick, validPlan, validQueries, validRatings } from '../websearch/webPlanning';
 import { currentResearchHarness } from './researchHarnessRuntime';
+import { positiveResearchInstructions } from '@shared/researchTurnIntent';
 
 /** The user asked for the internet in so many words. Deliberately narrow: a
  * question that merely mentions a website is not a request to search. */
@@ -25,7 +26,7 @@ const EXPLICIT_WEB = new RegExp([
   String.raw`\b(cerca)\b[^.?!\n]{0,60}\b(su\s+|in\s+)?(internet|web|rete)\b`,
   String.raw`(搜索|查一下|上网|網上|ウェブで|検索して|웹에서|검색해)`,
 ].join('|'), 'iu');
-export function explicitWebRequest(question: string): boolean { return EXPLICIT_WEB.test(question); }
+export function explicitWebRequest(question: string): boolean { return positiveResearchInstructions(question).some(text => EXPLICIT_WEB.test(text)); }
 
 /** Questions about the present or the latest state of something. */
 const RECENCY = /\b(20[2-3]\d|actual(es|mente)?|hoy|reciente(s|mente)?|[uú]ltim[oa]s?|novedades|noticias|latest|recent(ly)?|current(ly)?|today|this\s+year|news|nowadays|aujourd'hui|récent|aktuell|neueste|atual(mente)?|attuale)\b/iu;

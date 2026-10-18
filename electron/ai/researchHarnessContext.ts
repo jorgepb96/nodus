@@ -1,4 +1,5 @@
 import { RESEARCH_ANSWER_REVIEW_POLICY } from '@shared/researchAnswerReview';
+import { RESEARCH_TURN_INTENT_POLICY } from '@shared/researchTurnIntent';
 import type { DeepResearchRequest, ImmersionRequest, ResearchChatRequest } from '@shared/types';
 import type { ResearchRunContext, ResearchRunMode } from '@shared/researchHarness';
 import type { ResolvedResearchScope } from '@shared/researchCorpus';
@@ -18,7 +19,7 @@ export function researchHarnessContext(mode: ResearchRunMode, request: ResearchC
     objective: chat ? chat.messages.filter(m => m.role === 'user').at(-1)?.content ?? '' : 'objective' in request ? request.objective : (request as ImmersionRequest).topic,
     model: resolveModelRef(model), effort: request.thinkingEffort ?? 'standard',
     ...(chat ? { options: { selection: structuredClone(chat.selection), skillIds: [...(chat.skillIds ?? [])] } } : {}),
-    policyKey: researchFingerprint({ answerReview: RESEARCH_ANSWER_REVIEW_POLICY.version, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
+    policyKey: researchFingerprint({ answerReview: RESEARCH_ANSWER_REVIEW_POLICY.version, turnIntent: RESEARCH_TURN_INTENT_POLICY, verification: settings.researchAnswerVerification ?? 'off', language: 'language' in request ? request.language : settings.promptLanguage,
       selection: chat?.selection, skillIds: chat?.skillIds,
       instructions: chat ? withResearchSystemPrompt('', chat.systemPromptId, { surface: 'research', conversationId: chat.conversationId }) : '',
       userTurns: chat?.conversationId ? getConversation(chat.conversationId)?.messages.filter(m => m.role === 'user').map(m => [m.id, m.content]) : undefined }),

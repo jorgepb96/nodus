@@ -4,6 +4,7 @@ import { researchActivityStep } from './researchActivity';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import type { ResearchQuestionIntent } from '@shared/researchHarness';
 import { validResearchQuestionIntent } from '@shared/researchActions';
+import { RESEARCH_TURN_INTENT_POLICY, explicitResearchLibraryRequest, researchDirectTurnKind, researchLookupFollowUp, type ResearchDirectKind } from '@shared/researchTurnIntent';
 
 export interface ResearchSearchBranch extends ResearchQuestionIntent { question: string; query: string; priority: number }
 
@@ -31,23 +32,14 @@ export interface ResearchTurnPlan {
    * text already in it, or general knowledge that no source would change. Searching every
    * library and the web for «gracias» only slowed the answer and padded it with citations. */
   needsSources: boolean;
-  /** False when the plan is the literal message because the model could not plan. */
+  directKind?: ResearchDirectKind;
+  /** False for deterministic routing or the bounded fallback after a failed model plan. */
   planned: boolean;
 }
 export type ResearchTurnKind = 'definition' | 'comparison' | 'survey' | 'fact' | 'other';
 const KINDS: readonly ResearchTurnKind[] = ['definition', 'comparison', 'survey', 'fact', 'other'];
 
-/** The user asked for their library, Zotero or its connector: a request about where to
- * look, never the topic itself. Deliberately broad on «zotero» and «mcp», which in a
- * research chat mean nothing else. */
-const EXPLICIT_LIBRARY = new RegExp([
-  String.raw`\b(zotero|mcp)\b`,
-  String.raw`\b(usa|utiliza|consulta|mira|revisa|busca|buscar|búscame|buscame|investiga|explora|recurre)\b[^.?!\n]{0,60}\b(mi|mis|la|el|tu)\s+(biblioteca|corpus|documentos|fuentes|lecturas|referencias|bibliograf[ií]a)\b`,
-  String.raw`\b(otros|m[aá]s|dem[aá]s)\s+autores\b`,
-  String.raw`\b(use|search|check|look\s+(in|at|through)|query|consult)\b[^.?!\n]{0,60}\b(my|the)\s+(library|corpus|documents|sources|references|bibliography)\b`,
-  String.raw`\b(other|more)\s+authors\b`,
-].join('|'), 'iu');
-export function explicitLibraryRequest(message: string): boolean { return EXPLICIT_LIBRARY.test(message); }
+export const explicitLibraryRequest = explicitResearchLibraryRequest;
 
 /** Questions that need several voices: what a term means, how two things differ, what
  * the literature says. */
@@ -59,18 +51,24 @@ function literalKind(message: string): ResearchTurnKind {
 }
 
 /** The literal message, when there is nothing to plan with or the model could not plan. */
-export function literalResearchTurnPlan(message: string): ResearchTurnPlan {
+export function literalResearchTurnPlan(message: string, messages: readonly ResearchChatMessage[] = []): ResearchTurnPlan {
   const text = message.trim().slice(0, 1000);
-  // Without a plan nothing is known about the message, so it is searched as before.
-  return { goal: text, queries: [text], authors: [], titles: [], explicitLibrary: explicitLibraryRequest(text), kind: literalKind(text), needsSources: true, planned: false };
+  const directKind = researchDirectTurnKind(message);
+  const previous = researchLookupFollowUp(message) ? [...messages.slice(0, -1)].reverse().find(turn => turn.role === 'user'
+    && !researchLookupFollowUp(turn.content) && !['transform', 'conversation'].includes(researchDirectTurnKind(turn.content) ?? ''))?.content.trim().slice(0, 800) : undefined;
+  const goal = previous ? `${previous}\n${text}` : text;
+  return { goal, queries: directKind ? [] : [previous ?? text], authors: [], titles: [], explicitLibrary: explicitLibraryRequest(message), kind: literalKind(goal), needsSources: !directKind, planned: false,
+    ...(directKind ? { directKind } : {}) };
 }
 
 const SYSTEM = `You plan the library search for one turn of a research chat. Return JSON only:
 {"needsSources":true,"goal":"...","queries":["..."],"authors":["..."],"titles":["..."],"explicitLibrary":false,"kind":"definition|comparison|survey|fact|other","answerMode":"documentary|constructive"}
-- needsSources: false ONLY when the latest message can be answered fully without looking anything up: greetings, thanks or small talk; questions about this conversation or the assistant itself; rewriting, translating, shortening, reformatting or explaining text that is already in the conversation; arithmetic or unit conversions; general knowledge that no research source would change. True for anything about a research topic, an author, a work, a period, evidence, a claim to check, what the literature says, or any request to search. When in doubt, true.
+- needsSources: false ONLY when the latest task can be completed from supplied text, conversation or ordinary general knowledge: greetings; questions about this conversation; rewriting, translating, shortening, correcting or reformatting supplied text; arithmetic/conversions; general explanations or drafting advice that do not ask what the user's sources establish. A text mentioning a research topic, author, historical period, Zotero, MCP or the word corpus is not by itself a request to retrieve anything. Classify the TASK, not its subject words. Transforming supplied research prose needs no new corpus search and must not add factual content. When needsSources=false return queries=[], authors=[], titles=[], exploration=[] and directKind="transform|conversation|general". If the input to transform is missing, ask for it instead of searching for an unspecified text.
+- needsSources: true when the task requires locating text not supplied, checking claims against evidence, identifying quotations from a work, comparing what sources establish, finding more authors, or retrieving from the library. "Translate the following paragraph" differs from "find and translate the passage in that book". A transformation combined with source verification still needs retrieval. When uncertain about documentary evidence, true.
+- Re-evaluate EVERY new user turn. A previous direct/no-search decision is not a persistent restriction. If the user now says "ahora sí, consulta el corpus", "búscalo", "search again" or accepts an offered search, retrieve evidence about the conversation's substantive topic. Conversely an earlier research request does not force a later rewrite/translation to search. The first user turn is included only as a possible topic anchor; a newer explicit topic takes priority. sourceRequestIsExplicit=true requires needsSources=true even if an earlier answer said lookup was unnecessary.
 - goal: the question the user needs answered NOW, stated on its own, in the user's language, with every name and term it depends on. A follow-up ("and what about X?", "use zotero", "look again", "more authors") keeps the topic of the conversation: fold the earlier topic into the goal.
 - A request about WHERE or HOW to search (Zotero, MCP, "my library", "search again", "more authors") is never the topic. Set explicitLibrary true and keep the conversation's topic as the goal.
-- queries: 1 to 4 short library queries (3 to 12 words) in the language of the sources, covering the goal's facets and key synonyms. Never a tool name or a command. Disambiguate key terms from the user's context: anchor at least one query in concrete actors, practices or mechanisms of the intended sense. Do not repeat the same ambiguous word in every query or drift to another sense simply because it shares vocabulary.
+- queries: [] without retrieval; otherwise 1 to 4 short library queries (3 to 12 words) in the language of the sources, covering the goal's facets and key synonyms. Never a tool name, translation instruction or command. Disambiguate key terms from the user's context: anchor at least one query in concrete actors, practices or mechanisms of the intended sense. Do not repeat the same ambiguous word in every query or drift to another sense simply because it shares vocabulary.
 - authors: people the user names or clearly means (surname first as written, e.g. "Alburquerque García"); leave spelling as typed. Empty when none.
 - titles: works the user names. Empty when none.
 - kind: definition (what something means), comparison (how things differ), survey (what the literature or several authors say), fact, other.
@@ -91,9 +89,10 @@ function validPlan(value: unknown): value is Omit<ResearchTurnPlan, 'planned' | 
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const plan = value as Record<string, unknown>;
   return typeof plan.goal === 'string' && plan.goal.trim().length >= 3 && plan.goal.length <= 800
-    && strings(plan.queries, 1, 4, 300) && strings(plan.authors ?? [], 0, 4, 120) && strings(plan.titles ?? [], 0, 4, 240)
+    && strings(plan.queries, plan.needsSources === false ? 0 : 1, 4, 300) && strings(plan.authors ?? [], 0, 4, 120) && strings(plan.titles ?? [], 0, 4, 240)
     && (plan.explicitLibrary === undefined || typeof plan.explicitLibrary === 'boolean')
     && (plan.answerMode === undefined || plan.answerMode === 'documentary' || plan.answerMode === 'constructive')
+    && (plan.directKind === undefined || ['transform', 'conversation', 'general'].includes(String(plan.directKind)))
     && (plan.kind === undefined || KINDS.includes(plan.kind as ResearchTurnKind))
     && (plan.exploration === undefined || Array.isArray(plan.exploration) && plan.exploration.length <= 4 && plan.exploration.every(branch => {
       if (!branch || typeof branch !== 'object' || Array.isArray(branch)) return false;
@@ -113,21 +112,27 @@ const prose = (text: string, limit: number) => text.replace(/\[([^\]]*)\]\(nodus
 /** Plan one turn from the recent conversation. Any failure plans nothing new: the literal
  * message is searched, as before, and a request for the library is still recognised. */
 export async function planResearchTurn(messages: ResearchChatMessage[], model?: ModelRef | null, signal?: AbortSignal): Promise<ResearchTurnPlan> {
-  return researchHarnessStage('turn-plan', { messages, model }, () => planResearchTurnUncached(messages, model, signal));
+  return researchHarnessStage(RESEARCH_TURN_INTENT_POLICY, { messages, model }, () => planResearchTurnUncached(messages, model, signal));
 }
 async function planResearchTurnUncached(messages: ResearchChatMessage[], model?: ModelRef | null, signal?: AbortSignal): Promise<ResearchTurnPlan> {
+  signal?.throwIfAborted();
   const latest = [...messages].reverse().find(message => message.role === 'user')?.content ?? '';
-  const literal = literalResearchTurnPlan(latest);
-  if (!latest.trim()) return literal;
-  const conversation = messages.slice(-6).map(message => ({ role: message.role, text: prose(message.content, message.role === 'user' ? 1000 : 600) })).filter(turn => turn.text);
+  const literal = literalResearchTurnPlan(latest, messages);
+  if (!latest.trim() || !literal.needsSources) return literal;
+  const recent = messages.slice(-6), first = messages.find(message => message.role === 'user');
+  const conversation = (first && !recent.includes(first) ? [first, ...recent] : recent)
+    .map(message => ({ role: message.role, text: prose(message.content, message.role === 'user' ? 1000 : 600) })).filter(turn => turn.text);
   const harness = currentResearchHarness();
   try {
-    const plan = await researchActivityStep('tools', 'plan', () => completeJson({ system: SYSTEM + (harness ? EXPLORATION_SYSTEM : ''), user: JSON.stringify({ conversation, latest: prose(latest, 1000),
+    let plan = await researchActivityStep('tools', 'plan', () => completeJson({ system: SYSTEM + (harness ? EXPLORATION_SYSTEM : ''), user: JSON.stringify({ conversation, latest: prose(latest, 1000), sourceRequestIsExplicit: literal.explicitLibrary,
       ...(harness ? { capabilities: harness.record.context.capabilities } : {}) }),
       maxTokens: harness ? 1400 : 500, temperature: 0, noRetry: true, corpusContext: true, signal, timeoutMs: researchStepTimeoutMs(model) }, validPlan, model));
+    // A mistaken no-search plan cannot erase an explicit current lookup request.
+    if (literal.explicitLibrary && plan.needsSources === false) plan = literal;
+    const needsSources = plan.needsSources !== false || plan.explicitLibrary === true || literal.explicitLibrary;
     const seen = new Set<string>();
     const focusedLiteral = /una sola (?:oración|cita)|una cita breve|un pasaje[^.!?]{0,80}(?:literal|c[oó]pialo)|one (?:verbatim|literal) (?:quote|sentence)/iu.test(latest);
-    const exploration = harness && !focusedLiteral && plan.needsSources !== false && plan.answerMode !== 'constructive' && plan.kind !== 'fact'
+    const exploration = harness && !focusedLiteral && needsSources && plan.needsSources !== false && plan.answerMode !== 'constructive' && plan.kind !== 'fact'
       ? (plan.exploration ?? []).filter(branch => {
         const key = branch.query.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
         if (seen.has(key)) return false;
@@ -135,13 +140,14 @@ async function planResearchTurnUncached(messages: ResearchChatMessage[], model?:
       }).map(branch => ({ ...branch, question: branch.question.trim(), query: branch.query.trim(), purpose: branch.purpose.trim() }))
       : [];
     return {
-      goal: plan.goal.trim(), queries: plan.queries.map(query => query.trim()).slice(0, 4),
-      authors: (plan.authors ?? []).map(author => author.trim()), titles: (plan.titles ?? []).map(title => title.trim()),
+      goal: plan.goal.trim(), queries: needsSources ? (plan.queries.length ? plan.queries : [plan.goal]).map(query => query.trim()).slice(0, 4) : [],
+      authors: needsSources ? (plan.authors ?? []).map(author => author.trim()) : [], titles: needsSources ? (plan.titles ?? []).map(title => title.trim()) : [],
       // A request the words already make is honoured even when the model missed it.
       explicitLibrary: plan.explicitLibrary === true || literal.explicitLibrary,
       kind: plan.kind ?? literal.kind,
       // Only an explicit «no» skips the search, never a request for the library.
-      needsSources: plan.needsSources !== false || plan.explicitLibrary === true || literal.explicitLibrary,
+      needsSources,
+      ...(!needsSources ? { directKind: plan.directKind ?? 'general' as const } : {}),
       planned: true,
       ...(harness ? { exploration } : {}),
       ...(plan.answerMode === undefined ? {} : { answerMode: plan.answerMode }),

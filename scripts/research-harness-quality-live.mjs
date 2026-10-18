@@ -10,7 +10,7 @@ import { startResearchProviderProxy } from './research-provider-proxy.mjs';
 const require = createRequire(import.meta.url), repo = path.resolve(import.meta.dirname, '..');
 const arg = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
 const phase = arg('phase');
-if (!['preaudit', 'round1', 'round2', 'audit', 'corrections1', 'corrections2'].includes(phase)) throw new Error('Choose an explicit quality phase');
+if (!['preaudit', 'round1', 'round2', 'audit', 'corrections1', 'corrections2', 'intent'].includes(phase)) throw new Error('Choose an explicit quality phase');
 const out = path.join(repo, 'artifacts/research-harness-ab/quality');fs.mkdirSync(out,{recursive:true});
 const file = path.join(out,'authorization.json');
 const recordedAuthorization = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : null;
@@ -69,6 +69,11 @@ try {
     const files=execFileSync('git',['ls-files','electron/ai','electron/qa','shared','scripts/lib/research-harness-ab-electron.mjs','scripts/lib/research-validation-cases.mjs'],{cwd:repo,encoding:'utf8'}).trim().split('\n');
     fs.writeFileSync(path.join(artifacts,`${scenario}-code-identity.json`),JSON.stringify({commit,files:Object.fromEntries(files.map(p=>[p,createHash('sha256').update(fs.readFileSync(path.join(repo,p))).digest('hex')])),intervention:'Native V1 with the selected context, no audit bypass.'},null,2));
     script='scripts/lib/research-harness-ab-electron.mjs';
+  }else if(phase==='intent'){
+    env.NODUS_AB_CHAT_MODEL=JSON.stringify(nativeModel);
+    if(nativeModel.provider==='openrouter')env.NODUS_RESEARCH_OPENROUTER_CHAT_QA='1';
+    env.NODUS_QUALITY_OUTPUT=path.join(artifacts,`quality-intent-${commit}.json`);
+    script='scripts/lib/research-intent-electron.mjs';
   }else{
     const inputs=[];
     const folders=phase==='preaudit'?fs.readdirSync(path.join(repo,'artifacts/research-harness-ab')).filter(n=>n.startsWith('v1-validation-')).map(n=>path.join(repo,'artifacts/research-harness-ab',n,'campaign.json'))

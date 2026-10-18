@@ -92,6 +92,8 @@ try {
     'nodus_generate_deep_research',
     'nodus_finalize_deep_research',
     'nodus_enqueue_deep_research',
+    'nodus_list_research_runs',
+    'nodus_control_research_run',
     'nodus_list_deep_research_jobs',
     'nodus_get_deep_research_job',
     'nodus_cancel_deep_research_job',

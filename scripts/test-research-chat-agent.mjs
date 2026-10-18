@@ -75,7 +75,9 @@ try {
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null)).explicitLibrary, true, 'the words of a request for Zotero are honoured when the model misses them');
   ai.completeJson = async () => { throw new Error('provider_unavailable'); };
   const literal = await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null);
-  assert.deepEqual([literal.planned, literal.goal, literal.explicitLibrary], [false, 'usa zotero mcp', true], 'a planner that fails falls back to the literal message');
+  assert.deepEqual([literal.planned, literal.explicitLibrary], [false, true]);
+  assert.match(literal.goal, /albuquerque garc[ií]a\?\nusa zotero mcp/u, 'a failed follow-up planner retains the earlier topic instead of searching a tool command');
+  assert.doesNotMatch(literal.queries[0], /zotero|mcp/u);
   assert.equal(literalResearchTurnPlan('define libro de viaje vs relato de viaje').kind, 'comparison');
   // The plan says whether the message needs sources at all. Only an explicit «no» skips the
   // search: a model that says nothing, a planner that fails and a request for the library search.
@@ -89,7 +91,7 @@ try {
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'gracias, perfecto' }], null)).needsSources, false);
   assert.equal((await planResearchTurn([...history, { role: 'user', content: 'usa zotero mcp' }], null)).needsSources, true, 'a request for the library is never answered without it');
   ai.completeJson = async (options, guard) => { const reply = { needsSources: 'no', goal: 'x y z', queries: ['x y'], kind: 'other' }; if (!guard(reply)) throw new Error('invalid'); return reply; };
-  assert.equal((await planResearchTurn([...history, { role: 'user', content: 'vale' }], null)).needsSources, true, 'an invalid answer falls back to searching');
+  assert.equal((await planResearchTurn([...history, { role: 'user', content: '¿Qué otras posiciones hay?' }], null)).needsSources, true, 'an ambiguous documentary request with an invalid plan still searches');
 
   // Every one of the planner's four facets reaches the real retrieval binding.
   // Small windows must not be divided into five slices smaller than one chunk.

@@ -22,6 +22,7 @@ test('uploaded and generated images require confirmation, retain bytes, and supp
       import { BlockNoteCanvas } from './src/components/editor/BlockNoteCanvas';
       import { uploadEditorFile, storeEditorImage } from './src/components/editor/editorAttachments';
       import { Markdown } from './src/components/Markdown';
+      import { renderEditorAssetImage } from './src/components/editor/EditorAssetImage';
       const pixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
       const assets = new Map();
       window.assetWrites = 0;
@@ -49,7 +50,7 @@ test('uploaded and generated images require confirmation, retain bytes, and supp
           <button id="preview" onClick={() => setPreview(value => !value)}>Preview</button>
           <BlockNoteCanvas ref={canvas} documentId="images" value="Texto conservado" nativeDocument={doc}
             onChange={(_markdown,next) => setDoc(next)} />
-          {preview && <div id="markdown-preview"><Markdown content={'![Imagen](' + window.uploaded + ')' + String.fromCharCode(10,10) + '![SVG](' + window.svg + ')'} verify={false} allowDataImages /></div>}
+          {preview && <div id="markdown-preview"><Markdown content={'![Imagen](' + window.uploaded + ')' + String.fromCharCode(10,10) + '![SVG](' + window.svg + ')'} verify={false} allowDataImages renderLocalImage={renderEditorAssetImage} /></div>}
         </>;
       }
       createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>);

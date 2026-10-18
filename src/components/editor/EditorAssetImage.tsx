@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { editorAttachmentResolver } from './editorAttachments';
 
+export const renderEditorAssetImage = (src: string, alt?: string) => <EditorAssetImage src={src} alt={alt} />;
+
 export function EditorAssetImage({ src, alt }: { src: string; alt?: string }) {
   const [url, setUrl] = useState('');
   useEffect(() => {

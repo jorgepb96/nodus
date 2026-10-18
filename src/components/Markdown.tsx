@@ -1,4 +1,3 @@
-import { EditorAssetImage } from './editor/EditorAssetImage';
 import { DocumentFigure, useDocumentFigures } from './DocumentFigures';
 import { documentBlocks } from '@shared/documentSkills';
 import { ChatVisual } from './ChatVisual';
@@ -70,6 +69,7 @@ function MarkdownComponent({
   onTestimonyLink,
   verify = true,
   allowDataImages = false,
+  renderLocalImage,
   chatVisuals = false,
 }: {
   content: string;
@@ -95,6 +95,8 @@ function MarkdownComponent({
   verify?: boolean;
   /** Only for trusted local reader assets already confined by the main process. */
   allowDataImages?: boolean;
+  /** Supplied by editor windows that can read local vault assets. */
+  renderLocalImage?: (src: string, alt?: string) => ReactNode;
 }) {
   const documentFigures = useDocumentFigures(content);
   const insertDocumentFigures = () => (tree: any) => {
@@ -195,7 +197,7 @@ function MarkdownComponent({
               if (/^https:\/\//i.test(source)) void window.nodus.openExternal(source);
             }} /> : null;
           },
-          img: ({ src, alt }) => chatVisuals && src?.startsWith('nodus-image://chat/') ? <ChatVisual source={src} alt={alt} /> : src?.startsWith('nodus-blob://') ? <EditorAssetImage src={src} alt={alt} /> : <img src={src} alt={alt} />,
+          img: ({ src, alt }) => chatVisuals && src?.startsWith('nodus-image://chat/') ? <ChatVisual source={src} alt={alt} /> : src?.startsWith('nodus-blob://') && renderLocalImage ? renderLocalImage(src, alt) : <img src={src} alt={alt} />,
           p: ({ node, children, ...props }) => {
             const first = (node as any)?.children?.[0];
             const href = first?.tagName === 'a' ? String(first.properties?.href ?? '') : '';
@@ -336,7 +338,7 @@ function MarkdownComponent({
               </a>
             );
           },
-  }),[documentFigures,onCitation,onReaderCitation,onStudyDocument,onStudyMaterial,onStudyRecording,onStudyEvidence,onGuideEvidence,onWorldEntry,onTestimonyLink,verify,validity,chatVisuals]);
+  }),[documentFigures,onCitation,onReaderCitation,onStudyDocument,onStudyMaterial,onStudyRecording,onStudyEvidence,onGuideEvidence,onWorldEntry,onTestimonyLink,verify,validity,chatVisuals,renderLocalImage]);
 
   return (
     <div className={`md ${className}`}>
@@ -345,7 +347,7 @@ function MarkdownComponent({
         rehypePlugins={[rehypeKatex, rehypeGroupParenthesizedCitations, insertDocumentFigures]}
         urlTransform={(value, key) => {
           if (chatVisuals && key === 'src' && /^nodus-image:\/\/chat\/[a-f0-9]{64}\/[a-f0-9-]{36}$/.test(value)) return value;
-          if (allowDataImages && key === 'src' && /^nodus-blob:\/\/[a-f0-9]{64}$/.test(value)) return value;
+          if (renderLocalImage && key === 'src' && /^nodus-blob:\/\/[a-f0-9]{64}$/.test(value)) return value;
           if (allowDataImages && key === 'src' && /^data:image\/(?:png|jpeg|gif|webp|svg\+xml);base64,/i.test(value)) return value;
           return nodusUrlTransform(value);
         }}

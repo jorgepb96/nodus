@@ -41,6 +41,7 @@ import type { StudySentenceContext, StudySynonymAlternative } from '@shared/stud
 import { studySentenceContext } from '@shared/studySynonyms';
 import type { AppSettings } from '@shared/types';
 import { Markdown } from '../Markdown';
+import { renderEditorAssetImage } from './EditorAssetImage';
 import { parseTestimonyLink, type TestimonyDeepLink } from '@shared/testimonyDeepLinks';
 import { ModelPicker } from '../ModelPicker';
 import { Icon, Spinner } from '../ui';
@@ -1196,7 +1197,7 @@ export function StudyEditor({
                 spellcheck language={data.spellcheckLanguage} onChange={(value, native) => { if (!rawRef.current) { setDraftState(value); nativeRef.current = native; setNativeDocument(native); } }} onHistoryChange={setHistoryState} onOpenRecording={onOpenRecording} listReferences={port.listReferences} onNavigateLink={href => void navigateReference(href)} onWikiLink={reference => void port.listLinkTargets().then(targets => { const target=targets.find(item=>item.id===reference || item.title===reference); if(target) void openLinkedDocument(target.id); })} onToolbarElement={setSelectionToolbar} />
             )}
           </div>
-          {split && <div className="min-h-full overflow-y-auto bg-stone-50 p-8 text-stone-900 dark:bg-neutral-900/20 dark:text-neutral-100"><Markdown content={draft} verify={false} onStudyDocument={(documentId) => void openLinkedDocument(documentId)} onStudyRecording={onOpenRecording} onTestimonyLink={onTestimonyLink} /></div>}
+          {split && <div className="min-h-full overflow-y-auto bg-stone-50 p-8 text-stone-900 dark:bg-neutral-900/20 dark:text-neutral-100"><Markdown content={draft} verify={false} allowDataImages renderLocalImage={renderEditorAssetImage} onStudyDocument={(documentId) => void openLinkedDocument(documentId)} onStudyRecording={onOpenRecording} onTestimonyLink={onTestimonyLink} /></div>}
           {aiPanel && <ScriptorAiPanel mode={aiPanel} settings={settings} model={aiModel} onModelChange={setAiModel} styles={allImproveStyles} quickStyles={quickImproveStyles} styleId={aiStyleId} onStyleChange={chooseAiStyle} instructions={aiInstructions} onInstructionsChange={setAiInstructions} imagePrompt={imagePrompt} onImagePromptChange={setImagePrompt} imageModel={imageModel} imageChoices={imageChoices} onImageModelChange={setImageModel} status={improveStreamingStyleId ? 'streaming' : aiResult ? 'review' : imageBusy ? 'generating' : imageResult ? 'image-ready' : 'compose'} error={improveStreamError} warnings={aiResult?.warnings ?? []} image={imageResult} onSubmit={() => void (aiPanel === 'image' ? runImage() : runPolish())} onCancel={cancelAi} onAccept={acceptProposal} onReject={() => { discardProposal(); setImproveStreamError(''); }} onImage={openImagePanel} onPolish={() => openPolish(resolveImproveSelection(false))} onInsert={insertImage} onClose={closeAiPanel} onLayout={() => { if (aiPanel !== 'polish') return; const range = aiSource.current?.target.range; if (range && !raw) canvasRef.current?.revealAiSelection(range); else if (raw) document.querySelector('[data-testid="scriptor-ai-raw-target"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }} />}
 
         </div>

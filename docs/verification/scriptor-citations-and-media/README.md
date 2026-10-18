@@ -38,6 +38,12 @@ and Markdown previews resolve local references through the existing asset API,
 and editor object URLs are released on unmount. Downloads retain the image
 bytes.
 
+Local asset rendering is injected by Scriptor into the shared Markdown renderer.
+The shared renderer does not import the editor's attachment store, so Nodi's
+overlay keeps its existing restricted preload without vault asset read/write
+methods. Scriptor's split preview opts into the same local image renderer used
+by the native editor.
+
 The change adds no external service or AI request. Source lookup reads local
 metadata, and selecting a vault source can use the existing local Zotero API.
 Asset bytes stay in the vault database; no backup implementation or
@@ -62,6 +68,10 @@ The following focused checks passed locally:
   Markdown input, rollback, and unchanged text limits.
 - `scripts/test-editor-references.mjs`: work-only search, creator/year filters,
   result limits, literal wildcard handling, and existing reference behavior.
+- `scripts/test-window-preloads.mjs`: real secondary-window bundle dependencies
+  match their bridges, and shared Markdown does not give Nodi vault asset APIs.
+- `scripts/test-server-generated.mjs`: committed server modules match their
+  shared sources after regeneration with `npm run build:server-shared`.
 - Academic Scriptor, academic interface, Server Web academic parity, Scriptor AI
   review, editor images, navigation, and internationalization coverage suites.
 

@@ -91,6 +91,15 @@ test('the Nodi overlay declares every bridge method its code calls', () => {
   assert.deepEqual(missing, [], 'Nodi calls methods its preload does not expose');
 });
 
+test('the Nodi overlay does not acquire vault attachment storage through shared Markdown', () => {
+  const declared = new Set(declaredMethods('NODI_WINDOW_METHODS'));
+  const used = methodsUsedBy((rel) => overlaySources.has(rel));
+  for (const method of ['storePageAsset', 'pickPageAsset', 'getPageAsset']) {
+    assert.equal(declared.has(method), false, `${method} stays outside the overlay bridge`);
+    assert.equal(used.has(method), false, `shared rendering must not require ${method} in the overlay`);
+  }
+});
+
 test('the Presenter windows declare every bridge method their code calls', () => {
   const declared = new Set(declaredMethods('PRESENTER_WINDOW_METHODS'));
   // presenterAudience.html and presenterView.html. src/presenter/remote/ is the phone

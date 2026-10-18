@@ -40,7 +40,6 @@ import { getScopedLegacyPassageDetail } from '../citations/scopedLegacyCitations
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchTaskKey } from '@shared/researchHarness';
 import { researchExcerptHasProse } from '@shared/researchDocumentReview';
-import { reviewResearchDocument } from './researchDocumentReview';
 import type { ResearchAction } from '@shared/researchActions';
 
 /** Research Chat's agent: the turn's plan and how many independent sources a finish needs.
@@ -745,22 +744,8 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       ...(run.budget.partial ? ['Documentary coverage is partial; do not infer absence from missing evidence.'] : []), ...[...run.limitations].map(describeResearchLimitation)] }) };
   if (run.harness) {
     bounded.continuousNarrative = true;
-    bounded.finalDocumentReview = async parts => ({ ...await reviewResearchDocument(parts, model, signal), passages: [...run.evidence.values()] });
-    // V1 reviews the complete prose with literal premises and an independent
-    // semantic veto. The legacy sentence-deletion chain must not then prune it.
-    bounded.auditFactualProse = undefined;
-    bounded.auditReportConsistency = undefined;
-    bounded.auditSectionClaims = undefined;
-    bounded.auditPlanCoverage = undefined;
-    bounded.auditFinalSummary = undefined;
-    bounded.verifyCitations = undefined;
-    bounded.reviseSection = undefined;
-    bounded.judgeSectionRevision = undefined;
-    bounded.reviewReport = undefined;
-    bounded.checkCoherence = undefined;
-    bounded.repairSectionCoverage = undefined;
-    bounded.checkSectionCoverage = undefined;
-    bounded.finalize = async input => ({ title: input.planTitle, abstract: '', limitations: [], nextSteps: [] });
+    // Keep the existing report checks and their bounds. Investigation adds an
+    // agenda and evidence, not a second proof/rewrite/semantic-review pipeline.
   }
   return new Proxy(bounded, { get(target, property) {
     const value = Reflect.get(target, property);

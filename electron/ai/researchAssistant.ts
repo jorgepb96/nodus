@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { withResearchActivity, researchActivityStep, startResearchActivity } from './researchActivity';
 import { currentResearchHarness, researchHarnessEnabled, withResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchHarnessContext } from './researchHarnessContext';
-import { repairResearchDraft } from './researchHarnessVerification';
 import { researchChatPresentationInstruction, researchChatRequestedOutputTokens } from '@shared/researchAnswerReview';
 import type { ResearchRunSummary } from '@shared/researchHarness';
 import type { ResearchActivity } from '@shared/researchActivity';
@@ -520,9 +519,9 @@ async function streamResearchChatTurn(
   const structured = grounded && verification === 'structured';
   const citationRequired = needsCitation && !isRouteFixPrompt(execution.question ?? '') && !structured;
   const opts = { corpusContext: !!requestNotebookScope(request) && !attachments.images?.length, system: system + attachments.system, user: user + attachments.text, images: attachments.images, englishImagePrompts: execution.skills.some(skill => skillHasCapability(skill, 'image')), temperature: 0.2, ...generationOptions, signal };
-  // Documentary prose is held until its claims have been checked. Thinking can
-  // still stream; cancellation must never publish the unchecked partial draft.
-  const holdDraft = grounded || Boolean(currentResearchHarness() && !council?.member);
+  // Both engines honor the same optional verification setting. The harness
+  // coordinates research; it does not add a mandatory audit to each answer.
+  const holdDraft = grounded;
   const deltas: typeof onDelta = (text, kind) => { if (!holdDraft || kind === 'reasoning') onDelta(text, kind); };
   // On the retry, ask for one rung less thinking: the first attempt was cut off because the
   // reasoning consumed the whole output ceiling, and repeating it unchanged reproduces that. The
@@ -544,22 +543,6 @@ async function streamResearchChatTurn(
   // the citation-recovery resample or the skill tools now would either throw an
   // AbortError or spend another provider call on a reply the user just cancelled.
   if (signal?.aborted) return { answer: holdDraft ? '' : answer, stats, aborted: true };
-  if (currentResearchHarness() && !council?.member && !isRouteFixPrompt(execution.question ?? '') && !execution.skills.some(skill => (skill.capabilities ?? []).includes('nodus:chemistry'))) {
-    // The text auditor cannot judge image pixels. Retain the existing multimodal
-    // answer contract and record this explicit verification limit.
-    if (attachments.images?.length) currentResearchHarness()!.corpus?.limitations.add('visual_evidence_not_audited');
-    else answer = await repairResearchDraft(answer, request.model, signal, attachments.text ? [{
-      id: 'user-attachments', text: attachments.text, label: 'User attachments: filenames and locations in the excerpt', citation: '',
-    }] : []);
-    onDelta(answer, 'replace');
-    const run = currentResearchHarness()!.corpus;
-    if (run) {
-      stats.researchTraversal = compactResearchTraversal(run.coverage());
-      stats.webSources = run.web?.sources(); stats.webSearch = run.web?.stats();
-    }
-    // The auditor may return an honest evidence limitation without a citation.
-    return { answer: rememberNotebookTurn(request, await researchHarnessStage('chat.finalize', answer, () => finalizeWithAudit(answer, execution, signal))), stats };
-  }
   for (let attempt = 1; citationRequired && !attachments.text && extractCitationRefs(answer).length === 0 && !splitChatVisuals(answer).some(part => part.kind !== 'markdown') && attempt < CHAT_CITATION_ATTEMPTS; attempt += 1) {
     signal?.throwIfAborted();
     // Streamed deltas are provisional and the renderer replaces them with the
@@ -588,6 +571,11 @@ async function streamResearchChatTurn(
     validateNotebookRequest(request);
   }
   if (!council?.member) answer = await withRouteEvidence(answer, execution, opts, local, sourceContext, signal);
+  const run = currentResearchHarness()?.corpus;
+  if (run) {
+    stats.researchTraversal = compactResearchTraversal(run.coverage());
+    stats.webSources = run.web?.sources(); stats.webSearch = run.web?.stats();
+  }
   // Interim repaints carry the whole answer, so they replace the streamed text rather than append.
   const repaint = (text: string) => onDelta(text, 'replace');
   return { answer: council?.member ? answer : rememberNotebookTurn(request, await (execution.skills.length ? researchActivityStep('tools', 'execute', () => finalizeWithAudit(answer, execution, signal, repaint)) : finalizeWithAudit(answer, execution, signal, repaint))), stats };

@@ -1,7 +1,6 @@
 import { withJobThinkingEffort } from './thinkingEffort';
 import { currentResearchHarness, researchHarnessEnabled, withResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchHarnessContext } from './researchHarnessContext';
-import { verifyImmersionPlan } from './immersionVerification';
 import { researchExcerptHasProse } from '@shared/researchDocumentReview';
 import { ResearchWebGrant } from './researchWebStep';
 import { getActiveVault } from '../vaults/vaultRegistry';
@@ -673,7 +672,6 @@ function realDeps(model: ModelRef | null, preparedMaterial?: ImmersionMaterial):
         for (const passage of prepared.passages) if (!corpus.passages.some(p => p.id === passage.id)) corpus.passages.push(passage);
         station.passageIds = prepared.passageIds;
       },
-      verifyPlan: plan => verifyImmersionPlan(plan, model, currentResearchHarness()!.signal),
     } satisfies Partial<ImmersionDeps> : {}),
   };
 }

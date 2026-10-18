@@ -209,7 +209,7 @@ You may add up to four complementary tasks with {"action":"enqueue","queries":[{
 Exploration questions are provisional routes, not findings. For broad goals investigate distinct relevant facets, contextual conditions, mechanisms or competing explanations with separate semantic queries. Keep each line anchored by its purpose to the ORIGINAL objective, people, place and period. Execute promising pending searches by returning their search action (or enqueue them again to run the queue). Assess what their evidence changes in the answer, rather than collecting adjacent material. Prefer original reading or a different line when queries return the same evidence. Explicitly defer irrelevant or exhausted branches; completeness does not require exploring every association. Operational statements about indexes, app options, tool failures or your own draft are never research questions to search in the corpus.
 When a pending exploration task exists, execute it with {"action":"search","taskId":"provided pending task ID","query":"its query or a focused refinement"}. Always retain taskId when rewording a queued query: it is the SAME question, not a new task. A genuinely new line must use enqueue with its own question, purpose and relation.
 Finish with {"action":"finish","reason":"sufficient|diminishing_returns|sources_exhausted","coverage":[...]} and assess EVERY agenda question. supported requires actual evidence answering that question. Several documents do not establish independence; count useful positions and evidence, not citations. Never infer absence from silence or no matches. Contradictions require reading both positions. A source mentioned in a bibliography was not itself read.
-After two actions without useful new evidence, change strategy only for a concrete gap and an untried route. Do not rephrase exhausted searches indefinitely. Decisions have a shared budget; leave room for drafting and verification. An empty library can still use an authorized web action. Return JSON only.`;
+After two actions without useful new evidence, change strategy only for a concrete gap and an untried route. Do not rephrase exhausted searches indefinitely. Decisions have a shared budget; leave room for drafting and verification. Keep query purposes under 180 characters and choose at most two useful evidence IDs per coverage question; never echo whole excerpts or the source inventory. An empty library can still use an authorized web action. Return JSON only.`;
 
 /** Shared decision loop. The backend, rather than the model, owns task execution and budgets. */
 async function superviseHarness(run: ResearchCorpusRun, question: string, model?: ModelRef | null): Promise<void> {
@@ -240,7 +240,7 @@ async function superviseHarness(run: ResearchCorpusRun, question: string, model?
     const system = HARNESS_SYSTEM + '\n' + systemFor(web, true);
     const targetModel = model ?? harness.record.context.model;
     const window = targetModel ? (await researchModelContextWindow(targetModel)).tokens : 32768;
-    const maxTokens = Math.max(384, Math.min(1800, Math.floor(window * 0.08)));
+    const maxTokens = Math.max(384, Math.min(3600, Math.floor(window * 0.08)));
     // Keep high-signal current evidence before expanding the model's source menu.
     const framing = Buffer.byteLength(system) + maxTokens + 2048 + Buffer.byteLength(JSON.stringify(harness.record.context));
     const limit = Math.min(run.budget.decisionTokenLimit - run.budget.decisionTokens, window) - framing;

@@ -1,3 +1,5 @@
+import { researchAnswerReviewLimitation } from '@shared/researchAnswerReview';
+import { researchFailureRequiresStop } from '@shared/researchFailures';
 import { researchConsistencyUnverified, researchCoverageIncomplete, researchEvidenceLimitation } from '@shared/researchEvidenceMessages';
 import { reconcileResearchReport, researchProseSpans, researchSentenceKey, type ResearchConflict, type ResearchProseAudit, type ResearchClaimRecord } from '@shared/researchClaimAudit';
 // Citation naming lives in @shared/citationLabel so the reader that re-derives a
@@ -1083,11 +1085,13 @@ export async function orchestrateDeepResearch(
     let raw = '';
     try {
       raw = await deps.writeSection(inputForSection);
-    } catch {
+    } catch (error) {
+      if (deps.finalDocumentReview && researchFailureRequiresStop(error)) throw error;
       // One retry, then a graceful degraded section — never fail the whole report.
       try {
         raw = await deps.writeSection(inputForSection);
-      } catch {
+      } catch (error) {
+        if (deps.finalDocumentReview && researchFailureRequiresStop(error)) throw error;
         raw = degradedSection(section, maps, L);
         if (!stoppedReason) stoppedReason = L.degraded;
       }
@@ -1627,11 +1631,12 @@ export async function orchestrateDeepResearch(
       written[index].section.coverageClaims = [];
       claimLedger.push(...part.claims);
     }
+    if (!written.length) throw new Error(researchAnswerReviewLimitation(language));
     // Summaries copy a complete verified paragraph, never a new model claim.
     finalize.abstract = written.length ? stripInitialHeading(written[0].markdown).split(/\n\s*\n/u)[0] : researchEvidenceLimitation(language);
     finalize.nextSteps = [];
-    finalize.limitations = review.status === 'verified' ? [] : [researchEvidenceLimitation(language)];
-    if (review.status !== 'verified') stoppedReason = researchEvidenceLimitation(language);
+    finalize.limitations = review.status === 'verified' ? [] : [researchAnswerReviewLimitation(language)];
+    if (review.status !== 'verified') stoppedReason = researchAnswerReviewLimitation(language);
     coveredIdeaIds.clear(); Object.values(citedIds).forEach(set => set.clear());
     for (const item of written) {
       const { cited } = applyCitationPolicy(item.markdown, maps);

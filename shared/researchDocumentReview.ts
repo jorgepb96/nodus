@@ -1,5 +1,7 @@
 import type { ResearchClaimRecord } from './researchClaimAudit';
 
+export const RESEARCH_SOURCE_CHUNK_RULE = 'Quote keys q1, q2, etc. are transport slices of ONE authorized source, not separate citation destinations. An inline source citation covers ALL its supplied quote slices. Check every slice of that cited source; do not reject a correct link merely because the supporting passage is in q2 rather than q1. Distinct source IDs remain distinct evidence and cannot silently substitute for each other.';
+
 export interface ResearchDocumentPart {
   id: string;
   text: string;

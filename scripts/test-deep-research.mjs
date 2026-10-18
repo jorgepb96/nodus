@@ -1643,9 +1643,13 @@ try {
     assert.equal(report.draft.draftMarkdown, accepted, 'No later deletion, unchecked abstract, headings or transition is added');
     assert.equal(report.meta.words, countWords(accepted)); assert.equal(report.meta.worksCited, 1);
     assert.equal(report.draft.bibliography.length, 1);
-    const failed = await run(false);
-    assert.equal(failed.meta.sections, 0); assert.equal(failed.meta.words, 0); assert.equal(failed.meta.worksCited, 0);
-    assert.equal(failed.draft.bibliography.length, 0, 'Removed prose does not inflate citation/coverage metrics');
+    await assert.rejects(() => run(false), /comprobación|verification/iu, 'A wholly unchecked report is not published as an empty completed artifact');
+    let terminalCalls = 0;
+    await assert.rejects(() => orchestrateDeepResearch({ objective: 'Explica las fuentes.', sectionLimit: 'single' }, {
+      ...baseDeps(snapshot), finalDocumentReview: async () => { throw new Error('must not reach verification'); },
+      writeSection: async () => { terminalCalls++; throw Object.assign(new Error('budget exhausted'), { code: 'budget_exhausted' }); },
+    }), error => error.code === 'budget_exhausted');
+    assert.equal(terminalCalls, 1, 'A terminal allowance failure never pays for an unchanged second writer request');
   }
 
   console.log('deep research orchestration test passed');

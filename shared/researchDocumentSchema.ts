@@ -11,7 +11,8 @@ const premise = object({ text: string, type: { type: 'string', enum: ['fact', 'a
   evidence: array(object({ id: string, quote: string })), from: indices, fromParagraphs: indices });
 export const RESEARCH_DOCUMENT_PROOF_SCHEMA = object({ parts: array(object({ id: string, claims: array(object({
   index: { type: 'integer' }, kind: { type: 'string', enum: ['fact', 'attributed', 'inference', 'nonfactual'] },
-  premises: array(premise), unsupportedParts: issues, explicitInference: boolean, supported: boolean, reason: string,
+  premises: array(premise), unsupportedParts: issues, explicitInference: boolean, supported: boolean,
+  reason: { type: 'string', enum: ['literal_premises', 'attributed_interpretation', 'necessary_inference', 'editorial_only', 'unsupported_assertion', 'incomplete_field'] },
 })), coherent: boolean, relevant: boolean, complete: boolean, issues })) });
 export const RESEARCH_DOCUMENT_SEMANTIC_SCHEMA = object({ parts: array(object({ id: string, supported: boolean, issues })) });
 export const RESEARCH_DOCUMENT_REVISION_SCHEMA = object({ parts: array(object({ id: string, text: string })) });

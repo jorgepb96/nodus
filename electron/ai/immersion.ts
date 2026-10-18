@@ -33,7 +33,7 @@ import { getImmersionSession, recordImmersionAnswer, saveImmersionSession } from
 import { buildWritingWorkshopSnapshot } from './writingWorkshop';
 import { completeJson, embedQuery } from './aiClient';
 import { ResearchCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
-import { RETRIEVAL_PRESETS, validateRetrievalSettings } from '@shared/researchCorpus';
+import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, validateRetrievalSettings } from '@shared/researchCorpus';
 import {
   IMMERSION_LIMITS,
   orchestrateImmersion,
@@ -74,7 +74,7 @@ const DOCUMENT_WORK_MAX_KEEP = 20;
 const GAP_SCORE_CUT = 0.2;
 function immersionRetrieval() {
   const request = currentResearchHarness()?.record.request as ImmersionRequest | undefined;
-  return validateRetrievalSettings(request?.retrieval ?? (request && request.minutes >= 150 ? RETRIEVAL_PRESETS.deep : RETRIEVAL_PRESETS.balanced));
+  return validateRetrievalSettings(request?.retrieval ?? (currentResearchHarness() ? RESEARCH_LONGFORM_AGENT_SETTINGS : request && request.minutes >= 150 ? RETRIEVAL_PRESETS.deep : RETRIEVAL_PRESETS.balanced));
 }
 
 /** Let the event loop breathe between heavy synchronous steps (queries + graph build). */

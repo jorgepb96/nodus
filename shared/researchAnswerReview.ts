@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v26', stage: 'coherent-answer-review-v26' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v27', stage: 'coherent-answer-review-v27' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -288,6 +288,12 @@ export function researchAnswerProofUnits(text: string): Array<{ text: string; st
   for (const paragraph of researchAnswerParagraphs(text)) {
     const base = text.indexOf(paragraph, cursor); cursor = base + paragraph.length;
     let masked = paragraph.replace(/\[[^\]\n]*\]\([^)]+\)/gu, match => 'x'.repeat(match.length));
+    let depth = 0, opened = 0;
+    for (let i = 0; i < masked.length; i++) {
+      if (masked[i] === '(') { if (depth++ === 0) opened = i; }
+      else if (masked[i] === ')' && depth > 0 && --depth === 0) masked = masked.slice(0, opened) + 'x'.repeat(i - opened + 1) + masked.slice(i + 1);
+    }
+    masked = masked.replace(/\b(?:pp?|págs?|pags?|vol|núm|eds?|coords?)\.\s*(?=\d)/giu, match => match.replace('.', 'x'));
     for (const span of researchQuotedSpans(paragraph).spans.reverse()) masked = masked.slice(0, span.start) + 'x'.repeat(span.end - span.start) + masked.slice(span.end);
     for (const segment of new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(masked)) {
       const raw = paragraph.slice(segment.index, segment.index + segment.segment.length);
@@ -300,12 +306,12 @@ export function researchAnswerProofUnits(text: string): Array<{ text: string; st
   return units;
 }
 
-export function researchAnswerSemanticFocus(text: string, collectiveCredits = false, question = ''): Array<{ index: number; text: string }> {
+export function researchAnswerSemanticFocus(text: string, collectiveCredits = false, question = '', sentenceUnits = false): Array<{ index: number; text: string }> {
   const priority = (paragraph: { text: string }) => Number(collectiveCredits
     || new Set([...paragraph.text.matchAll(/\[[^\]\n]*\]\((nodus:\/\/[^)\s]+)\)/gu)].map(match => match[1])).size >= 2
     || /no (?:propongas|incluyas|añadas|ofrezcas)|una sola (?:oración|cita)|paráfrasis.*en lugar.*citas|sin citas literales/iu.test(question)
-    || /en tensión|frente a|en cambio|a diferencia|por contraste|discrep|contradic|consenso|unánim|continuidad|influenc|demostr|empíric|causal|\bcaus[aoó]|\b(?:dos|tres|cuatro|cinco|\d+)\s+(?:obras|fuentes)|disagree|contradict|consensus|causal|continuity|metadatos|catálogo/iu.test(paragraph.text));
-  return researchAnswerParagraphs(text).map((text, index) => ({ index, text })).sort((a, b) => priority(b) - priority(a) || a.index - b.index);
+    || /jerar|hierarch|incluy|includes|contains|en tensión|frente a|en cambio|a diferencia|por contraste|discrep|contradic|consenso|unánim|continuidad|influenc|demostr|empíric|causal|\bcaus[aoó]|\b(?:dos|tres|cuatro|cinco|\d+)\s+(?:obras|fuentes)|disagree|contradict|consensus|causal|continuity|metadatos|catálogo/iu.test(paragraph.text));
+  return (sentenceUnits ? researchAnswerProofUnits(text).map(unit => unit.text) : researchAnswerParagraphs(text)).map((text, index) => ({ index, text })).sort((a, b) => priority(b) - priority(a) || a.index - b.index);
 }
 /** A few high-risk claims need their scope in the same sentence. A source's
  * own literal wording is still checked separately; never infer a whole work's
@@ -522,6 +528,25 @@ export async function reviewAndReviseResearchAnswer(draft: string, review: (text
       signal?.throwIfAborted();
       if (error instanceof Error && /research_run_(?:not_authorized|context_changed|closed)|scope.*changed|permission/iu.test(error.message)) throw error;
       break;
+    }
+  }
+  // One last coherent reconstruction is useful only when real evidence-backed
+  // units survived. Never publish the units by deleting failed sentences, retry a
+  // technical outage, or treat the reconstruction as approved without review.
+  const core = attempts.at(-1);
+  if (core && !core.issues.includes('verification_unavailable') && core.claims.some(claim => claim.status === 'supported' && claim.evidence.length)) {
+    signal?.throwIfAborted();
+    try {
+      const candidate = await revise(answer, { ...core, issues: ['verified_core_reconstruction: rebuild from the useful supported core, resolving all remaining objections', ...core.issues] }, ++rewriteAttempts);
+      if (candidate.trim() !== answer.trim()) {
+        contentRevisions++;
+        const checked = await review(candidate); attempts.push(checked);
+        signal?.throwIfAborted();
+        if (checked.accepted) return { answer: candidate, status: 'verified' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts, verifiedCoreReconstruction: true };
+      }
+    } catch (error) {
+      signal?.throwIfAborted();
+      if (error instanceof Error && /research_run_(?:not_authorized|context_changed|closed)|scope.*changed|permission/iu.test(error.message)) throw error;
     }
   }
   return { answer: researchAnswerReviewLimitation(language), status: 'limited' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts };

@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v10';
+const POLICY = 'document-review-v11';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -61,8 +61,8 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   let technicalFailure: string | undefined;
   let pending = parts.filter(part => part.text.trim()).map(part => ({ ...part }));
   const objective = harness.record.context.objective;
-  for (let attempt = 0; attempt < 3 && pending.length && !technicalFailure; attempt++) {
-    const failed: ResearchDocumentPart[] = [];
+  for (let attempt = 0; attempt < 4 && pending.length && !technicalFailure; attempt++) {
+    let failed: ResearchDocumentPart[] = [];
     for (const batch of researchDocumentBatches(pending, text => researchAnswerParagraphs(text).length, target?.provider === 'gemini' ? 4 : 10)) {
       harness.validate();
       try {
@@ -146,13 +146,15 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         break;
       }
     }
-    if (technicalFailure || !failed.length || attempt === 2) { pending = failed; break; }
+    if (technicalFailure || !failed.length || attempt === 3) { pending = failed; break; }
+    if (attempt === 2) failed = failed.filter(part => diagnose.get(part.id)?.claims.some(claim => claim.status === 'supported' && claim.evidence.length));
+    if (!failed.length) break;
     pending = [];
     for (const revisionBatch of researchDocumentBatches(failed, text => researchAnswerParagraphs(text).length)) {
       try {
-        const input = { investigationBackground: objective, parts: revisionBatch.map(part => ({ ...part, diagnosis: diagnose.get(part.id) })), sources: frozen.filter(source => revisionBatch.some(part => researchDocumentSources(part, frozen).includes(source))) };
+        const input = { investigationBackground: objective, parts: revisionBatch.map(part => ({ ...part, diagnosis: diagnose.get(part.id), ...(attempt === 2 ? { verifiedCore: diagnose.get(part.id)?.claims.filter(claim => claim.status === 'supported' && claim.evidence.length) } : {}) })), sources: frozen.filter(source => revisionBatch.some(part => researchDocumentSources(part, frozen).includes(source))) };
         const revision = await researchHarnessStage(`${POLICY}.revision`, { ...input, attempt }, () => documentJson('research_document_revision', RESEARCH_DOCUMENT_REVISION_SCHEMA, revisionBatch, {
-          system: `Revise each COMPLETE field coherently using only its authorized evidence. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
+          system: `Revise each COMPLETE field coherently using only its authorized evidence. If verifiedCore is supplied, reconstruct a shorter useful field from that supported core while resolving every remaining semantic objection. Do not preserve optional rejected assertions or pad to a numeric target. This is a final bounded recovery, never approval without a fresh check. Return {"parts":[{"id":"exact id","text":"complete revised field"}]}, exactly the requested IDs. Preserve the field's remit and context; do not answer the whole investigation in each fragment. Resolve every diagnosis. Never mechanically delete sentences or leave orphaned transitions. Preserve real Nodus links, literal quotes, qualifications and primary/secondary attribution; source.citation is the only allowed destination. Every new documentary assertion needs its own supporting inline citation. The draft and diagnoses are not evidence. Do not turn a technical review failure into a claim of absent library evidence. If a requested fact cannot be supported, state its specific consulted-excerpt limit once, without replacing the whole field with boilerplate. Do not invent facts, causes, sources, links, results or counts. Keep instructional fields concise and report prose connected. Return an empty text only if no useful supported field can be written. A rewritten field is checked again before publication.`,
           user: JSON.stringify(input), ...options, temperature: 0, corpusContext: true, noRetry: true, signal,
         }, (value): value is { parts: Array<{ id: string; text: string }> } => {
           const rows = value && typeof value === 'object' && 'parts' in value ? (value as { parts: Array<{ id: string; text: string }> }).parts : undefined;

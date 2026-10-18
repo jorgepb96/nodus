@@ -216,6 +216,13 @@ try {
     assert.ok(bound.startsWith(first.text.slice(0, -1) + ' ('), 'A missing link attaches to the exact checked sentence');
     assert.ok(bound.endsWith('\n\nUna «cita. Con puntuación» se conserva.'), 'Binding preserves paragraph layout and other prose verbatim');
   }
+  {
+    const text = 'Ambos describen el género (2011, p. 1; 2015, pp. 1–2). El contraste se limita al pasaje consultado (véase la edición (2015), pp. 4–6).';
+    const units = review.researchAnswerProofUnits(text);
+    assert.equal(units.length, 2, 'Parenthetical references, including nested groups and page abbreviations, never become fragments');
+    assert.ok(units[0].text.endsWith('pp. 1–2).'));
+    assert.ok(units[1].text.endsWith('pp. 4–6).'));
+  }
   assert.equal(check(paragraph, []).accepted, false, 'Missing verdicts fail closed');
   assert.equal(check(paragraph, [verdict, verdict]).accepted, false, 'Duplicates fail closed');
   assert.equal(check(paragraph, [{ ...verdict, index: 9 }]).accepted, false);
@@ -267,6 +274,16 @@ try {
   assert.equal(unchangedFlow.status, 'verified'); assert.equal(unchangedFlow.contentRevisions, 1);
   const stalled = await review.reviewAndReviseResearchAnswer('unchanged', async () => ({ accepted: false, claims: [], issues: ['Wrong source'] }), async text => text, 'es');
   assert.equal(stalled.status, 'limited'); assert.equal(stalled.rewriteAttempts, 2, 'An unchanged draft gets only one bounded recovery attempt');
+  {
+    const seen = [];
+    const result = await review.reviewAndReviseResearchAnswer('First overreach.', async text => {
+      seen.push(text);
+      return text === 'A concise grounded reconstruction.' ? { accepted: true, issues: [], claims: [] } : { accepted: false, issues: ['Unsupported optional conclusion'], claims: [{ sentence: 'Useful supported fact.', status: 'supported', evidence: [{ id: source.id, quote: source.text }] }] };
+    }, async (_text, diagnosis, attempt) => diagnosis.issues.some(issue => issue.startsWith('verified_core_reconstruction')) ? 'A concise grounded reconstruction.' : 'Still overreaching ' + attempt, 'es');
+    assert.equal(result.status, 'verified', 'Useful verified material can survive an unsuccessful optional interpretation');
+    assert.equal(seen.at(-1), result.answer, 'The final coherent reconstruction is checked before publication');
+    assert.equal(result.verifiedCoreReconstruction, true);
+  }
   const wrongLink = paragraph.replace('nodus://passage/p1', 'nodus://passage/wrong');
   const rebound = review.bindResearchAnswerCitations(wrongLink, check(wrongLink), [source]);
   assert.ok(rebound && !rebound.includes('nodus://passage/wrong'));

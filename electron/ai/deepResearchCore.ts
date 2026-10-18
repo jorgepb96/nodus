@@ -1617,7 +1617,9 @@ export async function orchestrateDeepResearch(
   if (deps.finalDocumentReview) {
     const review = await deps.finalDocumentReview(written.map((item, index) => ({
       id: `section:${index}`, text: stripInitialHeading(item.markdown),
-      remit: [effectiveRequest.objective, item.section.purpose, ...(item.section.coverageQuestions ?? [])].join('\n'),
+      remit: [written.length === 1 ? effectiveRequest.objective : item.section.purpose, ...(item.section.coverageQuestions ?? [])].join('\n'),
+      context: JSON.stringify({ title: item.section.title, investigationBackground: effectiveRequest.objective,
+        advisoryWordTarget: sectionLengthPlan.targetWords }),
     })));
     if (review.passages?.length) mergeRetrievedMaterial(maps, { passages: review.passages });
     for (let index = written.length - 1; index >= 0; index--) {

@@ -10,7 +10,9 @@ app.setName('Nodus');
 for (const [key, relative] of Object.entries({ userData: 'profile', sessionData: 'sessions', temp: 'tmp', crashDumps: 'crashes', logs: 'logs' })) {
   fs.mkdirSync(path.join(root, relative), { recursive: true }); app.setPath(key, path.join(root, relative));
 }
-process.env.NODUS_QA_ROOT = root; app.getAppPath = () => repo;
+process.env.NODUS_QA_ROOT = root;
+process.env.NODUS_QA_DATABASE_AUDIT_LOG = path.join(root, 'profile/database-access.jsonl');
+app.getAppPath = () => repo;
 const { installRuntimeHooks } = await import(path.join(repo, 'scripts/lib/tsRuntimeHooks.mjs'));
 installRuntimeHooks(path.join(root, 'profile'), { app, safeStorage });
 const require = createRequire(import.meta.url), load = file => require(path.join(repo, file));

@@ -443,7 +443,8 @@ Chat writer prompt (the AI client still injects it once), avoiding wasted contex
 small local models. An empty-corpus/no-web turn now avoids an unnecessary supervisor
 call. When fixed instructions/history leave no room even after context pruning,
 Chat reduces its initial output ceiling and refits the original evidence rather
-than sending an empty context or failing needlessly. These later changes have functional/native integration coverage; the paid
+than sending an empty context or failing needlessly. This also applies when the
+first fit would displace every retrieved passage. These later changes have functional/native integration coverage; the paid
 preference numbers above identify their measured commit and were not relabeled as
 a final-head benchmark. The actual production controls passed 28 UI cases across
 four surfaces, light/dark, narrow screens, twelve languages, keyboard help and live

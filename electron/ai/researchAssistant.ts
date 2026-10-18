@@ -1159,10 +1159,13 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     } : undefined, { passageQueries });
     let fitted = fit();
     const fixedOverflow = researchRequestUpperBound(fitInputs()) - window;
-    if (recoverableContext && fixedOverflow > 0) {
-      // Output is an upper allowance, not a quota. Reduce it only when even the
-      // stripped request cannot fit, leaving up to 4k bytes for whole evidence.
-      generationOptions.maxTokens = Math.max(512, generationOptions.maxTokens - fixedOverflow - 4096);
+    const lostAllPassages = recoverableContext && Array.isArray(recoverableContext.pasajes_relevantes)
+      && recoverableContext.pasajes_relevantes.length > 0
+      && (!Array.isArray(context.pasajes_relevantes) || !context.pasajes_relevantes.length);
+    if (recoverableContext && (fixedOverflow > 0 || lostAllPassages)) {
+      // Output is an upper allowance, not a quota. Also recover when it would
+      // otherwise displace every literal passage, leaving up to 4k for evidence.
+      generationOptions.maxTokens = Math.max(512, generationOptions.maxTokens - Math.max(0, fixedOverflow) - 4096);
       context = recoverableContext;
       fitted = fit();
     }

@@ -88,8 +88,8 @@ try {
         context.effort = effort;
         const output = await run([part('reasoning-room-' + effort)], (options, input) => {
           const visible = input.parts[0].paragraphs ? 8000 : 1800;
-          if (effort === 'standard') assert.ok(options.maxTokens >= visible + 16_384, 'Reasoning and the visible source proof have separate room');
-          else assert.equal(options.maxTokens, visible, 'Explicit off does not acquire a reasoning allowance');
+          if (effort === 'standard' && !input.parts[0].paragraphs) assert.ok(options.maxTokens >= visible + 16_384, 'Only the final semantic veto enables bounded reasoning by default');
+          else assert.equal(options.maxTokens, visible, 'Ordinary proof and explicit off do not acquire a reasoning allowance');
           return input.parts[0].paragraphs ? proof(input) : semantic(input);
         });
         assert.equal(output.status, 'verified');

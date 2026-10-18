@@ -195,6 +195,14 @@ export function researchSemanticValidationEffort(p: ResearchReasoningProfile, re
   return minimumReasoningEffort(p.levels) ?? resolveResearchEffort(p, requested) ?? 'standard';
 }
 
+/** Ordinary source checks and rewrites need not enable thinking when the turn
+ * uses the standard fast path. A separate whole-answer semantic veto retains
+ * the native reasoning floor. Explicit thinking/off choices remain respected. */
+export function researchProofValidationEffort(p: ResearchReasoningProfile, requested: ResearchEffort): ResearchEffort {
+  if (requested === 'standard') return resolveResearchEffort(p, 'standard') ?? 'standard';
+  return researchSemanticValidationEffort(p, requested);
+}
+
 /**
  * The settings key one selection's remembered level lives under. Provider ids never
  * contain a colon and model ids may contain slashes (OpenRouter's `vendor/model`), so

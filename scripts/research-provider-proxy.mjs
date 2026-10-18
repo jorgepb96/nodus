@@ -225,10 +225,15 @@ export async function startResearchProviderProxy(root, { dispatch = fetch, catal
         request.socket.destroy();
         return;
       }
-      if (reservation) fs.appendFileSync(log, JSON.stringify({ reservation, provider, failed: true, reservationRetained: true, latencyMs: performance.now() - started }) + '\n', { mode: 0o600 });
-      if (!response.headersSent) response.writeHead(error instanceof Error && /budget.*exhausted/i.test(error.message) ? 402 : 403, { 'Content-Type': 'application/json' });
-      const message = error instanceof Error && /budget.*exhausted/i.test(error.message) ? 'research_budget_exhausted'
-        : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked';
+      const budget = error instanceof Error && /budget.*exhausted/i.test(error.message);
+      // A failure after reserving/dispatching is not evidence of a bad key.
+      // Keep unknown usage fully reserved and record only bounded error types,
+      // never upstream messages that may contain credentials or user material.
+      if (reservation) fs.appendFileSync(log, JSON.stringify({ reservation, provider, failed: true, reservationRetained: true, latencyMs: performance.now() - started,
+        errorType: error instanceof Error && ['Error', 'TypeError', 'RangeError', 'AbortError', 'TimeoutError'].includes(error.name) ? error.name : 'unknown', errorCode: ['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT', 'ABORT_ERR'].includes(error?.cause?.code ?? error?.code) ? error.cause?.code ?? error.code : undefined }) + '\n', { mode: 0o600 });
+      if (!response.headersSent) response.writeHead(budget ? 402 : reservation ? 503 : 403, { 'Content-Type': 'application/json' });
+      const message = budget ? 'research_budget_exhausted'
+        : reservation ? 'research_upstream_unavailable' : error instanceof Error && error.message.startsWith('research_') ? error.message : 'research_dispatch_blocked';
       blocked.push({ provider, message, at: new Date().toISOString() });
       response.end(JSON.stringify({ error: { message } }));
     } finally { releaseCampaignSlot?.(); if (admitted) { running--; waiting.shift()?.(); } controllers.delete(controller); }

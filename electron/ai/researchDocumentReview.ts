@@ -6,12 +6,12 @@ import { completeJson, type CallOpts } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchReviewEvidence, RESEARCH_SOURCE_REVIEW } from './researchHarnessVerification';
 import { researchVerificationOptions } from './researchGenerationOptions';
-import { isResearchEffort, researchReasoningProfile, researchSemanticValidationEffort } from '@shared/researchReasoning';
+import { isResearchEffort, researchReasoningProfile, researchSemanticValidationEffort, researchProofValidationEffort } from '@shared/researchReasoning';
 import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v22';
+const POLICY = 'document-review-v23';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -43,8 +43,11 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   const frozen = researchReviewEvidence().sources;
   const target = model ?? harness.record.context.model;
   const requested = harness.record.context.effort;
-  const effort = researchSemanticValidationEffort(researchReasoningProfile(target, target ? await thinkingCatalogInfo(target, signal) : undefined), isResearchEffort(requested) ? requested : 'standard');
-  const options = target ? await researchVerificationOptions({ model: target, thinkingEffort: effort }, 8000, signal) : { maxTokens: 8000 };
+  const profile = researchReasoningProfile(target, target ? await thinkingCatalogInfo(target, signal) : undefined);
+  const requestedEffort = isResearchEffort(requested) ? requested : 'standard';
+  const effort = researchSemanticValidationEffort(profile, requestedEffort);
+  const proofEffort = researchProofValidationEffort(profile, requestedEffort);
+  const options = target ? await researchVerificationOptions({ model: target, thinkingEffort: proofEffort }, 8000, signal) : { maxTokens: 8000 };
   const semanticOptions = target ? await researchVerificationOptions({ model: target, thinkingEffort: effort }, 1800, signal) : { maxTokens: 1800 };
   const native = !!target && ['openai', 'openrouter', 'gemini'].includes(target.provider);
   const documentJson = async <T>(name: string, schema: Record<string, unknown>, fields: Array<{ id: string; sourceIds?: string[]; paragraphs?: Array<{ index: number }> }>, opts: CallOpts, valid: (value: unknown) => value is T, quoteKeys: string[] = []): Promise<T> => {

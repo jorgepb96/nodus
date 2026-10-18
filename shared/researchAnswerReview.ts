@@ -1,7 +1,7 @@
 import { decideResearchVerdict, normalizeResearchProseVerdicts, researchAuditSourceTransport, researchProseSpans, researchPlainSentence, researchEditorialHeading, type ResearchAuditSource, type ResearchClaimRecord, type ResearchClaimFailure } from './researchClaimAudit';
 import { researchChatCalculations, researchChatLiteralQuotes, researchQuotedSpans } from './researchChatGrounding';
 
-export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v35', stage: 'coherent-answer-review-v35' } as const;
+export const RESEARCH_ANSWER_REVIEW_POLICY = { version: 'coherent-v36', stage: 'coherent-answer-review-v36' } as const;
 
 /** Presentation follows an explicit user request, not a model's preferred template. */
 export function researchChatHeadingsRequested(question: string): boolean {
@@ -359,7 +359,7 @@ export function researchAnswerRequestedBudgets(question: string) {
   const beforeLimit = global ? question.slice(Math.max(0, question.lastIndexOf('.', global.index - 1) + 1), global.index) : '';
   const perPart = /\b(?:cada|each|por autor|per author)\b/iu.test(beforeLimit) && !/en total|in total/iu.test(question.slice(global?.index ?? 0));
   const explanation = /explicación\s+(?:de\s+)?(?:hasta|máximo)\s+(\d{1,4})\s+palabras/iu.exec(question);
-  const single = /una sola (?:oración|cita)|una cita (?:literal|breve)|one (?:verbatim|literal) (?:quote|sentence)/iu.test(question);
+  const single = /(?:una sola|una única|solo una|exactamente una) (?:oración|frase|cita)|(?:exactly one|a single|only one) (?:verbatim |literal )?(?:quote|quotation|sentence)/iu.test(question);
   return { maxWords: global && !perPart ? Number(global[1]) : undefined, maxExplanationWords: explanation ? Number(explanation[1]) : undefined, singleLiteral: single };
 }
 /** A short prose request must not reserve a book-sized visible answer. Thinking
@@ -566,12 +566,23 @@ export async function reviewAndReviseResearchAnswer(draft: string, review: (text
   if (core && !core.issues.includes('verification_unavailable') && core.claims.some(claim => claim.status === 'supported' && claim.evidence.length)) {
     signal?.throwIfAborted();
     try {
-      const candidate = await revise(answer, { ...core, issues: ['verified_core_reconstruction: rebuild from the useful supported core, resolving all remaining objections', ...core.issues] }, ++rewriteAttempts);
+      let candidate = await revise('', { ...core, issues: ['verified_core_reconstruction: rebuild from the useful supported core, resolving all remaining objections', ...core.issues] }, ++rewriteAttempts);
       if (candidate.trim() !== answer.trim()) {
         contentRevisions++;
-        const checked = await review(candidate); attempts.push(checked);
+        let checked = await review(candidate); attempts.push(checked);
         signal?.throwIfAborted();
         if (checked.accepted) return { answer: candidate, status: 'verified' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts, verifiedCoreReconstruction: true };
+        // A reconstruction is a fresh candidate too. Bind a missing citation
+        // only to its own already proved source, then run the complete review.
+        // Formatting is never a positive verdict or permission to change a fact.
+        const bound = !checked.issues.length && citationRepairs < 3 ? format?.(candidate, checked) : null;
+        if (bound && bound !== candidate) {
+          citationRepairs++;
+          const boundCheck = await review(bound); attempts.push(boundCheck);
+          signal?.throwIfAborted();
+          if (boundCheck.accepted) return { answer: bound, status: 'verified' as const, attempts, contentRevisions, citationRepairs, rewriteAttempts, verifiedCoreReconstruction: true };
+          candidate = bound; checked = boundCheck;
+        }
         // One narrow final correction can repair a source locator or an accidental
         // nonliteral quotation. Dependent synthesis is checked again too; no
         // unsupported fact, semantic objection or technical outage qualifies.

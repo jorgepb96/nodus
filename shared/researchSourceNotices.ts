@@ -8,7 +8,7 @@ export interface ResearchSourcePresentation { content: string; notices: string[]
  * Historical/epistemic qualifications, quotations, code and scientific limitations stay put. */
 export function researchSourcePresentation(text: string, existing: readonly string[] = []): ResearchSourcePresentation {
   const notices = [...existing.filter(note => typeof note === 'string' && note.trim())];
-  const label = /^(?:#{1,6}\s*)?(?:\*\*)?(?:(?:nota|advertencia|aviso)\s+(?:sobre|acerca de)\s+)?(?:la\s+)?(?:evidencia disponible|cobertura (?:de las fuentes|documental)|limitaciones (?:de las fuentes|del corpus|de la evidencia|de esta respuesta)|source limitations|evidence limitations|evidence availability)(?:\*\*)?\s*[:：]?\s*(?:\*\*)?/iu;
+  const label = /^(?:#{1,6}\s*)?(?:\*\*)?(?:(?:nota|advertencia|aviso)\s+(?:sobre|acerca de)\s+)?(?:la\s+)?(?:nota de fuentes|cautela de cobertura|evidencia disponible|cobertura (?:de las fuentes|documental)|limitaciones (?:de las fuentes|del corpus|de la evidencia|de esta respuesta)|source limitations|evidence limitations|evidence availability)(?:\*\*)?\s*[:：]?\s*(?:\*\*)?/iu;
   const operational = /\b(?:pasajes|fragmentos|textos)\s+(?:recuperados|recuperadas|consultados|consultadas|indexados|indexadas|disponibles)|\b(?:retrieved|indexed)\s+(?:passages|excerpts|sources)|\b(?:corpus|fuentes)\s+(?:seleccionad[oa]s?|consultad[oa]s?|disponibles|recuperad[oa]s?)|\b(?:indexar|indexing)\s+(?:más|nuevas|more|additional)\s+(?:fuentes|textos|sources)|\b(?:menú|menu)\s+(?:de contexto|de fuentes|context|sources)/iu;
   const coverage = /\b(?:no\s+(?:permiten?|ofrecen?|contienen?|aportan?|incluyen?|hay)|no se (?:puede|ha)|limitad[oa]s?|limitaci[oó]n|carecen?|falta[an]?|convendr[ií]a|necesitar[ií]a|insuficiente|parcial|cannot|do not|does not|limited|missing|insufficient|would need)\b/iu;
   const remember = (note: string) => { const clean = note.trim(); if (clean && !notices.includes(clean)) notices.push(clean); };
@@ -27,7 +27,7 @@ export function researchSourcePresentation(text: string, existing: readonly stri
         return block;
       }
       if (/^\s*(?:>|\||[-*+]\s|\d+[.)]\s|[“«"])/u.test(block)) return block;
-      const matched = label.exec(block.trim());
+      const matched = label.exec(block.trim()) ?? /^(?:Hay además |Hay también |Además,? )?una cautela de cobertura\b/iu.exec(block.trim());
       if (matched) {
         const body = block.trim().slice(matched[0].length).trim();
         if (!body) { pendingLabel = block.trim(); return ''; }

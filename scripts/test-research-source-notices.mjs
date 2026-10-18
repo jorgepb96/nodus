@@ -18,6 +18,12 @@ try {
     assert.deepEqual(present(persisted.content, persisted.stats.sourceNotices), { content: body, notices: [note] });
     assert.deepEqual(present(`${note}\n\n${body}`), { content: body, notices: [note] });
   });
+  test('observed native legacy source footers move verbatim without touching the argument', () => {
+    for (const note of [
+      'Nota de fuentes: varios pasajes citados proceden de una revisión indexada anterior de los documentos, no de la versión actual; algunas obras del catálogo no se leyeron en este turno.',
+      'Hay además una cautela de cobertura que conviene tener presente: parte de los pasajes citados proceden de una revisión indexada anterior de sus obras.',
+    ]) assert.deepEqual(present(`${body}\n\n${note}`), { content: body, notices: [note] });
+  });
   test('supplied-text translations/edits preserve their actual content and explicit sidecar', () => {
     assert.deepEqual(chat({ content: note, stats: { sourceNotices: [] } }), { content: note, notices: [] });
     assert.deepEqual(chat({ content: `${body}\n\n${note}` }), { content: body, notices: [note] });

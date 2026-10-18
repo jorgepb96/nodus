@@ -167,3 +167,19 @@ test('native OpenRouter calls retain paid price caps and live catalogue metadata
   assert.equal(proxy.ledgers.openrouter.read().calls.length,models.length);
  }finally{await proxy.close();fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('an unknown dispatched failure retains cost and is a service error, not invalid credentials', async () => {
+  const root = createResearchTestRoot(); let attempts = 0;
+  const proxy = await startResearchProviderProxy(root, { dispatch: async () => {
+    if (++attempts === 1) throw new TypeError('must-not-log-sensitive-key');
+    return new Response(JSON.stringify({ choices: [{ message: { content: 'Checked' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } }), { status: 200 });
+  } });
+  try {
+    const body = { model: 'deepseek-flash', messages: [{ role: 'user', content: 'Synthetic evidence' }], max_tokens: 100 };
+    const send = () => fetch(proxy.url + '/deepseek/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer fixture-key', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const failed = await send(); assert.equal(failed.status, 503); assert.match(await failed.text(), /research_upstream_unavailable/);
+    assert.equal(proxy.ledger.read().calls[0].actualUsd, null, 'Unknown usage is never released');
+    assert.equal((await send()).status, 200, 'A transient dispatch failure does not invalidate the key');
+    assert.doesNotMatch(fs.readFileSync(path.join(root, 'artifacts/provider-metrics.jsonl'), 'utf8'), /must-not-log-sensitive-key|fixture-key/);
+  } finally { await proxy.close(); fs.rmSync(root, { recursive: true, force: true }); }
+});

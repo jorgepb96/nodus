@@ -244,6 +244,7 @@ try {
   assert.equal(review.researchChatRequestedOutputTokens('Para cada autor, máximo 100 palabras.', 60000), 60000);
   assert.equal(review.researchChatRequestedOutputTokens('Una cita breve y una explicación de hasta 100 palabras.', 60000), 4096);
   assert.equal(review.researchChatRequestedOutputTokens('Explica libremente.', 60000), 60000);
+  assert.deepEqual(review.researchAnswerRequestedBudgetIssues('«Primera cita comprobada». «Segunda cita comprobada».', 'Incluye una cita literal breve si puedes comprobarla.'), [], 'An indefinite request to include a quote is not an exclusive count gate');
   assert.equal(review.researchChatRequestedOutputTokens('Máximo 200 palabras.', 1024), 1024);
 
   assert.deepEqual(review.researchAnswerScopeIssues('La biblioteca no demuestra esa relación causal.'), ['unbounded_corpus_absence']);
@@ -251,7 +252,7 @@ try {
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Una explicación demasiado larga para este límite.', 'Máximo 3 palabras.'), [], 'An advisory word target cannot reject grounded content');
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Breve [Una etiqueta de cita muy larga](nodus://passage/p1).', 'Máximo 2 palabras.'), [], 'Citation labels are not explanation prose');
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('Este texto tiene más de tres palabras.', 'Para cada autor, máximo 3 palabras.'), [], 'A per-author limit is not a whole-answer limit');
-  assert.ok(review.researchAnswerRequestedBudgetIssues('«Primera oración de la fuente». «Segunda oración de la fuente».', 'Una cita literal y una explicación de hasta 100 palabras.').some(issue => issue.startsWith('requested_single_literal_excerpt')));
+  assert.ok(review.researchAnswerRequestedBudgetIssues('«Primera oración de la fuente». «Segunda oración de la fuente».', 'Una sola cita literal y una explicación de hasta 100 palabras.').some(issue => issue.startsWith('requested_single_literal_excerpt')));
   assert.deepEqual(review.researchAnswerRequestedBudgetIssues('«Una cita literal con sus palabras». Esta explicación contiene demasiadas palabras para el límite.', 'Una cita literal y una explicación de hasta 3 palabras.'), []);
   {
     const text = 'Una afirmación sin enlace. Otra afirmación [Autor, p. 2](nodus://passage/p1).\n\nUna «cita. Con puntuación» se conserva.';
@@ -327,7 +328,7 @@ try {
     const result = await review.reviewAndReviseResearchAnswer('First overreach.', async text => {
       seen.push(text);
       return text === 'A concise grounded reconstruction.' ? { accepted: true, issues: [], claims: [] } : { accepted: false, issues: ['Unsupported optional conclusion'], claims: [{ sentence: 'Useful supported fact.', status: 'supported', evidence: [{ id: source.id, quote: source.text }] }] };
-    }, async (_text, diagnosis, attempt) => diagnosis.issues.some(issue => issue.startsWith('verified_core_reconstruction')) ? 'A concise grounded reconstruction.' : 'Still overreaching ' + attempt, 'es');
+    }, async (text, diagnosis, attempt) => { if (diagnosis.issues.some(issue => issue.startsWith('verified_core_reconstruction'))) { assert.equal(text, '', 'The rejected draft must not prime reconstruction'); return 'A concise grounded reconstruction.'; } return 'Still overreaching ' + attempt; }, 'es');
     assert.equal(result.status, 'verified', 'Useful verified material can survive an unsuccessful optional interpretation');
     assert.equal(seen.at(-1), result.answer, 'The final coherent reconstruction is checked before publication');
     assert.equal(result.verifiedCoreReconstruction, true);
@@ -354,6 +355,25 @@ try {
     assert.equal(matches[0].candidates[0].id, source.id);
     assert.equal(matches[0].quote, 'an actual literal qualification');
     assert.equal(review.researchLiteralRepairCandidates(text, [other]).length, 0, 'No nearby or invented source is suggested without an exact real excerpt');
+  }
+  {
+    const uncited = 'El autor afirma que el relato se apoya en un pacto factual.';
+    const seen = [];
+    const diagnosis = { accepted: false, issues: ['Unsupported optional framing'], claims: [{ sentence: paragraph, status: 'supported', evidence: [{ id: source.id, quote: source.text }] }] };
+    const result = await review.reviewAndReviseResearchAnswer('Overreach.', async text => {
+      seen.push(text);
+      return text.startsWith('El autor afirma') ? check(text) : diagnosis;
+    }, async (_text, d, attempt) => d.issues.some(issue => issue.startsWith('verified_core_reconstruction')) ? uncited : 'Overreach ' + attempt, 'es', undefined,
+    (text, d) => review.bindResearchAnswerCitations(text, d, [source]));
+    assert.equal(result.status, 'verified', 'A last reconstruction with proved content can still repair a missing citation');
+    assert.ok(result.answer.includes('nodus://passage/p1'));
+    assert.equal(seen.at(-1), result.answer, 'The citation correction receives the full review');
+    assert.equal(result.citationRepairs, 1);
+    const unsafe = await review.reviewAndReviseResearchAnswer('Overreach.', async text => text.startsWith('El autor afirma')
+      ? text.includes('Invented result') ? { ...diagnosis, issues: ['unsupported factual addition'] } : check(text) : diagnosis,
+    async (_text, d, attempt) => d.issues.some(issue => issue.startsWith('verified_core_reconstruction')) ? uncited : 'Overreach ' + attempt, 'es', undefined,
+    (text, d) => { const bound = review.bindResearchAnswerCitations(text, d, [source]); return bound ? bound + ' Invented result.' : null; });
+    assert.equal(unsafe.status, 'limited', 'Formatting never authorizes a new or unchecked assertion');
   }
   const wrongLink = paragraph.replace('nodus://passage/p1', 'nodus://passage/wrong');
   const rebound = review.bindResearchAnswerCitations(wrongLink, check(wrongLink), [source]);

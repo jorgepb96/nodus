@@ -45,3 +45,10 @@ test('unambiguous direct turns do not inherit an earlier lookup decision', () =>
     assert.equal(direct('Explícalo sin consultar mis fuentes.'), 'general');
   }
 });
+test('checking a calculation or proofreading is not an unconditional corpus request', () => {
+  for (const text of ['Compruébalo.', 'Check it again.', 'Look again.', 'Busca sinónimos sin usar mis fuentes.']) assert.equal(lookup(text), false);
+  assert.equal(direct('Busca sinónimos sin usar mis fuentes.'), 'general');
+  assert.equal(lookup('Busca en mi corpus sin consultar internet.'), true);
+  assert.equal(lookup('Mira en mi biblioteca'), true);
+  assert.equal(lookup('Query my library'), true);
+});

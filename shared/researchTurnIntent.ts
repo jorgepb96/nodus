@@ -4,9 +4,10 @@ export const RESEARCH_TURN_INTENT_POLICY = 'source-routing-v2';
 const fold = (text: string) => text.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim();
 const TRANSFORM = /^(?:(?:por favor|please)[,\s]+)?(?:traduce|traducir|parafrasea|parafrasear|reescribe|reformula|resume|resumir|acorta|simplifica|corrige|translate|paraphrase|rewrite|rephrase|summari[sz]e|shorten|proofread|traduis|traduisez|reformule|reformulez|resumez)\b/iu;
 const ACTION_PREFIX = /^(?:(?:ahora(?:\s+si)?|si|por favor|please|entonces|tambien|ademas|luego|vale|ok|pero|now|yes|then|again)[,\s]+)*/u;
-const LOOKUP = /^(?:(?:puedes|podrias|puede|quiero que|necesito que|can you|could you|please)\s+)?(?:usa(?:r)?|utiliza(?:r)?|consulta(?:r|lo|la|los|las|s)?|consultalo|consultala|revisa(?:r|lo|la)?|busca(?:r|me|lo|la|los|las)?|buscalo|buscala|investiga(?:r)?|explora(?:r)?|comprueba(?:lo|la)?|contrasta(?:lo|la)?|verifica(?:lo|la)?|use|search|check|consult|look\s+(?:in|at|through|up)|find)\b/u;
+const LOOKUP = /^(?:(?:puedes|podrias|puede|quiero que|necesito que|can you|could you|please)\s+)?(?:usa(?:r)?|utiliza(?:r)?|consulta(?:r|lo|la|los|las|s)?|consultalo|consultala|revisa(?:r|lo|la)?|mira|recurre|busca(?:r|me|lo|la|los|las)?|buscalo|buscala|investiga(?:r)?|explora(?:r)?|comprueba(?:lo|la)?|contrasta(?:lo|la)?|verifica(?:lo|la)?|use|search|check|consult|query|browse|look\s+(?:in|at|through|up)|find)\b/u;
 const LIBRARY = /\b(?:zotero|mcp|biblioteca|corpus|documentos|fuentes|lecturas|referencias|bibliografia|library|documents|sources|references|bibliography)\b/u;
-const BARE_LOOKUP = /^(?:vuelve a (?:buscar|consultar)|busca(?:lo|la|los|las)?|buscalo|buscala|consulta(?:lo|la|los|las)?|consultalo|consultala|compruebalo|compruebala|search(?: again)?|look (?:it up|again)|check (?:it|again))(?:\s+(?:ahora|de nuevo|otra vez|por favor|please|now|again))*$/u;
+const BARE_LOOKUP = /^(?:vuelve a (?:buscar|consultar)|busca(?:lo|la|los|las)?|buscalo|buscala|consulta(?:lo|la|los|las)?|consultalo|consultala|search(?: again)?|look it up)(?:\s+(?:ahora|de nuevo|otra vez|por favor|please|now|again))*$/u;
+const NEGATIVE_USE = /\b(?:sin\s+(?:buscar|consultar|usar|utilizar)|without\s+(?:searching|consulting|using)|no\s+(?:uses|busques|consultes)|(?:do not|don't)\s+(?:use|search|consult))\b/u;
 
 /** Only the user's instructions can request tools. Quoted/fenced text and the
  * payload after a transformation header are data, even if they say "search". */
@@ -23,12 +24,20 @@ export function researchTurnInstructionText(message: string): string {
 export function positiveResearchInstructions(message: string): string[] {
   return researchTurnInstructionText(message).split(/[.!?;\n,]+|\b(?:y|pero|luego|and|then|but)\b/iu)
     .map(text => fold(text).replace(/^[¿¡\s]+|[?!.\s]+$/gu, '').replace(ACTION_PREFIX, '').trim())
+    .map(text => {
+      const at = text.search(NEGATIVE_USE);
+      if (at <= 0) return text;
+      const before = text.slice(0, at).trim();
+      // "Find synonyms without using my sources" does not request those sources.
+      // A real target before the exclusion (library or web) retains its grant.
+      return LOOKUP.test(before) && !LIBRARY.test(before) && !/\b(?:web|internet|online|google)\b/u.test(before) ? '' : before;
+    })
     .filter(text => text && !/^(?:no\b(?!\s+solo\b)|sin\b|do not\b|don't\b|without\b|never\b)/u.test(text));
 }
 
 export function researchLookupFollowUp(message: string): boolean {
   return positiveResearchInstructions(message).some(text => BARE_LOOKUP.test(text)
-    || LOOKUP.test(text) && /^(?:usa|utiliza|consulta(?:lo|la|los|las)?|consultalo|consultala|revisa|busca(?:lo|la|los|las)?|buscalo|buscala|use|search|check|consult)\s+(?:(?:en|con|in|the|my|mi|mis|la|el|las|los)\s+)*(?:zotero(?:\s+mcp)?|mcp|biblioteca|corpus|fuentes|documentos|library|sources|documents)$/u.test(text));
+    || LOOKUP.test(text) && /^(?:(?:en|con|a|in|the|my|mi|mis|la|el|las|los)\s+)*(?:zotero(?:\s+mcp)?|mcp|biblioteca|corpus|fuentes|documentos|library|sources|documents)$/u.test(text.replace(LOOKUP, '').trim()));
 }
 
 export function explicitResearchLibraryRequest(message: string): boolean {

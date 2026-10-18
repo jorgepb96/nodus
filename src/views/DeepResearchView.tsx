@@ -48,7 +48,7 @@ import {
 } from '@shared/deepResearchVersions';
 import { DECORATIVE_IMAGE_STYLES } from '@shared/imageStyles';
 import { toReadingCopy } from '@shared/readingCopy';
-import { stripLeadingAbstract } from '@shared/writingDocument';
+import { stripLeadingAbstract, researchDocumentProse } from '@shared/writingDocument';
 import type { DeepResearchSnapshot } from '../app/viewSnapshots';
 import { useListPlacement } from '../listPlacement';
 import { readingBlocks, topBlockIndex, useReadingPlace, type ReadingPlace } from '../readingPlace';
@@ -71,7 +71,6 @@ import { SourceCitationModal, type CitationTarget, type OpenCitationLibraryWork 
 import { SaveToNotesModal } from '../components/SaveToNotesModal';
 import { TranslationModal } from '../components/TranslationModal';
 import { ResearchMarkdown as Markdown } from '../components/ResearchSourceNotice';
-import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import { DraftActionBar, DraftResultMain, SupportMatrix } from './writingShared';
 import { DeepResearchQueueStrip, type QueueStripItem } from '../components/DeepResearchQueueStrip';
 import { DecorativeImageCard } from '../components/DecorativeImageCard';
@@ -918,7 +917,7 @@ export function DeepResearchView({
 
   const copyDraft = async () => {
     if (!openDraft) return;
-    await navigator.clipboard.writeText(researchSourcePresentation(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown).content);
+    await navigator.clipboard.writeText(researchDocumentProse(appliedTranslation?.markdown ?? openDraft.draft.draftMarkdown, Boolean(openDraft.draft.limitations?.length)));
     setMessage(t('Borrador copiado.'));
   };
 
@@ -928,8 +927,8 @@ export function DeepResearchView({
   const copyForListening = async () => {
     if (!openDraft) return;
     const text = appliedTranslation
-      ? toReadingCopy(researchSourcePresentation(appliedTranslation.markdown).content)
-      : toReadingCopy(researchSourcePresentation(openDraft.draft.draftMarkdown).content, { title: openDraft.draft.title });
+      ? toReadingCopy(researchDocumentProse(appliedTranslation.markdown, Boolean(openDraft.draft.limitations?.length)))
+      : toReadingCopy(researchDocumentProse(openDraft.draft.draftMarkdown, Boolean(openDraft.draft.limitations?.length)), { title: openDraft.draft.title });
     await navigator.clipboard.writeText(text);
     setMessage(t('Texto copiado sin citas ni referencias.'));
   };

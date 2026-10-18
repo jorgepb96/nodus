@@ -18,7 +18,7 @@ await build({
   platform: 'node',
   logLevel: 'silent',
 });
-const { stripLeadingAbstract, documentBodyForPanels } = await import(pathToFileURL(outfile).href);
+const { stripLeadingAbstract, documentBodyForPanels, researchDocumentProse } = await import(pathToFileURL(outfile).href);
 
 test('continuous Deep Research stays self-contained but panels do not duplicate it', () => {
   const abstract = 'Resumen exacto del hallazgo.';
@@ -40,4 +40,11 @@ test('continuous Deep Research stays self-contained but panels do not duplicate 
   assert.doesNotMatch(panelBody, /El corpus es parcial/u, 'the reader does not repeat the limitations panel');
   assert.match(panelBody, /Primer argumento/u);
   assert.match(panelBody, /\*\*Referencias\*\*/u, 'references remain in the report body');
+});
+
+test('research copy/export omits structured source-note footers and keeps scientific argument', () => {
+  const body = 'La intención propagandística no demuestra su recepción.';
+  const structured = `${body}\n\n**Limitaciones:** El corpus es parcial.`;
+  assert.equal(researchDocumentProse(structured, true), body);
+  assert.equal(researchDocumentProse('## Limitaciones\n\nLa censura afecta a los testimonios.', false), '## Limitaciones\n\nLa censura afecta a los testimonios.');
 });

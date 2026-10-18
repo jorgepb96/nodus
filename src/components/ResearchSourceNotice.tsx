@@ -12,7 +12,7 @@ export function ResearchSourceNotice({ notices, onCitation }: { notices: readonl
   if (!notices.length) return null;
   const title = t('Sobre las fuentes');
   return <div className="mt-2" data-testid="research-source-notice">
-    <button ref={anchor} type="button" className="inline-flex items-center gap-1.5 rounded px-1.5 py-1 text-xs text-amber-500 hover:bg-amber-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500" aria-label={title} title={title} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(value => !value)}>
+    <button ref={anchor} type="button" className="inline-flex items-center gap-1.5 rounded px-1.5 py-1 text-xs text-amber-400 hover:bg-amber-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500" aria-label={title} title={title} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(value => !value)}>
       <Icon name="alert" size={14} /><span>{title}</span>
     </button>
     <HeaderBalloon open={open} anchor={anchor} onClose={() => setOpen(false)} title={title} icon={<Icon name="alert" size={18} />} width={420} testId="research-source-notice-balloon">

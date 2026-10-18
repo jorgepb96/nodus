@@ -34,7 +34,7 @@ export const RESEARCH_CHAT_AGENT_SETTINGS: Readonly<RetrievalSettings> = {
 export const RESEARCH_CHAT_LIGHT_AGENT_SETTINGS: Readonly<RetrievalSettings> = { ...RETRIEVAL_PRESETS.balanced, preset: 'custom', rounds: 6 };
 
 /** One allowance for a whole report/lesson, with room for related questions.
- * Explicit request/notebook settings always take precedence. */
+ * Explicit request/notebook settings choose the targets; the harness may use a bounded margin when useful. */
 export const RESEARCH_LONGFORM_AGENT_SETTINGS: Readonly<RetrievalSettings> = { ...RETRIEVAL_PRESETS.deep, preset: 'custom', evidenceTokens: 32000, rounds: 14 };
 /** Bytes the chat agent's own decisions may spend: each is a separate provider call and
  * must not be bounded by the evidence the answer needs. About eight decisions. */

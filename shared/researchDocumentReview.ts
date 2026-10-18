@@ -2,6 +2,8 @@ import type { ResearchClaimRecord } from './researchClaimAudit';
 
 export const RESEARCH_SOURCE_CHUNK_RULE = 'Quote keys q1, q2, etc. are transport slices of ONE authorized source, not separate citation destinations. An inline source citation covers ALL its supplied quote slices. Check every slice of that cited source; do not reject a correct link merely because the supporting passage is in q2 rather than q1. Distinct source IDs remain distinct evidence and cannot silently substitute for each other.';
 
+export const RESEARCH_SOURCE_QUALIFICATION_RULE = "Preserve qualifications and the source author's time perspective. A retrospective account of limitations in earlier scholarship is not evidence that those limitations persist today, especially when the same excerpt describes subsequent progress. A source identifying a limitation does not establish its cause: every because/due-to explanation needs evidence for the causal connection itself. Split compound assertions into atomic propositions; a supported first clause never licenses the rest of its sentence or paragraph. Check counterevidence and qualifications in ALL supplied slices before approving a proposition.";
+
 export interface ResearchDocumentPart {
   id: string;
   text: string;
@@ -34,12 +36,12 @@ export function researchExcerptHasProse(text: string): boolean {
 }
 
 /** Batch by actual paragraphs/bytes, not by the number of fields in a form. */
-export function researchDocumentBatches(parts: ResearchDocumentPart[], paragraphCount: (text: string) => number) {
+export function researchDocumentBatches(parts: ResearchDocumentPart[], paragraphCount: (text: string) => number, maxParagraphs = 10) {
   const batches: ResearchDocumentPart[][] = [];
   let batch: ResearchDocumentPart[] = [], paragraphs = 0, bytes = 0;
   for (const part of parts) {
     const count = paragraphCount(part.text), size = new TextEncoder().encode(part.text + (part.context ?? '')).length;
-    if (batch.length && (batch.length >= 8 || paragraphs + count > 10 || bytes + size > 16_000)) {
+    if (batch.length && (batch.length >= 8 || paragraphs + count > maxParagraphs || bytes + size > 16_000)) {
       batches.push(batch); batch = []; paragraphs = 0; bytes = 0;
     }
     batch.push(part); paragraphs += count; bytes += size;

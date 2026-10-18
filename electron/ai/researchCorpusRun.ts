@@ -106,6 +106,7 @@ export class ResearchCorpusRun {
   constructor(readonly scope: ResolvedResearchScope, settings: RetrievalSettings, readonly signal?: AbortSignal, readonly pinRevisions = false) {
     if (this.harness) this.harness.corpus = this;
     this.budget = new ResearchRetrievalBudget(settings);
+    if (this.harness) this.budget.allowAdaptiveTargets((this.harness.record.checkpoint.modelContext as { tokens?: number } | undefined)?.tokens ?? 32768);
     const inventory = new Map(getResearchPreparationInventory().documents.map(document => [document.id, document.preparation]));
     this.sourceCoverage = scope.documents.map(document => {
       const state = inventory.get(document.id);
@@ -128,6 +129,7 @@ export class ResearchCorpusRun {
         [this.limitations, saved.limitations], [this.budget.visited, saved.budget.visited]] as const) entries.forEach(entry => target.add(entry));
       this.traversal.push(...saved.traversal); this.catalogLookups.push(...saved.lookups);
       Object.assign(this.budget, { rounds: saved.budget.rounds, usedEvidenceTokens: saved.budget.evidence, decisionTokens: saved.budget.decisions, candidates: saved.budget.candidates, partial: saved.budget.partial });
+      this.budget.roundLimit = Math.min(this.budget.roundLimit, saved.budget.roundLimit ?? this.budget.roundLimit);
       this.budget.evidenceTokenLimit = Math.min(this.budget.evidenceTokenLimit, saved.budget.evidenceLimit ?? Infinity);
       this.budget.decisionTokenLimit = Math.min(this.budget.decisionTokenLimit, saved.budget.decisionLimit ?? Infinity);
       this.priorPassages = saved.priorPassages; this.graphSnapshot = saved.graph;
@@ -139,7 +141,7 @@ export class ResearchCorpusRun {
       mcpReads: [...this.zoteroMcpReads], mcpAttempts: [...this.zoteroMcpAttempts], limitations: [...this.limitations], traversal: this.traversal, lookups: this.catalogLookups,
       priorPassages: this.priorPassages, graph: this.graphSnapshot, researchLog: this.researchLog(),
       budget: { rounds: this.budget.rounds, evidence: this.budget.usedEvidenceTokens, decisions: this.budget.decisionTokens, candidates: this.budget.candidates, partial: this.budget.partial,
-        evidenceLimit: this.budget.evidenceTokenLimit, decisionLimit: this.budget.decisionTokenLimit, visited: [...this.budget.visited] } };
+        roundLimit: this.budget.roundLimit, evidenceLimit: this.budget.evidenceTokenLimit, decisionLimit: this.budget.decisionTokenLimit, visited: [...this.budget.visited] } };
   }
   checkpoint(interrupted = false): void {
     if (!this.harness) return;
@@ -238,7 +240,7 @@ export class ResearchCorpusRun {
     // Legacy indexed-only turns keep one literal probe. V1 can refine index
     // searches while its capability grants continue to forbid other layers.
     const alone = researchIndexedTextsAlone(this.layers, !!this.web?.enabled) && !this.harness;
-    const branches = this.harness && !alone && !this.agent?.correction && this.budget.settings.autoExpand && this.budget.settings.rounds - this.budget.rounds > 1
+    const branches = this.harness && !alone && !this.agent?.correction && this.budget.settings.autoExpand && this.budget.roundLimit - this.budget.rounds > 1
       ? [...this.agent?.plan.exploration ?? []].sort((a, b) => b.priority - a.priority) : [];
     for (const branch of branches) this.harness!.agenda.enqueue({ action: 'search', query: branch.query }, branch.question, branch.priority,
       { purpose: branch.purpose, relation: branch.relation });
@@ -257,7 +259,7 @@ export class ResearchCorpusRun {
       (1 + Math.min(2, branches.length)) * RETRIEVAL_CHUNK_MAX_BYTES)) : Math.floor(remaining / 3);
     const queryLimit = this.agent && !alone
       ? (this.layers.documents || this.harness) ? Math.min(Math.max(1, Math.floor(openingBudget / RETRIEVAL_CHUNK_MAX_BYTES)),
-        Math.max(1, this.budget.settings.autoExpand ? this.budget.settings.rounds - this.budget.rounds - 1 : 1)) : 3
+        Math.max(1, this.budget.settings.autoExpand ? this.budget.roundLimit - this.budget.rounds - 1 : 1)) : 3
       : 1;
     const queries = allQueries.slice(0, queryLimit);
     const opening = Math.floor(openingBudget / queries.length);
@@ -319,7 +321,7 @@ export class ResearchCorpusRun {
     const usedBeforeRound = this.budget.usedEvidenceTokens;
     const remaining = Math.min(roundLimit ?? Infinity, this.budget.evidenceTokenLimit - usedBeforeRound);
     const acceptRound = (id: string, text: string) => this.budget.usedEvidenceTokens - usedBeforeRound + Buffer.byteLength(text) <= remaining && this.budget.accept(id, text);
-    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, settings.rounds - this.budget.rounds + 1)) : 1;
+    const expansion = settings.autoExpand && readDocuments ? Math.max(1, Math.min(expandRounds, this.budget.roundLimit - this.budget.rounds + 1)) : 1;
     const shared = readIndexed && remaining >= 256 ? await retrieveSharedDocumentaryEvidence(searchScope, query,
       { ...settings, rounds: expansion, evidenceTokens: remaining }, vector, this.signal, undefined,
       () => this.inventory().documents, lexicalQueries) : { evidence: [], traversal: { rounds: 1, candidates: 0, partial: true } };

@@ -229,7 +229,7 @@ try {
     assert.equal(run.budget.rounds, 1, 'an interrupted action retains the round it consumed');
     assert.equal(run.budget.evidenceTokenLimit, 1234, 'continuation cannot enlarge a narrowed allowance');
     assert.equal(currentResearchHarness().agenda.next().status, 'pending');
-    run.budget.rounds = run.budget.settings.rounds;
+    run.budget.rounds = run.budget.roundLimit;
     const { ResearchWebGrant } = load('electron/ai/researchWebStep.ts');
     const web = new ResearchWebGrant('auto', 'balanced', 'A concrete research question', signal, null, 2000);
     assert.equal(await web.search([], 'fallback', 'fallback', ''), null, 'fallback web cannot bypass the shared round limit');

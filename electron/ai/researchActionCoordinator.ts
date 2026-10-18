@@ -220,7 +220,7 @@ async function superviseHarness(run: ResearchCorpusRun, question: string, model?
   let note: string | undefined;
   let administrative = 0;
   let schemaRecoveries = 0;
-  while (run.budget.rounds < Math.min(run.budget.settings.rounds, run.budget.phaseRoundLimit)) {
+  while (run.budget.rounds < Math.min(run.budget.roundLimit, run.budget.phaseRoundLimit)) {
     run.validate(); harness.validate();
     const web = !!run.web?.available;
     const allowed = { ...harness.record.context.capabilities, ideas: run.layers.ideas, indexed: run.layers.indexed, documents: run.layers.documents, web: !!run.web?.enabled };
@@ -235,9 +235,9 @@ async function superviseHarness(run: ResearchCorpusRun, question: string, model?
     const payload = { goal: question, context: { ...harness.record.context, capabilities: allowed },
       agenda: harness.agenda.questions, tasks: harness.agenda.tasks.slice(-24), evidence: ranked, sources,
       web: { available: web, explicitRequest: run.web?.explicit ?? false, used: run.web?.used ?? 0 },
-      budget: { roundsRemaining: run.budget.settings.rounds - run.budget.rounds, evidenceBytesRemaining: run.budget.evidenceTokenLimit - run.budget.usedEvidenceTokens },
+      budget: { targets: { rounds: run.budget.settings.rounds, evidenceBytes: run.budget.settings.evidenceTokens }, roundsUsed: run.budget.rounds, roundsRemaining: run.budget.roundLimit - run.budget.rounds, evidenceBytesRemaining: run.budget.evidenceTokenLimit - run.budget.usedEvidenceTokens },
       limitations: [...run.limitations], stagnantActions: harness.agenda.stagnant, coordinator_note: note };
-    const system = HARNESS_SYSTEM + '\n' + systemFor(web, true);
+    const system = HARNESS_SYSTEM + '\nUser retrieval settings are advisory targets. The backend provides a bounded operating margin in budget. Cross a target only for a concrete unresolved facet and an untried promising route; stop for diminishing returns. Never exceed granted capabilities or the remaining operating allowance.' + '\n' + systemFor(web, true);
     const targetModel = model ?? harness.record.context.model;
     const window = targetModel ? (await researchModelContextWindow(targetModel)).tokens : 32768;
     const maxTokens = Math.max(384, Math.min(3600, Math.floor(window * 0.08)));
@@ -332,5 +332,5 @@ async function superviseHarness(run: ResearchCorpusRun, question: string, model?
     });
     run.checkpoint();
   }
-  harness.record.summary.stopReason = run.budget.rounds >= run.budget.settings.rounds ? 'budget' : 'diminishing_returns'; run.checkpoint();
+  harness.record.summary.stopReason = run.budget.rounds >= run.budget.roundLimit ? 'budget' : 'diminishing_returns'; run.checkpoint();
 }

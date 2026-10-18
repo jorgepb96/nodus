@@ -22,11 +22,12 @@ export function getResearchRun(id: string): ResearchRunRecord | null {
   const row = getDb().prepare('SELECT record_json FROM research_harness_runs WHERE id=?').get(id) as { record_json: string } | undefined;
   return row ? JSON.parse(row.record_json) as ResearchRunRecord : null;
 }
-export function listResearchRuns(conversationId?: string): ResearchRunSummary[] {
-  const rows = getDb().prepare(`SELECT summary_json FROM research_harness_runs WHERE (? IS NULL OR conversation_id=?) ORDER BY updated_at DESC LIMIT 50`).all(conversationId ?? null, conversationId ?? null) as Array<{ summary_json: string }>;
+export function listResearchRuns(conversationId?: string, entryId?: string): ResearchRunSummary[] {
+  const rows = getDb().prepare(`SELECT summary_json FROM research_harness_runs WHERE (? IS NULL OR conversation_id=?) AND (? IS NULL OR json_extract(record_json,'$.context.entryId')=?) ORDER BY updated_at DESC LIMIT 50`).all(conversationId ?? null, conversationId ?? null, entryId ?? null, entryId ?? null) as Array<{ summary_json: string }>;
   return rows.map(row => JSON.parse(row.summary_json) as ResearchRunSummary);
 }
-export function deleteResearchRuns(owner: { conversationId?: string; artifactId?: string }): void {
+export function deleteResearchRuns(owner: { conversationId?: string; artifactId?: string; entryId?: string }): void {
   if (owner.conversationId) getDb().prepare('DELETE FROM research_harness_runs WHERE conversation_id=?').run(owner.conversationId);
   if (owner.artifactId) getDb().prepare('DELETE FROM research_harness_runs WHERE artifact_id=?').run(owner.artifactId);
+  if (owner.entryId) getDb().prepare("DELETE FROM research_harness_runs WHERE mode='dictionary' AND json_extract(record_json,'$.context.entryId')=?").run(owner.entryId);
 }

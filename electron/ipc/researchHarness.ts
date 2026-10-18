@@ -11,7 +11,7 @@ export function broadcastResearchRun(run: ResearchRunSummary): void {
 let releaseUpdates: (() => void) | undefined;
 export function registerResearchHarnessIpc({ h }: IpcContext): void {
   releaseUpdates?.(); releaseUpdates = onResearchRunUpdate(broadcastResearchRun);
-  h('research:run:list', (_e, conversationId?: string) => listResearchRuns(conversationId).map(run => run.status === 'running' && !researchRunIsActive(run.id) ? { ...run, status: 'paused', stopReason: 'interrupted' } : run));
+  h('research:run:list', (_e, conversationId?: string, entryId?: string) => listResearchRuns(conversationId, entryId).map(run => run.status === 'running' && !researchRunIsActive(run.id) ? { ...run, status: 'paused', stopReason: 'interrupted' } : run));
   h('research:run:get', (_e, id: string) => getResearchRun(id)?.summary ?? null);
   h('research:run:pause', (_e, id: string) => interruptResearchRun(id));
   h('research:run:cancel', (_e, id: string) => interruptResearchRun(id, true));

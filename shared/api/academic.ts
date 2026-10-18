@@ -738,7 +738,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
    * answer had streamed so far (never rejects), so the UI can keep the text.
    */
   cancelResearchChat(conversationId?: string): Promise<void>;
-  listResearchRuns?(conversationId?: string): Promise<import('../researchHarness').ResearchRunSummary[]>;
+  listResearchRuns?(conversationId?: string, entryId?: string): Promise<import('../researchHarness').ResearchRunSummary[]>;
   getResearchRun?(id: string): Promise<import('../researchHarness').ResearchRunSummary | null>;
   pauseResearchRun?(id: string): Promise<import('../researchHarness').ResearchRunSummary | null>;
   cancelResearchRun?(id: string): Promise<import('../researchHarness').ResearchRunSummary | null>;

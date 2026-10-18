@@ -32,7 +32,7 @@ import { getImmersionSession, recordImmersionAnswer, saveImmersionSession } from
 import { buildWritingWorkshopSnapshot } from './writingWorkshop';
 import { completeJson, embedQuery } from './aiClient';
 import { ResearchCorpusRun, resolveAcademicRunScope } from './researchCorpusRun';
-import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, RESEARCH_AGENT_DECISION_BYTES, validateRetrievalSettings } from '@shared/researchCorpus';
+import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, validateRetrievalSettings } from '@shared/researchCorpus';
 import {
   IMMERSION_LIMITS,
   orchestrateImmersion,
@@ -182,7 +182,6 @@ export async function buildImmersionMaterial(
   const query = topic.trim();
   const research = researchModel === undefined ? null : new ResearchCorpusRun(resolveAcademicRunScope(), currentResearchHarness() ? immersionRetrieval() : RETRIEVAL_PRESETS.balanced, currentResearchHarness()?.signal);
   if (research?.harness) {
-    research.budget.decisionTokenLimit = RESEARCH_AGENT_DECISION_BYTES;
     research.web = new ResearchWebGrant(research.harness.record.context.capabilities.web ? 'auto' : 'off', 'balanced', query, research.signal, researchModel, 2600);
   }
   const vector = await embedQuery(query);
@@ -529,7 +528,6 @@ async function generateImmersionWithVisualPlan(
   // A cached material phase still needs the restored run for station-level research.
   if (currentResearchHarness() && !currentResearchHarness()!.corpus) {
     const run = new ResearchCorpusRun(resolveAcademicRunScope(), immersionRetrieval(), currentResearchHarness()!.signal);
-    run.budget.decisionTokenLimit = RESEARCH_AGENT_DECISION_BYTES;
     run.web = new ResearchWebGrant(request.webSearch ?? 'off', 'balanced', request.topic, run.signal, model, 2600);
   }
   emit({

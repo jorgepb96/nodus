@@ -1,7 +1,7 @@
 # Nodus Research Harness (v1 preview)
 
 The academic vault can opt into a shared research execution across Research Chat,
-Deep Research and Immersion. The existing `legacy` path remains the default.
+Deep Research, Immersion and Dictionary. The existing `legacy` path remains the default.
 Functional tests establish execution guarantees. The later ten-pair development
 comparison does not establish an overall advantage over legacy: its masked model
 reviewer preferred legacy in seven cases. Source inspection also found reviewer
@@ -84,6 +84,21 @@ technical context/output bounds remain strict.
 
 ## Verification policy
 
+The shared decision policy now uses a compact supervisor view. It keeps diverse
+source excerpts and the latest tool result visible, uses short request-bound
+evidence IDs for coverage, and summarizes completed actions while retaining every
+pending branch. IDs expand only through the exact supplied evidence map; unknown
+or window-pruned aliases cannot claim support. The writer and checkpoint retain
+the complete excerpts and canonical citation destinations. Redundant legacy-agent
+instructions no longer accompany every harness decision. The agent is guided to
+stop for an answered objective rather than consume the full allowance; retrieval
+and model-call ceilings have not been reduced.
+
+All four adapters initialize the shared decision allowance before restoring a
+checkpoint. Continuation retains both consumed bytes and any narrowed decision
+limit; an adapter cannot replenish it after restoration. The decision policy is
+part of the request fingerprint, so incompatible previous decisions are not reused.
+
 V1 never adds response checks beyond legacy. The harness adds an
 investigation agenda, contextual tool choices and durable execution, not another
 mandatory proof/rewrite/semantic-veto chain. Research Chat respects the existing
@@ -110,6 +125,17 @@ resume their previous audit policy silently.
 | Research Chat | Keeps the turn planner, indexed-only policy, context switches, notebook/source restrictions, Concilium and skills. Uses exactly the same optional verification and citation-recovery path as legacy. |
 | Deep Research | Shares one ledger and budget through discovery and sections. Keeps deterministic source/citation/structure guards and the evidence-informed writers. Removes overlapping model audits, automatic rewrites and sentence pruning; a continuous report contains its connected body, with summaries and source notes kept separately. Later web findings retain their actual web receipts, without fictitious local works. |
 | Immersion | Retains curriculum/panorama/stations/contrasts/exam and the existing structural/literal-citation handling. Can investigate each station before writing, without an additional field-by-field model audit. Prepared inputs and generated phases survive continuation. |
+| Dictionary | Explicit investigation and generation use the same agenda, related-query planning, original readers, web grant, accounting and checkpoints. Its own adapter pins term/aliases, editorial focus, source scope, language and detail; it retains Dictionary's existing definition, attribution, citation, version and author-card handling. No additional review chain is introduced. Background incremental scans stay local. |
+
+Dictionary exposes the same opt-in and execution panel. Each run belongs to one
+entry, including research-only scans; entry filters are applied before the saved
+run list is bounded. Generation continuation uses the same per-entry queue and
+broadcasts as initial work. A user pause is shown as paused rather than failed,
+transient retries retain the same run ID, and late stopped-worker events cannot
+overwrite the resumed job. Completed definition/grounding/author phases are reused.
+Saving a version and its artifact identity is transactional, so continuation after
+a save does not create a second version. Editorial/source changes reject an old
+continuation, and deleting an entry removes its local research checkpoints.
 
 Source existence alone does not establish entailment. The writer receives the
 authorized evidence and provenance and must cite accurately, preserve actor/time
@@ -146,7 +172,8 @@ report/session reuses its artifact identity instead of creating another copy.
 Run the focused functional checks with:
 
 ```sh
-node --test scripts/test-research-harness.mjs scripts/test-research-harness-evaluation.mjs scripts/test-research-verification-parity.mjs scripts/test-research-blind-judge.mjs
+node --test scripts/test-research-harness.mjs scripts/test-research-decision-context.mjs scripts/test-research-harness-evaluation.mjs scripts/test-research-verification-parity.mjs scripts/test-research-blind-judge.mjs
+node --test scripts/test-dictionary-harness.mjs scripts/test-dictionary-generation-queue.mjs scripts/test-dictionary.mjs scripts/test-dictionary-ui.mjs
 node scripts/test-research-expansion.mjs
 node --test scripts/test-research-actions.mjs scripts/test-research-corpus-run.mjs scripts/test-research-source-filters.mjs scripts/test-research-chat-agent.mjs
 node --test scripts/test-research-claim-audit.mjs scripts/test-research-claim-audit-batching.mjs scripts/test-research-request-budget.mjs
@@ -337,6 +364,17 @@ presentation does not enlarge the source grant. Both original and presented
 assistant prose are registered for notebook follow-up provenance.
 
 ## Latest targeted validation
+
+A subsequent frozen five-question comparison used ten fresh native answers at
+commit `a8743222`, DeepSeek Flash, standard effort, web off and optional verification
+off. The calibrated masked Gemini 3.8 Flash reviewer preferred V1 four times and
+tied once. All five receipts were valid without correction; every format judgment
+was tied, and all answers had no headings. Legacy had a partial further-search
+failure in one pair. Mean latency was 53.1 seconds for V1 versus 25.6 for legacy;
+one V1 BGE request took 60.5 seconds. Generation accounted for USD 0.08900 versus
+0.03409, excluding BGE. This is a small development sample, not a general quality
+guarantee. The compact-decision and Dictionary changes came afterward and require
+their own measurement; these results must not be attributed to those changes.
 
 After the user stopped the fresh 15-pair campaign, six pairs and their original
 votes were retained (legacy 4, V1 2). No remaining pairs were resumed. A short

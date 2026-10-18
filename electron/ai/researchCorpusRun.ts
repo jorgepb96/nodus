@@ -104,7 +104,7 @@ export class ResearchCorpusRun {
   private readonly sourceCoverage: NonNullable<ResearchTraversal['sourceCoverage']>;
   constructor(readonly scope: ResolvedResearchScope, settings: RetrievalSettings, readonly signal?: AbortSignal, readonly pinRevisions = false) {
     if (this.harness) this.harness.corpus = this;
-    this.budget = new ResearchRetrievalBudget(settings);
+    this.budget = new ResearchRetrievalBudget(settings, settings.evidenceTokens, this.harness ? RESEARCH_AGENT_DECISION_BYTES : settings.evidenceTokens);
     if (this.harness) this.budget.allowAdaptiveTargets((this.harness.record.checkpoint.modelContext as { tokens?: number } | undefined)?.tokens ?? 32768);
     const inventory = new Map(getResearchPreparationInventory().documents.map(document => [document.id, document.preparation]));
     this.sourceCoverage = scope.documents.map(document => {
@@ -681,7 +681,6 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
   const settings = validateRetrievalSettings(request.retrieval ?? (request.notebookId ? getResearchNotebook(request.notebookId)?.settings : undefined) ?? (currentResearchHarness() ? RESEARCH_LONGFORM_AGENT_SETTINGS : RETRIEVAL_PRESETS.deep));
   const run = new ResearchCorpusRun(scope, settings, signal, true);
   if (run.harness) {
-    run.budget.decisionTokenLimit = RESEARCH_AGENT_DECISION_BYTES;
     run.web = new ResearchWebGrant(request.webSearch ?? 'off', webDepth(settings), request.objective, signal, request.model,
       Math.floor(run.budget.evidenceTokenLimit / 3));
   }

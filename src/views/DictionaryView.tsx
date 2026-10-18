@@ -42,6 +42,8 @@ import { PROMPT_LANGUAGES } from "@shared/types";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Markdown, type MarkdownCitation } from "../components/Markdown";
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
+import { ResearchHarnessControl, useResearchHarnessOptions, type ResearchHarnessOptions } from '../components/ResearchHarnessControl';
+import { ResearchHarnessPanel } from '../components/ResearchHarnessPanel';
 import { useResearchEffort } from '../hooks/useResearchEffort';
 import type { ResearchEffort } from '@shared/researchReasoning';
 import type { ResearchWebSearchMode } from '@shared/types';
@@ -470,6 +472,7 @@ function ChoiceGrid({
 }
 
 interface DictionaryResearchOptions {
+  harness: ResearchHarnessOptions;
   thinkingEffort: ResearchEffort;
   onThinkingEffort: (effort: ResearchEffort) => void;
   webSearch: ResearchWebSearchMode;
@@ -480,6 +483,7 @@ function DictionaryResearchControls({ model, research, disabled = false }: {
   model: ModelRef | null; research: DictionaryResearchOptions; disabled?: boolean;
 }) {
   return <div className="flex flex-wrap items-center gap-2" data-testid="dictionary-research-controls">
+    <ResearchHarnessControl options={research.harness} disabled={disabled} />
     <ResearchEffortControl model={model} value={research.thinkingEffort} onChange={research.onThinkingEffort}
       disabled={disabled} variant="field" testId="dictionary-thinking" />
     <button type="button" className="btn btn-ghost h-8 gap-1.5 text-xs" aria-pressed={research.webSearch !== 'off'}
@@ -611,6 +615,7 @@ function CreationDialog({
               model,
               thinkingEffort: research.thinkingEffort,
               webSearch: research.webSearch,
+              harnessVersion: research.harness.version,
             });
             setQueuedDrafts((current) => new Set(current).add(draft.key));
           }
@@ -1058,7 +1063,8 @@ export function DictionaryView({
   const [model, setModel] = useFeatureModel(settings, "dictionaryModel");
   const [thinkingEffort, onThinkingEffort] = useResearchEffort(settings, model);
   const [webSearch, onWebSearch] = useState<ResearchWebSearchMode>('auto');
-  const research = { thinkingEffort, onThinkingEffort, webSearch, onWebSearch };
+  const harness = useResearchHarnessOptions(settings);
+  const research = { thinkingEffort, onThinkingEffort, webSearch, onWebSearch, harness };
   const [entries, setEntries] = useState<DictionaryEntrySummary[]>([]);
   const [total, setTotal] = useState(0);
   const [facets, setFacets] = useState<DictionaryFacets>({
@@ -1396,6 +1402,7 @@ export function DictionaryView({
           onCloseTab={closeEntry}
         />
       </header>
+      <ResearchHarnessPanel mode="dictionary" entryId={activeId} onResumed={() => { void reload(); }} />
       {activeId ? (
         <DictionaryEntryView
           key={activeId}
@@ -1808,6 +1815,9 @@ function DictionaryGenerationState({
       </span>
     );
   }
+  if (progress.phase === 'paused' || progress.phase === 'cancelled') {
+    return <span className="text-xs text-neutral-500">{appT(progress.phase === 'paused' ? 'En pausa' : 'Cancelada')}</span>;
+  }
   if (progress.phase === "done") {
     return (
       <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
@@ -1921,7 +1931,7 @@ function DictionaryEntryView({
   const entry = detail.entry;
   const hasEvidence = detail.coverage.included > 0;
   const backgroundBusy =
-    !!progress && !["done", "degraded", "failed"].includes(progress.phase);
+    !!progress && !["done", "degraded", "failed", "paused", "cancelled"].includes(progress.phase);
   const backgroundFailure =
     progress?.phase === "failed" && !hideBackgroundFailure
       ? progress.error || t("La generación no pudo completarse.")
@@ -1938,6 +1948,7 @@ function DictionaryEntryView({
           model,
           thinkingEffort: research.thinkingEffort,
           webSearch: research.webSearch,
+          harnessVersion: research.harness.version,
       })
       .then((nextProgress) => {
         onGenerationStarted(nextProgress);
@@ -2038,7 +2049,7 @@ function DictionaryEntryView({
                   onClick={() =>
                     void run(
                       "scan",
-                      () => window.nodus.scanDictionaryNewEvidence(entryId, { model, thinkingEffort: research.thinkingEffort, webSearch: research.webSearch }),
+                      () => window.nodus.scanDictionaryNewEvidence(entryId, { model, thinkingEffort: research.thinkingEffort, webSearch: research.webSearch, harnessVersion: research.harness.version }),
                       "evidence",
                     )
                   }

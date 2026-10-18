@@ -14,7 +14,7 @@ export type DictionaryGenerationExecutor = (
 ) => Promise<DictionaryVersion | void>;
 
 const isRunning = (progress: DictionaryProgress): boolean =>
-  !["done", "degraded", "failed"].includes(progress.phase);
+  !["done", "degraded", "failed", "paused", "cancelled"].includes(progress.phase);
 
 const MAX_TRANSIENT_RETRIES = 2;
 
@@ -54,13 +54,24 @@ export class DictionaryGenerationQueue {
     this.#set(queued, token);
 
     setImmediate(() => {
-      void this.#run(request, token);
+      void this.#run(request, token).catch(() => { /* The terminal progress is already published. */ });
     });
     return queued;
   }
 
   list(): DictionaryProgress[] {
     return [...this.#jobs.values()];
+  }
+
+  /** Continuation uses the same owner, progress events and per-entry queue as
+   * initial generation. The stopped worker's late events cannot replace it. */
+  async run(request: DictionaryGenerationRequest): Promise<DictionaryVersion | void> {
+    const current = this.#jobs.get(request.entryId);
+    if (current && isRunning(current) && (!request.runId || current.researchRun?.id !== request.runId)) throw new Error('research_run_already_running');
+    const token = Symbol(request.entryId);
+    this.#tokens.set(request.entryId, token);
+    this.#set({ entryId: request.entryId, mode: request.mode, phase: 'queued', message: 'En cola' }, token);
+    return this.#run(request, token);
   }
 
   delete(entryIds: Iterable<string>): void {
@@ -73,12 +84,17 @@ export class DictionaryGenerationQueue {
   async #run(
     request: DictionaryGenerationRequest,
     token: symbol,
-  ): Promise<void> {
-    const report = (progress: DictionaryProgress) =>
-      this.#set({ ...progress, mode: request.mode }, token);
+  ): Promise<DictionaryVersion | void> {
+    let researchRun: DictionaryProgress['researchRun'];
+    const report = (progress: DictionaryProgress) => {
+      researchRun = progress.researchRun ?? researchRun;
+      this.#set({ ...progress, mode: request.mode, ...(researchRun ? { researchRun } : {}) }, token);
+    };
     for (let attempt = 0; ; attempt += 1) {
       try {
-        const result = await this.execute(request, report);
+        if (this.#tokens.get(request.entryId) !== token) return;
+        const result = await this.execute({ ...request, ...(researchRun ? { runId: researchRun.id } : {}) }, report);
+        researchRun = result?.researchRun ?? researchRun;
         if (result?.outcome === "degraded") {
           report({
             entryId: request.entryId,
@@ -89,7 +105,7 @@ export class DictionaryGenerationQueue {
             degradationReason: result.degradationReason ?? undefined,
             attempts: result.generationAttempts,
           });
-          return;
+          return result;
         }
         report({
           entryId: request.entryId,
@@ -97,9 +113,11 @@ export class DictionaryGenerationQueue {
           phase: "done",
           message: "Definición generada",
         });
-        return;
+        return result;
       } catch (error) {
-        if (retriable(error) && attempt < MAX_TRANSIENT_RETRIES) {
+        if (this.#tokens.get(request.entryId) !== token) return;
+        const interrupted = researchRun?.status === 'paused' || researchRun?.status === 'cancelled';
+        if (!interrupted && retriable(error) && attempt < MAX_TRANSIENT_RETRIES) {
           report({
             entryId: request.entryId,
             mode: request.mode,
@@ -110,18 +128,18 @@ export class DictionaryGenerationQueue {
           continue;
         }
         const detail = error instanceof Error ? error.message : String(error);
-        console.error(
+        if (!interrupted) console.error(
           `[dictionary] background generation failed for ${request.entryId}`,
           error,
         );
         report({
           entryId: request.entryId,
           mode: request.mode,
-          phase: "failed",
-          message: "Error al generar",
-          error: detail,
+          phase: interrupted ? researchRun!.status as 'paused' | 'cancelled' : "failed",
+          message: interrupted ? researchRun!.status === 'paused' ? 'En pausa' : 'Cancelada' : "Error al generar",
+          ...(!interrupted ? { error: detail } : {}),
         });
-        return;
+        throw error;
       }
     }
   }

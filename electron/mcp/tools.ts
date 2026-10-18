@@ -2570,8 +2570,8 @@ export function registerTools(server: McpServer): void {
 
   server.registerTool('nodus_list_research_runs', {
     title: 'List research executions', description: 'Lists research harness progress and resumable executions in the active academic vault. Read-only.',
-    inputSchema: { conversationId: z.string().max(100).optional() }, annotations: { readOnlyHint: true, openWorldHint: false },
-  }, ({ conversationId }) => tool(() => ({ runs: listResearchRuns(conversationId) }))());
+    inputSchema: { conversationId: z.string().max(100).optional(), entryId: z.string().max(100).optional() }, annotations: { readOnlyHint: true, openWorldHint: false },
+  }, ({ conversationId, entryId }) => tool(() => ({ runs: listResearchRuns(conversationId, entryId) }))());
   server.registerTool('nodus_control_research_run', {
     title: 'Control a research execution', description: 'Pauses, resumes or cancels an existing research execution in the active academic vault. Resume can consume provider tokens and preserves the original source boundary and budget.',
     inputSchema: { runId: z.string().min(1).max(100), action: z.enum(['pause', 'resume', 'cancel']) },

@@ -7,21 +7,21 @@ const states = { running: 'En curso', paused: 'En pausa', completed: 'Completada
 const questionStates = { pending: 'Pendiente', supported: 'Evidencia suficiente', partial: 'Parcial', contradictory: 'Contradicción', unresolved: 'Sin resolver' } as const;
 
 /** A durable operational summary. It deliberately exposes no model reasoning. */
-export function ResearchHarnessPanel({ mode, conversationId, onResumed }: { mode: ResearchRunMode; conversationId?: string | null; onResumed?: () => void }) {
+export function ResearchHarnessPanel({ mode, conversationId, entryId, onResumed }: { mode: ResearchRunMode; conversationId?: string | null; entryId?: string | null; onResumed?: () => void }) {
   const [runs, setRuns] = useState<ResearchRunSummary[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const owner = useRef(''); owner.current = `${mode}:${conversationId ?? ''}`;
+  const owner = useRef(''); owner.current = `${mode}:${conversationId ?? ''}:${entryId ?? ''}`;
   useEffect(() => {
     let active = true;
-    const accepts = (run: ResearchRunSummary) => run.mode === mode && (mode !== 'chat' || (!!conversationId && run.conversationId === conversationId));
-    const refresh = () => { void window.nodus.listResearchRuns?.(conversationId ?? undefined).then(next => { if (active) setRuns(next.filter(accepts)); }).catch(() => undefined); };
+    const accepts = (run: ResearchRunSummary) => run.mode === mode && (mode !== 'chat' || (!!conversationId && run.conversationId === conversationId)) && (!entryId || run.entryId === entryId);
+    const refresh = () => { void window.nodus.listResearchRuns?.(conversationId ?? undefined, entryId ?? undefined).then(next => { if (active) setRuns(next.filter(accepts)); }).catch(() => undefined); };
     setRuns([]); refresh();
     const unsubscribe = window.nodus.onResearchRun?.(run => {
       if (active && accepts(run)) setRuns(previous => [run, ...previous.filter(item => item.id !== run.id)].slice(0, 5));
     });
     return () => { active = false; unsubscribe?.(); };
-  }, [mode, conversationId]);
+  }, [mode, conversationId, entryId]);
   const run = runs.find(item => item.status !== 'completed' && item.status !== 'cancelled') ?? runs[0];
   if (!run) return null;
   const reason = run.stopReason && !(run.stopReason === 'interrupted' && ['paused', 'cancelled'].includes(run.status)) ? t(reasons[run.stopReason]) : '';
@@ -32,8 +32,8 @@ export function ResearchHarnessPanel({ mode, conversationId, onResumed }: { mode
       if (operation === 'resume') { await window.nodus.resumeResearchRun?.(run.id); if (owner.current === startedFor) onResumed?.(); }
       else if (operation === 'pause') await window.nodus.pauseResearchRun?.(run.id);
       else await window.nodus.cancelResearchRun?.(run.id);
-      const next = await window.nodus.listResearchRuns?.(conversationId ?? undefined);
-      if (next && owner.current === startedFor) setRuns(next.filter(item => item.mode === mode && (mode !== 'chat' || item.conversationId === conversationId)));
+      const next = await window.nodus.listResearchRuns?.(conversationId ?? undefined, entryId ?? undefined);
+      if (next && owner.current === startedFor) setRuns(next.filter(item => item.mode === mode && (mode !== 'chat' || item.conversationId === conversationId) && (!entryId || item.entryId === entryId)));
     } catch (failure) { setError(failure instanceof Error && failure.message.includes('context_changed') ? t('El contexto ha cambiado') : t('No se ha podido continuar la investigación.')); }
     finally { setBusy(null); }
   };

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { v4 as uuid } from 'uuid';
+import { deleteResearchRuns } from './researchRunsRepo';
 import type {
   DictionaryAuthorView,
   DictionaryCitationRecord,
@@ -335,6 +336,7 @@ export function deleteDictionaryEntries(ids: string[]): number {
   const clean = [...new Set(ids.filter(Boolean))]; if (!clean.length) return 0;
   const db = getDb(); const placeholders = clean.map(() => '?').join(',');
   return db.transaction(() => {
+    for (const entryId of clean) deleteResearchRuns({ entryId });
     db.prepare(`DELETE FROM dictionary_relations WHERE from_entry_id IN (${placeholders}) OR to_entry_id IN (${placeholders})`).run(...clean, ...clean);
     db.prepare(`DELETE FROM dictionary_versions WHERE entry_id IN (${placeholders})`).run(...clean);
     db.prepare(`DELETE FROM dictionary_evidence WHERE entry_id IN (${placeholders})`).run(...clean);

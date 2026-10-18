@@ -304,7 +304,7 @@ assert.match(
   "the status column renders an animated generation indicator",
 );
 assert.match(
-  academicIpc,
+  academicIpc + await readFile(path.join(root, 'electron/ai/dictionaryGenerationLane.ts'), 'utf8'),
   /new DictionaryGenerationQueue\([\s\S]*generateDictionaryEntry\(request, report\)/,
   "the background queue runs the shared Dictionary investigation and synthesis",
 );
@@ -358,8 +358,8 @@ assert.match(
   /restoreDictionaryVersion/,
   "version restoration is available",
 );
-const generatedAt = ai.indexOf("generated = await generator");
-const savedAt = ai.indexOf("return saveDictionaryVersion", generatedAt);
+const generatedAt = ai.indexOf("generated = await researchHarnessStage('dictionary.definition'");
+const savedAt = ai.indexOf("const version = saveDictionaryVersion", generatedAt);
 assert.ok(
   generatedAt >= 0 && savedAt > generatedAt,
   "provider generation completes before any version is saved, so failure preserves current content",

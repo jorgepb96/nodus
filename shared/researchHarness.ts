@@ -2,7 +2,7 @@ import type { ModelRef, ResearchContextSelection } from './types';
 import type { ResearchAction } from './researchActions';
 
 export type ResearchHarnessVersion = 'legacy' | 'v1';
-export type ResearchRunMode = 'chat' | 'deep-research' | 'immersion';
+export type ResearchRunMode = 'chat' | 'deep-research' | 'immersion' | 'dictionary';
 export type ResearchStopReason = 'sufficient' | 'diminishing_returns' | 'sources_exhausted' | 'budget' | 'technical' | 'interrupted' | 'context_changed';
 export type ResearchRunStatus = 'running' | 'paused' | 'completed' | 'cancelled' | 'failed';
 export type ResearchQuestionStatus = 'pending' | 'supported' | 'partial' | 'contradictory' | 'unresolved';
@@ -18,6 +18,7 @@ export interface ResearchQuestionAssessment extends Partial<ResearchQuestionInte
 }
 export interface ResearchRunContext {
   mode: ResearchRunMode;
+  entryId?: string;
   vaultId: string;
   scopeId: string;
   notebookId: string | null;
@@ -44,6 +45,7 @@ export interface ResearchTask extends Partial<ResearchQuestionIntent> {
 export interface ResearchRunSummary {
   id: string;
   conversationId?: string;
+  entryId?: string;
   version: 'v1';
   mode: ResearchRunMode;
   objective: string;

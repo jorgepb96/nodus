@@ -119,6 +119,7 @@ export async function withResearchHarness<T extends object>(input: {
   const requestKey = hash({ request, context: input.context });
   let record = runId ? getResearchRun(runId) : null;
   if (runId && (!record || record.context.vaultId !== input.context.vaultId || record.context.mode !== input.context.mode
+    || record.context.entryId !== input.context.entryId
     || record.conversationId !== request.conversationId)) throw new Error('research_run_not_authorized');
   if (record && record.requestKey !== requestKey) {
     if (!['completed', 'cancelled'].includes(record.summary.status)) { record.summary.status = 'paused'; record.summary.stopReason = 'context_changed'; saveResearchRun(record); }
@@ -130,8 +131,9 @@ export async function withResearchHarness<T extends object>(input: {
   // technically. Such a run may retry verification through normal continuation.
   if (record?.summary.status === 'completed' && record.result && !(record.checkpoint.documentReview as { technicalFailure?: string } | undefined)?.technicalFailure) return structuredClone(record.result) as T;
   if (runId && running.has(runId)) throw new Error('research_run_already_running');
+  if (input.context.mode === 'dictionary' && [...running.values()].some(run => run.record.context.mode === 'dictionary' && run.record.context.entryId === input.context.entryId)) throw new Error('research_run_already_running');
   record ??= { context: input.context, request, requestKey, conversationId: request.conversationId, checkpoint: {}, stages: {},
-    summary: { id: randomUUID(), conversationId: request.conversationId, version: 'v1', mode: input.context.mode, objective: input.context.objective, status: 'running', questions: [], tasks: [],
+    summary: { id: randomUUID(), conversationId: request.conversationId, entryId: input.context.entryId, version: 'v1', mode: input.context.mode, objective: input.context.objective, status: 'running', questions: [], tasks: [],
       usage: { rounds: 0, evidenceBytes: 0, decisionBytes: 0 }, updatedAt: new Date().toISOString() } };
   const harness = new ResearchHarness(record, input.signal, input.validate, input.onUpdate);
   // scopeId fingerprints the full authorized inventory; keep identities/revisions,
@@ -183,12 +185,12 @@ export async function withResearchHarness<T extends object>(input: {
       record.result = output; harness.persist();
       return output;
     } catch (error) {
-      const contextChanged = /scope_changed|not_authorized|revision_changed/.test(error instanceof Error ? error.message : '');
+      const contextChanged = /scope_changed|context_changed|not_authorized|revision_changed/.test(error instanceof Error ? error.message : '');
       try { harness.stop(harness.signal.aborted || contextChanged ? (record.summary.status === 'cancelled' ? 'cancelled' : 'paused') : 'failed', contextChanged ? 'context_changed' : harness.signal.aborted ? 'interrupted' : record.summary.stopReason === 'budget' ? 'budget' : 'technical'); }
       catch {
         // Only metadata is settled after a same-vault revocation. A switched vault
         // must never receive the old run's checkpoint.
-        if (contextChanged && getActiveVault().id === record.context.vaultId) saveResearchRun(record);
+        if (contextChanged && getActiveVault().id === record.context.vaultId && getResearchRun(record.summary.id)) saveResearchRun(record);
       }
       throw error;
     } finally { running.delete(record.summary.id); harness.close(); }

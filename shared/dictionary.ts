@@ -220,6 +220,7 @@ export interface DictionaryVersion {
   generationAttempts: number;
   generationProblems: string[];
   insufficientEvidence: boolean;
+  researchRun?: import('./researchHarness').ResearchRunSummary;
 }
 
 export interface DictionaryEntryDetail {
@@ -247,6 +248,7 @@ export interface DictionaryDuplicateMatch {
 }
 
 export interface DictionaryProgress {
+  researchRun?: import('./researchHarness').ResearchRunSummary;
   entryId: string;
   /** The action that owns this progress, so the matching control stays visibly busy. */
   mode?: DictionaryGenerationRequest["mode"];
@@ -258,6 +260,8 @@ export interface DictionaryProgress {
     | "saving"
     | "done"
     | "degraded"
+    | "paused"
+    | "cancelled"
     | "failed";
   message: string;
   error?: string;
@@ -273,9 +277,11 @@ export interface DictionaryGenerationRequest {
   language?: import('./types').PromptLanguage;
   thinkingEffort?: import('./researchReasoning').ResearchEffort;
   webSearch?: import('./types').ResearchWebSearchMode;
+  harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
+  runId?: string;
 }
 
-export type DictionaryResearchOptions = Pick<DictionaryGenerationRequest, 'model' | 'thinkingEffort' | 'webSearch'>;
+export type DictionaryResearchOptions = Pick<DictionaryGenerationRequest, 'model' | 'thinkingEffort' | 'webSearch' | 'harnessVersion' | 'runId'>;
 
 export interface DictionaryRelation {
   id: string;

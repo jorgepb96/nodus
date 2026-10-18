@@ -147,13 +147,12 @@ import type {
   DictionaryEvidenceRef,
   DictionaryEvidenceRequest,
   DictionaryGenerationRequest,
-  DictionaryProgress,
   DictionaryListRequest,
   DictionaryRelationType,
 } from '@shared/dictionary';
 import { immersionAnnotationDocumentId } from '@shared/readerAnnotations';
 import { applyDecorativeImageOption, invalidateDecorativeImageGeneration } from '../ai/decorativeImages';
-import { DictionaryGenerationQueue } from '../ai/dictionaryGenerationQueue';
+import { dictionaryGenerationJobs } from '../ai/dictionaryGenerationLane';
 import * as zotero from '../zotero/zoteroClient';
 import * as dedupe from '../db/dedupeRepo';
 import * as ideaDedupe from '../db/ideaDedupeRepo';
@@ -403,26 +402,6 @@ function announceDictionary(entryId: string | null): void {
     if (!win.isDestroyed() && !win.webContents.isDestroyed()) win.webContents.send('dictionary:changed', entryId);
   }
 }
-
-function announceDictionaryProgress(progress: DictionaryProgress): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-      win.webContents.send('dictionary:progress', localizedForUi(progress));
-      if (progress.phase === 'failed' && isAiModelRequiredError(progress.error)) {
-        win.webContents.send('ai:modelRequired');
-      }
-    }
-  }
-}
-
-const dictionaryGenerationJobs = new DictionaryGenerationQueue(
-  async (request, report) => {
-    const version = await generateDictionaryEntry(request, report);
-    announceDictionary(request.entryId);
-    return version;
-  },
-  announceDictionaryProgress,
-);
 
 function announceWritingDraftAnnotations(draftId: string | null): void {
   for (const win of BrowserWindow.getAllWindows()) {

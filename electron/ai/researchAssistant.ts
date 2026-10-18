@@ -26,7 +26,7 @@ import { researchAnswerTokens, researchPromptUpperBound } from '@shared/research
 import { documentedMaxOutput } from '@shared/providerContextWindows';
 import { researchContextLayers, researchIndexedTextsAlone } from '@shared/researchContextLayers';
 import { ResearchCorpusRun } from './researchCorpusRun';
-import { RESEARCH_CHAT_AGENT_DECISION_BYTES, RESEARCH_AGENT_DECISION_BYTES, RESEARCH_CHAT_AGENT_SETTINGS, RESEARCH_CHAT_LIGHT_AGENT_SETTINGS, researchScopeForPrompt, validateRetrievalSettings, compactResearchTraversal } from '@shared/researchCorpus';
+import { RESEARCH_CHAT_AGENT_DECISION_BYTES, RESEARCH_CHAT_AGENT_SETTINGS, RESEARCH_CHAT_LIGHT_AGENT_SETTINGS, researchScopeForPrompt, validateRetrievalSettings, compactResearchTraversal } from '@shared/researchCorpus';
 import { planResearchTurn, literalResearchTurnPlan } from './researchTurnPlanner';
 import { inspectResearchMolecules, appendStructureAudit, appendRouteReportAndDrawings, resolveNamedRoute, chemistryRunner } from './moleculeInspection';
 import { asksForRoute, countRouteSteps, FORWARD_STEPS_REQUIRED_RULE, FORWARD_STEPS_SYSTEM_RULE, forwardStepsRequired, findRouteProgram, findStepNamedSpecies, formatAuthorStructureNote, formatResolutionSourceNote, formatMissingSpeciesPrompt, formatNameCorrectionNote, formatStructureDisagreementNote, formatRouteCheckUnavailable, isRouteFixPrompt, MOLECULE_DOSSIER_SYSTEM_RULE, ROUTE_CONTINUITY_SYSTEM_RULE, requestedTargetFor, routeConversationState, routeFixPromptForHistory, routeReportsForHistory, stripDrawingRequests, uncheckedRouteNote } from '@shared/moleculeInspection';
@@ -956,7 +956,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     const run = new ResearchCorpusRun(notebookScope, { ...retrieval,
       evidenceTokens: Math.max(256, Math.min(retrieval.evidenceTokens, Math.floor(contextBudget / LOCAL_CHARS_PER_TOKEN))) }, signal);
     run.layers = turnLayers;
-    run.budget.decisionTokenLimit = run.harness ? RESEARCH_AGENT_DECISION_BYTES : RESEARCH_CHAT_AGENT_DECISION_BYTES;
+    if (!run.harness) run.budget.decisionTokenLimit = RESEARCH_CHAT_AGENT_DECISION_BYTES;
     // Use the final request's bound, including its actual answer + thinking output.
     // Keep room for source metadata, citations and provider-injected instructions.
     if (window) {

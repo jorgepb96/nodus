@@ -220,10 +220,11 @@ try {
     const payload = JSON.parse(options.user);
     if (Array.isArray(payload.paragraphs)) throw new Error('Verifier unavailable in supervisor fixture');
     decisions++;
-    assert.ok(payload.evidence.some(p => p.id === 'web:known' && p.text.includes('external finding')), 'web text informs the next decision');
+    const webEvidence = payload.evidence.find(p => p.text.includes('external finding'));
+    assert.ok(webEvidence && /^e\d+$/.test(webEvidence.id), 'web text informs the next decision through a bound short ID');
     assert.equal(payload.context.capabilities.web, true);
     const decision = decisions === 1 ? { action: 'enqueue', queries: [{ question: 'How much?', query: 'new measured evidence', priority: 3 }] }
-      : { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: ['web:known'] })) };
+      : { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: [webEvidence.id] })) };
     assert.ok(guard(decision)); return decision;
   };
   const { ResearchCorpusRun } = load('electron/ai/researchCorpusRun.ts');
@@ -243,6 +244,8 @@ try {
     const run = new ResearchCorpusRun(realScope, RETRIEVAL_PRESETS.deep, signal);
     await run.perform({ action: 'search', query: 'interrupted read' }, async () => {
       run.budget.evidenceTokenLimit = 1234;
+      run.budget.decisionTokenLimit = 12345;
+      run.budget.decisionTokens = 2345;
       run.budget.nextRound(); interruptResearchRun(interruptedId); signal.throwIfAborted();
     });
     return {};
@@ -251,6 +254,8 @@ try {
     const run = new ResearchCorpusRun(realScope, RETRIEVAL_PRESETS.deep, signal);
     assert.equal(run.budget.rounds, 1, 'an interrupted action retains the round it consumed');
     assert.equal(run.budget.evidenceTokenLimit, 1234, 'continuation cannot enlarge a narrowed allowance');
+    assert.equal(run.budget.decisionTokenLimit, 12345, 'continuation also preserves a narrowed decision allowance');
+    assert.equal(run.budget.decisionTokens, 2345, 'continuation retains consumed supervisor bytes');
     assert.equal(currentResearchHarness().agenda.next().status, 'pending');
     run.budget.rounds = run.budget.roundLimit;
     const { ResearchWebGrant } = load('electron/ai/researchWebStep.ts');
@@ -300,7 +305,7 @@ try {
       if (mode === 'repeated-invalid' || mode === 'recover' && calls === 1) throw new ai.AiError('Malformed action', false, false, 'schema_mismatch');
       const payload = JSON.parse(options.user);
       if (mode === 'recover') assert.match(payload.coordinator_note, /previous reply did not satisfy/);
-      const decision = { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: ['web:known'] })) };
+      const decision = { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: [payload.evidence.find(p => p.text.includes('external finding')).id] })) };
       const response = mode === 'duplicate-envelope' ? [decision, structuredClone(decision)] : decision;
       assert.equal(guard(response), true); return response;
     };
@@ -324,7 +329,7 @@ try {
       if (++calls === 2) assert.match(payload.coordinator_note, /action was refused/);
       const decision = calls === 1 || repeat
         ? { action: 'read', documentId: 'outside-the-grant', operation: { kind: 'pages', from: 1 } }
-        : { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: ['web:known'] })) };
+        : { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: [payload.evidence.find(p => p.text.includes('external finding')).id] })) };
       assert.equal(guard(decision), true); return decision;
     };
     const result = await withResearchHarness({ request: {}, context: { ...context, scopeId: realScope.id, capabilities: { ...context.capabilities, documents: true, web: true } }, scope: realScope, validate() {} }, async signal => {

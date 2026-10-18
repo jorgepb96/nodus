@@ -46,6 +46,7 @@ import {
   generationTrigger,
   getDictionaryEntry,
   getDictionaryEntryDetail,
+  getDictionaryVersion,
   includedEvidence,
   entriesNeedingDictionaryScan,
   listDictionaryEntries,
@@ -65,6 +66,30 @@ import { ResearchWebGrant, webDepth } from './researchWebStep';
 import { withJobThinkingEffort, withResearchValidationThinking } from './thinkingEffort';
 import { withResearchActivity } from './researchActivity';
 import type { DictionaryProgress } from '@shared/dictionary';
+import { getActiveVault } from '../vaults/vaultRegistry';
+import { currentResearchHarness, researchHarnessEnabled, researchHarnessStage, withResearchHarness } from './researchHarnessRuntime';
+import { dictionaryEditorialContext, dictionaryHarnessContext } from './researchHarnessContext';
+import { researchFingerprint } from './researchCorpusScope';
+import { planResearchTurn } from './researchTurnPlanner';
+
+export type DictionaryHarnessRequest = DictionaryGenerationRequest & { researchOperation?: 'initial' | 'scan' };
+
+async function withDictionaryResearchHarness<T extends object>(request: DictionaryHarnessRequest, body: (resolved: DictionaryHarnessRequest, report?: (progress: DictionaryProgress) => void) => Promise<T>, report?: (progress: DictionaryProgress) => void): Promise<T> {
+  const entry = getDictionaryEntry(request.entryId);
+  if (!entry) throw new Error('research_source_not_authorized');
+  const resolve = () => resolveAcademicResearchScope({ enabled: true, workIds: resolveScopeWorkIds(entry.scope).ids, authorIds: [] });
+  const scope = resolve(), context = dictionaryHarnessContext(request, entry, scope);
+  const editorial = researchFingerprint(dictionaryEditorialContext(entry));
+  let latest: DictionaryProgress = { entryId: entry.id, phase: 'retrieving', message: 'Analizando corpus' };
+  return withResearchHarness({ request, context, scope,
+    validate: () => {
+      const current = getDictionaryEntry(entry.id);
+      if (getActiveVault().id !== scope.vaultId || !current) throw new Error('research_source_not_authorized');
+      if (researchFingerprint(dictionaryEditorialContext(current)) !== editorial || resolve().id !== scope.id) throw new Error('research_run_context_changed');
+    },
+    onUpdate: researchRun => report?.({ ...latest, researchRun }),
+  }, () => body({ ...request, model: context.model }, progress => { latest = progress; report?.({ ...progress, researchRun: currentResearchHarness()?.summary() }); }));
+}
 
 function dictionaryPromptLanguage(requested?: PromptLanguage): PromptLanguage {
   if (requested) return requested;
@@ -716,19 +741,30 @@ export async function retrieveDictionaryResearchEvidence(entryId: string, mode: 
 
 /** Explicit generation shares Research chat's scope inventory, supervisor and
  * original-document readers. Background scans remain bounded local lookups. */
-export async function investigateDictionaryEvidence(request: DictionaryGenerationRequest, mode: 'initial' | 'scan' = 'initial') {
+export async function investigateDictionaryEvidence(request: DictionaryGenerationRequest, mode: 'initial' | 'scan' = 'initial'): Promise<{ traversal: ReturnType<ResearchCorpusRun['coverage']>; web: ReturnType<ResearchWebGrant['stats']> }> {
+  if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
+    return withDictionaryResearchHarness({ ...request, researchOperation: mode }, resolved => investigateDictionaryEvidence(resolved, mode));
+  }
   const entry = getDictionaryEntry(request.entryId);
   if (!entry) throw new Error("La entrada de Dictionary ya no existe.");
   const allowed = resolveScopeWorkIds(entry.scope);
   const scope = resolveAcademicResearchScope({ enabled: true, workIds: allowed.ids, authorIds: [] });
   const query = [entry.name, ...entry.aliases].filter(Boolean).join('. ');
   const retrieval = RETRIEVAL_PRESETS.balanced;
-  const run = new ResearchCorpusRun(scope, retrieval, undefined, true);
+  const harness = currentResearchHarness();
+  const signal = harness?.signal;
+  const run = new ResearchCorpusRun(scope, retrieval, signal, true);
   // A user may explicitly request web research in the editorial focus without
   // diluting the concept's semantic retrieval query with that instruction.
   run.web = new ResearchWebGrant(request.webSearch ?? 'auto', webDepth(retrieval),
-    `${query}. ${entry.focusPrompt}`, undefined, request.model, 12000);
+    `${query}. ${entry.focusPrompt}`, signal, request.model, 12000);
   await withResearchValidationThinking(request.model, async () => {
+    if (harness) {
+      const objective = harness.record.context.objective;
+      const plan = await planResearchTurn([{ role: 'user', content: `Consult the authorized library to research this Dictionary entry. Term and editorial focus: ${objective}` }], request.model, signal);
+      run.agent = { question: objective, minSources: Math.min(2, scope.documents.length), compact: ((harness.record.checkpoint.modelContext as { tokens?: number } | undefined)?.tokens ?? 32768) < 16000,
+        plan: { ...plan, goal: objective, needsSources: true, answerMode: 'documentary', queries: plan.queries.length ? plan.queries : [query] } };
+    }
     await run.investigate(query, request.model);
     await run.web!.afterLibrary({ evidence: run.evidence.size, matched: run.matchedDocuments.size,
       supervised: run.supervised, titles: scope.documents.filter(d => run.matchedDocuments.has(d.id)).map(d => d.title) });
@@ -1516,6 +1552,15 @@ export async function generateDictionaryEntry(
   request: DictionaryGenerationRequest,
   report?: (progress: DictionaryProgress) => void,
 ): Promise<DictionaryVersion> {
+  if (getActiveVault().type === 'academic' && researchHarnessEnabled(request) && !currentResearchHarness()) {
+    return withDictionaryResearchHarness(request, (resolved, publish) => generateDictionaryEntry(resolved, publish), report);
+  }
+  const harness = currentResearchHarness();
+  if (harness?.record.context.mode === 'dictionary' && harness.record.artifactId) {
+    const saved = getDictionaryVersion(harness.record.artifactId);
+    if (!saved || saved.entryId !== request.entryId) throw new Error('research_source_not_authorized');
+    return saved;
+  }
   const model = resolveModelRef(request.model ?? getSettings().dictionaryModel);
   const resolved = { ...request, model };
   return withJobThinkingEffort(request.thinkingEffort, model, () => withResearchActivity(
@@ -1594,14 +1639,14 @@ async function generateDictionaryEntryUsing(
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       generationAttempts = attempt;
       try {
-        generated = await generator(
+        generated = await researchHarnessStage('dictionary.definition', { entryId: entry.id, attempt, correction, evidence, mode: request.mode }, () => generator(
           request.entryId,
           evidence,
           request.model ?? null,
           request.mode === "update" ? entry.contentMarkdown : "",
           correction,
           request.language,
-        );
+        ));
       } catch (error) {
         const recoverable = dictionaryOutputErrorReason(error);
         if (!recoverable) throw error;
@@ -1617,13 +1662,13 @@ async function generateDictionaryEntryUsing(
         ].join("\n");
         continue;
       }
-        grounded = await groundGeneratedDescription(
+        grounded = await researchHarnessStage('dictionary.grounding', { generated, evidence }, () => groundGeneratedDescription(
         generated,
         snapshot,
           verifyCitations,
           request.model ?? null,
           promptLanguage,
-      );
+      ));
       const originalGroundingProblems = [
         ...new Set([
           ...grounded.problems,
@@ -1719,13 +1764,13 @@ async function generateDictionaryEntryUsing(
       markdown = decorateIdeaTags(grounded.markdown, evidence);
       try {
         generated.authorSummaries = (
-          await authorGenerator(
+          await researchHarnessStage('dictionary.authors', { evidence, markdown }, () => authorGenerator(
             request.entryId,
             evidence,
             markdown,
             request.model ?? null,
             request.language,
-          )
+          ))
         ).authorSummaries;
       } catch {
         // Author cards are a secondary, separately bounded request. The verified
@@ -1806,29 +1851,37 @@ async function generateDictionaryEntryUsing(
       tags: item.kind === "idea" ? item.tags : [],
     });
   }
-  return saveDictionaryVersion({
-    entryId: request.entryId,
-    contentMarkdown: markdown,
-    evidence: evidence.map((item) => ({ kind: item.kind, id: item.id })),
-    citations: [...cited.values()],
-    authorSummaries,
-    model: request.model ?? null,
-    trigger: generationTrigger(request),
-    // Regenerate is an explicit replacement action. The previous version remains
-    // immutable in history and can be restored, so making the new definition current
-    // immediately matches the button's promise without sacrificing reversibility.
-    state:
-      outcome === "degraded"
-        ? "degraded"
-        : request.mode === "update"
-          ? "proposed"
-          : "applied",
-    outcome,
-    degradationReason,
-    generationAttempts,
-    generationProblems,
-    insufficientEvidence: insufficient,
-  });
+  const harness = currentResearchHarness();
+  harness?.validate();
+  // Save the version and its run identity atomically. A pause immediately after
+  // this commit resumes the same artifact instead of creating another version.
+  return getDb().transaction(() => {
+    const version = saveDictionaryVersion({
+      entryId: request.entryId,
+      contentMarkdown: markdown,
+      evidence: evidence.map((item) => ({ kind: item.kind, id: item.id })),
+      citations: [...cited.values()],
+      authorSummaries,
+      model: request.model ?? null,
+      trigger: generationTrigger(request),
+      // Regenerate is an explicit replacement action. The previous version remains
+      // immutable in history and can be restored, so making the new definition current
+      // immediately matches the button's promise without sacrificing reversibility.
+      state:
+        outcome === "degraded"
+          ? "degraded"
+          : request.mode === "update"
+            ? "proposed"
+            : "applied",
+      outcome,
+      degradationReason,
+      generationAttempts,
+      generationProblems,
+      insufficientEvidence: insufficient,
+    });
+    if (harness) { harness.record.artifactId = version.id; harness.persist(); }
+    return version;
+  })();
 }
 
 function cosine(a: number[], b: number[]): number {

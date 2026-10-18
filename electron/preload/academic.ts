@@ -19,7 +19,7 @@ const studyAssistantStreams = chatStreamRegistry();
 let activeStudySttRequestId: string | null = null;
 
 export const academicApi: AcademicApi = {
-  listResearchRuns: conversationId => ipcRenderer.invoke('research:run:list', conversationId),
+  listResearchRuns: (conversationId, entryId) => ipcRenderer.invoke('research:run:list', conversationId, entryId),
   getResearchRun: id => ipcRenderer.invoke('research:run:get', id),
   pauseResearchRun: id => ipcRenderer.invoke('research:run:pause', id),
   cancelResearchRun: id => ipcRenderer.invoke('research:run:cancel', id),

@@ -42,9 +42,7 @@ try {
     buildCitationLabels,
     normalizeBareCitations,
     IMMERSION_LIMITS,
-    IMMERSION_TIME,
   } = mod;
-  const FIXED_MINUTES = IMMERSION_TIME.panorama + IMMERSION_TIME.contrasts + IMMERSION_TIME.frontiers + IMMERSION_TIME.exam;
 
   // ── Fake material ───────────────────────────────────────────────────────────
   const makeMaterial = (ideaCount = 24, passageCount = 8) => {

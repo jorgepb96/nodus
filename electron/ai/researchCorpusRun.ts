@@ -1,7 +1,7 @@
 import { researchActivityStep, startResearchActivity } from './researchActivity';
 import { researchIndexedTextsAlone, type ResearchCorpusLayers } from '@shared/researchContextLayers';
 import type { ResearchDocumentRead, ResearchEvidence, ResearchTraversal, ResolvedResearchScope, RetrievalSettings } from '@shared/researchCorpus';
-import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, describeResearchLimitation, validateRetrievalSettings, validateResearchDocumentRead } from '@shared/researchCorpus';
+import { RETRIEVAL_PRESETS, RESEARCH_LONGFORM_AGENT_SETTINGS, RESEARCH_AGENT_DECISION_BYTES, describeResearchLimitation, validateRetrievalSettings, validateResearchDocumentRead } from '@shared/researchCorpus';
 import { ResearchRetrievalBudget } from '@shared/researchRetrievalBudget';
 import { RETRIEVAL_CHUNK_MAX_BYTES, textWithPageStarts } from '@shared/retrievalChunks';
 import type { DeepResearchRequest, WritingWorkshopBrief, WritingWorkshopIdeaCandidate, WritingWorkshopPassageCandidate, WritingWorkshopSnapshot } from '@shared/types';
@@ -682,7 +682,7 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
   const settings = validateRetrievalSettings(request.retrieval ?? (request.notebookId ? getResearchNotebook(request.notebookId)?.settings : undefined) ?? (currentResearchHarness() ? RESEARCH_LONGFORM_AGENT_SETTINGS : RETRIEVAL_PRESETS.deep));
   const run = new ResearchCorpusRun(scope, settings, signal, true);
   if (run.harness) {
-    run.budget.decisionTokenLimit = 128_000;
+    run.budget.decisionTokenLimit = RESEARCH_AGENT_DECISION_BYTES;
     run.web = new ResearchWebGrant(request.webSearch ?? 'off', webDepth(settings), request.objective, signal, request.model,
       Math.floor(run.budget.evidenceTokenLimit / 3));
   }

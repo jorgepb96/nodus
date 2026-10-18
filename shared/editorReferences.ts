@@ -1,6 +1,7 @@
 import type { BlockNoteDocument, NativeInline } from './blockNoteDocument';
 
 export type EditorReferenceKind = 'idea' | 'author' | 'work' | 'note' | 'studyDocument' | 'studyMaterial' | 'passage';
+export interface EditorReferenceOptions { includePassages?: boolean; search?: string; onlyWorks?: boolean; limit?: number }
 export interface EditorReference { id: string; kind: EditorReferenceKind; title: string; subtitle?: string; bibliography?: import('./libraryTypes').LibraryItemMetadata; href: string; pageLabel?:string;physicalPage?:number }
 const collections = [
   ['ideas', 'idea', 'global_id', 'label', 'statement', 'idea'],

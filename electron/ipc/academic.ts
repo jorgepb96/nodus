@@ -703,11 +703,13 @@ export function registerAcademicIpc(context: IpcContext): void {
     }
     return all.length;
   });
-  h('works:meta', async (_e, nodusId: string) => {
+  h('works:meta', async (_e, nodusId: string, options?: { timeoutMs?: number }) => {
     const w = works.getWork(nodusId);
     if (!w) return null;
     const { zoteroUserId } = getSettings();
-    const meta = await zotero.getItemMeta(zoteroUserId, w.zotero_key).catch(() => null);
+    const timeoutMs = Number(options?.timeoutMs);
+    const signal = Number.isFinite(timeoutMs) ? AbortSignal.timeout(Math.max(100, Math.min(10_000, Math.trunc(timeoutMs)))) : undefined;
+    const meta = await zotero.getItemMeta(zoteroUserId, w.zotero_key, signal).catch(() => null);
     if (!meta) return null;
     return meta;
   });

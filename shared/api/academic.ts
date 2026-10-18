@@ -308,7 +308,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   /** Snapshot the DB into userData/backups before a destructive maintenance action; returns the path. */
   backupDatabase(): Promise<string>;
   /** Live bibliographic metadata for a work (journal/book, pages, publisher, …). */
-  getWorkMeta(nodusId: string): Promise<WorkMeta | null>;
+  getWorkMeta(nodusId: string, options?: { timeoutMs: number }): Promise<WorkMeta | null>;
   openInZotero(zoteroKey: string): Promise<void>;
   /**
    * Open an evidence locator at its exact page. Zotero's own reader is preferred
@@ -965,7 +965,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   globalSearch(query: string, limitPerKind?: number, kinds?: SearchResultKind[]): Promise<GlobalSearchResult[]>;
   /** Metadata-only link catalogue, scoped to the active vault and visible ideas. */
   inspectAcademicDocument(input:{documentId:string;kind:'note'|'study';expectedRevision?:number}):Promise<import('../academicDocument').AcademicIssue[]>;
-  listEditorReferences(options?:{includePassages?:boolean;search?:string}): Promise<import('../editorReferences').EditorReference[]>;
+  listEditorReferences(options?:import('../editorReferences').EditorReferenceOptions): Promise<import('../editorReferences').EditorReference[]>;
   getSearchResultDetail(kind: SearchResultKind, id: string): Promise<SearchResultDetail | null>;
   /** Search by meaning over embedded ideas, passages and works. */
   semanticSearch(query: string, options?: SemanticSearchOptions): Promise<SemanticSearchResponse>;

@@ -3,7 +3,9 @@ import { EditorInsertController, EditorSideMenu, editorInsertMenuOptions, type E
 import { Icon } from '../ui';
 import { EditorFileDownloadButton } from './EditorFileDownloadButton';
 import { EditorFilePanel } from './EditorFilePanel';
-import { uploadEditorFile } from './editorAttachments';
+import { uploadEditorFile, editorAttachmentResolver } from './editorAttachments';
+import { EditorFileDeleteButton } from './EditorFileDeleteButton';
+import { ConfirmModal } from '../ConfirmModal';
 import { academicCitationSequence, academicInlines, academicTargets, type AcademicMetadata, type AcademicCitation } from '@shared/academicDocument';
 import { formatAcademicSnapshot, singleAcademicSnapshot } from '@shared/academicCsl';
 import { createContext, useContext, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -163,7 +165,10 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     visit(initial); return result;
   }, [initial]);
   const initialContent = useMemo(() => forEditor(initial), [initial]);
-  const editor = useCreateBlockNote({ schema, extensions: [AiReviewExtension({ getReview: () => aiReviewRef.current })], initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
+  const attachments = useMemo(() => editorAttachmentResolver(), [documentId]);
+  useEffect(() => { attachments.activate(); return () => attachments.dispose(); }, [attachments]);
+  const [pendingDelete, setPendingDelete] = useState<{id:string;type:string;url:string}|null>(null);
+  const editor = useCreateBlockNote({ schema, resolveFileUrl: attachments.resolve, extensions: [AiReviewExtension({ getReview: () => aiReviewRef.current })], initialContent: initialContent.length ? initialContent : undefined, uploadFile: uploadEditorFile, dictionary: getActiveLang() === 'es' ? es : en, links: { isValidLink: editorLinkAllowed } }, [documentId]);
   const root = useRef<HTMLDivElement>(null);
   const dictation = useRef<{ id: string; from: number; to: number; text: string; prefix: string; suffix: string; time: number; detached?: boolean } | null>(null);
   useEffect(() => {
@@ -251,7 +256,7 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
     const moreAnchor = useRef<HTMLButtonElement>(null);
     const Components = useComponentsContext()!;
     const advanced = new Set(['strikeStyleButton', 'textAlignLeftButton', 'textAlignCenterButton', 'textAlignRightButton', 'nestBlockButton', 'unnestBlockButton']);
-    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item);
+    const items = getFormattingToolbarItems().map(item => item.key === 'fileDownloadButton' ? <EditorFileDownloadButton key={item.key} /> : item.key === 'fileDeleteButton' ? <EditorFileDeleteButton key={item.key} onRequestDelete={id => { const block = editor.getBlock(id); if (block && 'url' in block.props) setPendingDelete({id,type:block.type,url:String(block.props.url)}); }} /> : item);
     return <FormattingToolbar>
       {items.filter(item => !advanced.has(String(item.key)))}
       {onAcademicAction&&<button type="button" className="bn-button" title={t('Citar fuente')} aria-label={t('Citar fuente')} onMouseDown={event=>event.preventDefault()} onClick={()=>academicActionRef.current?.('cite')}><Icon name="quote" size={18} /></button>}
@@ -499,6 +504,12 @@ export const BlockNoteCanvas = forwardRef<BlockNoteCanvasHandle, {
       }} />}
       {editable && <EditorInsertController ref={insertController} items={insertItems} />}
     </BlockNoteView></AcademicRender.Provider>
+    {pendingDelete && <ConfirmModal title={t(pendingDelete.type === 'image' ? 'Eliminar imagen' : 'Eliminar')} message={t('El recurso se eliminará del documento. Puedes deshacer esta acción.')} confirmLabel={t('Eliminar')} danger autoFocusConfirm={false} zIndex={240} onCancel={() => { setPendingDelete(null); editor.focus(); }} onConfirm={() => {
+      const target = editor.getBlock(pendingDelete.id);
+      setPendingDelete(null);
+      if (!editor.isEditable || !target || target.type !== pendingDelete.type || !('url' in target.props) || target.props.url !== pendingDelete.url) return;
+      editor.focus(); editor.removeBlocks([target.id]);
+    }} />}
   </div>;
 });
 BlockNoteCanvas.displayName = 'BlockNoteCanvas';

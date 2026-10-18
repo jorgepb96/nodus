@@ -592,9 +592,9 @@ function creatorName(c: any): string {
 }
 
 /** Full bibliographic metadata for one item — used by the graph detail panel. */
-export async function getItemMeta(userId: string, itemKey: string): Promise<WorkMeta | null> {
+export async function getItemMeta(userId: string, itemKey: string, signal?: AbortSignal): Promise<WorkMeta | null> {
   const parsed = parseCanonicalKey(itemKey, { ...PERSONAL_LIBRARY, id: userId });
-  const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/items/${encodeURIComponent(parsed.rawKey)}`);
+  const res = await zfetch(`${ZOTERO_API_BASE}/${libraryPrefix(parsed.library)}/items/${encodeURIComponent(parsed.rawKey)}`, signal);
   if (!res.ok) return null;
   const d = ((await res.json()) as any).data ?? {};
   const authors = (d.creators ?? [])

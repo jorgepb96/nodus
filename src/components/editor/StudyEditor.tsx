@@ -1,6 +1,6 @@
 import {assertAcademicSupplement} from '@shared/academicProjection';
 import {openEvidenceAtPage} from '../../evidenceJump';
-import { AcademicTools, AcademicPanel, desktopAcademicSources, type AcademicToolsHandle } from './AcademicTools';
+import { AcademicTools, AcademicPanel, desktopAcademicSources, desktopAcademicSourceDetails, type AcademicToolsHandle } from './AcademicTools';
 import { normalizeAcademicMetadata, type AcademicMetadata } from '@shared/academicDocument';
 import { readEditorialDraft, retainEditorialDraft, clearEditorialDraft, downloadEditorialDraft } from '../workspace/editorialDrafts';
 import { flushEditorialDraft } from '../workspace/flushEditorialDraft';
@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom';
 import { documentReferences, parseEditorReference } from '@shared/editorReferences';
 import { EditorialReferences } from './EditorReferences';
 import { BlockNoteCanvas, type BlockNoteCanvasHandle } from './BlockNoteCanvas';
+import { storeEditorImage } from './editorAttachments';
 import { markdownToBlockNote, nativeBlockMarkdown, type BlockNoteDocument } from '@shared/blockNoteDocument';
 import TurndownService from 'turndown';
 import { diffWordsWithSpace } from 'diff';
@@ -593,22 +594,32 @@ export function StudyEditor({
       setImageChoices(choices);
     }).catch(cause => { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); });
   };
+  const imageAsset = useRef<{dataUrl:string;url:string}|null>(null);
   const runImage = async () => {
     if (!imagePrompt.trim() || imageBusy || !imageSource.current || !imageChoices.some(choice => choice.id === `${imageModel.provider}:${imageModel.model}` && !choice.disabled)) return;
     const generation = ++aiGeneration.current, requestId = crypto.randomUUID(); imageRequest.current = requestId;
-    setImageBusy(true); setImageResult(null); setImproveStreamError('');
-    try { const result = await window.nodus.generateEditorImage({ requestId, prompt: imagePrompt, model: imageModel }); if (generation === aiGeneration.current && imageSource.current?.id === activeIdRef.current) setImageResult(result); }
+    setImageBusy(true); setImageResult(null); imageAsset.current = null; setImproveStreamError('');
+    try {
+      const result = await window.nodus.generateEditorImage({ requestId, prompt: imagePrompt, model: imageModel });
+      if (generation !== aiGeneration.current || imageSource.current?.id !== activeIdRef.current) return;
+      const url = await storeEditorImage(result.dataUrl);
+      if (generation === aiGeneration.current && imageSource.current?.id === activeIdRef.current) {
+        imageAsset.current = { dataUrl: result.dataUrl, url };
+        setImageResult(result);
+      }
+    }
     catch (cause) { if (generation === aiGeneration.current) setImproveStreamError(aiErrorMessage(cause)); }
     finally { if (generation === aiGeneration.current) { setImageBusy(false); imageRequest.current = null; } }
   };
   const insertImage = () => {
     const source = imageSource.current; if (!source || !imageResult || source.id !== activeIdRef.current) return;
+    const imageUrl = imageAsset.current?.dataUrl === imageResult.dataUrl ? imageAsset.current.url : imageResult.dataUrl;
     let rawCursor: number | undefined;
     if (imageNeedsCursor.current) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); return; }
     if (raw && source.raw) {
       if (source.raw.base !== draft) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
-      const at = source.raw.at, snippet = `\n\n![${imagePrompt.replace(/[\]\n[]/g, ' ')}](${imageResult.dataUrl})\n\n`; setDraft(`${draft.slice(0, at)}${snippet}${draft.slice(at)}`); rawCursor = at + snippet.length;
-    } else if (!source.anchor || !canvasRef.current?.insertGeneratedImage(source.anchor, imageResult.dataUrl, imagePrompt)) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
+      const at = source.raw.at, snippet = `\n\n![${imagePrompt.replace(/[\]\n[]/g, ' ')}](${imageUrl})\n\n`; setDraft(`${draft.slice(0, at)}${snippet}${draft.slice(at)}`); rawCursor = at + snippet.length;
+    } else if (!source.anchor || !canvasRef.current?.insertGeneratedImage(source.anchor, imageUrl, imagePrompt)) { setImproveStreamError(t('Sitúa el cursor donde deseas insertar la imagen.')); imageNeedsCursor.current = true; return; }
     setSaveState('dirty'); closeAiPanel();
     if (rawCursor !== undefined) focusRawAt(source.id, rawCursor);
   };
@@ -1022,7 +1033,7 @@ export function StudyEditor({
 
   return (
     <div style={styleVars} className={`study-editor-shell editorial-editor flex h-full min-h-0 flex-col bg-stone-100 text-stone-900 dark:bg-neutral-950 dark:text-neutral-100 ${focusMode ? 'editorial-focus' : ''} study-theme-${style.theme}`}>
-{nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
+{nativeDocument&&<AcademicTools ref={academicTools} id={active.id} title={title} document={nativeDocument} metadata={academicMetadata} onChange={setAcademicMetadata} canvas={canvasRef} unresolvedComments={data?.annotations.filter(a=>!a.resolvedAt).length??0} adapter={{inspect:()=>window.nodus.inspectAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id)}),searchSources:desktopAcademicSources,resolveSource:desktopAcademicSourceDetails,rootKind:port.referenceKind==='note'?'note':'study',loadChapter:async(id,kind)=>{const data=kind==='note'?await window.nodus.getWorkspaceNoteEditorData(id):await studyDocumentPort.loadEditorData(id);return data.nativeDocument??markdownToBlockNote(data.contentMarkdown??'');},searchEvidence:async query=>(await window.nodus.listEditorReferences({includePassages:true,search:query})).filter(ref=>['idea','work','passage'].includes(ref.kind)&&ref.title.toLowerCase().includes(query.toLowerCase())).slice(0,50).map(ref=>({href:ref.href,title:ref.title,pageLabel:ref.pageLabel,physicalPage:ref.physicalPage})),listChapters:async()=>{const [notes,study]=await Promise.all([window.nodus.getNotesTree(),window.nodus.getStudyWorkspace()]);return [...notes.notes.filter(note=>!note.trashedAt).map(note=>({documentId:note.id,title:note.title,kind:'note' as const})),...study.documents.map(doc=>({documentId:doc.id,title:doc.title,kind:'study' as const}))];},flush:()=>flushLatest(),export:(format,acceptWarnings)=>window.nodus.exportAcademicDocument({documentId:active.id,kind:port.referenceKind==='note'?'note':'study',expectedRevision:revisionRef.current.get(active.id),format,acceptWarnings})}} />}
       {showTabs ? (
         <WorkspaceTabStrip
           className="study-editor-tabs"

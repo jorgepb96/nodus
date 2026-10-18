@@ -121,6 +121,35 @@ try {
   // Replay an additive migration from a partially upgraded branch without losing
   // native documents, version history, revisions or existing comment anchors.
   const db = database.getDb();
+  // Existing failed drafts and new media bypass text limits by storing binary bytes once.
+  const mediaBytes=Buffer.alloc(1_100_000,42),mediaUrl='data:image/png;base64,'+mediaBytes.toString('base64');
+  const mediaDocument=Array.from({length:3},(_,index)=>({id:'large-image-'+index,type:'image',props:{url:mediaUrl,caption:'Figura '+index},children:[]}));
+  assert.ok(JSON.stringify(mediaDocument).length>4_000_000);
+  const mediaNote=notes.createNote({title:'Imágenes grandes',content:''});
+  workspace.updateWorkspaceNote(mediaNote.id,{title:mediaNote.title,contentMarkdown:'',nativeDocument:mediaDocument});
+  const compact=workspace.getWorkspaceNoteEditorData(mediaNote.id);
+  assert.ok(JSON.stringify(compact.nativeDocument).length<2000,'native JSON keeps references instead of base64');
+  assert.ok(!compact.contentMarkdown.includes('base64,'));
+  const mediaHash=compact.nativeDocument[0].props.url.slice('nodus-blob://'.length);
+  assert.deepEqual(Buffer.from(pages.getPageAsset(mediaHash)),mediaBytes,'complete bytes are preserved without recompression');
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM db_blobs WHERE hash=?').get(mediaHash).count,1,'repeated image content is stored once');
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM page_block_blobs WHERE blob_hash=?').get(mediaHash).count,3,'page attachments retain their blob references');
+  assert.deepEqual(mediaDocument[0].props.url,mediaUrl,'saving never mutates the caller draft');
+  const mediaStudy=org.createStudyDocument({title:'Imágenes en estudio',contentMarkdown:''});
+  study.updateStudyDoc(mediaStudy.id,{title:mediaStudy.title,contentMarkdown:'',nativeDocument:mediaDocument});
+  assert.deepEqual(study.getStudyDocEditorData(mediaStudy.id).nativeDocument,compact.nativeDocument);
+  const rawMedia=notes.createNote({title:'Imagen Markdown',content:''});
+  workspace.updateWorkspaceNote(rawMedia.id,{title:rawMedia.title,contentMarkdown:'![Figura]('+mediaUrl+')'});
+  assert.match(workspace.getWorkspaceNoteEditorData(rawMedia.id).contentMarkdown,/nodus-blob:\/\/[a-f0-9]{64}/);
+  // Ordinary text still has the same limits; a failed save rolls back newly stored blobs.
+  const rejectedUrl='data:image/png;base64,'+Buffer.from('uncommitted-image').toString('base64');
+  const blobsBefore=db.prepare('SELECT COUNT(*) AS count FROM db_blobs').get().count;
+  assert.throws(()=>workspace.updateWorkspaceNote(mediaNote.id,{title:mediaNote.title,contentMarkdown:'',nativeDocument:[
+    {id:'temporary-image',type:'image',props:{url:rejectedUrl}},
+    {id:'too-large-text',type:'paragraph',props:{},content:[{type:'text',text:'x'.repeat(1_100_000),styles:{}}]},
+  ]}),/1 MB/);
+  assert.equal(db.prepare('SELECT COUNT(*) AS count FROM db_blobs').get().count,blobsBefore);
+  assert.deepEqual(workspace.getWorkspaceNoteEditorData(mediaNote.id).nativeDocument,compact.nativeDocument);
   const { runMigrations, SCHEMA_VERSION } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
   const persisted = () => ['study_docs', 'study_doc_versions', 'note_versions', 'note_annotations'].map(table => db.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all());
   const beforeReplay = persisted();

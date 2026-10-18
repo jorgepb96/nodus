@@ -38,6 +38,7 @@ import { getDb } from './database';
 import { getNote } from './notesRepo';
 import { getPageDocumentForNote, reconcileLegacyNoteCache, synchronizeNotePage, savePageDocument } from './pagesRepo';
 import { blockNoteToPageBlocks, markdownToBlockNote, nativeDocumentText, parseNativeDocument, validateBlockNoteDocument } from '@shared/blockNoteDocument';
+import { externalizeEditorAttachments } from './editorAttachmentsRepo';
 import { markdownToPageBlocks } from '@shared/pages';
 import type { PageDocument } from '@shared/pages';
 import { resolveBlockAnnotations } from '@shared/blockNoteAnnotations';
@@ -218,6 +219,7 @@ export function updateWorkspaceNote(noteId: string, input: StudyDocUpdateInput):
     const current = noteRow(noteId);
     const pageDocument = getPageDocumentForNote(noteId) ?? reconcileLegacyNoteCache(noteId);
     if (input.expectedRevision !== undefined && input.expectedRevision !== pageDocument.revision) throw new Error('REVISION_CONFLICT: La nota ha cambiado en otra sesión. El borrador se conserva.');
+    input = externalizeEditorAttachments(input);
     if(input.nativeDocument===undefined)assertAcademicSupplement(pageDocument.markdown,input.contentMarkdown);
     const native = input.nativeDocument === undefined
       ? (pageDocument.nativeDocument ? markdownToBlockNote(input.contentMarkdown, pageDocument.nativeDocument) : null)

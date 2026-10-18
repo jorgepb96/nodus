@@ -118,7 +118,7 @@ export const academicApi: AcademicApi = {
   listDuplicateIdeas: () => ipcRenderer.invoke('ideas:listDuplicates'),
   mergeIdeas: (canonicalId, duplicateIds) => ipcRenderer.invoke('ideas:merge', canonicalId, duplicateIds),
   backupDatabase: () => ipcRenderer.invoke('ideas:backup'),
-  getWorkMeta: (nodusId) => ipcRenderer.invoke('works:meta', nodusId),
+  getWorkMeta: (nodusId, options) => ipcRenderer.invoke('works:meta', nodusId, options),
   openInZotero: (zoteroKey) => ipcRenderer.invoke('works:openInZotero', zoteroKey).then(() => undefined),
   openEvidenceAtPage: (nodusId, location) => ipcRenderer.invoke('works:openAtPage', nodusId, location),
   getLibraryReaderDocument: (nodusId) => ipcRenderer.invoke('libraryReader:get', nodusId),

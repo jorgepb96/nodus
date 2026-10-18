@@ -1,11 +1,19 @@
-import { editorReferenceCatalog } from '@shared/editorReferences';
+import { editorReferenceCatalog, type EditorReferenceOptions } from '@shared/editorReferences';
 import { getDb } from './database';
 import { getSettings } from './settingsRepo';
 import { manualIdeaVisible } from './manualIdeaVisibility';
 
-export function listEditorReferences(options?:{includePassages?:boolean;search?:string}) {
+export function listEditorReferences(options?:EditorReferenceOptions) {
   const db = getDb();
   const rows = (sql: string) => db.prepare(sql).all() as Array<Record<string, unknown>>;
+  if (options?.onlyWorks) {
+    const terms = String(options.search ?? '').trim().slice(0, 200).split(/\s+/).filter(Boolean);
+    const clauses = terms.map(() => "(title LIKE ? ESCAPE '\\' OR authors_json LIKE ? ESCAPE '\\' OR CAST(year AS TEXT) LIKE ? ESCAPE '\\' OR doi LIKE ? ESCAPE '\\')");
+    const params = terms.flatMap(term => Array(4).fill('%' + term.replace(/[\\%_]/g, '\\$&') + '%'));
+    const limit = Math.max(1, Math.min(100, Math.trunc(Number(options.limit) || 50)));
+    const works = db.prepare(`SELECT nodus_id, title, year, item_type, authors_json, creators_json, doi FROM works WHERE archived=0${clauses.length ? ' AND ' + clauses.join(' AND ') : ''} ORDER BY title COLLATE NOCASE, nodus_id LIMIT ?`).all(...params, limit) as Array<Record<string, unknown>>;
+    return editorReferenceCatalog({ works });
+  }
   // No text documents, blobs or embeddings cross IPC. Use the same visibility
   // predicate as Ideas; the active database provides the vault boundary.
   return editorReferenceCatalog({

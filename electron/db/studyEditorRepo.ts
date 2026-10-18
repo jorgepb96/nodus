@@ -1,5 +1,6 @@
 import {academicMarkdownProjection,assertAcademicSupplement} from '@shared/academicProjection';
 import { normalizeAcademicMetadata } from '@shared/academicDocument';
+import { externalizeEditorAttachments } from './editorAttachmentsRepo';
 import crypto from 'node:crypto';
 import { markdownToBlockNote, nativeDocumentText, parseNativeDocument, validateBlockNoteDocument } from '@shared/blockNoteDocument';
 import { resolveBlockAnnotations } from '@shared/blockNoteAnnotations';
@@ -160,6 +161,7 @@ export function updateStudyDoc(documentId: string, input: StudyDocUpdateInput): 
   return db.transaction(() => {
     const current = docRow(documentId);
     if (input.expectedRevision !== undefined && input.expectedRevision !== Number(current.editor_revision)) throw new Error('REVISION_CONFLICT: El documento ha cambiado en otra sesión. El borrador se conserva.');
+    input = externalizeEditorAttachments(input);
     if(input.nativeDocument===undefined)assertAcademicSupplement(String(current.content_markdown??''),input.contentMarkdown);
     const previousNative = parseNativeDocument(current.native_document_json);
     const native = input.nativeDocument === undefined ? (previousNative ? markdownToBlockNote(input.contentMarkdown, previousNative) : null) : input.nativeDocument === null ? null : validateBlockNoteDocument(input.nativeDocument);

@@ -86,6 +86,25 @@ try {
   }
   {
     let calls = 0;
+    const output = await run([part('field')], (_options, input) => {
+      calls++; if (calls === 1) throw Object.assign(new Error('Truncated proof'), { code: 'output_truncated' });
+      return input.parts[0].paragraphs ? proof(input) : semantic(input);
+    });
+    assert.equal(output.status, 'verified'); assert.equal(calls, 3, 'One format recovery still requires independent semantic review');
+  }
+  {
+    let revisions = 0;
+    const output = await run(Array.from({ length: 17 }, (_, i) => part(`field-${i}`, 'Unsupported wording.')), (options, input) => {
+      if (options.system.startsWith('Revise')) {
+        revisions++; assert.ok(input.parts.length <= 8, 'Whole-field revisions also respect batch bounds');
+        return { parts: input.parts.map(item => ({ id: item.id, text: 'A supported result.' })) };
+      }
+      return input.parts[0].paragraphs ? proof(input) : semantic(input, item => item.text.includes('Unsupported'));
+    });
+    assert.equal(revisions, 3); assert.equal(output.status, 'verified');
+  }
+  {
+    let calls = 0;
     const output = await run([part('stable-id')], (options, input) => {
       calls++;
       if (input.parts[0].paragraphs) return proof(input);

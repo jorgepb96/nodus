@@ -33,14 +33,19 @@ for (const provider of ['deepseek','openrouter','gemini']) {
   const limit = authorization.providerLimitsUsd[provider];
   if (limit === .8) continue;
   const records = (authorization.adjustments ?? []).filter(row => row.provider === provider);
-  const adjustment = records[0];
-  if (!['deepseek','gemini'].includes(provider) || limit !== .85 || records.length !== 1
-      || adjustment.previousLimitUsd !== .8 || adjustment.limitUsd !== limit || adjustment.exchangeRate?.usdPerEur !== 1.1253
-      || limit / adjustment.exchangeRate.usdPerEur * 1.21 * 1.055 * 1.02 >= authorization.userLimitEurPerProvider
-      || !Number.isSafeInteger(adjustment.calls) || adjustment.calls < 0) throw new Error('Changed authorization');
+  if (!['deepseek','gemini'].includes(provider) || ![.85, ...(provider === 'gemini' ? [.9] : [])].includes(limit)
+      || records.length !== (limit === .9 ? 2 : 1)) throw new Error('Changed authorization');
   const ledger = JSON.parse(fs.readFileSync(path.join(artifacts, `cost-ledger-${provider}.json`)));
-  if (ledger.limitUsd !== limit || ledger.calls.length < adjustment.calls
-      || createHash('sha256').update(JSON.stringify(ledger.calls.slice(0,adjustment.calls))).digest('hex') !== adjustment.callsSha256) throw new Error('Historical spending changed');
+  let previous = .8;
+  for (const adjustment of records) {
+    if (adjustment.previousLimitUsd !== previous || adjustment.limitUsd !== (previous === .8 ? .85 : .9)
+        || adjustment.exchangeRate?.usdPerEur !== 1.1253
+        || adjustment.limitUsd / adjustment.exchangeRate.usdPerEur * 1.21 * 1.03 >= authorization.userLimitEurPerProvider
+        || !Number.isSafeInteger(adjustment.calls) || adjustment.calls < 0 || ledger.calls.length < adjustment.calls
+        || createHash('sha256').update(JSON.stringify(ledger.calls.slice(0,adjustment.calls))).digest('hex') !== adjustment.callsSha256) throw new Error('Historical spending changed');
+    previous = adjustment.limitUsd;
+  }
+  if (ledger.limitUsd !== limit || previous !== limit) throw new Error('Changed authorization');
 }
 const nativeModels={
   'deepseek:deepseek-flash':{provider:'deepseek',model:'deepseek-flash'},

@@ -1,10 +1,8 @@
-import {researchVisualFields} from '../../shared/documentVisualContent';
-import {canonicalJson} from '../../shared/canonicalJson';
 import {getDocumentVisuals as readCanonicalDocumentVisuals} from '../ai/documentVisuals';
 import {getWritingWorkshopDraft as readCanonicalVisualDraft} from '../db/writingDraftsRepo';
 import {runLiveDocumentVisuals,type LiveVisualMethod} from './liveDocumentVisuals';
 import {mobileStudyKnowledgeSource} from './mobileStudyKnowledge';
-import {getMobileDeepResearchVisualSource,readMobileDeepResearchVisualAsset} from './researchVisualSource';
+import {getMobileDeepResearchVisualSource,readMobileDeepResearchVisualAsset,matchesResearchVisualReadDraft} from './researchVisualSource';
 import {saveMobileDeepResearchVisuals} from './researchVisualEdits';
 import {MOBILE_DATABASE_ACTION_METHODS,executeMobileDatabaseAction} from './databaseActionsOperation';
 import {mobileDeepResearchSource,saveMobileDeepResearchReport} from './mobileDeepResearch';
@@ -64,7 +62,7 @@ export async function executeMobileOperation(vaultId: string, domains: readonly 
     return withOwningVault(vaultId,()=>withVaultDatabase(vaultId,()=>withMobileOperation(()=>{
       const target=args[0] as {kind:'deep-research'|'immersion';id:string};
       if(args.length<1||args.length>2||!target||!['deep-research','immersion'].includes(target.kind)||typeof target.id!=='string')throw new Error('invalid_visual_read');
-      if(args.length===2){const expected=args[1] as {expectedDraft?:WritingWorkshopDraft},actual=target.kind==='deep-research'?readCanonicalVisualDraft(target.id)?.draft:null;if(!actual||!expected?.expectedDraft||typeof expected.expectedDraft.draftMarkdown!=='string'||typeof expected.expectedDraft.abstract!=='string'||actual.title!==expected.expectedDraft.title||canonicalJson(researchVisualFields(actual))!==canonicalJson(researchVisualFields(expected.expectedDraft)))throw new Error('research_visual_source_revision_conflict');}
+      if(args.length===2){const expected=args[1] as {expectedDraft?:WritingWorkshopDraft},actual=target.kind==='deep-research'?readCanonicalVisualDraft(target.id)?.draft:null;if(!actual||!expected?.expectedDraft||typeof expected.expectedDraft.draftMarkdown!=='string'||typeof expected.expectedDraft.abstract!=='string'||!matchesResearchVisualReadDraft(target.id,expected.expectedDraft,actual))throw new Error('research_visual_source_revision_conflict');}
       return readCanonicalDocumentVisuals(target);
     },domains)));
   }

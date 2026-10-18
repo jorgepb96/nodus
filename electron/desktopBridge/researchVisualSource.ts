@@ -13,6 +13,17 @@ import {researchVisualFields} from '../../shared/documentVisualContent';
 const uuid=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 interface CapturedAsset {id:string;figureId:string;owner:string;mimeType:string;byteCount:number;sha256:string}
 function hasAttachment(nodes:unknown,id:string):boolean{return Array.isArray(nodes)&&nodes.some(node=>node&&typeof node==='object'&&((node as {attachmentId?:unknown}).attachmentId===id||hasAttachment((node as {children?:unknown}).children,id)));}
+/** Corpus readers carry the persisted draft; Desktop readers carry its current
+ * citation-label projection. Both must match an exact current source, never an
+ * arbitrary relabelled caller payload. Keep manifest/asset revision checks separate. */
+export function matchesResearchVisualReadDraft(reportId:string, expected:WritingWorkshopDraft, current:WritingWorkshopDraft):boolean {
+ const same=(draft:WritingWorkshopDraft)=>draft.title===expected.title&&canonicalJson(researchVisualFields(draft))===canonicalJson(researchVisualFields(expected));
+ if(same(current))return true;
+ const row=getDb().prepare('SELECT draft_json FROM writing_saved_drafts WHERE id = ?').get(reportId) as {draft_json:string}|undefined;
+ if(!row)return false;
+ const persisted=JSON.parse(row.draft_json) as WritingWorkshopDraft;
+ return same(persisted);
+}
 /** An explicit source for figure editing, never a prose generation or publication. */
 export function getMobileDeepResearchVisualSource(raw:unknown){
  const input=raw as {reportId?:string};if(!input||typeof input.reportId!=='string'||!uuid.test(input.reportId))throw new Error('invalid_research_visual_source');
@@ -43,7 +54,7 @@ export function readMobileDeepResearchVisualAsset(raw:unknown){
  if(source?.action==='context'){
   if(typeof source.reportId!=='string'||!uuid.test(source.reportId)||!source.expectedDraft||typeof source.expectedDraft.draftMarkdown!=='string'||typeof source.expectedDraft.abstract!=='string')throw new Error('invalid_research_visual_context');
   const saved=getWritingWorkshopDraft(source.reportId);
-  if(!saved||saved.draft.brief.kind!=='deep_research'||saved.draft.title!==source.expectedDraft.title||canonicalJson(researchVisualFields(saved.draft))!==canonicalJson(researchVisualFields(source.expectedDraft)))throw new Error('research_visual_source_revision_conflict');
+  if(!saved||saved.draft.brief.kind!=='deep_research'||!matchesResearchVisualReadDraft(source.reportId,source.expectedDraft,saved.draft))throw new Error('research_visual_source_revision_conflict');
   const target={kind:'deep-research' as const,id:source.reportId};return {version:1,vaultId:getActiveVault().id,target,manifest:getDocumentVisuals(target)};
  }
  const input=raw as {reportId:string;captureHash?:string;expected?:{contentHash:string;revision:string|null;manifestHash?:string};expectedManifest?:unknown;source?:string;assetId:string;owner:string;offset:number;count:number};

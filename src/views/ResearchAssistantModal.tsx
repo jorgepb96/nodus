@@ -37,7 +37,7 @@ import { ResearchCoverage } from '../components/ResearchCoverage';
 import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ModelPicker } from '../components/ModelPicker';
 import { liveResearchTurnKey, liveResearchTurns, type LiveResearchTurn } from '../researchLiveTurns';
-import { researchSourcePresentation } from '@shared/researchSourceNotices';
+import { researchChatPresentation } from '@shared/researchSourceNotices';
 import { ResearchSourceNotice } from '../components/ResearchSourceNotice';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
@@ -141,7 +141,7 @@ const AdapterMessageBody = memo(function AdapterMessageBody({ render, message, s
 // Keep the callback stable so Markdown retains its DOM and the guide's anchor.
 const ResearchMessageBody = memo(function ResearchMessageBody({content,streaming,conversationId,messageId,onCitation,language,notices}:{notices?:string[];content:string;streaming:boolean;conversationId?:string;messageId:string;language:string;onCitation:(citation:MarkdownCitation,origin:{conversationId?:string;messageId:string})=>void}){
   const cite=useCallback((citation:MarkdownCitation)=>onCitation(citation,{conversationId,messageId}),[onCitation,conversationId,messageId]);
-  const display = researchSourcePresentation(content, notices);
+  const display = streaming ? { content, notices: notices ?? [] } : researchChatPresentation({ content, stats: { sourceNotices: notices } });
   return <><ChatMarkdown key={language} content={display.content} streaming={streaming} onCitation={cite}/><ResearchSourceNotice notices={display.notices} onCitation={cite}/></>;
 });
 
@@ -409,7 +409,7 @@ export function ResearchAssistantModal({
   }, []);
 
   const copyMessageMarkdown = useCallback(async (message: UiMessage) => {
-    const text = (!adapter && message.role === 'assistant' ? researchSourcePresentation(message.content).content : message.content).trim();
+    const text = (!adapter && message.role === 'assistant' ? researchChatPresentation(message).content : message.content).trim();
     if (!text) return;
     await navigator.clipboard.writeText(text);
     setCopiedMessageId(message.id);
@@ -1287,7 +1287,7 @@ export function ResearchAssistantModal({
                               const fallbackTitle = messages.find((candidate) => candidate.role === 'user' && candidate.content.trim())?.content.trim().slice(0, 80);
                               const conversationTitle = summary?.title || contextTitle || fallbackTitle || t('Research chat');
                               setNoteTarget({
-                                content: isAcademic ? localizeResearchCitationLabels(researchSourcePresentation(message.content).content,t('Fuente')) : adapter ? message.content : researchSourcePresentation(message.content).content,
+                                content: isAcademic ? localizeResearchCitationLabels(researchChatPresentation(message).content,t('Fuente')) : adapter ? message.content : researchChatPresentation(message).content,
                                 title: deriveNoteTitle(message.content, conversationTitle),
                                 source: researchNoteSource({
                                   surface: attachmentSurface,

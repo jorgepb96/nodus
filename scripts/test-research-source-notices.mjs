@@ -9,7 +9,7 @@ const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'nodus-source-notices-'));
 try {
   const bundle = path.join(temp, 'notices.mjs');
   await build({ entryPoints: ['shared/researchSourceNotices.ts'], outfile: bundle, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
-  const { researchSourcePresentation: present, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION: instruction } = await import(pathToFileURL(bundle).href);
+  const { researchSourcePresentation: present, researchChatPresentation: chat, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION: instruction } = await import(pathToFileURL(bundle).href);
   const body = 'La propaganda turística construyó una imagen del país [Fuente](nodus://passage/real). Su recepción exige distinguir intención y efecto.';
   const note = '**Nota sobre la evidencia disponible:** los pasajes recuperados permiten reconstruir el origen, la difusión y la persistencia del tópico, pero no ofrecen un análisis teórico comparado del mismo con otros estereotipos europeos equivalentes. Para profundizar en esa dimensión comparada, convendría indexar más fuentes o reformular la pregunta.';
   test('old legacy footer is optional, verbatim and absent from copied/saved prose', () => {
@@ -17,6 +17,10 @@ try {
     const persisted = JSON.parse(JSON.stringify({ content: body, stats: { sourceNotices: [note] } }));
     assert.deepEqual(present(persisted.content, persisted.stats.sourceNotices), { content: body, notices: [note] });
     assert.deepEqual(present(`${note}\n\n${body}`), { content: body, notices: [note] });
+  });
+  test('supplied-text translations/edits preserve their actual content and explicit sidecar', () => {
+    assert.deepEqual(chat({ content: note, stats: { sourceNotices: [] } }), { content: note, notices: [] });
+    assert.deepEqual(chat({ content: `${body}\n\n${note}` }), { content: body, notices: [note] });
   });
   test('unlabelled operational coverage aside moves without creating a note', () => {
     const aside = 'Los pasajes recuperados no ofrecen datos sobre la recepción de esta campaña. Convendría indexar más fuentes.';

@@ -1,3 +1,4 @@
+import { researchSourcePresentation } from '@shared/researchSourceNotices';
 import { getDocumentVisuals } from '../ai/documentVisuals';
 import { documentFigureInsertions, readyDocumentFigures, figureHtml } from '@shared/documentFigureExport';
 import type { DocumentVisualManifest } from '@shared/documentSkills';
@@ -183,7 +184,7 @@ function citationHtml(citation: ImmersionCitation, labels: ImmersionReportLabels
 
 function stationHtml(session: ImmersionSession, index: number, labels: ImmersionReportLabels, visuals?: DocumentVisualManifest | null): { html: string; headings: ReturnType<typeof anchoredMarkdown>['headings'] } {
   const station = session.plan.stations[index];
-  const synthesis = anchoredMarkdown(station.synthesis, `station-${index + 1}`, documentFigureInsertions(station.synthesis, `station-${station.id}-synthesis`, visuals));
+  const synthesis = anchoredMarkdown(researchSourcePresentation(station.synthesis).content, `station-${index + 1}`, documentFigureInsertions(station.synthesis, `station-${station.id}-synthesis`, visuals));
   const readings = station.citations.length
     ? `<h3>${escapeHtml(labels.guidedReading)}</h3>${station.citations.map((citation) => citationHtml(citation, labels)).join('')}`
     : '';
@@ -197,7 +198,7 @@ function stationHtml(session: ImmersionSession, index: number, labels: Immersion
     : '';
   return {
     html: `<div class="question-box"><small>${escapeHtml(labels.guidingQuestion)}</small><p>${escapeHtml(station.question)}</p></div>
-      ${station.context ? `<div class="prose">${anchoredMarkdown(station.context, `context-${index}`, documentFigureInsertions(station.context, `station-${station.id}-context`, visuals)).html}</div>` : ''}
+      ${station.context ? `<div class="prose">${anchoredMarkdown(researchSourcePresentation(station.context).content, `context-${index}`, documentFigureInsertions(station.context, `station-${station.id}-context`, visuals)).html}</div>` : ''}
       <div class="prose">${synthesis.html}</div>
       ${readings}${positions}${takeaways}`,
     headings: synthesis.headings,
@@ -238,7 +239,7 @@ export function buildImmersionPdfInput(session: ImmersionSession, imageOverride?
   try { visuals = getDocumentVisuals({ kind: 'immersion', id: session.id }); } catch { /* Unsaved export fixtures have no local manifest. */ }
   const labels = LABELS[session.language];
   const image = imageOverride ?? reportImage(session, labels);
-  const overview = anchoredMarkdown(session.plan.overview, 'overview', documentFigureInsertions(session.plan.overview, 'overview', visuals));
+  const overview = anchoredMarkdown(researchSourcePresentation(session.plan.overview).content, 'overview', documentFigureInsertions(session.plan.overview, 'overview', visuals));
   const sections: ProfessionalReportSection[] = [
     {
       id: 'overview',

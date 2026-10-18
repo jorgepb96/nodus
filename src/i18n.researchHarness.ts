@@ -1,5 +1,6 @@
 export const RESEARCH_HARNESS_TRANSLATIONS = {
   "en": {
+    "Sobre las fuentes": "About the sources",
     "Sin más avances útiles": "No further useful progress",
     "Investigación incompleta": "Incomplete research",
     "El contexto ha cambiado": "The context has changed",
@@ -9,6 +10,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Steps completed"
   },
   "fr": {
+    "Sobre las fuentes": "À propos des sources",
     "Sin más avances útiles": "Aucun progrès utile supplémentaire",
     "Investigación incompleta": "Recherche incomplète",
     "El contexto ha cambiado": "Le contexte a changé",
@@ -18,6 +20,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Étapes effectuées"
   },
   "de": {
+    "Sobre las fuentes": "Zu den Quellen",
     "Sin más avances útiles": "Kein weiterer sinnvoller Fortschritt",
     "Investigación incompleta": "Unvollständige Recherche",
     "El contexto ha cambiado": "Der Kontext hat sich geändert",
@@ -27,6 +30,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Ausgeführte Schritte"
   },
   "pt": {
+    "Sobre las fuentes": "Sobre as fontes",
     "Sin más avances útiles": "Sem mais avanços úteis",
     "Investigación incompleta": "Investigação incompleta",
     "El contexto ha cambiado": "O contexto mudou",
@@ -36,6 +40,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Passos realizados"
   },
   "pt-BR": {
+    "Sobre las fuentes": "Sobre as fontes",
     "Sin más avances útiles": "Sem mais avanços úteis",
     "Investigación incompleta": "Pesquisa incompleta",
     "El contexto ha cambiado": "O contexto mudou",
@@ -45,6 +50,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Etapas realizadas"
   },
   "it": {
+    "Sobre las fuentes": "Informazioni sulle fonti",
     "Sin más avances útiles": "Nessun ulteriore progresso utile",
     "Investigación incompleta": "Ricerca incompleta",
     "El contexto ha cambiado": "Il contesto è cambiato",
@@ -54,6 +60,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Passaggi eseguiti"
   },
   "tr": {
+    "Sobre las fuentes": "Kaynaklar hakkında",
     "Sin más avances útiles": "Başka yararlı ilerleme yok",
     "Investigación incompleta": "Araştırma tamamlanmadı",
     "El contexto ha cambiado": "Bağlam değişti",
@@ -63,6 +70,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "Gerçekleştirilen adımlar"
   },
   "zh-CN": {
+    "Sobre las fuentes": "关于来源",
     "Sin más avances útiles": "没有更多有效进展",
     "Investigación incompleta": "研究未完成",
     "El contexto ha cambiado": "上下文已更改",
@@ -72,6 +80,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "已执行步骤"
   },
   "zh-TW": {
+    "Sobre las fuentes": "關於來源",
     "Sin más avances útiles": "沒有更多有效進展",
     "Investigación incompleta": "研究未完成",
     "El contexto ha cambiado": "上下文已變更",
@@ -81,6 +90,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "已執行步驟"
   },
   "ja": {
+    "Sobre las fuentes": "出典について",
     "Sin más avances útiles": "これ以上の有用な進展はありません",
     "Investigación incompleta": "調査未完了",
     "El contexto ha cambiado": "コンテキストが変更されました",
@@ -90,6 +100,7 @@ export const RESEARCH_HARNESS_TRANSLATIONS = {
     "Pasos realizados": "実行したステップ"
   },
   "ko": {
+    "Sobre las fuentes": "출처 정보",
     "Sin más avances útiles": "더 이상 유용한 진전 없음",
     "Investigación incompleta": "연구 미완료",
     "El contexto ha cambiado": "컨텍스트가 변경되었습니다",

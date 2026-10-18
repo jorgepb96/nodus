@@ -372,8 +372,10 @@ export async function answerResearchChat(request: ResearchChatRequest): Promise<
 }
 
 function presentResearchResponse(response: ResearchChatResponse): ResearchChatResponse {
-  const display = researchSourcePresentation(response.answer, response.stats.sourceNotices);
-  return { ...response, answer: display.content, stats: { ...response.stats, ...(display.notices.length ? { sourceNotices: display.notices } : {}) } };
+  const stats = response.stats;
+  const documentary = Boolean(stats.researchTraversal || stats.passages || stats.documents || stats.works || stats.sections.length || stats.webSources?.length);
+  const display = documentary ? researchSourcePresentation(response.answer, stats.sourceNotices) : { content: response.answer, notices: stats.sourceNotices ?? [] };
+  return { ...response, answer: display.content, stats: { ...response.stats, sourceNotices: display.notices } };
 }
 
 async function answerResearchChatRaw(request: ResearchChatRequest): Promise<ResearchChatResponse> {

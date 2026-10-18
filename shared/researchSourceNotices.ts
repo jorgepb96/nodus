@@ -57,3 +57,12 @@ export function researchSourcePresentation(text: string, existing: readonly stri
 /** New answers should not acquire a ritual footnote. Qualifications affecting a
  * historical/scientific assertion still belong with that assertion. */
 export const RESEARCH_SOURCE_PRESENTATION_INSTRUCTION = 'Write directly about the research question. Keep qualifications that affect the argument next to the assertion they qualify. Do not append routine evidence-availability disclaimers, describe retrieved passages, menus or indexing, or recommend adding sources unless the user asks. If a material source-coverage caveat is necessary, put it in a separate paragraph; the application displays it as an optional source note. Never invent such a note.';
+
+/** An explicit sidecar (including []) marks a newly presented response. Supplied-
+ * text edits/translations deliberately retain their body rather than extracting
+ * apparent source notes from the text the user asked us to transform. */
+export function researchChatPresentation(message: { content: string; stats?: { sourceNotices?: string[] } | null }): ResearchSourcePresentation {
+  return message.stats?.sourceNotices !== undefined
+    ? { content: message.content, notices: message.stats.sourceNotices }
+    : researchSourcePresentation(message.content);
+}

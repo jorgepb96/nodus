@@ -208,6 +208,30 @@ try {
     assert.equal(transport.restore('[Unknown](nodus://passage/_nr-99)'), '[Unknown](nodus://passage/_nr-99)', 'Unknown aliases never resolve to guessed sources');
     assert.equal(transport.sources[0].text, sources[0].text, 'The source excerpt is never rewritten by citation transport');
   }
+
+  {
+    const original = { ...model };
+    Object.assign(model, { provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash-1017' });
+    try {
+      const output = await run([part('closed-source')], (options, input) => {
+        if (input.parts[0].paragraphs) {
+          const idSchema = options.responseSchema.schema.properties.parts.properties['closed-source'].properties.claims.properties.p0.properties.premises.items.properties.evidence.items.properties.id;
+          assert.deepEqual(idSchema.enum, input.parts[0].sourceIds, 'Supported native decoders constrain each field to its own source aliases');
+        }
+        const value = input.parts[0].paragraphs ? proof(input) : semantic(input);
+        return { parts: Object.fromEntries(value.parts.map(({ id, claims, ...field }) => [id, { ...field, ...(claims ? { claims: Object.fromEntries(claims.map(({ index, ...claim }) => ['p' + index, claim])) } : {}) }])) };
+      });
+      assert.equal(output.status, 'verified');
+    } finally { Object.assign(model, original); }
+  }
+  {
+    let proofCalls = 0;
+    await run([part('large-overview', Array(16).fill('A supported result.').join(' ')), part('short-term')], (_options, input) => {
+      if (input.parts[0].paragraphs) { proofCalls++; assert.equal(input.parts.length, 1, 'A long single paragraph consumes its actual sentence-proof budget'); }
+      return input.parts[0].paragraphs ? proof(input) : semantic(input);
+    });
+    assert.equal(proofCalls, 2);
+  }
   console.log('Document review: batched proofs, independent semantic veto, complete revisions, exact-source comments, literal evidence, stable IDs and technical-stop retention passed.');
   db.close();
 } finally { fs.rmSync(scratch, { recursive: true, force: true }); }

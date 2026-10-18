@@ -42,10 +42,10 @@ export function researchSourcePresentation(text: string, existing: readonly stri
       // silently remove the scope that makes its factual assertion true.
       if ((operational.exec(block)?.index ?? Infinity) < 100 && coverage.test(block) && !/\]\(nodus:\/\//u.test(block)) { remember(block); return ''; }
       const asides = researchAnswerProofUnits(block).filter(unit =>
-        /^(?:Los? (?:pasajes|fragmentos|textos)|Las? fuentes|Varios de (?:estos|los) (?:extractos|pasajes|fragmentos)|The (?:retrieved|indexed) (?:passages|excerpts|sources))\b/iu.test(unit.text)
+        /^(?:L[oa]s? (?:pasajes?|fragmentos?|textos?|citas?|extractos?)|Las? fuentes|Varios de (?:estos|los) (?:extractos|pasajes|fragmentos)|The (?:retrieved|indexed) (?:passages|excerpts|sources))\b/iu.test(unit.text)
         && !/\]\(nodus:\/\//u.test(unit.text)
         && (operational.test(unit.text) && coverage.test(unit.text)
-          || /\b(?:proceden|provienen|procede|proviene|come from|originate)\b/iu.test(unit.text) && /\b(?:indexad[oa]s?|revisiones anteriores|OCR|indexed|previous revision)\b/iu.test(unit.text)));
+          || /\b(?:proceden|provienen|procede|proviene|se copia|se transcribe|come from|originate)\b/iu.test(unit.text) && /\b(?:indexad[oa]s?|revisiones anteriores|OCR|indexed|previous revision)\b/iu.test(unit.text)));
       let clean = block;
       for (const unit of [...asides].reverse()) { remember(unit.text); clean = clean.slice(0, unit.start) + clean.slice(unit.end); }
       return clean.trim();

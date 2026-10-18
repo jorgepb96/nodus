@@ -43,6 +43,8 @@ try {
   test('a provenance aside inside a paragraph separates without deleting factual scope', () => {
     const provenance = 'Los pasajes proceden de una revisión indexada anterior de cada obra, no de la versión actual.';
     assert.deepEqual(present(`${body} ${provenance}`), { content: body, notices: [provenance] });
+    const indexed = 'La cita se copia de la revisión indexada disponible.';
+    assert.deepEqual(present(`${body} ${indexed}`), { content: body, notices: [indexed] });
     const scoped = 'La postmodernidad aparece en 2015 [Fuente](nodus://passage/a), aspecto que no aparece en los pasajes disponibles de 2011.';
     assert.deepEqual(present(scoped), { content: scoped, notices: [] });
   });

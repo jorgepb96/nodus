@@ -1,7 +1,7 @@
 import type { ModelRef } from '@shared/types';
 import { researchWriterCitationTransport, type ResearchAuditSource } from '@shared/researchClaimAudit';
 import { researchDocumentBatches, RESEARCH_SOURCE_CHUNK_RULE, RESEARCH_SOURCE_QUALIFICATION_RULE, type ResearchDocumentPart, type ResearchDocumentPartReview, type ResearchDocumentReview } from '@shared/researchDocumentReview';
-import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
+import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerProofUnits, researchAnswerVerdictsWithFallback, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
 import { completeJson, type CallOpts } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchReviewEvidence, RESEARCH_SOURCE_REVIEW } from './researchHarnessVerification';
@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v19';
+const POLICY = 'document-review-v20';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -59,10 +59,13 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   const compatibleStage = <T>(kind: string, input: unknown, generate: () => Promise<T>, compatible: (value: unknown) => value is T) =>
     researchHarnessStage(`${POLICY}.${kind}`, input, async () => {
       // v18 has the same source-bound verdict transport and factual guards.
-      // Reuse only exact-input positive proofs/vetoes (or unchecked revisions),
+      // Reuse only exact-input positive proofs/vetoes,
       // then run the current deterministic normalizer before publication.
-      const cached = harness.cachedStage(`document-review-v18.${kind}`, input);
-      return cached.found && compatible(cached.value) ? cached.value : generate();
+      for (const policy of ['document-review-v19', 'document-review-v18']) {
+        const cached = harness.cachedStage(`${policy}.${kind}`, input);
+        if (cached.found && compatible(cached.value)) return cached.value;
+      }
+      return generate();
     });
   const completed = new Map<string, ResearchDocumentPartReview>();
   const diagnose = new Map<string, ResearchAnswerReview>();
@@ -82,43 +85,57 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
           paragraphs: researchAnswerProofUnits(part.text).map(({ text }, index) => ({ index, text })),
           sourceIds: selected.get(part.id)!.map(source => aliases.get(source.id)!) })), sources: transport.sources };
         type Reply = { parts: Array<ResearchAnswerVerdicts & { id: string }> };
-        const valid = (value: unknown): value is Reply => {
-          const rows = value && typeof value === 'object' && 'parts' in value ? (value as Reply).parts : undefined;
-          return Array.isArray(rows) && rows.length === batch.length && new Set(rows.map(row => row.id)).size === rows.length
-            && rows.every(row => { const part = input.parts.find(part => part.id === row.id);
-              // Routing and shape are structural; an out-of-field proof ID is
-              // rejected by the exact selected-source normalizer below, without
-              // aborting review of unrelated lesson fields.
-              return !!part && validResearchAnswerCoverage(row, part.paragraphs.length, undefined, 0, true); });
+        const proveInput = async (proofInput: typeof input, recovery = false): Promise<Reply> => {
+          const valid = (value: unknown): value is Reply => {
+            const rows = value && typeof value === 'object' && 'parts' in value ? (value as Reply).parts : undefined;
+            return Array.isArray(rows) && rows.length === proofInput.parts.length && new Set(rows.map(row => row.id)).size === rows.length
+              && rows.every(row => { const part = proofInput.parts.find(part => part.id === row.id);
+                // Routing and shape are structural; an out-of-field proof ID is
+                // rejected by the exact selected-source normalizer below, without
+                // aborting review of unrelated lesson fields.
+                return !!part && validResearchAnswerCoverage(row, part.paragraphs.length, undefined, part.paragraphs[0]?.index ?? 0, true); });
+          };
+          let rejected: unknown;
+          const guard = (value: unknown): value is Reply => { rejected = value; return valid(value); };
+          const prove = (recovery: boolean) => compatibleStage(`proof${recovery ? '.recovery' : ''}`, proofInput, () => documentJson('research_document_proof', RESEARCH_DOCUMENT_PROOF_SCHEMA, proofInput.parts, {
+            system: PROOF_SCHEMA + '\nEach numbered proof unit is one sentence-sized span of its complete field. Check EVERY clause; neighboring spans are context, not permission to omit support. Assess the listed spans in their complete field context. Markdown topic headings use nonfactual/editorial_only with no factual premises; a substantive assertion in a heading still needs source proof. Respect a local batch remit and leave whole-field coverage to the separate semantic veto.', user: JSON.stringify(proofInput), ...options,
+            ...(recovery && target ? { maxTokens: withinModelOutput(Math.max(options.maxTokens, 16000), target.provider, target.model) } : {}),
+            temperature: 0, corpusContext: true, noRetry: true, signal,
+          }, guard, [...new Set(transport.sources.flatMap(source => source.quotes.map(quote => quote.key)))]), (value): value is Reply => valid(value) && value.parts.every(part => part.coherent && part.relevant && part.complete && part.claims.every(claim => (claim as { supported?: boolean }).supported === true)));
+          let raw: Reply;
+          try { raw = await prove(recovery); }
+          catch (error) {
+            const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
+            // One bounded format recovery; a forged field/source binding is never
+            // repaired into an accepted assertion. All semantic checks still apply.
+            const rows = rejected && typeof rejected === 'object' && 'parts' in rejected ? (rejected as Reply).parts : undefined;
+            const safeBindings = Array.isArray(rows) && rows.length === proofInput.parts.length && new Set(rows.map(row => row.id)).size === rows.length
+              && rows.every(row => { const part = proofInput.parts.find(part => part.id === row.id);
+                return !!part && Array.isArray(row.claims) && row.claims.every(claim => {
+                  if (!claim || typeof claim !== 'object') return false;
+                  const premises = (claim as { premises?: unknown }).premises;
+                  return Array.isArray(premises) && premises.every(premise => {
+                    if (!premise || typeof premise !== 'object') return false;
+                    const evidence = (premise as { evidence?: unknown }).evidence;
+                    return Array.isArray(evidence) && evidence.every(proof => proof && typeof proof === 'object' && typeof proof.id === 'string' && part.sourceIds.includes(proof.id));
+                  });
+                }); });
+            if (!['output_truncated', 'invalid_json'].includes(String(code)) && !(code === 'schema_mismatch' && safeBindings)) throw error;
+            harness.validate(); raw = await prove(true);
+          }
+          return raw;
         };
-        let rejected: unknown;
-        const guard = (value: unknown): value is Reply => { rejected = value; return valid(value); };
-        const prove = (recovery: boolean) => compatibleStage(`proof${recovery ? '.recovery' : ''}`, input, () => documentJson('research_document_proof', RESEARCH_DOCUMENT_PROOF_SCHEMA, input.parts, {
-          system: PROOF_SCHEMA + '\nEach numbered proof unit is one sentence-sized span of its complete field. Check EVERY clause; neighboring spans are context, not permission to omit support. Judge field coherence and completeness over all spans together.', user: JSON.stringify(input), ...options,
-          ...(recovery && target ? { maxTokens: withinModelOutput(Math.max(options.maxTokens, 16000), target.provider, target.model) } : {}),
-          temperature: 0, corpusContext: true, noRetry: true, signal,
-        }, guard, [...new Set(transport.sources.flatMap(source => source.quotes.map(quote => quote.key)))]), (value): value is Reply => valid(value) && value.parts.every(part => part.coherent && part.relevant && part.complete && part.claims.every(claim => (claim as { supported?: boolean }).supported === true)));
         let raw: Reply;
-        try { raw = await prove(false); }
-        catch (error) {
-          const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined;
-          // One bounded format recovery; a forged field/source binding is never
-          // repaired into an accepted assertion. All semantic checks still apply.
-          const rows = rejected && typeof rejected === 'object' && 'parts' in rejected ? (rejected as Reply).parts : undefined;
-          const safeBindings = Array.isArray(rows) && rows.length === batch.length && new Set(rows.map(row => row.id)).size === rows.length
-            && rows.every(row => { const part = input.parts.find(part => part.id === row.id);
-              return !!part && Array.isArray(row.claims) && row.claims.every(claim => {
-                if (!claim || typeof claim !== 'object') return false;
-                const premises = (claim as { premises?: unknown }).premises;
-                return Array.isArray(premises) && premises.every(premise => {
-                  if (!premise || typeof premise !== 'object') return false;
-                  const evidence = (premise as { evidence?: unknown }).evidence;
-                  return Array.isArray(evidence) && evidence.every(proof => proof && typeof proof === 'object' && typeof proof.id === 'string' && part.sourceIds.includes(proof.id));
-                });
-              }); });
-          if (!['output_truncated', 'invalid_json'].includes(String(code)) && !(code === 'schema_mismatch' && safeBindings)) throw error;
-          harness.validate(); raw = await prove(true);
-        }
+        const long = input.parts.length === 1 ? input.parts[0] : undefined;
+        if (long && long.paragraphs.length > 12) {
+          const check = async (paragraphs: typeof long.paragraphs) => {
+            const fragment = { ...long, context: JSON.stringify({ fieldContext: long.context, answerContext: long.paragraphs }), paragraphs,
+              remit: long.remit + ' Check only the listed stable sentence indices. Earlier answerContext spans may be dependencies only if their own proofs pass backend validation. Context is unverified prose, never evidence. Judge completeness locally to the listed spans; the complete field receives a separate semantic review.' };
+            return (await proveInput({ ...input, parts: [fragment] })).parts[0];
+          };
+          const verdict = await researchAnswerVerdictsWithFallback(long.paragraphs.map(unit => unit.text), check, signal);
+          raw = { parts: [{ ...verdict, id: long.id }] };
+        } else raw = await proveInput(input);
         const candidates: ResearchDocumentPart[] = [];
         for (const part of batch) {
           const verdict = transport.restore(raw.parts.find(row => row.id === part.id)!);

@@ -47,6 +47,33 @@ try {
     assert.ok(output.parts.every(item => item.text.includes('nodus://passage/p1')), 'The backend binds real links without buying another proof');
   }
   {
+    let proofs = 0, semantics = 0;
+    const seen = [];
+    const output = await run([part('long-field', Array.from({ length: 17 }, (_, i) => `A supported result number ${i}.`).join(' '))], (_options, input) => {
+      if (!input.parts[0].paragraphs) { semantics++; assert.ok(input.parts[0].text.includes('number 16'), 'The semantic veto receives the complete field'); return semantic(input); }
+      proofs++; const field = input.parts[0];
+      assert.ok(field.paragraphs.length <= 4, 'A long field is proved in bounded sentence batches');
+      assert.equal(JSON.parse(field.context).answerContext.length, 17, 'Unverified whole-field context remains available');
+      seen.push(...field.paragraphs.map(p => p.index));
+      return proof(input);
+    });
+    assert.equal(output.status, 'verified'); assert.equal(proofs, 5); assert.equal(semantics, 1);
+    assert.deepEqual(seen, Array.from({ length: 17 }, (_, i) => i), 'Stable indices cover every span exactly once');
+  }
+  {
+    let revisions = 0;
+    const output = await run([part('long-rejected', Array.from({ length: 17 }, (_, i) => `A supported result number ${i}.`).join(' '))], (options, input) => {
+      if (options.system.startsWith('Revise')) { revisions++; return { parts: [{ id: 'long-rejected', text: 'A supported result.' }] }; }
+      if (!input.parts[0].paragraphs) { assert.equal(revisions, 1, 'A bad proof in a later batch cannot approve the original field'); return semantic(input); }
+      const result = proof(input);
+      const bad = result.parts[0].claims.find(claim => claim.index === 12);
+      if (bad && !revisions) bad.premises[0].fromParagraphs = [12];
+      return result;
+    });
+    assert.equal(output.status, 'verified'); assert.equal(revisions, 1);
+    assert.ok(!output.parts[0].text.includes('number'), 'The complete replacement receives fresh proof after a rejected cross-batch dependency');
+  }
+  {
     let firstProof = true;
     const output = await run([part('compound', 'A supported result. A different, unsupported causal claim.')], (options, input) => {
       if (options.system.startsWith('Revise')) return { parts: [{ id: 'compound', text: 'The source documents a supported result.' }] };
@@ -230,7 +257,7 @@ try {
       if (input.parts[0].paragraphs) { proofCalls++; assert.equal(input.parts.length, 1, 'A long single paragraph consumes its actual sentence-proof budget'); }
       return input.parts[0].paragraphs ? proof(input) : semantic(input);
     });
-    assert.equal(proofCalls, 2);
+    assert.equal(proofCalls, 5, 'Four bounded long-field batches plus one independent short-field proof');
   }
 
   {

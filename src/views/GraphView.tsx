@@ -124,7 +124,6 @@ export function GraphView({
                       onClick={() => setModal(modal === action.id ? "" : action.id)}
                     >
                       <Icon name={action.icon} size={16} />
-                      <span className="graph-action-tooltip" role="tooltip">{label}</span>
                     </button>
                   );
                 })}

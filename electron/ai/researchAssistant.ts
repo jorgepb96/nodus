@@ -429,8 +429,14 @@ export async function streamResearchChat(
   onActivity?: (activity: ResearchActivity) => void,
   onRun?: (run: ResearchRunSummary) => void,
 ): Promise<ResearchChatResponse> {
-  const result = presentResearchResponse(await streamResearchChatRaw(request, onDelta, signal, onConcilium, onActivity, onRun));
-  onDelta(result.answer, 'replace');
+  let displayed = '';
+  const delta: typeof onDelta = (text, kind) => {
+    if (kind === 'replace') displayed = text;
+    else if (kind !== 'reasoning') displayed += text;
+    onDelta(text, kind);
+  };
+  const result = presentResearchResponse(await streamResearchChatRaw(request, delta, signal, onConcilium, onActivity, onRun));
+  if (displayed !== result.answer) onDelta(result.answer, 'replace');
   return result;
 }
 

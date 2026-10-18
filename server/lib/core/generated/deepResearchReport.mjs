@@ -181,6 +181,86 @@ When the learner demonstrates understanding, summarize the key idea in a few sen
   ...GENERAL_CHAT_SKILLS
 ];
 var BUILTIN_SKILL_PACKAGES = Object.fromEntries(DEFAULT_CHAT_SKILLS.map((skill) => [skillSlug(skill.name), skill.id]));
+function splitChatVisuals(content, claimed = /* @__PURE__ */ new Set(), legacy = /* @__PURE__ */ new Set()) {
+  const trimmed = content.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const value = JSON.parse(trimmed);
+      if (value && Object.keys(value).every((key) => ["title", "alt", "prompt", "aspectRatio"].includes(key)) && ["title", "alt", "prompt"].every((key) => typeof value[key] === "string")) {
+        return [{ kind: "image-request", content: trimmed, complete: true }];
+      }
+    } catch {
+    }
+  }
+  const parts = [];
+  const pattern = /(^[ \t]*(`{3,}|~{3,})([^\n]*)\n)|(<svg\b)/gim;
+  let cursor = 0;
+  let match;
+  while (match = pattern.exec(content)) {
+    const start = match.index;
+    let end, body, kind, complete, claimedFence;
+    if (match[2]) {
+      const fence = match[2];
+      const language = match[3].trim().toLowerCase();
+      const tail = content.slice(pattern.lastIndex);
+      const closing = new RegExp(`^[ \\t]*${fence[0]}{${fence.length},}[ \\t]*(?:\\n|$)`, "m").exec(tail);
+      end = closing ? pattern.lastIndex + closing.index + closing[0].length : content.length;
+      body = tail.slice(0, closing?.index ?? tail.length).trim();
+      complete = !!closing;
+      if (/^(svg|xml|html)?$/.test(language)) body = body.replace(/^<\?xml[\s\S]*?\?>\s*/i, "");
+      kind = language === "nodus-image-error" ? "image-error" : language === "nodus-image" ? "image-request" : language === "nodus-capability" ? "capability-request" : language === "nodus-capability-result" ? "capability-result" : language === "nodus-artifact" ? "capability-artifact" : language === "nodus-view" ? "capability-view" : language === "nodus-route-fix" ? "route-fix" : legacy.has(language) ? (claimedFence = language, "capability-legacy") : claimed.has(language) ? (claimedFence = language, "capability-pending") : /^(svg|xml|html)?$/.test(language) && /^<svg\b/i.test(body) ? "svg" : "markdown";
+      if (kind === "markdown") {
+        pattern.lastIndex = end;
+        continue;
+      }
+    } else {
+      const closing = /<\/svg\s*>/i.exec(content.slice(pattern.lastIndex));
+      end = closing ? pattern.lastIndex + closing.index + closing[0].length : content.length;
+      body = content.slice(start, end);
+      complete = !!closing;
+      kind = "svg";
+    }
+    if (start > cursor) parts.push({ kind: "markdown", content: content.slice(cursor, start), complete: true });
+    parts.push({ kind, content: body, complete: complete && (kind !== "svg" || /<\/svg\s*>$/i.test(body)), ...claimedFence ? { fence: claimedFence } : {} });
+    cursor = end;
+    pattern.lastIndex = end;
+  }
+  if (cursor < content.length) parts.push({ kind: "markdown", content: content.slice(cursor), complete: true });
+  return parts;
+}
+function serializeChatVisualPart(part) {
+  if (part.kind === "markdown") return part.content;
+  if (part.fence) return `
+
+\`\`\`${part.fence}
+${part.content}
+${part.complete ? "```" : ""}
+
+`;
+  const language = part.kind === "image-request" ? "nodus-image" : part.kind === "image-error" ? "nodus-image-error" : part.kind === "capability-request" ? "nodus-capability" : part.kind === "capability-result" ? "nodus-capability-result" : part.kind === "capability-artifact" ? "nodus-artifact" : part.kind === "capability-view" ? "nodus-view" : part.kind === "route-fix" ? "nodus-route-fix" : part.kind;
+  return `
+
+\`\`\`${language}
+${part.content}
+${part.complete ? "```" : ""}
+
+`;
+}
+function transformChatProse(content, transform) {
+  const visuals = [];
+  let prefix = "\uE000NODUS_VISUAL_";
+  while (content.includes(prefix)) prefix += "_";
+  const prose = splitChatVisuals(content).map((part) => {
+    if (part.kind === "markdown") return part.content;
+    const index = visuals.push(serializeChatVisualPart(part)) - 1;
+    return `${prefix}${index}\uE001`;
+  }).join("");
+  let result = transform(prose);
+  visuals.forEach((visual, index) => {
+    result = result.replaceAll(`${prefix}${index}\uE001`, visual);
+  });
+  return result;
+}
 
 // shared/pipelineLogMessages.ts
 var PIPELINE_LOG_SUBJECTS = {
@@ -403,7 +483,160 @@ function documentFigureInsertions(markdown, field, manifest) {
   return result;
 }
 
+// shared/researchClaimAudit.ts
+var CITATION = /\[[^\]]*\]\(nodus:\/\/[^)]+\)/gu;
+var PARENTHESIZED_CITATIONS = new RegExp(`[ \\t]*\\(\\s*(?:${CITATION.source})(?:\\s*[,;]?\\s*(?:${CITATION.source}))*\\s*\\)`, "gu");
+var HAS_CONTENT_MARKER = new RegExp("\\p{N}|nodus:\\/\\/", "u");
+
+// shared/researchChatGrounding.ts
+var RESEARCH_CHAT_PRECISION_RULES = [
+  "Answer the actual question first. Match the length to its complexity: for a simple factual question use one short paragraph, normally under 120 words; for a comparison or explanation normally stay under 400 words unless the user requests depth. Do not add a catalogue of sources, language inventories or unrelated background. Mention an extraction limitation once and only when it materially affects the requested conclusion; avoid repeating citations in a final caveat paragraph.",
+  "When the question names several roles, stages, organisms or criteria, address each requested element explicitly. Condensing must not silently drop one of those facets; if the evidence cannot establish one, identify that precise limit.",
+  "For documentary claims, every factual clause and table cell must be supported by the supplied excerpts. A working citation is not proof that its source entails the attached claim. Preserve exact source titles, attribution, dates, values, units, negations and corrections.",
+  "Preserve the subject, action and object of each statement, including ellipsis and temporal contrasts. Do not turn a contrast between what opened in a given year into a claim that one building opened another. Put separately supported facts in separate short sentences; put a derived interpretation in its own explicitly labelled sentence with its premises.",
+  "Preserve technical terminology and operations faithfully across languages. Prefer the original source term to an approximate translated synonym; add a translation only when it preserves the exact operation or property. A correct original term in parentheses does not excuse a wrong translated term. Do not introduce a translation/version relationship between records unless their provenance explicitly establishes it.",
+  "When an excerpt is visibly fragmentary or a table/column extraction breaks its sentences, do not fill missing qualifiers or relationships from memory. Prefer a coherent authorized passage; otherwise state the precise evidence limit.",
+  "Separate what a source states from your calculations, general explanations and hypotheses. Label a calculation or inference explicitly and give its supported premises. Write arithmetic as an explicit equation and check the result. Do not turn a plausible interpretation into a documented cause, mechanism, distribution, policy or procedure.",
+  "When asked to compare interpretation limits, contrast the directly stated measurements and qualifications as your own labelled reasoning with those literal premises. A source need not use the word limit or state the joint comparison verbatim. Do not refuse supported reasoning merely because that joint sentence is absent. This does not authorize inventing measurements, causes, a distribution shape or absence from complete sources.",
+  "Mark a table row containing a derived value as a calculation or inference in that row itself; a separate paragraph does not qualify the row. Prefer literal values in the table and an explicitly labelled calculation below it.",
+  "Keep distinct quantities and policies distinct unless the evidence explicitly connects them. A stated confidence level does not establish that an interval was calculated. Summary statistics alone do not establish a distribution or explain their difference.",
+  "An omitted detail means only that the supplied excerpts do not establish it; it does not prove absence from a document or corpus. Do not infer independent corroboration or a shared study design from repeated or translated wording.",
+  'Keep absence claims within the exact lookup predicates: no matches for author AND title AND year does not prove no records for that author OR year separately. A truncated example inventory cannot establish the years of every record. Never turn a passage silence into "the author does not address this" without limiting the claim to that passage.',
+  "Use only comparisons that bear on the requested question. Do not add a literary-genre foil to an answer about social gender. Political approval or moral evaluation is not evidence of experiential inauthenticity. A fragment without its grammatical subject cannot establish who makes its claim; prefer another coherent excerpt instead of assigning the claim to the catalogue author.",
+  "For a catalogue identity question, answer only the requested metadata fields and name document kinds in the answer language rather than dumping internal enum values. A cover page may establish additional facts but is not a catalogue record; do not call its university, supervisors or month catalogue fields. Metadata catalogue lookups do not depend on passage indexing: do not add unrelated semantic-index or extraction caveats to a catalogue result. Respect exclusions such as no alternative bibliography, even when other real publications were found.",
+  "Link positive catalogue examples with their supplied Nodus work citations so the user can open the records. Counts and zero-result lookups are operational facts and never require a fictitious documentary citation. Do not call a passage an abstract, introduction or conclusion unless the source establishes that section: a page range can span an abstract and the body. Use passage or text when its section is unknown.",
+  "Do not invent disagreement or consensus from differences of emphasis. Compatible propositions are not a contradiction. Catalogue credits for an edited volume identify its editors, not the author of every chapter; when the excerpt speaker is unknown, attribute the statement to the passage or volume, not to its editors. State a count of consulted works only when requested and established by the backend records. When using a secondary source, identify that mediation explicitly.",
+  "A bibliographic reference proves only that the cited work is referenced; it does not prove conceptual continuity, influence, agreement, contradiction or an evolution of theory. Do not attribute those relationships to an author without an explicit supporting passage.",
+  "Before finishing, check every assertion, attribution and count against the exact cited excerpt. Remove unsupported additions. If the available evidence cannot answer the question, say briefly that you cannot establish the requested fact, rather than claiming that the documents contain no such information. Do not pad that limitation with unrelated facts, search narration or inventories of sources.",
+  "Use an evidence-gap acknowledgement only for an unanswered facet actually requested by the user. Do not add inability statements about source relationships, classifications or distinctions that the question does not require. A directly stated negation can be described as explicit; its source need not itself use the word explicit."
+].join("\n");
+function researchQuotedSpans(text) {
+  const spans = [];
+  const stack = [];
+  let start = -1;
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index];
+    if (character === "\\") {
+      index++;
+      continue;
+    }
+    if (!stack.length && character === '"' && /\d/u.test(text[index - 1] ?? "")) continue;
+    if (stack.length && character === stack.at(-1)) {
+      stack.pop();
+      if (!stack.length) spans.push({ start, end: index + 1, text: text.slice(start + 1, index) });
+    } else if (character === "\xAB" || character === "\u201C" || character === '"') {
+      if (!stack.length) start = index;
+      stack.push(character === "\xAB" ? "\xBB" : character === "\u201C" ? "\u201D" : '"');
+    }
+  }
+  return { spans, unclosed: stack.length > 0 };
+}
+
+// shared/researchAnswerReview.ts
+var researchAnswerParagraphs = (text) => text.trim().split(/\n\s*\n/u).filter((part) => part.trim());
+function researchAnswerProofUnits(text) {
+  const units = [];
+  let cursor = 0;
+  for (const paragraph of researchAnswerParagraphs(text)) {
+    const base = text.indexOf(paragraph, cursor);
+    cursor = base + paragraph.length;
+    let masked = paragraph.replace(/\[[^\]\n]*\]\([^)]+\)/gu, (match) => "x".repeat(match.length));
+    let depth = 0, opened = 0;
+    for (let i = 0; i < masked.length; i++) {
+      if (masked[i] === "(") {
+        if (depth++ === 0) opened = i;
+      } else if (masked[i] === ")" && depth > 0 && --depth === 0) masked = masked.slice(0, opened) + "x".repeat(i - opened + 1) + masked.slice(i + 1);
+    }
+    masked = masked.replace(/\b(?:pp?|págs?|pags?|vol|núm|eds?|coords?)\.\s*(?=\d)/giu, (match) => match.replace(".", "x"));
+    masked = masked.replace(/^(\s*(?:#{1,6}\s*)?(?:\*\*|__)?\d{1,2})\.(?=\s|[*_])/gmu, (match) => match.replace(".", "x"));
+    for (const span of researchQuotedSpans(paragraph).spans.reverse()) masked = masked.slice(0, span.start) + "x".repeat(span.end - span.start) + masked.slice(span.end);
+    for (const segment of new Intl.Segmenter(void 0, { granularity: "sentence" }).segment(masked)) {
+      const raw = paragraph.slice(segment.index, segment.index + segment.segment.length);
+      const content = raw.trim();
+      if (!content) continue;
+      const start = base + segment.index + raw.indexOf(content);
+      units.push({ text: content, start, end: start + content.length });
+    }
+  }
+  return units;
+}
+
+// shared/researchSourceNotices.ts
+function researchSourcePresentation(text, existing = []) {
+  const notices = [...existing.filter((note) => typeof note === "string" && note.trim())];
+  const label = /^(?:#{1,6}\s*)?(?:\*\*)?(?:(?:nota|advertencia|aviso)\s+(?:sobre|acerca de)\s+)?(?:la\s+)?(?:evidencia disponible|cobertura (?:de las fuentes|documental)|limitaciones (?:de las fuentes|del corpus|de la evidencia|de esta respuesta)|source limitations|evidence limitations|evidence availability)(?:\*\*)?\s*[:：]?\s*(?:\*\*)?/iu;
+  const operational = /\b(?:pasajes|fragmentos|textos)\s+(?:recuperados|recuperadas|consultados|consultadas|indexados|indexadas|disponibles)|\b(?:retrieved|indexed)\s+(?:passages|excerpts|sources)|\b(?:corpus|fuentes)\s+(?:seleccionad[oa]s?|consultad[oa]s?|disponibles|recuperad[oa]s?)|\b(?:indexar|indexing)\s+(?:más|nuevas|more|additional)\s+(?:fuentes|textos|sources)|\b(?:menú|menu)\s+(?:de contexto|de fuentes|context|sources)/iu;
+  const coverage = /\b(?:no\s+(?:permiten?|ofrecen?|contienen?|aportan?|incluyen?|hay)|no se (?:puede|ha)|limitad[oa]s?|limitaci[oó]n|carecen?|falta[an]?|convendr[ií]a|necesitar[ií]a|insuficiente|parcial|cannot|do not|does not|limited|missing|insufficient|would need)\b/iu;
+  const remember = (note) => {
+    const clean = note.trim();
+    if (clean && !notices.includes(clean)) notices.push(clean);
+  };
+  const content = transformChatProse(text, (prose) => {
+    let fenced = null;
+    let pendingLabel = null;
+    return prose.split(/(\n\s*\n)/u).map((block) => {
+      if (!block.trim()) return block;
+      const fence = /^\s*(`{3,}|~{3,})/u.exec(block);
+      if (fenced || fence) {
+        for (const line of block.split("\n")) {
+          const marker = /^\s*(`{3,}|~{3,})/u.exec(line)?.[1];
+          if (marker) {
+            if (!fenced) fenced = marker;
+            else if (marker[0] === fenced[0] && marker.length >= fenced.length) fenced = null;
+          }
+        }
+        return block;
+      }
+      if (/^\s*(?:>|\||[-*+]\s|\d+[.)]\s|[“«"])/u.test(block)) return block;
+      const matched = label.exec(block.trim());
+      if (matched) {
+        const body = block.trim().slice(matched[0].length).trim();
+        if (!body) {
+          pendingLabel = block.trim();
+          return "";
+        }
+        remember(block);
+        return "";
+      }
+      if (pendingLabel) {
+        const heading = pendingLabel;
+        pendingLabel = null;
+        if (!/^\s*#/u.test(block)) {
+          remember(`${heading}
+
+${block}`);
+          return "";
+        }
+        return `${heading}
+
+${block}`;
+      }
+      if ((operational.exec(block)?.index ?? Infinity) < 100 && coverage.test(block) && !/\]\(nodus:\/\//u.test(block)) {
+        remember(block);
+        return "";
+      }
+      const asides = researchAnswerProofUnits(block).filter((unit) => /^(?:L[oa]s? (?:pasajes?|fragmentos?|textos?|citas?|extractos?)|Las? fuentes|Varios de (?:estos|los) (?:extractos|pasajes|fragmentos)|The (?:retrieved|indexed) (?:passages|excerpts|sources))\b/iu.test(unit.text) && !/\]\(nodus:\/\//u.test(unit.text) && (operational.test(unit.text) && coverage.test(unit.text) || /\b(?:proceden|provienen|procede|proviene|se copia|se transcribe|come from|originate)\b/iu.test(unit.text) && /\b(?:indexad[oa]s?|revisiones anteriores|OCR|indexed|previous revision)\b/iu.test(unit.text)));
+      let clean = block;
+      for (const unit of [...asides].reverse()) {
+        remember(unit.text);
+        clean = clean.slice(0, unit.start) + clean.slice(unit.end);
+      }
+      return clean.trim();
+    }).join("").replace(/\n{3,}/gu, "\n\n") + (pendingLabel ? `
+
+${pendingLabel}` : "");
+  }).trim();
+  return { content, notices: [...new Set(notices.map((note) => note.trim()))] };
+}
+
 // shared/writingDocument.ts
+var SECTION_ALIASES = {
+  abstract: ["resumen", "abstract", "r\xE9sum\xE9", "resume", "zusammenfassung", "\xF6zet", "ozet", "resumo"],
+  limitations: ["limitaciones", "limitations", "limites", "limita\xE7\xF5es", "limitacoes", "einschr\xE4nkungen", "einschrankungen", "s\u0131n\u0131rl\u0131l\u0131klar", "sinirliliklar"]
+};
+function normalizeHeading(text) {
+  return text.replace(/^#{1,6}\s+/, "").trim().toLocaleLowerCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.:;]+$/, "").trim();
+}
 function stripLeadingAbstract(markdown, abstract) {
   const lines = (markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
   const first = lines.findIndex((line) => line.trim().length > 0);
@@ -422,6 +655,27 @@ function stripLeadingAbstract(markdown, abstract) {
   const block = lines.slice(first + 1, next).join(" ").replace(/\s+/g, " ").trim();
   if (!expected || !block || !block.includes(expected.slice(0, Math.min(80, expected.length)))) return markdown;
   return lines.slice(next).join("\n").trim();
+}
+function stripInlineLimitations(markdown) {
+  const aliases = SECTION_ALIASES.limitations.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return markdown.replace(new RegExp(`^\\*\\*(?:${aliases})[.:;]?\\*\\*\\s+.*(?:\\n\\n|$)`, "imu"), "").trim();
+}
+function stripSection(markdown, kind) {
+  const aliases = new Set(SECTION_ALIASES[kind]);
+  const lines = (markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
+  const out = [];
+  let skipping = false;
+  for (const line of lines) {
+    if (/^#{1,3}\s+/.test(line)) {
+      skipping = aliases.has(normalizeHeading(line));
+      if (skipping) continue;
+    }
+    if (!skipping) out.push(line);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+function researchDocumentProse(markdown, hasSourceNotes = false) {
+  return researchSourcePresentation(hasSourceNotes ? stripInlineLimitations(stripSection(markdown, "limitations")) : markdown).content;
 }
 
 // shared/professionalReport.ts
@@ -1229,7 +1483,7 @@ function escapeCellHtml(value) {
 function deepResearchReportInput(draft, image = { dataUrl: null, credit: null }, visuals) {
   const language = draft.brief.language ?? "es";
   const labels = DEEP_LABELS[language];
-  const body = stripLeadingAbstract(draft.draftMarkdown, draft.abstract);
+  const body = researchDocumentProse(stripLeadingAbstract(draft.draftMarkdown, draft.abstract), Boolean(draft.limitations?.length));
   const report = anchoredMarkdown(body, "report", documentFigureInsertions(body, "body", visuals));
   const abstract = anchoredMarkdown(draft.abstract || draft.brief.objective, "summary");
   const sections = [

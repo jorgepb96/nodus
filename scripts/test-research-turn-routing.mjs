@@ -85,6 +85,14 @@ try {
     runIds.add(result.researchRun.id);
     return result;
   }
+  {
+    const note = 'Only an earlier indexed revision was consulted.';
+    const result = await prepare([{ role: 'user', content: topic }, { role: 'assistant', content: 'Una explicación general.', sourceNotices: [note] }, { role: 'user', content: 'Traduce tu respuesta al inglés.' }]);
+    const previous = result.payload.conversacion.find(message => message.role === 'assistant');
+    assert.equal(previous.content, 'Una explicación general.');
+    assert.deepEqual(previous.sourceNotices, [note], 'The agent retains the optional coverage note separately from the text being translated');
+    assert.equal(result.direct, true); assert.equal(result.noCorpusRun, true, 'A prior source note cannot grant a new lookup');
+  }
   for (let attempt = 0; attempt < 3; attempt++) {
     planning = 'direct';
     const before = retrieves;

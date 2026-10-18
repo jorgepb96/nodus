@@ -706,9 +706,9 @@ export function ResearchAssistantModal({
     const userMessage: UiMessage = { id: crypto.randomUUID(), role: 'user', content, selectionKey, attachments: files, ...(skills.length ? { skills } : {}) };
     const assistantId = crypto.randomUUID();
     const requestMessages: ResearchChatMessage[] = [
-      ...priorMessages.filter((m) => (m.selectionKey === selectionKey || (adapter && !m.selectionKey)) && !m.error && m.content.trim()),
+      ...priorMessages.filter((m) => (m.selectionKey === selectionKey || (adapter && !m.selectionKey)) && !m.error && (m.content.trim() || m.stats?.sourceNotices?.length)),
       userMessage,
-    ].map((m) => ({ role: m.role, content: m.content, attachments: m.attachments }));
+    ].map((m) => ({ role: m.role, content: m.content, attachments: m.attachments, ...(m.role === 'assistant' && m.stats?.sourceNotices?.length ? { sourceNotices: m.stats.sourceNotices } : {}) }));
 
     setStoppedMessageId(null);
     const onScreen = () => activeIdRef.current === conversationId;

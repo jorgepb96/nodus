@@ -244,6 +244,23 @@ try {
     });
     assert.equal(output.status, 'verified'); assert.equal(output.technicalFailure, undefined, 'A self-dependent proof is rejected locally, revised and rechecked without cancelling unrelated fields');
   }
+
+  {
+    const previousObjective = context.objective; context.objective = 'Copia una cita literal y explica el resultado.';
+    try {
+      let revisions = 0;
+      const wrong = 'A supported result [Author](nodus://passage/p1). Afirma «a completely invented quotation» [Author](nodus://passage/p1).';
+      const output = await run([part('literal-recovery', wrong)], (options, input) => {
+        if (options.system.startsWith('Revise')) {
+          revisions++;
+          return { parts: [{ id: 'literal-recovery', text: revisions === 4 ? 'A supported result [Author](nodus://passage/p1). Afirma «a specific supported result in its own context» [Author](nodus://passage/p1).' : wrong }] };
+        }
+        return input.parts[0].paragraphs ? proof(input) : semantic(input);
+      });
+      assert.equal(output.status, 'verified'); assert.equal(revisions, 4, 'Only a remaining literal-binding failure receives one final whole-field repair');
+      assert.ok(!output.parts[0].text.includes('invented quotation'));
+    } finally { context.objective = previousObjective; }
+  }
   console.log('Document review: batched proofs, independent semantic veto, complete revisions, exact-source comments, literal evidence, stable IDs and technical-stop retention passed.');
   db.close();
 } finally { fs.rmSync(scratch, { recursive: true, force: true }); }

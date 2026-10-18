@@ -9,7 +9,7 @@ const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'nodus-source-notices-'));
 try {
   const bundle = path.join(temp, 'notices.mjs');
   await build({ entryPoints: ['shared/researchSourceNotices.ts'], outfile: bundle, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent' });
-  const { researchSourcePresentation: present, researchChatPresentation: chat, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION: instruction } = await import(pathToFileURL(bundle).href);
+  const { researchSourcePresentation: present, researchChatPresentation: chat, researchHistorySourceNotices: historyNotes, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION: instruction } = await import(pathToFileURL(bundle).href);
   const body = 'La propaganda turística construyó una imagen del país [Fuente](nodus://passage/real). Su recepción exige distinguir intención y efecto.';
   const note = '**Nota sobre la evidencia disponible:** los pasajes recuperados permiten reconstruir el origen, la difusión y la persistencia del tópico, pero no ofrecen un análisis teórico comparado del mismo con otros estereotipos europeos equivalentes. Para profundizar en esa dimensión comparada, convendría indexar más fuentes o reformular la pregunta.';
   test('old legacy footer is optional, verbatim and absent from copied/saved prose', () => {
@@ -21,6 +21,12 @@ try {
   test('supplied-text translations/edits preserve their actual content and explicit sidecar', () => {
     assert.deepEqual(chat({ content: note, stats: { sourceNotices: [] } }), { content: note, notices: [] });
     assert.deepEqual(chat({ content: `${body}\n\n${note}` }), { content: body, notices: [note] });
+  });
+  test('coverage notes remain bounded contextual history independently of answer prose', () => {
+    assert.deepEqual(historyNotes([null, 7, '  Source coverage was partial.  ']), ['Source coverage was partial.']);
+    assert.deepEqual(historyNotes('untrusted non-array'), []);
+    assert.equal(historyNotes(Array(10).fill('x'.repeat(7000))).length, 8);
+    assert.equal(historyNotes(['x'.repeat(7000)])[0].length, 6000);
   });
   test('unlabelled operational coverage aside moves without creating a note', () => {
     const aside = 'Los pasajes recuperados no ofrecen datos sobre la recepción de esta campaña. Convendría indexar más fuentes.';

@@ -6011,6 +6011,8 @@ export interface ResearchContextSelection {
 }
 
 export interface ResearchChatMessage {
+  /** Previous assistant coverage notes, separate from copyable prose and never source evidence. */
+  sourceNotices?: string[];
   attachments?: import('./researchAttachments').ResearchAttachment[];
   role: 'user' | 'assistant';
   content: string;

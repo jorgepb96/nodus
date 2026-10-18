@@ -54,9 +54,14 @@ export function researchAnswerCatalogueCitationIssues(text: string, sources: rea
 export function canonicalResearchUnrequestedQuotes(text: string, sources: readonly ResearchAuditSource[], question: string): string {
   if (/\b(?:copia(?:r)?|literal(?:es|mente)?|textual(?:es|mente)?|quotes?|quotation|verbatim|littéral(?:ement)?|copi(?:ez|er)|wörtlich|zitat)\b/iu.test(question)) return text;
   const normalize = (value: string) => value.normalize('NFC').replace(/\s+/gu, ' ').trim();
-  const excerpts = sources.map(source => normalize(source.text));
+  const units = researchAnswerProofUnits(text);
+  const literalInBoundSource = (span: { start: number; end: number; text: string }) => {
+    const unit = units.find(unit => unit.start <= span.start && unit.end >= span.end);
+    const cited = unit ? sources.filter(source => source.citation && unit.text.includes(`](${source.citation})`)) : [];
+    return (cited.length ? cited : sources).some(source => normalize(source.text).includes(normalize(span.text)));
+  };
   const spans = researchQuotedSpans(text).spans.filter(span => span.text.length >= 12
-    && !excerpts.some(excerpt => excerpt.includes(normalize(span.text)))
+    && !literalInBoundSource(span)
     && !/(?:traducci[oó]n|translation|traduction)\s*:\s*$/iu.test(text.slice(Math.max(0, span.start - 40), span.start)));
   for (const span of spans.reverse()) text = text.slice(0, span.start) + span.text + text.slice(span.end);
   return text;

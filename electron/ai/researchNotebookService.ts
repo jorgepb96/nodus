@@ -1,4 +1,4 @@
-import { researchSourcePresentation } from '@shared/researchSourceNotices';
+import { researchSourcePresentation, researchHistorySourceNotices } from '@shared/researchSourceNotices';
 import type { ResearchNotebookInput, ResearchNotebookPreparation, ResolvedResearchScope } from '@shared/researchCorpus';
 import type { ResearchChatRequest } from '@shared/types';
 import { notebookPreparationStatus, validateRetrievalSettings } from '@shared/researchCorpus';
@@ -132,8 +132,13 @@ function authorizedNotebookHistory(input: ResearchChatRequest, scope: ResolvedRe
   const known = input.conversationId ? getDb().prepare(`SELECT role,content_hash FROM research_conversation_provenance WHERE conversation_id=? AND scope_id=?`)
     .all(input.conversationId, scope.id) as { role: string; content_hash: string }[] : [];
   const trusted = new Set(known.map(row => `${row.role}:${row.content_hash}`));
-  return input.messages.filter((message, index) => index === lastUser || trusted.has(`${message.role}:${researchFingerprint(message.content)}`))
-    .map(({ role, content }) => ({ role, content }));
+  return input.messages.filter((message, index) => index === lastUser || trusted.has(`${message.role}:${researchFingerprint(message.content)}`)
+    || message.role === 'assistant' && !message.content.trim() && trusted.has(`assistant:${researchFingerprint(researchHistorySourceNotices(message.sourceNotices).join('\n\n'))}`))
+    .map(({ role, content, sourceNotices }) => {
+      // Annotations remain untrusted context, never citation provenance or a tool grant.
+      const notes = role === 'assistant' ? researchHistorySourceNotices(sourceNotices) : [];
+      return { role, content, ...(notes.length ? { sourceNotices: notes } : {}) };
+    });
 }
 
 /** Only provider results that passed scope validation can authorize later reuse.

@@ -34,6 +34,8 @@ try {
   assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Explica la mirada'), translated.replace('«', '').replace('»', ''));
   assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Copia una cita literal'), translated, 'Explicit literal requests must still fail the nonliteral quote gate');
   assert.equal(review.canonicalResearchUnrequestedQuotes(translated, [english], 'Explica con citas Nodus'), translated.replace('«', '').replace('»', ''), 'Bibliographic citation instructions do not demand invented verbatim quotes');
+  const wrongBound = 'Dice «There is no single tourist gaze as such» [Other](nodus://passage/other).';
+  assert.equal(review.canonicalResearchUnrequestedQuotes(wrongBound, [english, { ...english, id: 'other', citation: 'nodus://passage/other', text: 'An unrelated statement.' }], 'Explica con citas Nodus'), wrongBound.replace('«', '').replace('»', ''), 'An unrequested quote cannot borrow literal wording from a source attached elsewhere; its paraphrase must still be proved');
   const literal = 'Dice «There is no single tourist gaze as such».';
   assert.equal(review.canonicalResearchUnrequestedQuotes(literal, [english], 'Explica la mirada'), literal);
   const labelledTranslation = 'Traducción: «no hay una única mirada turística».';

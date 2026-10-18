@@ -1,7 +1,7 @@
 import type { ModelRef } from '@shared/types';
 import { researchWriterCitationTransport, type ResearchAuditSource } from '@shared/researchClaimAudit';
 import { researchDocumentBatches, RESEARCH_SOURCE_CHUNK_RULE, RESEARCH_SOURCE_QUALIFICATION_RULE, type ResearchDocumentPart, type ResearchDocumentPartReview, type ResearchDocumentReview } from '@shared/researchDocumentReview';
-import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerParagraphs, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
+import { assessResearchAnswer, bindResearchAnswerCitations, canonicalResearchCitationLabels, canonicalResearchUnrequestedQuotes, researchAnswerEvidenceTransport, researchLiteralRepairCandidates, researchAnswerProofUnits, researchAnswerScopeIssues, validResearchAnswerCoverage, type ResearchAnswerReview, type ResearchAnswerVerdicts } from '@shared/researchAnswerReview';
 import { completeJson, type CallOpts } from './aiClient';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import { researchReviewEvidence, RESEARCH_SOURCE_REVIEW } from './researchHarnessVerification';
@@ -11,7 +11,7 @@ import { thinkingCatalogInfo } from './thinkingEffort';
 import { researchDocumentFieldSchema, decodeResearchDocumentFields, RESEARCH_DOCUMENT_PROOF_SCHEMA, RESEARCH_DOCUMENT_SEMANTIC_SCHEMA, RESEARCH_DOCUMENT_REVISION_SCHEMA } from '@shared/researchDocumentSchema';
 import { withinModelOutput } from '@shared/researchRetrievalBudget';
 
-const POLICY = 'document-review-v18';
+const POLICY = 'document-review-v19';
 const SOURCE_RULES = RESEARCH_SOURCE_REVIEW.split('\n').slice(2).join('\n');
 const PROOF_SCHEMA = `Return ONLY {"parts":[{"id":"exact input id","claims":[{"index":0,"kind":"fact","premises":[{"text":"concise atomic proposition","type":"fact","entailed":true,"evidence":[{"id":"source-1","quote":"q1"}],"from":[],"fromParagraphs":[]}],"unsupportedParts":[],"explicitInference":false,"supported":true,"reason":"short diagnostic"}],"coherent":true,"relevant":true,"complete":true,"issues":[]}]}.
 Never echo input sources, paragraphs, context or instructions. No root keys except parts. Premises use type and entailed, never nested premises, kind or supported. Keep each premise text below 300 characters and diagnostics below 160. Use actual enums and literal quote KEYS, never copied source text.
@@ -61,7 +61,7 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
   let technicalFailure: string | undefined;
   let pending = parts.filter(part => part.text.trim()).map(part => ({ ...part, text: canonicalResearchUnrequestedQuotes(part.text, frozen, harness.record.context.objective) }));
   const objective = harness.record.context.objective;
-  for (let attempt = 0; attempt < 4 && pending.length && !technicalFailure; attempt++) {
+  for (let attempt = 0; attempt < 5 && pending.length && !technicalFailure; attempt++) {
     let failed: ResearchDocumentPart[] = [];
     for (const batch of researchDocumentBatches(pending, text => researchAnswerProofUnits(text).length, target?.provider === 'gemini' ? 4 : 10)) {
       harness.validate();
@@ -149,8 +149,14 @@ export async function reviewResearchDocument(parts: ResearchDocumentPart[], mode
         break;
       }
     }
-    if (technicalFailure || !failed.length || attempt === 3) { pending = failed; break; }
+    if (technicalFailure || !failed.length || attempt === 4) { pending = failed; break; }
     if (attempt === 2) failed = failed.filter(part => diagnose.get(part.id)?.claims.some(claim => claim.status === 'supported' && claim.evidence.length));
+    if (attempt === 3) failed = failed.filter(part => {
+      const diagnosis = diagnose.get(part.id)!;
+      const rejected = diagnosis.claims.filter(claim => claim.status !== 'supported');
+      return !diagnosis.issues.length && rejected.some(claim => /^The direct quotation does not match/u.test(claim.reason))
+        && rejected.every(claim => /^The direct quotation does not match|^inference_without_supported_premises/u.test(claim.reason));
+    });
     if (!failed.length) break;
     pending = [];
     for (const revisionBatch of researchDocumentBatches(failed, text => researchAnswerProofUnits(text).length)) {

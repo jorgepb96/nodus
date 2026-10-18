@@ -19,7 +19,7 @@ import { capabilityChatSkills, enabledChatSkills, invokedChatSkills } from '../c
 import { chatAssetOwner, chatAssetVersion } from '../chatAssets';
 import { getConversation } from '../db/chatRepo';
 import { executeChatSkills } from './chatSkillExecution';
-import { researchSourcePresentation, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION } from '@shared/researchSourceNotices';
+import { researchSourcePresentation, researchHistorySourceNotices, RESEARCH_SOURCE_PRESENTATION_INSTRUCTION } from '@shared/researchSourceNotices';
 import { authorizeNotebookRequest, validateNotebookRequest, requestNotebookScope, hasResearchSourceRestriction, rememberNotebookTurn, registerNotebookRun } from './researchNotebookService';
 import { researchModelContextWindow, researchRequestUpperBound } from './aiClient';
 import { recordRetrieval } from './transcript';
@@ -770,7 +770,11 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
   const local = loadedWindow != null;
   const compact = window != null && window <= LOCAL_COMPACT_WINDOW;
 
-  const turns = request.messages.filter((m) => (m.role === 'user' || m.role === 'assistant') && m.content.trim());
+  const turns = request.messages.map(m => {
+    const { sourceNotices, ...message } = m;
+    const notes = m.role === 'assistant' ? researchHistorySourceNotices(sourceNotices) : [];
+    return { ...message, ...(notes.length ? { sourceNotices: notes } : {}) };
+  }).filter((m) => (m.role === 'user' || m.role === 'assistant') && (m.content.trim() || m.sourceNotices?.length));
   // The retrieval anchor belongs to the full authorized history, before the model-window trim.
   const originalRequest = [...turns].reverse().find(message => message.role === 'user' && !isRouteFixPrompt(message.content))?.content;
   const latestAnswer = turns.map((m) => m.role).lastIndexOf('assistant');
@@ -785,7 +789,7 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       ? { ...m, content: routeReportsForHistory(chatProseForHistory(m.content), index === latestAnswer) }
       // An earlier correction keeps its failures and edit policy, not another copy of the rules.
       : index === latestQuestion ? m : { ...m, content: routeFixPromptForHistory(m.content) }))
-    .filter((m) => m.content.trim())
+    .filter((m) => m.content.trim() || m.sourceNotices?.length)
     .slice(-MAX_HISTORY_MESSAGES);
   // A run of corrections pushes the route's own request out of the window, and with it every
   // constraint the chips do not repeat (the starting materials, the scale, the stereochemistry).

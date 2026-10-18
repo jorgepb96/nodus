@@ -744,10 +744,12 @@ export function bindAcademicCorpusRun(deps: DeepResearchDeps, request: DeepResea
       ...(run.budget.partial ? ['Documentary coverage is partial; do not infer absence from missing evidence.'] : []), ...[...run.limitations].map(describeResearchLimitation)] }) };
   if (run.harness) {
     bounded.continuousNarrative = true;
-    // One existing citation-support pass (and its bounded evidence repair) is
-    // enough. The overlapping planning, editorial and premise audits repeatedly
-    // rejected legitimate synthesis and pruned connected reports into fragments.
-    // Do not replace them with another mandatory model-review pipeline.
+    // Keep deterministic citation/source guards; let the evidence-informed
+    // writer own synthesis. Post-hoc entailment pruning removed antecedents and
+    // qualified interpretations, breaking the report's connected argument.
+    // The harness adds no mandatory model-review or automatic rewrite chain.
+    bounded.verifyCitations = undefined;
+    bounded.reviseSection = undefined;
     bounded.auditFactualProse = undefined;
     bounded.auditReportConsistency = undefined;
     bounded.auditSectionClaims = undefined;

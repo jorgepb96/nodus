@@ -1622,7 +1622,20 @@ try {
     assert.equal(promoted.meta.generationSelection?.baseline, 0);
   }
 
-  // V1's final coherent review publishes exactly what was proved and recounts it.
+  // Continuous reports without an added audit publish the connected writer text,
+  // not a duplicated unlinked abstract or an appended operational limitations list.
+  {
+    const text = 'La continuidad del personal sugiere una interpretación, sin demostrar identidad de políticas [Autor0, N. (2000)](nodus://idea/g-0).';
+    const report = await orchestrateDeepResearch({ objective: 'Explica las fuentes.', harnessVersion: 'v1', sectionLimit: 'single', sectionLength: 500 }, {
+      ...baseDeps(makeSnapshot(4)), continuousNarrative: true, strictDocumentaryGrounding: true,
+      writeSection: async () => text,
+      finalize: async () => ({ title: 'Report', abstract: 'Unlinked duplicated summary.', limitations: ['Operational scope note.'], nextSteps: [] }),
+    });
+    assert.equal(report.draft.draftMarkdown, text);
+    assert.ok(report.draft.limitations.includes('Operational scope note.'), 'Notes remain available separately');
+    assert.equal(report.meta.words, countWords(text));
+  }
+  // Historical final-review hook contracts remain independently testable.
   {
     const snapshot = makeSnapshot(4);
     let writes = 0, planned = 0;

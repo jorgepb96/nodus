@@ -27,6 +27,8 @@ export function researchSourcePresentation(text: string, existing: readonly stri
         return block;
       }
       if (/^\s*(?:>|\||[-*+]\s|\d+[.)]\s|[“«"])/u.test(block)) return block;
+      if (/^\s*\*{0,2}Nota de alcance\s*[:：]/iu.test(block) && coverage.test(block)
+        && (operational.test(block) || /\bbiblioteca\b/iu.test(block))) { remember(block); return ''; }
       const matched = label.exec(block.trim()) ?? /^(?:Hay además |Hay también |Además,? )?una cautela de cobertura\b/iu.exec(block.trim());
       if (matched) {
         const body = block.trim().slice(matched[0].length).trim();

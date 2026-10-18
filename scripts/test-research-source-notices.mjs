@@ -22,6 +22,7 @@ try {
     for (const note of [
       'Nota de fuentes: varios pasajes citados proceden de una revisión indexada anterior de los documentos, no de la versión actual; algunas obras del catálogo no se leyeron en este turno.',
       'Hay además una cautela de cobertura que conviene tener presente: parte de los pasajes citados proceden de una revisión indexada anterior de sus obras.',
+      '*Nota de alcance: las afirmaciones son interpretaciones atribuidas; la biblioteca no permite por sí sola corroborar cifras de visitantes.*',
     ]) assert.deepEqual(present(`${body}\n\n${note}`), { content: body, notices: [note] });
   });
   test('supplied-text translations/edits preserve their actual content and explicit sidecar', () => {
@@ -43,6 +44,7 @@ try {
   test('substantive scientific uncertainty and quoted source text remain in the argument', () => {
     for (const text of [
       'La intención propagandística no demuestra por sí sola un efecto en los visitantes.',
+      '*Nota de alcance: el estudio se circunscribe a la propaganda de 1938 y no demuestra efectos posteriores.*',
       'Las fuentes del archivo de 1940 no incluyen testimonios de mujeres; esta ausencia limita el estudio histórico [Autor](nodus://passage/a).',
       'La autora señala las limitaciones de las fuentes censuradas y propone compararlas con testimonios orales.',
       '> Los pasajes recuperados no ofrecen un análisis comparado.',

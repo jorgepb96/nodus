@@ -1682,8 +1682,9 @@ export async function orchestrateDeepResearch(
   const references = buildReferences(citedWorkIds, maps, language);
   const singleNarrative = effectiveRequest.sectionLimit === 'single';
   const draftMarkdown = deps.strictDocumentaryGrounding && !written.length ? researchEvidenceLimitation(language)
-    : deps.finalDocumentReview && singleNarrative ? written.map(item => stripInitialHeading(item.markdown)).join('\n\n')
+    : (deps.continuousNarrative || deps.finalDocumentReview) && singleNarrative ? written.map(item => stripInitialHeading(item.markdown)).join('\n\n')
       : assembleMarkdown(written, references, deps.finalDocumentReview ? { ...finalize, abstract: '' } : finalize, language, effectiveRequest.sectionLimit);
+  if (deps.continuousNarrative && singleNarrative) totalWords = countWords(draftMarkdown);
   const worksCited = citedWorkIds.size;
 
   const outline: WritingWorkshopSection[] = singleNarrative ? [] : written.map((w, index) => ({

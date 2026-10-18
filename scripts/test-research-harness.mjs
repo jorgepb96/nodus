@@ -315,6 +315,30 @@ try {
     assert.equal(calls, ['recover', 'repeated-invalid'].includes(mode) ? 2 : 1, mode);
     assert.equal(result.researchRun.stopReason, ['recover', 'duplicate-envelope'].includes(mode) ? 'sufficient' : 'technical', mode);
   }
+  // A refused tool argument executes nothing and can be corrected once. It
+  // cannot widen the grant or mark a successfully produced artifact as an outage.
+  for (const repeat of [false, true]) {
+    let calls = 0, reads = 0;
+    ai.completeJson = async (options, guard) => {
+      const payload = JSON.parse(options.user);
+      if (++calls === 2) assert.match(payload.coordinator_note, /action was refused/);
+      const decision = calls === 1 || repeat
+        ? { action: 'read', documentId: 'outside-the-grant', operation: { kind: 'pages', from: 1 } }
+        : { action: 'finish', reason: 'sufficient', coverage: payload.agenda.map(q => ({ ...q, status: 'supported', evidenceIds: ['web:known'] })) };
+      assert.equal(guard(decision), true); return decision;
+    };
+    const result = await withResearchHarness({ request: {}, context: { ...context, scopeId: realScope.id, capabilities: { ...context.capabilities, documents: true, web: true } }, scope: realScope, validate() {} }, async signal => {
+      const run = new ResearchCorpusRun(realScope, RETRIEVAL_PRESETS.deep, signal);
+      run.budget.decisionTokenLimit = 128000;
+      run.web = { available: true, enabled: true, used: 1, explicit: false, contextPassages: () => [{ id: 'web:known', title: 'External source', text: 'An external finding.', url: 'https://example.com/evidence' }] };
+      run.readDocument = async () => { reads++; throw new Error('Unauthorized read must never execute'); };
+      await run.investigate(context.objective);
+      return { answer: 'Evidence collected' };
+    });
+    assert.equal(calls, 2); assert.equal(reads, 0);
+    assert.equal(result.researchRun.status, 'completed');
+    assert.equal(result.researchRun.stopReason, repeat ? 'diminishing_returns' : 'sufficient');
+  }
   assert.equal(db.prepare('PRAGMA user_version').get().user_version, SCHEMA_VERSION);
   console.log('Research harness: agenda, source-backed coverage, bounded actions, checkpoints, pause/resume, budgets, ownership and deletion passed.');
 } finally { fs.rmSync(scratch, { recursive: true, force: true }); }

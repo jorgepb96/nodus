@@ -61,7 +61,7 @@ The agenda deduplicates queries, prioritizes pending work and permits at most 32
 questions and 64 tasks. Two actions without new evidence permit one strategy
 change; continued stagnation ends research. Useful new evidence resets that
 counter. Finish distinguishes sufficient evidence, exhausted sources, diminishing
-returns, budget, interruption, context changes and technical failure. An agenda
+returns, budget, interruption, context changes and technical failure. Evidence now carries its authorized document ID and the source menu prioritizes matched documents. A refused tool argument executes nothing and gets at most one corrected decision within the same allowance. Repeated refusals stop exploration for diminishing returns; real scope revocation still interrupts the execution. An agenda
 assessment is operational state, **not** an independently verified quality score.
 
 Retrieval rounds, evidence allowance and decision allowance belong to the entire
@@ -82,39 +82,42 @@ follow-ups. Word-count and duration guidance do not invalidate grounded content.
 Source permissions, capability switches, cancellation, provider spending and
 technical context/output bounds remain strict.
 
+## Verification policy
+
+V1 never adds response checks beyond legacy. The harness adds an
+investigation agenda, contextual tool choices and durable execution, not another
+mandatory proof/rewrite/semantic-veto chain. Research Chat respects the existing
+`researchAnswerVerification` setting: off adds no model audit, legacy uses the
+existing documentary check, and structured uses the existing structured answer
+path. Ordinary prose streams immediately when that setting is off. Citation
+sanitization, source authorization, technical bounds, cancellation and specialized
+skill checks still apply.
+
+Reasonable inferences and comparisons may combine cited premises from different
+sources. Their combined conclusion need not appear verbatim in a passage. Writers
+distinguish their interpretation naturally from a source's explicit statement and
+qualify it proportionately; they must not invent facts, quotations or demonstrated
+causality. A successful execution is not an independent accuracy certificate.
+
+The policy fingerprints changed to `legacy-parity-v1` (Chat/Immersion) and
+`direct-evidence-v1` (Deep Research), so incompatible old preview checkpoints cannot
+resume their previous audit policy silently.
+
 ## Grounding by surface
 
 | Surface | v1 behavior |
 | --- | --- |
-| Research Chat | Keeps the turn planner, indexed-only policy, context switches, notebook/source restrictions, Concilium and skills. Ordinary prose receives bounded whole-answer review against source-bound premises, citation checks and a separate semantic veto. Changed prose must be reviewed again before publication. |
-| Deep Research | Shares one ledger and budget through discovery and sections. Reviews and revises complete report fields with source-bound premises and an independent semantic veto; does not run the legacy sentence-deletion chain afterward. Later web findings retain their actual web receipts, without fictitious local works. |
-| Immersion | Retains curriculum/panorama/stations/contrasts/exam. Admits initial literal passages to the shared allowance and can investigate each station before writing. Prepared station inputs and completed generated phases survive continuation. Expository prose, positions and quiz explanations/expected answers are verified before saving. |
+| Research Chat | Keeps the turn planner, indexed-only policy, context switches, notebook/source restrictions, Concilium and skills. Uses exactly the same optional verification and citation-recovery path as legacy. |
+| Deep Research | Shares one ledger and budget through discovery and sections. Keeps deterministic source/citation/structure guards and the evidence-informed writers. Removes overlapping model audits, automatic rewrites and sentence pruning; a continuous report contains its connected body, with summaries and source notes kept separately. Later web findings retain their actual web receipts, without fictitious local works. |
+| Immersion | Retains curriculum/panorama/stations/contrasts/exam and the existing structural/literal-citation handling. Can investigate each station before writing, without an additional field-by-field model audit. Prepared inputs and generated phases survive continuation. |
 
-Source existence is not entailment. Verification requires an authorized ID, a
-literal supporting quote and a valid premise verdict. Every sentence-sized span
-receives its own verdict, including when several sentences share a paragraph.
-Citation labels, URLs and literal quotations are opaque to segmentation. A
-backend citation repair attaches to the checked span and preserves the original
-paragraph layout; it cannot place a supporting link at the end of a paragraph to
-legitimize a different unsupported sentence. Complete-field rewrites preserve
-connected prose and require fresh proof. Source qualifications, direction of
-relationships, time perspective and the distinction between a documented limit
-and an inferred cause remain semantic obligations. Generated interpretations
-can support attribution, not independent factual corroboration. Ordinary Chat prose is revised coherently instead of being reduced by deleting
-individual sentences. If review cannot verify a useful answer within its bounds,
-the result states that verification limitation. It must not turn a technical
-review failure into a claim that the library contains no evidence. Visual blocks
-remain opaque to the prose transformation.
-
-Limits: semantic entailment still depends on the configured model; a successful
-verdict is not a proof of truth. Multimodal attachments retain their existing
-answer flow and record `visual_evidence_not_audited`, because a text-only auditor
-cannot verify pixels. Plaintext attachments are explicit evidence and retain
-filename/location citations instead of fabricated vault IDs. Chemistry keeps its
-specialized verifier. Immersion review includes the selected answer, explanation and factual
-presuppositions of each retained question. False distractors remain intentional
-alternatives; automated approval still does not establish pedagogical quality. Tiny model windows and provider failures may yield incomplete
-verification. These are evaluation cases, not grounds to silently skip checks.
+Source existence alone does not establish entailment. The writer receives the
+authorized evidence and provenance and must cite accurately, preserve actor/time
+scope and distinguish source text, metadata, authored notes and its own reasoning.
+Disabling optional verification does not enlarge source permissions or allow
+fabricated citation destinations. Model-generated prose remains fallible; corpus
+permission checks and citation receipts are deterministic guarantees, not proofs
+of every interpretation.
 
 ## Persistence and API
 
@@ -143,7 +146,7 @@ report/session reuses its artifact identity instead of creating another copy.
 Run the focused functional checks with:
 
 ```sh
-node --test scripts/test-research-harness.mjs scripts/test-research-harness-evaluation.mjs
+node --test scripts/test-research-harness.mjs scripts/test-research-harness-evaluation.mjs scripts/test-research-verification-parity.mjs scripts/test-research-blind-judge.mjs
 node scripts/test-research-expansion.mjs
 node --test scripts/test-research-actions.mjs scripts/test-research-corpus-run.mjs scripts/test-research-source-filters.mjs scripts/test-research-chat-agent.mjs
 node --test scripts/test-research-claim-audit.mjs scripts/test-research-claim-audit-batching.mjs scripts/test-research-request-budget.mjs
@@ -170,7 +173,21 @@ original reads, web off/on, local small-window models and interruption/restart.
 Run both orders and repeat variable cases. Keep provider/model versions and the
 original outputs with the measurements. Do not use fixtures as evidence of quality.
 
-Review outputs blindly against a fixed question rubric. Record independently:
+Review outputs blindly against a fixed question rubric. The reusable
+`scripts/lib/research-blind-judge.mjs` protocol separates `contentPreference` from
+`formatPreference`: assess grounding, relevance, coverage and synthesis first.
+Neutral headings add no content; identical prose must tie on content. An explicit
+request for sections overrides the default connected prose. Presentation breaks
+only content ties and cannot outweigh a factual error. Counterbalance A/B labels
+and test both requested/unrequested headings with identical text, plus factual
+perturbations. Reject malformed, inconsistent or unanchored judgments instead of
+counting them as votes. This receipt validation cannot prove the judge is right.
+The clarified protocol matched all 12 expected preferences in a private calibration
+(including eight content ties), after the initial protocol overapplied prose when
+headings were explicitly requested. The stopped fresh comparison had no headings
+in any of its six completed pairs; heading preference did not explain those votes.
+
+Record independently:
 questions answered with support, factual claims supported, citation errors, model
 calls, elapsed time and preference. Include useful depth, qualified disagreement,
 false absence claims and truncated/incomplete results in the review. Token/currency
@@ -216,9 +233,7 @@ the following shape (these are field examples, not measured results):
 result. Promote v1 only after reviewing all surfaces, real answer preference and
 the observed latency/cost tradeoff. Until then the default stays legacy.
 
-## Coherent answer verification
-
-### Source-free turns and later lookup requests
+## Source-free turns and later lookup requests
 
 Routing follows the current task rather than the topic words in the text. Clear
 provided-text transformations, social turns and explicit source-free instructions
@@ -255,7 +270,11 @@ these are repeated cases, not distinct research questions or an accuracy guarant
 Long inputs also retain their tail in the bounded planner context so a final
 lookup instruction cannot disappear behind the text being edited.
 
-### Verifying documentary answers
+## Historical coherent answer verification
+
+This preview review chain is no longer invoked by the product. The current
+verification policy above supersedes it; the description is retained to explain
+the development measurements below.
 
 The review binds each factual clause to its own cited source. Local literal
 excerpt keys are restored by the backend; a model cannot invent supporting
@@ -313,11 +332,46 @@ empty sidecar preserves supplied-text translation/paraphrase output. Copying or
 saving a Chat answer uses its clean prose; Deep Research and Immersion readers
 and their prose exports use the same presentation rules. Source notes are
 user-opened balloons with keyboard dismissal, focus return and bounded placement.
-The complete checked text remains available to the verification/checkpoint
-pipeline; presentation is not an evidence bypass. Both original and presented
+The complete generated text remains available in execution checkpoints;
+presentation does not enlarge the source grant. Both original and presented
 assistant prose are registered for notebook follow-up provenance.
 
-## Source-inspected validation
+## Latest targeted validation
+
+After the user stopped the fresh 15-pair campaign, six pairs and their original
+votes were retained (legacy 4, V1 2). No remaining pairs were resumed. A short
+V1-only regression repeated three predeclared questions after removing the
+mandatory review chain. Latencies changed from 406.4 / 531.3 / 427.4 seconds to
+59.8 / 45.5 / 26.2 seconds; DeepSeek generation cost across these cases fell from
+USD 0.30460 to USD 0.04786, excluding BGE. These are descriptive repeat measurements,
+not a fresh simultaneous A/B or evidence of general superiority. The shared
+source-menu/tool-recovery adjustment was made afterward.
+
+A calibrated masked reviewer compared those three answers with their historical
+legacy answers. Two usable judgments preferred V1. A third also preferred V1,
+but its objection quoted the rival inaccurately and was excluded. Original votes
+were not overwritten. All generated links resolved. Source inspection still
+found small transcription differences in secondary quotations; automatic approval
+is not a guarantee of literal transcription or factual accuracy.
+
+A native long-form regression exposed fragmentation from the inherited report
+audits, and a second exposed the same problem from citation-driven sentence
+pruning. Both outputs were retained as quality failures despite technical
+completion. V1 now omits that post-generation pruning and keeps source/identity
+checks. The Immersion regression generated a full three-station lesson with
+15 exact source cards and 17 questions, but a rejected document-ID argument had
+incorrectly marked the finished run failed. The shared coordinator now supplies
+real document IDs and permits one bounded correction without relaxing the grant.
+Final-policy regeneration and its limitations are recorded with the private QA
+artifacts. None of these small regressions justifies default replacement by itself.
+
+## Historical source-inspected validation
+
+**The mandatory V1 review chain described in this historical development record
+was subsequently removed at the user's request. The current verification policy
+is documented above. These outcomes are retained for comparison, not presented
+as final-policy validation.**
+
 
 Chat, Deep Research and Immersion use one harness. Mode adapters supply the output
 contract: connected chat prose, a report, or a lesson with stations and questions.
@@ -452,8 +506,10 @@ establish a new native quality success under the remaining paid allowance.
 
 All campaigns retain one append-only authorization and cumulative provider ledgers,
 including prior failures and full uncertain reservations. The user extended the
-ceiling from EUR 1 to EUR 2 per provider; the proxy enforces USD 1.75 per provider
-with conservative pricing, tax/exchange margin and no borrowing between providers.
+cumulative ceiling to EUR 4 for DeepSeek and EUR 3 each for OpenRouter and Google;
+the proxy enforces conservative USD caps of 3.50 / 2.65 / 2.65 respectively, with
+tax/exchange margin and no borrowing between providers. A delayed reply to an
+earlier budget question does not append a duplicate extension.
 BGE is excluded as requested. These ledger totals are conservative bounds, not
 provider invoices. Temporary encrypted credential copies are removed by each
 paid parent after its child exits; a parent lease prevents overlapping ownership.

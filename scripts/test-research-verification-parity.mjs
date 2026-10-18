@@ -59,15 +59,14 @@ try {
     }
     if (harnessVersion === 'v1') assert.ok(response.researchRun);
   }
-  // Deep Research keeps the existing citation verifier and bounded repair, with
-  // no overlapping premise/editorial audits. Binding starts no model call.
+  // Deep Research keeps deterministic source/citation guards without post-hoc
+  // model pruning or rewrite loops. Binding starts no model call.
   const scope = load('electron/ai/researchNotebookService.ts').resolveAcademicResearchScope();
   await runtime.withResearchHarness({ request: {}, context: { mode: 'deep-research', vaultId: scope.vaultId, scopeId: scope.id, objective: 'Measure', model: null, effort: 'standard', capabilities: {} }, scope, validate() {} }, async () => {
     const marker = async () => 'existing check';
     const deps = bindAcademicCorpusRun({ verifyCitations: marker, reviseSection: marker, auditSectionClaims: marker, auditFinalSummary: marker, judgeSectionRevision: marker, checkCoherence: marker, finalize: marker }, { objective: 'Measure' });
     assert.equal(deps.finalDocumentReview, undefined);
-    for (const key of ['verifyCitations', 'reviseSection']) assert.equal(typeof deps[key], 'function');
-    for (const key of ['auditFactualProse', 'auditReportConsistency', 'auditSectionClaims', 'auditPlanCoverage', 'auditFinalSummary', 'judgeSectionRevision', 'reviewReport', 'checkCoherence', 'repairSectionCoverage', 'checkSectionCoverage']) assert.equal(deps[key], undefined);
+    for (const key of ['verifyCitations', 'reviseSection', 'auditFactualProse', 'auditReportConsistency', 'auditSectionClaims', 'auditPlanCoverage', 'auditFinalSummary', 'judgeSectionRevision', 'reviewReport', 'checkCoherence', 'repairSectionCoverage', 'checkSectionCoverage']) assert.equal(deps[key], undefined);
     assert.equal(await deps.finalize({}), 'existing check', 'Keep the established final writer');
     return {};
   });

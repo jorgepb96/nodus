@@ -29,14 +29,17 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.12.1');
-  assert.equal(current.highlights.length, 3);
-  assert.deepEqual(current.highlights.map(h => h.category), ['enhancement','enhancement','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','ai','ai']);
-  assert.match(current.highlights[0].en, /^In Research Chat, Indexed texts no longer switches off the other sources/);
-  assert.equal(current.highlights.filter(highlight => /Full documents/.test(highlight.en)).length, 1, 'the Full documents rename appears once with its final behavior');
-  assert.match(current.highlights[1].en, /^In the Simple interface, a new Research Chat conversation starts with only Indexed texts on/);
-  assert.match(current.highlights[2].en, /^Synthesis routes use the forward step search with precedents again/);
+  assert.equal(current.version, '5.13.0');
+  assert.equal(current.highlights.length, 11);
+  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','ai','ai','ai','ai','ai','academic','academic','academic','ai','ai']);
+  const outcomes = [/Nodus Research Harness/, /Fast and Expanded modes/, /EmbeddingGemma 2/, /translations, paraphrases and text edits/, /connected prose/, /PDF tables/, /citation picker/, /Large images/, /one translated tooltip/, /consumed reagents/, /OpenRouter models/];
+  outcomes.forEach((outcome, index) => assert.match(current.highlights[index].en, outcome));
+  assert.equal(current.highlights.filter(h => /Nodus Research Harness/.test(h.en)).length, 1, 'the new engine is described once with its final behavior');
+  assert.match(current.highlights[2].en, /experimental/);
+  assert.match(current.highlights[2].en, /unavailable on Intel Macs/);
+  assert.match(current.highlights[5].en, /optional and off by default/);
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.12.1').highlights[0].en, /^In Research Chat, Indexed texts no longer switches off/);
   // 5.12.0 introduced the Indexed texts mode. Its note stays as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.12.0').highlights[0].en, /^Research Chat has a new Indexed texts mode/);
   for (const lang of languages) for (const highlight of current.highlights) {
@@ -88,9 +91,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // 5.12.1 has no new features: that section states it has no changes.
+  // Independently authored section boundaries for the eleven final outcomes.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,0,2][i], [0,2,3][i]);
+    const entries = current.highlights.slice([0,3,6][i], [3,6,11][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

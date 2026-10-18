@@ -984,8 +984,8 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     run.agent = { plan, question, compact, correction, minSources: ['definition', 'comparison', 'survey'].includes(plan.kind) ? 3 : 2 };
     if (run.harness) {
       run.harness.agenda.addQuestion(run.harness.record.context.objective);
-      // The manifest is operational context, not citable source material.
-      system += '\nNodus Research Harness operational context: ' + JSON.stringify(run.harness.record.context);
+      // aiClient injects the run's operational context once for every model call.
+      // Duplicating it here wastes the writer's window, especially on local models.
     }
     passageQueries = plan.queries;
     // A message the plan can answer as it is searches nothing: no library, no catalogue, no web,

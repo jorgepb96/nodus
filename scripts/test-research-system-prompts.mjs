@@ -57,9 +57,7 @@ try {
     await run(undefined); await run(a.id); await run(null);
     assert.equal(captured.length, 3);
     assert.equal(captured[0].system, captured[2].system, 'returning to Default restores exact original prompt');
-    // V1 appends the current run's operational context, including the selected prompt.
-    const baseSystem = system => system.split('\nNodus Research Harness operational context: ')[0];
-    assert.ok(baseSystem(captured[1].system).endsWith(baseSystem(captured[0].system)), 'full original system and skill instructions remain intact');
+    assert.ok(captured[1].system.endsWith(captured[0].system), 'full original system and skill instructions remain intact');
     assert.match(captured[0].system, /svg/i, 'enabled skill instructions are included in the invariant');
     assert.match(captured[1].system, /Evidencia y Límites/);
     assert.deepEqual(Object.keys(captured[1]).sort(), Object.keys(captured[0]).sort(), 'tools, budgets and transport options unchanged');

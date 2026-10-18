@@ -978,9 +978,13 @@ function optionalBody(model: ModelRef, jsonMode: boolean, reasoning: ReasoningEf
   // costs. See optionalFieldsSupport.ts.
   if (optionalBodyUnsupported(model)) return {};
   const auditedOpenRouterProvider = process.env.NODUS_AUDIT_OPENROUTER_PROVIDER?.trim();
+  // A non-reasoning OpenRouter endpoint may reject even an explicit opt-out.
+  // Respect its catalogue instead of filtering out every strict-routing endpoint.
+  const acceptsReasoning = model.provider !== 'openrouter'
+    || (opts.researchModelInfo ?? thinkingCatalogFor(model, openAiCompatBase(model.provider)))?.reasoning !== false;
   return {
     ...(jsonMode && supportsJsonMode(model.provider) ? { response_format: { type: 'json_object' as const } } : {}),
-    ...(opts.researchEffort === undefined && !reasoningHintUnsupported(model) ? reasoningBody(model.provider, reasoning, model.model, opts.requestClass === 'background') : {}),
+    ...(opts.researchEffort === undefined && acceptsReasoning && !reasoningHintUnsupported(model) ? reasoningBody(model.provider, reasoning, model.model, opts.requestClass === 'background') : {}),
     // Groq's reasoning models (gpt-oss/qwen3) reason at medium by default, which slows scans and
     // burns tokens. reasoningBody can't send it (no model id), so minimise it here. Groq rejects
     // reasoning_effort:'none' — 'low' is its floor; non-reasoning models 400 and the caller strips it.

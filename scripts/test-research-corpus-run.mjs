@@ -154,6 +154,35 @@ try {
   };
   const ideasOnly = await layered({ ideas: true, documents: false, indexed: false });
   assert.deepEqual(ideasOnly.result.ideas.map(idea => idea.id), ['selected'], 'the ideas layer alone still reads the ideas');
+  // A previously indexed revision of ONE source must not disable ideas from
+  // every other source. Both ordinary chats and pinned report runs use this path.
+  for (const pinRevisions of [false, true]) {
+    const mixedRevisions = { ...notebookService.requestNotebookScope(general), id: `mixed-revisions-${pinRevisions}` };
+    mixedRevisions.documents = mixedRevisions.documents.map(document => document.workId === 'outside'
+      ? { ...document, indexedSource: { revision: 'previous-indexed-revision', attachmentId: null, indexKeys: [] } }
+      : document);
+    const revisionRun = new ResearchCorpusRun(mixedRevisions, RETRIEVAL_PRESETS.balanced, undefined, pinRevisions);
+    revisionRun.layers = { ideas: true, documents: false, indexed: false };
+    await revisionRun.retrieve('measure');
+    assert.deepEqual([...revisionRun.ideas.keys()], ['selected'], 'current ideas survive a stale source without admitting stale or mixed-source ideas');
+  }
+  {
+    const { withResearchHarness } = load('electron/ai/researchHarnessRuntime.ts');
+    const authorScope = { ...notebookService.requestNotebookScope(general), id: 'author-narrowed-ideas' };
+    authorScope.documents = authorScope.documents.map(document => ({ ...document, authors: [`Author ${document.workId}`] }));
+    await withResearchHarness({ request: {}, scope: authorScope, validate: () => {}, context: {
+      mode: 'chat', vaultId: authorScope.vaultId, scopeId: authorScope.id, notebookId: null, objective: 'measure', model: null, effort: 'standard',
+      capabilities: { ideas: true, indexed: true, documents: false, web: false, attachments: [], skills: [], restricted: true },
+    } }, async () => {
+      const authorRun = new ResearchCorpusRun(authorScope, RETRIEVAL_PRESETS.balanced);
+      authorRun.layers = { ideas: true, documents: false, indexed: true };
+      authorRun.agent = { plan: { goal: 'measure', queries: ['measure'], authors: ['Author inside'], titles: [],
+        kind: 'other', needsSources: true, explicitLibrary: false, planned: true }, question: 'measure', compact: false, minSources: 1 };
+      await authorRun.retrieve('measure');
+      assert.deepEqual([...authorRun.ideas.keys()], ['selected'], 'author routing preserves in-scope ideas while excluding mixed-source syntheses');
+      return {};
+    });
+  }
   assert.equal(ideasOnly.result.passages.length, 0, 'with the indexed texts off no passage is read');
   assert.equal(ideasOnly.sharedReads, 0, 'with the indexed texts off the documentary store is never asked');
   for (const layer of ['profiles', 'nodus']) assert.ok(!ideasOnly.layersRead.has(layer), `with the indexed texts off ${layer} is not consulted`);

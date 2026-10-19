@@ -1075,7 +1075,8 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
     // Count what the turn actually carried, not the whole authorized scope: with the list
     // filtered above, reporting `snapshot.works.length` showed the reader ~60 works for a turn
     // that sent one.
-    stats = { sections: indexedOnly ? [prompt.context.sections.passages] : [prompt.context.sections.ideas, prompt.context.sections.passages], works: sentWorks.length,
+    stats = { sections: [...(Array.isArray(context.ideas_generadas) && context.ideas_generadas.length ? [prompt.context.sections.ideas] : []),
+      ...(snapshot.passages.length ? [prompt.context.sections.passages] : [])], works: sentWorks.length,
       documents: sentWorks.length, summaries: 0, passages: snapshot.passages.length, contextChars: JSON.stringify(context).length, truncated: run.budget.partial, researchTraversal: compactResearchTraversal(run.coverage()),
       ...(run.web.used || (run.web.explicit && !run.web.enabled) ? { webSearch: run.web.stats(), webSources: run.web.sources() } : {}) };
   } else {
@@ -1173,6 +1174,9 @@ async function buildResearchChatPrompt(request: ResearchChatRequest, skills = en
       contextChars: JSON.stringify(context).length, passages: Array.isArray(context.pasajes_relevantes) ? context.pasajes_relevantes.length : 0,
       works: Array.isArray(context.obras) ? context.obras.length : 0, documents: Array.isArray(context.obras) ? context.obras.length : 0 };
   }
+  if (notebookScope) stats.sections = stats.sections.filter(section =>
+    section === prompt.context.sections.ideas ? Array.isArray(context.ideas_generadas) && context.ideas_generadas.length > 0
+      : section === prompt.context.sections.passages ? Array.isArray(context.pasajes_relevantes) && context.pasajes_relevantes.length > 0 : true);
   // A skill (chemistry route/synthesis) is a construction task, not a corpus-grounded literature
   // answer: the citation contract above is already null when a skill is active, so the enforcement
   // flag must match — otherwise the route gets citation retries/refusals it was never told to satisfy.

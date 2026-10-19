@@ -1,5 +1,5 @@
 /** Routing changes invalidate persisted decisions, including completed direct turns. */
-export const RESEARCH_TURN_INTENT_POLICY = 'source-routing-v3';
+export const RESEARCH_TURN_INTENT_POLICY = 'source-routing-v4';
 
 const fold = (text: string) => text.normalize('NFKD').replace(/\p{M}/gu, '').toLocaleLowerCase().trim();
 const TRANSFORM = /^(?:(?:por favor|please)[,\s]+)?(?:traduce|traducir|parafrasea|parafrasear|reescribe|reformula|resume|resumir|acorta|simplifica|corrige|translate|paraphrase|rewrite|rephrase|summari[sz]e|shorten|proofread|traduis|traduisez|reformule|reformulez|resumez)\b/iu;
@@ -38,6 +38,12 @@ export function positiveResearchInstructions(message: string): string[] {
 export function researchLookupFollowUp(message: string): boolean {
   return positiveResearchInstructions(message).some(text => BARE_LOOKUP.test(text)
     || LOOKUP.test(text) && /^(?:(?:en|con|a|in|the|my|mi|mis|la|el|las|los)\s+)*(?:zotero(?:\s+mcp)?|mcp|biblioteca|corpus|fuentes|documentos|library|sources|documents)$/u.test(text.replace(LOOKUP, '').trim()));
+}
+
+/** A review keeps its object from the conversation, but does not itself grant
+ * a library lookup: reviewing supplied prose can be a source-free task. */
+export function researchReviewFollowUp(message: string): boolean {
+  return positiveResearchInstructions(message).some(text => /^(?:revisa(?:lo|la|los|las)?|comprueba(?:lo|la)?|verifica(?:lo|la)?|review|check|look)(?:\s+(?:de nuevo|otra vez|again))+(?:\s+(?:por favor|please))?$/u.test(text));
 }
 
 export function explicitResearchLibraryRequest(message: string): boolean {

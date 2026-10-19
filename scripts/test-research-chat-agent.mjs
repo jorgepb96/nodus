@@ -78,6 +78,27 @@ try {
   assert.deepEqual([literal.planned, literal.explicitLibrary], [false, true]);
   assert.match(literal.goal, /albuquerque garc[ií]a\?\nusa zotero mcp/u, 'a failed follow-up planner retains the earlier topic instead of searching a tool command');
   assert.doesNotMatch(literal.queries[0], /zotero|mcp/u);
+  const touristTopic = 'Busca evidencias sobre la mirada turística de John Urry';
+  const reviewHistory = [
+    { role: 'user', content: touristTopic },
+    { role: 'assistant', content: 'La mirada turística se construye culturalmente.' },
+    { role: 'user', content: 'Revisa de nuevo' },
+    { role: 'assistant', content: 'La revisión aporta nuevos pasajes.' },
+  ];
+  for (const followUp of ['Revisa de nuevo', 'Compruébalo otra vez', 'Review again', 'Check again']) {
+    const fallback = await planResearchTurn([...reviewHistory, { role: 'user', content: followUp }], null);
+    assert.deepEqual(fallback.queries, [touristTopic], 'a failed planner searches the topic across repeated review turns');
+    assert.match(fallback.goal, /John Urry/u);
+  }
+  for (const code of ['rate_limit', 'schema_mismatch']) {
+    ai.completeJson = async () => { throw new ai.AiError('Planner fixture failure', code === 'rate_limit', false, code); };
+    const fallback = await planResearchTurn([...reviewHistory, { role: 'user', content: 'Revisa de nuevo' }], null);
+    assert.deepEqual(fallback.queries, [touristTopic], `${code} keeps the original objective`);
+    assert.equal(fallback.explicitLibrary, false, 'a review does not create a new library grant');
+  }
+  assert.deepEqual(literalResearchTurnPlan('Revisa de nuevo').queries, [], 'an objectless review cannot launch an unrelated corpus search');
+  assert.deepEqual(literalResearchTurnPlan('Revisa de nuevo la cronología de Roma', reviewHistory).queries,
+    ['Revisa de nuevo la cronología de Roma'], 'an explicit new subject replaces the earlier topic');
   assert.equal(literalResearchTurnPlan('define libro de viaje vs relato de viaje').kind, 'comparison');
   // The plan says whether the message needs sources at all. Only an explicit «no» skips the
   // search: a model that says nothing, a planner that fails and a request for the library search.

@@ -12,7 +12,7 @@ export async function waitForTrial({root,token,version,pid,signal,timeout=90000}
     signal?.throwIfAborted();
     if(fs.existsSync(file)) {
       noLinks(file);const value=readJson(file);
-      assert(value.protocol===1&&value.root===root&&value.token===token&&value.version===version&&value.pid===pid,'TRIAL_READY_INVALID');
+      assert(value.protocol===1&&value.root===root&&value.token===token&&value.version===version&&Number.isInteger(value.pid)&&value.pid>0&&(pid===undefined||value.pid===pid),'TRIAL_READY_INVALID');
       return value;
     }
     await delay(Math.min(200,Math.max(1,until-Date.now())),undefined,{signal});

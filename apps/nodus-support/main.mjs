@@ -21,7 +21,7 @@ import { supportText, SUPPORT_LANGUAGES } from '../../shared/support/messages';
 import trustedKeys from './trusted-release-keys.json';
 import qualifiedRepairs from './qualified-repairs.json';
 import { waitForTrial } from './core/trial-ready.mjs';
-import { requireQualified } from './core/qualification.mjs';
+import { requireQualified,qualifiedRepairsFor,compiledSupportSource } from './core/qualification.mjs';
 import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
 import { verifyActivatedInstallation } from './core/installation.mjs';
@@ -203,8 +203,8 @@ async function reinstall(id,update=false) {
 }
 async function ensureDiagnosticRuntime(id) {
   let session=await service.session(id);
-  if(session.diagnosticRuntime){await service.runtimeFor(session);return session;}
-  try{if((await service.installation())?.protocol===1)return session;}catch{/* A damaged installation must never be executed. */}
+  if(session.diagnosticRuntime){const runtime=await service.runtimeFor(session);assert(runtime.installation.supportSourceSha256===compiledSupportSource,'COMPATIBLE_INSTALL_REQUIRED');return session;}
+  try{const installed=await service.installation();if(installed?.protocol===1&&installed.supportSourceSha256===compiledSupportSource)return session;}catch{/* A damaged installation must never be executed. */}
   return service.exclusive(async()=>{
     service.activeId=id;service.controller=new AbortController();
     try {
@@ -219,7 +219,7 @@ async function ensureDiagnosticRuntime(id) {
       const candidate=path.join(folder,'candidate');await extractRuntime(archive,candidate,openZip);
       service.controller.signal.throwIfAborted();
       const executable=destination(candidate,manifest.executable);await verifyPlatformSignature(executable,manifest.runtime.platformSignature);
-      const installation=await service.installation(executable);assert(installation?.protocol===1&&installation.version===manifest.version,'RELEASE_INCOMPATIBLE');
+      const installation=await service.installation(executable);assert(installation?.protocol===1&&installation.version===manifest.version&&installation.supportSourceSha256===compiledSupportSource,'RELEASE_INCOMPATIBLE');
       const diagnosticRuntime={folder,candidate,executable,version:manifest.version,inventory:await inventory(candidate,service.controller.signal,service.progress,{links:true})};
       session=await service.session(id);
       return service.event(id,{status:'protected',diagnosticRuntime,diagnosticVersion:manifest.version,actions:[...session.actions,{id:randomUUID(),action:'prepare-runtime',status:'passed',at:new Date().toISOString()}]});
@@ -230,9 +230,10 @@ async function ensureDiagnosticRuntime(id) {
 async function launchRecovered(id, index) {
   requireQualified(qualifiedRepairs, process.platform, process.arch, 'interactive-copy');
   const session = await service.session(id); assert(Number.isInteger(index) && index >= 0 && index < session.recoveredProfiles.length, 'INVALID_REQUEST');
+  await service.guardSource(session);
   const root = session.recoveredProfiles[index]; noLinks(root);
   assert(root.startsWith(`${session.folder}${path.sep}`), 'INVALID_REQUEST');
-  const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1,'COMPATIBLE_INSTALL_REQUIRED');
+  const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1&&installation.supportSourceSha256===compiledSupportSource,'COMPATIBLE_INSTALL_REQUIRED');
   const result=readJson(path.join(root,'result.json'));
   assert(result.protocol===1&&result.root===root&&result.appVersion===installation.version,'COMPATIBLE_INSTALL_REQUIRED');
   // Interactive copies use the normal application only with the validated isolated bootstrap.
@@ -292,7 +293,7 @@ async function handlers() {
   });
   handle('setLanguage', async language => { assert(SUPPORT_LANGUAGES.includes(language),'INVALID_REQUEST'); service.locale = language; await remember(); });
   handle('openGuide',async id=>{assert(typeof id==='string','INVALID_REQUEST');await shell.openExternal(guideUrl(id,process.platform));});
-  handle('inspect', async () => ({...await service.inspect(),qualifiedRepairs:qualifiedRepairs.platforms[`${process.platform}-${process.arch}`] ?? []})); handle('chooseProfile', () => choose('profile')); handle('chooseExecutable', () => choose('executable')); handle('chooseStorage', () => choose('storage'));
+  handle('inspect', async () => ({...await service.inspect(),qualifiedRepairs:qualifiedRepairsFor(qualifiedRepairs,process.platform,process.arch)})); handle('chooseProfile', () => choose('profile')); handle('chooseExecutable', () => choose('executable')); handle('chooseStorage', () => choose('storage'));
   handle('create', input => {assert(!service.busy,'OPERATION_RUNNING');selectCurrentProfile(service,path.join(stateRoot,'launch-policies'));return service.create(input);}); handle('protect', id => service.protect(id)); handle('test', async(id,action)=>{assert(SUPPORT_ACTIONS.includes(action),'INVALID_ACTION');await ensureDiagnosticRuntime(id);return service.test(id,action);});
   handle('answer', async (id, works) => {
     const session = await service.session(id);
@@ -316,12 +317,19 @@ async function handlers() {
       // A system installer can outlive the assistant. Require an explicit retry or rollback.
       return service.event(id,{status:'blocked',lastError:'INSTALLATION_RECOVERY_REQUIRED'});
     }
+    if(session.trialPending) {
+      const pending=session.trialPending;
+      assert(session.recoveredProfiles.includes(pending.root),'INVALID_SESSION');
+      try{await waitForTrial({...pending,timeout:100});await service.event(id,{trialOpened:pending.root,trialPending:null});}
+      catch(error){if(error.code!=='TRIAL_NOT_READY')throw error;}
+    }
     await new SolutionManager(service,path.join(stateRoot,'launch-policies')).recover(id);
     return service.resume(id);
   });
   handle('launchRecovered', launchRecovered); handle('report', async(id,selection)=>{const {report:_report,...summary}=await service.report(id,selection);return summary;}); handle('reinstall', reinstall);
   handle('applySolution', async (id,index) => {
     requireQualified(qualifiedRepairs,process.platform,process.arch,'apply-solution');
+    assert((await service.installation())?.supportSourceSha256===compiledSupportSource,'COMPATIBLE_INSTALL_REQUIRED');
     assert(!(await service.session(id)).installationPrevious,'INVALID_STATE');
     if(!await confirmation(text('applySolution'),text('trial')))return service.session(id);
     return new SolutionManager(service,path.join(stateRoot,'launch-policies')).apply(id,index);
@@ -359,7 +367,7 @@ async function handlers() {
     assert(typeof password === 'string' && password.length > 0 && password.length <= 4096, 'RECOVERY_PASSWORD_REQUIRED');
     await ensureDiagnosticRuntime(id);
     const session = await service.session(id); await service.guardSource(session); await service.protectedSources(session);
-    const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1,'COMPATIBLE_INSTALL_REQUIRED');
+    const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1&&installation.supportSourceSha256===compiledSupportSource,'COMPATIBLE_INSTALL_REQUIRED');
     const choice = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Nodus', extensions: ['nodus'] }] });
     if (choice.canceled) return session;
     return service.exclusive(async () => {

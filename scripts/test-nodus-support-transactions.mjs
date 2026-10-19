@@ -66,6 +66,10 @@ test('an unqualified repair is blocked for every supported native platform',() =
   for(const [platform,arch] of [['win32','x64'],['darwin','arm64'],['darwin','x64'],['linux','x64']]) for(const action of ['reinstall','interactive-copy','apply-solution','restore-copy']) {
     assert.throws(()=>requireQualified({...catalog,platforms:{}},platform,arch,action),/REPAIR_NOT_QUALIFIED/);
   }
+  const source='a'.repeat(64),approved={...catalog,sourceSha256:source,platforms:{'win32-x64':['reinstall']}};
+  assert.doesNotThrow(()=>requireQualified(approved,'win32','x64','reinstall',source));
+  assert.throws(()=>requireQualified(approved,'win32','x64','reinstall','b'.repeat(64)),/REPAIR_NOT_QUALIFIED/);
+  assert.throws(()=>requireQualified(approved,'win32','x64','reinstall'),/REPAIR_NOT_QUALIFIED/);
   assert.throws(()=>requireQualified({...catalog,protocol:2},'win32','x64','reinstall'),/REPAIR_NOT_QUALIFIED/);
 });
 test('application framework symlinks copy privately without traversing the links', {skip:process.platform==='win32'},async () => {

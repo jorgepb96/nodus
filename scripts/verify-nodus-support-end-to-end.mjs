@@ -45,7 +45,7 @@ fs.writeFileSync(path.join(entry,'entry.mjs'),`
  }
 `);
 await createPackage(entry,path.join(resources,'app.asar'));
-fs.writeFileSync(path.join(resources,'nodus-support-protocol.json'),JSON.stringify({protocol:1,trialReadyProtocol:1,version,platform:process.platform,arch:process.arch,archiveSha256:await hashFile(path.join(resources,'app.asar'))}));
+fs.writeFileSync(path.join(resources,'nodus-support-protocol.json'),JSON.stringify({protocol:1,trialReadyProtocol:1,supportSourceSha256:sourceSha256,version,platform:process.platform,arch:process.arch,archiveSha256:await hashFile(path.join(resources,'app.asar'))}));
 if(process.platform==='darwin') {
  execFileSync('/usr/libexec/PlistBuddy',['-c','Set :CFBundleExecutable NodusSupportQA',path.join(runtime,'Contents/Info.plist')]);
  execFileSync('/usr/bin/codesign',['--force','--deep','--sign','-',runtime],{stdio:'pipe'});
@@ -53,8 +53,8 @@ if(process.platform==='darwin') {
 execFileSync(electron,[path.join(repo,'scripts/support-native-fixture.mjs'),root],{env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:'inherit'});
 const profile=path.join(root,'original'),external=path.join(root,'external-vault'),library=path.join(root,'external-library'),before=await Promise.all([profile,external,library].map(file=>inventory(file)));
 const helper=path.join(root,'helper');fs.cpSync(path.join(repo,'build/support-app'),helper,{recursive:true});
-await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile:path.join(helper,'main.mjs'),bundle:true,platform:'node',format:'esm',target:'node22',external:['electron'],banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);const __dirname=__fixtureRequire(import.meta.url)("node:path").dirname(__fixtureRequire(import.meta.url)("node:url").fileURLToPath(import.meta.url));'},plugins:[{name:'test-only-qualification-and-dialogs',setup(builder){
- builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/1',protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution']}}),loader:'json'}));
+await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile:path.join(helper,'main.mjs'),define:{__NODUS_SUPPORT_SOURCE_SHA256__:JSON.stringify(sourceSha256)},bundle:true,platform:'node',format:'esm',target:'node22',external:['electron'],banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);const __dirname=__fixtureRequire(import.meta.url)("node:path").dirname(__fixtureRequire(import.meta.url)("node:url").fileURLToPath(import.meta.url));'},plugins:[{name:'test-only-qualification-and-dialogs',setup(builder){
+ builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/2',sourceSha256,protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution']}}),loader:'json'}));
  builder.onResolve({filter:/^electron$/},()=>({path:'electron',namespace:'qualification-electron'}));
  builder.onLoad({filter:/.*/,namespace:'qualification-electron'},()=>({loader:'js',contents:`
  import{createRequire}from'node:module';const e=createRequire(import.meta.url)('electron');

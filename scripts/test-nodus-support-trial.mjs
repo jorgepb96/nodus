@@ -11,7 +11,7 @@ test('a spawn alone cannot qualify a trial, and stale/wrong receipts cannot conf
     await assert.rejects(waitForTrial(input),/TRIAL_NOT_READY/);
     assert.throws(()=>trialReceiptPath(root,'../outside'),/INVALID_REQUEST/);
     const file=trialReceiptPath(root,token);fs.writeFileSync(file,JSON.stringify({protocol:1,...input,pid:5678}));await assert.rejects(waitForTrial(input),/TRIAL_READY_INVALID/);
-    fs.writeFileSync(file,JSON.stringify({protocol:1,...input}));assert.equal((await waitForTrial(input)).pid,1234);
+    fs.writeFileSync(file,JSON.stringify({protocol:1,...input}));assert.equal((await waitForTrial(input)).pid,1234);assert.equal((await waitForTrial({...input,pid:undefined})).pid,1234);
     const controller=new AbortController();controller.abort();await assert.rejects(waitForTrial({...input,signal:controller.signal}),error=>error.name==='AbortError');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

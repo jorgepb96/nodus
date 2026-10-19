@@ -1,3 +1,4 @@
+import {supportSourceDigest} from './lib/supportEvidence.mjs';
 // Runtime archives and signed manifests are produced from the final, signed app.
 // No release can enable reinstall without an independently configured trust key.
 import fs from 'node:fs';
@@ -43,7 +44,7 @@ if (process.argv.includes('--runtime')) {
 }
 if (process.argv.includes('--publish')) {
   const qualified = JSON.parse(fs.readFileSync(path.join(root,'apps/nodus-support/qualified-repairs.json'),'utf8'));
-  for (const repair of ['interactive-copy','apply-solution','restore-copy','reinstall']) requireQualified(qualified,platform,arch,repair);
+  for (const repair of ['interactive-copy','apply-solution','restore-copy','reinstall']) requireQualified(qualified,platform,arch,repair,supportSourceDigest(root));
   const privateKey = process.env.NODUS_SUPPORT_RELEASE_PRIVATE_KEY;
   const keyId = process.env.NODUS_SUPPORT_RELEASE_KEY_ID;
   if (!privateKey || !keyId) throw new Error('Support publication requires NODUS_SUPPORT_RELEASE_PRIVATE_KEY and NODUS_SUPPORT_RELEASE_KEY_ID');

@@ -7,7 +7,7 @@ import { createPublicKey, sign, createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import archiver from 'archiver';
 import { hashFile } from '../apps/nodus-support/core/files.mjs';
-import { verifyRelease } from '../apps/nodus-support/core/releases.mjs';
+import { acceptPlatformSignature,verifyRelease } from '../apps/nodus-support/core/releases.mjs';
 import { requireQualified } from '../apps/nodus-support/core/qualification.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -17,6 +17,13 @@ const release = path.join(root, 'release');
 const runtimeName = `Nodus-Runtime-${platform}-${arch}.zip`;
 const preparedRuntime = path.join(root, '.ci/support-release', runtimeName);
 const app = platform === 'darwin' ? path.join(release, `mac${arch === 'arm64' ? '-arm64' : ''}`, 'Nodus.app') : path.join(release, platform === 'win32' ? 'win-unpacked' : 'linux-unpacked');
+function platformSignature(file) {
+  if(platform==='darwin') {execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',app]);execFileSync('/usr/sbin/spctl',['--assess','--type','execute',app]);return 'macos-notarized';}
+  if(platform!=='win32')return 'none';
+  const powershell=path.join(process.env.SystemRoot??'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
+  const status=execFileSync(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:{...process.env,NODUS_SUPPORT_SIGNATURE_FILE:file},encoding:'utf8'}).trim();
+  acceptPlatformSignature(status,'none');return status==='Valid'?'authenticode':'none';
+}
 if (process.argv.includes('--runtime')) {
   fs.mkdirSync(path.dirname(preparedRuntime), { recursive: true });
   await new Promise((resolve, reject) => {
@@ -45,7 +52,7 @@ if (process.argv.includes('--publish')) {
   if (!keys.some(key => key.keyId === keyId && key.publicKeyPem.trim() === derived.trim())) throw new Error('The support release key is not pinned in the application');
   fs.copyFileSync(preparedRuntime, path.join(release,runtimeName));
   const names = platform === 'darwin' ? [[`Nodus-mac-${arch}.zip`,'zip']] : platform === 'win32' ? [['Nodus-win-x64.exe','nsis']] : [['Nodus-x86_64.AppImage','AppImage'],['Nodus-linux-amd64.deb','deb'],['Nodus-linux-x86_64.rpm','rpm']];
-  const artifact = async (name,format) => ({name,format,url:`https://github.com/jorgepb96/nodus/releases/download/v${pkg.version}/${name}`,bytes:fs.statSync(path.join(release,name)).size,sha256:await hashFile(path.join(release,name))});
+  const artifact = async (name,format) => ({name,format,platformSignature:platformSignature(name===runtimeName?path.join(app,platform==='win32'?'Nodus.exe':'nodus'):path.join(release,name)),url:`https://github.com/jorgepb96/nodus/releases/download/v${pkg.version}/${name}`,bytes:fs.statSync(path.join(release,name)).size,sha256:await hashFile(path.join(release,name))});
   const manifest = {format:'nodus.support-release/1',protocol:1,version:pkg.version,platform,arch,executable:platform === 'darwin' ? 'Nodus.app/Contents/MacOS/Nodus' : platform === 'win32' ? 'Nodus.exe' : 'nodus',runtime:await artifact(runtimeName,'zip'),installers:await Promise.all(names.map(([name,format])=>artifact(name,format)))};
   const payload = Buffer.from(JSON.stringify(manifest)); const envelope = {keyId,payload:payload.toString('base64'),signature:sign(null,payload,privateKey).toString('base64')};
   verifyRelease(envelope,keys,platform,arch);

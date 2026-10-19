@@ -16,7 +16,7 @@ export async function openNodusSupport(language: AppLanguage): Promise<void> {
   const response = await dialog.showMessageBox({ type: 'info', message: supportText(language, 'title'), detail: supportText(language, 'backupHelp'), buttons: [supportText(language, 'cancel'), supportText(language, 'confirm')], defaultId: 0, cancelId: 0, noLink: true });
   if (response.response !== 1) return;
   const installed = process.platform === 'linux' && process.env.APPIMAGE ? process.env.APPIMAGE : process.execPath;
-  const child = spawn(executable, [`--nodus-profile=${process.env.NODUS_SUPPORT_ORIGINAL_PROFILE ?? app.getPath('userData')}`, `--nodus-executable=${installed}`], { detached: true, stdio: 'ignore' });
+  const child = spawn(executable, [`--nodus-profile=${process.env.NODUS_SUPPORT_ORIGINAL_PROFILE ?? app.getPath('userData')}`, `--nodus-executable=${installed}`, `--nodus-version=${app.getVersion()}`], { detached: true, stdio: 'ignore' });
   await new Promise<void>((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
   child.unref();
   // Existing before-quit/editor guards must save work. Support never forces termination.

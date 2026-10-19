@@ -2,12 +2,13 @@ import type { AppLanguage } from '../types';
 
 export const SUPPORT_PROTOCOL = 1;
 export type SupportSymptom = 'startup' | 'tool' | 'data' | 'sync' | 'update' | 'other';
-export type SupportAction = 'fresh-profile' | 'software-graphics' | 'copy-profile' | 'disable-plugins' | 'database-check' | 'rebuild-library' | 'restore-copy' | 'reinstall' | 'configuration-check' | 'model-check' | 'repair-local-endpoints' | 'pause-sync' | 'archive-roundtrip' | 'library-check' | 'recover-database' | 'apply-solution' | 'undo-solution';
+export type SupportAction = 'fresh-profile' | 'software-graphics' | 'copy-profile' | 'disable-plugins' | 'database-check' | 'rebuild-library' | 'restore-copy' | 'reinstall' | 'configuration-check' | 'model-check' | 'repair-local-endpoints' | 'pause-sync' | 'archive-roundtrip' | 'library-check' | 'recover-database' | 'apply-solution' | 'undo-solution' | 'prepare-runtime';
 export type SupportStatus = 'created' | 'protecting' | 'protected' | 'testing' | 'awaiting-user' | 'confirmed' | 'reverted' | 'blocked' | 'interrupted' | 'conflict';
 export interface SupportFinding { code: string; level: 'info' | 'warning' | 'error'; component: string; count?: number; }
 export interface SupportInspection {
   profile: string; executable: string | null; version: string | null; protocol: number | null;
   language: AppLanguage; platform: string; arch: string; findings: SupportFinding[]; roots: string[];
+  osVersion?:string|null;
 }
 export interface SupportSession {
   id: string; at: string; symptom: SupportSymptom; mode: 'guided' | 'automatic'; status: SupportStatus;
@@ -15,6 +16,8 @@ export interface SupportSession {
   files: number; bytes: number; folder: string; recoveredProfiles: string[];
   trialOpened?: string | null;
   policyApplied?: string|null;
+  diagnosticVersion?:string;
+  recoveryInfo?:Record<string,{source:string;backupDate?:string}>;
   findings?: SupportFinding[];
   conflict?: {current:string;previous:string} | null;
 }

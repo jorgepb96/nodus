@@ -20,12 +20,17 @@ export function verifyRelease(envelope, keys, platform, arch) {
   assert(/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/i.test(manifest.version), 'RELEASE_INCOMPATIBLE');
   for (const artifact of [manifest.runtime, ...manifest.installers]) {
     assert(artifact && /^[a-f0-9]{64}$/.test(artifact.sha256) && Number.isSafeInteger(artifact.bytes) && artifact.bytes > 0, 'RELEASE_NOT_TRUSTED');
+    assert(platform==='darwin'?artifact.platformSignature==='macos-notarized':platform==='win32'?['authenticode','none'].includes(artifact.platformSignature):artifact.platformSignature==='none','RELEASE_NOT_TRUSTED');
     const url = new URL(artifact.url);
     assert(url.href.startsWith(`${RELEASE_ORIGIN}v${manifest.version}/`) && !url.search && !url.hash && !url.username && !url.password, 'RELEASE_NOT_TRUSTED');
     assert(decodeURIComponent(url.pathname.split('/').at(-1)) === artifact.name && path.basename(artifact.name) === artifact.name, 'RELEASE_NOT_TRUSTED');
   }
   assert(!path.isAbsolute(manifest.executable) && !manifest.executable.includes('..'), 'RELEASE_NOT_TRUSTED');
   return manifest;
+}
+export function acceptPlatformSignature(status,policy) {
+  assert(policy==='authenticode'||policy==='none','RELEASE_NOT_TRUSTED');
+  assert(status==='Valid'||policy==='none'&&status==='NotSigned','RELEASE_PLATFORM_SIGNATURE_INVALID');
 }
 async function boundedJson(response) {
   assert(response.body,'RELEASE_MANIFEST_UNAVAILABLE');const reader=response.body.getReader(),parts=[];let size=0;

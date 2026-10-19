@@ -12,6 +12,8 @@ export class SolutionManager {
       await this.service.guardSource(session);const sources=await this.service.protectedSources(session);
       assert(Number.isInteger(index)&&index>=0&&session.trialOpened===session.recoveredProfiles[index],'USER_TRIAL_REQUIRED');
       const root=session.recoveredProfiles[index],result=readJson(path.join(root,'result.json'));
+      const installed=await this.service.installation();
+      assert(installed?.protocol===1&&installed.version===result.appVersion,'COMPATIBLE_INSTALL_REQUIRED');
       assert(result.ok===true&&result.protocol===1&&result.root===root&&!result.diagnostic&&!result.partial,'PROBE_INVALID');
       assert(result.action!=='fresh-profile','DIAGNOSTIC_PROFILE_ONLY');
       for(const source of sources)await verifyInventory(source.original,source.inventory);

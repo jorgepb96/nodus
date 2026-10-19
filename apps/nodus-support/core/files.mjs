@@ -97,7 +97,10 @@ export async function copyInventory(source, target, manifest, signal, progress =
     // Flush while the writable handle is open. Windows cannot fsync a read-only
     // handle, and reopening after copying would also fail for read-only sources.
     const out = fs.createWriteStream(to, { flags: 'wx', mode: 0o600, flush:true });
-    await pipeline(fs.createReadStream(from), out, { signal });
+    const input=fs.createReadStream(from);let copied=0;
+    input.on('data',chunk=>{copied+=chunk.length;progress({phase:'protecting',completed:completed+copied,total:manifest.bytes});});
+    await pipeline(input, out, { signal });
+    progress({phase:'verifying',completed:0,total:0});
     assert(await hashFile(to, signal) === entry.sha256 && await hashFile(from, signal) === entry.sha256, 'COPY_NOT_VERIFIED');
     // Copies of executables must retain their executable bits; directories remain private.
     await fsp.chmod(to, entry.mode & 0o700);

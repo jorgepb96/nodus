@@ -15,7 +15,9 @@ import dgram from 'node:dgram';
 import workers from 'node:worker_threads';
 
 export function installSupportIsolation(root) {
-  const realpath = fs.realpathSync.native.bind(fs.realpathSync), lstat = fs.lstatSync.bind(fs);
+  // Match Electron's profile markers. Windows native realpath can resolve a
+  // runner's mapped drive into a different device path from fs.realpathSync.
+  const realpath = fs.realpathSync.bind(fs), lstat = fs.lstatSync.bind(fs);
   const normalize=file=>process.platform==='win32'?path.toNamespacedPath(path.resolve(file)):path.resolve(file);
   const boundary = normalize(realpath(root)), restored = [], writable = new Set([1,2]);
   const deny = code => { throw Object.assign(new Error(code),{code}); };

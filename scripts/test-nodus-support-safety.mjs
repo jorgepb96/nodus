@@ -139,6 +139,14 @@ test('selection filters dates and counts without pruning the underlying log', as
   assert.equal((await f.service.errors({ limit: 'all', since: '2026-10-19T00:00:00Z' })).length, 60);
   assert.equal(JSON.parse(fs.readFileSync(path.join(f.profile, 'nodus-logs.json'), 'utf8')).entries.length, 120);
 });
+test('actual pipeline badges and nearby technical events survive without message parameters or identifiers',async()=>{
+  const f=fixture(),secret='Alice private document sk-canary-token',jobId='private-job-Alice';
+  put(path.join(f.profile,'nodus-logs.json'),{entries:[{level:'info',at:'2026-10-19T10:00:00Z',category:'provider',code:'connection',jobId,documentTitle:secret,message:{id:'ok',params:{detail:secret}}},{level:'error',at:'2026-10-19T10:00:01Z',category:'provider',code:'auth',httpStatus:401,repeat:3,jobId,detail:secret,model:secret}]});
+  const before=await inventory(f.profile),report=await f.service.report((await create(f.service)).id,{limit:50});
+  assert.equal(report.report.errors[0].code,'PIPELINE_AUTH');assert.equal(report.report.errors[0].httpStatus,401);assert.equal(report.report.errors[0].repeat,3);assert.equal(report.report.errors[0].context[0].code,'PIPELINE_CONNECTION');
+  for(const privateValue of ['Alice','private document','sk-canary','private-job'])assert.ok(!JSON.stringify(report).includes(privateValue));
+  assert.deepEqual(await inventory(f.profile),before);
+});
 test('GitHub drafts are bounded, carry no account tokens and use the existing form', () => {
   const report = publicReport({ version: '5.13.0', platform: 'win32', arch: 'x64' }, { symptom: 'startup', status: 'blocked', actions: [] }, [], []);
   const draft = issueDraft(report, reportMarkdown(report)); assert.ok(draft.issueUrl.includes('bug_report.yml'));

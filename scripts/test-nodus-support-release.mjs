@@ -4,11 +4,11 @@ import { generateKeyPairSync, sign, createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { verifyRelease, downloadArtifact, installerCommand,resolveRelease } from '../apps/nodus-support/core/releases.mjs';
+import { acceptPlatformSignature, verifyRelease, downloadArtifact, installerCommand,resolveRelease } from '../apps/nodus-support/core/releases.mjs';
 
 const keys = generateKeyPairSync('ed25519');
 const trusted = [{ keyId: 'test', publicKeyPem: keys.publicKey.export({ format: 'pem', type: 'spki' }) }];
-const artifact = (name, format) => ({ name, format, url: `https://github.com/jorgepb96/nodus/releases/download/v5.13.0/${name}`, bytes: 7, sha256: createHash('sha256').update('payload').digest('hex') });
+const artifact = (name, format) => ({ name, format, platformSignature:'none',url: `https://github.com/jorgepb96/nodus/releases/download/v5.13.0/${name}`, bytes: 7, sha256: createHash('sha256').update('payload').digest('hex') });
 const payload = { format: 'nodus.support-release/1', platform: 'win32', arch: 'x64', version: '5.13.0', protocol: 1, executable: 'Nodus.exe', runtime: artifact('runtime.zip','zip'), installers: [artifact('Nodus-win-x64.exe','nsis')] };
 const envelope = value => { const bytes = Buffer.from(JSON.stringify(value)); return { keyId: 'test', payload: bytes.toString('base64'), signature: sign(null, bytes, keys.privateKey).toString('base64') }; };
 test('only signed official artifacts for the exact platform and architecture are accepted', () => {
@@ -19,6 +19,12 @@ test('only signed official artifacts for the exact platform and architecture are
   assert.throws(() => verifyRelease(tampered, trusted, 'win32','x64'), /RELEASE_SIGNATURE_INVALID/);
   const external = structuredClone(payload); external.runtime.url = 'https://malicious.example/runtime.zip';
   assert.throws(() => verifyRelease(envelope(external), trusted, 'win32','x64'), /RELEASE_NOT_TRUSTED/);
+});
+test('an unsigned Windows build is accepted only when its signed manifest explicitly declares that policy',()=>{
+  acceptPlatformSignature('NotSigned','none');acceptPlatformSignature('Valid','authenticode');
+  assert.throws(()=>acceptPlatformSignature('NotSigned','authenticode'),/RELEASE_PLATFORM_SIGNATURE_INVALID/);
+  for(const status of ['HashMismatch','NotTrusted','UnknownError'])assert.throws(()=>acceptPlatformSignature(status,'none'),/RELEASE_PLATFORM_SIGNATURE_INVALID/);
+  assert.throws(()=>acceptPlatformSignature('NotSigned',undefined),/RELEASE_NOT_TRUSTED/);
 });
 test('downloads verify actual bytes, retain failures and never overwrite another artifact', async () => {
   const folder = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'nodus-support-download-')));

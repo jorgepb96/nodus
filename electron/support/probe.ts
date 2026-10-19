@@ -20,7 +20,7 @@ export async function runSupportProbe():Promise<void> {
   process.env.NODUS_HARNESS_KEYS_FILE=path.join(root,'no-provider-keys.json');process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS='1';process.env.NODUS_BACKUP_UTILITY_INLINE='1';
   isolateSupportApplication(root);
   if(action==='software-graphics')app.disableHardwareAcceleration();
-  const result=(ok:boolean,code:string,extra:Record<string,unknown>={})=>process.stdout.write(`\n@@NODUS_SUPPORT@@${JSON.stringify({protocol:1,root,ok,code,diagnostic:DIAGNOSTIC_ACTIONS.includes(action),...extra})}\n`);
+  const result=(ok:boolean,code:string,extra:Record<string,unknown>={})=>process.stdout.write(`\n@@NODUS_SUPPORT@@${JSON.stringify({protocol:1,root,appVersion:app.getVersion(),ok,code,diagnostic:DIAGNOSTIC_ACTIONS.includes(action),...extra})}\n`);
   await app.whenReady();
   try {
     if(action==='restore-archive'||action==='archive-roundtrip') {
@@ -43,12 +43,17 @@ export async function runSupportProbe():Promise<void> {
         fs.mkdirSync(profile,{mode:0o700});
         fs.writeFileSync(prefsFile,JSON.stringify({autoBackupFolder:path.join(profile,'recovered-library'),recoverySetupVersion:1,autoBackupEnabled:false,backupCleanupEnabled:false}),{flag:'wx',mode:0o600});
       }
-      const restored=await restoreBackupArchiveFile(archive,password);password='';
+      const restored=await restoreBackupArchiveFile(archive,password,value=>process.stdout.write(`\n@@NODUS_SUPPORT_PROGRESS@@${JSON.stringify({protocol:1,root,phase:value.phase,completed:value.completedBytes,total:value.totalBytes})}\n`));password='';
       let verified=restored.ok;
       if(verified&&action==='archive-roundtrip') {
         const {getDb,closeDb}=await import('../db/database');verified=Boolean(getDb().prepare("SELECT 1 FROM support_roundtrip WHERE value='synthetic recovery check'").get());closeDb();
       }
-      result(verified,verified?'ARCHIVE_RECOVERED':'ARCHIVE_RECOVERY_FAILED',{diagnostic:action==='archive-roundtrip'});app.quit();return;
+      let backupDate:string|undefined;
+      if(verified) {
+        const {ZipFileReader}=await import('../export/zipFile');const reader=await ZipFileReader.open(archive),entry=reader.entry('manifest.json');
+        if(entry){const metadata=JSON.parse((await reader.read(entry,1024*1024)).toString('utf8'));if(typeof metadata.date==='string'&&Number.isFinite(Date.parse(metadata.date)))backupDate=new Date(metadata.date).toISOString();}
+      }
+      result(verified,verified?'ARCHIVE_RECOVERED':'ARCHIVE_RECOVERY_FAILED',{diagnostic:action==='archive-roundtrip',backupDate});app.quit();return;
     }
     if(['configuration-check','model-check'].includes(action)) {result(true,'CONFIGURATION_CHECKED',{findings:configurationFindings(profile)});app.quit();return;}
     if(action==='repair-local-endpoints') {const changed=repairLocalEndpoints(profile);result(changed>0,changed?'MODEL_ENDPOINT_REPAIRED':'NO_KNOWN_REPAIR');app.quit();return;}

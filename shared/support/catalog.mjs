@@ -12,6 +12,6 @@ export const SUPPORT_CATALOG = [
 export const SUPPORT_ACTIONS = [...new Set(SUPPORT_CATALOG.flatMap(entry=>entry.actions))];
 export const DIAGNOSTIC_ACTIONS = ['fresh-profile','database-check','library-check','configuration-check','model-check','archive-roundtrip'];
 export function suggestedActions(symptom) {
-  const first={startup:['configuration-check','fresh-profile','software-graphics','copy-profile','disable-plugins'],tool:['configuration-check','model-check','disable-plugins'],data:['database-check','library-check','rebuild-library','recover-database'],sync:['configuration-check','model-check','pause-sync'],update:['configuration-check','fresh-profile'],other:['configuration-check','database-check','model-check','library-check','archive-roundtrip']}[symptom] ?? [];
+  const first={startup:['fresh-profile','software-graphics','copy-profile','disable-plugins','configuration-check'],tool:['configuration-check','model-check','disable-plugins'],data:['database-check','library-check','rebuild-library','recover-database'],sync:['configuration-check','model-check','pause-sync'],update:['configuration-check','fresh-profile'],other:['configuration-check','database-check','model-check','library-check','archive-roundtrip']}[symptom] ?? [];
   return [...new Set([...first,...SUPPORT_ACTIONS])];
 }

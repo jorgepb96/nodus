@@ -10,12 +10,12 @@ import { randomUUID } from 'node:crypto';
 import archiver from 'archiver';
 import { open as openZip } from 'yauzl';
 import { SupportService } from './core/service.mjs';
-import { assert, copyInventory, destination, inventory, noLinks, readJson, separate, sufficientSpace as sufficientSpaceForArchive, verifyInventory, writeNew } from './core/files.mjs';
+import { assert, copyInventory, destination, hashFile, inventory, noLinks, readJson, separate, sufficientSpace as sufficientSpaceForArchive, verifyInventory, writeNew } from './core/files.mjs';
 import { runProbe } from './core/probe.mjs';
 import { SolutionManager } from './core/solutions.mjs';
 import { resolvePolicy } from './core/policies.mjs';
 import { activateInstallation, recoverInstallation } from './core/install-transaction.mjs';
-import { downloadArtifact, extractRuntime, installerCommand, preserveInstallation, resolveRelease, runInstaller } from './core/releases.mjs';
+import { acceptPlatformSignature, downloadArtifact, extractRuntime, installerCommand, preserveInstallation, resolveRelease, runInstaller } from './core/releases.mjs';
 import { issueDraft } from '../../shared/support/report.mjs';
 import { supportText, SUPPORT_LANGUAGES } from '../../shared/support/messages';
 import trustedKeys from './trusted-release-keys.json';
@@ -23,6 +23,7 @@ import qualifiedRepairs from './qualified-repairs.json';
 import { requireQualified } from './core/qualification.mjs';
 import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
+import { SUPPORT_ACTIONS } from '../../shared/support/catalog.mjs';
 
 const exec = promisify(execFile);
 app.setName('Nodus Support'); app.disableHardwareAcceleration();
@@ -45,12 +46,13 @@ function detectExecutable() {
   return candidates.find(file=>file && fs.existsSync(file)) ?? null;
 }
 const isRunning = async () => {
+  const names=new Set(['Nodus','nodus','Nodus.exe',...(service?.executable?[path.basename(service.executable)]:[])].map(name=>name.toLowerCase()));
   if (process.platform === 'win32') {
-    const { stdout } = await exec('tasklist.exe', ['/FI','IMAGENAME eq Nodus.exe','/FO','CSV','/NH'], { windowsHide: true });
-    return /"Nodus\.exe"/i.test(stdout);
+    const { stdout } = await exec('tasklist.exe', ['/FO','CSV','/NH'], { windowsHide: true });
+    return stdout.split('\n').some(line=>names.has(line.trim().match(/^"([^"]+)"/)?.[1]?.toLowerCase()));
   }
   const { stdout } = await exec('/bin/ps', ['-A','-o','comm=']);
-  return stdout.split('\n').some(line => ['Nodus','nodus'].includes(path.basename(line.trim())));
+  return stdout.split('\n').some(line=>{const name=path.basename(line.trim()).toLowerCase();return names.has(name)||name.length===15&&[...names].some(expected=>expected.startsWith(name));});
 };
 async function loadState() {
   let config = {};
@@ -60,14 +62,14 @@ async function loadState() {
     try { if (files.length) config = readJson(path.join(folder, files.at(-1))); } catch { /* Choices can always be selected again. */ }
   }
   const defaultProfile = ['Nodus','nodus'].map(name => path.join(app.getPath('appData'), name)).find(folder => fs.existsSync(folder)) ?? path.join(app.getPath('appData'), 'Nodus');
-  service = new SupportService({ storage: config.storage ?? path.join(stateRoot, 'retained'), profile: argument('nodus-profile') ?? config.profile ?? defaultProfile, executable: argument('nodus-executable') ?? config.executable ?? detectExecutable(), locale: app.getLocale(), isRunning, probe: runProbe, privateDirectory, onIdle: () => { if (quitRequested) queueMicrotask(() => app.quit()); },
+  service = new SupportService({ storage: config.storage ?? path.join(stateRoot, 'retained'), profile: argument('nodus-profile') ?? config.profile ?? defaultProfile, executable: argument('nodus-executable') ?? config.executable ?? detectExecutable(), versionHint:argument('nodus-version')??config.versionHint, osVersion:process.getSystemVersion?.()??os.release().split('-')[0], locale: app.getLocale(), isRunning, probe: runProbe, privateDirectory, onIdle: () => { if (quitRequested) queueMicrotask(() => app.quit()); },
     progress: progress => { if (win && !win.isDestroyed()) win.webContents.send('support:progress', progress); } });
-  service.locale = config.language ?? (await service.inspect()).inspection.language;
   const active=resolvePolicy(path.join(stateRoot,'launch-policies'),service.profile);
   if(active?.recoveredRoot) {service.originProfile=service.profile;service.profile=path.join(active.recoveredRoot,'profile');}
+  service.locale = config.language ?? (await service.inspect()).inspection.language;
 }
 async function remember() {
-  await writeNew(path.join(stateRoot, 'choices', `${Date.now()}-${randomUUID()}.json`), { storage: service.storage, profile: service.originProfile??service.profile, executable: service.executable, language: service.locale });
+  await writeNew(path.join(stateRoot, 'choices', `${Date.now()}-${randomUUID()}.json`), { storage: service.storage, profile: service.originProfile??service.profile, executable: service.executable, versionHint:service.versionHint, language: service.locale });
 }
 async function choose(kind) {
   assert(!service.busy, 'OPERATION_RUNNING');
@@ -76,8 +78,8 @@ async function choose(kind) {
   const chosen = result.filePaths[0]; noLinks(chosen);
   if (kind === 'profile') { separate(chosen, service.storage); service.profile = chosen; service.originProfile=null; }
   else if (kind === 'storage') { separate(chosen, service.profile); service.storage = path.join(chosen, 'Nodus-Support-retained'); }
-  else if (process.platform === 'darwin' && chosen.endsWith('.app')) service.executable = path.join(chosen, 'Contents/MacOS/Nodus');
-  else service.executable = chosen;
+  else if (process.platform === 'darwin' && chosen.endsWith('.app')) {service.executable = path.join(chosen, 'Contents/MacOS/Nodus');service.versionHint=null;}
+  else {service.executable = chosen;service.versionHint=null;}
   await remember(); return service.inspect();
 }
 const confirmation = async (message, detail) => (await dialog.showMessageBox(win, { type: 'question', message, detail, buttons: [text('cancel'), text('confirm')], defaultId: 0, cancelId: 0, noLink: true })).response === 1;
@@ -96,18 +98,20 @@ async function chooseExport() {
   const picked = await dialog.showOpenDialog(win, { properties: ['openDirectory','createDirectory'] });
   return picked.canceled ? null : picked.filePaths[0];
 }
-async function verifyPlatformSignature(executable) {
+async function verifyPlatformSignature(executable,policy) {
   if (process.platform === 'darwin') {
     const bundle = path.resolve(executable,'../../..');
     await exec('/usr/bin/codesign',['--verify','--deep','--strict',bundle]);
     await exec('/usr/sbin/spctl',['--assess','--type','execute',bundle]);
   } else if (process.platform === 'win32') {
     const powershell = path.join(process.env.SystemRoot ?? 'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
-    await exec(powershell,['-NoProfile','-NonInteractive','-Command',"if ((Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_VERIFIED_INSTALLER).Status -ne 'Valid') { exit 1 }"],{env:{...process.env,NODUS_SUPPORT_VERIFIED_INSTALLER:executable},windowsHide:true});
+    const {stdout}=await exec(powershell,['-NoProfile','-NonInteractive','-Command',"(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_VERIFIED_INSTALLER).Status.ToString()"],{env:{...process.env,NODUS_SUPPORT_VERIFIED_INSTALLER:executable},windowsHide:true});
+    acceptPlatformSignature(stdout.trim(),policy);
   }
 }
 async function reinstall(id,update=false) {
   assert(typeof update==='boolean','INVALID_REQUEST');
+  assert(service.executable&&fs.existsSync(service.executable),'INSTALLATION_NOT_SELECTED');
   requireQualified(qualifiedRepairs, process.platform, process.arch, 'reinstall');
   const session = await service.session(id); await service.guardSource(session); await service.protectedSources(session);
   if (!await confirmation(text('reinstall'), text('automaticHelp'))) return session;
@@ -122,8 +126,9 @@ async function reinstall(id,update=false) {
       await service.event(id, { status: 'testing', installationAttempt: folder });
       const runtime = await downloadArtifact(manifest.runtime, folder, { fetch: net.fetch.bind(net), signal:service.controller.signal, progress: service.progress });
       const candidate = path.join(folder, 'candidate'); await extractRuntime(runtime, candidate, openZip);
+      service.controller.signal.throwIfAborted();
       const executable = destination(candidate, manifest.executable);
-      await verifyPlatformSignature(executable);
+      await verifyPlatformSignature(executable,manifest.runtime.platformSignature);
       const working = await service.workingCopy(session);
       const dataCheck=await runProbe({executable,root:working.root,action:'database-check',signal:service.controller.signal});
       assert(dataCheck.ok&&dataCheck.protocol===1&&dataCheck.root===working.root,'CANDIDATE_FAILED');
@@ -136,18 +141,20 @@ async function reinstall(id,update=false) {
       else { try { await exec('/usr/bin/dpkg-query', ['-S', service.executable]); format = 'deb'; } catch { await exec('/usr/bin/rpm', ['-qf', service.executable]); format = 'rpm'; } }
       const artifact = manifest.installers.find(entry => entry.format === format); assert(artifact, 'INSTALLER_NOT_SUPPORTED');
       const installer = await downloadArtifact(artifact, folder, { fetch: net.fetch.bind(net), signal:service.controller.signal, progress: service.progress });
-      if (process.platform === 'win32') await verifyPlatformSignature(installer);
-      let rollbackInstaller=installer;
+      if (process.platform === 'win32') await verifyPlatformSignature(installer,artifact.platformSignature);
+      let rollbackInstaller=installer,rollbackArtifact=artifact;
       if(manifest.version!==version&&['nsis','deb','rpm'].includes(format)) {
         const artifact=previous?.installers.find(entry=>entry.format===format);assert(artifact,'INSTALLATION_RECOVERY_REQUIRED');
+        rollbackArtifact=artifact;
         rollbackInstaller=await downloadArtifact(artifact,path.join(folder,'rollback-installer'),{fetch:net.fetch.bind(net),signal:service.controller.signal,progress:service.progress});
-        if(process.platform==='win32')await verifyPlatformSignature(rollbackInstaller);
+        if(process.platform==='win32')await verifyPlatformSignature(rollbackInstaller,artifact.platformSignature);
       }
       const original = process.platform === 'darwin' ? path.resolve(service.executable, '../../..') : format === 'AppImage' ? service.executable : path.dirname(service.executable);
       for (const root of session.inspection.roots) separate(original, root);
       const old = await preserveInstallation(original, folder);
-      await service.event(id, { installationOriginal: original, installationPrevious: old, installerVerified: artifact.name, installerFormat:format, installationPreviousInstaller:rollbackInstaller, installationVersion:manifest.version });
+      await service.event(id, { installationOriginal: original, installationPrevious: old, installerVerified: artifact.name, installerFormat:format, installationPreviousInstaller:rollbackInstaller, installationPreviousArtifact:rollbackArtifact, installationVersion:manifest.version });
       assert(!await isRunning(), 'CLOSE_NODUS_FIRST');
+      if(process.platform==='win32'&&artifact.platformSignature==='none')assert(await confirmation(text('reinstall'),text('manifestVerified')),'TEST_CANCELLED');
       for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory,service.controller.signal);
       service.controller.signal.throwIfAborted();
       if (process.platform === 'darwin' || format === 'AppImage') {
@@ -165,19 +172,46 @@ async function reinstall(id,update=false) {
         await runInstaller(command.command,command.args);
         await service.event(id,{installationSystemPending:false});
       }
+      service.controller.signal.throwIfAborted();
       return service.event(id, { status: 'awaiting-user', actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
     } catch (error) { return service.blocked(id, error); }
     finally { service.activeId = null; service.controller = null; }
+  });
+}
+async function ensureDiagnosticRuntime(id) {
+  let session=await service.session(id);
+  if(session.diagnosticRuntime){await service.runtimeFor(session);return session;}
+  try{if((await service.installation())?.protocol===1)return session;}catch{/* A damaged installation must never be executed. */}
+  return service.exclusive(async()=>{
+    service.activeId=id;service.controller=new AbortController();
+    try {
+      await service.guardSource(session);await service.protectedSources(session);
+      assert(trustedKeys.keys.length,'RELEASE_SIGNING_NOT_CONFIGURED');
+      assert(await confirmation(text('compatibleRuntime'),text('trial')),'TEST_CANCELLED');
+      const version=session.inspection.version??app.getVersion();
+      const {manifest}=await resolveRelease(version,trustedKeys.keys,process.platform,process.arch,{fetch:net.fetch.bind(net),signal:service.controller.signal,approveUpgrade:({from,to})=>confirmation(text('compatibleRuntime'),`${from} → ${to}\n${text('trial')}`)});
+      const folder=path.join(session.folder,'runtimes',randomUUID());await fsp.mkdir(folder,{recursive:true,mode:0o700});
+      await service.event(id,{status:'testing',runtimePrepared:folder});
+      const archive=await downloadArtifact(manifest.runtime,folder,{fetch:net.fetch.bind(net),signal:service.controller.signal,progress:service.progress});
+      const candidate=path.join(folder,'candidate');await extractRuntime(archive,candidate,openZip);
+      service.controller.signal.throwIfAborted();
+      const executable=destination(candidate,manifest.executable);await verifyPlatformSignature(executable,manifest.runtime.platformSignature);
+      const installation=await service.installation(executable);assert(installation?.protocol===1&&installation.version===manifest.version,'RELEASE_INCOMPATIBLE');
+      const diagnosticRuntime={folder,candidate,executable,version:manifest.version,inventory:await inventory(candidate,service.controller.signal,service.progress,{links:true})};
+      session=await service.session(id);
+      return service.event(id,{status:'protected',diagnosticRuntime,diagnosticVersion:manifest.version,actions:[...session.actions,{id:randomUUID(),action:'prepare-runtime',status:'passed',at:new Date().toISOString()}]});
+    }catch(error){await service.blocked(id,error);throw error;}
+    finally{service.activeId=null;service.controller=null;}
   });
 }
 async function launchRecovered(id, index) {
   requireQualified(qualifiedRepairs, process.platform, process.arch, 'interactive-copy');
   const session = await service.session(id); assert(Number.isInteger(index) && index >= 0 && index < session.recoveredProfiles.length, 'INVALID_REQUEST');
   const root = session.recoveredProfiles[index]; noLinks(root);
-  assert(root.startsWith(`${session.folder}${path.sep}`) && service.executable, 'INVALID_REQUEST');
-  assert((await service.installation())?.protocol === 1, 'LEGACY_READ_ONLY');
+  assert(root.startsWith(`${session.folder}${path.sep}`), 'INVALID_REQUEST');
+  const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
   // Interactive copies use the normal application only with the validated isolated bootstrap.
-  const child = spawn(service.executable, [], { detached: true, stdio: 'ignore', env: { ...process.env, ELECTRON_RUN_AS_NODE: '', NODUS_USERDATA: '', NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') } });
+  const child = spawn(executable, [], { detached: true, stdio: 'ignore', env: { ...process.env, ELECTRON_RUN_AS_NODE: '', NODUS_USERDATA: '', NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') } });
   await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); }); child.unref();
   return service.event(id,{trialOpened:root});
 }
@@ -191,6 +225,9 @@ async function rollbackInstallation(id) {
   await verifyInventory(protection.copy,protection.inventory);
   if(['nsis','deb','rpm'].includes(session.installerFormat)) {
     assert(session.installationPreviousInstaller,'INSTALLATION_RECOVERY_REQUIRED');
+    const artifact=session.installationPreviousArtifact;assert(artifact,'INSTALLATION_RECOVERY_REQUIRED');
+    assert(fs.statSync(session.installationPreviousInstaller).size===artifact.bytes&&await hashFile(session.installationPreviousInstaller)===artifact.sha256,'DOWNLOAD_HASH_MISMATCH');
+    if(process.platform==='win32')await verifyPlatformSignature(session.installationPreviousInstaller,artifact.platformSignature);
     if(!await confirmation(text('undoSolution'),text('reinstall')))return session;
     const command=installerCommand(process.platform,session.installerFormat,session.installationPreviousInstaller,original,{rollback:true});
     await service.event(id,{installationSystemRollbackPending:true});
@@ -213,7 +250,7 @@ async function handlers() {
   handle('setLanguage', async language => { assert(SUPPORT_LANGUAGES.includes(language),'INVALID_REQUEST'); service.locale = language; await remember(); });
   handle('openGuide',async id=>{assert(typeof id==='string','INVALID_REQUEST');await shell.openExternal(guideUrl(id,process.platform));});
   handle('inspect', async () => ({...await service.inspect(),qualifiedRepairs:qualifiedRepairs.platforms[`${process.platform}-${process.arch}`] ?? []})); handle('chooseProfile', () => choose('profile')); handle('chooseExecutable', () => choose('executable')); handle('chooseStorage', () => choose('storage'));
-  handle('create', input => service.create(input)); handle('protect', id => service.protect(id)); handle('test', (id, action) => service.test(id, action));
+  handle('create', input => service.create(input)); handle('protect', id => service.protect(id)); handle('test', async(id,action)=>{assert(SUPPORT_ACTIONS.includes(action),'INVALID_ACTION');await ensureDiagnosticRuntime(id);return service.test(id,action);});
   handle('answer', async (id, works) => {
     const session = await service.session(id);
     if (works === true) assert(session.trialOpened || session.installationPrevious,'USER_TRIAL_REQUIRED');
@@ -239,7 +276,7 @@ async function handlers() {
     await new SolutionManager(service,path.join(stateRoot,'launch-policies')).recover(id);
     return service.resume(id);
   });
-  handle('launchRecovered', launchRecovered); handle('report', (id, selection) => service.report(id, selection)); handle('reinstall', reinstall);
+  handle('launchRecovered', launchRecovered); handle('report', async(id,selection)=>{const {report,...summary}=await service.report(id,selection);return summary;}); handle('reinstall', reinstall);
   handle('applySolution', async (id,index) => {
     requireQualified(qualifiedRepairs,process.platform,process.arch,'apply-solution');
     if(!await confirmation(text('applySolution'),text('trial')))return service.session(id);
@@ -275,8 +312,9 @@ async function handlers() {
   handle('restore', async (id, password) => {
     requireQualified(qualifiedRepairs, process.platform, process.arch, 'restore-copy');
     assert(typeof password === 'string' && password.length > 0 && password.length <= 4096, 'RECOVERY_PASSWORD_REQUIRED');
+    await ensureDiagnosticRuntime(id);
     const session = await service.session(id); await service.guardSource(session); await service.protectedSources(session);
-    assert((await service.installation())?.protocol === 1, 'LEGACY_READ_ONLY');
+    const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
     const choice = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Nodus', extensions: ['nodus'] }] });
     if (choice.canceled) return session;
     return service.exclusive(async () => {
@@ -287,9 +325,10 @@ async function handlers() {
         await sufficientSpaceForArchive(working.root, manifest.bytes);
         await copyInventory(archive, path.join(working.root, 'recovery.nodus'), manifest, service.controller.signal);
         await service.event(id, { status: 'testing', recoveryAttempt: working.root });
-        const result = await runProbe({ executable: service.executable, root: working.root, action: 'restore-archive', password, signal:service.controller.signal });
+        const result = await runProbe({ executable, root: working.root, action: 'restore-archive', password, signal:service.controller.signal,progress:service.progress });
         assert(result.protocol === 1 && result.root === working.root, 'PROBE_INVALID');
-        return service.event(id, { status: result.ok ? 'awaiting-user' : 'blocked', recoveredProfiles: result.ok ? [...session.recoveredProfiles, working.root] : session.recoveredProfiles, actions: [...session.actions, { id: randomUUID(), action: 'restore-copy', status: result.ok ? 'passed' : 'failed', code: result.code, at: new Date().toISOString() }] });
+        await writeNew(path.join(working.root,'result.json'),{...result,action:'restore-copy',at:new Date().toISOString()});
+        return service.event(id, { status: result.ok ? 'awaiting-user' : 'blocked', recoveryInfo:{...(session.recoveryInfo??{}),[working.root]:{source:path.basename(archive),backupDate:result.backupDate}}, recoveredProfiles: result.ok ? [...session.recoveredProfiles, working.root] : session.recoveredProfiles, actions: [...session.actions, { id: randomUUID(), action: 'restore-copy', status: result.ok ? 'passed' : 'failed', code: result.code, at: new Date().toISOString() }] });
       } catch (error) { return service.blocked(id, error); }
       finally { service.activeId = null; service.controller = null; }
     });

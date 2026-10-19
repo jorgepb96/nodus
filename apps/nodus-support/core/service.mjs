@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { assert, canonical, copyInventory, destination, hashFile, inventory, noLinks, readJson, separate, sufficientSpace, verifyInventory, writeNew, writeRecord } from './files.mjs';
 import { executableArchitectures, readInstalledPackage } from './installation.mjs';
 import { issueDraft, publicReport, reportMarkdown, safeError } from '../../../shared/support/report.mjs';
+import { technicalLogEntry } from '../../../shared/support/logs.mjs';
 import { SUPPORT_ACTIONS } from '../../../shared/support/catalog.mjs';
 
 const SYMPTOMS = new Set(['startup', 'tool', 'data', 'sync', 'update', 'other']);
@@ -37,9 +39,11 @@ export function detectSources(profile) {
   return { roots: unique, missing, registry, prefs };
 }
 export class SupportService {
-  constructor({ storage, profile, executable = null, platform = process.platform, arch = process.arch, locale = 'en', probe, isRunning = async () => true, progress = () => {}, privateDirectory = async () => {}, onIdle = () => {} }) {
+  constructor({ storage, profile, executable = null, versionHint=null, osVersion=os.release().split('-')[0], platform = process.platform, arch = process.arch, locale = 'en', probe, isRunning = async () => true, progress = () => {}, privateDirectory = async () => {}, onIdle = () => {} }) {
     this.storage = path.resolve(storage); this.profile = path.resolve(profile); this.executable = executable;
     this.platform = platform; this.arch = arch; this.locale = locale; this.probe = probe;
+    this.versionHint=/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/i.test(versionHint??'')?versionHint:null;
+    this.osVersion=/^\d+(?:\.\d+){1,3}$/.test(osVersion)?osVersion:null;
     this.isRunning = isRunning; this.progress = progress; this.privateDirectory = privateDirectory;
     this.busy = false; this.controller = null; this.activeId = null; this.onIdle = onIdle;
   }
@@ -59,21 +63,32 @@ export class SupportService {
     if (metadata && metadata.protocol !== 1) findings.push({ code: 'LEGACY_READ_ONLY', component: 'installation', level: 'warning' });
     try { if (await this.isRunning()) findings.push({ code: 'CLOSE_NODUS_FIRST', component: 'app', level: 'warning' }); }
     catch { findings.push({ code: 'PROCESS_CHECK_UNAVAILABLE', component: 'app', level: 'error' }); }
-    const inspection = { profile: this.profile, executable: this.executable, version: metadata?.version ?? null, protocol: metadata?.protocol ?? null, language: detectLanguage(sources.prefs?.uiLanguage, this.locale), platform: this.platform, arch: this.arch, findings, roots: sources.roots };
+    const inspection = { profile: this.profile, executable: this.executable, version: metadata?.version ?? null, protocol: metadata?.protocol ?? null, language: detectLanguage(sources.prefs?.uiLanguage, this.locale), platform: this.platform, osVersion:this.osVersion, arch: this.arch, findings, roots: sources.roots };
     return { inspection, sessions: await this.sessions(), storage: this.storage };
   }
-  async installation() {
-    if (!this.executable || !fs.existsSync(this.executable)) return null;
-    noLinks(this.executable); const folder = this.platform === 'darwin' ? path.resolve(this.executable, '../../Resources') : path.join(path.dirname(this.executable), 'resources');
+  async installation(executable=this.executable) {
+    if (!executable || !fs.existsSync(executable)) return null;
+    noLinks(executable); const folder = this.platform === 'darwin' ? path.resolve(executable, '../../Resources') : path.join(path.dirname(executable), 'resources');
     const metadata = optionalJson(path.join(folder, 'nodus-support-protocol.json'));
     let pkg=null;try{pkg=readInstalledPackage(folder);}catch{/* A damaged package can still supply direct logs and source protection. */}
     const version=pkg?.name==='nodus'&&/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/i.test(pkg.version)?pkg.version:null;
     if(metadata?.protocol===1&&metadata.platform===this.platform&&metadata.arch===this.arch&&metadata.version===version) {
-      assert(executableArchitectures(this.executable).includes(this.arch),'RELEASE_INCOMPATIBLE');
+      assert(executableArchitectures(executable).includes(this.arch),'RELEASE_INCOMPATIBLE');
       assert(/^[a-f0-9]{64}$/.test(metadata.archiveSha256??'')&&await hashFile(path.join(folder,'app.asar'))===metadata.archiveSha256,'INSTALLATION_INTEGRITY_FAILED');
       return metadata;
     }
-    return {version,protocol:null};
+    return {version:version??(executable===this.executable?this.versionHint:null),protocol:null};
+  }
+  async runtimeFor(session) {
+    const runtime=session.diagnosticRuntime;
+    if(!runtime)return {executable:this.executable,installation:await this.installation()};
+    assert(runtime.folder.startsWith(`${session.folder}${path.sep}`),'INVALID_SESSION');
+    const candidate=destination(runtime.folder,'candidate');
+    assert(runtime.candidate===candidate&&runtime.executable.startsWith(`${candidate}${path.sep}`),'INVALID_SESSION');
+    await verifyInventory(candidate,runtime.inventory);
+    const installation=await this.installation(runtime.executable);
+    assert(installation?.protocol===1&&installation.version===runtime.version,'RELEASE_INCOMPATIBLE');
+    return {executable:runtime.executable,installation};
   }
   async sessions() {
     const folder = path.join(this.storage, 'sessions'); if (!fs.existsSync(folder)) return [];
@@ -207,14 +222,15 @@ export class SupportService {
       try {
         await this.guardSource(session); await this.protectedSources(session);
         assert(['protected', 'reverted', 'blocked'].includes(session.status), 'INVALID_STATE');
-        const installation = await this.installation(); assert(installation?.protocol === 1, 'LEGACY_READ_ONLY');
+        const {executable,installation}=await this.runtimeFor(session); assert(installation?.protocol === 1, 'LEGACY_READ_ONLY');
         assert(typeof this.probe === 'function', 'PROBE_UNAVAILABLE');
         const working = await this.workingCopy(session, ['fresh-profile','archive-roundtrip'].includes(action));
         await this.event(id, { status: 'testing', trialOpened: null, actions: [...session.actions, attempt] });
-        const result = await this.probe({ ...working, executable: this.executable, action, signal: this.controller.signal, progress: this.progress });
+        const result = await this.probe({ ...working, executable, action, signal: this.controller.signal, progress: this.progress });
         assert(result?.protocol === 1 && result.root === working.root, 'PROBE_INVALID');
+        if(result.appVersion!==undefined&&installation.version!==undefined)assert(result.appVersion===installation.version,'RELEASE_INCOMPATIBLE');
         attempt.status = result.ok ? 'passed' : 'failed'; if (!result.ok) attempt.code = safeError(result.code);
-        await writeNew(path.join(working.root, 'result.json'), { ...result, action, at: now() });
+        await writeNew(path.join(working.root, 'result.json'), { ...result, appVersion:installation.version, action, at: now() });
         const diagnostic=result.diagnostic===true;
         const findings=[...(session.findings??[]),...(result.findings??[]),...(!result.ok?[{code:safeError(result.code),component:'app',level:'error'}]:[]),...(result.partial?[{code:'PARTIAL_RECOVERY',component:'database',level:'warning'}]:[])];
         return this.event(id, { status: diagnostic ? 'protected' : result.ok ? 'awaiting-user' : 'reverted', findings:findings.filter((finding,index)=>findings.findIndex(other=>other.code===finding.code&&other.component===finding.component)===index), actions: [...session.actions, attempt], recoveredProfiles: diagnostic ? session.recoveredProfiles : [...session.recoveredProfiles, working.root] });
@@ -267,10 +283,12 @@ export class SupportService {
       for await (const chunk of input) { bytes += chunk.length; if (bytes > 32 * 1024 * 1024) { input.destroy(); break; } text += chunk.toString('utf8'); }
       if (path.basename(file) === 'nodus-logs.json') {
         let parsed; try { parsed = JSON.parse(text); } catch { entries.push({ code: 'LOG_UNREADABLE', component: 'logging' }); continue; }
-        for (const entry of parsed.entries ?? []) {
-          if (entry.level !== 'error') continue;
-          if (selection.since && entry.at < selection.since || selection.until && entry.at > selection.until) continue;
-          entries.push({ code: safeError(entry.detail ?? entry.code), component: 'pipeline', at: entry.at });
+        if(!Array.isArray(parsed.entries)){entries.push({code:'LOG_UNREADABLE',component:'logging'});continue;}
+        for (const [index,entry] of parsed.entries.entries()) {
+          if (!entry || entry.level !== 'error') continue;
+          if (selection.since && (!entry.at || entry.at < selection.since) || selection.until && (!entry.at || entry.at > selection.until)) continue;
+          const context=parsed.entries.slice(Math.max(0,index-2),index+3).filter(other=>other&&other!==entry&&(!entry.jobId||other.jobId===entry.jobId)).slice(0,4).map(other=>({...technicalLogEntry(other,safeError),level:other.level}));
+          entries.push({...technicalLogEntry(entry,safeError),context});
         }
       } else for (const line of text.split('\n')) {
         if (!/error|failed|cannot find|SQLITE_|EACCES|ENOSPC/i.test(line)) continue;

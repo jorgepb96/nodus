@@ -68,3 +68,17 @@ test('manifest keys stay private, separate from code signing and outside reposit
   if(process.platform!=='win32')assert.equal(fs.statSync(key.privateFile).mode&0o777,0o600);
   assert.throws(()=>createSupportKey('test-key',path.join(scratch,'keys'),repo),/EEXIST/);
 });
+test('legacy diagnostics run only the separate verified copy and never select it for an incompatible installation',async()=>{
+  const folder=path.join(scratch,'legacy-runtime'),profile=path.join(folder,'profile'),original=path.join(folder,'old-nodus');fs.mkdirSync(profile,{recursive:true});fs.writeFileSync(original,'old application');fs.writeFileSync(path.join(profile,'notes'),'recent user work');
+  const invoked=[];
+  const service=new SupportService({profile,storage:path.join(folder,'support'),executable:original,isRunning:async()=>false,probe:async input=>{invoked.push(input.executable);return {protocol:1,root:input.root,ok:true};}});
+  service.installation=async(executable=original)=>({version:executable===original?'5.9.1':'5.13.0',protocol:executable===original?null:1});
+  let session=await service.create({symptom:'startup',mode:'guided'});session=await service.protect(session.id);
+  const runtimeFolder=path.join(session.folder,'runtimes','separate'),candidate=path.join(runtimeFolder,'candidate'),executable=path.join(candidate,'nodus');fs.mkdirSync(candidate,{recursive:true});fs.writeFileSync(executable,'verified test application');
+  session=await service.event(session.id,{diagnosticRuntime:{folder:runtimeFolder,candidate,executable,version:'5.13.0',inventory:await inventory(candidate)}});
+  session=await service.test(session.id,'copy-profile');assert.equal(session.status,'awaiting-user');assert.deepEqual(invoked,[executable]);
+  session=await service.event(session.id,{trialOpened:session.recoveredProfiles[0]});session=await service.answer(session.id,true);
+  await assert.rejects(new SolutionManager(service,path.join(folder,'policies')).apply(session.id,0),/COMPATIBLE_INSTALL_REQUIRED/);
+  fs.writeFileSync(executable,'damaged candidate');await assert.rejects(service.runtimeFor(session),/COPY_NOT_VERIFIED/);
+  assert.equal(fs.readFileSync(original,'utf8'),'old application');assert.equal(fs.readFileSync(path.join(profile,'notes'),'utf8'),'recent user work');
+});

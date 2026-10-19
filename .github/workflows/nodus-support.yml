@@ -1,7 +1,7 @@
 name: Nodus Support safety and native UI
 on:
   pull_request:
-    paths: ['apps/nodus-support/**','shared/**','electron/**','src/theme/**','scripts/*nodus-support*','scripts/support-*','scripts/configure-support-signing.mjs','scripts/lib/supportEvidence.mjs','package.json','package-lock.json','vite.config.ts','build/**','.github/workflows/nodus-support.yml']
+    paths: ['apps/nodus-support/**','shared/**','electron/**','src/theme/**','scripts/*nodus-support*','scripts/support-*','scripts/configure-support-signing.mjs','scripts/lib/support*.mjs','package.json','package-lock.json','vite.config.ts','build/**','.github/workflows/nodus-support.yml']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -66,6 +66,13 @@ jobs:
       - name: Verify the independent Linux runtime
         if: runner.os == 'Linux'
         run: xvfb-run -a node scripts/verify-nodus-support-runtime.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nodus-support-review-packages-${{ matrix.os }}
+          path: release-support/Nodus-Support-*
+          if-no-files-found: error
+          retention-days: 3
+          compression-level: 0
       - uses: actions/upload-artifact@v7
         if: always()
         with:

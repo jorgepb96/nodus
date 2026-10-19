@@ -1,6 +1,5 @@
-import fs from 'node:fs';
 import path from 'node:path';
-import { assert,hashFile,noLinks,readJson } from './files.mjs';
+import { physicalFs as fs,assert,hashFile,noLinks,readJson } from './files.mjs';
 
 // The artifact must already come from a verified signed release manifest.
 export async function verifyActivatedInstallation({format,original,artifact,version,installation,signal}) {

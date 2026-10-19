@@ -5,13 +5,13 @@ import path from 'node:path';
 import os from 'node:os';
 import {generateKeyPairSync,sign,createHash} from 'node:crypto';
 import archiver from 'archiver';
-import {SupportAppInstallation} from '../apps/nodus-support/core/app-installation.mjs';
+import {SupportAppInstallation,verifySystemSupport} from '../apps/nodus-support/core/app-installation.mjs';
 import {inventory} from '../apps/nodus-support/core/files.mjs';
 import {verifySupportApp,supportContentDigest,supportInstallerFormat,selectSupportInstaller,resolveSupportApp} from '../shared/support/appDistribution.mjs';
 const {publicKey,privateKey}=generateKeyPairSync('ed25519'),keys=[{keyId:'fixture',publicKeyPem:publicKey.export({type:'spki',format:'pem'})}];
 const envelope=value=>{const payload=Buffer.from(JSON.stringify(value));return {keyId:'fixture',payload:payload.toString('base64'),signature:sign(null,payload,privateKey).toString('base64')};};
 async function fixture() {
- const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'support-app-install-'))),source=path.join(root,'source'),storage=path.join(root,'support-installations');fs.mkdirSync(source);fs.writeFileSync(path.join(source,'nodus-support'),'independent executable');fs.writeFileSync(path.join(source,'personal-original'),'must remain');
+ const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'support-app-install-'))),source=path.join(root,'source'),storage=path.join(root,'support-installations');fs.mkdirSync(source);fs.writeFileSync(path.join(source,'nodus-support'),'independent executable');fs.writeFileSync(path.join(source,'personal-original'),'must remain');fs.mkdirSync(path.join(source,'resources/app'),{recursive:true});fs.writeFileSync(path.join(source,'resources/app/package.json'),JSON.stringify({name:'nodus-support',version:'5.13.0'}));
  const zipFile=path.join(root,'fixture.zip');await new Promise((resolve,reject)=>{const out=fs.createWriteStream(zipFile),zip=archiver('zip');out.once('close',resolve);zip.once('error',reject);zip.pipe(out);zip.directory(source,false);void zip.finalize();});
  const zip=fs.readFileSync(zipFile),artifact={name:'Nodus-Support-Runtime-linux-x64.zip',format:'zip',platformSignature:'none',bytes:zip.length,sha256:createHash('sha256').update(zip).digest('hex'),url:'https://github.com/jorgepb96/nodus/releases/download/v5.13.0/Nodus-Support-Runtime-linux-x64.zip'};
  const manifest={format:'nodus.support-app/1',protocol:1,version:'5.13.0',platform:'linux',arch:'x64',executable:'nodus-support',expandedBytes:(await inventory(source)).bytes,contentSha256:supportContentDigest(await inventory(source)),runtime:artifact,installers:[{...artifact,format:'AppImage'}]};
@@ -55,5 +55,14 @@ test('Support waits for post-publication assets, validates the exact tag, and ne
   await assert.rejects(resolveSupportApp('5.12.0',keys,'linux','x64',{fetch:async url=>url.includes('api.github.com')?fetch(url):new Response('',{status:404})}),/SUPPORT_ASSET_PENDING/);
   await assert.rejects(resolveSupportApp('5.12.0',keys,'linux','x64',{fetch:async()=>new Response(JSON.stringify({tag_name:'v5.13.0-beta.1',draft:false,prerelease:true}))}),/SUPPORT_ASSET_PENDING/);
   assert.throws(()=>selectSupportInstaller(f.manifest,'deb'),/SUPPORT_ASSET_PENDING/);
+ }finally{fs.rmSync(f.root,{recursive:true,force:true});}
+});
+
+test('native installations are accepted only when their actual content matches the signed app',async()=>{
+ const f=await fixture();try {
+  const executable=path.join(f.source,'nodus-support'),signed=envelope(f.manifest);
+  assert.equal((await verifySystemSupport(executable,signed,{keys,platform:'linux',arch:'x64'})).manifest.version,'5.13.0');
+  fs.writeFileSync(path.join(f.source,'resources/app/package.json'),JSON.stringify({name:'nodus-support',version:'5.12.0'}));
+  await assert.rejects(verifySystemSupport(executable,signed,{keys,platform:'linux',arch:'x64'}),/SUPPORT_DOWNLOAD_INVALID/);
  }finally{fs.rmSync(f.root,{recursive:true,force:true});}
 });

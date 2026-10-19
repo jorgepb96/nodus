@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import {physicalFs as fs} from './files.mjs';
 import path from 'node:path';
 import { assert,canonical,noLinks } from './files.mjs';
 

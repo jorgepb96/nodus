@@ -47,3 +47,5 @@ export async function resolveSupportApp(version,keys,platform,arch,{fetch:fetche
 }
 
 export function supportContentDigest(value) {return createHash('sha256').update(JSON.stringify(value.entries.map(({mode:_mode,...entry})=>entry))).digest('hex');}
+
+export function newerSupportVersion(a,b){return semver.gt(a,b);}

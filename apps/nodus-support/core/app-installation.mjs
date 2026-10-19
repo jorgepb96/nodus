@@ -6,6 +6,7 @@ import {randomUUID} from 'node:crypto';
 import yauzl from 'yauzl';
 import {verifySupportApp,supportContentDigest} from '../../../shared/support/appDistribution.mjs';
 import {assert,inventory,noLinks,sufficientSpace,verifyInventory,writeRecord,readJson} from './files.mjs';
+import {readInstalledPackage} from './installation.mjs';
 import {downloadArtifact,extractRuntime} from './releases.mjs';
 
 export class SupportAppInstallation {
@@ -45,4 +46,17 @@ export class SupportAppInstallation {
     await writeRecord(path.join(folder,'installed.json'),{format:'nodus.support-installation/1',envelope,at:new Date().toISOString(),inventory:protectedFiles});
     return {executable,manifest};
   }
+}
+
+// Native package managers add their own uninstaller. All application/runtime
+// contents still have to match the signed Support package, not a local marker.
+export async function verifySystemSupport(executable,envelope,{keys,platform,arch,verifyPlatform=async()=>{}}) {
+ const manifest=verifySupportApp(envelope,keys,platform,arch);noLinks(executable);
+ const root=platform==='darwin'?path.resolve(executable,'../../..'):path.dirname(executable);
+ const resources=platform==='darwin'?path.join(root,'Contents/Resources'):path.join(root,'resources');
+ const pkg=readInstalledPackage(resources);assert(pkg.name==='nodus-support'&&pkg.version===manifest.version,'SUPPORT_DOWNLOAD_INVALID');
+ let actual=await inventory(root,undefined,undefined,{links:true});
+ if(platform==='win32')actual={...actual,entries:actual.entries.filter(entry=>!['Uninstall Nodus Support.exe','Uninstall nodus-support.exe','uninstallerIcon.ico'].includes(entry.path))};
+ if(platform==='darwin')actual={...actual,entries:[{path:'',type:'directory'},...actual.entries.map(entry=>({...entry,path:entry.path?`nodus-support.app/${entry.path}`:'nodus-support.app'}))]};
+ assert(supportContentDigest(actual)===manifest.contentSha256,'SUPPORT_DOWNLOAD_INVALID');await verifyPlatform(executable,manifest);return {executable,manifest};
 }

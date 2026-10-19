@@ -5,12 +5,14 @@ import fsp from 'node:fs/promises';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {randomUUID} from 'node:crypto';
-import {SupportAppInstallation} from '../apps/nodus-support/core/app-installation.mjs';
-import {acceptPlatformSignature,downloadArtifact} from '../apps/nodus-support/core/releases.mjs';
-import {resolveSupportApp,selectSupportInstaller,supportInstallerFormat,type SupportAppManifest} from '../shared/support/appDistribution.mjs';
+import {SupportAppInstallation,verifySystemSupport} from '../apps/nodus-support/core/app-installation.mjs';
+import {downloadArtifact} from '../apps/nodus-support/core/releases.mjs';
+import {newerSupportVersion,resolveSupportApp,selectSupportInstaller,supportInstallerFormat,type SupportAppManifest} from '../shared/support/appDistribution.mjs';
 import type {SupportDistributionState} from '../shared/support/distributionTypes';
 import {supportText} from '../shared/support/messages';
 import type {AppLanguage} from '../shared/types';
+import {writeRecord,readJson,noLinks} from '../apps/nodus-support/core/files.mjs';
+import {verifySupportPlatform} from './supportLauncher';
 import trusted from '../apps/nodus-support/trusted-release-keys.json';
 const run=promisify(execFile);
 let state:SupportDistributionState={phase:'idle',platform:process.platform,arch:process.arch};
@@ -19,20 +21,28 @@ let controller:AbortController|null=null;
 let promptPending=false;
 let ready:Promise<void>|null=null;
 const storage=()=>path.join(process.env.NODUS_SUPPORT_ORIGINAL_APP_DATA??app.getPath('appData'),'Nodus Support','installations');
-async function verifyPlatform(executable:string,manifest:SupportAppManifest):Promise<void> {
-  if(process.platform==='darwin') {
-    const bundle=path.resolve(executable,'../../..');
-    await run('/usr/bin/codesign',['--verify','--deep','--strict',bundle]);await run('/usr/sbin/spctl',['--assess','--type','execute',bundle]);
-  } else if(process.platform==='win32') {
-    const powershell=path.join(process.env.SystemRoot??'C:\\Windows','System32/WindowsPowerShell/v1.0/powershell.exe');
-    const result=await run(powershell,['-NoProfile','-NonInteractive','-Command','(Get-AuthenticodeSignature -LiteralPath $env:NODUS_SUPPORT_SIGNATURE_FILE).Status.ToString()'],{env:{...process.env,NODUS_SUPPORT_SIGNATURE_FILE:executable}});
-    acceptPlatformSignature(result.stdout.trim(),manifest.runtime.platformSignature);
-  }
-}
+async function verifyPlatform(executable:string,manifest:SupportAppManifest):Promise<void> {await verifySupportPlatform(executable,manifest.runtime.platformSignature);}
 const manager=()=>new SupportAppInstallation({storage:storage(),keys:trusted.keys,platform:process.platform,arch:process.arch,verifyPlatform});
 function allowDownload():void {if(process.env.NODUS_SUPPORT_INTERACTIVE==='1')throw new Error('SUPPORT_EXTERNAL_ACTION_DENIED');}
+function systemCandidates():string[] {
+  if(process.platform==='darwin')return ['/Applications',path.join(app.getPath('home'),'Applications')].flatMap(folder=>['nodus-support.app','Nodus Support.app'].map(name=>path.join(folder,name,'Contents/MacOS/nodus-support')));
+  if(process.platform==='win32')return [process.env.LOCALAPPDATA&&path.join(process.env.LOCALAPPDATA,'Programs'),process.env.ProgramFiles].filter((folder):folder is string=>Boolean(folder)).flatMap(folder=>['nodus-support','Nodus Support'].map(name=>path.join(folder,name,'nodus-support.exe')));
+  return ['/opt/Nodus Support/nodus-support','/opt/nodus-support/nodus-support'];
+}
 export async function installedSupportSelection(){
-  const current=await manager().current();if(current)state={...state,installedVersion:current.manifest.version};return current;
+  let current=await manager().current();
+  const manifests=path.join(storage(),'system-manifests');
+  if(fs.existsSync(manifests)) {
+    noLinks(manifests);
+    for(const name of fs.readdirSync(manifests).filter(name=>/^[a-f0-9-]{36}\.json$/.test(name)).reverse()) {
+      for(const executable of systemCandidates())if(fs.existsSync(executable))try {
+        noLinks(path.join(manifests,name));const envelope=readJson(path.join(manifests,name));
+        const candidate=await verifySystemSupport(executable,envelope,{keys:trusted.keys,platform:process.platform,arch:process.arch,verifyPlatform});
+        if(!current||newerSupportVersion(candidate.manifest.version,current.manifest.version))current=candidate;
+      }catch{/* An unrelated or modified app is never executed. */}
+    }
+  }
+  if(current)state={...state,installedVersion:current.manifest.version};return current;
 }
 export async function installedSupportExecutable():Promise<string|null>{return (await installedSupportSelection())?.executable??null;}
 export async function supportDistributionState():Promise<SupportDistributionState> {
@@ -52,11 +62,18 @@ function failure(error:unknown):void {
   state={...state,phase:controller?.signal.aborted?'cancelled':code==='SUPPORT_ASSET_PENDING'?'pending':'error',error:code};
 }
 export async function checkSupportDownload():Promise<SupportDistributionState> {
-  allowDownload();if(controller||promptPending)return supportDistributionState();controller=new AbortController();state={...state,phase:'checking',error:undefined};
+  allowDownload();if(controller||promptPending)return supportDistributionState();controller=new AbortController();state={...state,phase:'checking',error:undefined,availableVersion:undefined};
   try {
+    await installedSupportSelection();
     release=await resolveSupportApp(app.getVersion(),trusted.keys,process.platform,process.arch,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
-    const installerFormat=await detectedFormat();selectSupportInstaller(release.manifest,installerFormat);
-    state={...state,phase:'available',availableVersion:release.manifest.version,installerFormat,bytes:release.manifest.runtime.bytes,completed:0};
+    await writeRecord(path.join(storage(),'system-manifests',`${randomUUID()}.json`),release.envelope);
+    await installedSupportSelection();
+    let managedAllowed=true;
+    if(process.platform==='linux')try{await run('/usr/bin/unshare',['--user','/usr/bin/true']);}catch{managedAllowed=false;}
+    let installerFormat=await detectedFormat();
+    if(!managedAllowed&&installerFormat==='AppImage')installerFormat=fs.existsSync('/usr/bin/dpkg')?'deb':fs.existsSync('/usr/bin/rpm')?'rpm':installerFormat;
+    selectSupportInstaller(release.manifest,installerFormat);
+    state={...state,phase:'available',availableVersion:release.manifest.version,installerFormat,managedAllowed,bytes:release.manifest.runtime.bytes,completed:0};
   }catch(error){release=null;failure(error);}finally{controller=null;}
   return {...state};
 }
@@ -79,7 +96,7 @@ async function installSupportShortcut(executable:string,version:string):Promise<
   }
 }
 export async function installSupportDownload(language:AppLanguage):Promise<SupportDistributionState> {
-  allowDownload();if(controller||promptPending||!release||state.phase!=='available')return supportDistributionState();
+  allowDownload();if(controller||promptPending||!release||state.managedAllowed===false)return supportDistributionState();
   promptPending=true;let confirm;
   try{confirm=await dialog.showMessageBox({type:'info',message:supportText(language,'installSupport'),detail:supportText(language,'supportInstallHelp'),buttons:[supportText(language,'cancel'),supportText(language,'confirm')],defaultId:0,cancelId:0,noLink:true});}finally{promptPending=false;}
   if(confirm.response!==1)return {...state};if(controller)return {...state};
@@ -95,7 +112,7 @@ export async function saveSupportInstaller(language:AppLanguage):Promise<Support
   allowDownload();if(controller||promptPending||!release)return supportDistributionState();const artifact=selectSupportInstaller(release.manifest,state.installerFormat??await detectedFormat());
   promptPending=true;let destination;
   try {
-    const confirm=await dialog.showMessageBox({type:'info',message:supportText(language,'saveSupportInstaller'),detail:supportText(language,'supportSystemInstallerHelp'),buttons:[supportText(language,'cancel'),supportText(language,'confirm')],defaultId:0,cancelId:0,noLink:true});
+    const confirm=await dialog.showMessageBox({type:'info',message:supportText(language,'saveSupportInstaller'),detail:supportText(language,'supportSystemInstallerHelp')+(process.platform==='win32'&&artifact.platformSignature==='none'?'\n\n'+supportText(language,'manifestVerified'):''),buttons:[supportText(language,'cancel'),supportText(language,'confirm')],defaultId:0,cancelId:0,noLink:true});
     if(confirm.response!==1)return {...state};
     destination=await dialog.showOpenDialog({title:supportText(language,'saveSupportInstaller'),properties:['openDirectory','createDirectory']});
     if(destination.canceled||!destination.filePaths[0])return {...state};
@@ -105,6 +122,7 @@ export async function saveSupportInstaller(language:AppLanguage):Promise<Support
     // Unique destination: even a previous download is retained. Never overwrite a chosen file.
     const folder=path.join(destination.filePaths[0],`Nodus-Support-${release.manifest.version}-${randomUUID()}`);
     const file=await downloadArtifact(artifact,folder,{signal:controller.signal,progress:value=>{state={...state,completed:value.completed};}});
+    await writeRecord(path.join(storage(),'system-manifests',`${randomUUID()}.json`),release.envelope);
     state={...state,phase:'saved'};shell.showItemInFolder(file);
   }catch(error){failure(error);}finally{controller=null;}
   return {...state};

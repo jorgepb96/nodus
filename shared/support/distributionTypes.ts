@@ -5,6 +5,7 @@ export interface SupportDistributionState {
   platform:string;
   arch:string;
   installerFormat?:string;
+  managedAllowed?:boolean;
   bytes?:number;
   completed?:number;
   error?:string;

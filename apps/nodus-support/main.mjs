@@ -25,6 +25,7 @@ import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
 import { verifyActivatedInstallation } from './core/installation.mjs';
 import { protectInstallationRollback } from './core/rollback-protection.mjs';
+import { supportSandbox } from './core/linux-sandbox.mjs';
 import { SUPPORT_ACTIONS } from '../../shared/support/catalog.mjs';
 
 const exec = promisify(execFile);
@@ -330,7 +331,8 @@ async function handlers() {
     const folder = path.join(output, `nodus-private-logs-${randomUUID()}`);for(const source of new Set([session.inspection.profile,...session.inspection.roots]))separate(source,folder);
     await fsp.mkdir(folder, { mode: 0o700 }); await privateDirectory(folder);
     let i = 0;
-    for (const source of [...service.logFiles(session.inspection.profile),...service.privateProbeLogs(session)]) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
+    const startup=path.join(stateRoot,'startup-errors'),startupFiles=fs.existsSync(startup)?fs.readdirSync(startup).filter(name=>/^\d+-[a-f0-9-]{36}\.json$/.test(name)).map(name=>path.join(startup,name)):[];
+    for (const source of [...service.logFiles(session.inspection.profile),...service.privateProbeLogs(session),...startupFiles]) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
     await writeNew(path.join(folder, 'PRIVATE.txt'), text('rawWarning'));
     await service.event(session.id, { lastPrivateExport: folder }); return saveZip(folder);
   });
@@ -378,13 +380,15 @@ else {
     const target=await retainSupportRuntime(source,path.join(stateRoot,'runtimes'),process.platform==='darwin'?{copy:async(from,to)=>exec('/usr/bin/ditto',[from,to])}:{});
     const executable = process.platform === 'darwin' ? path.join(target, 'Contents/MacOS/nodus-support') : path.join(target, path.basename(process.execPath));
     app.releaseSingleInstanceLock();
-    const child = spawn(executable, ['--support-retained=1', ...process.argv.slice(1).filter(arg => arg.startsWith('--nodus-') || arg.startsWith('--support-state=') || arg.startsWith('--support-launch-token='))], { detached: true, stdio: 'ignore' });
+    const retainedEnv={...process.env},sandbox=supportSandbox(process.execPath,process.env.CHROME_DEVEL_SANDBOX);
+    if(sandbox)retainedEnv.CHROME_DEVEL_SANDBOX=sandbox;
+    const child = spawn(executable, ['--support-retained=1', ...process.argv.slice(1).filter(arg => arg.startsWith('--nodus-') || arg.startsWith('--support-state=') || arg.startsWith('--support-launch-token='))], { detached: true, stdio: 'ignore',env:retainedEnv });
     await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); }); child.unref(); app.quit();
   } else {
     const ui = path.join(__dirname, 'ui');
     protocol.handle('nodus-support', request => {
       const url = new URL(request.url); const relative = decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
-      try { return net.fetch(pathToFileURL(destination(ui, relative)).href); } catch { return new Response('', { status: 403 }); }
+      try { const file=path.resolve(ui,relative);assert(inside(ui,file)&&file!==ui&&!relative.includes('\0'),'PATH_ESCAPE');return net.fetch(pathToFileURL(file).href); } catch { return new Response('', { status: 403 }); }
     });
     win = new BrowserWindow({ width: 1120, height: 850, minWidth: 720, minHeight: 580, title: 'Nodus Support', icon: path.join(__dirname,'icon.png'), backgroundColor: '#171717', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, nodeIntegration: false, contextIsolation: true } });
     const announceReady=async(argv)=>{
@@ -402,4 +406,8 @@ else {
 }
 app.on('window-all-closed', () => app.quit());
 }
-void start().catch(() => { dialog.showErrorBox('Nodus Support','SUPPORT_STARTUP_FAILED'); app.exit(1); });
+void start().catch(async error => {
+  // Private local diagnostic; never included automatically in a public report.
+  try{await writeRecord(path.join(stateRoot,'startup-errors',`${Date.now()}-${randomUUID()}.json`),{at:new Date().toISOString(),code:error?.code??'SUPPORT_STARTUP_FAILED',stack:String(error?.stack??error).slice(0,12000)});}catch{/* Preserve startup even when logging itself is unavailable. */}
+  dialog.showErrorBox('Nodus Support','SUPPORT_STARTUP_FAILED'); app.exit(1);
+});

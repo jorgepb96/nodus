@@ -7,3 +7,5 @@ export function supportJson(response:Response):Promise<any>;
 export function resolveSupportApp(version:string,keys:Array<{keyId:string;publicKeyPem:string}>,platform:string,arch:string,options?:{fetch?:typeof fetch;signal?:AbortSignal}):Promise<{manifest:SupportAppManifest;envelope:unknown}>;
 
 export function supportContentDigest(value:unknown):string;
+
+export function newerSupportVersion(a:string,b:string):boolean;

@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { spawn } from 'node:child_process';
 import semver from 'semver';
-import { assert, copyInventory, destination, hashFile, inventory, noLinks, sufficientSpace, writeNew } from './files.mjs';
+import { physicalFs,assertWritablePath,assert, copyInventory, destination, hashFile, inventory, noLinks, sufficientSpace, writeNew } from './files.mjs';
 
 export const RELEASE_ORIGIN = 'https://github.com/jorgepb96/nodus/releases/download/';
 export function verifyRelease(envelope, keys, platform, arch) {
@@ -68,7 +68,8 @@ export async function downloadArtifact(artifact, folder, { fetch: fetcher = fetc
   return output;
 }
 export async function extractRuntime(archive, folder, openZip) {
-  noLinks(folder); assert(!fs.existsSync(folder), 'DESTINATION_EXISTS'); await fsp.mkdir(folder, { recursive: true, mode: 0o700 });
+  assertWritablePath(folder);const outputFs=physicalFs,outputFsp=outputFs.promises;
+  noLinks(folder); assert(!fs.existsSync(folder), 'DESTINATION_EXISTS'); await outputFsp.mkdir(folder, { recursive: true, mode: 0o700 });
   const zip = await new Promise((resolve, reject) => openZip(archive, { lazyEntries: true, autoClose: true }, (error, zip) => error ? reject(error) : resolve(zip)));
   return new Promise((resolve, reject) => {
     const links = []; let expanded = 0; const seen = new Set();
@@ -77,7 +78,7 @@ export async function extractRuntime(archive, folder, openZip) {
         for (const link of links) {
           const resolved = path.resolve(path.dirname(link.file), link.target);
           assert(resolved.startsWith(`${folder}${path.sep}`) && !path.isAbsolute(link.target), 'ARCHIVE_PATH_ESCAPE');
-          noLinks(path.dirname(link.file)); await fsp.symlink(link.target, link.file);
+          noLinks(path.dirname(link.file)); await outputFsp.symlink(link.target, link.file);
         }
         resolve();
       } catch (error) { reject(error); }
@@ -85,11 +86,11 @@ export async function extractRuntime(archive, folder, openZip) {
     zip.on('entry', entry => { void (async () => {
       assert(!entry.fileName.includes('\\') && !entry.fileName.includes('\0'), 'ARCHIVE_PATH_ESCAPE');
       const file = destination(folder, entry.fileName.replace(/\/$/, ''));
-      assert(!seen.has(file), 'ARCHIVE_DUPLICATE'); seen.add(file);
+      assertWritablePath(file);assert(!seen.has(file), 'ARCHIVE_DUPLICATE'); seen.add(file);
       expanded += entry.uncompressedSize; assert(Number.isSafeInteger(expanded) && expanded < 64 * 1024 ** 3, 'ARCHIVE_TOO_LARGE');
       const mode = entry.externalFileAttributes >>> 16;
-      if (entry.fileName.endsWith('/')) { await fsp.mkdir(file, { recursive: true, mode: 0o700 }); zip.readEntry(); return; }
-      await fsp.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
+      if (entry.fileName.endsWith('/')) { await outputFsp.mkdir(file, { recursive: true, mode: 0o700 }); zip.readEntry(); return; }
+      await outputFsp.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
       const stream = await new Promise((resolve, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve(stream)));
       if ((mode & 0o170000) === 0o120000) {
         assert(entry.uncompressedSize < 4096, 'ARCHIVE_PATH_ESCAPE'); const chunks = [];
@@ -98,7 +99,7 @@ export async function extractRuntime(archive, folder, openZip) {
         links.push({ file, target: Buffer.concat(chunks).toString('utf8') });
       } else {
         assert(!(mode & 0o170000) || (mode & 0o170000) === 0o100000, 'ARCHIVE_SPECIAL_FILE');
-        await pipeline(stream, fs.createWriteStream(file, { flags: 'wx', mode: mode & 0o700 || 0o600 }));
+        await pipeline(stream, outputFs.createWriteStream(file, { flags: 'wx', mode: mode & 0o700 || 0o600 }));
       }
       zip.readEntry();
     })().catch(error => { zip.close(); reject(error); }); }); zip.readEntry();

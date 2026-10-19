@@ -2451,6 +2451,7 @@ export function effectiveEmbeddingConfig(): EmbeddingExecutionConfig {
 function assertEmbeddingExecution(config: EmbeddingExecutionConfig, signal?: AbortSignal, query = false): void {
   signal?.throwIfAborted();
   if (config.indexId) {
+    if (config.scope !== getDb().name) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
     const row = indexRow(getDb(), config.indexId);
     if (config.scope !== getDb().name || (row.generation !== config.generation && row.staging_generation !== config.generation
       && !getDb().prepare('SELECT 1 FROM embedding_index_values WHERE index_id=? AND generation=? LIMIT 1').get(row.id, config.generation ?? -1))) throw new AiError('El índice de embeddings cambió durante la solicitud.', false);

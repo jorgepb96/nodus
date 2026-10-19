@@ -44,6 +44,9 @@ try {
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
     runMigrations(db);
+    const indexes = require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'));
+    const profile = indexes.embeddingProfile({ embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small' });
+    indexes.ensureInitialEmbeddingIndex(db, profile);
     return db;
   };
   const useDb = (db) => {
@@ -123,7 +126,7 @@ try {
   ins(dbA, 'teaching_grade_entries', { id: 'geA', student_id: 'stuA', item_id: 'itemA', raw_value: 8.5, status: 'graded', created_at: T0, updated_at: T1 });
 
   // ── Machine A: study docs with binary payloads ─────────────────────────────
-  ins(dbA, 'study_docs', { id: 'docShared', short_id: 'DOC-A', title: 'Tema 1', content_markdown: '# versión A', embedding: Buffer.from('EMBED-A'), created_at: T0, updated_at: T1 });
+  ins(dbA, 'study_docs', { id: 'docShared', short_id: 'DOC-A', title: 'Tema 1', content_markdown: '# versión A', embedding: Buffer.from(new Float32Array([1,0]).buffer), embedding_provider: 'openai', embedding_model: 'text-embedding-3-small', embedding_dim: 2, created_at: T0, updated_at: T1 });
 
   // ── Machine A: protected copies, including a soft-delete marker ───────────
   ins(dbA, 'protect_copies', { id: 'pcShared', file_name: 'copia.pdf', mime_type: 'application/pdf', bytes: 8, sha256: 'hash-new', blob: Buffer.from('COPY-NEW'), source_kind: 'disk', source_label: 'Documento', created_at: T0, updated_at: T1, deleted_at: null });
@@ -142,7 +145,7 @@ try {
   ins(dbB, 'notes', { id: 'n2', folder_id: null, title: 'Compartida', kind: 'markdown', content: 'versión nueva de B', order_idx: 0, created_at: T0, updated_at: T1 });
   ins(dbB, 'notes', { id: 'n3', folder_id: null, title: 'Solo B', kind: 'markdown', content: 'local de B', order_idx: 0, created_at: T0, updated_at: T0 });
   ins(dbB, 'edge_feedback', { from_id: 'iB', to_id: 'iA', type: 'contradicts', verdict: 'confirmed', note: '', created_at: T0 });
-  ins(dbB, 'study_docs', { id: 'docShared', short_id: 'DOC-A', title: 'Tema local más nuevo', content_markdown: '# versión B', embedding: Buffer.from('EMBED-B'), created_at: T0, updated_at: T2 });
+  ins(dbB, 'study_docs', { id: 'docShared', short_id: 'DOC-A', title: 'Tema local más nuevo', content_markdown: '# versión B', embedding: Buffer.from(new Float32Array([0,1]).buffer), embedding_provider: 'openai', embedding_model: 'text-embedding-3-small', embedding_dim: 2, created_at: T0, updated_at: T2 });
   ins(dbB, 'protect_copies', { id: 'pcShared', file_name: 'vieja.pdf', mime_type: 'application/pdf', bytes: 8, sha256: 'hash-old', blob: Buffer.from('COPY-OLD'), source_kind: 'disk', source_label: null, created_at: T0, updated_at: T0, deleted_at: null });
   ins(dbB, 'protect_copies', { id: 'pcDeleted', file_name: 'borrada.png', mime_type: 'image/png', bytes: 8, sha256: 'hash-del', blob: Buffer.from('COPY-OLD'), source_kind: 'disk', source_label: null, created_at: T0, updated_at: T0, deleted_at: null });
   ins(dbB, 'protect_copies', { id: 'pcLocal', file_name: 'local.png', mime_type: 'image/png', bytes: 5, sha256: 'hash-local', blob: Buffer.from('LOCAL'), source_kind: 'disk', source_label: null, created_at: T0, updated_at: T0, deleted_at: null });
@@ -249,7 +252,7 @@ try {
   assert.equal(dbB.prepare('SELECT COUNT(*) AS n FROM edge_feedback').get().n, 1, 'the reversed pair did not become a second row');
   assert.equal(dbB.prepare('SELECT verdict FROM edge_feedback').get().verdict, 'rejected', 'newer verdict adopted (direction-agnostic)');
   assert.equal(dbB.prepare("SELECT title FROM study_docs WHERE id = 'docShared'").get().title, 'Tema local más nuevo', 'newer local study row preserved');
-  assert.equal(dbB.prepare("SELECT embedding FROM study_docs WHERE id = 'docShared'").get().embedding.toString(), 'EMBED-B', 'newer local embedding stays byte-exact');
+  assert.deepEqual(dbB.prepare("SELECT embedding FROM embedding_read_study_docs WHERE id = 'docShared'").get().embedding, Buffer.from(new Float32Array([0,1]).buffer), 'newer local embedding stays byte-exact');
 
   // ── Idempotence ────────────────────────────────────────────────────────────
   const again = sync.mergeSyncPackage(pkg.buffer, PASS);

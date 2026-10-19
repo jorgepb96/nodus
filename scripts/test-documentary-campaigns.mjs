@@ -152,5 +152,5 @@ try {
   } finally { settingsRepo.getSettings = originalSettings; aiClient.effectiveEmbeddingConfig = originalEmbedding; }
   console.log('Frozen This-vault consent, missing configuration, independent future policy, shared job interests, per-document controls and revoked previews passed.');
 } finally {
-  preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true });
+  await preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true });
 }

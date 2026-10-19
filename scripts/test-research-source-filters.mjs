@@ -38,7 +38,6 @@ try {
   for (const [id, work] of [['shared', 'a1'], ['inside', 'a1'], ['second', 'a2'], ['outside', 'b1']]) {
     const text = id === 'outside' ? 'OUTSIDE_ONLY idea' : `Selected idea ${id}`;
     db.prepare("INSERT INTO ideas(global_id,type,label,statement,created_at) VALUES (?,'claim',?,?,datetime('now'))").run(id, text, text);
-    ideas.updateIdeaEmbedding(id, text, id === 'outside' ? [1, 0] : [.8, .6]);
     db.prepare("INSERT INTO idea_occurrences(global_id,nodus_id,role,development,confidence) VALUES (?,?,'supports',?,.9)").run(id, work, text);
     db.prepare("INSERT INTO evidence(id,global_id,nodus_id,quote,location,kind) VALUES (?,?,?,?,'1','quote')").run(`e-${id}`, id, work, text);
   }
@@ -50,6 +49,10 @@ try {
   for (const [id, work] of [['edge-in', 'a1'], ['edge-out', 'b1']]) db.prepare("INSERT INTO edges VALUES (?,'shared','inside',?,'explicit',.9,?)").run(id, id === 'edge-in' ? 'contradicts' : 'supports', work);
   db.prepare("INSERT INTO gaps(id,nodus_id,related_idea,kind,statement,confidence,evidence_id) VALUES ('gap-in','a1','outside','research','Selected gap',.9,'e-outside')").run();
   db.prepare("INSERT INTO gaps(id,nodus_id,kind,statement,confidence) VALUES ('gap-out','b1','research','OUTSIDE_ONLY gap',1)").run();
+  for (const row of db.prepare('SELECT global_id, type, label, statement FROM ideas').all()) {
+    const themes = db.prepare('SELECT DISTINCT t.label FROM themes t JOIN idea_theme_links it ON it.theme_id=t.theme_id WHERE it.global_id=?').all(row.global_id).map(row => row.label);
+    ideas.updateIdeaEmbedding(row.global_id, ideas.embeddingTextForIdea({ ...row, themes }), row.global_id === 'outside' ? [1, 0] : [.8, .6]);
+  }
   const scopeApi = load('electron/ai/researchSourceScope.ts');
   const sources = scopeApi.listResearchContextSources();
   assert.deepEqual(sources.authors.find(a => a.id === 'a').workIds.sort(), ['a1', 'a2'], 'editorship alone is not authorship');

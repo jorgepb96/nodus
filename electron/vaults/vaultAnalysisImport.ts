@@ -20,6 +20,7 @@ type WorkRow = Work & {
 };
 
 interface AnalysisCounts {
+  embeddingCompatible: boolean;
   themes: number;
   ideas: number;
   ideaEmbeddings: number;
@@ -153,8 +154,9 @@ function sourceCounts(db: Database.Database, nodusId: string): AnalysisCounts {
   const target = activeEmbeddingIndex(getDb());
   const sourceHead = embeddingIndexHead(db);
   const sourceIndex = sourceHead?.active_id ? indexRow(db, sourceHead.active_id) : null;
-  if (!target || !sourceIndex || sourceIndex.fingerprint !== profileFingerprint(target.profile)
-    || (target.dimensions !== null && target.dimensions !== sourceIndex.dimensions)) row.ideaEmbeddings = 0;
+  row.embeddingCompatible = !!target && !!sourceIndex && !sourceIndex.legacy && !!sourceHead?.enabled
+    && sourceIndex.fingerprint === profileFingerprint(target.profile)
+    && (target.dimensions === null || target.dimensions === sourceIndex.dimensions);
   return row;
 }
 
@@ -295,6 +297,10 @@ function decideCompatibility(
     const component = kindComponent(kind);
     if (!available.has(kind)) {
       compatibility[kind] = { state: 'unavailable', reason: `The source vault has no ${kind} output.` };
+      continue;
+    }
+    if (kind === 'ideaEmbeddings' && !match.counts.embeddingCompatible) {
+      compatibility[kind] = { state: 'incompatible', reason: 'The source embedding index contract differs.' };
       continue;
     }
     if (targetHasLocalOutput(kind)) {
@@ -458,9 +464,6 @@ function copyDeepAnalysis(
     `
   ).run({ sourceId, targetId });
   tableChange(db, tableRows, 'external_refs');
-
-  if (includeEmbeddings) copyIdeaEmbeddings(db, sourceId, targetId, tableRows);
-
 }
 
 function copyIdeaEmbeddings(db: Database.Database, sourceId: string, targetId: string, tableRows: Record<string, number>): void {
@@ -770,7 +773,10 @@ function importMatch(
           .map((row) => row.global_id);
         wakeIdeasWithWorks(targetDb, importedIdeas);
         sleepIdeasWithoutWorks(targetDb, now);
-      } else if (imported.includes('ideaEmbeddings')) copyIdeaEmbeddings(targetDb, match.work.nodus_id, target.nodus_id, tableRows);
+      }
+      // Waking a dormant idea invalidates its previous availability revision.
+      // Copy verified vectors afterwards, once the target input is final.
+      if (imported.includes('ideaEmbeddings')) copyIdeaEmbeddings(targetDb, match.work.nodus_id, target.nodus_id, tableRows);
       if (imported.includes('summary')) copySummary(targetDb, match.work.nodus_id, target.nodus_id, tableRows);
       if (imported.includes('passages')) copyPassages(targetDb, match.work.nodus_id, target.nodus_id, tableRows, imported.includes('ideaEmbeddings'));
       if (imported.includes('documentProfile')) copyDocumentProfile(targetDb, match.work.nodus_id, target.nodus_id, tableRows);

@@ -392,7 +392,7 @@ test('the vectors switch exists and the privacy notice matches what really trave
   const [privacy, settings, publisher] = await Promise.all([
     read('PRIVACY.md'),
     read('src/views/Settings.tsx'),
-    read('electron/serverSync/serverSyncService.ts'),
+    read('electron/serverSync/atomicEmbeddingPublication.ts'),
   ]);
   // PRIVACY.md used to state outright that embeddings were never uploaded. They are now,
   // behind a switch — and a privacy notice that contradicts the code is the worst outcome.
@@ -404,7 +404,7 @@ test('the vectors switch exists and the privacy notice matches what really trave
   assert.match(settings, /nodusServerIncludeVectors/);
   assert.match(settings, /Incluye las representaciones auditadas de documentos/);
   // Off means off.
-  assert.match(publisher, /if \(!config\.includeVectors\) return;/);
+  assert.match(publisher, /config\.includeVectors \? snapshot\.vectors : \[\]/);
   // Passage vectors are gated by the passages switch, not by the vectors one alone.
-  assert.match(publisher, /(?:config|publicationConfig)\.includePassages \? \['ideas', 'documents', 'passages'\] : \['ideas', 'documents'\]/);
+  assert.match(await read('electron/serverSync/serverSyncService.ts'), /(?:config|publicationConfig)\.includePassages \? \['ideas', 'documents', 'passages'\] : \['ideas', 'documents'\]/);
 });

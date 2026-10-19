@@ -18,6 +18,7 @@ const load = file => require(path.join(repoRoot, file));
 try {
   const db = load('electron/db/database.ts').getDb();
   const settingsRepo = load('electron/db/settingsRepo.ts');
+  settingsRepo.updateSettings({ embeddingProvider: 'openrouter', embeddingModel: 'baai/bge-m3' });
   const baseSettings = settingsRepo.getSettings;
   settingsRepo.getSettings = () => ({ ...baseSettings(), embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small', providerKeys: { ...baseSettings().providerKeys, openai: true } });
   const themes = load('electron/db/themesRepo.ts');
@@ -36,6 +37,12 @@ try {
       .run(Buffer.from(new Float32Array([1, 0, 0]).buffer), embeddingTextHash(text), id);
   }
 
+  const indexes = load('electron/db/embeddingIndexesRepo.ts');
+  const oldIndex = indexes.activeEmbeddingIndex(db);
+  const nextIndex = indexes.createIndex(db, indexes.embeddingProfile({ ...baseSettings(), embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small' }));
+  db.prepare('UPDATE embedding_index_state SET pending_id=?').run(nextIndex.id);
+  indexes.commitEmbeddingIndex(db, indexes.indexContext(db, nextIndex));
+
   // The model moves `shared` to a new theme and leaves the others where they were.
   load('electron/ai/structuredHeadroom.ts').completeJsonWithHeadroom = async request => {
     const input = JSON.parse(request.user);
@@ -52,10 +59,10 @@ try {
   assert.equal(embedded.length, 1, 'the shared idea is embedded once although two works hold it');
   assert.match(embedded[0], /etiqueta: shared/);
   assert.match(embedded[0], /temas: tema nuevo/i, 'it is embedded with its new theme');
-  const row = id => db.prepare('SELECT embedding_provider p, embedding_model m FROM ideas WHERE global_id=?').get(id);
+  const row = id => db.prepare('SELECT embedding_provider p, embedding_model m FROM embedding_read_ideas WHERE global_id=?').get(id);
   assert.deepEqual({ ...row('shared') }, { p: 'openai', m: 'text-embedding-3-small' });
-  assert.deepEqual({ ...row('kept') }, { p: 'openrouter', m: 'baai/bge-m3' }, 'an untouched idea keeps its vector, even from an older model');
-  assert.deepEqual({ ...row('other') }, { p: 'openrouter', m: 'baai/bge-m3' });
+  assert.deepEqual({ ...indexes.withEmbeddingIndexContext(oldIndex, () => row('kept')) }, { p: 'openrouter', m: 'baai/bge-m3' }, 'an untouched idea keeps its vector, even from an older model');
+  assert.deepEqual({ ...indexes.withEmbeddingIndexContext(oldIndex, () => row('other')) }, { p: 'openrouter', m: 'baai/bge-m3' });
   await pipeline.refreshRethemedIdeaEmbeddings([]);
   assert.equal(embedded.length, 1, 'nothing re-themed, nothing embedded');
 

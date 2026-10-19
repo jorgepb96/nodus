@@ -128,7 +128,7 @@ try {
   assert.equal(gateMax, 2, 'remote embeddings start with two requests in flight');
   console.log('Documentary preparation overlaps documents and embedding batches, extracts text only and bounds its per-page work.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   database.closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

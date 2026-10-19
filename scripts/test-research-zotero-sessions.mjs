@@ -76,7 +76,7 @@ try {
   console.log('Simulated MCP sessions: default automatic, two-slot reservation, independent cancellation, disabled policy, endpoint identity and owned cleanup passed.');
 } finally {
   await load('electron/mcp/researchZotero.ts').closeResearchZotero();
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

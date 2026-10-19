@@ -289,7 +289,7 @@ try {
   } finally { preparation.retrieveSharedDocumentaryEvidence = emptyRetrieval; }
   console.log('Research chat agent: follow-up planning, catalogue by author, groundwork reads, refused premature finishes and carried citations passed.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

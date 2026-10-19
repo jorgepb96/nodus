@@ -16,7 +16,15 @@ local.embedWithNodusLocal = async (model, input, signal, options) => {
   calls.push({ model, input, options }); if (release) await release;
   return (Array.isArray(input) ? input : [input]).map(() => { const values = Array(model === 'multilingual-e5-small-int8' ? 384 : model.includes('256') ? 256 : 512).fill(0); values[0] = 1; return values; });
 };
-const setModel = model => settings.updateSettings({ onboardingComplete: true, embeddingProvider: 'nodus', embeddingModel: model });
+const indexes = load('electron/db/embeddingIndexesRepo.ts');
+const setModel = model => {
+  const db = database.getDb();
+  if (indexes.activeEmbeddingIndex(db)?.profile.model === model) return;
+  const index = indexes.createIndex(db, indexes.embeddingProfile({ ...settings.getSettings(), embeddingProvider: 'nodus', embeddingModel: model }));
+  db.prepare('UPDATE embedding_index_state SET pending_id=?').run(index.id);
+  indexes.commitEmbeddingIndex(db, indexes.indexContext(db, index));
+  settings.updateSettings({ onboardingComplete: true });
+};
 try {
   const owner = registry.getActiveVault(); setModel(profile);
   const revision = settings.embeddingSettingsRevision(); setModel(profile);
@@ -28,19 +36,19 @@ try {
   await assert.rejects(ai.embedDocuments(['one'], undefined, { titles: [] }), /títulos/);
   let finish; release = new Promise(resolve => { finish = resolve; });
   const old = ai.embedQuery('held query'); const refused = assert.rejects(old, /configuración.*cambió/);
-  setModel('embeddinggemma-2-text-q8-256-v1'); setModel(profile); finish(); await refused; release = null;
+  setModel('embeddinggemma-2-text-q8-256-v1'); finish(); await refused; release = null; setModel(profile);
   setModel('multilingual-e5-small-int8'); await ai.embedQuery(full); assert.equal(calls.at(-1).input.length, 8000, 'historical preparation is preserved');
   release = new Promise(resolve => { finish = resolve; });
   const legacy = ai.embedQuery('legacy indexing in flight'); const legacyRefused = assert.rejects(legacy, /configuración.*cambió/);
   await new Promise(resolve => setImmediate(resolve)); setModel(profile); finish(); await legacyRefused; release = null;
   const second = registry.createVault('Other disposable vault', 'academic');
   release = new Promise(resolve => { finish = resolve; });
-  const scoped = ai.embedQuery('vault query'); const scopedRefused = assert.rejects(scoped, /bóveda.*cambió/);
+  const scoped = ai.embedQuery('vault query'); const scopedRefused = assert.rejects(scoped, /(?:bóveda|índice).*cambió/);
   database.closeDb(); registry.setActiveVault(second.id); setModel(profile); finish(); await scopedRefused; release = null;
   database.closeDb(); registry.setActiveVault(owner.id);
   release = new Promise(resolve => { finish = resolve; });
   const pinned = registry.withOwningVault(owner.id, () => database.withVaultDatabase(owner.id, () => ai.embedQuery('pinned owner query')));
-  const pinnedRefused = assert.rejects(pinned, /bóveda.*cambió/);
+  const pinnedRefused = assert.rejects(pinned, /(?:bóveda|índice).*cambió/);
   await new Promise(resolve => setImmediate(resolve)); registry.setActiveVault(second.id); registry.setActiveVault(owner.id); finish(); await pinnedRefused; release = null;
   const previousProcess = { ...ai.effectiveEmbeddingConfig(), session: 'previous-process', revision: 999 };
   assert(await ai.embedDocument('resumed queued document', undefined, { config: previousProcess }), 'persisted configurations do not reuse a previous process settings counter');
@@ -66,4 +74,4 @@ try {
   try { await queue.waitForIdle(5000); assert.equal(queue.list()[0].status, 'done'); assert(progress >= 2, 'global extraction notifications survive closing the initiating vault connection'); }
   finally { queue.dispose(); catalog.close(); }
   console.log('Real embedding API rejects stale model/vault results, preserves legacy preparation and invalidates changed summary titles.');
-} finally { load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true }); }
+} finally { await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true }); }

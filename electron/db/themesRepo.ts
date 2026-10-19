@@ -146,7 +146,6 @@ export function replaceIdeaThemeLinks(
 ): void {
   const db = getDb();
   const tx = db.transaction(() => {
-    db.prepare('DELETE FROM idea_theme_links WHERE global_id = ?').run(globalId);
     const seen = new Set<string>();
     const themeIds: string[] = [];
     for (const label of labels) {
@@ -155,11 +154,17 @@ export function replaceIdeaThemeLinks(
       seen.add(norm);
       themeIds.push(getOrCreateTheme(norm));
     }
+    // Keep unchanged links: deleting/reinserting them would invalidate saved
+    // vectors even when the idea's embedded theme labels did not change.
+    db.prepare(`DELETE FROM idea_theme_links WHERE global_id=? AND
+      (nodus_id NOT IN (SELECT value FROM json_each(?)) OR theme_id NOT IN (SELECT value FROM json_each(?)))`)
+      .run(globalId, JSON.stringify(occurrenceNodusIds), JSON.stringify(themeIds));
     for (const nodusId of occurrenceNodusIds) {
       for (const themeId of themeIds) {
         db.prepare(
-          `INSERT OR REPLACE INTO idea_theme_links (nodus_id, global_id, theme_id, confidence, basis)
-           VALUES (?, ?, ?, ?, ?)`
+          `INSERT INTO idea_theme_links (nodus_id, global_id, theme_id, confidence, basis)
+           VALUES (?, ?, ?, ?, ?) ON CONFLICT(nodus_id,global_id,theme_id)
+           DO UPDATE SET confidence=excluded.confidence,basis=excluded.basis`
         ).run(nodusId, globalId, themeId, confidence, basis);
       }
     }

@@ -70,6 +70,8 @@ try {
     );
   `);
   db.exec(await migration28Sql());
+  // This migration-28 fixture intentionally retains the legacy carrier schema.
+  db.exec('CREATE VIEW embedding_read_ideas AS SELECT rowid,* FROM ideas');
   assert.ok(
     db.prepare("SELECT 1 FROM pragma_table_info('ideas') WHERE name = 'orphaned_at'").get(),
     'migration 28 adds orphaned_at'

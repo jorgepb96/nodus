@@ -68,7 +68,6 @@ test('every model row shown in the reported Settings block has a short descripti
     'Auditor de fichas documentales',
     'Fusión y deduplicación',
     'Asistente Nodi',
-    'Indexación de embeddings',
     'Llamadas simultáneas',
     'Razonamiento (chat/tutor/escritura)',
     'IA y datos del alumnado',
@@ -80,5 +79,6 @@ test('every model row shown in the reported Settings block has a short descripti
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     assert.match(settings, new RegExp(`<Row[^>]*label=\\{t\\('${escaped}'\\)\\}[^>]*hint=`), label);
   }
+  assert.match(settings, /<EmbeddingIndexesManager settings=/, 'embedding maintenance is managed per saved index');
   assert.match(settings, /keys\.map\(\(key\) => <Row key=\{key\} label=\{t\(VAULT_MODEL_FIELDS\[key\]\)\} hint=\{t\(VAULT_MODEL_HINTS\[key\]\)\}/);
 });

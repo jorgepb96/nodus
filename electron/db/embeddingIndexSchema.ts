@@ -134,8 +134,11 @@ export function migrateEmbeddingIndexes(db: Database.Database): void {
   if (selection.embeddingModel) db.prepare('UPDATE embedding_index_state SET enabled=1 WHERE singleton=1').run();
   for (const operation of ['INSERT', 'UPDATE', 'DELETE']) {
     const ref = operation === 'DELETE' ? 'OLD' : 'NEW';
-    db.exec(`CREATE TRIGGER IF NOT EXISTS embedding_theme_links_${operation} AFTER ${operation} ON idea_theme_links BEGIN
-      DELETE FROM embedding_index_values WHERE family='ideas' AND entity_id=${ref}.global_id;
+    db.exec(`CREATE TRIGGER IF NOT EXISTS embedding_theme_links_${operation} AFTER ${operation === 'UPDATE' ? 'UPDATE OF global_id,theme_id' : operation} ON idea_theme_links
+      ${operation === 'UPDATE' ? 'WHEN OLD.global_id IS NOT NEW.global_id OR OLD.theme_id IS NOT NEW.theme_id' : ''} BEGIN
+      DELETE FROM embedding_index_values WHERE family='ideas' AND entity_id ${operation === 'UPDATE' ? 'IN (OLD.global_id,NEW.global_id)' : `= ${ref}.global_id`}
+        ${operation === 'DELETE' ? `AND NOT EXISTS(SELECT 1 FROM idea_theme_links WHERE global_id=OLD.global_id AND theme_id=OLD.theme_id)`
+          : operation === 'INSERT' ? `AND (SELECT COUNT(*) FROM idea_theme_links WHERE global_id=NEW.global_id AND theme_id=NEW.theme_id)=1` : ''};
       UPDATE embedding_index_state SET corpus_revision=corpus_revision+1;
     END;`);
   }

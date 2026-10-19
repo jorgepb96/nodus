@@ -31,6 +31,9 @@ await mkdir(artifacts, { recursive: true });
 const output = path.join(artifacts, 'exports');
 await mkdir(output, { recursive: true });
 const bundle = path.join(temp, 'backups.cjs');
+const embeddingBundle = path.join(temp, 'embedding-functions.cjs');
+buildSync({ entryPoints: [path.join(repo, 'electron/db/embeddingIndexesRepo.ts')], outfile: embeddingBundle, bundle: true, format: 'cjs', platform: 'node', alias: { '@shared': path.join(repo, 'shared') } });
+const { registerEmbeddingIndexFunctions } = require(embeddingBundle);
 buildSync({
   entryPoints: [path.join(repo, 'shared/backups.ts')],
   bundle: true,
@@ -280,6 +283,7 @@ try {
     }, type);
     vaults.push(created);
     const db = new Database(created.path);
+    registerEmbeddingIndexFunctions(db);
     db.pragma('foreign_keys=ON');
     const insert = (table, values) => {
       const info = db.pragma(`table_info("${table}")`);
@@ -931,6 +935,7 @@ try {
   }
   // Cancellation crosses the real IPC channel while the worker streams a large original.
   const largeDb = new Database(vaults[0].path);
+  registerEmbeddingIndexFunctions(largeDb);
   const libraryOnly = {
     ...defaultOpenBackupOptions(vaults[0].id),
     vaultIds: [],

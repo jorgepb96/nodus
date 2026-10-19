@@ -160,7 +160,7 @@ try {
   assert.equal(preparation.documentaryStore().revision(resumed.indexKey).embedding_ready, 1);
   console.log('Legacy fencing, lexical-first preparation, frozen model dispatch, durable batches and compatible vector reuse passed.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

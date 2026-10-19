@@ -79,7 +79,26 @@ The URL carries the state, so a filtered view can be shared:
 
   /* ------------------------------------------------------------ data */
 
-  const tabs = guide.tabs || [];
+  const latest = (guide.tabs || []).map((tab) => tab.updated).filter(Boolean).sort().at(-1);
+
+  // The last tab is not in the data file: it holds the definitions, the
+  // sources and the update history, which models-data.js keeps apart.
+  const tabs = [...(guide.tabs || []), {
+    id: 'method',
+    label: 'Methodology',
+    icon: 'info',
+    accent: '#a78bfa',
+    updated: latest,
+    title: 'Methodology and sources',
+    intro: 'Definitions of the columns, the sources consulted and the update history.',
+    filters: [],
+    tables: [],
+    extra: '<dl class="mg-method" id="mg-method"></dl>'
+      + '<div class="mg-about-grid"><div class="mg-sources" id="mg-sources"></div>'
+      + '<aside class="mg-history"><h3>Update history</h3><ol class="mg-changelog" id="mg-changelog"></ol>'
+      + '<p class="mg-edit">To report outdated data, <a href="https://github.com/jorgepb96/nodus/issues/new/choose" target="_blank" rel="noopener">open an issue on GitHub</a>. All tables on this page are generated from <a href="https://github.com/jorgepb96/nodus/blob/main/site/models/models-data.js" target="_blank" rel="noopener">models-data.js</a>.</p></aside></div>'
+      + '<p class="mg-disclaimer">Comparisons and priorities are proposals to validate on real corpora, not performance guarantees.</p>',
+  }];
   const tabsById = new Map(tabs.map((tab) => [tab.id, tab]));
   const columnId = (column) => column.id || column.key;
   const optionsOf = (facet) => (facet.groups ? facet.groups.flatMap((group) => group.options) : facet.options);
@@ -288,7 +307,7 @@ The URL carries the state, so a filtered view can be shared:
       + `${table.estimator ? estimator(table) : ''}`
       + `<div class="mg-table-card"><div class="mg-scroll"><table class="mg-table" aria-labelledby="${titleId}">`
       + `<thead><tr>${head}</tr></thead><tbody data-body="${table.id}"></tbody></table></div>`
-      + `<div class="mg-empty" data-empty="${table.id}" hidden>Nothing in this table matches the filters. <button class="mg-link-btn" type="button" data-clear>Clear filters</button></div></div>`
+      + `<div class="mg-empty" data-empty="${table.id}" hidden>No rows match the selected filters. <button class="mg-link-btn" type="button" data-clear>Clear filters</button></div></div>`
       + `${table.footnote ? `<p class="mg-footnote">${inline(table.footnote)}</p>` : ''}`
       + `${table.callout ? callout(table.callout) : ''}`;
 
@@ -336,7 +355,8 @@ The URL carries the state, so a filtered view can be shared:
       + `<p class="mg-reviewed">${icon('calendar', 'mg-ic')}Reviewed <time datetime="${tab.updated}">${formatDate(tab.updated)}</time></p></header>`
       + `${(tab.notes || []).map(callout).join('')}`
       + `${filterBox(tab)}`
-      + `<div class="mg-blocks">${tab.tables.map(tableBlock).join('')}</div></div>`;
+      + `${tab.tables.length ? `<div class="mg-blocks">${tab.tables.map(tableBlock).join('')}</div>` : ''}`
+      + `${tab.extra || ''}</div>`;
   }
 
   tabBar.innerHTML = tabs.map((tab) => `<button class="mg-tab" type="button" role="tab" id="mg-tab-${tab.id}" aria-controls="mg-panel-${tab.id}" aria-selected="false" tabindex="-1" data-tab="${tab.id}" style="--tab-accent:${tab.accent}">`
@@ -391,8 +411,8 @@ The URL carries the state, so a filtered view can be shared:
     const meta = panel.querySelector('[data-meta]');
     if (meta) {
       meta.innerHTML = active
-        ? `Showing <b>${shown}</b> of ${total} entries · ${active} ${active === 1 ? 'filter' : 'filters'} on`
-        : `Showing all <b>${total}</b> entries. Tap a bubble to filter; more bubbles in the same row add to the selection.`;
+        ? `Showing <b>${shown}</b> of ${total} entries · ${active} ${active === 1 ? 'filter' : 'filters'} active`
+        : `Showing all <b>${total}</b> entries. Select one or more options to filter the tables.`;
     }
     const clear = panel.querySelector('.mg-clear');
     if (clear) clear.disabled = active === 0;
@@ -534,8 +554,6 @@ The URL carries the state, so a filtered view can be shared:
 
   /* ------------------------------------------------------------ the rest of the page */
 
-  const dates = tabs.map((tab) => tab.updated).filter(Boolean).sort();
-  const latest = dates[dates.length - 1];
   const updated = document.getElementById('mg-updated');
   if (updated && latest) {
     updated.dateTime = latest;
@@ -552,7 +570,7 @@ The URL carries the state, so a filtered view can be shared:
   const method = document.getElementById('mg-method');
   if (method) {
     const items = [
-      { term: 'Review date', text: `Figures as of **${latest ? formatDate(latest) : 'the date shown on each tab'}**. Prices, the models on offer and measured speeds change; each tab shows the day it was last reviewed.` },
+      { term: 'Review date', text: `Data as of **${latest ? formatDate(latest) : 'the date shown on each tab'}**. Prices, available models and measured speeds change. Each tab shows its own review date.` },
       ...(guide.method || []),
     ];
     method.innerHTML = items.map((item) => `<div class="mg-method-item"><dt>${escapeHtml(item.term)}</dt><dd>${inline(item.text)}</dd></div>`).join('');

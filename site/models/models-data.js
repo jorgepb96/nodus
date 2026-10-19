@@ -108,7 +108,7 @@ SHAPES
   /* ---------------------------------------------------------------- filters
      Shared between tabs: the same id keeps the same selection everywhere. */
   const MACHINE = {
-    id: 'machine', label: 'Your machine', type: 'machine',
+    id: 'machine', label: 'Hardware', type: 'machine',
     groups: [
       { label: 'Mac', hint: 'unified memory', options: [
         { id: 'mac8', label: '8 GB', kind: 'mac', gb: 8 },
@@ -136,8 +136,8 @@ SHAPES
   const RUNS = {
     id: 'runs', label: 'Runs', field: 'runs',
     options: [
-      { id: 'local', label: 'On my machine' },
-      { id: 'api', label: 'Through an API' },
+      { id: 'local', label: 'Local' },
+      { id: 'api', label: 'API' },
     ],
   };
 
@@ -154,7 +154,7 @@ SHAPES
     id: 'speed', label: 'API speed', field: 'speed',
     options: [
       { id: 'fast', label: 'Fast', hint: '150+ t/s', atLeast: 150 },
-      { id: 'steady', label: 'Steady', hint: '80 to 149 t/s', atLeast: 80, below: 150 },
+      { id: 'steady', label: 'Medium', hint: '80 to 149 t/s', atLeast: 80, below: 150 },
       { id: 'slow', label: 'Slow', hint: 'under 80 t/s', below: 80 },
     ],
   };
@@ -197,7 +197,7 @@ SHAPES
       accent: '#2dd4bf',
       updated: '2026-10-19',
       title: 'Local models',
-      intro: 'Open weights you download and run yourself. They handle Research Chat, the Dictionary, drafting, summaries of **ideas you’ve already retrieved**, and semantic search. They aren’t proposed for extracting new ideas in bulk. And an API’s speed tells you nothing about how fast a model runs on your laptop.',
+      intro: 'Models with downloadable weights that run on your own computer. Use them for Research Chat, the Dictionary, drafting, summaries of **already retrieved ideas** and semantic search. They are not recommended for bulk extraction of new ideas. API speed figures do not apply to local inference.',
       filters: [MACHINE, {
         id: 'family', label: 'Family', field: 'family',
         options: [
@@ -210,7 +210,7 @@ SHAPES
         {
           id: 'local-llm',
           title: 'Generative models',
-          intro: 'From lightest to heaviest. Pick your machine above and only what fits stays.',
+          intro: 'Sorted by size. The hardware filter shows only the models that fit the selected machine.',
           columns: [
             { key: 'name', label: 'Model', type: 'name' },
             { key: 'q4', label: 'Q4 size*', type: 'text' },
@@ -221,22 +221,22 @@ SHAPES
           ],
           rows: [
             { name: 'Gemma 4 E2B IT', family: 'gemma', sub: '5.1B total · 2.3B effective', q4: '~3–5 GB', fit: { mac: 8, gpu: 6, cpu: 'slow' }, chat: 'Basic', dictionary: 'Quick definitions', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-E2B-it') },
-            { name: 'Qwen3.5 4B', family: 'qwen', sub: '4B', q4: '~3–5 GB', fit: { mac: 8, gpu: 6, cpu: 'slow' }, chat: 'Light', dictionary: '**Very well suited**', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.5-4B') },
+            { name: 'Qwen3.5 4B', family: 'qwen', sub: '4B', q4: '~3–5 GB', fit: { mac: 8, gpu: 6, cpu: 'slow' }, chat: 'Light', dictionary: '**Well suited**', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.5-4B') },
             { name: 'Phi-4 Mini Instruct', family: 'phi', sub: '3.8B', q4: '~3–5 GB', fit: { mac: 8, gpu: 6, cpu: 'slow' }, chat: 'Light', dictionary: 'Definitions, structured output', licence: LICENCE.mit('Microsoft', 'https://huggingface.co/microsoft/Phi-4-mini-instruct') },
-            { name: 'Gemma 4 E4B IT', family: 'gemma', sub: '8B total · 4.5B effective', q4: '~5–8 GB', fit: { mac: 16, gpu: 8 }, chat: 'Good', dictionary: '**Very well suited**, multimodal', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-E4B-it') },
+            { name: 'Gemma 4 E4B IT', family: 'gemma', sub: '8B total · 4.5B effective', q4: '~5–8 GB', fit: { mac: 16, gpu: 8 }, chat: 'Good', dictionary: '**Well suited**, multimodal', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-E4B-it') },
             { name: 'Qwen3.5 9B', family: 'qwen', pick: 'Balanced pick', sub: '~9B', q4: '~6–9 GB', fit: { mac: 16, gpu: 12 }, chat: '**Balanced**', dictionary: '**Balanced**, multilingual', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.5-9B') },
             { name: 'Gemma 4 12B Unified', family: 'gemma', sub: '~12B', q4: '~8–12 GB', fit: { mac: 24, gpu: 16 }, chat: 'High', dictionary: 'High', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-12B-it') },
             { name: 'Gemma 4 26B-A4B', family: 'gemma', sub: '25.2B total · 3.8B active', q4: '~15–20 GB', fit: { mac: 32, gpu: 24 }, chat: '**High, efficient MoE**', dictionary: 'High', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-26B-A4B-it') },
-            { name: 'Qwen3.8 27B', family: 'qwen', sub: '27B', q4: '~17–22 GB', fit: { mac: 32, gpu: 24 }, fitNote: 'Tight on a 32 GB Mac; 48 GB is comfortable', chat: '**Very high**', dictionary: 'High', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.8-27B') },
+            { name: 'Qwen3.8 27B', family: 'qwen', sub: '27B', q4: '~17–22 GB', fit: { mac: 32, gpu: 24 }, fitNote: 'Limited on a 32 GB Mac; 48 GB recommended', chat: '**Very high**', dictionary: 'High', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.8-27B') },
             { name: 'Qwen3.5 35B-A3B', family: 'qwen', sub: '~35B total · ~3B active', q4: '~22–28 GB', fit: { mac: 48, gpu: 32 }, chat: 'High, MoE', dictionary: 'High', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3.5-35B-A3B') },
             { name: 'Gemma 4 31B', family: 'gemma', sub: '~31B', q4: '~20–26 GB', fit: { mac: 48, gpu: 32 }, chat: '**Very high**', dictionary: 'High', licence: LICENCE.apache('Google', 'https://huggingface.co/google/gemma-4-31B-it') },
           ],
-          footnote: '* **Estimates**, not official requirements or measurements: roughly 4-bit weights plus metadata, and they vary between GGUF and MLX builds. They **don’t include the headroom** for the system, long context, KV cache, vision, other processes or a shared GPU, so keep several GB free. A MoE model’s *active* parameters aren’t what has to sit in memory, and Gemma E2B/E4B “effective” sizes aren’t the totals either. A 24 GB card can run tight on long contexts, and 32 GB doesn’t guarantee good throughput.',
+          footnote: '* **Estimates**, not official requirements or measurements: approximately 4-bit weights plus metadata, varying between GGUF and MLX builds. They **do not include memory** for the operating system, long context, KV cache, vision, other processes or a shared GPU; leave several GB free. The *active* parameters of a MoE model are not the parameters that must be stored in memory, and the “effective” sizes of Gemma E2B/E4B are not the total sizes. A 24 GB GPU may be insufficient for long contexts, and 32 GB does not guarantee good throughput.',
         },
         {
           id: 'local-profiles',
           title: 'Hardware profiles',
-          intro: 'Start here if you know your machine but not the model names. Each profile says what’s realistic for chat and for retrieval.',
+          intro: 'Reference machines with the models suited to each one for chat and for retrieval.',
           columns: [
             { key: 'name', label: 'Profile', type: 'name' },
             { key: 'memory', label: 'Memory', type: 'text' },
@@ -246,44 +246,44 @@ SHAPES
             { key: 'verdict', label: 'Verdict', type: 'text' },
           ],
           rows: [
-            { tag: 'D0', name: 'Budget CPU, N100 mini-PC', machines: ['cpu'], memory: '8–16 GB RAM', graphics: 'Intel UHD, no dedicated VRAM', chat: 'Phi-4 Mini, Gemma E2B or Qwen 4B, **slow on CPU**', retrieval: 'EmbeddingGemma 2 (text), Harrier 270M, GTE reranker 306M', verdict: '**Search and Dictionary before heavy chat**' },
-            { tag: 'D1', name: 'Entry Mac or laptop', machines: ['mac8'], memory: '**8 GB unified**', graphics: 'Apple Silicon integrated GPU', chat: 'Qwen3.5 4B or Gemma E2B Q4, short context', retrieval: 'Harrier 270M, Voyage 4 Nano, EmbeddingGemma 2 (text)', verdict: 'Works, with few apps open at once' },
-            { tag: 'D2', name: 'MacBook Air M2, 16 GB', pick: 'Balanced', machines: ['mac16'], memory: '**16 GB unified**', graphics: 'Apple M2 GPU', chat: '**Qwen3.5 9B Q4**; Gemma E4B as the alternative', retrieval: '**Harrier 0.6B / BGE-M3** + Qwen3 Reranker 0.6B, one after the other', verdict: '**Nodus’s balanced local profile**' },
-            { tag: 'D3', name: 'Mac mini or MacBook Pro', machines: ['mac24', 'mac32'], memory: '24–32 GB unified', graphics: 'Apple Silicon GPU', chat: 'Gemma 4 12B; Gemma 26B-A4B Q4 on 32 GB with room to spare; Qwen 27B is tight', retrieval: 'Harrier 0.6B / BGE-M3 / EmbeddingGemma 2', verdict: 'Good for advanced chat; watch the KV cache' },
-            { tag: 'D4', name: 'Mac Studio or MacBook Pro', machines: ['mac48', 'mac64'], memory: '**48–64 GB unified**', graphics: 'Apple Silicon with more memory bandwidth', chat: '**Qwen3.8 27B**, Gemma 4 26B-A4B / 31B, Qwen 35B-A3B', retrieval: 'Qwen3 Embedding 4B–8B; a 4B reranker if it earns its place', verdict: 'Best local profile for quality' },
+            { tag: 'D0', name: 'Budget CPU, N100 mini-PC', machines: ['cpu'], memory: '8–16 GB RAM', graphics: 'Intel UHD, no dedicated VRAM', chat: 'Phi-4 Mini, Gemma E2B or Qwen 4B, **slow on CPU**', retrieval: 'EmbeddingGemma 2 (text), Harrier 270M, GTE reranker 306M', verdict: '**Prioritise search and Dictionary over intensive chat**' },
+            { tag: 'D1', name: 'Entry Mac or laptop', machines: ['mac8'], memory: '**8 GB unified**', graphics: 'Apple Silicon integrated GPU', chat: 'Qwen3.5 4B or Gemma E2B Q4, short context', retrieval: 'Harrier 270M, Voyage 4 Nano, EmbeddingGemma 2 (text)', verdict: 'Viable with few concurrent processes' },
+            { tag: 'D2', name: 'MacBook Air M2, 16 GB', pick: 'Balanced', machines: ['mac16'], memory: '**16 GB unified**', graphics: 'Apple M2 GPU', chat: '**Qwen3.5 9B Q4**; Gemma E4B as the alternative', retrieval: '**Harrier 0.6B / BGE-M3** + Qwen3 Reranker 0.6B, run sequentially', verdict: '**Nodus’s balanced local profile**' },
+            { tag: 'D3', name: 'Mac mini or MacBook Pro', machines: ['mac24', 'mac32'], memory: '24–32 GB unified', graphics: 'Apple Silicon GPU', chat: 'Gemma 4 12B; Gemma 26B-A4B Q4 on 32 GB; Qwen 27B at the limit', retrieval: 'Harrier 0.6B / BGE-M3 / EmbeddingGemma 2', verdict: 'Suitable for advanced chat; check KV cache size' },
+            { tag: 'D4', name: 'Mac Studio or MacBook Pro', machines: ['mac48', 'mac64'], memory: '**48–64 GB unified**', graphics: 'Apple Silicon with more memory bandwidth', chat: '**Qwen3.8 27B**, Gemma 4 26B-A4B / 31B, Qwen 35B-A3B', retrieval: 'Qwen3 Embedding 4B–8B; a 4B reranker if needed', verdict: 'Best local profile for quality' },
             { tag: 'D5', name: 'PC with an entry graphics card', machines: ['gpu6', 'gpu8'], memory: '16–32 GB RAM + **6–8 GB VRAM**', graphics: 'NVIDIA or AMD, discrete', chat: 'Qwen 4B / Gemma E4B Q4; 9B may need offload', retrieval: 'Harrier 270M / 0.6B, EmbeddingGemma 2', verdict: 'Depends on real VRAM, not total RAM' },
             { tag: 'D6', name: 'PC with a mid-range graphics card', machines: ['gpu12', 'gpu16'], memory: '32 GB RAM + **12–16 GB VRAM**', graphics: 'NVIDIA or AMD, discrete', chat: '**Qwen 9B**, Gemma 12B Q4 (16 GB), small models with long context', retrieval: 'BGE-M3, Harrier 0.6B, Qwen3 Reranker 0.6B', verdict: 'Good interactive speed' },
-            { tag: 'D7', name: 'PC with a high-end graphics card', machines: ['gpu24'], memory: '32–64 GB RAM + **24 GB VRAM**', graphics: 'RTX 3090 / 4090 or another 24 GB card', chat: 'Gemma 26B-A4B / Qwen 27B Q4, minding the KV cache', retrieval: 'Qwen3 Embedding 4B–8B and rerankers', verdict: 'Ideal for ~27B models if they fit whole' },
-            { tag: 'D8', name: 'Workstation', machines: ['gpu32', 'gpu48'], memory: '64–128+ GB RAM + **32–48+ GB VRAM**', graphics: 'Professional GPU or several', chat: 'Gemma 31B, Qwen 35B-A3B and longer contexts', retrieval: '8B embeddings and top-tier reranking', verdict: 'Advanced; the hardware costs a lot' },
+            { tag: 'D7', name: 'PC with a high-end graphics card', machines: ['gpu24'], memory: '32–64 GB RAM + **24 GB VRAM**', graphics: 'RTX 3090 / 4090 or another 24 GB card', chat: 'Gemma 26B-A4B / Qwen 27B Q4, checking KV cache size', retrieval: 'Qwen3 Embedding 4B–8B and rerankers', verdict: 'Suitable for ~27B models that fit entirely in VRAM' },
+            { tag: 'D8', name: 'Workstation', machines: ['gpu32', 'gpu48'], memory: '64–128+ GB RAM + **32–48+ GB VRAM**', graphics: 'Professional GPU or multiple GPUs', chat: 'Gemma 31B, Qwen 35B-A3B and longer contexts', retrieval: '8B embeddings and top-tier reranking', verdict: 'Advanced use; high hardware cost' },
           ],
         },
         {
           id: 'local-mac',
           title: 'Apple Silicon, by memory',
           collapsed: true,
-          intro: 'Unified memory isn’t dedicated VRAM: macOS and every open app draw from the same pool.',
+          intro: 'Unified memory is not dedicated VRAM: macOS and open applications use the same memory.',
           columns: [
             { key: 'name', label: 'Memory', type: 'name' },
             { key: 'chat', label: 'Preferred chat models', type: 'text' },
             { key: 'embeddings', label: 'Preferred embedding models', type: 'text' },
-            { key: 'avoid', label: 'Don’t make it the default', type: 'text' },
+            { key: 'avoid', label: 'Avoid as default', type: 'text' },
           ],
           rows: [
             { name: '8 GB', machines: ['mac8'], chat: 'Gemma E2B · Qwen 4B Q4', embeddings: 'Harrier 270M · Voyage Nano', avoid: '9B and up with long context' },
             { name: '16 GB', machines: ['mac16'], chat: '**Qwen 9B Q4 · Gemma E4B**', embeddings: '**Harrier 0.6B · BGE-M3**', avoid: '27B / 35B, and heavy multitasking' },
             { name: '24 GB', machines: ['mac24'], chat: 'Gemma 12B · 9B with more context', embeddings: 'Harrier 0.6B · EmbeddingGemma 2', avoid: '35B Q4' },
-            { name: '32 GB', machines: ['mac32'], chat: 'Gemma 26B-A4B · Qwen 27B with care', embeddings: 'Qwen3 Embedding 4B', avoid: '35B, if you need it fluent for long stretches' },
-            { name: '48–64 GB', machines: ['mac48', 'mac64'], chat: 'Qwen 27B · Gemma 31B · Qwen 35B-A3B', embeddings: 'Qwen3 Embedding 8B', avoid: 'Assuming speeds you haven’t tested' },
+            { name: '32 GB', machines: ['mac32'], chat: 'Gemma 26B-A4B · Qwen 27B with care', embeddings: 'Qwen3 Embedding 4B', avoid: '35B, if sustained speed is required' },
+            { name: '48–64 GB', machines: ['mac48', 'mac64'], chat: 'Qwen 27B · Gemma 31B · Qwen 35B-A3B', embeddings: 'Qwen3 Embedding 8B', avoid: 'Untested speed assumptions' },
           ],
         },
         {
           id: 'local-pc',
           title: 'PC graphics card, by free VRAM',
           collapsed: true,
-          intro: 'Read it as **free VRAM**, not RAM plus VRAM. A model that doesn’t fit can spill into RAM, but then speed depends on the bus, the engine and the CPU.',
+          intro: 'Values refer to **free VRAM**, not RAM plus VRAM. A model that exceeds VRAM can be partly offloaded to RAM; speed then depends on the bus, the inference engine and the CPU.',
           columns: [
             { key: 'name', label: 'Free VRAM', type: 'name' },
-            { key: 'chat', label: 'Chat, roughly, in Q4', type: 'text' },
+            { key: 'chat', label: 'Chat (Q4, approximate)', type: 'text' },
             { key: 'embeddings', label: 'Embeddings and reranking', type: 'text' },
           ],
           rows: [
@@ -304,19 +304,19 @@ SHAPES
             { key: 'advice', label: 'What to run', type: 'text' },
           ],
           rows: [
-            { name: '8–16 GB', machines: ['cpu'], advice: 'Put **EmbeddingGemma 2 (text only)**, Voyage 4 Nano, Harrier 270M or a 306M reranker first. Chat with a 2–4B model only if slow is fine.' },
-            { name: '32 GB, e.g. Intel N100', machines: ['cpu'], advice: 'A 9–27B model that fits in RAM **won’t necessarily** answer quickly. Put embeddings, search, a vector server and reranking first, and send complex conversation to an API.' },
-            { name: '64 GB and up', machines: ['cpu'], advice: 'Holds bigger models, but RAM and parameter count don’t make up for memory bandwidth and acceleration.' },
+            { name: '8–16 GB', machines: ['cpu'], advice: 'Prioritise **EmbeddingGemma 2 (text only)**, Voyage 4 Nano, Harrier 270M or a 306M reranker. Chat with 2–4B models only if low speed is acceptable.' },
+            { name: '32 GB, e.g. Intel N100', machines: ['cpu'], advice: 'A 9–27B model that fits in RAM **does not** necessarily respond quickly. Prioritise embeddings, search, a vector server and reranking; use an API for complex conversation.' },
+            { name: '64 GB and up', machines: ['cpu'], advice: 'Can hold larger models, but RAM and parameter count do not replace memory bandwidth and hardware acceleration.' },
           ],
         },
         {
           id: 'local-retrieval',
-          title: 'Retrieve ideas locally; extract them through an API',
-          intro: 'Retrieving ideas you already have **isn’t** extracting new ones. The first runs fine on your machine.',
+          title: 'Local retrieval and API extraction',
+          intro: 'Retrieving existing ideas is **not** the same as extracting new ones. Retrieval runs locally; bulk extraction uses an API.',
           flow: {
             lanes: [
-              { label: 'On your machine', tone: 'good', steps: ['Ideas already indexed', 'Local embeddings', 'Semantic + hybrid search', 'Local reranker', 'Research Chat or Dictionary'] },
-              { label: 'Through an API', tone: 'warn', steps: ['Unprocessed documents', 'Idea Extraction', 'Ideas already indexed'] },
+              { label: 'Local', tone: 'good', steps: ['Ideas already indexed', 'Local embeddings', 'Semantic + hybrid search', 'Local reranker', 'Research Chat or Dictionary'] },
+              { label: 'API', tone: 'warn', steps: ['Unprocessed documents', 'Idea Extraction', 'Ideas already indexed'] },
             ],
           },
           columns: [
@@ -329,7 +329,7 @@ SHAPES
             { name: 'Find existing ideas and similarities', verdict: 'yes', components: 'Harrier 0.6B, BGE-M3, Voyage 4 Nano, EmbeddingGemma 2', condition: 'A compatible vector index' },
             { name: 'Sort the results by relevance', verdict: 'yes', components: 'Qwen3 Reranker 0.6B, GTE Multilingual Reranker 306M', condition: 'Run it on the top 20–50 passages' },
             { name: 'Explain and connect retrieved ideas', verdict: 'yes', components: 'Qwen3.5 9B, Gemma E4B or Gemma 26B-A4B, depending on hardware', condition: 'Answer citing IDs, passages and sources' },
-            { name: 'Extract new ideas in bulk', verdict: 'no', components: '**Local models aren’t recommended**', condition: 'Use an API provider: see [Idea Extraction](#extraction)' },
+            { name: 'Extract new ideas in bulk', verdict: 'no', components: '**Local models not recommended**', condition: 'Use an API provider: see [Idea Extraction](#extraction)' },
           ],
         },
       ],
@@ -343,12 +343,12 @@ SHAPES
       accent: '#818cf8',
       updated: '2026-10-19',
       title: 'Embeddings',
-      intro: 'Embeddings turn passages into vectors so Nodus can find related texts, ideas and documents. They retrieve; they **don’t generate ideas**. Run them on your machine or pay per token through an API. With historical sources in three languages, test cross-language search, proper names and literal quotations before you settle on one.',
+      intro: 'Embeddings convert passages into vectors used to find related texts, ideas and documents. They are used for retrieval and **do not generate ideas**. They can run locally or through a paid API. For historical sources in three languages, test cross-language search, proper names and literal quotations before choosing one.',
       filters: [RUNS, MACHINE, {
         id: 'modality', label: 'Content', field: 'modality',
         options: [
           { id: 'text', label: 'Text' },
-          { id: 'multimodal', label: 'Images, audio, video' },
+          { id: 'multimodal', label: 'Multimodal' },
         ],
       }],
       tables: [
@@ -366,22 +366,22 @@ SHAPES
             { key: 'licence', label: 'Licence · weights', type: 'licence' },
           ],
           rows: [
-            { name: 'Harrier-OSS 0.6B', pick: 'Top text candidate', sub: '~600M parameters', modality: 'text', mteb: 69.0, context: '32K', dimensions: '1,024', fit: { mac: 16, gpu: 8 }, notes: '**The main candidate for text**', licence: LICENCE.mit('Microsoft', 'https://huggingface.co/microsoft/harrier-oss-v1-0.6b') },
+            { name: 'Harrier-OSS 0.6B', pick: 'Main text candidate', sub: '~600M parameters', modality: 'text', mteb: 69.0, context: '32K', dimensions: '1,024', fit: { mac: 16, gpu: 8 }, notes: '**The main candidate for text**', licence: LICENCE.mit('Microsoft', 'https://huggingface.co/microsoft/harrier-oss-v1-0.6b') },
             { name: 'Harrier-OSS 270M', sub: '270M parameters', modality: 'text', mteb: 66.5, context: '32K', dimensions: '640', fit: { mac: 8, cpu: true }, notes: 'Light, text', licence: LICENCE.mit('Microsoft', 'https://huggingface.co/microsoft/harrier-oss-v1-270m') },
             { name: 'Voyage 4 Nano', sub: '~340M parameters', modality: 'text', mteb: null, context: '32K', dimensions: '256–2,048', fit: { mac: 8, cpu: true }, notes: '**Shares the Voyage 4 vector space**', licence: LICENCE.apache('Voyage', 'https://huggingface.co/voyageai/voyage-4-nano') },
             { name: 'EmbeddingGemma 2 (text)', sub: '**270M text** · 740M multimodal', modality: ['text', 'multimodal'], mteb: '61.36 (text)', context: '8K', dimensions: '128–768', fit: { mac: 8, cpu: true }, fitNote: 'Other modalities are optional', notes: 'Text, code, images, audio and video', licence: LICENCE.apache('Google', 'https://huggingface.co/google/embeddinggemma-2') },
             { name: 'BGE-M3', sub: '~568M parameters', modality: 'text', mteb: '~59.6 ‡', context: '8K', dimensions: '1,024', fit: { mac: 16, gpu: 8 }, notes: '**Dense + sparse + ColBERT**', licence: LICENCE.mit('BAAI', 'https://huggingface.co/BAAI/bge-m3') },
             { name: 'Qwen3 Embedding 0.6B', sub: '~600M parameters', modality: 'text', mteb: 64.3, context: '32K', dimensions: '1,024', fit: { mac: 16, gpu: 8 }, notes: '100+ languages, takes instructions', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Embedding-0.6B') },
-            { name: 'Qwen3 Embedding 4B', sub: '4B parameters', modality: 'text', mteb: 69.5, context: '32K', dimensions: '2,560', fit: { mac: 32, gpu: 12 }, notes: 'Quality, at more compute', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Embedding-4B') },
+            { name: 'Qwen3 Embedding 4B', sub: '4B parameters', modality: 'text', mteb: 69.5, context: '32K', dimensions: '2,560', fit: { mac: 32, gpu: 12 }, notes: 'Higher quality, more compute', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Embedding-4B') },
             { name: 'Qwen3 Embedding 8B', sub: '8B parameters', modality: 'text', mteb: 70.6, context: '32K', dimensions: '4,096', fit: { mac: 48, gpu: 16 }, notes: 'High quality, lower throughput', licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Embedding-8B') },
             { name: 'Harrier-OSS 27B', sub: '27B parameters', modality: 'text', mteb: 74.3, context: '32K', dimensions: '5,376', fit: { mac: 64, gpu: 48 }, fitNote: 'Workstation class', notes: 'Benchmark quality, impractical on a desktop', licence: LICENCE.mit('Microsoft', 'https://huggingface.co/microsoft/harrier-oss-v1-27b') },
           ],
-          footnote: '† Published MTEB Multilingual v2 scores, **not** the AA Intelligence Index; figures from different model cards and dates don’t compare cleanly. ‡ BGE-M3’s score leaves out its sparse and multi-vector retrieval. EmbeddingGemma 2 has **740M parameters in total** but a **270M text encoder**; don’t mix the two sizes up. Sources: [Microsoft](https://huggingface.co/microsoft/harrier-oss-v1-0.6b) · [Google](https://developers.googleblog.com/embeddinggemma-2-the-developer-guide/) · [BAAI](https://huggingface.co/BAAI/bge-m3).',
+          footnote: '† Published MTEB Multilingual v2 scores, **not** the AA Intelligence Index; compare values from different model cards and dates with caution. ‡ The BGE-M3 score does not reflect its sparse and multi-vector retrieval. EmbeddingGemma 2 has **740M parameters in total** and a **270M text encoder**. Sources: [Microsoft](https://huggingface.co/microsoft/harrier-oss-v1-0.6b) · [Google](https://developers.googleblog.com/embeddinggemma-2-the-developer-guide/) · [BAAI](https://huggingface.co/BAAI/bge-m3).',
         },
         {
           id: 'embeddings-api',
-          title: 'Embeddings through an API: indexing cost',
-          intro: 'You pay for **input tokens**, not for an LLM’s output. Prices are per million text tokens, before tax, caching or volume discounts.',
+          title: 'API embeddings: indexing cost',
+          intro: 'Billed per **input token**. Prices per million text tokens, excluding tax, caching and volume discounts.',
           row: { runs: 'api' },
           columns: [
             { key: 'name', label: 'Model', type: 'name' },
@@ -393,23 +393,23 @@ SHAPES
           ],
           rows: [
             { name: 'Voyage 4 Lite', modality: 'text', price: 0.02, multimodal: 'no', use: '**Cheap indexing**; queries against Voyage 4 indexes', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
-            { name: 'OpenAI text-embedding-3-small', modality: 'text', price: 0.02, multimodal: 'no', use: 'Low-cost API, integrated almost everywhere', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
-            { name: 'Voyage 4', pick: 'Recommended API', modality: 'text', price: 0.06, multimodal: 'no', use: '**The balance we recommend through an API**', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
+            { name: 'OpenAI text-embedding-3-small', modality: 'text', price: 0.02, multimodal: 'no', use: 'Low-cost API, widely integrated', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
+            { name: 'Voyage 4', pick: 'Recommended API', modality: 'text', price: 0.06, multimodal: 'no', use: '**Recommended API option**', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
             { name: 'Voyage 4 Large', modality: 'text', price: 0.12, multimodal: 'no', use: 'Higher retrieval quality', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
-            { name: 'OpenAI text-embedding-3-large', modality: 'text', price: 0.13, multimodal: 'no', use: 'The established alternative', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
+            { name: 'OpenAI text-embedding-3-large', modality: 'text', price: 0.13, multimodal: 'no', use: 'Established alternative', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
             { name: 'Gemini Embedding 001', modality: 'text', price: 0.15, multimodal: 'no', use: 'Multilingual', pricing: { label: 'Google', url: 'https://ai.google.dev/gemini-api/docs/pricing' } },
             { name: 'Gemini Embedding 2', sub: 'Price shown for text', modality: ['text', 'multimodal'], price: 0.20, multimodal: 'yes', use: 'Text + photographs + audio and video', pricing: { label: 'Google', url: 'https://ai.google.dev/gemini-api/docs/pricing' } },
           ],
           callout: {
             tone: 'good',
-            title: 'A combination worth knowing',
-            text: 'Index your documents once with **Voyage 4 Large**, then embed queries with **Voyage 4 Nano** on your machine or 4 Lite through the API, **without reindexing**: the family shares one vector space. Voyage offers **200M free tokens** to start on eligible Voyage 4 models, under its current terms. [Source: Voyage AI](https://blog.voyageai.com/2026/01/15/voyage-4/)',
+            title: 'Voyage 4 shared vector space',
+            text: 'Documents indexed with **Voyage 4 Large** can be queried with **Voyage 4 Nano** (local) or 4 Lite (API) **without reindexing**, because the family shares one vector space. Voyage offers **200M free tokens** for eligible Voyage 4 models under its current terms. [Source: Voyage AI](https://blog.voyageai.com/2026/01/15/voyage-4/)',
           },
         },
         {
           id: 'embeddings-rerankers',
-          title: 'Local rerankers: sharper idea retrieval',
-          intro: 'A reranker rescores the passages a search returns, so the best evidence comes first.',
+          title: 'Local rerankers',
+          intro: 'A reranker reorders the passages returned by a search by relevance.',
           row: { runs: 'local', modality: 'text' },
           columns: [
             { key: 'name', label: 'Reranker', type: 'name' },
@@ -423,13 +423,13 @@ SHAPES
             { name: 'GTE Multilingual Reranker Base', sub: '306M parameters', context: '8K', languages: '70+', fit: { mac: 8, cpu: true }, licence: LICENCE.apache('Alibaba', 'https://huggingface.co/Alibaba-NLP/gte-multilingual-reranker-base'), role: 'Light reranking' },
             { name: 'Qwen3 Reranker 0.6B', pick: 'Balanced pick', sub: '600M parameters', context: '32K', languages: '100+', fit: { mac: 16, gpu: 8 }, licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Reranker-0.6B'), role: '**The balanced option**' },
             { name: 'BGE Reranker v2 M3', sub: '~568M parameters', context: 'Depends on the runtime', languages: 'Multilingual', fit: { mac: 16, gpu: 8 }, licence: LICENCE.mit('BAAI', 'https://huggingface.co/BAAI/bge-reranker-v2-m3'), role: 'Simple, pairs with the BGE family' },
-            { name: 'Jina Reranker v3.5', sub: '600M parameters', context: 'Depends on the runtime', languages: 'Multilingual', fit: { mac: 16, gpu: 8 }, licence: { name: 'CC BY-NC 4.0', by: 'Jina', url: 'https://huggingface.co/jinaai/jina-reranker-v3.5', warn: 'Non-commercial' }, role: 'Worth testing; **mind the licence**' },
+            { name: 'Jina Reranker v3.5', sub: '600M parameters', context: 'Depends on the runtime', languages: 'Multilingual', fit: { mac: 16, gpu: 8 }, licence: { name: 'CC BY-NC 4.0', by: 'Jina', url: 'https://huggingface.co/jinaai/jina-reranker-v3.5', warn: 'Non-commercial' }, role: 'Test candidate; **check the licence**' },
             { name: 'Qwen3 Reranker 4B', sub: '4B parameters', context: '32K', languages: '100+', fit: { mac: 32, gpu: 16 }, licence: LICENCE.apache('Qwen', 'https://huggingface.co/Qwen/Qwen3-Reranker-4B'), role: 'High quality, more latency' },
           ],
           callout: {
             tone: 'warn',
-            title: 'Don’t mix embedding models without a compatible index',
-            text: 'If the vector space or the dimension changes, Nodus has to build a new index. Changing the **reranker** never needs a reindex, because it works on query–passage pairs. For historical work, keep exact or BM25 search alongside, for place names, dates, authors and proper names.',
+            title: 'Index compatibility',
+            text: 'Do not mix embedding models without a compatible index. If the vector space or the dimension changes, Nodus must build a new index. Changing the **reranker** does not require reindexing, because it works on query–passage pairs. For historical sources, keep exact or BM25 search for place names, dates, authors and proper names.',
           },
         },
       ],
@@ -443,7 +443,7 @@ SHAPES
       accent: '#a78bfa',
       updated: '2026-10-19',
       title: 'Research Chat + Dictionary',
-      intro: 'Both features **work with local models**. Nodus searches your index on your machine, writes the answer and shows citations you can check. Switch to an API when you want more quality or a longer context.',
+      intro: 'Both features **can use local models**: Nodus searches the local index, generates the answer and shows verifiable citations. APIs provide higher quality and longer context.',
       filters: [RUNS, PRICE, SPEED, PROVIDER],
       tables: [
         {
@@ -454,24 +454,24 @@ SHAPES
           rows: [
             { ref: 'deepseek-flash-max', pick: 'Research Chat', profile: '**Research Chat: speed and tools**' },
             { ref: 'mimo-pro', profile: 'Reasoning and long context' },
-            { ref: 'haiku-high', pick: 'Dictionary', profile: '**Dictionary: accuracy for the cost**' },
-            { ref: 'haiku-max', profile: 'Smart; slower to start answering' },
+            { ref: 'haiku-high', pick: 'Dictionary', profile: '**Dictionary: accuracy per cost**' },
+            { ref: 'haiku-max', profile: 'Higher score; longer time to first token' },
             { ref: 'glm-flash', profile: 'Cheap alternative, verbose' },
             { ref: 'luna-max', profile: 'Low-cost reasoning' },
             { ref: 'luna-high', profile: 'Short definitions' },
             { ref: 'mimo-flash', profile: 'Low cost per token' },
             { ref: 'gemini-flash-high', profile: 'Google’s multimodal; higher price' },
-            { ref: 'sonnet-max', profile: 'Premium step up, not a default' },
+            { ref: 'sonnet-max', profile: 'Premium option, not a default' },
           ],
-          footnote: 'USD per million tokens. **AA** is the Artificial Analysis general index, not a Nodus quality measurement. *High* and *Max* settings can spend different amounts of hidden reasoning tokens. Speed is generation **once the answer has started**, not total time. Click a column heading to sort.',
+          footnote: 'USD per million tokens. **AA** is the Artificial Analysis general index, not a Nodus quality measurement. *High* and *Max* settings may use different amounts of hidden reasoning tokens. Speed is generation speed **after the answer starts**, not total time. Click a column heading to sort.',
         },
         {
           id: 'chat-local',
-          title: 'Local alternatives for both features',
+          title: 'Local alternatives',
           row: { runs: 'local' },
           flow: {
             lanes: [
-              { label: 'How the chat answers', tone: 'accent', steps: ['Your question', 'Retrieval (dense + lexical)', 'Reranking', 'Answer with citations'] },
+              { label: 'Chat pipeline', tone: 'accent', steps: ['Query', 'Retrieval (dense + lexical)', 'Reranking', 'Answer with citations'] },
             ],
           },
           columns: [
@@ -489,8 +489,8 @@ SHAPES
           ],
           callout: {
             tone: 'info',
-            title: 'What a good answer looks like',
-            text: 'Never invent a source: return the passage text and its reference. For the Dictionary, cap the length of the answer, lay each entry out as term, senses and context, and keep examples tied to sources when there are any.',
+            title: 'Answer format',
+            text: 'Do not invent sources; return the passage text and its reference. For the Dictionary, limit output length, structure entries as term, senses and context, and link examples to sources when available.',
           },
         },
       ],
@@ -504,18 +504,18 @@ SHAPES
       accent: '#fbbf24',
       updated: '2026-10-19',
       title: 'Idea Extraction',
-      intro: 'Idea Extraction reads your documents and pulls out **new** ideas with their attribution. It runs through an API. Working through many pages, attributing claims and validating passages is a different load from searching ideas you’ve already extracted, which local embeddings and a reranker do well.',
+      intro: 'Idea Extraction processes documents and extracts **new** ideas with their attribution. It uses API providers. Processing many pages, attributing claims and validating passages is a different workload from searching already extracted ideas, which runs locally with embeddings and a reranker.',
       notes: [{
         tone: 'bad',
-        title: 'Local models aren’t recommended here',
-        text: 'Use them to search and rerank ideas once they exist, and leave bulk extraction to an API provider.',
+        title: 'Local models not recommended',
+        text: 'Use local models to search and rerank extracted ideas. Use an API provider for bulk extraction.',
       }],
       filters: [PRICE, SPEED, PROVIDER],
       tables: [
         {
           id: 'extraction-api',
-          title: 'API candidates, with no winner picked in advance',
-          intro: 'This table **doesn’t name a default**. Choose by testing on your own corpus: faithfulness, missed ideas, attribution accuracy and total cost.',
+          title: 'API candidates (no default)',
+          intro: 'No model is set as **default**. Select by testing on your own corpus: faithfulness, omitted ideas, attribution accuracy and total cost.',
           row: { runs: 'api' },
           estimator: { documents: 1000, inputTokens: 10000, outputTokens: 2000 },
           columns: [...API_HEAD, { key: 'estimate', label: 'Estimated cost', type: 'cost' }, { key: 'test', label: 'What to test', type: 'text' }],
@@ -526,14 +526,14 @@ SHAPES
             { ref: 'deepseek-flash-max', test: 'Coverage and end-to-end time' },
             { ref: 'mimo-flash', test: 'Batch runs, bulk cost, omissions' },
             { ref: 'mimo-pro', test: 'Hard cases and implicit ideas' },
-            { ref: 'glm-flash', test: 'Verbosity and the real token bill' },
-            { ref: 'haiku-max', test: 'What it gains over High' },
+            { ref: 'glm-flash', test: 'Verbosity and actual token cost' },
+            { ref: 'haiku-max', test: 'Improvement over High' },
           ],
-          footnote: 'The estimate is simplified on purpose: every document costs the same input and billable output tokens (reasoning included). No caching, batch pricing, off-peak discounts, retries, format errors or tools, and it doesn’t measure how long each model actually thinks. Change the three numbers above to match your corpus.',
+          footnote: 'Simplified estimate: every document has the same input and billable output tokens (reasoning included). Excludes caching, batch pricing, off-peak discounts, retries, format errors and tools, and does not measure the actual reasoning length of each model. Adjust the three values above to match your corpus.',
           callout: {
             tone: 'info',
-            title: 'Before you set a default',
-            text: 'Run 50–100 multilingual articles or chapters. Review by hand the claims each model supports, the ideas it misses, any spurious references and the quality of exact quotations. Then compare **end-to-end** time and dollars per correct idea.',
+            title: 'Selection criteria',
+            text: 'Test 50–100 multilingual articles or chapters. Review manually the supported claims, omitted ideas, spurious references and accuracy of exact quotations. Compare **end-to-end** time and cost per correct idea.',
           },
         },
       ],
@@ -547,12 +547,12 @@ SHAPES
       accent: '#22d3ee',
       updated: '2026-10-19',
       title: 'Deep Research + Immersion',
-      intro: '**Deep Research** searches in rounds, plans, calls tools, reconciles sources and cites them. **Immersion** explains, keeps a long conversation going and adapts to your level. Both lean on APIs, though local embeddings and search can still do the retrieval underneath.',
+      intro: '**Deep Research** requires iterative searches, planning, tool calls, source reconciliation and citations. **Immersion** requires explanations, extended dialogue and adaptation to the user’s level. Both use APIs by default; local embeddings and search can handle the retrieval step.',
       filters: [PRICE, SPEED, PROVIDER],
       tables: [
         {
           id: 'deep-api',
-          title: 'Agentic, capable and efficient models',
+          title: 'API models',
           row: { runs: 'api' },
           columns: [...API_HEAD, { key: 'research', label: 'Deep Research', type: 'text' }, { key: 'immersion', label: 'Immersion', type: 'text' }],
           rows: [
@@ -561,15 +561,15 @@ SHAPES
             { ref: 'haiku-high', research: 'Cheap subtasks', immersion: '**Conversation and tutoring**' },
             { ref: 'haiku-max', research: 'Reasoning, with high latency', immersion: 'Complex tutoring' },
             { ref: 'glm-flash', research: 'Synthesis with tools', immersion: 'Good' },
-            { ref: 'luna-max', research: 'Narrow subagents', immersion: 'Low-cost tutoring' },
+            { ref: 'luna-max', research: 'Scoped subagents', immersion: 'Low-cost tutoring' },
             { ref: 'gemini-flash-high', research: 'Multimodal documents', immersion: 'Good' },
             { ref: 'sonnet-max', research: '**Premium tier**', immersion: 'Premium tier' },
             { ref: 'sol-max', research: '**Premium tier, less verbose**', immersion: 'Premium tier' },
           ],
           callout: {
             tone: 'info',
-            title: 'General intelligence isn’t the whole story',
-            text: 'For Deep Research in Nodus, count how many searches were relevant, how good the plan was, whether every source can be traced, tool errors, real citations and the **cost of each finished report**. Immersion needs its own tests of how well it teaches.',
+            title: 'Evaluation criteria',
+            text: 'General intelligence scores are not sufficient. For Deep Research, measure the number of relevant searches, plan quality, source traceability, tool errors, real citations and **cost per completed report**. Immersion requires separate tests of teaching value.',
           },
         },
       ],
@@ -583,7 +583,7 @@ SHAPES
       accent: '#f0abfc',
       updated: '2026-10-19',
       title: 'Decision guide',
-      intro: 'One row per Nodus feature: whether it runs locally, a local setup that works, the API to try, and the measure that should settle the choice.',
+      intro: 'One row per Nodus feature: local support, viable local setup, API to evaluate and decision metric.',
       filters: [{
         id: 'local', label: 'Runs locally', field: 'local',
         options: [
@@ -595,11 +595,11 @@ SHAPES
       tables: [
         {
           id: 'guide-matrix',
-          title: 'Which setup for which feature',
+          title: 'Feature matrix',
           columns: [
             { key: 'name', label: 'Nodus feature', type: 'name' },
             { key: 'local', label: 'Local?', type: 'verdict' },
-            { key: 'localSetup', label: 'Local setup that works', type: 'text' },
+            { key: 'localSetup', label: 'Viable local setup', type: 'text' },
             { key: 'api', label: 'API to evaluate', type: 'text' },
             { key: 'measure', label: 'Decide by', type: 'text' },
           ],
@@ -608,7 +608,7 @@ SHAPES
             { name: 'Dictionary', href: '#chat', local: 'yes', localSetup: 'Gemma E2B / E4B; Qwen3.5 9B', api: 'Haiku High; Luna High', measure: 'Terminological accuracy and concision' },
             { name: 'Text embeddings', href: '#embeddings', local: 'yes', localSetup: 'Harrier 270M (light) / **Harrier 0.6B** (balanced); BGE-M3 (hybrid)', api: '**Voyage 4** / 4 Lite', measure: 'Recall@10, MRR / nDCG, indexing cost' },
             { name: 'Multimodal embeddings', href: '#embeddings', local: 'yes', localSetup: '**EmbeddingGemma 2**', api: 'Gemini Embedding 2', measure: 'Cross-modal text–image retrieval' },
-            { name: 'Retrieving existing ideas', href: '#local', local: 'yes', localSetup: 'BGE-M3 / Harrier + Qwen3 0.6B reranker; Qwen 9B to explain the results', api: 'Voyage 4 + an API LLM, if you like', measure: 'Source accuracy, latency, top-k' },
+            { name: 'Retrieving existing ideas', href: '#local', local: 'yes', localSetup: 'BGE-M3 / Harrier + Qwen3 0.6B reranker; Qwen 9B to explain results', api: 'Voyage 4 + an API LLM (optional)', measure: 'Source accuracy, latency, top-k' },
             { name: 'Idea Extraction (new ideas)', href: '#extraction', local: 'no', localSetup: '**None**', api: '**See the API comparison; no default**', measure: 'Supported ideas, misses, time and cost per idea' },
             { name: 'Deep Research', href: '#deep', local: 'aux', localSetup: 'Embeddings and lexical search; no local LLM by default', api: 'DeepSeek Flash-1017, MiMo Pro; Sol or Sonnet as premium', measure: 'Finished research with verified citations' },
             { name: 'Immersion', href: '#deep', local: 'aux', localSetup: 'Embeddings and local reading', api: 'Haiku High; Luna; Sonnet as premium', measure: 'Teaching value and cost per session' },
@@ -621,12 +621,12 @@ SHAPES
   /* ---------------------------------------------------------------- methodology */
   const method = [
     { term: 'API prices', text: 'USD per **million input and output tokens**, before tax, batch discounts, caching, special rates or aggregator margins.' },
-    { term: 'AA intelligence', text: '[Artificial Analysis Intelligence Index v4.3.2](https://artificialanalysis.ai/); higher is better. It compares the general ability of the listed variant and reasoning setting, and **doesn’t measure academic extraction or bibliographic faithfulness**.' },
-    { term: 'API speed', text: 'Output tokens per second from the measured provider. It **leaves out some of the upfront reasoning and the wait for the first token**, so don’t read it as documents per second, total cost or local speed. Rounded snapshots.' },
-    { term: 'AA cost / task', text: 'A weighted average across the Artificial Analysis tasks. It isn’t the cost of a Nodus request or of extracting one document.' },
-    { term: 'MTEB multilingual', text: 'An embeddings benchmark, **not comparable with the AA index**. Its subtasks aren’t historiographical RAG either.' },
-    { term: 'Local hardware', text: 'Bands are **estimated**, not measured on a particular Mac or GPU. Context, batch size, offload, drivers and quantisation all move the result, and no local tokens-per-second figure is quoted without a physical test.' },
-    { term: 'Licences', text: 'As declared in the repositories consulted. Check the terms, versions and dependencies before distributing a model with anything.' },
+    { term: 'AA intelligence', text: '[Artificial Analysis Intelligence Index v4.3.2](https://artificialanalysis.ai/); higher is better. It compares the general capability of the listed variant and reasoning setting. It **does not measure academic extraction or bibliographic faithfulness**.' },
+    { term: 'API speed', text: 'Output tokens per second from the measured provider. It **excludes part of the initial reasoning and the time to first token**. It is not documents per second, total cost or local speed. Rounded point measurements.' },
+    { term: 'AA cost / task', text: 'A weighted average across the Artificial Analysis tasks. It is not the cost of a Nodus request or of extracting one document.' },
+    { term: 'MTEB multilingual', text: 'An embeddings benchmark, **not comparable with the AA index**. Its subtasks are not historiographical RAG.' },
+    { term: 'Local hardware', text: 'Bands are **estimated**, not measured on a particular Mac or GPU. Context, batch size, offload, drivers and quantisation affect the result. No local tokens-per-second figures are given without physical tests.' },
+    { term: 'Licences', text: 'As declared in the repositories consulted. Check terms, versions and dependencies before distributing a model with Nodus.' },
   ];
 
   const sources = [

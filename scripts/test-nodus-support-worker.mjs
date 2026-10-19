@@ -31,5 +31,6 @@ test('stale outcomes and private stderr cannot become a successful or public res
     fs.writeFileSync(path.join(root,'probe-result-old.json'),JSON.stringify({protocol:1,root,ok:true}));
     await assert.rejects(runProbe({executable:process.execPath,args:['-e',`process.stderr.write('synthetic private canary');process.exit(7)`],root,action:'configuration-check',diagnostic:value=>seen.push(value)}),error=>error.code==='PROBE_NO_RESULT'&&!JSON.stringify(error).includes('canary'));
     assert.equal(seen[0].exitCode,7);assert.match(seen[0].stderr,/canary/);
+    const retained=fs.readdirSync(root).filter(name=>name.startsWith('probe-private-'));assert.equal(retained.length,1);assert.match(fs.readFileSync(path.join(root,retained[0]),'utf8'),/PRIVATE.*personal data[\s\S]*canary/);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

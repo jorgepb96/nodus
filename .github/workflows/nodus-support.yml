@@ -54,10 +54,10 @@ jobs:
         run: npx vite build
       - name: Native support application, twelve languages, both themes
         if: runner.os != 'Linux'
-        run: node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-protocol.mjs
+        run: node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs
       - name: Native Linux support application
         if: runner.os == 'Linux'
-        run: xvfb-run -a sh -c 'node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-protocol.mjs'
+        run: xvfb-run -a sh -c 'node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs'
       - name: Package every native support format
         run: npm run support:dist
       - name: Verify the independent packaged runtime

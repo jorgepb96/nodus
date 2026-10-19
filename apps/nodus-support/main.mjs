@@ -64,8 +64,10 @@ async function loadState() {
   const defaultProfile = ['Nodus','nodus'].map(name => path.join(app.getPath('appData'), name)).find(folder => fs.existsSync(folder)) ?? path.join(app.getPath('appData'), 'Nodus');
   service = new SupportService({ storage: config.storage ?? path.join(stateRoot, 'retained'), profile: argument('nodus-profile') ?? config.profile ?? defaultProfile, executable: argument('nodus-executable') ?? config.executable ?? detectExecutable(), versionHint:argument('nodus-version')??config.versionHint, osVersion:process.getSystemVersion?.()??os.release().split('-')[0], locale: app.getLocale(), isRunning, probe: runProbe, privateDirectory, onIdle: () => { if (quitRequested) queueMicrotask(() => app.quit()); },
     progress: progress => { if (win && !win.isDestroyed()) win.webContents.send('support:progress', progress); } });
-  const active=resolvePolicy(path.join(stateRoot,'launch-policies'),service.profile);
-  if(active?.recoveredRoot) {service.originProfile=service.profile;service.profile=path.join(active.recoveredRoot,'profile');}
+  try {
+    const active=resolvePolicy(path.join(stateRoot,'launch-policies'),service.profile);
+    if(active?.recoveredRoot) {service.originProfile=service.profile;service.profile=path.join(active.recoveredRoot,'profile');}
+  }catch{service.selectionError=true;}
   service.locale = config.language ?? (await service.inspect()).inspection.language;
 }
 async function remember() {
@@ -76,7 +78,7 @@ async function choose(kind) {
   const result = await dialog.showOpenDialog(win, { properties: kind === 'executable' ? ['openFile', ...(process.platform === 'darwin' ? ['openDirectory'] : [])] : ['openDirectory','createDirectory'] });
   if (result.canceled) return null;
   const chosen = result.filePaths[0]; noLinks(chosen);
-  if (kind === 'profile') { separate(chosen, service.storage); service.profile = chosen; service.originProfile=null; }
+  if (kind === 'profile') { separate(chosen, service.storage); service.profile = chosen; service.originProfile=null;service.selectionError=false; }
   else if (kind === 'storage') { separate(chosen, service.profile); service.storage = path.join(chosen, 'Nodus-Support-retained'); }
   else if (process.platform === 'darwin' && chosen.endsWith('.app')) {service.executable = path.join(chosen, 'Contents/MacOS/Nodus');service.versionHint=null;}
   else {service.executable = chosen;service.versionHint=null;}
@@ -173,7 +175,11 @@ async function reinstall(id,update=false) {
         await service.event(id,{installationSystemPending:false});
       }
       service.controller.signal.throwIfAborted();
-      return service.event(id, { status: 'awaiting-user', actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
+      const installed=await service.installation();
+      assert(installed?.protocol===1&&installed.version===manifest.version,'INSTALLATION_INTEGRITY_FAILED');
+      for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory,service.controller.signal);
+      await writeNew(path.join(working.root,'result.json'),{...check,appVersion:manifest.version,action:'reinstall',diagnostic:false,at:new Date().toISOString()});
+      return service.event(id, { status: 'awaiting-user',trialOpened:null,recoveredProfiles:[...session.recoveredProfiles,working.root], actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
     } catch (error) { return service.blocked(id, error); }
     finally { service.activeId = null; service.controller = null; }
   });
@@ -210,6 +216,8 @@ async function launchRecovered(id, index) {
   const root = session.recoveredProfiles[index]; noLinks(root);
   assert(root.startsWith(`${session.folder}${path.sep}`), 'INVALID_REQUEST');
   const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
+  const result=readJson(path.join(root,'result.json'));
+  assert(result.protocol===1&&result.root===root&&result.appVersion===installation.version,'COMPATIBLE_INSTALL_REQUIRED');
   // Interactive copies use the normal application only with the validated isolated bootstrap.
   const env={ ...process.env, NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_SUPPORT_LANGUAGE:service.locale, NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') };
   delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_USERDATA;delete env.NODUS_SUPPORT_PROBE;
@@ -281,6 +289,7 @@ async function handlers() {
   handle('launchRecovered', launchRecovered); handle('report', async(id,selection)=>{const {report,...summary}=await service.report(id,selection);return summary;}); handle('reinstall', reinstall);
   handle('applySolution', async (id,index) => {
     requireQualified(qualifiedRepairs,process.platform,process.arch,'apply-solution');
+    assert(!(await service.session(id)).installationPrevious,'INVALID_STATE');
     if(!await confirmation(text('applySolution'),text('trial')))return service.session(id);
     return new SolutionManager(service,path.join(stateRoot,'launch-policies')).apply(id,index);
   });
@@ -300,7 +309,7 @@ async function handlers() {
     const folder = path.join(output, `nodus-private-logs-${randomUUID()}`); separate(service.profile, folder);
     await fsp.mkdir(folder, { mode: 0o700 }); await privateDirectory(folder);
     let i = 0;
-    for (const source of service.logFiles()) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
+    for (const source of [...service.logFiles(),...service.privateProbeLogs(session)]) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
     await writeNew(path.join(folder, 'PRIVATE.txt'), text('rawWarning'));
     await service.event(session.id, { lastPrivateExport: folder }); return saveZip(folder);
   });

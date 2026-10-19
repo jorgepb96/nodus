@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { SupportError } from './files.mjs';
+import { SupportError,noLinks } from './files.mjs';
 
 export function runProbe({ executable, args = [], root, action, signal, password, progress=()=>{}, diagnostic=()=>{} }) {
   return new Promise((resolve, reject) => {
@@ -36,6 +36,12 @@ export function runProbe({ executable, args = [], root, action, signal, password
     child.on('error', () => finish(new SupportError('RUNTIME_UNAVAILABLE')));
     child.on('close', (exitCode,exitSignal) => {
       consume(pending);
+      // Retain bounded raw failures locally, separately from classified reports.
+      // The enclosing trial inherits the private ACL of the support session.
+      if(stderr)try {
+        noLinks(root);
+        if(fs.statSync(root).isDirectory())fs.writeFileSync(path.join(root,`probe-private-${requestId}.log`),`PRIVATE: may contain personal data. Not included in issue reports.\nExit: ${exitCode}; signal: ${exitSignal}\n${stderr}`,{flag:'wx',mode:0o600});
+      }catch{/* A log write failure must not turn an unsuccessful probe into a pass. */}
       // Windows GUI processes do not always expose a usable stdout pipe. A
       // unique durable outcome also avoids depending on stdout flushing at quit.
       const file=path.join(root,`probe-result-${requestId}.json`);

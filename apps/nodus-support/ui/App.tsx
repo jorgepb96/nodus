@@ -16,6 +16,7 @@ function App() {
   const [state, setState] = useState<SupportState>();
   const [language, setLanguage] = useState<AppLanguage>('en');
   const languageChosen = useRef(false);
+  const stopRequested = useRef(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   const [symptom, setSymptom] = useState<SupportSymptom>('startup');
   const actions = suggestedActions(symptom);
@@ -33,6 +34,7 @@ function App() {
   useEffect(() => { void API.inspect().then(value => { setState(value); if (!languageChosen.current) setLanguage(value.inspection.language); }).catch(e => setError(e.message)); return API.onProgress(setProgress); }, []);
   useEffect(() => { document.documentElement.lang = language; document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.classList.toggle('light', theme === 'light'); }, [language, theme]);
   const run = async (task: () => Promise<unknown>) => {
+    stopRequested.current=false;
     setBusy(true); setError(''); setSaved('');
     try { await task(); await refresh(); } catch (e) { setError(e instanceof Error ? e.message : 'OPERATION_FAILED'); }
     finally { setBusy(false); setProgress({ phase: '', completed: 0, total: 0 }); }
@@ -43,6 +45,7 @@ function App() {
   const automatic = async () => {
     if (!session) return;
     for (const action of actions.filter(value => !session.actions.some(attempt => attempt.action === value))) {
+      if(stopRequested.current)return;
       const next = await updateSession(API.test(session.id, action));
       // A user must test the affected feature. Never treat a technical pass as a resolution.
       if (['awaiting-user','blocked','confirmed','interrupted'].includes(next.status)) return;
@@ -58,16 +61,17 @@ function App() {
       {state?.qualifiedRepairs?.length === 0 && <p className="notice">{t('notQualified')}</p>}
       <div className="hero"><span className="eyebrow">{t('title')}</span><h1>{t('welcome')}</h1><p>{t('safety')}</p></div>
       <nav aria-label={t('title')} className="steps">{(['check','protect','test','confirm','help'] as const).map((key,i) => <div key={key} aria-current={step === i ? 'step' : undefined} className={step === i ? 'current' : i < step ? 'done' : ''}><span>{i < step ? '✓' : i + 1}</span>{t(key)}</div>)}</nav>
+      {[...(state?.inspection.findings??[]),...(session?.findings??[])].filter((finding,index,all)=>['RECOVERY_SELECTION_CONFLICT','SESSION_UNREADABLE'].includes(finding.code)&&all.findIndex(other=>other.code===finding.code)===index).map(finding=><aside key={finding.code} className="notice warning" role="alert"><p>{t(finding.code==='SESSION_UNREADABLE'?'sessionUnreadable':'selectionUnreadable')}</p><details><summary>{t('details')}</summary><code>{finding.code}</code></details></aside>)}
       {!!session?.findings?.length && <aside className="notice" aria-live="polite">{session.findings.map((finding,index)=><div key={index}><p>{t(finding.code==='PARTIAL_RECOVERY'?'partial':finding.code==='MODEL_NOT_SELECTED'?'noModel':finding.code==='MODEL_ENDPOINT_INVALID'?'endpointInvalid':'unavailable')}</p><details><summary>{t('details')}</summary><code>{finding.code}</code></details></div>)}</aside>}
       {session?.status==='conflict'&&<section className="panel"><p>{t('changed')}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void run(async()=>updateSession(API.undoSolution(session.id,'keep-current')))}>{t('keepCurrent')}</button><button className="secondary" disabled={busy} onClick={()=>void run(async()=>updateSession(API.undoSolution(session.id,'use-previous')))}>{t('usePrevious')}</button></div></section>}
       {(error || localError) && <div className="notice warning" role="alert"><strong>{t('blocked')}</strong><p>{t(hint)}</p><details><summary>{t('details')}</summary><code>{localError}</code></details></div>}
-      {busy && <div className="notice" role="status"><strong>{t('progress')}</strong><p>{t(progress.phase==='download'?'downloading':progress.phase==='protecting'?'protect':['inventory','verifying'].includes(progress.phase)?'check':['decrypting','restoring','finalizing'].includes(progress.phase)?'restore':'test')}</p><progress aria-label={t('progress')} max={progress.total || undefined} value={progress.total ? progress.completed : undefined}/>{session && <button className="secondary" onClick={() => void API.cancel(session.id).catch(e => setError(e.message))}>{t('cancel')}</button>}</div>}
+      {busy && <div className="notice" role="status"><strong>{t('progress')}</strong><p>{t(progress.phase==='download'?'downloading':progress.phase==='protecting'?'protect':['inventory','verifying'].includes(progress.phase)?'check':['decrypting','restoring','finalizing'].includes(progress.phase)?'restore':'test')}</p><progress aria-label={t('progress')} max={progress.total || undefined} value={progress.total ? progress.completed : undefined}/>{session && <button className="secondary" onClick={() => {stopRequested.current=true;void API.cancel(session.id).catch(e => setError(e.message));}}>{t('cancel')}</button>}</div>}
       {!session ? <section className="panel"><h2>{t('symptom')}</h2><div className="symptom-grid">{symptoms.map((value,i) => <button key={value} aria-pressed={symptom === value} className={`symptom ${symptom === value ? 'selected' : ''}`} onClick={() => setSymptom(value)}><span aria-hidden="true">{icons[i]}</span>{t(value)}</button>)}</div>
         <fieldset className="mode"><legend>{t('test')}</legend>{(['guided','automatic'] as const).map(value => <label key={value}><input type="radio" checked={mode === value} onChange={() => setMode(value)}/>{t(value)}</label>)}</fieldset><p className="muted">{t('automaticHelp')}</p><button disabled={busy} className="primary" onClick={() => void run(async () => updateSession(API.create({ symptom, mode })))}>{t('start')} <span aria-hidden="true">→</span></button>
       </section> : <section className="panel">
         <div className="section-heading"><h2>{t(symptom)}</h2><button className="secondary" disabled={busy} onClick={() => { setSession(undefined); setReviewed(''); }}>{t('check')}</button></div>
         {session.diagnosticVersion&&<p className="notice">{t('testVersion')}: <strong>{session.diagnosticVersion}</strong></p>}
-        {session.status === 'confirmed' && <div className="notice success"><p>{t('confirmed')}</p><button className="primary" disabled={busy || !!session.policyApplied || !session.recoveredProfiles.length} onClick={() => void run(async () => updateSession(API.applySolution(session.id,session.recoveredProfiles.indexOf(session.trialOpened ?? ''))))}>{t('applySolution')}</button></div>}
+        {session.status === 'confirmed' && <div className="notice success"><p>{t('confirmed')}</p>{!session.installationPrevious&&<button className="primary" disabled={busy || !!session.policyApplied || !session.recoveredProfiles.length} onClick={() => void run(async () => updateSession(API.applySolution(session.id,session.recoveredProfiles.indexOf(session.trialOpened ?? ''))))}>{t('applySolution')}</button>}</div>}
         {session.status === 'reverted' && <div className="notice">{t('retained')}</div>}
         {['created','protecting','interrupted','blocked'].includes(session.status) && <><p>{t('backupHelp')}</p><button className="primary" disabled={busy} onClick={() => void run(async () => updateSession(API.protect(session.id)))}>{t('createProtection')}</button></>}
         {session.status==='protected'&&session.actions.length>0&&<p role="status">{t('diagnosticDone')}</p>}

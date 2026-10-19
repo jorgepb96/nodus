@@ -17,6 +17,7 @@ export interface SupportSession {
   trialOpened?: string | null;
   policyApplied?: string|null;
   diagnosticVersion?:string;
+  installationPrevious?:string;
   recoveryInfo?:Record<string,{source:string;backupDate?:string}>;
   findings?: SupportFinding[];
   conflict?: {current:string;previous:string} | null;

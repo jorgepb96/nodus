@@ -66,3 +66,27 @@ try {
   fs.writeFileSync(path.join(output,'verification.json'),JSON.stringify({languages:SUPPORT_LANGUAGES,themes:['light','dark'],screenshots:24,wcagAxeChecks:24,keyboard:true,reducedMotion:true,scaling200:true,originalsUnchanged:true,errors},null,2));
   console.log('Nodus Support: real native UI, 12 languages, 2 themes, protected originals and issue review passed.');
 } finally { await app.close(); /* Keep evidence and synthetic session files for inspection. */ }
+
+// Damage in Support's own history/selection must leave the independent helper
+// usable, while blocking any assumption about which dataset is the latest.
+const damagedState=path.join(scratch,'damaged-assistant-state');
+const policyFolder=path.join(damagedState,'launch-policies');fs.mkdirSync(policyFolder,{recursive:true});
+fs.writeFileSync(path.join(policyFolder,'1-00000000-0000-4000-8000-000000000001.json'),'{ damaged launch selection');
+const journalFolder=path.join(damagedState,'retained/sessions/00000000-0000-4000-8000-000000000002');fs.mkdirSync(journalFolder,{recursive:true});
+fs.writeFileSync(path.join(journalFolder,'session.json'),'{ damaged prior session');
+const resilient=await _electron.launch({args:[path.join(root,'build/support-app'),`--support-state=${damagedState}`,`--nodus-profile=${profile}`],env,timeout:60000});
+try{
+ const page=await resilient.firstWindow();await page.waitForSelector('h1');
+ await page.getByRole('alert').filter({hasText:supportText('en','selectionUnreadable')}).waitFor();
+ await page.getByRole('alert').filter({hasText:supportText('en','sessionUnreadable')}).waitFor();
+ await page.getByRole('button',{name:'Check my installation',exact:true}).click();
+ await page.getByRole('button',{name:'Create verified copy',exact:true}).click();
+ await page.getByRole('alert').filter({hasText:'RECOVERY_SELECTION_CONFLICT'}).last().waitFor();
+ await page.getByRole('button',{name:'Get help',exact:true}).click();await page.locator('textarea').waitFor();
+ assert.match(await page.locator('textarea').inputValue(),/RECOVERY_SELECTION_CONFLICT/);assert.match(await page.locator('textarea').inputValue(),/SESSION_UNREADABLE/);
+ assert.equal(fs.readFileSync(path.join(policyFolder,'1-00000000-0000-4000-8000-000000000001.json'),'utf8'),'{ damaged launch selection');
+ assert.equal(fs.readFileSync(path.join(journalFolder,'session.json'),'utf8'),'{ damaged prior session');
+ assert.equal(fs.readFileSync(path.join(profile,'app-prefs.json'),'utf8'),JSON.stringify({uiLanguage:'en'}));
+ fs.writeFileSync(path.join(output,'startup-resilience.json'),JSON.stringify({damagedSelectionReported:true,damagedSessionReported:true,fileChangesBlocked:true,reportAvailable:true,damagedFilesRetained:true,originalsUnchanged:true},null,2));
+ console.log('Independent Support opens with damaged selections/history, blocks changes and offers a usable report.');
+}finally{await resilient.close();}

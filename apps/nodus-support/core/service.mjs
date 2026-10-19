@@ -51,6 +51,7 @@ export class SupportService {
   sessionFolder(id) { assert(/^[0-9a-f-]{36}$/.test(id), 'INVALID_SESSION'); return destination(canonical(this.storage), `sessions/${id}`); }
   async inspect() {
     const findings = []; let sources = { roots: [], missing: [], prefs: null };
+    if(this.selectionError)findings.push({code:'RECOVERY_SELECTION_CONFLICT',component:'profile',level:'error'});
     try { sources = detectSources(this.profile); }
     catch { findings.push({ code: 'PROFILE_UNAVAILABLE', component: 'profile', level: 'error' }); }
     for (const code of sources.missing) findings.push({ code, component: 'storage', level: 'error' });
@@ -63,8 +64,11 @@ export class SupportService {
     if (metadata && metadata.protocol !== 1) findings.push({ code: 'LEGACY_READ_ONLY', component: 'installation', level: 'warning' });
     try { if (await this.isRunning()) findings.push({ code: 'CLOSE_NODUS_FIRST', component: 'app', level: 'warning' }); }
     catch { findings.push({ code: 'PROCESS_CHECK_UNAVAILABLE', component: 'app', level: 'error' }); }
+    let sessions=[];
+    try{sessions=await this.sessions();if(this.unreadableSessions)findings.push({code:'SESSION_UNREADABLE',component:'storage',level:'warning'});}
+    catch{findings.push({code:'SESSION_UNREADABLE',component:'storage',level:'warning'});}
     const inspection = { profile: this.profile, executable: this.executable, version: metadata?.version ?? null, protocol: metadata?.protocol ?? null, language: detectLanguage(sources.prefs?.uiLanguage, this.locale), platform: this.platform, osVersion:this.osVersion, arch: this.arch, findings, roots: sources.roots };
-    return { inspection, sessions: await this.sessions(), storage: this.storage };
+    return { inspection, sessions, storage: this.storage };
   }
   async installation(executable=this.executable) {
     if (!executable || !fs.existsSync(executable)) return null;
@@ -91,11 +95,13 @@ export class SupportService {
     return {executable:runtime.executable,installation};
   }
   async sessions() {
+    this.unreadableSessions=0;
     const folder = path.join(this.storage, 'sessions'); if (!fs.existsSync(folder)) return [];
+    noLinks(folder);
     const result = [];
     for (const name of await fsp.readdir(folder)) {
       if (!/^[0-9a-f-]{36}$/.test(name)) continue;
-      try { result.push(await this.session(name)); } catch { /* Preserve unreadable session files; never repair by deleting them. */ }
+      try { result.push(await this.session(name)); } catch { this.unreadableSessions++; /* Preserve and report unreadable sessions. */ }
     }
     return result.sort((a, b) => b.at.localeCompare(a.at));
   }
@@ -126,6 +132,7 @@ export class SupportService {
     await writeRecord(path.join(folder, 'session.json'), session); return this.session(id);
   }
   async guardSource(session) {
+    assert(!this.selectionError,'RECOVERY_SELECTION_CONFLICT');
     assert(session.inspection.profile === this.profile && session.inspection.executable === this.executable, 'SOURCE_SELECTION_CHANGED');
     assert(!await this.isRunning(), 'CLOSE_NODUS_FIRST');
     const { roots, missing } = detectSources(this.profile);
@@ -272,6 +279,17 @@ export class SupportService {
     const startup = path.join(this.profile, 'support-startup');
     if (fs.existsSync(startup)) for (const entry of fs.readdirSync(startup)) if (/^[a-zA-Z0-9.-]+\.jsonl$/.test(entry)) candidates.push(path.join(startup, entry));
     return candidates.filter(file => { try { noLinks(file); return fs.statSync(file).isFile(); } catch { return false; } });
+  }
+  privateProbeLogs(session) {
+    const tests=path.join(this.sessionFolder(session.id),'tests');if(!fs.existsSync(tests))return [];
+    noLinks(tests);const files=[];
+    for(const name of fs.readdirSync(tests).filter(name=>/^[0-9a-f-]{36}$/.test(name))) {
+      const folder=path.join(tests,name);noLinks(folder);if(!fs.statSync(folder).isDirectory())continue;
+      for(const name of fs.readdirSync(folder).filter(name=>/^probe-private-[0-9a-f-]{36}\.log$/.test(name))) {
+        const file=path.join(folder,name);noLinks(file);if(fs.statSync(file).isFile())files.push(file);
+      }
+    }
+    return files;
   }
   async errors(selection = { limit: 50 }) {
     assert([20,50,100,'all'].includes(selection.limit), 'INVALID_REQUEST');

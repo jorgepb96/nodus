@@ -34,6 +34,30 @@ function fixture(overrides = {}) {
 }
 const create = service => service.create({ symptom: 'startup', mode: 'guided' });
 
+test('an unreadable previous journal stays visible as a finding and all its files are retained',async()=>{
+  const f=fixture(),session=await create(f.service),file=path.join(session.folder,'journal/00000001.json');
+  put(file,'{ interrupted or damaged journal');const before=await inventory(session.folder);
+  const state=await f.service.inspect();assert.ok(state.inspection.findings.some(finding=>finding.code==='SESSION_UNREADABLE'));
+  assert.deepEqual(await inventory(session.folder),before);
+  const next=await create(f.service),report=await f.service.report(next.id,{limit:50});assert.match(report.markdown,/SESSION_UNREADABLE/);
+});
+test('an unresolved current profile cannot begin a file-changing check',async()=>{
+  const f=fixture(),before=await inventory(f.profile);f.service.selectionError=true;
+  const state=await f.service.inspect();assert.ok(state.inspection.findings.some(finding=>finding.code==='RECOVERY_SELECTION_CONFLICT'));
+  const session=await f.service.protect((await create(f.service)).id);assert.equal(session.lastError,'RECOVERY_SELECTION_CONFLICT');
+  assert.deepEqual(await inventory(f.profile),before);
+});
+test('private worker logs are available only to the separate raw export',async()=>{
+  const f=fixture({probe:async input=>{
+    put(path.join(input.root,'probe-private-00000000-0000-4000-8000-000000000003.log'),'PRIVATE synthetic personal canary');
+    return {protocol:1,root:input.root,ok:false,code:'TEST_FAILED'};
+  }});
+  let session=await create(f.service);session=await f.service.protect(session.id);session=await f.service.test(session.id,'copy-profile');
+  const files=f.service.privateProbeLogs(session);assert.equal(files.length,1);assert.match(fs.readFileSync(files[0],'utf8'),/personal canary/);
+  const report=await f.service.report(session.id,{limit:50});assert.ok(!JSON.stringify(report).includes('personal canary'));
+  assert.ok(!f.service.logFiles().includes(files[0]));
+});
+
 test('protection includes external SQLite WAL, library, notes and encrypted blobs without modifying a source', async () => {
   const f = fixture(); const sources = detectSources(f.profile).roots;
   const before = await Promise.all(sources.map(root => inventory(root)));

@@ -68,6 +68,12 @@ import type {
 
 export interface PlatformApi {
   openNodusSupport(): Promise<void>;
+  supportDistributionState():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  checkSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  installSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  saveSupportInstaller():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  cancelSupportDownload():Promise<import('../support/distributionTypes').SupportDistributionState>;
+  revealSupportInstallation():Promise<void>;
   getMcpStatus(): Promise<McpServerStatus>;
   regenerateMcpToken(): Promise<string>;
   getMcpTunnelStatus(): Promise<McpTunnelStatus>;

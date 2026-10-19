@@ -1,7 +1,7 @@
 name: Nodus Support safety and native UI
 on:
   pull_request:
-    paths: ['apps/nodus-support/**','shared/**','electron/**','src/theme/**','scripts/*nodus-support*','scripts/support-*','scripts/configure-support-signing.mjs','scripts/lib/support*.mjs','package.json','package-lock.json','vite.config.ts','build/**','.github/workflows/nodus-support.yml']
+    paths: ['apps/nodus-support/**','shared/**','electron/**','src/theme/**','scripts/*nodus-support*','scripts/support-*','scripts/configure-support-signing.mjs','scripts/lib/support*.mjs','package.json','package-lock.json','vite.config.ts','build/**','.github/workflows/nodus-support.yml','.github/workflows/release-support.yml']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -63,6 +63,12 @@ jobs:
       - name: Verify non-destructive native Windows installer repairs
         if: runner.os == 'Windows'
         run: node scripts/verify-nodus-support-nsis.mjs
+      - name: Verify the managed download and real independent startup
+        if: runner.os != 'Linux'
+        run: node scripts/verify-nodus-support-on-demand.mjs
+      - name: Verify Linux managed download and real independent startup
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/verify-nodus-support-on-demand.mjs
       - name: Verify the independent packaged runtime
         if: runner.os != 'Linux'
         run: node scripts/verify-nodus-support-runtime.mjs

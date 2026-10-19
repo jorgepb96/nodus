@@ -509,8 +509,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "include": "build/nodus-support.nsh"
+      "deleteAppDataOnUninstall": false
     },
     "linux": {
       "target": [

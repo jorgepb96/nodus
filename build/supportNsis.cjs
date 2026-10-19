@@ -4,7 +4,7 @@ const path=require('node:path');
 const {createHash}=require('node:crypto');
 const protocol='nodus.support-nsis-repair/1';
 const digest=value=>createHash('sha256').update(value).digest('hex');
-const quoted=file=>path.resolve(file).replaceAll('\\','/').replaceAll('"','$\\"');
+const quoted=file=>path.resolve(file).replaceAll('"','$\\"');
 function replaceOnce(source,needle,replacement) {
   if(source.split(needle).length!==2)throw new Error(`NSIS support repair requires review: template anchor ${JSON.stringify(needle)}`);
   return source.replace(needle,replacement);

@@ -20,10 +20,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  support-quality:
-    uses: ./.github/workflows/nodus-support.yml
-    with:
-      ref: ${{ inputs.tag }}
   quality-gate:
     needs: validate-release
     uses: ./.github/workflows/ci.yml
@@ -151,20 +147,6 @@ jobs:
       - name: Bind the prepared app to this tag, lockfile and complete payload
         id: pack
         run: node scripts/release-linux-artifact.mjs pack
-      - name: Build independent support installers and the verified runtime archive
-        run: |
-          npm run support:dist
-          node scripts/support-release.mjs --runtime
-      - name: Share independent Linux support artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: nodus-support-linux-release
-          path: |
-            .ci/support-release/
-            release-support/Nodus-Support-*
-          include-hidden-files: true
-          compression-level: 0
-          if-no-files-found: error
       - name: Pin the installer tool runtime
         id: runtime
         run: echo "node_version=$(node -p 'process.versions.node')" >> "$GITHUB_OUTPUT"
@@ -277,16 +259,6 @@ jobs:
         run: node scripts/release-linux-artifact.mjs collect
       - name: Upload the complete Linux asset set to the shared draft
         run: node scripts/upload-release-assets.mjs linux
-      - name: Download independent Linux support artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: nodus-support-linux-release
-          path: .
-      - name: Sign and upload Linux support recovery artifacts
-        env:
-          NODUS_SUPPORT_RELEASE_PRIVATE_KEY: ${{ secrets.NODUS_SUPPORT_RELEASE_PRIVATE_KEY }}
-          NODUS_SUPPORT_RELEASE_KEY_ID: ${{ secrets.NODUS_SUPPORT_RELEASE_KEY_ID }}
-        run: node scripts/support-release.mjs --publish
 
   release:
     needs: prepare-release
@@ -512,18 +484,6 @@ jobs:
         if: startsWith(matrix.os, 'macos')
         run: node scripts/verify-macos-release.cjs release ${{ matrix.mac_arch }}
 
-      - name: Build and publish independent support and signed recovery artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODUS_SUPPORT_RELEASE: '1'
-          NODUS_SUPPORT_RELEASE_PRIVATE_KEY: ${{ secrets.NODUS_SUPPORT_RELEASE_PRIVATE_KEY }}
-          NODUS_SUPPORT_RELEASE_KEY_ID: ${{ secrets.NODUS_SUPPORT_RELEASE_KEY_ID }}
-          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: |
-          npm run support:dist
-          node scripts/support-release.mjs --runtime --publish
-
       - name: Remove temporary macOS credentials
         if: always() && startsWith(matrix.os, 'macos')
         shell: bash
@@ -676,7 +636,6 @@ jobs:
     if: >-
       always() &&
       needs.quality-gate.result == 'success' &&
-      needs.support-quality.result == 'success' &&
       needs.prepare-release.result == 'success' &&
       needs.release.result == 'success' &&
       needs.upload-linux.result == 'success' &&
@@ -684,7 +643,6 @@ jobs:
       (inputs.channel == 'beta' || needs.build-zotero-plugin.result == 'success')
     needs:
       - quality-gate
-      - support-quality
       - prepare-release
       - release
       - upload-linux
@@ -826,5 +784,27 @@ jobs:
           gh workflow run release-macos-intel.yml \
             --repo "$GITHUB_REPOSITORY" \
             --ref "$INTEL_WORKFLOW_REF" \
+            -f tag="$RELEASE_TAG" \
+            -f channel="$RELEASE_CHANNEL"
+
+  release-support:
+    # Dispatch only after publication. Support never delays or invalidates Nodus.
+    needs: verify-and-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_CHANNEL: ${{ inputs.channel }}
+      SUPPORT_WORKFLOW_REF: ${{ github.ref_name }}
+    steps:
+      - name: Start independent Nodus Support release
+        run: |
+          gh workflow run release-support.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$SUPPORT_WORKFLOW_REF" \
             -f tag="$RELEASE_TAG" \
             -f channel="$RELEASE_CHANNEL"

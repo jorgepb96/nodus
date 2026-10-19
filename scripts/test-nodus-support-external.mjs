@@ -35,13 +35,14 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
       assert.equal(Object.keys(globalThis.supportLaunch.options.env).some(key=>key.startsWith('NODUS_')),false);
       assert.equal('ELECTRON_RUN_AS_NODE' in globalThis.supportLaunch.options.env,false);
       assert.equal(fs.readFileSync(original,'utf8'),'preserve original');
-    `,resolveDir:path.resolve(import.meta.dirname,'..')},outfile:bundle,bundle:true,platform:'node',format:'esm',plugins:[{name:'controlled-electron',setup(builder){
+    `,resolveDir:path.resolve(import.meta.dirname,'..')},outfile:bundle,bundle:true,platform:'node',format:'esm',banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);'},plugins:[{name:'controlled-electron',setup(builder){
       builder.onResolve({filter:/^electron$/},()=>({path:'electron',namespace:'test-electron'}));
       builder.onResolve({filter:/^node:child_process$/},()=>({path:'child-process',namespace:'test-child-process'}));
       builder.onLoad({filter:/.*/,namespace:'test-child-process'},()=>({contents:`
         import {EventEmitter} from 'node:events';
         export const spawn=(executable,args,options)=>{globalThis.supportLaunch={executable,args,options};const child=new EventEmitter();child.unref=()=>{};queueMicrotask(()=>child.emit('spawn'));return child;};
-        export default {spawn};
+        export const execFile=()=>{};
+        export default {spawn,execFile};
       `,loader:'js'}));
       builder.onLoad({filter:/.*/,namespace:'test-electron'},()=>({contents:`
         import {EventEmitter} from 'node:events';

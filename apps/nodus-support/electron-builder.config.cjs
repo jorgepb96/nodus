@@ -6,7 +6,7 @@ module.exports = {
   directories: { app: path.join(root, 'build/support-app'), output: path.join(root, 'release-support') },
   electronVersion: require(path.join(root, 'node_modules/electron/package.json')).version,
   files: ['main.mjs','preload.cjs','package.json','icon.png','ui/**/*','!node_modules/**/*'], npmRebuild: false, icon: path.join(__dirname, 'assets/icon.png'),
-  extraResources: [{from:path.join(root,'build/support-app/legal'),to:'legal'}],
+  extraResources: [{from:path.join(root,'build/support-app/legal'),to:'legal'},{from:path.join(__dirname,'assets/icon.png'),to:'support-icon.png'}],
   artifactName: 'Nodus-Support-${os}-${arch}.${ext}', publish: null,
   mac: { target: ['dmg','zip'], icon: path.join(__dirname, 'assets/icon.icns'), category: 'public.app-category.utilities', hardenedRuntime: true, forceCodeSigning: release, ...(release ? { notarize: true, entitlements: path.join(root, 'build/entitlements.mac.plist'), entitlementsInherit: path.join(root, 'build/entitlements.mac.inherit.plist') } : { identity: null }) },
   win: { target: ['nsis', { target: 'portable', arch: ['x64'] }], icon: path.join(__dirname, 'assets/icon.ico') },

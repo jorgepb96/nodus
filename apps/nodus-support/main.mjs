@@ -307,7 +307,7 @@ async function handlers() {
     await new SolutionManager(service,path.join(stateRoot,'launch-policies')).recover(id);
     return service.resume(id);
   });
-  handle('launchRecovered', launchRecovered); handle('report', async(id,selection)=>{const {report,...summary}=await service.report(id,selection);return summary;}); handle('reinstall', reinstall);
+  handle('launchRecovered', launchRecovered); handle('report', async(id,selection)=>{const {report:_report,...summary}=await service.report(id,selection);return summary;}); handle('reinstall', reinstall);
   handle('applySolution', async (id,index) => {
     requireQualified(qualifiedRepairs,process.platform,process.arch,'apply-solution');
     assert(!(await service.session(id)).installationPrevious,'INVALID_STATE');
@@ -378,7 +378,7 @@ else {
     const target=await retainSupportRuntime(source,path.join(stateRoot,'runtimes'),process.platform==='darwin'?{copy:async(from,to)=>exec('/usr/bin/ditto',[from,to])}:{});
     const executable = process.platform === 'darwin' ? path.join(target, 'Contents/MacOS/nodus-support') : path.join(target, path.basename(process.execPath));
     app.releaseSingleInstanceLock();
-    const child = spawn(executable, ['--support-retained=1', ...process.argv.slice(1).filter(arg => arg.startsWith('--nodus-') || arg.startsWith('--support-state='))], { detached: true, stdio: 'ignore' });
+    const child = spawn(executable, ['--support-retained=1', ...process.argv.slice(1).filter(arg => arg.startsWith('--nodus-') || arg.startsWith('--support-state=') || arg.startsWith('--support-launch-token='))], { detached: true, stdio: 'ignore' });
     await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); }); child.unref(); app.quit();
   } else {
     const ui = path.join(__dirname, 'ui');
@@ -387,11 +387,16 @@ else {
       try { return net.fetch(pathToFileURL(destination(ui, relative)).href); } catch { return new Response('', { status: 403 }); }
     });
     win = new BrowserWindow({ width: 1120, height: 850, minWidth: 720, minHeight: 580, title: 'Nodus Support', icon: path.join(__dirname,'icon.png'), backgroundColor: '#171717', webPreferences: { preload: path.join(__dirname, 'preload.cjs'), sandbox: true, nodeIntegration: false, contextIsolation: true } });
+    const announceReady=async(argv)=>{
+      const token=argv.find(value=>value.startsWith('--support-launch-token='))?.slice('--support-launch-token='.length);
+      if(token&&/^[a-f0-9-]{36}$/.test(token))try{await writeRecord(path.join(stateRoot,'launch-receipts',`${token}.json`),{format:'nodus.support-ready/1',token,pid:process.pid,version:app.getVersion()});}catch{/* Existing receipts are retained. */}
+    };
+    win.webContents.once('did-finish-load',()=>{void announceReady(process.argv);});
     win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     win.webContents.on('will-navigate', (event, url) => { if (!url.startsWith('nodus-support://app/')) event.preventDefault(); });
     win.webContents.session.setPermissionRequestHandler((_contents, _permission, done) => done(false));
     await handlers(); await win.loadURL('nodus-support://app/index.html');
-    app.on('second-instance', () => { if (win) { win.show(); win.focus(); } });
+    app.on('second-instance', (_event,argv) => { if (win) { win.show(); win.focus();void announceReady(argv); } });
     app.on('before-quit', event => { if (service.busy) { event.preventDefault(); quitRequested = true; if (service.activeId) void service.cancel(service.activeId); } });
   }
 }

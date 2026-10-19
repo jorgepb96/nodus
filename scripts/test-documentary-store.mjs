@@ -83,6 +83,40 @@ try {
     'failed replacement retains both attachment heads');
   assert.equal(first.lexicalSearch('Independent', keys, 10).length, 2);
 
+  // A fresh revision must not scan the corpus to delete nonexistent passages.
+  // FTS id is UNINDEXED; on a real 372k-passage store even an empty IN subquery
+  // took 2.5 seconds on Electron's main thread for every newly indexed document.
+  const lexical = new DocumentaryStore(path.join(scratch, 'lexical.sqlite'));
+  try {
+    const prepare = lexical.db.prepare;
+    let ftsDeletes = 0;
+    lexical.db.prepare = function (sql, ...args) {
+      if (/^DELETE FROM documentary_fts\b/.test(sql)) ftsDeletes += 1;
+      return prepare.call(this, sql, ...args);
+    };
+    const chunk = text => ({ text, pageLabel: '1', pageNumber: 1, sourceRef: 'pdf' });
+    const publish = (documentId, revision, texts) => {
+      const key = lexical.enqueue({ ...identity, documentId, revision }, {});
+      const job = lexical.claim(Date.now(), 60000, key);
+      lexical.saveChunks(job, texts.map(chunk));
+      lexical.publishLexical(job);
+      return { key, job };
+    };
+    const unrelated = publish('unrelated', 'r1', ['Unrelated preserved evidence']);
+    const original = publish('reindexed', 'r1', ['Original immutable evidence']);
+    const replacement = publish('reindexed', 'r2', ['Replacement first passage', 'Replacement second passage']);
+    assert.equal(ftsDeletes, 0, 'new documents and new revisions never run a full-corpus FTS delete');
+    assert.equal(lexical.lexicalSearch('Replacement', [replacement.key], 10).length, 2, 'bulk FTS insertion publishes every passage');
+    lexical.saveChunks(replacement.job, [chunk('Repaired searchable passage')]);
+    lexical.publishLexical(replacement.job);
+    assert.equal(ftsDeletes, 1, 'republication of an existing index still replaces its old FTS rows');
+    assert.equal(lexical.lexicalSearch('Replacement', [replacement.key], 10).length, 0, 'republication leaves no obsolete FTS text');
+    assert.equal(lexical.lexicalSearch('Repaired', [replacement.key], 10).length, 1);
+    assert.equal(lexical.db.prepare('SELECT COUNT(*) n FROM documentary_passages WHERE index_key=?').get(replacement.key).n, 1);
+    assert.equal(lexical.lexicalSearch('preserved', [unrelated.key], 10).length, 1, 'other documents survive reindexing');
+    assert.equal(lexical.lexicalSearch('Original', [original.key], 10).length, 1, 'previous immutable revisions remain searchable');
+  } finally { lexical.close(); }
+
   // A real SQLITE_FULL during FTS publication must roll back the new revision,
   // leaving the previous manifest and searchable passages intact.
   const full = new DocumentaryStore(path.join(scratch, 'full.sqlite'));

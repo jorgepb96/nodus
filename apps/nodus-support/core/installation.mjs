@@ -1,6 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { assert,noLinks,readJson } from './files.mjs';
+import { assert,hashFile,noLinks,readJson } from './files.mjs';
+
+// The artifact must already come from a verified signed release manifest.
+export async function verifyActivatedInstallation({format,original,artifact,version,installation,signal}) {
+  noLinks(original);
+  if(format==='AppImage') {
+    // Its resources live inside the read-only image, not beside the file.
+    assert(fs.statSync(original).size===artifact.bytes&&await hashFile(original,signal)===artifact.sha256,'INSTALLATION_INTEGRITY_FAILED');
+  }else {
+    const installed=await installation();
+    assert(installed?.protocol===1&&installed.version===version,'INSTALLATION_INTEGRITY_FAILED');
+  }
+}
 
 // Read package metadata without executing the damaged application or loading its graph.
 export function readInstalledPackage(resources) {

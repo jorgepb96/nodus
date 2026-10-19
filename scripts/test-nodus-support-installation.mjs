@@ -6,13 +6,26 @@ import os from 'node:os';
 import {createRequire} from 'node:module';
 import {inventory} from '../apps/nodus-support/core/files.mjs';
 import {activateInstallation,recoverInstallation} from '../apps/nodus-support/core/install-transaction.mjs';
-import {readInstalledPackage,executableArchitectures} from '../apps/nodus-support/core/installation.mjs';
+import {readInstalledPackage,executableArchitectures,verifyActivatedInstallation} from '../apps/nodus-support/core/installation.mjs';
 import {retainSupportRuntime} from '../apps/nodus-support/core/self-runtime.mjs';
 import {SupportService} from '../apps/nodus-support/core/service.mjs';
 import {hashFile} from '../apps/nodus-support/core/files.mjs';
 
 const scratch=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'support-installation-'))),require=createRequire(import.meta.url);
 process.on('exit',()=>fs.rmSync(scratch,{recursive:true,force:true}));
+test('activated AppImages are checked against the signed bytes without expecting adjacent resources',async()=>{
+  const original=path.join(scratch,'Nodus.AppImage');fs.writeFileSync(original,'verified image');
+  const artifact={bytes:fs.statSync(original).size,sha256:await hashFile(original)};
+  const input={format:'AppImage',original,artifact,version:'5.13.0',installation:async()=>{throw new Error('No adjacent resources exist for AppImages');}};
+  await verifyActivatedInstallation(input);
+  fs.writeFileSync(original,'tampered image');await assert.rejects(verifyActivatedInstallation(input),/INSTALLATION_INTEGRITY_FAILED/);
+  assert.equal(fs.readFileSync(original,'utf8'),'tampered image','Failed verification preserves the suspect version');
+});
+test('a completed system installer still needs the expected installed protocol and version',async()=>{
+  const original=path.join(scratch,'installed-program');fs.mkdirSync(original);
+  for(const result of [{protocol:null,version:'5.13.0'},{protocol:1,version:'5.9.1'},null])await assert.rejects(verifyActivatedInstallation({format:'nsis',original,version:'5.13.0',installation:async()=>result}),/INSTALLATION_INTEGRITY_FAILED/);
+  await verifyActivatedInstallation({format:'nsis',original,version:'5.13.0',installation:async()=>({protocol:1,version:'5.13.0'})});
+});
 for(const phase of ['prepared','original-retained','candidate-active','complete'])test(`installation interrupted at ${phase} retains old and candidate versions`,async()=>{
   const folder=path.join(scratch,phase);fs.mkdirSync(folder);
   const transaction={original:path.join(folder,'Nodus'),staged:path.join(folder,'staged'),retained:path.join(folder,'retained')};

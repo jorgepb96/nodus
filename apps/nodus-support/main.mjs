@@ -23,6 +23,7 @@ import qualifiedRepairs from './qualified-repairs.json';
 import { requireQualified } from './core/qualification.mjs';
 import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
+import { verifyActivatedInstallation } from './core/installation.mjs';
 import { SUPPORT_ACTIONS } from '../../shared/support/catalog.mjs';
 
 const exec = promisify(execFile);
@@ -175,11 +176,11 @@ async function reinstall(id,update=false) {
         await service.event(id,{installationSystemPending:false});
       }
       service.controller.signal.throwIfAborted();
-      const installed=await service.installation();
-      assert(installed?.protocol===1&&installed.version===manifest.version,'INSTALLATION_INTEGRITY_FAILED');
+      await verifyActivatedInstallation({format,original,artifact,version:manifest.version,installation:()=>service.installation(),signal:service.controller.signal});
       for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory,service.controller.signal);
       await writeNew(path.join(working.root,'result.json'),{...check,appVersion:manifest.version,action:'reinstall',diagnostic:false,at:new Date().toISOString()});
-      return service.event(id, { status: 'awaiting-user',trialOpened:null,recoveredProfiles:[...session.recoveredProfiles,working.root], actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
+      const diagnosticRuntime={folder,candidate,executable,version:manifest.version,inventory:await inventory(candidate,service.controller.signal,service.progress,{links:true})};
+      return service.event(id, { status: 'awaiting-user',diagnosticRuntime,diagnosticVersion:manifest.version,trialOpened:null,recoveredProfiles:[...session.recoveredProfiles,working.root], actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
     } catch (error) { return service.blocked(id, error); }
     finally { service.activeId = null; service.controller = null; }
   });

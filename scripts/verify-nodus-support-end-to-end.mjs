@@ -11,9 +11,14 @@ import {build} from 'esbuild';
 import {createPackage} from '@electron/asar';
 import {_electron} from 'playwright-core';
 import {inventory,hashFile,verifyInventory} from '../apps/nodus-support/core/files.mjs';
+import {runProbe} from '../apps/nodus-support/core/probe.mjs';
+import {SupportService} from '../apps/nodus-support/core/service.mjs';
+import {waitForTrial} from '../apps/nodus-support/core/trial-ready.mjs';
+import {randomUUID} from 'node:crypto';
 import {supportSourceDigest} from './lib/supportEvidence.mjs';
 const repo=path.resolve(import.meta.dirname,'..'),sourceSha256=supportSourceDigest(repo),require=createRequire(import.meta.url),electron=require('electron'),version=JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version;
-assert.equal(process.env.CI,'true','This full process-discovery test requires a disposable native CI host, with no personal Nodus session');
+const fixtureOnly=process.argv.includes('--verify-fixture-only');
+if(!fixtureOnly)assert.equal(process.env.CI,'true','This full process-discovery test requires a disposable native CI host, with no personal Nodus session');
 const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'nodus-support-e2e-'))),runtime=path.join(root,process.platform==='darwin'?'NodusSupportQA.app':'runtime');
 const source=process.platform==='darwin'?path.resolve(electron,'../../..'):path.dirname(electron);
 fs.cpSync(source,runtime,{recursive:true,verbatimSymlinks:true});
@@ -52,6 +57,15 @@ if(process.platform==='darwin') {
 }
 execFileSync(electron,[path.join(repo,'scripts/support-native-fixture.mjs'),root],{env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:'inherit'});
 const profile=path.join(root,'original'),external=path.join(root,'external-vault'),library=path.join(root,'external-library'),before=await Promise.all([profile,external,library].map(file=>inventory(file)));
+if(fixtureOnly) {
+ const service=new SupportService({profile,storage:path.join(root,'fixture-probe-state'),executable,probe:runProbe,isRunning:async()=>false});
+ let value=await service.create({symptom:'startup',mode:'guided'});value=await service.protect(value.id);assert.equal(value.status,'protected');
+ for(const action of ['fresh-profile','software-graphics']){value=await service.test(value.id,action);assert.equal(value.actions.find(attempt=>attempt.action===action).status,'passed',JSON.stringify(value));}
+ const copy=value.recoveredProfiles.at(-1),token=randomUUID(),env={...process.env,NODUS_ISOLATED_ROOT:copy,NODUS_SUPPORT_INTERACTIVE:'1',NODUS_SUPPORT_TRIAL_TOKEN:token,NODUS_QA_DEFER_CREDENTIAL_STATUS:'1',NODUS_STELLAR_PREVIEW:'1'};delete env.ELECTRON_RUN_AS_NODE;
+ const app=await _electron.launch({executablePath:executable,args:[],env,timeout:60000});
+ try{const page=await app.firstWindow();await page.waitForFunction(()=>window.nodus&&document.getElementById('root')?.children.length);await waitForTrial({root:copy,token,version});const until=Date.now()+30000;while(!fs.existsSync(path.join(copy,'qualification-note.json'))&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,200));assert.ok(fs.existsSync(path.join(copy,'qualification-note.json')),fs.existsSync(path.join(copy,'qualification-note-error.txt'))?fs.readFileSync(path.join(copy,'qualification-note-error.txt'),'utf8'):'No saved note');}finally{await app.close();}
+ assert.deepEqual(await Promise.all([profile,external,library].map(file=>inventory(file))),before);console.log('Native fixture: actual probes, real application, ready receipt and saved note passed without touching any other session.');process.exit(0);
+}
 const helper=path.join(root,'helper');fs.cpSync(path.join(repo,'build/support-app'),helper,{recursive:true});
 await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile:path.join(helper,'main.mjs'),define:{__NODUS_SUPPORT_SOURCE_SHA256__:JSON.stringify(sourceSha256)},bundle:true,platform:'node',format:'esm',target:'node22',external:['electron'],banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);const __dirname=__fixtureRequire(import.meta.url)("node:path").dirname(__fixtureRequire(import.meta.url)("node:url").fileURLToPath(import.meta.url));'},plugins:[{name:'test-only-qualification-and-dialogs',setup(builder){
  builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/2',sourceSha256,protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution']}}),loader:'json'}));

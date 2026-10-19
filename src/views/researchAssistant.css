@@ -434,6 +434,16 @@
 .research-history-row:hover .research-history-row-actions, .research-history-row:focus-within .research-history-row-actions, .research-history-row.is-menu-open .research-history-row-actions { opacity: 1; }
 .research-history-row.is-pinned .research-history-row-actions { opacity: 1; }
 .research-history-row.is-pinned:not(:hover):not(:focus-within):not(.is-menu-open) .research-history-action:not(.is-on) { visibility: hidden; }
+/* Chat titles use the full row. Revealed actions cover its end without reflowing it. */
+.research-history-chat { --history-surface: #0a0a0a; --history-actions-bg: var(--history-surface); padding-right: 10px; }
+.research-history-chat:is(:hover, :focus-within, .is-menu-open) { --history-actions-bg: #1a1a1a; }
+.research-history-chat.is-active { --history-actions-bg: color-mix(in srgb, var(--vault-accent, #6366f1) 14%, var(--history-surface)); }
+.research-history-chat > .research-history-row-actions { position: absolute; right: 6px; top: 4px; background: var(--history-actions-bg); border-radius: 7px; box-shadow: -6px 0 6px var(--history-actions-bg); pointer-events: none; }
+.research-history-chat:is(:hover, :focus-within, .is-menu-open, .is-pinned) > .research-history-row-actions { pointer-events: auto; }
+.research-history-chat:has(> .research-history-rename) > .research-history-row-actions { display: none; }
+.light .research-history-chat { --history-surface: #f8fafc; }
+.light .research-history-chat:is(:hover, :focus-within, .is-menu-open) { --history-actions-bg: #f4f4f5; }
+.light .research-history-chat.is-active { --history-actions-bg: color-mix(in srgb, var(--vault-accent, #6366f1) 14%, var(--history-surface)); }
 /* A chat still answering while the user is in another one. */
 .research-history-running { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--vault-accent, #6366f1); animation: research-history-running 1.2s ease-in-out infinite; }
 @keyframes research-history-running { 50% { opacity: .3; transform: scale(.75); } }
@@ -451,6 +461,7 @@
 .light .research-history-row { color: #262626; }
 .light .research-history-row:hover, .light .research-history-row:focus-within, .light .research-history-row.is-menu-open { background: #f4f4f5; }
 .light .research-history-row.is-active { color: #171717; }
+.light .research-history-chat.is-active { background: color-mix(in srgb, var(--vault-accent, #6366f1) 14%, transparent); }
 .light .research-history-action { color: #71717a; }
 .light .research-history-action:hover { color: #18181b; background: #e4e4e7; }
 .light .research-history-action.is-on { color: var(--vault-accent, #6366f1); }

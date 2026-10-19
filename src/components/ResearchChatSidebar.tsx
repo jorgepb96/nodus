@@ -349,7 +349,7 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
           const key = `chat:${row.nested ? 'nested' : 'top'}:${conversation.id}`;
           const pinned = !!conversation.pinnedAt && !conversation.archived;
           return (
-            <div className={`research-history-row group ${row.nested ? 'is-nested' : ''} ${conversation.id === activeId ? 'is-active' : ''} ${pinned ? 'is-pinned' : ''} ${menu?.kind === 'chat' && menu.row === key ? 'is-menu-open' : ''} ${selecting && selectedIds.has(conversation.id) ? 'is-selected' : ''}`}
+            <div className={`research-history-row research-history-chat group ${row.nested ? 'is-nested' : ''} ${conversation.id === activeId ? 'is-active' : ''} ${pinned ? 'is-pinned' : ''} ${menu?.kind === 'chat' && menu.row === key ? 'is-menu-open' : ''} ${selecting && selectedIds.has(conversation.id) ? 'is-selected' : ''}`}
               data-testid={`research-conversation-${conversation.id}`} data-marquee-host
               style={row.depth === undefined ? undefined : { paddingLeft: 14 + row.depth * 14 + 18 }}
               {...(!selecting && supportsProjects && !(locksMoves && inNotebook(conversation)) && renaming !== key ? chatDragProps(conversation) : {})}>

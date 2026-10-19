@@ -63,6 +63,9 @@ await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile
  `}));
 }}]});
 const state=path.join(root,'support-state'),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
+if(process.platform==='linux') {
+ const sandbox=path.join(repo,'node_modules/electron/dist/chrome-sandbox'),stat=fs.statSync(sandbox);assert.equal(stat.uid,0);assert.ok(stat.mode&0o4000);env.CHROME_DEVEL_SANDBOX=sandbox;
+}
 const args=[helper,`--support-state=${state}`,`--nodus-profile=${profile}`,`--nodus-executable=${executable}`];
 let app,page;const output=path.join(repo,'.ci/support-native');fs.mkdirSync(output,{recursive:true});
 const wait=async(test,message)=>{const until=Date.now()+90000;while(Date.now()<until){if(await test())return;await new Promise(resolve=>setTimeout(resolve,200));}assert.fail(message);};

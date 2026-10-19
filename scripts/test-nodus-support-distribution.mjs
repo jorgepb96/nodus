@@ -35,3 +35,9 @@ test('Support is dispatched after publication and never bundled or required by t
  const pkg=JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname,'../package.json'),'utf8'));assert.equal(pkg.build.nsis.include,undefined);
  assert.match(support.jobs.validate.steps[1].run,/isDraft/,'Support cannot be published into a draft');
 });
+
+test('moving Support after publication retains its full public safety gate',()=>{
+ const publisher=fs.readFileSync(path.resolve(import.meta.dirname,'support-app-release.mjs'),'utf8');
+ for(const action of ['interactive-copy','apply-solution','restore-copy','reinstall'])assert.ok(publisher.includes("'"+action+"'"));
+ assert.ok(publisher.indexOf('requireQualified(qualified,platform,arch,repair)')<publisher.indexOf("execFileSync('gh'"),'Qualification precedes any release operation');
+});

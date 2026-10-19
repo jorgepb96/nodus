@@ -11,7 +11,7 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
   try {
     await build({stdin:{contents:`
       import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';
-      import {app,dialog} from 'electron';import {isolateSupportApplication} from './electron/support/isolation.ts';
+      import {app,dialog,ipcMain} from 'electron';import {isolateSupportApplication} from './electron/support/isolation.ts';
       import {listAppleCalendars,mutateAppleCalendar} from './electron/calendar/appleCalendarBridge.ts';
       import {prepareSupportLauncher,openNodusSupport} from './electron/supportLauncher.ts';
       const root=process.env.SUPPORT_FIXTURE_ROOT,original=process.env.SUPPORT_FIXTURE_ORIGINAL;
@@ -21,6 +21,9 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
       isolateSupportApplication(root);
       await assert.rejects(listAppleCalendars(true),error=>error.code==='SUPPORT_EXTERNAL_ACTION_DENIED');
       await assert.rejects(mutateAppleCalendar({action:'delete',nativeId:'synthetic'}),error=>error.code==='SUPPORT_EXTERNAL_ACTION_DENIED');
+      assert.throws(()=>process.kill(process.pid,0),/SUPPORT_PROCESS_DENIED/);
+      for(const channel of ['updates:install','calendar:delete','toolkit:job:run','settings:setApiKey']){ipcMain.handle(channel,()=>{throw new Error('Unrestricted handler reached');});await assert.rejects(globalThis.supportHandlers[channel](),error=>!error.message.includes('Unrestricted'));}
+      ipcMain.handle('notes:get',()=> 'copied note');assert.equal(globalThis.supportHandlers['notes:get'](),'copied note');
       assert.throws(()=>app.relaunch(),/SUPPORT_EXTERNAL_ACTION_DENIED/);
       assert.throws(()=>app.setLoginItemSettings({openAtLogin:true}),/SUPPORT_EXTERNAL_ACTION_DENIED/);
       process.env.SUPPORT_SAVE_PATH=original;
@@ -51,6 +54,7 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
       builder.onLoad({filter:/.*/,namespace:'test-electron'},()=>({contents:`
         import {EventEmitter} from 'node:events';
         export const app=Object.assign(new EventEmitter(),{whenReady:async()=>{},getAppPath:()=>process.env.SUPPORT_FIXTURE_ROOT,getPath:()=>process.env.SUPPORT_FIXTURE_ROOT,getVersion:()=> '5.13.0',getLocale:()=> 'en',quit(){},relaunch(){},setLoginItemSettings(){},setAsDefaultProtocolClient(){},removeAsDefaultProtocolClient(){}});
+        export const ipcMain={handle(channel,listener){globalThis.supportHandlers??={};globalThis.supportHandlers[channel]=listener;}};
         export const net={request(){},async fetch(){}};export const utilityProcess={fork(){}};
         export const safeStorage={decryptString(){},encryptString(){}};
         export const shell={async openExternal(){},async openPath(){},async trashItem(){}};

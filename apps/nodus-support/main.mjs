@@ -20,6 +20,7 @@ import { issueDraft } from '../../shared/support/report.mjs';
 import { supportText, SUPPORT_LANGUAGES } from '../../shared/support/messages';
 import trustedKeys from './trusted-release-keys.json';
 import qualifiedRepairs from './qualified-repairs.json';
+import { waitForTrial } from './core/trial-ready.mjs';
 import { requireQualified } from './core/qualification.mjs';
 import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
@@ -231,15 +232,25 @@ async function launchRecovered(id, index) {
   const session = await service.session(id); assert(Number.isInteger(index) && index >= 0 && index < session.recoveredProfiles.length, 'INVALID_REQUEST');
   const root = session.recoveredProfiles[index]; noLinks(root);
   assert(root.startsWith(`${session.folder}${path.sep}`), 'INVALID_REQUEST');
-  const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
+  const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1,'COMPATIBLE_INSTALL_REQUIRED');
   const result=readJson(path.join(root,'result.json'));
   assert(result.protocol===1&&result.root===root&&result.appVersion===installation.version,'COMPATIBLE_INSTALL_REQUIRED');
   // Interactive copies use the normal application only with the validated isolated bootstrap.
-  const env={ ...process.env, NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_SUPPORT_LANGUAGE:service.locale, NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') };
+  const token=randomUUID();
+  const env={ ...process.env, NODUS_SUPPORT_TRIAL_TOKEN:token, NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_SUPPORT_LANGUAGE:service.locale, NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') };
   delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_USERDATA;delete env.NODUS_SUPPORT_PROBE;
-  const child = spawn(executable, [], { detached: true, stdio: 'ignore', env });
-  await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); }); child.unref();
-  return service.event(id,{trialOpened:root});
+  return service.exclusive(async()=>{
+    service.activeId=id;service.controller=new AbortController();
+    try {
+      await service.event(id,{trialOpened:null,trialPending:{root,token,version:installation.version}});
+      const child = spawn(executable, [], { detached: true, stdio: 'ignore', env });
+      await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); });child.unref();
+      await service.event(id,{trialPending:{root,token,version:installation.version,pid:child.pid}});
+      await waitForTrial({root,token,version:installation.version,pid:child.pid,signal:service.controller.signal});
+      return service.event(id,{trialOpened:root,trialPending:null});
+    }finally{service.activeId=null;service.controller=null;}
+    // Cancelling the wait never kills a trial which may contain unsaved new work.
+  });
 }
 async function rollbackInstallation(id) {
   const session = await service.session(id); await service.guardSource(session); await service.protectedSources(session);
@@ -348,7 +359,7 @@ async function handlers() {
     assert(typeof password === 'string' && password.length > 0 && password.length <= 4096, 'RECOVERY_PASSWORD_REQUIRED');
     await ensureDiagnosticRuntime(id);
     const session = await service.session(id); await service.guardSource(session); await service.protectedSources(session);
-    const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
+    const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');assert(installation.trialReadyProtocol===1,'COMPATIBLE_INSTALL_REQUIRED');
     const choice = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Nodus', extensions: ['nodus'] }] });
     if (choice.canceled) return session;
     return service.exclusive(async () => {

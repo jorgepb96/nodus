@@ -1,3 +1,4 @@
+import {verifySupportWal} from './wal-integrity.mjs';
 // SQLite performs native I/O without node:fs. Protect its constructors and file SQL too.
 const denied=()=>{throw Object.assign(new Error('SUPPORT_WRITE_DENIED'),{code:'SUPPORT_WRITE_DENIED'});};
 const tokens=sql=>[...String(sql).matchAll(/\s+|--[^\r\n]*|\/\*[\s\S]*?\*\/|'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]*\]|\?(?:\d+)?|[:@$][\w]+|[a-zA-Z_][\w$]*|[^\s]/g)].map(value=>value[0]).filter(value=>!/^\s|^--|^\/\*/.test(value));
@@ -48,7 +49,8 @@ export function installSqliteIsolation(require,check) {
   patch(Constructor.prototype,'backup',original=>async function(target,...args){file(this.name);file(target);return original.call(this,target,...args);});
   patch(Constructor.prototype,'pragma',original=>function(sql,...args){file(this.name);fileOperations(`PRAGMA ${sql}`);return original.call(this,sql,...args);});
   patch(Constructor.prototype,'loadExtension',()=>()=>denied());
-  const Guarded=new Proxy(Constructor,{construct(target,args,newTarget){file(args[0]);return Reflect.construct(target,args,newTarget===Guarded?target:newTarget);},apply(target,thisArg,args){file(args[0]);return Reflect.apply(target,thisArg,args);}});
+  const opening=value=>{file(value);if(value!==':memory:')verifySupportWal(value);};
+  const Guarded=new Proxy(Constructor,{construct(target,args,newTarget){opening(args[0]);return Reflect.construct(target,args,newTarget===Guarded?target:newTarget);},apply(target,thisArg,args){opening(args[0]);return Reflect.apply(target,thisArg,args);}});
   patch(Constructor.prototype,'constructor',()=>Guarded);cache.exports=Guarded;
   return ()=>{cache.exports=Constructor;for(const undo of restore.reverse())undo();};
 }

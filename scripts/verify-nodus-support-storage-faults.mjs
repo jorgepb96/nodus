@@ -49,7 +49,7 @@ try {
     if(!disconnected&&boundary&&value.phase==='protecting'&&value.total===8192&&value.completed===4096){volume.disconnect();disconnected=true;}
   });
   session=await unplugged.create({symptom:'data',mode:'guided'});session=await unplugged.protect(session.id);
-  assert.ok(disconnected);assert.equal(session.status,'blocked');assert.equal(session.protection,undefined);
+  assert.ok(disconnected,`Unplug callback failed or was not reached: ${session.lastError}`);assert.equal(session.status,'blocked');assert.equal(session.protection,undefined);
   volume.reconnect();await verifyInventory(library,external);await verifyInventory(profile,withLibrary);
   unplugged.progress=()=>{};session=await unplugged.resume(session.id);session=await unplugged.protect(session.id);assert.equal(session.status,'protected');
   checked.push('native-volume-disconnected-during-copy','resume-after-reconnect');

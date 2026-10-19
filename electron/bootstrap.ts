@@ -8,6 +8,7 @@ import { resolvePolicy } from '../apps/nodus-support/core/policies.mjs';
 import { isolateSupportApplication } from './support/isolation';
 import { supportText, SUPPORT_LANGUAGES } from '../shared/support/messages';
 import type { AppLanguage } from '../shared/types';
+import { trialReceiptPath } from '../apps/nodus-support/core/trial-ready.mjs';
 import { prepareSupportLauncher } from './supportLauncher';
 
 prepareSupportLauncher();
@@ -117,6 +118,20 @@ if (requestedRoot) {
     }
     window.setTitle(label);
     window.on('page-title-updated', event => { event.preventDefault(); window.setTitle(label); });
+    window.webContents.once('did-finish-load', () => {
+      const token=process.env.NODUS_SUPPORT_TRIAL_TOKEN;
+      if(process.env.NODUS_SUPPORT_INTERACTIVE!=='1'||!token)return;
+      const file=trialReceiptPath(root,token),until=Date.now()+60000;
+      const ready=async()=>{
+        if(window.isDestroyed()||Date.now()>until||fs.existsSync(file))return;
+        try {
+          const loaded=await window.webContents.executeJavaScript('Boolean(window.nodus && document.getElementById("root")?.children.length)');
+          if(loaded){const fd=fs.openSync(file,'wx',0o600);try{fs.writeFileSync(fd,JSON.stringify({protocol:1,root,token,version:app.getVersion(),pid:process.pid}));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}return;}
+        }catch{/* Loading/closing windows must never produce a false readiness receipt. */}
+        setTimeout(()=>void ready(),200).unref();
+      };
+      void ready();
+    });
     window.webContents.on('did-finish-load', () => {
       void window.webContents.insertCSS(`body::after{content:${JSON.stringify(label)};position:fixed;bottom:4px;right:12px;max-width:calc(100vw - 48px);z-index:2147483647;background:#323109;color:#f3ef9c;padding:4px 10px;border-radius:4px;font:12px system-ui;pointer-events:none}`);
     });

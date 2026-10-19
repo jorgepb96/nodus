@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
+import { verifySupportWal } from '../../shared/support/wal-integrity.mjs';
 import { GRANULAR_MODEL_KEYS } from '../../shared/modelSettings';
 
 type Finding={code:string;component:string;level:'error'|'warning'|'info';count?:number};
@@ -16,6 +17,7 @@ export function openSupportDatabase(profile:string,file:string,readonly=false):D
   const root=fs.realpathSync(profile),canonical=fs.realpathSync(file);
   if(!canonical.startsWith(`${root}${path.sep}`))throw new Error('SUPPORT_WRITE_DENIED');
   for(const part of [file,`${file}-wal`,`${file}-shm`])if(fs.existsSync(part)&&(fs.lstatSync(part).isSymbolicLink()||fs.statSync(part).nlink>1))throw new Error('SUPPORT_WRITE_DENIED');
+  verifySupportWal(canonical);
   const Constructor=createRequire(import.meta.url)('better-sqlite3') as typeof Database;
   return new Constructor(canonical,{readonly,fileMustExist:true});
 }

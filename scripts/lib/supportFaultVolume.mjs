@@ -59,7 +59,12 @@ export function createFaultVolume(root) {
     if(!mounted)return;
     if(process.platform==='darwin')run('/usr/bin/hdiutil',['detach','-force',mount]);
     else if(process.platform==='linux')run('/usr/bin/sudo',['-n','/usr/bin/umount',mount]);
-    else diskpart(['detach vdisk']);
+    else {
+      // DiskPart can report an error after the volume has already detached.
+      // Ask the Storage API for the image's actual state rather than retrying it.
+      const command="$ErrorActionPreference='Stop'; $image=Get-DiskImage -ImagePath $env:NODUS_QA_VHD; if($image.Attached){Dismount-DiskImage -ImagePath $env:NODUS_QA_VHD | Out-Null}; if((Get-DiskImage -ImagePath $env:NODUS_QA_VHD).Attached){throw 'Fixture image remains attached'}";
+      execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',command],{env:{...process.env,NODUS_QA_VHD:image},stdio:'pipe',timeout:60000,windowsHide:true});
+    }
     mounted=false;
   };
   try{reconnect();check();fs.writeFileSync(path.join(root,'volume-created.json'),JSON.stringify({image,mount}));}

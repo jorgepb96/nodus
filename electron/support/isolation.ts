@@ -1,12 +1,22 @@
-import { app, dialog, net, safeStorage, session, shell, systemPreferences, utilityProcess } from 'electron';
+import { app, dialog, ipcMain, net, safeStorage, session, shell, systemPreferences, utilityProcess } from 'electron';
 import { installSupportIsolation } from '../../shared/support/isolation.mjs';
 import { createRequire } from 'node:module';
+import { supportText, SUPPORT_LANGUAGES } from '../../shared/support/messages';
+import type { AppLanguage } from '../../shared/types';
 import { installSqliteIsolation } from '../../shared/support/sqlite-isolation.mjs';
 
 export function isolateSupportApplication(root: string): void {
   const boundary=installSupportIsolation(root);
   if(process.versions.electron)installSqliteIsolation(createRequire(import.meta.url),boundary.check);
   const deny = () => { throw Object.assign(new Error('SUPPORT_EXTERNAL_ACTION_DENIED'),{code:'SUPPORT_EXTERNAL_ACTION_DENIED'}); };
+  // Native bridges and integrations can perform I/O without Node's guards.
+  // Reject their commands at registration, before ordinary initialization.
+  const handle=ipcMain.handle.bind(ipcMain);
+  const external=/^(?:updates|localServer|mcp|copilot|zoteroPlugin|browserConnector|nodusServer|cloudflare|desktopBridge|plugins|skillMarketplace|capabilities|toolkit|toolkitApps|audio|calendar|presenter|backups|translate|aiOcr):|^(?:settings:(?:setApiKey|clearApiKey|recoverApiKeys)|vaults:copyApiKeys|backup:cleanupRunNow|recovery:restore|data:import)$/;
+  ipcMain.handle=((channel,listener)=>handle(channel,external.test(channel)?async()=>{
+    const locale=process.env.NODUS_SUPPORT_LANGUAGE as AppLanguage;
+    throw new Error(supportText(SUPPORT_LANGUAGES.includes(locale)?locale:'en','externalPaused'));
+  }:listener)) as typeof ipcMain.handle;
   utilityProcess.fork = deny;
   net.request = deny; net.fetch = async () => deny();
   shell.openExternal = async () => deny(); shell.openPath = async () => deny(); shell.trashItem = async () => deny();

@@ -247,8 +247,8 @@ async function launchRecovered(id, index) {
       const child = spawn(executable, [], { detached: true, stdio: 'ignore', env });
       await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); });child.unref();
       await service.event(id,{trialPending:{root,token,version:installation.version,pid:child.pid}});
-      await waitForTrial({root,token,version:installation.version,pid:child.pid,signal:service.controller.signal});
-      return service.event(id,{trialOpened:root,trialPending:null});
+      const ready=await waitForTrial({root,token,version:installation.version,pid:child.pid,signal:service.controller.signal});
+      return service.event(id,{trialOpened:root,trialPending:null,trialReady:ready});
     }finally{service.activeId=null;service.controller=null;}
     // Cancelling the wait never kills a trial which may contain unsaved new work.
   });
@@ -320,7 +320,7 @@ async function handlers() {
     if(session.trialPending) {
       const pending=session.trialPending;
       assert(session.recoveredProfiles.includes(pending.root),'INVALID_SESSION');
-      try{await waitForTrial({...pending,timeout:100});await service.event(id,{trialOpened:pending.root,trialPending:null});}
+      try{const ready=await waitForTrial({...pending,timeout:100});await service.event(id,{trialOpened:pending.root,trialPending:null,trialReady:ready});}
       catch(error){if(error.code!=='TRIAL_NOT_READY')throw error;}
     }
     await new SolutionManager(service,path.join(stateRoot,'launch-policies')).recover(id);

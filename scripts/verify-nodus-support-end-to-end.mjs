@@ -38,7 +38,14 @@ fs.writeFileSync(path.join(entry,'entry.mjs'),`
      const until=Date.now()+60000;
      const edit=async()=>{
        if(window.isDestroyed()||Date.now()>until)return;
-       try{const note=await window.webContents.executeJavaScript('window.nodus?.createNote({title:"Support qualification",content:"New work saved through the real renderer and IPC"})');
+       try{
+         const saved=path.join(root,'qualification-note.json');
+         if(fs.existsSync(saved)){
+           const id=JSON.parse(fs.readFileSync(saved,'utf8')).id;
+           const previous=await window.webContents.executeJavaScript('window.nodus?.getNote('+JSON.stringify(id)+')');
+           if(previous?.id===id){fs.writeFileSync(path.join(root,'qualification-note-reopened.json'),JSON.stringify(previous));return;}
+         }
+         const note=await window.webContents.executeJavaScript('window.nodus?.createNote({title:"Support qualification",content:"New work saved through the real renderer and IPC"})');
          if(note?.id){fs.writeFileSync(path.join(root,'qualification-note.json'),JSON.stringify(note),{flag:'wx'});return;}
        }catch(error){fs.writeFileSync(path.join(root,'qualification-note-error.txt'),String(error));}
        setTimeout(()=>void edit(),250).unref();
@@ -102,13 +109,24 @@ const open=async()=>{app=await _electron.launch({args,env,timeout:60000});page=a
 const api=(method,...args)=>page.evaluate(async({method,args})=>window.nodusSupport[method](...args),{method,args});
 const button=name=>page.getByRole('button',{name,exact:true});
 const session=async()=>{const inspection=await api('inspect');return inspection.sessions.at(0);};
-async function closeTrial(value){const trial=value.trialOpened;await wait(()=>fs.existsSync(path.join(trial,'qualification-note.json')),`Actual note was not saved: ${fs.existsSync(path.join(trial,'qualification-note-error.txt'))?fs.readFileSync(path.join(trial,'qualification-note-error.txt'),'utf8'):trial}`);const note=JSON.parse(fs.readFileSync(path.join(trial,'qualification-note.json'),'utf8'));assert.ok(note.id);assert.match(note.content,/New work saved/);fs.writeFileSync(path.join(trial,'qualification-quit'),'user closed test');await wait(()=>fs.existsSync(path.join(trial,'qualification-closed')),'Nodus did not quit cooperatively');await new Promise(resolve=>setTimeout(resolve,2000));return trial;}
+async function closeTrial(value,crash=false){
+ const trial=value.trialOpened;await wait(()=>fs.existsSync(path.join(trial,'qualification-note.json')),`Actual note was not saved: ${fs.existsSync(path.join(trial,'qualification-note-error.txt'))?fs.readFileSync(path.join(trial,'qualification-note-error.txt'),'utf8'):trial}`);
+ const note=JSON.parse(fs.readFileSync(path.join(trial,'qualification-note.json'),'utf8'));assert.ok(note.id);assert.match(note.content,/New work saved/);
+ if(crash){assert.equal(value.trialReady.root,trial);assert.ok(trial.startsWith(root+path.sep));process.kill(value.trialReady.pid,'SIGKILL');await wait(()=>{try{process.kill(value.trialReady.pid,0);return false;}catch(error){if(error.code==='ESRCH')return true;throw error;}},'Crashed fixture did not exit');}
+ else{fs.writeFileSync(path.join(trial,'qualification-quit'),'user closed test');await wait(()=>fs.existsSync(path.join(trial,'qualification-closed')),'Nodus did not quit cooperatively');}
+ await new Promise(resolve=>setTimeout(resolve,2000));return trial;
+}
 try {
  await open();await button('Check my installation').click();await button('Create verified copy').click();await page.locator('.test-list .test-row').first().waitFor();
  await page.locator('.test-list').first().getByRole('button').click();await wait(async()=>!!(await session()).actions.find(action=>action.action==='fresh-profile'&&action.status!=='running'),'Fresh-profile check did not finish');assert.equal((await session()).actions.find(action=>action.action==='fresh-profile').status,'passed',JSON.stringify(await session()));await page.waitForFunction(()=>document.querySelector('.test-list')?.textContent?.includes('graphics'));
  await page.locator('.test-list').first().getByRole('button').click();await button('It works now').waitFor();assert.equal(await button('It works now').isDisabled(),true);
  await page.getByRole('button',{name:/^Open additional copy/}).last().click();await wait(async()=>!!(await session()).trialOpened,'Trial readiness never confirmed');
- let value=await session();const trial=await closeTrial(value);await button('It works now').click();await button('Use this solution when opening Nodus').click();
+ let value=await session();const deadPid=value.trialReady.pid,trial=await closeTrial(value,true);
+ await page.getByRole('button',{name:/^Open additional copy/}).last().click();await wait(async()=>{const next=await session();return next.trialOpened===trial&&next.trialReady?.pid!==deadPid;},'The crashed recovery workspace did not reopen');
+ await wait(()=>fs.existsSync(path.join(trial,'qualification-note-reopened.json')),'The saved note did not survive the real application crash');
+ assert.equal(JSON.parse(fs.readFileSync(path.join(trial,'qualification-note-reopened.json'),'utf8')).id,JSON.parse(fs.readFileSync(path.join(trial,'qualification-note.json'),'utf8')).id);
+ assert.ok(fs.readdirSync(path.join(trial,'profile')).some(name=>name.startsWith('isolated-instance.lock.support-retained-')));
+ await closeTrial(await session());await button('It works now').click();await button('Use this solution when opening Nodus').click();
  await wait(async()=>!!(await session()).policyApplied,'Actual launch policy not applied');value=await session();
  // A later edit forces an explicit conflict and a newly verified retained copy.
  fs.writeFileSync(path.join(trial,'profile','later-user-work.txt'),'work entered after applying solution');
@@ -131,6 +149,6 @@ try {
  const restored=(await session()).recoveredProfiles.at(-1);assert.notEqual(restored,failedRoot);assert.ok(fs.existsSync(failedRoot));assert.ok(fs.existsSync(path.join(restored,'profile')));await verifyInventory(recoveryArchive,archiveInventory);
  assert.deepEqual(await Promise.all([profile,external,library].map(file=>inventory(file))),before);
  assert.equal(supportSourceDigest(repo),sourceSha256);
- fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-${interfaceOnly?'development-interface':'end-to-end'}.json`),JSON.stringify({format:interfaceOnly?'nodus.support-development-interface-evidence/1':'nodus.support-e2e-evidence/1',processDiscoveryControlled:interfaceOnly,sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,wrongPasswordRejected:true,failedRestoreRetained:true,additionalArchiveRestored:true,archiveUnchanged:true,reviewedReport:true,originalsUnchanged:true},null,2));
+ fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-${interfaceOnly?'development-interface':'end-to-end'}.json`),JSON.stringify({format:interfaceOnly?'nodus.support-development-interface-evidence/1':'nodus.support-e2e-evidence/1',processDiscoveryControlled:interfaceOnly,sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,actualApplicationCrashRecovered:true,staleLockRetained:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,wrongPasswordRejected:true,failedRestoreRetained:true,additionalArchiveRestored:true,archiveUnchanged:true,reviewedReport:true,originalsUnchanged:true},null,2));
  console.log('Actual Support main/preload/UI + actual Nodus: guided and automatic trial, saved note, policy, divergent work, undo, restart and report passed.');
 }catch(error){try{const failure=await session();fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-e2e-session.json`),JSON.stringify(failure,null,2));for(const test of fs.readdirSync(path.join(failure.folder,'tests'))){const folder=path.join(failure.folder,'tests',test);for(const name of fs.readdirSync(folder))if(/^probe-private-.*\.log$/.test(name))fs.copyFileSync(path.join(folder,name),path.join(output,`${process.platform}-${process.arch}-e2e-${name}`));}}catch{/* Preserve the primary failure. */}await page?.screenshot({path:path.join(output,`${process.platform}-${process.arch}-e2e-failure.png`),fullPage:true}).catch(()=>{});throw error;}finally{await app?.close();}

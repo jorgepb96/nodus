@@ -6,7 +6,8 @@ function fileOperations(sql) {
   const words=tokens(sql),operations=[];
   for(let i=0;i<words.length;i++) {
     const word=words[i].toUpperCase();
-    if(/^(?:LOAD_EXTENSION|TEMP_STORE_DIRECTORY|DATA_STORE_DIRECTORY)$/.test(word))denied();
+    const identifier=/^["`[]/.test(word)?word.slice(1,-1):word;
+    if(/^(?:LOAD_EXTENSION|TEMP_STORE_DIRECTORY|DATA_STORE_DIRECTORY)$/.test(identifier))denied();
     if(word!=='ATTACH'&&word!=='VACUUM')continue;
     let target=i+1;
     if(word==='ATTACH'&&words[target]?.toUpperCase()==='DATABASE')target++;

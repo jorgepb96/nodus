@@ -1,6 +1,7 @@
 import { initializeChatSkillDefaults } from './chatSkills';
 import {initializeLearningWorkspace,isLearningWorkspace,closeLearningWorkspace} from './learning/learningWorkspace';
 import { flushWindowEditors, installEditorCloseGuard } from './editorFlush';
+import { claimSupportProfile } from './support/instanceLock';
 import { claimIsolatedProfile } from './qa/isolatedProfile';
 import { initializePluginStore } from './skillPlugins';
 import { initializeCapabilityPluginStore } from './capabilities/pluginStoreV2';
@@ -153,7 +154,7 @@ if (process.env.NODUS_USERDATA) {
  * process to exit (`while kill -0 "$PID"`) before it replaces the bundle and
  * runs `open -n`, so the lock is already released by then.
  */
-const isolatedUnlock = process.env.NODUS_ISOLATED_ROOT ? claimIsolatedProfile(process.env.NODUS_ISOLATED_ROOT) : null;
+const isolatedUnlock = process.env.NODUS_ISOLATED_ROOT ? (process.env.NODUS_SUPPORT_INTERACTIVE==='1'?claimSupportProfile(process.env.NODUS_ISOLATED_ROOT):claimIsolatedProfile(process.env.NODUS_ISOLATED_ROOT)) : null;
 const hasSingleInstanceLock = process.env.NODUS_ISOLATED_ROOT ? Boolean(isolatedUnlock) : app.requestSingleInstanceLock();
 if (isolatedUnlock) app.on('will-quit', isolatedUnlock);
 if (!hasSingleInstanceLock) {

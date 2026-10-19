@@ -19,13 +19,13 @@ const manifest=await inventory(payload,undefined,undefined,{links:mac}),original
 await copyInventory(payload,original,manifest);await copyInventory(payload,staged,manifest);await verifyInventory(original,manifest);await verifyInventory(staged,manifest);
 const protection=path.join(root,'protection');fs.mkdirSync(protection);const previous=await preserveInstallation(original,protection);
 const profile=path.join(root,'profile');fs.mkdirSync(profile);fs.writeFileSync(path.join(profile,'private-note.txt'),'Synthetic original work');const before=await inventory(profile);
-const transaction={original,staged,retained,previousInventory:manifest,candidateInventory:manifest},record=value=>writeRecord(path.join(root,'transaction.json'),value);
+const transaction={original,staged,retained,previousInventory:manifest,candidateInventory:manifest},journal=path.join(root,'journal');fs.mkdirSync(journal);let sequence=0;const record=value=>writeRecord(path.join(journal,`${String(sequence++).padStart(6,'0')}.json`),value);
 await assert.rejects(activateInstallation(transaction,record,{transition:phase=>{if(phase==='original-retained')throw Object.assign(new Error('Simulated activation permission refusal'),{code:'EACCES'});}}),error=>error.code==='EACCES');
 assert.equal(await recoverInstallation(transaction,record),'reverted');await verifyInventory(original,manifest);await verifyInventory(staged,manifest);await verifyInventory(previous,manifest);
 await activateInstallation(transaction,record);signature(original);signature(retained);
 const executable=mac?path.join(original,'Contents/MacOS/nodus-support'):original,env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
 if(!mac){env.APPIMAGE_EXTRACT_AND_RUN='1';env.CHROME_DEVEL_SANDBOX=path.join(repo,'node_modules/electron/dist/chrome-sandbox');}
-const app=await _electron.launch({executablePath:executable,args:['--support-retained=1',`--support-state=${path.join(root,'state')}`,`--nodus-profile=${profile}`],env,timeout:90000,chromiumSandbox:true});
+const app=await _electron.launch({executablePath:executable,args:['--support-retained=1',`--support-state=${path.join(root,'state')}`,`--nodus-profile=${profile}`,`--nodus-executable=${path.join(root,'missing-nodus')}`],env,timeout:90000,chromiumSandbox:true});
 try{const page=await app.firstWindow();await page.locator('h1').waitFor();const result=await page.evaluate(()=>window.nodusSupport.inspect());assert.equal(result.inspection.profile,profile);}finally{await app.close();}
 // Roll back with the same immutable payload and retain the active version too.
 const rollback={original,staged:retained,retained:path.join(root,mac?'Retained candidate.app':'RetainedCandidate.AppImage'),previousInventory:manifest,candidateInventory:manifest};

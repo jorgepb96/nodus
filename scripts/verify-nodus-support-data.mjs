@@ -52,7 +52,7 @@ try {
     deny(()=>fs.writeFileSync(input.outside,'would overwrite original'),'SUPPORT_WRITE_DENIED');
     deny(()=>fs.renameSync(input.outside,input.root+'/moved-original'),'SUPPORT_WRITE_DENIED');
     deny(()=>cp.execFileSync(process.execPath,['--version']),'SUPPORT_PROCESS_DENIED');
-    deny(()=>process.kill(process.pid,0),'SUPPORT_PROCESS_DENIED');
+    deny(()=>process.kill(process.pid,'SIGTERM'),'SUPPORT_PROCESS_DENIED');
     deny(()=>new (require('node:worker_threads').Worker)('process.exit(0)',{eval:true}),'SUPPORT_PROCESS_DENIED');
     deny(()=>require('node:http').get(input.url),'SUPPORT_NETWORK_DENIED');
     deny(()=>require('node:net').connect(1234,'127.0.0.1'),'SUPPORT_NETWORK_DENIED');

@@ -26,6 +26,8 @@ test('actual native SQLite cannot open, attach, vacuum or back up outside the tr
         assert.throws(()=>db.prepare('VACUUM INTO ?').run(outside),/SUPPORT_WRITE_DENIED/);
         await assert.rejects(db.backup(outside),/SUPPORT_WRITE_DENIED/);assert.throws(()=>db.loadExtension(outside),/SUPPORT_WRITE_DENIED/);
         assert.throws(()=>db.pragma("temp_store_directory='"+root.replaceAll("'","''")+"'"),/SUPPORT_WRITE_DENIED/);
+        assert.throws(()=>db.prepare('SELECT "load_extension"(?)').get(outside),/SUPPORT_WRITE_DENIED/);
+        assert.throws(()=>db.pragma('"temp_store_directory" = '+JSON.stringify(root)),/SUPPORT_WRITE_DENIED/);
         db.prepare('VACUUM INTO ?').run(path.join(copy,'vacuum.sqlite'));
         db.prepare('ATTACH DATABASE @file AS other').bind({file:path.join(copy,'attached.sqlite')}).run();db.exec('DETACH DATABASE other');
         await db.backup(path.join(copy,'backup.sqlite'));assert.equal(db.prepare("SELECT 'ATTACH DATABASE' AS text").get().text,'ATTACH DATABASE');db.close();

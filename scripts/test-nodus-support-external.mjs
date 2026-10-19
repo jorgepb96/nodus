@@ -21,7 +21,7 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
       isolateSupportApplication(root);
       await assert.rejects(listAppleCalendars(true),error=>error.code==='SUPPORT_EXTERNAL_ACTION_DENIED');
       await assert.rejects(mutateAppleCalendar({action:'delete',nativeId:'synthetic'}),error=>error.code==='SUPPORT_EXTERNAL_ACTION_DENIED');
-      assert.throws(()=>process.kill(process.pid,0),/SUPPORT_PROCESS_DENIED/);
+      assert.throws(()=>process.kill(process.pid,'SIGTERM'),/SUPPORT_PROCESS_DENIED/);
       for(const channel of ['updates:install','calendar:delete','toolkit:job:run','settings:setApiKey']){ipcMain.handle(channel,()=>{throw new Error('Unrestricted handler reached');});await assert.rejects(globalThis.supportHandlers[channel](),error=>!error.message.includes('Unrestricted'));}
       ipcMain.handle('notes:get',()=> 'copied note');assert.equal(globalThis.supportHandlers['notes:get'](),'copied note');
       assert.throws(()=>app.relaunch(),/SUPPORT_EXTERNAL_ACTION_DENIED/);

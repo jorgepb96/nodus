@@ -75,7 +75,7 @@ export function installSupportIsolation(root) {
     patch(fs,`${key}Sync`,original=>function(fd,...args){check(fd);return original.call(this,fd,...args);});
   }
   for(const key of ['spawn','spawnSync','exec','execSync','execFile','execFileSync','fork']) patch(childProcess,key,()=>()=>deny('SUPPORT_PROCESS_DENIED'));
-  patch(process,'kill',()=>()=>deny('SUPPORT_PROCESS_DENIED'));
+  patch(process,'kill',original=>function(pid,signal){if(signal===0&&Number.isSafeInteger(pid)&&pid>0)return original.call(this,pid,0);return deny('SUPPORT_PROCESS_DENIED');});
   patch(workers,'Worker',()=>class { constructor(){deny('SUPPORT_PROCESS_DENIED');} });
   for(const [object,keys] of [[net,['connect','createConnection']],[net.Socket.prototype,['connect']],[net.Server.prototype,['listen']],[tls,['connect']],[http,['request','get']],[https,['request','get']],[dgram.Socket.prototype,['send','connect','bind']],[dns,Object.keys(dns).filter(key=>/^(resolve|lookup)/.test(key))],[dns.promises,Object.keys(dns.promises).filter(key=>/^(resolve|lookup)/.test(key))]]) {
     for(const key of keys)patch(object,key,()=>()=>deny('SUPPORT_NETWORK_DENIED'));

@@ -16,18 +16,19 @@ import workers from 'node:worker_threads';
 
 export function installSupportIsolation(root) {
   const realpath = fs.realpathSync.native.bind(fs.realpathSync), lstat = fs.lstatSync.bind(fs);
-  const boundary = realpath(root), restored = [], writable = new Set([1,2]);
+  const normalize=file=>process.platform==='win32'?path.toNamespacedPath(path.resolve(file)):path.resolve(file);
+  const boundary = normalize(realpath(root)), restored = [], writable = new Set([1,2]);
   const deny = code => { throw Object.assign(new Error(code),{code}); };
   function check(input) {
     if (typeof input === 'number') { if (!writable.has(input)) deny('SUPPORT_WRITE_DENIED'); return; }
-    const file = path.resolve(input instanceof URL ? fileURLToPath(input) : Buffer.isBuffer(input) ? input.toString() : input);
+    const file = normalize(input instanceof URL ? fileURLToPath(input) : Buffer.isBuffer(input) ? input.toString() : input);
     const relative = path.relative(boundary,file);
     if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) deny('SUPPORT_WRITE_DENIED');
     let current = file;
     for (;;) {
       try { const stat=lstat(current); if (stat.isSymbolicLink() || stat.isFile() && stat.nlink > 1) deny('SUPPORT_WRITE_DENIED'); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
-      if (current === boundary) break;
+      if (path.relative(boundary,current)==='') break;
       const parent=path.dirname(current); if (current===parent) deny('SUPPORT_WRITE_DENIED'); current=parent;
     }
   }

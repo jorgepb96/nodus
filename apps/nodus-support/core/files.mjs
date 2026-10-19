@@ -17,7 +17,9 @@ export function canonical(input) {
   assert(typeof input === 'string' && path.isAbsolute(input), 'INVALID_PATH');
   let at = path.resolve(input); const tail = [];
   while (!fs.existsSync(at)) { const parent = path.dirname(at); assert(parent !== at, 'INVALID_PATH'); tail.unshift(path.basename(at)); at = parent; }
-  return path.join(fs.realpathSync.native(at), ...tail);
+  // Use the same public path representation as Electron and isolation markers.
+  // Windows native realpath can add a device namespace to only one side.
+  return path.join(fs.realpathSync(at), ...tail);
 }
 export function noLinks(input) {
   let at = path.resolve(input);
@@ -92,12 +94,13 @@ export async function copyInventory(source, target, manifest, signal, progress =
     if (entry.type === 'directory') { await fsp.mkdir(to, { recursive: true, mode: 0o700 }); continue; }
     if (entry.type === 'link') { links.push({ from, to, target: entry.target }); continue; }
     const before = await fsp.lstat(from); assert(before.isFile() && !before.isSymbolicLink(), 'SOURCE_CHANGED');
-    const out = fs.createWriteStream(to, { flags: 'wx', mode: 0o600 });
+    // Flush while the writable handle is open. Windows cannot fsync a read-only
+    // handle, and reopening after copying would also fail for read-only sources.
+    const out = fs.createWriteStream(to, { flags: 'wx', mode: 0o600, flush:true });
     await pipeline(fs.createReadStream(from), out, { signal });
     assert(await hashFile(to, signal) === entry.sha256 && await hashFile(from, signal) === entry.sha256, 'COPY_NOT_VERIFIED');
     // Copies of executables must retain their executable bits; directories remain private.
     await fsp.chmod(to, entry.mode & 0o700);
-    const fd = await fsp.open(to, 'r'); try { await fd.sync(); } finally { await fd.close(); }
     completed += entry.bytes; progress({ phase: 'protecting', completed, total: manifest.bytes });
   }
   for (const link of links) { assert(await fsp.readlink(link.from) === link.target && inside(target, path.resolve(path.dirname(link.to), link.target)), 'SOURCE_CHANGED'); await fsp.symlink(link.target, link.to); }

@@ -15,6 +15,7 @@ test('Support blocks writes, links, networking and subprocesses outside its copi
   const guard=installSupportIsolation(root);
   try {
     fs.writeFileSync(path.join(root,'allowed'),'allowed');await fsp.writeFile(path.join(root,'async-allowed'),'allowed');
+    fs.writeFileSync(path.toNamespacedPath(path.join(root,'namespace-allowed')),'allowed');
     assert.throws(()=>fs.writeFileSync(file,'lost'),/SUPPORT_WRITE_DENIED/);
     assert.throws(()=>fs.createWriteStream(file),/SUPPORT_WRITE_DENIED/);
     assert.throws(()=>fs.renameSync(file,path.join(root,'stolen')),/SUPPORT_WRITE_DENIED/);

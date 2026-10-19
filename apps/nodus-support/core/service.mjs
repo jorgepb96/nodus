@@ -174,8 +174,9 @@ export class SupportService {
       }
       const remap = value => {
         if (typeof value === 'string') {
+          const resolved=path.isAbsolute(value)?canonical(value):value;
           for (const mapping of [...mappings].sort((a,b) => b.original.length - a.original.length)) {
-            if (value === mapping.original || value.startsWith(`${mapping.original}${path.sep}`)) return mapping.copy + value.slice(mapping.original.length);
+            if (resolved === mapping.original || resolved.startsWith(`${mapping.original}${path.sep}`)) return mapping.copy + resolved.slice(mapping.original.length);
           }
           return value;
         }

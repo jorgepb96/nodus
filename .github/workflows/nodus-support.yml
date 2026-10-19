@@ -18,6 +18,8 @@ jobs:
         os: [windows-latest, macos-latest, macos-15-intel, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=6144
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,9 +32,16 @@ jobs:
       - run: node node_modules/electron/install.js
       - name: Linux GUI dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 rpm
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 rpm clang-15
       - name: Build the native database and calendar dependencies
+        if: runner.os != 'Linux'
         run: npx --no-install electron-rebuild -f -w better-sqlite3 && node scripts/build-apple-calendar.cjs
+      - name: Build Linux native dependencies with the release compiler
+        if: runner.os == 'Linux'
+        run: npx --no-install electron-rebuild -f -w better-sqlite3
+        env:
+          CC: clang-15
+          CXX: clang++-15
       - run: npm run support:typecheck
       - run: npm run support:test
         env:

@@ -11,7 +11,7 @@ const current = RELEASE_NOTES[0];
 const pkg = JSON.parse(await fs.readFile('package.json', 'utf8'));
 assert.equal(current.version, pkg.version);
 // Independently authored order: three features, three enhancements and five fixes.
-assert.equal(current.version, '5.13.0');
+assert.equal(current.version, '5.14.0');
 const expected = current.highlights;
 assert.deepEqual(expected.map(h => h.category), ['new','new','new','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix']);
 const output = `artifacts/release-${current.version}`;
@@ -39,7 +39,7 @@ try {
     assert.equal(await release.locator('svg, img').count(), expected.length, 'every entry has an icon');
     if (lang === 'es') await page.screenshot({ path: `${output}/modal-${theme}.png`, animations: 'disabled' });
     await page.getByTestId('whats-new-version-trigger').click();
-    assert.equal(await page.getByTestId('whats-new-version-5.12.1').count(), 1, `${theme}/${lang}: the release just superseded stays in the picker`);
+    assert.equal(await page.getByTestId('whats-new-version-5.13.0').count(), 1, `${theme}/${lang}: the release just superseded stays in the picker`);
     assert.equal(await page.getByTestId('whats-new-version-5.11.1').count(), 1);
     assert.equal(await page.getByTestId('whats-new-version-5.10.0').count(), 1);
     assert.equal(await page.getByTestId('whats-new-version-5.7.0').count(), 1);
@@ -85,5 +85,5 @@ try {
   }
   assert.deepEqual(errors, []);
   await fs.writeFile(`${output}/modal-order-es.md`, `# Novedades de Nodus ${current.version}\n\n${releaseNoteSections(current).map(section => `## ${RELEASE_SECTION_LABELS.es[section.category]}\n\n` + section.highlights.map(highlight => `- [${highlight.scope}] ${highlight.es}`).join('\n\n')).join('\n\n')}\n`);
-  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.13.0 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
+  console.log(`PASS: ${current.highlights.length} release notes in exact displayed order, all twelve languages in light/dark, v5.14.0 active, all historical v5 sections translated and v4 layout unchanged and unpublished v5.3.2 absent.`);
 } finally { await browser.close(); }

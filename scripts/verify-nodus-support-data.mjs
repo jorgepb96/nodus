@@ -45,7 +45,7 @@ const app=await _electron.launch({args:[repo],env,timeout:60000});
 try {
   const page=await app.firstWindow();await page.waitForFunction(()=>document.body?.innerText.trim().length>0,{},{timeout:60000});
   const vaults=await page.evaluate(()=>window.nodus.listVaults());assert.ok(vaults.every(v=>v.path.startsWith(copy.profile+path.sep)));
-  await waitForTrial({root:copy.root,token,version:JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version,pid:app.process().pid});
+  await waitForTrial({root:copy.root,token,version:JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version,pid:await app.evaluate(()=>process.pid)});
   const boundary=await app.evaluate(async(e,input)=>{
     const require=process.getBuiltinModule('module').createRequire(input.package),assert=require('node:assert/strict'),fs=require('node:fs'),cp=require('node:child_process');
     const deny=(fn,code)=>assert.throws(fn,error=>error.code===code);

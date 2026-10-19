@@ -67,6 +67,15 @@ jobs:
         run: xvfb-run -a sh -c 'node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-end-to-end.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-settings.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs'
       - name: Package every native support format
         run: npm run support:dist
+      - name: Verify native AppImage switch and rollback
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/verify-nodus-support-native-switch.mjs
+      - name: Verify native DEB and RPM installation and retained repair
+        if: runner.os == 'Linux'
+        run: node scripts/verify-nodus-support-linux-packages.mjs
+      - name: Verify native macOS bundle switch and rollback
+        if: runner.os == 'macOS'
+        run: node scripts/verify-nodus-support-native-switch.mjs
       - name: Verify non-destructive native Windows installer repairs
         if: runner.os == 'Windows'
         run: node scripts/verify-nodus-support-nsis.mjs

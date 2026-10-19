@@ -67,6 +67,10 @@ if(fixtureOnly) {
  try{const page=await app.firstWindow();await page.waitForFunction(()=>window.nodus&&document.getElementById('root')?.children.length);await waitForTrial({root:copy,token,version});const until=Date.now()+30000;while(!fs.existsSync(path.join(copy,'qualification-note.json'))&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,200));assert.ok(fs.existsSync(path.join(copy,'qualification-note.json')),fs.existsSync(path.join(copy,'qualification-note-error.txt'))?fs.readFileSync(path.join(copy,'qualification-note-error.txt'),'utf8'):'No saved note');}finally{await app.close();}
  assert.deepEqual(await Promise.all([profile,external,library].map(file=>inventory(file))),before);console.log('Native fixture: actual probes, real application, ready receipt and saved note passed without touching any other session.');process.exit(0);
 }
+const archiveService=new SupportService({profile,storage:path.join(root,'archive-fixture-state'),executable,probe:runProbe,isRunning:async()=>false});
+let archiveSession=await archiveService.create({symptom:'data',mode:'guided'});archiveSession=await archiveService.protect(archiveSession.id);assert.equal(archiveSession.status,'protected');
+const archiveCopy=await archiveService.workingCopy(archiveSession);execFileSync(electron,[path.join(repo,'scripts/support-native-archive-fixture.mjs'),archiveCopy.root],{env:{...process.env,ELECTRON_RUN_AS_NODE:'1'},stdio:'inherit'});
+const recoveryArchive=path.join(archiveCopy.root,'qualification.nodus');assert.ok(fs.existsSync(recoveryArchive));const archiveInventory=await inventory(recoveryArchive);
 const helper=path.join(root,'helper');fs.cpSync(path.join(repo,'build/support-app'),helper,{recursive:true});
 await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile:path.join(helper,'main.mjs'),define:{__NODUS_SUPPORT_SOURCE_SHA256__:JSON.stringify(sourceSha256)},bundle:true,platform:'node',format:'esm',target:'node22',external:['electron'],banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);const __dirname=__fixtureRequire(import.meta.url)("node:path").dirname(__fixtureRequire(import.meta.url)("node:url").fileURLToPath(import.meta.url));'},plugins:[{name:'test-only-qualification-and-dialogs',setup(builder){
  if(interfaceOnly){
@@ -79,12 +83,12 @@ await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile
  export default {...cp,execFile};
  `}));
  }
- builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/2',sourceSha256,protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution']}}),loader:'json'}));
+ builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/2',sourceSha256,protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution','restore-copy']}}),loader:'json'}));
  builder.onResolve({filter:/^electron$/},()=>({path:'electron',namespace:'qualification-electron'}));
  builder.onLoad({filter:/.*/,namespace:'qualification-electron'},()=>({loader:'js',contents:`
  import{createRequire}from'node:module';const e=createRequire(import.meta.url)('electron');
  export const {app,BrowserWindow,clipboard,ipcMain,net,protocol,shell}=e;
- export const dialog={...e.dialog,async showMessageBox(_window,options){if(!options.message||!options.buttons?.length)throw new Error('Unexpected approval');return{response:1,checkboxChecked:true};},async showOpenDialog(){throw new Error('Unexpected file selection');},async showSaveDialog(){throw new Error('Unexpected export');}};
+ export const dialog={...e.dialog,async showMessageBox(_window,options){if(!options.message||!options.buttons?.length)throw new Error('Unexpected approval');return{response:1,checkboxChecked:true};},async showOpenDialog(_window,options){if(!options.filters?.some(filter=>filter.extensions.includes('nodus')))throw new Error('Unexpected file selection');return{canceled:false,filePaths:[${JSON.stringify(recoveryArchive)}]};},async showSaveDialog(){throw new Error('Unexpected export');}};
  `}));
 }}]});
 const state=path.join(root,'support-state'),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
@@ -118,8 +122,15 @@ try {
  await page.getByRole('button',{name:/^Open additional copy/}).last().click();await wait(async()=>!!(await session()).trialOpened,'Automatic trial did not become ready');await closeTrial(await session());
  await button('Still not working').click();await button('Get help').click();await page.locator('textarea').waitFor();assert.match(await page.locator('textarea').inputValue(),/Nodus support report/);
  assert.equal(await button('Open issue on GitHub').isDisabled(),true);
+ await button('Recover an earlier copy').click();
+ await page.locator('input[type=password]').fill('Deliberately wrong synthetic password');await page.locator('form.recovery-password').getByRole('button').click();
+ await wait(async()=>(await session()).actions.some(action=>action.action==='restore-copy'&&action.status==='failed'),'Wrong archive password was not rejected');
+ const failedRoot=(await session()).recoveryAttempt;assert.ok(fs.existsSync(failedRoot));
+ await page.locator('input[type=password]').fill('Support qualification synthetic password');await page.locator('form.recovery-password').getByRole('button').click();
+ await wait(async()=>(await session()).actions.some(action=>action.action==='restore-copy'&&action.status==='passed'),'Archive was not restored into an additional profile');
+ const restored=(await session()).recoveredProfiles.at(-1);assert.notEqual(restored,failedRoot);assert.ok(fs.existsSync(failedRoot));assert.ok(fs.existsSync(path.join(restored,'profile')));await verifyInventory(recoveryArchive,archiveInventory);
  assert.deepEqual(await Promise.all([profile,external,library].map(file=>inventory(file))),before);
  assert.equal(supportSourceDigest(repo),sourceSha256);
- fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-${interfaceOnly?'development-interface':'end-to-end'}.json`),JSON.stringify({format:interfaceOnly?'nodus.support-development-interface-evidence/1':'nodus.support-e2e-evidence/1',processDiscoveryControlled:interfaceOnly,sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,reviewedReport:true,originalsUnchanged:true},null,2));
+ fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-${interfaceOnly?'development-interface':'end-to-end'}.json`),JSON.stringify({format:interfaceOnly?'nodus.support-development-interface-evidence/1':'nodus.support-e2e-evidence/1',processDiscoveryControlled:interfaceOnly,sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,wrongPasswordRejected:true,failedRestoreRetained:true,additionalArchiveRestored:true,archiveUnchanged:true,reviewedReport:true,originalsUnchanged:true},null,2));
  console.log('Actual Support main/preload/UI + actual Nodus: guided and automatic trial, saved note, policy, divergent work, undo, restart and report passed.');
 }catch(error){try{const failure=await session();fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-e2e-session.json`),JSON.stringify(failure,null,2));for(const test of fs.readdirSync(path.join(failure.folder,'tests'))){const folder=path.join(failure.folder,'tests',test);for(const name of fs.readdirSync(folder))if(/^probe-private-.*\.log$/.test(name))fs.copyFileSync(path.join(folder,name),path.join(output,`${process.platform}-${process.arch}-e2e-${name}`));}}catch{/* Preserve the primary failure. */}await page?.screenshot({path:path.join(output,`${process.platform}-${process.arch}-e2e-failure.png`),fullPage:true}).catch(()=>{});throw error;}finally{await app?.close();}

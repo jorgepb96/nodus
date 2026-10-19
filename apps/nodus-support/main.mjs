@@ -381,7 +381,7 @@ async function handlers() {
         const result = await runProbe({ executable, root: working.root, action: 'restore-archive', password, signal:service.controller.signal,progress:service.progress });
         assert(result.protocol === 1 && result.root === working.root, 'PROBE_INVALID');
         await writeNew(path.join(working.root,'result.json'),{...result,action:'restore-copy',at:new Date().toISOString()});
-        return service.event(id, { status: result.ok ? 'awaiting-user' : 'blocked', recoveryInfo:{...(session.recoveryInfo??{}),[working.root]:{source:path.basename(archive),backupDate:result.backupDate}}, recoveredProfiles: result.ok ? [...session.recoveredProfiles, working.root] : session.recoveredProfiles, actions: [...session.actions, { id: randomUUID(), action: 'restore-copy', status: result.ok ? 'passed' : 'failed', code: result.code, at: new Date().toISOString() }] });
+        return service.event(id, { status: result.ok ? 'awaiting-user' : 'blocked',lastError:result.ok?null:'ARCHIVE_RESTORE_FAILED', recoveryInfo:{...(session.recoveryInfo??{}),[working.root]:{source:path.basename(archive),backupDate:result.backupDate}}, recoveredProfiles: result.ok ? [...session.recoveredProfiles, working.root] : session.recoveredProfiles, actions: [...session.actions, { id: randomUUID(), action: 'restore-copy', status: result.ok ? 'passed' : 'failed', code: result.code, at: new Date().toISOString() }] });
       } catch (error) { return service.blocked(id, error); }
       finally { service.activeId = null; service.controller = null; }
     });

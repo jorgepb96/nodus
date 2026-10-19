@@ -20,7 +20,8 @@ test('real native WAL damage is detected before SQLite can discard recent work',
       fs.writeFileSync(wal,original.subarray(0,-1));assert.throws(()=>verifySupportWal(copy),/SUPPORT_WAL_UNVERIFIED/);
       fs.writeFileSync(wal,original.subarray(0,18));assert.throws(()=>verifySupportWal(copy),/SUPPORT_WAL_UNVERIFIED/);
       const badHeader=Buffer.from(original);badHeader[24]^=1;fs.writeFileSync(wal,badHeader);assert.throws(()=>verifySupportWal(copy),/SUPPORT_WAL_UNVERIFIED/);
-      const oldFrame=Buffer.from(original.subarray(32));oldFrame[8]^=1;fs.writeFileSync(wal,Buffer.concat([original,oldFrame]));verifySupportWal(copy);
+      const oldFrame=Buffer.from(original.subarray(32));oldFrame[8]^=1;fs.writeFileSync(wal,Buffer.concat([original,oldFrame]));assert.throws(()=>verifySupportWal(copy),/SUPPORT_WAL_UNVERIFIED/);
+      const damagedSalt=Buffer.from(original);damagedSalt[40]^=1;fs.writeFileSync(wal,damagedSalt);assert.throws(()=>verifySupportWal(copy),/SUPPORT_WAL_UNVERIFIED/);
       fs.writeFileSync(wal,original);const reopened=new Database(copy);assert.equal(reopened.prepare('SELECT value FROM notes').get().value,'most recent committed work');reopened.close();
       assert.deepEqual(fs.readFileSync(file+'-wal'),original);db.close();
     `);

@@ -16,8 +16,10 @@ export function verifySupportWal(database) {
     let frames=0,committed=0;
     for(let offset=32;offset<size;offset+=24+page) {
       if(size-offset<24)fail();const frame=read(24,offset);
-      // Recycled WALs may retain frames from the previous salt beyond the valid end.
-      if(!frame.subarray(8,16).equals(header.subarray(16,24)))break;
+      // A salt mismatch may be recycled trailing data OR damage to a current
+      // committed frame. Without a verified commit index we cannot distinguish
+      // them. Retain the whole WAL and refuse to silently discard either case.
+      if(!frame.subarray(8,16).equals(header.subarray(16,24)))fail();
       if(size-offset<24+page||frame.readUInt32BE(0)===0)fail();
       checksum(frame.subarray(0,8));checksum(read(page,offset+24));
       if(first!==frame.readUInt32BE(16)||second!==frame.readUInt32BE(20))fail();

@@ -38,6 +38,7 @@ Hosts opt in with a placeholder element:
         <a href="${base}wiki/">Wiki</a>
         <a href="${base}blog/">Blog</a>
         <a href="${base}faq/">FAQ</a>
+        <a href="${base}models/">Model guide</a>
         <a href="${base}demo/">Live demos</a>
       </div>
       <div class="foot-col">

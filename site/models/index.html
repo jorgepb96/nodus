@@ -1,0 +1,156 @@
+<!--
+SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
+SPDX-License-Identifier: AGPL-3.0-only
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nodus model guide: local models, embeddings and APIs</title>
+<meta name="description" content="Which AI models to use with Nodus, task by task: local models and the hardware they need, embeddings and rerankers, and API models for Research Chat, the Dictionary, Idea Extraction, Deep Research and Immersion. Prices, benchmark scores and the date of the last review."/>
+<meta property="og:title" content="Nodus model guide: local models, embeddings and APIs"/>
+<meta property="og:description" content="Which models fit your machine, what they cost through an API, and how they score, filtered by task."/>
+<meta property="og:url" content="https://nodusresearch.com/models/"/>
+<meta property="og:site_name" content="Nodus Research"/>
+<link rel="canonical" href="https://nodusresearch.com/models/"/>
+<link rel="icon" href="../favicon.ico" sizes="any"/>
+  <link rel="icon" type="image/png" href="../favicon.png" sizes="512x512"/>
+  <link rel="icon" type="image/svg+xml" href="../assets/nodus-logo.svg"/>
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png"/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/inter-latin.woff2" crossorigin/>
+<link rel="preload" as="font" type="font/woff2" href="../assets/fonts/fraunces-latin.woff2" crossorigin/>
+<link rel="stylesheet" href="../assets/css/nodus.css?v=20260928s"/>
+<link rel="stylesheet" href="../contribute/planet.css?v=20260922a"/>
+<link rel="stylesheet" href="models.css?v=20261019a"/>
+</head>
+<body>
+
+<a class="skip-link" href="#mg-guide">Skip to the model tables</a>
+<canvas id="organism" aria-hidden="true"></canvas>
+
+<div data-nodus-site-header data-base="../" data-page="models"></div>
+<script defer src="../site-header.js?v=20260927a"></script>
+
+<main id="main" data-accent="#2dd4bf" data-second="#a78bfa" data-energy="0.28">
+  <header class="has-planet page-hero mg-hero">
+    <div class="page-planet nodus-planet" data-nodus-planet data-blend="true" data-caption="false" aria-hidden="true"></div>
+    <div class="wrap">
+      <div class="scrim">
+        <span class="kicker">Model guide</span>
+        <h1 class="display" data-split>The right model for each job.</h1>
+        <p class="lead">Which models to run with Nodus, task by task: what fits on your own machine, what an API charges, and how each one scores. Pick a tab, then tap the bubbles to narrow the tables.</p>
+        <ul class="mg-facts" aria-label="About this guide">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Updated <time id="mg-updated">recently</time></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Benchmark <a id="mg-benchmark" href="https://artificialanalysis.ai/" target="_blank" rel="noopener">Artificial Analysis</a></li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.7 3.9 5.9 3.9 9.5s-1.3 6.8-3.9 9.5c-2.6-2.7-3.9-5.9-3.9-9.5s1.3-6.8 3.9-9.5Z"/></svg>Weighted for <span id="mg-languages">English, Spanish, French</span></li>
+        </ul>
+        <p class="mg-start">Not sure where to begin? <a href="#guide">Open the decision guide</a>.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- The one rule the whole guide hangs on, stated before any table. -->
+  <section class="mg-policy" aria-label="Where each kind of work runs">
+    <div class="wrap">
+      <div class="mg-policy-grid">
+        <article class="card lit mg-policy-card mg-policy-card--local reveal">
+          <span class="mg-policy-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="2"/><path d="M2 19.5h20"/></svg></span>
+          <div>
+            <h2>Runs well on your machine</h2>
+            <p>Research Chat, the Dictionary, embeddings, retrieving ideas you’ve already indexed, and reranking.</p>
+          </div>
+        </article>
+        <article class="card lit mg-policy-card mg-policy-card--api reveal" style="--delay:80ms">
+          <span class="mg-policy-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 0 0 .5-9 6 6 0 0 0-11.6 1.6A3.8 3.8 0 0 0 7 19Z"/></svg></span>
+          <div>
+            <h2>Send it to an API</h2>
+            <p>Bulk <a href="#extraction">Idea Extraction</a>. Processing time, context and sustained load make an API the better choice. Retrieving existing ideas isn’t extracting new ones.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="mg-guide" id="mg-guide" aria-label="Model tables">
+    <div class="mg-tabbar-shell">
+      <div class="wrap">
+        <div class="mg-tabbar" id="mg-tabs" role="tablist" aria-label="Model guide sections"></div>
+      </div>
+    </div>
+    <div class="wrap" id="mg-panels">
+      <noscript><p class="mg-noscript">The tables are drawn in your browser. Without JavaScript you can still read every figure in <a href="models-data.js">the data file</a>.</p></noscript>
+    </div>
+  </section>
+
+  <section class="section-line mg-about" aria-labelledby="mg-method-title">
+    <div class="wrap">
+      <div class="mg-about-head">
+        <span class="kicker">Methodology</span>
+        <h2 class="title" id="mg-method-title">How to read these numbers</h2>
+        <p class="lead">Every figure is a starting point for testing on your own corpus. None of them is a performance guarantee.</p>
+      </div>
+      <dl class="mg-method" id="mg-method"></dl>
+
+      <div class="mg-about-grid">
+        <div class="mg-sources" id="mg-sources"></div>
+        <aside class="mg-history">
+          <h3>Update history</h3>
+          <ol class="mg-changelog" id="mg-changelog"></ol>
+          <p class="mg-edit">Spotted something out of date? <a href="https://github.com/jorgepb96/nodus/issues/new/choose" target="_blank" rel="noopener">Tell us on GitHub</a>, or edit <a href="https://github.com/jorgepb96/nodus/blob/main/site/models/models-data.js" target="_blank" rel="noopener">models-data.js</a> directly: every table on this page is drawn from it.</p>
+        </aside>
+      </div>
+
+      <p class="mg-disclaimer">A technical decision guide for Nodus Research. The comparisons and priorities here are proposals to validate on real corpora.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="logo" href="../"><img src="../assets/nodus-logo.svg" alt=""/> Nodus Research</a>
+        <p>A personal, independent open-source project. Nodus is its local-first desktop application.</p>
+      </div>
+      <div class="foot-col">
+        <h3>Product</h3>
+        <a href="../#vaults">The four vaults</a>
+        <a href="../#tools">Nodus Toolkit</a>
+        <a href="../apps/">Nodus Apps</a>
+        <a href="../demo/">Live demos</a>
+      </div>
+      <div class="foot-col">
+        <h3>Learn</h3>
+        <a href="../wiki/">Wiki</a>
+        <a href="../blog/">Blog</a>
+        <a href="../faq/">FAQ</a>
+        <a href="./">Model guide</a>
+      </div>
+      <div class="foot-col">
+        <h3>Project</h3>
+        <a href="../about/">About Nodus Research</a>
+        <a href="../cite/">Cite Nodus</a>
+        <a href="../legal/">Legal notice</a>
+        <a href="../contribute/">Support Nodus</a>
+        <a href="https://github.com/jorgepb96/nodus" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/jorgepb96/nodus/releases" target="_blank" rel="noopener">Releases</a>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>© 2026 Jorge Pérez Burgueño and Nodus contributors.</span>
+      <a href="../privacy/">Website privacy</a>
+      <a href="../cookies/">Cookies</a>
+      <a href="https://github.com/jorgepb96/nodus/blob/main/LICENSE" target="_blank" rel="noopener">AGPL-3.0-only</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../assets/js/organism.js?v=20260820a"></script>
+<script src="../assets/js/site.js?v=20260815"></script>
+<script src="models-data.js?v=20261019a"></script>
+<script src="models.js?v=20261019a"></script>
+<script src="../assets/js/back-to-top.js?v=20260817b"></script>
+<script src="../contribute/planet.js?v=20260917a"></script>
+</body>
+</html>

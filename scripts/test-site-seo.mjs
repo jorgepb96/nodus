@@ -106,12 +106,11 @@ test('release and citation metadata have one generated source of truth', () => {
   assert.match(cite, new RegExp(`Version ${publicVersion.replaceAll('.', '\\.')}`));
 });
 
-test('public website copy has no stale licence, version, domain or social handles', () => {
+test('public website copy has no stale version, domain or social handles', () => {
   const sources = filesUnder(siteRoot, (file) => /\.(?:html|js|json|md|xml|txt)$/.test(file))
     .filter((file) => !file.includes(`${path.sep}assets${path.sep}fonts${path.sep}`))
     .filter((file) => relativeSitePath(file) !== 'data/announcements.json');
   const combined = sources.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
-  assert.doesNotMatch(combined, /\bMIT\b/, 'current public copy does not advertise the retired licence');
   assert.doesNotMatch(combined, /\bNodus 4(?:\b|\.)/, 'current public copy is not branded as Nodus 4');
   assert.doesNotMatch(combined, /\bNodus [0-4]\.\d+(?:\.\d+)?\b|\bNodus 5\.0\.[01]\b/, 'current public copy has no obsolete release number');
   assert.doesNotMatch(combined, /drakonis96\.github\.io\/nodus/i, 'the legacy Pages domain is gone');

@@ -21,6 +21,7 @@ for (const entry of [
   { source: 'server/lib/core/debates.mjs', target: 'debates.mjs' },
   { source: 'server/lib/core/academicWorkspace.mjs', target: 'academicWorkspace.mjs' },
   { source: 'shared/deepResearchReport.ts', target: 'deepResearchReport.mjs' },
+  { source: 'shared/embeddingContract.ts', target: 'embeddingContract.mjs' },
 ]) {
   await build({
     entryPoints: [path.join(root, entry.source)],

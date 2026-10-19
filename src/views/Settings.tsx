@@ -13,7 +13,6 @@ import type {
   BackupCleanupPreview,
   BackupRetentionUnit,
   CopilotServerStatus,
-  EmbeddingProvider,
   LocalServerAccess,
   LocalServerPowerStatus,
   LocalServerStatus,
@@ -47,7 +46,7 @@ import { Icon } from '../components/ui';
 import { ThemeColourPicker } from '../components/ThemeColourPicker';
 import { ThemePalettePicker } from '../components/ThemePalettePicker';
 import { ModelPicker, ModelWithReasoning, SubscriptionQuotaNotice, ExtractionCapabilityNotice, SelfAuditNotice } from '../components/ModelPicker';
-import { EmbeddingModelControl } from '../components/EmbeddingModelControl';
+import { EmbeddingIndexesManager } from '../components/EmbeddingIndexesManager';
 import { GeneralTextModelControl } from '../components/GeneralTextModelControl';
 import { NodiStylePicker } from '../components/nodi/NodiStylePicker';
 import { TutorialVideoGrid } from '../components/TutorialVideos';
@@ -251,9 +250,7 @@ export function Settings({
   const [updateProgress, setUpdateProgress] = useUpdateProgress();
   const [requestingInstall, setRequestingInstall] = useState(false);
   const [confirmBetaUpdates, setConfirmBetaUpdates] = useState(false);
-  const [confirmReindex, setConfirmReindex] = useState(false);
   const [pendingModelSettingsMode, setPendingModelSettingsMode] = useState<AppSettings['modelSettingsMode'] | null>(null);
-  const [pendingEmbeddingChange, setPendingEmbeddingChange] = useState<{ provider: EmbeddingProvider; model: string } | null>(null);
   const [backupResult, setBackupResult] = useState<{ path: string; password: string; recoveryKey: string } | null>(null);
   const [backupCopied, setBackupCopied] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -3273,10 +3270,7 @@ export function Settings({
               label={t('Modelo de embeddings (similitud semántica multilingüe)')}
               hint={t('Representa el significado del texto para la búsqueda semántica y la recuperación por similitud.')}
             >
-              <EmbeddingModelControl
-                settings={settings}
-                onEmbeddingChange={(provider, model) => setPendingEmbeddingChange({ provider, model })}
-              />
+              <EmbeddingIndexesManager settings={settings} onChange={onChange} vaultId={activeVault?.id} />
             </Row>
             {activeVault?.type === 'estudio' && <Row
               label={t('Procesamiento de materiales nuevos con IA')}
@@ -3361,36 +3355,6 @@ export function Settings({
                 </Row>
               </div>
             )}
-            <Row label={t('Indexación de embeddings')} hint={t('Genera los vectores pendientes para que la búsqueda semántica use el modelo actual.')}>
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-ghost border border-cyan-800 text-cyan-300"
-                  title={t(activeVault?.type === 'primary_sources'
-                    ? 'Indexa el texto revisado de las fuentes permitido por la política del vault.'
-                    : 'Genera embeddings solo para ideas que aún no los tienen.')}
-                  onClick={() => {
-                    if (activeVault?.type === 'primary_sources') {
-                      void window.nodus.indexArchive().then((result) => {
-                        flash(result.indexed > 0
-                          ? tx('{n} fuentes indexadas.', { n: result.indexed })
-                          : t('No hay fuentes autorizadas pendientes de indexación.'));
-                      });
-                    } else {
-                      void window.nodus.startEmbedding();
-                    }
-                  }}
-                >
-                  <Icon name="search" /> {t('Indexar pendientes')}
-                </button>
-                {activeVault?.type !== 'primary_sources' && <button
-                  className="btn btn-ghost border border-cyan-800 text-cyan-300"
-                  title={t('Borra todos los embeddings y los regenera desde cero. Útil tras cambiar de modelo.')}
-                  onClick={() => setConfirmReindex(true)}
-                >
-                  <Icon name="search" /> {t('Reindexar todo')}
-                </button>}
-              </div>
-            </Row>
             <Row label={t('Llamadas simultáneas')} hint={t('Automático se adapta por proveedor y modelo; Manual conserva un límite fijo entre 1 y 8.')}>
               <div className="flex items-center gap-2">
                 <select
@@ -3692,20 +3656,6 @@ export function Settings({
           </div>
         </div>
       )}
-      {confirmReindex && (
-        <ConfirmModal
-          title={t('Reindexar todos los embeddings')}
-          message={t('Se borrarán TODOS los embeddings existentes y se regenerarán desde cero. Esto consumirá tokens del proveedor de embeddings configurado. ¿Continuar?')}
-          confirmLabel={t('Reindexar todo')}
-          danger
-          onConfirm={() => {
-            setConfirmReindex(false);
-            void window.nodus.reindexAll();
-          }}
-          onCancel={() => setConfirmReindex(false)}
-        />
-      )}
-
       {pendingModelSettingsMode && (
         <ConfirmModal
           title={t(pendingModelSettingsMode === 'basic' ? '¿Cambiar a la configuración básica?' : '¿Cambiar a la configuración avanzada?')}
@@ -3727,19 +3677,6 @@ export function Settings({
             void patch({ modelSettingsMode: mode });
           }}
           onCancel={() => setPendingModelSettingsMode(null)}
-        />
-      )}
-      {pendingEmbeddingChange && (
-        <ConfirmModal
-          title={t('Cambiar modelo de embeddings')}
-          message={t('Los embeddings creados con el modelo anterior no son compatibles con el nuevo. Nodus conservará los datos, pero tendrás que reindexar para que la búsqueda semántica y las relaciones usen el nuevo modelo. ¿Cambiar de todos modos?')}
-          confirmLabel={t('Cambiar modelo')}
-          onConfirm={() => {
-            const next = pendingEmbeddingChange;
-            setPendingEmbeddingChange(null);
-            void patch({ embeddingProvider: next.provider, embeddingModel: next.model });
-          }}
-          onCancel={() => setPendingEmbeddingChange(null)}
         />
       )}
       {confirmBetaUpdates && (

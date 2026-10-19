@@ -1,6 +1,7 @@
 import { isManualAcademic } from '../ai/academicMode';
 import { manualIdeaVisible } from '../db/manualIdeaVisibility';
 import { getDb } from '../db/database';
+import { activeEmbeddingIndex, embeddingGenerationRevision } from '../db/embeddingIndexesRepo';
 import { SubstringIndex } from '@shared/substringIndex';
 import type {
   GraphData,
@@ -469,7 +470,8 @@ async function buildSemanticThemeEdges(themeEdges: GraphEdge[], nodeIds: Set<str
   // TTL), reuse the previously computed edges.
   const nodeIdsKey = compactSignature(nodeIds);
   const membershipKey = compactSignature(themeEdges.map((e) => `${e.source}|${e.target}`));
-  const cacheKey = `${membershipKey}::${nodeIdsKey}`;
+  const index = activeEmbeddingIndex(getDb());
+  const cacheKey = `${getDb().name}:${index?.indexId ?? 'none'}:${index?.generation ?? 0}:${index ? embeddingGenerationRevision(getDb(), index.indexId, index.generation) : 0}:${membershipKey}::${nodeIdsKey}`;
   const now = Date.now();
   if (semanticThemeEdgesCache && semanticThemeEdgesCache.nodeIdsKey === cacheKey && now - semanticThemeEdgesCache.ts < SEMANTIC_EDGES_TTL_MS) {
     return semanticThemeEdgesCache.edges;
@@ -501,7 +503,7 @@ async function buildSemanticThemeEdges(themeEdges: GraphEdge[], nodeIds: Set<str
     const rows = db
       .prepare(
         `SELECT global_id, embedding
-           FROM ideas
+           FROM embedding_read_ideas AS ideas
           WHERE global_id IN (${placeholders})
             AND embedding IS NOT NULL
             AND embedding_provider = ?

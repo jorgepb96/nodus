@@ -65,7 +65,9 @@ try {
   let prepares = 0;
   const originalPrepare = db.prepare.bind(db);
   db.prepare = (sql) => {
-    prepares += 1;
+    // Registry lookups and normalized-vector persistence are intentionally per batch.
+    // Count corpus reads, so the metric still detects full re-collection per emit.
+    if (!/\bembedding_index(?:es|_\w+)\b/.test(sql)) prepares += 1;
     return originalPrepare(sql);
   };
 

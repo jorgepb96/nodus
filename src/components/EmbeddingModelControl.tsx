@@ -96,7 +96,7 @@ export function EmbeddingModelControl({
         {t('OpenRouter acepta IDs como baai/bge-m3; si escribes BAAI:bge-m3 se normaliza automáticamente.')}
       </p>
       <p className="rounded-lg border border-amber-900/60 bg-amber-950/20 px-3 py-2 text-xs leading-5 text-amber-200">
-        {t('Si cambias de modelo de embeddings, los vectores anteriores no servirán con el nuevo modelo y tendrás que reindexar.')}
+        {t('Selecciona otro modelo para preparar un índice independiente. Los índices anteriores se conservarán.')}
       </p>
     </div>
   );

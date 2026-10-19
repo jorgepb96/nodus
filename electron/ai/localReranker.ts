@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
 import { setTimeout as delay } from 'node:timers/promises';
-import { freePort, llamaServerPath } from './nodusLocalAi';
+import { freePort, llamaServerPath, downloadVerifiedNodusAsset, installNodusLocalRuntime } from './nodusLocalAi';
 
 /**
  * A local cross-encoder reranker (bge-reranker-v2-m3, Q8_0) for the textbook evidence search. It
@@ -28,6 +28,27 @@ export const RERANKER_MODEL = {
 
 const IDLE_MS = 5 * 60_000;
 const START_TIMEOUT_MS = 60_000;
+let download: { controller: AbortController; promise: Promise<void>; progress: number } | null = null;
+export function localRerankerStatus() { return { available: rerankerAvailable(), downloading: !!download, progress: download?.progress ?? 0, bytes: RERANKER_MODEL.bytes }; }
+export async function prepareLocalReranker(action: 'download' | 'cancel'): Promise<ReturnType<typeof localRerankerStatus>> {
+  if (!['download', 'cancel'].includes(action)) throw new Error('Acción del reranker no válida.');
+  if (action === 'cancel') { download?.controller.abort(); await download?.promise.catch(() => {}); return localRerankerStatus(); }
+  if (rerankerAvailable()) return localRerankerStatus();
+  if (!download) {
+    const controller = new AbortController();
+    const job = { controller, progress: 0, promise: Promise.resolve() };
+    download = job;
+    job.promise = (async () => {
+      await installNodusLocalRuntime();
+      controller.signal.throwIfAborted();
+      let received = 0;
+      await downloadVerifiedNodusAsset(RERANKER_MODEL.url, rerankerModelPath(), RERANKER_MODEL.bytes, RERANKER_MODEL.sha256,
+        bytes => { received += bytes; job.progress = Math.min(1, received / RERANKER_MODEL.bytes); }, controller.signal);
+    })().finally(() => { if (download === job) download = null; });
+  }
+  await download.promise;
+  return localRerankerStatus();
+}
 
 let server: { child: ChildProcess; url: string; idle: NodeJS.Timeout | null } | null = null;
 let starting: { promise: Promise<string | null>; controller: AbortController; users: number } | null = null;

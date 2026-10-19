@@ -18,6 +18,7 @@ import { getDb } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
 import { activeVaultDir } from '../vaults/vaultRegistry';
 import { embedQuery, embedMany } from './aiClient';
+import { activeEmbeddingIndex, clearActiveEmbeddingFamilies, contractForProfile, embeddingIndexHead, importLegacyStudyVectors, storeIndexValues } from '../db/embeddingIndexesRepo';
 
 type Row = Record<string, unknown>;
 type ProgressListener = (progress: StudySearchProgress) => void;
@@ -31,6 +32,7 @@ interface StudySearchStore {
   excludedSourceIds: string[];
   savedSearches: StudySavedSearch[];
   history: StudySearchHistoryEntry[];
+  vectorsMigrated?: boolean;
 }
 
 const EMPTY_STORE: StudySearchStore = {
@@ -53,25 +55,71 @@ function now(): string { return new Date().toISOString(); }
 function hash(value: string): string { return crypto.createHash('sha1').update(value).digest('hex'); }
 function parseJson<T>(value: unknown, fallback: T): T { try { return value ? JSON.parse(String(value)) as T : fallback; } catch { return fallback; } }
 
-function readStore(): StudySearchStore {
+function readStore(includeVectors = true): StudySearchStore {
+  let parsed: Partial<StudySearchStore>;
   try {
-    const parsed = JSON.parse(fs.readFileSync(indexPath(), 'utf8')) as Partial<StudySearchStore>;
+    parsed = JSON.parse(fs.readFileSync(indexPath(), 'utf8')) as Partial<StudySearchStore>;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    return { ...EMPTY_STORE, entries: [], excludedSourceIds: [], savedSearches: [], history: [] };
+  }
+    if (!parsed.vectorsMigrated && parsed.entries?.some(entry => entry.embedding?.length)) {
+      const recovery = `${indexPath()}.pre-embedding-indexes.json`;
+      if (!fs.existsSync(recovery)) fs.copyFileSync(indexPath(), recovery, fs.constants.COPYFILE_EXCL);
+      importLegacyStudyVectors(getDb(), parsed.modelProvider || 'unknown', parsed.modelName || 'unknown', parsed.entries);
+      parsed.entries = parsed.entries.map(entry => ({ ...entry, embedding: null }));
+      parsed.vectorsMigrated = true;
+      const temporary = `${indexPath()}.tmp`;
+      fs.writeFileSync(temporary, JSON.stringify(parsed), 'utf8'); fs.renameSync(temporary, indexPath());
+    }
+    const context = activeEmbeddingIndex(getDb());
+    const vectors = context && includeVectors ? getDb().prepare("SELECT entity_id,text_hash,embedding FROM embedding_index_values WHERE index_id=? AND generation=? AND family='study_search'")
+      .all(context.indexId, context.generation) as Array<{ entity_id: string; text_hash: string; embedding: Buffer }> : [];
+    const byId = new Map(vectors.map(row => [row.entity_id, row]));
     return {
       ...EMPTY_STORE, ...parsed, version: 1,
-      entries: Array.isArray(parsed.entries) ? parsed.entries : [],
+      entries: Array.isArray(parsed.entries) ? parsed.entries.map(entry => {
+        const value = byId.get(entry.indexId);
+        return { ...entry, embedding: value?.text_hash === entry.contentHash
+          ? Array.from(new Float32Array(value.embedding.buffer, value.embedding.byteOffset, value.embedding.byteLength / 4)) : null };
+      }) : [],
       excludedSourceIds: Array.isArray(parsed.excludedSourceIds) ? parsed.excludedSourceIds : [],
       savedSearches: Array.isArray(parsed.savedSearches) ? parsed.savedSearches : [],
       history: Array.isArray(parsed.history) ? parsed.history : [],
     };
-  } catch { return { ...EMPTY_STORE, entries: [], excludedSourceIds: [], savedSearches: [], history: [] }; }
+}
+
+/** The catalogue is model-independent; attach the captured index even when its
+ * vectors were prepared before the file catalogue was ever opened. */
+function attachIndexVectors(entries: StudySearchIndexEntry[]): void {
+  const context = activeEmbeddingIndex(getDb());
+  if (!context) return;
+  const rows = getDb().prepare("SELECT entity_id,text_hash,embedding FROM embedding_index_values WHERE index_id=? AND generation=? AND family='study_search'")
+    .all(context.indexId, context.generation) as Array<{ entity_id: string; text_hash: string; embedding: Buffer }>;
+  const byId = new Map(rows.map(row => [row.entity_id, row]));
+  for (const entry of entries) {
+    const row = byId.get(entry.indexId);
+    if (!entry.excluded && row?.text_hash === entry.contentHash) entry.embedding = Array.from(new Float32Array(row.embedding.buffer, row.embedding.byteOffset, row.embedding.byteLength / 4));
+  }
 }
 
 function writeStore(store: StudySearchStore): void {
   const target = indexPath(); const temporary = `${target}.tmp`;
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(temporary, JSON.stringify(store), 'utf8');
+  const context = activeEmbeddingIndex(getDb());
+  if (context) {
+    const existing = new Map((getDb().prepare("SELECT entity_id,text_hash FROM embedding_index_values WHERE index_id=? AND generation=? AND family='study_search'")
+      .all(context.indexId, context.generation) as Array<{ entity_id: string; text_hash: string }>).map(row => [row.entity_id, row.text_hash]));
+    const values = store.entries.filter(entry => entry.embedding?.length && !entry.excluded && existing.get(entry.indexId) !== entry.contentHash)
+      .map(entry => ({ family: 'study_search', entityId: entry.indexId, textHash: entry.contentHash,
+        vector: entry.embedding!, contract: contractForProfile(context.profile, entry.embedding!.length) }));
+    storeIndexValues(getDb(), context, values);
+  }
+  fs.writeFileSync(temporary, JSON.stringify({ ...store, vectorsMigrated: true, entries: store.entries.map(entry => ({ ...entry, embedding: null })) }), 'utf8');
   fs.renameSync(temporary, target);
 }
+
+export function studySearchExcludedSourceIds(): string[] { return readStore(false).excludedSourceIds; }
 
 function modelConfig(): { provider: string; model: string } {
   const settings = getSettings();
@@ -166,7 +214,7 @@ function textChunks(text: string, size = 1400, overlap = 180): Array<{ text: str
 
 function addDocumentEntries(entries: StudySearchIndexEntry[], maps: ReturnType<typeof nameMaps>): void {
   const db = getDb();
-  const rows = db.prepare(`SELECT d.*, p.id AS placement_id, p.course_id, p.subject_id, p.folder_id, p.topic_id,
+  const rows = db.prepare(`SELECT d.id,d.title,d.content_markdown,d.created_at,d.updated_at, p.id AS placement_id, p.course_id, p.subject_id, p.folder_id, p.topic_id,
     (SELECT GROUP_CONCAT(t.name, '||') FROM study_doc_tags dt JOIN study_tags t ON t.id=dt.tag_id WHERE dt.document_id=d.id) AS tag_names FROM study_docs d
     LEFT JOIN study_placements p ON p.document_id = d.id AND p.deleted_at IS NULL
     WHERE d.archived_at IS NULL AND d.deleted_at IS NULL ORDER BY d.updated_at DESC, p.position`).all() as Row[];
@@ -194,7 +242,7 @@ function materialLocations(text: string): Array<{ text: string; from: number; to
 }
 
 function addMaterialEntries(entries: StudySearchIndexEntry[], maps: ReturnType<typeof nameMaps>): void {
-  const rows = getDb().prepare(`SELECT m.*, p.id AS placement_id, p.course_id, p.subject_id, p.folder_id, p.topic_id FROM study_materials m
+  const rows = getDb().prepare(`SELECT m.id,m.title,m.visual_description,m.extracted_text,m.metadata_json,m.created_at,m.updated_at, p.id AS placement_id, p.course_id, p.subject_id, p.folder_id, p.topic_id FROM study_materials m
     LEFT JOIN study_material_placements p ON p.material_id = m.id AND p.deleted_at IS NULL
     WHERE m.archived_at IS NULL AND m.deleted_at IS NULL ORDER BY m.updated_at DESC, p.position`).all() as Row[];
   for (const row of rows) {
@@ -392,6 +440,7 @@ export async function rebuildStudySearchIndex(): Promise<StudySearchProgress> {
   const old = readStore(); const config = modelConfig();
   try {
     const entries = collectStudySearchEntries(); runtime.totalEntries = entries.length;
+    attachIndexVectors(entries);
     const oldByHash = new Map(old.modelProvider === config.provider && old.modelName === config.model
       ? old.entries.filter((entry) => entry.embedding?.length).map((entry) => [entry.contentHash, entry.embedding]) : []);
     const excluded = new Set(old.excludedSourceIds);
@@ -405,9 +454,13 @@ export async function rebuildStudySearchIndex(): Promise<StudySearchProgress> {
       batch.forEach((entry, index) => { entry.embedding = vectors[index] ?? null; runtime.processedEntries++; });
       emit({ ...old, entries }, entries);
     }
+    if (runtime.stopRequested) throw new Error('embedding_preparation_stopped');
+    const current = new Map(collectStudySearchEntries().map(entry => [entry.indexId, entry.contentHash]));
+    const latestPreferences = readStore(false);
+    const latestExcluded = new Set(latestPreferences.excludedSourceIds);
     const store: StudySearchStore = {
-      ...old, updatedAt: now(), modelProvider: config.provider, modelName: config.model, entries,
-      excludedSourceIds: [...excluded],
+      ...latestPreferences, updatedAt: now(), modelProvider: config.provider, modelName: config.model,
+      entries: entries.filter(entry => current.get(entry.indexId) === entry.contentHash).map(entry => ({ ...entry, excluded: latestExcluded.has(entry.sourceId) })),
     };
     writeStore(store); runtime.state = entries.length ? 'ready' : 'empty'; runtime.currentTitle = null; emit(store, entries);
     return progress(store, entries);
@@ -422,6 +475,7 @@ let refreshTask: Promise<void> | null = null;
 /** Incremental, de-duplicated refresh used after source changes. Existing vectors
  * are retained by content hash and only new or changed fragments are embedded. */
 export function queueStudySearchIndexRefresh(): void {
+  if (embeddingIndexHead(getDb())?.enabled === 0) return;
   queuedRefresh = true;
   if (refreshTask) return;
   refreshTask = (async () => {
@@ -442,6 +496,7 @@ function ensureLexicalIndex(): StudySearchStore {
     const old = oldByHash.get(entry.contentHash);
     return { ...entry, embedding: old?.embedding ?? entry.embedding ?? null, excluded: excluded.has(entry.sourceId) };
   });
+  attachIndexVectors(entries);
   const unchanged = entries.length === store.entries.length && entries.every((entry, index) => {
     const old = store.entries[index];
     return old && entry.contentHash === old.contentHash && entry.excluded === old.excluded && entry.indexId === old.indexId
@@ -479,6 +534,22 @@ export function listStudySearchHistory(): StudySearchHistoryEntry[] { return rea
 export function clearStudySearchHistory(): void { const store = readStore(); store.history = []; writeStore(store); }
 export function setStudySearchSourceExcluded(sourceId: string, excluded: boolean): StudySearchIndexStatus {
   const store = readStore(); const ids = new Set(store.excludedSourceIds); if (excluded) ids.add(sourceId); else ids.delete(sourceId);
-  store.excludedSourceIds = [...ids]; store.entries = store.entries.map((entry) => entry.sourceId === sourceId ? { ...entry, excluded } : entry); writeStore(store); return statusFrom(store);
+  const db = getDb();
+  db.transaction(() => {
+    if (excluded) {
+      // Remove every saved derivative, so a paused job or switching back cannot
+      // make excluded text searchable again.
+      const remove = db.prepare("DELETE FROM embedding_index_values WHERE family='study_search' AND entity_id=?");
+      for (const entry of collectStudySearchEntries()) if (entry.sourceId === sourceId) remove.run(entry.indexId);
+    }
+    db.prepare('UPDATE embedding_index_state SET corpus_revision=corpus_revision+1').run();
+  })();
+  store.excludedSourceIds = [...ids]; store.entries = store.entries.map((entry) => entry.sourceId === sourceId ? { ...entry, excluded, embedding: excluded ? null : entry.embedding } : entry); writeStore(store); return statusFrom(store);
 }
-export function deleteStudySearchIndex(): void { try { fs.unlinkSync(indexPath()); } catch { /* already absent */ } runtime.state = 'empty'; runtime.error = null; emit(); }
+export function deleteStudySearchIndex(): void {
+  runtime.stopRequested = true;
+  clearActiveEmbeddingFamilies(getDb(), ['study_search']);
+  const store = readStore(false);
+  writeStore({ ...store, entries: [] });
+  runtime.state = 'empty'; runtime.error = null; emit();
+}

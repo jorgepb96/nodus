@@ -1745,7 +1745,7 @@ function listGaps(linkedWorkIds: Set<string>, scope: RelevanceScope) {
               e.quote AS evidence_quote, e.location AS evidence_location, e.kind AS evidence_kind, e.nodus_id AS evidence_work_id
        FROM gaps g
        JOIN works w ON w.nodus_id = g.nodus_id
-       LEFT JOIN ideas i ON i.global_id = g.related_idea
+       LEFT JOIN embedding_read_ideas i ON i.global_id = g.related_idea
        LEFT JOIN evidence e ON e.id = g.evidence_id
        WHERE w.archived = 0
        ORDER BY g.confidence DESC, w.year DESC`

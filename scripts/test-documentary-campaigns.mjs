@@ -32,6 +32,7 @@ try {
   await assert.rejects(() => experience.startResearchPreparationCampaign({ previewId: preview.id, mode: 'embeddings' }), /unavailable/);
   seed('after-preview');
   const campaign = await experience.startResearchPreparationCampaign({ previewId: preview.id, mode: 'text' });
+  assert.equal(repo.audit(campaign).reason, 'manual');
   const progress = experience.getResearchPreparationProgress();
   assert.equal(progress.campaigns[0].jobs.length, 2, 'confirmation never expands the frozen inventory');
   assert.equal(progress.campaigns[0].embedding, null);
@@ -101,6 +102,7 @@ try {
   await new Promise(resolve => setTimeout(resolve, 1300));
   assert.equal(repo.list().length, countBeforeAddition + 1);
   const latest = experience.getResearchPreparationProgress().campaigns[0];
+  assert.equal(latest.audit.reason, 'new_content');
   assert.deepEqual(latest.jobs.map(job => job.title), ['future-addition'], 'automatic work excludes old pending members');
   // Live finding: a document added before any embedding key existed froze the default
   // remote model; after configuring the local bge model, "Reintentar" re-queued it with the

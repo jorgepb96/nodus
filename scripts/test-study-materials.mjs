@@ -47,6 +47,8 @@ try {
   assert.equal(shared.studyMaterialLocationLabel({ materialId: 'm', materialTitle: 'Manual', pageNumber: 7 }), 'Manual · p. 7');
   assert.deepEqual(shared.parseStudyMaterialMarkers('[[p. 2]] A [[slide. 3]] B').map((item) => [item.kind, item.number]), [['page', 2], ['slide', 3]]);
 
+  require(path.join(repoRoot, 'electron/db/settingsRepo.ts')).updateSettings({ embeddingProvider: 'openai', embeddingModel: 'embedding-test' });
+
   const course = org.createStudyCourse({ name: 'Curso materiales' });
   const subject = org.createStudySubject({ courseId: course.id, name: 'Asignatura materiales' });
   const folder = org.createStudyFolder({ courseId: course.id, subjectId: subject.id, name: 'Carpeta fuentes' });
@@ -146,7 +148,7 @@ try {
   assert.equal(materials.getStudyMaterial(first.material.id).fragmentLinks[0].documentId, note.documentId, 'fragment-to-note provenance is durable');
 
   // #779: moving changes only one placement; all durable material data survives.
-  materials.setStudyMaterialEmbedding(first.material.id, [0.1, 0.2, 0.3], { provider: 'test', model: 'stable', textHash: 'stable' });
+  materials.setStudyMaterialEmbedding(first.material.id, [0.1, 0.2, 0.3], { provider: 'openai', model: 'embedding-test', textHash: 'stable' });
   const beforeMove = materials.getStudyMaterial(first.material.id);
   const beforeRow = getDb().prepare('SELECT * FROM study_materials WHERE id = ?').get(first.material.id);
   const movingPlacement = beforeMove.placements.find((p) => p.folderId === folder.id);

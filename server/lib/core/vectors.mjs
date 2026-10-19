@@ -66,7 +66,7 @@ export function normalize(vector) {
  * exists so the round-trip can be exercised from a test without the two ever disagreeing
  * about the layout.
  */
-export function encodeVectorSet({ kind, provider, model, dim, entries, embeddingContract }) {
+export function encodeVectorSet({ kind, provider, model, dim, entries, embeddingContract, indexId, generation }) {
   const ids = entries.map((entry) => String(entry.id));
   const matrix = Buffer.alloc(entries.length * dim);
   entries.forEach((entry, row) => {
@@ -77,7 +77,7 @@ export function encodeVectorSet({ kind, provider, model, dim, entries, embedding
     }
   });
   const header = Buffer.from(JSON.stringify({
-    format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count: entries.length, embeddingContract,
+    format: VECTOR_FORMAT, version: VECTOR_VERSION, kind, provider, model, dim, quant: VECTOR_QUANT, count: entries.length, embeddingContract, indexId, generation,
   }), 'utf8');
   const idTable = Buffer.from(JSON.stringify(ids), 'utf8');
   const headerLength = Buffer.alloc(4);

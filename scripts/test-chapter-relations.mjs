@@ -59,6 +59,8 @@ try {
     CREATE TABLE notes (id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', content TEXT NOT NULL DEFAULT '');
   `);
   db.exec(await migration21Sql());
+  // This migration-21 fixture uses the same read boundary as the current repositories.
+  db.exec('CREATE VIEW embedding_read_project_chapter_ideas AS SELECT * FROM project_chapter_ideas');
 
   // ── Schema ──────────────────────────────────────────────────────────────────
   assert.equal(tableExists(db, 'project_chapter_ideas'), true);

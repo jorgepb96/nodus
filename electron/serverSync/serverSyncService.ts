@@ -1,3 +1,4 @@
+import { publishAtomicEmbeddingSnapshot } from './atomicEmbeddingPublication';
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { getDb, withVaultDatabase } from '../db/database';
@@ -432,39 +433,6 @@ async function uploadPersonalImport(
  * Ideas always; passages only when the user has chosen to share the passages themselves,
  * because a vector set is derived from the very text that switch exists to withhold.
  */
-async function publishVectors(
-  config: VaultServerConfig,
-  token: string,
-  vectors: Awaited<ReturnType<typeof buildServerSnapshotInUtility>>['vectors'],
-  rt: VaultRuntime,
-): Promise<void> {
-  if (!config.includeVectors) return;
-  const endpoint = `${normalizeUrl(config.url)}/api/v1/spaces/${encodeURIComponent(config.spaceId)}/vectors`;
-  for (const vector of vectors) {
-    const { kind, revision, compressed, summary } = vector;
-    if (rt.lastVectorRevision[kind] === revision) continue;
-    try {
-      const response = await fetchWithTimeout(`${endpoint}?kind=${kind}`, {
-        method: 'PUT',
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': 'application/vnd.nodus.vectors',
-          'content-encoding': 'gzip',
-        },
-        body: compressed,
-      });
-      // A server too old to know about vectors has no such route; the corpus is still
-      // published and semantic search simply reports itself as unindexed there.
-      if (response.status === 404) return;
-      if (!response.ok) return;
-      rt.lastVectorRevision[kind] = revision;
-      rt.lastVectors = { ...rt.lastVectors, [kind]: { count: summary.count, dim: summary.dim, bytes: compressed.length } };
-    } catch {
-      // Retried on the next publication; nothing was recorded as sent.
-    }
-  }
-}
-
 /** Upload one vault's filtered snapshot. Serialized: at most one publish at a time. */
 async function publishVault(vaultId: string, automatic = false): Promise<void> {
   if (publishing) return;
@@ -548,6 +516,7 @@ async function publishVault(vaultId: string, automatic = false): Promise<void> {
       vault: { ...vault },
       settings: {
         nodusServerIncludeUserContent: publicationConfig.includeUserContent,
+        nodusServerIncludeVectors: publicationConfig.includeVectors,
         nodusServerIncludePassages: publicationConfig.includePassages,
         nodusServerIncludePrimarySources: publicationConfig.includePrimarySources,
         nodusServerIncludeTestimonies: publicationConfig.includeTestimonies,
@@ -567,7 +536,6 @@ async function publishVault(vaultId: string, automatic = false): Promise<void> {
     // Nothing changed since our last upload this session: keep the server as-is and
     // avoid the round-trip. The very first publish after launch always runs (no cache).
     if (rt.lastRevision && rt.lastRevision === snapshot.revision) {
-      await publishVectors(publicationConfig, token, snapshot.vectors, rt);
       rt.phase = 'ok';
       rt.pending = false;
       rt.dirtySince = 0;
@@ -585,19 +553,7 @@ async function publishVault(vaultId: string, automatic = false): Promise<void> {
     if (library) {
       await uploadLibraryPackages(normalizeUrl(config.url), config.spaceId, token, library.packages, rt);
     }
-    const response = await fetchWithTimeout(
-      `${normalizeUrl(config.url)}/api/v1/spaces/${encodeURIComponent(config.spaceId)}/snapshot`,
-      {
-        method: 'PUT',
-        headers: {
-          authorization: `Bearer ${token}`,
-          'content-type': 'application/vnd.nodus.snapshot+json',
-          'content-encoding': 'gzip',
-          'x-nodus-revision': snapshot.revision,
-        },
-        body: snapshot.compressed,
-      },
-    );
+    const response = await publishAtomicEmbeddingSnapshot(publicationConfig, token, snapshot);
     logPublishPerf('snapshot-put:complete', publishPhaseStartedAt, {
       status: response.status,
       bytes: snapshot.compressed.byteLength,
@@ -631,7 +587,8 @@ async function publishVault(vaultId: string, automatic = false): Promise<void> {
     rt.lastBytes = snapshot.compressed.length;
     // After the snapshot, so a client that sees the new revision already has rows for
     // whatever the matrix points at.
-    await publishVectors(publicationConfig, token, snapshot.vectors, rt);
+    rt.lastVectorRevision = Object.fromEntries(snapshot.vectors.map(vector => [vector.kind, vector.revision]));
+    rt.lastVectors = Object.fromEntries(snapshot.vectors.map(vector => [vector.kind, { count: vector.summary.count, dim: vector.summary.dim, bytes: vector.compressed.length }]));
     if (vault.active) rt.observed = lightweightVaultRevision(db);
   } catch (error) {
     rt.phase = 'error';

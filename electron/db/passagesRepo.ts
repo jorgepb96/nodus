@@ -192,7 +192,7 @@ export function findSimilarPassages(
          SELECT p.passage_id, p.nodus_id, p.text, p.page_label, p.source_ref, p.page_number,
                 w.title, w.authors_json, w.year, w.zotero_key,
                 vec_cosine(p.embedding, ?) AS similarity
-           FROM passages p
+           FROM embedding_read_passages p
            JOIN works w ON w.nodus_id = p.nodus_id
           WHERE p.embedding IS NOT NULL
             AND w.archived = 0
@@ -229,7 +229,7 @@ export async function findSimilarPassagesPaged(
   const ranked = await scanSimilar<{ passage_id: string; content_hash: string; rid: number; similarity: number }>({
     table: 'passages',
     sql: `SELECT p.passage_id, p.content_hash, p.rowid AS rid, vec_scan(p.embedding) AS similarity
-            FROM passages p
+            FROM embedding_read_passages p
             JOIN works w ON w.nodus_id = p.nodus_id
            WHERE p.rowid > ? AND p.rowid <= ?
              AND p.embedding IS NOT NULL
@@ -280,7 +280,7 @@ export function embeddedPassageCount(): number {
   const row = getDb()
     .prepare(
       `SELECT COUNT(*) AS count
-         FROM passages p
+         FROM embedding_read_passages p
          JOIN works w ON w.nodus_id = p.nodus_id
         WHERE p.embedding IS NOT NULL
           AND w.archived = 0
@@ -362,7 +362,7 @@ export function workPassageStatuses(nodusIds?: string[]): WorkPassageStatus[] {
                          AND p.embedding_dim > 0
                        THEN 1 ELSE 0 END) AS current_passages
          FROM works w
-         LEFT JOIN passages p ON p.nodus_id = w.nodus_id
+         LEFT JOIN embedding_read_passages p ON p.nodus_id = w.nodus_id
          ${where}
         GROUP BY w.nodus_id, w.deep_hash, w.resolved_text_hash`
     )

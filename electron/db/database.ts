@@ -17,6 +17,7 @@ import { scheduleMigrationRecoveryRetention } from './migrationRecoveryUtilityHo
 import { ensureBackupRevisionTriggers } from '../export/backupVaultRevision';
 import { ensureVectorScanGenerationTriggers } from './vectorScanGenerations';
 import { embeddingTextForIdea, embeddingTextHash } from './ideaEmbeddingText';
+import { activeEmbeddingIndex, registerEmbeddingIndexFunctions, withEmbeddingIndexContext, withoutEmbeddingIndexContext } from './embeddingIndexesRepo';
 
 let db: Database.Database | null = null;
 const jobDatabase = new AsyncLocalStorage<Database.Database>();
@@ -129,6 +130,7 @@ function openDatabase(file: string): Database.Database {
   const migrationPending = Number(next.pragma('user_version', { simple: true })) < SCHEMA_VERSION;
   next = migrateDatabaseSafely(next, file, SCHEMA_VERSION, runMigrations);
   if (migrationPending) scheduleMigrationRecoveryRetention(file);
+  registerEmbeddingIndexFunctions(next);
   ensureWorkspaceDevice(next);
   // Deletion tombstones are written by triggers, which are regenerated here rather than
   // created by a migration: the set of synced tables is decided in code, so a migration
@@ -230,7 +232,7 @@ export function withDatabaseContext<T>(database: Database.Database, work: () => 
  * even after withVaultDatabase has closed that dedicated connection.
  */
 export function withoutDatabaseContext<T>(work: () => T): T {
-  return jobDatabase.exit(work);
+  return jobDatabase.exit(() => withoutEmbeddingIndexContext(work));
 }
 
 /**
@@ -246,7 +248,10 @@ export async function withVaultDatabase<T>(vaultId: string, work: () => Promise<
 
   const scoped = openDatabase(vault.path);
   try {
-    return await jobDatabase.run(scoped, work);
+    return await jobDatabase.run(scoped, () => {
+      const context = withoutEmbeddingIndexContext(() => activeEmbeddingIndex(scoped));
+      return withEmbeddingIndexContext(context, work);
+    });
   } finally {
     if (scoped.open) scoped.close();
   }

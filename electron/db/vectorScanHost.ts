@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 
 export interface VectorScanWorkerInput {
+  indexContext?: { indexId: string; generation: number } | null;
   table: string;
   sql: string;
   params: unknown[];

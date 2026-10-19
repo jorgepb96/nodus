@@ -63,7 +63,7 @@ const IDEA_EMBEDDING_CURRENT = `(
 const SEMANTIC_COMPLETE = `(
   NOT EXISTS (
     SELECT 1 FROM idea_occurrences io
-    JOIN ideas i ON i.global_id = io.global_id
+    JOIN embedding_read_ideas i ON i.global_id = io.global_id
     WHERE io.nodus_id = w.nodus_id
       AND NOT ${IDEA_EMBEDDING_CURRENT}
   )

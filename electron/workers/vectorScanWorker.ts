@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parentPort } from 'node:worker_threads';
 import type { VectorScanWorkerInput } from '../db/vectorScanHost';
+import { embeddingGenerationRevision, hasEmbeddingIndexes, registerEmbeddingIndexFunctions } from '../db/embeddingIndexesRepo';
+import { embeddingReadTable } from '../db/embeddingIndexSchema';
 
 interface WorkerRequest {
   id: number;
@@ -110,18 +112,22 @@ function versionOf(database: Database.Database, tables: string[]): string {
 }
 
 function vectorCacheFor(database: Database.Database, file: string, table: string, dim: number): VectorCache {
-  const key = `${path.resolve(file)}|${table}`;
-  const version = versionOf(database, [table]);
+  const indexed = hasEmbeddingIndexes(database);
+  const context = indexed ? database.prepare('SELECT nodus_embedding_index() id,nodus_embedding_generation() generation').get() as { id: string; generation: number } : null;
+  const source = indexed ? embeddingReadTable(table) : table;
+  const key = `${path.resolve(file)}|${table}|${context?.id ?? ''}|${context?.generation ?? ''}`;
+  const revision = context?.id ? embeddingGenerationRevision(database, context.id, context.generation) : 0;
+  const version = `${versionOf(database, [table])}|${revision}`;
   let cache = vectorCaches.get(key);
   if (!cache || cache.version !== version || cache.dim !== dim) {
     const started = performance.now();
     const bytes = dim * 4;
-    const count = (database.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE embedding IS NOT NULL AND length(embedding) = ?`).get(bytes) as { n: number }).n;
+    const count = (database.prepare(`SELECT COUNT(*) AS n FROM ${source} WHERE embedding IS NOT NULL AND length(embedding) = ?`).get(bytes) as { n: number }).n;
     const vectors = new Float32Array(count * dim);
     const norms = new Float64Array(count);
     const slots = new Map<number, number>();
     let slot = 0;
-    for (const [rowid, stored] of database.prepare(`SELECT rowid, embedding FROM ${table} WHERE embedding IS NOT NULL AND length(embedding) = ?`).raw().iterate(bytes) as Iterable<[number, Buffer]>) {
+    for (const [rowid, stored] of database.prepare(`SELECT rowid, embedding FROM ${source} WHERE embedding IS NOT NULL AND length(embedding) = ?`).raw().iterate(bytes) as Iterable<[number, Buffer]>) {
       if (slot >= count) break;
       const vector = new Float32Array(stored.buffer, stored.byteOffset, dim);
       const base = slot * dim;
@@ -191,6 +197,7 @@ function scan(request: WorkerRequest, trace?: SweepTrace): unknown[] {
   const query = unitVector(input.query);
   if (!query) return [];
   const database = databaseFor(databasePath);
+  if (hasEmbeddingIndexes(database)) registerEmbeddingIndexFunctions(database, input.indexContext);
   const highest = (database.prepare(`SELECT MAX(rowid) AS top FROM ${input.table}`).get() as { top: number | null }).top ?? 0;
   if (highest === 0) return [];
 

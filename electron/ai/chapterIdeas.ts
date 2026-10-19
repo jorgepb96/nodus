@@ -102,7 +102,7 @@ function sampleEvenly<T>(items: T[], count: number): T[] {
   for (let i = 0; i < count; i++) out.push(items[Math.floor(i * step)]);
   return out;
 }
-function ideaEmbeddingText(idea: { type: string; label: string; statement: string }, language: PromptLanguage = getSettings().promptLanguage ?? 'es'): string {
+export function chapterIdeaEmbeddingText(idea: { type: string; label: string; statement: string }, language: PromptLanguage = getSettings().promptLanguage ?? 'es'): string {
   const copy = chapterPromptPack(language);
   return `${copy.embeddingType}: ${idea.type}\n${copy.embeddingLabel}: ${idea.label}\n${copy.embeddingStatement}: ${idea.statement}`;
 }
@@ -429,7 +429,7 @@ export async function analyzeChapterRelations(
     }
 
     emit({ chapterId: request.chapterId, phase: 'embedding', current: 0, total: rawIdeas.length, message: 'Indexando ideas…' });
-    const embedTexts = rawIdeas.map((idea) => ideaEmbeddingText({ type: idea.type!, label: idea.label!, statement: idea.statement! }, language));
+    const embedTexts = rawIdeas.map((idea) => chapterIdeaEmbeddingText({ type: idea.type!, label: idea.label!, statement: idea.statement! }, language));
     const vectors = await embedMany(embedTexts, undefined, { jobId: `chapter-relations:${request.chapterId}` });
     if (vectors.some((vector) => !vector)) {
       emit({ chapterId: request.chapterId, phase: 'error', current: 0, total: 0, message: 'No hay proveedor de embeddings configurado. Se ha conservado el análisis anterior.' });

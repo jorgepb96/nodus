@@ -65,8 +65,8 @@ export function listEdgeFeedback(): EdgeFeedbackView[] {
     .prepare(
       `SELECT f.*, COALESCE(a.label, f.from_id) AS from_label, COALESCE(b.label, f.to_id) AS to_label
          FROM edge_feedback f
-         LEFT JOIN ideas a ON a.global_id = f.from_id
-         LEFT JOIN ideas b ON b.global_id = f.to_id
+         LEFT JOIN embedding_read_ideas a ON a.global_id = f.from_id
+         LEFT JOIN embedding_read_ideas b ON b.global_id = f.to_id
         ORDER BY f.created_at DESC`
     )
     .all() as EdgeFeedbackView[];

@@ -81,6 +81,31 @@ export class DocumentaryStore {
       CREATE TABLE IF NOT EXISTS documentary_source_owners (
         vault_id TEXT NOT NULL, document_id TEXT NOT NULL, PRIMARY KEY(vault_id,document_id)
       );
+      CREATE TABLE IF NOT EXISTS documentary_embedding_index_owners (
+        vault_id TEXT NOT NULL,index_id TEXT NOT NULL,generation INTEGER NOT NULL,
+        index_key TEXT NOT NULL REFERENCES documentary_revisions(index_key) ON DELETE CASCADE,
+        PRIMARY KEY(vault_id,index_id,generation,index_key)
+      );
+      CREATE INDEX IF NOT EXISTS documentary_embedding_index_owners_key ON documentary_embedding_index_owners(index_key);
+      CREATE TABLE IF NOT EXISTS documentary_embedding_source_versions (vault_id TEXT PRIMARY KEY,revision INTEGER NOT NULL DEFAULT 0);
+      INSERT OR IGNORE INTO documentary_embedding_source_versions SELECT DISTINCT vault_id,0 FROM documentary_source_owners;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_owner_added AFTER INSERT ON documentary_source_owners BEGIN
+        INSERT INTO documentary_embedding_source_versions VALUES(NEW.vault_id,1) ON CONFLICT(vault_id) DO UPDATE SET revision=revision+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_owner_removed AFTER DELETE ON documentary_source_owners BEGIN
+        INSERT INTO documentary_embedding_source_versions VALUES(OLD.vault_id,1) ON CONFLICT(vault_id) DO UPDATE SET revision=revision+1;
+      END;
+      CREATE TRIGGER IF NOT EXISTS documentary_embedding_text_revision AFTER UPDATE OF lexical_ready ON documentary_revisions
+        WHEN OLD.lexical_ready=0 AND NEW.lexical_ready=1 AND NOT EXISTS (
+          SELECT 1 FROM documentary_revisions r WHERE r.document_id=NEW.document_id AND r.index_key<>NEW.index_key AND r.lexical_ready=1
+          AND json_extract(r.identity_json,'$.revision') IS json_extract(NEW.identity_json,'$.revision')
+          AND json_extract(r.identity_json,'$.attachmentId') IS json_extract(NEW.identity_json,'$.attachmentId')
+          AND json_extract(r.identity_json,'$.attachmentRevision') IS json_extract(NEW.identity_json,'$.attachmentRevision')
+          AND json_extract(r.identity_json,'$.textFingerprint') IS json_extract(NEW.identity_json,'$.textFingerprint')
+          AND json_extract(r.identity_json,'$.chunkerVersion') IS json_extract(NEW.identity_json,'$.chunkerVersion')
+          AND json_extract(r.identity_json,'$.processingVersion') IS json_extract(NEW.identity_json,'$.processingVersion')) BEGIN
+        UPDATE documentary_embedding_source_versions SET revision=revision+1 WHERE vault_id IN (SELECT vault_id FROM documentary_source_owners WHERE document_id=NEW.document_id);
+      END;
       CREATE TABLE IF NOT EXISTS documentary_mcp_choices (
         vault_id TEXT NOT NULL, notebook_id TEXT NOT NULL, endpoint TEXT NOT NULL,
         PRIMARY KEY(vault_id,notebook_id)

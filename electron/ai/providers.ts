@@ -1,3 +1,4 @@
+import { rememberEmbeddingModelRevisions } from './embeddingModelRevisions';
 import type {
   AiProvider,
   EmbeddingProvider,
@@ -559,6 +560,12 @@ async function listOpenCodeGo(signal?: AbortSignal, fullCatalog = false): Promis
 
 /** Fetch embedding-capable models for the configured embedding provider. */
 export async function listEmbeddingModels(provider: EmbeddingProvider, key: string | null): Promise<ModelInfo[]> {
+  const models = await listEmbeddingModelsNow(provider, key);
+  const endpoint = openAiCompatBase(provider);
+  if (endpoint) rememberEmbeddingModelRevisions(provider, endpoint, models);
+  return models;
+}
+async function listEmbeddingModelsNow(provider: EmbeddingProvider, key: string | null): Promise<ModelInfo[]> {
   const testModels = researchTestProviderModels(provider, 'embedding');
   if (testModels) return testModels;
   switch (provider) {
@@ -806,6 +813,7 @@ function localError(provider: LocalProvider, base: string, detail: string): Erro
 }
 
 interface OllamaTag {
+  digest?: string;
   name?: string;
   model?: string;
   size?: number;
@@ -831,6 +839,7 @@ async function listOllama(key: string | null, fullCatalog = false): Promise<Mode
       const id = m.model ?? m.name ?? '';
       return {
         id,
+        revision: m.digest,
         sizeBytes: typeof m.size === 'number' ? m.size : undefined,
         paramSize: m.details?.parameter_size,
         quantization: m.details?.quantization_level,
@@ -849,6 +858,7 @@ async function listOllamaEmbeddingModels(key: string | null): Promise<ModelInfo[
 }
 
 interface LmStudioModel {
+  sha256?: string;
   id?: string;
   type?: string;
   arch?: string;
@@ -882,6 +892,7 @@ async function listLmStudio(key: string | null, embeddingsOnly: boolean, fullCat
       return {
         id: m.id ?? '',
         name: m.publisher ? `${m.arch ?? m.id} · ${m.publisher}` : m.arch,
+        revision: m.sha256,
         quantization: m.quantization,
         contextLength: typeof m.max_context_length === 'number' ? m.max_context_length : undefined,
         trainedContextLength: typeof m.max_context_length === 'number' ? m.max_context_length : undefined,

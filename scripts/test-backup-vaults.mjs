@@ -4,6 +4,7 @@
 // vaultRegistry + database + exportImport under Electron-as-Node against a temp
 // profile.
 import assert from 'node:assert/strict';
+import { installRuntimeHooks } from './lib/tsRuntimeHooks.mjs';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -58,6 +59,26 @@ try {
     generatorModel: null, auditorModel: null, promptHash: 'backup-prompt',
     audit: { passed: true, score: 1, supportCoverage: 1, structureCoverage: 1, issues: [], repaired: false }, qualityScore: 1,
   });
+
+  const indexRepo = require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'));
+  const savedProfile = indexRepo.embeddingProfile(require(path.join(repoRoot, 'electron/db/settingsRepo.ts')).getSettings(), { provider: 'openai', model: 'backup-saved' });
+  const savedIndex = indexRepo.createIndex(getDb(), savedProfile);
+  const savedContext = indexRepo.indexContext(getDb(), savedIndex);
+  indexRepo.storeIndexValue(getDb(), savedContext, { family: 'document_vectors', entityId: 'saved-vector', textHash: 'saved-text', vector: [0, 1, 0, 0], contract: indexRepo.contractForProfile(savedProfile, 4) });
+  getDb().prepare("UPDATE embedding_indexes SET preparation='paused',staging_generation=2,completed=1,total=2 WHERE id=?").run(savedIndex.id);
+  const runRepo = require(path.join(repoRoot, 'electron/db/embeddingRunsRepo.ts'));
+  const savedRun = runRepo.beginEmbeddingRun(getDb(), savedIndex.id, 2, 'rebuild');
+  runRepo.recordEmbeddingRunItem(getDb(), savedRun, 'document_vectors', 'saved-vector', 'saved-text', 'computed');
+  runRepo.recordEmbeddingProviderInputs(getDb(), savedRun, 1);
+  const documentaryPreparation = require(path.join(repoRoot, 'electron/ai/documentaryPreparation.ts'));
+  const shared = documentaryPreparation.documentaryStore();
+  const sharedIdentity = { documentId: 'backup-shared', attachmentId: null, revision: 'backup-r1', textFingerprint: 'backup-text', chunkerVersion: 'test/1', processingVersion: 'test/1',
+    embedding: { provider: 'openai', model: 'backup-saved', dimensions: 4, metric: 'cosine', parameters: { embeddingProfile: indexRepo.profileFingerprint(savedProfile) } } };
+  const sharedKey = shared.enqueue(sharedIdentity, {});
+  const sharedJob = shared.claim();
+  shared.saveChunks(sharedJob, [{ text: 'Evidence retained for a valid citation.', pageLabel: '1', pageNumber: 1, sourceRef: 'source' }]);
+  shared.publishLexical(sharedJob); shared.publishEmbeddings(sharedJob, [[0, 1, 0, 0]]);
+  require(path.join(repoRoot, 'electron/db/embeddingDocumentaryRefs.ts')).recordDocumentaryIndexReference(getDb(), shared.db, legacy.id, savedContext, sharedKey, 'backup-shared');
 
   const gene = vaults.createVault('Familia', 'genealogy');
   switchTo(gene.id);
@@ -213,10 +234,19 @@ try {
   // Vector ids are scoped to the version that published them, so the restored row is found by
   // its kind and text rather than by the id the pipeline proposed.
   assert.equal(
-    getDb().prepare("SELECT length(embedding) AS bytes FROM document_vectors WHERE text='Perfil que debe sobrevivir al backup.'").get().bytes,
+    getDb().prepare("SELECT length(embedding) AS bytes FROM embedding_read_document_vectors WHERE text='Perfil que debe sobrevivir al backup.'").get().bytes,
     16,
     'the document embedding is restored without reindexing'
   );
+  assert.equal(indexRepo.indexRow(getDb(), savedIndex.id).preparation, 'paused', 'a saved preparation is restored');
+  assert.equal(indexRepo.indexRow(getDb(), savedIndex.id).staging_generation, 2);
+  const restoredRun = runRepo.listEmbeddingRuns(getDb(), savedIndex.id)[0];
+  assert.equal(restoredRun.id, savedRun); assert.equal(restoredRun.reason, 'rebuild');
+  assert.equal(restoredRun.state, 'paused'); assert.equal(restoredRun.lastReason, 'restart');
+  assert.equal(restoredRun.computed, 1); assert.equal(restoredRun.providerInputs, 1);
+  assert.equal(getDb().prepare('SELECT hex(embedding) bytes FROM embedding_index_values WHERE index_id=?').get(savedIndex.id).bytes, '000000000000803F0000000000000000', 'saved vectors survive without model calls');
+  assert.equal(getDb().prepare('SELECT index_key FROM embedding_index_documentary_refs WHERE index_id=?').get(savedIndex.id).index_key, sharedKey);
+  assert.equal(documentaryPreparation.documentaryStore().revision(sharedKey).embedding_ready, 1, 'the shared half of the index is included in the same backup');
   for (const item of extraVaults) {
     switchTo(item.vault.id);
     assert.ok(entities.getPerson(item.person.personId), `${item.vault.type} vault data restored`);
@@ -416,51 +446,4 @@ try {
   console.log('Multi-vault backup integrity test passed!');
 } finally {
   await rm(root, { recursive: true, force: true });
-}
-
-function installRuntimeHooks(userDataPath) {
-  const ts = require('typescript');
-  const Module = require('node:module');
-  const originalResolveFilename = Module._resolveFilename;
-  const originalLoad = Module._load;
-  const electronStub = {
-    app: {
-      getPath: () => userDataPath,
-      getVersion: () => '0.0.0-test',
-      getAppPath: () => repoRoot,
-      isPackaged: false,
-    },
-    safeStorage: {
-      isEncryptionAvailable: () => false,
-      encryptString: (v) => Buffer.from(String(v), 'utf8'),
-      decryptString: (v) => Buffer.from(v).toString('utf8'),
-    },
-    dialog: {},
-    shell: {},
-    BrowserWindow: class {},
-  };
-  Module._resolveFilename = function resolveFilename(request, parent, isMain, options) {
-    if (request.startsWith('@shared/')) return path.join(repoRoot, `${request.replace('@shared/', 'shared/')}.ts`);
-    return originalResolveFilename.call(this, request, parent, isMain, options);
-  };
-  Module._load = function load(request, parent, isMain) {
-    if (request === 'electron') return electronStub;
-    return originalLoad.call(this, request, parent, isMain);
-  };
-  require.extensions['.ts'] = function loadTs(module, filename) {
-    const source = fs.readFileSync(filename, 'utf8');
-    const output = ts.transpileModule(source, {
-      fileName: filename,
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2022,
-        module: ts.ModuleKind.CommonJS,
-        moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        esModuleInterop: true,
-        jsx: ts.JsxEmit.ReactJSX,
-        resolveJsonModule: true,
-        skipLibCheck: true,
-      },
-    }).outputText;
-    module._compile(output, filename);
-  };
 }

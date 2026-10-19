@@ -16,6 +16,7 @@ import { getSettings } from '../db/settingsRepo';
 import { listVaults, getActiveVault, restoreVaultDatabase, setActiveVault } from '../vaults/vaultRegistry';
 import { closeGlobalLibraryRuntime } from '../library/libraryRuntime';
 import { globalFocusFile, restoreGlobalFocusBackupFile, snapshotGlobalFocusForBackup } from '../study/focusRuntime';
+import { closeDocumentaryPreparation, initializeDocumentaryPreparation, restoreDocumentaryBackupFile, withDocumentarySnapshotBarrier } from '../ai/documentaryPreparation';
 import { configuredLibraryRoot } from '../library/libraryPaths';
 import { pathStaysInside } from '../library/libraryFileUtils';
 import type { VaultType } from '@shared/types';
@@ -116,6 +117,7 @@ export interface BackupInventory {
     passages: EmbeddingInventory;
     /** Added in backup v5; absent in older archives. */
     documents?: EmbeddingInventory;
+    indexes?: EmbeddingInventory;
   };
   modelSettings: Pick<
     AppSettings,
@@ -132,7 +134,8 @@ export interface BackupInventory {
 }
 
 const GLOBAL_AUXILIARY_FILES = ['app-prefs.json', 'backups-presets.json', 'chat-skills.json', 'skill-marketplace.json', 'browser-bookmarks.json', 'radar-store.json', 'nodi-chat-history.json', 'nodi-notes.json', 'nodi-notifications.json', 'nodi-welcome.seed'] as const;
-const VAULT_HISTORY_FILES = ['study-chat-history.json', 'study-search-index.json'] as const;
+const VAULT_HISTORY_FILES = ['study-chat-history.json'] as const;
+const VAULT_INDEX_PREFERENCES = ['study-search-index.json'] as const;
 const VAULT_MEDIA_FILES = ['study-audio-meta.json'] as const;
 /** Cloud TTS keys live outside the AI-provider store. This list is retained only to
  * restore legacy encrypted backups; new archives never serialize the plaintext keys. */
@@ -271,6 +274,16 @@ async function addAuxiliaryFiles(
   }
   for (const vault of vaults) {
     const dir = path.dirname(vault.path);
+    for (const name of VAULT_INDEX_PREFERENCES) {
+      const source = path.join(dir, name);
+      if (!fs.existsSync(source)) continue;
+      const bytes = await fs.promises.readFile(source);
+      if (selection.includeHistories) files[`aux/vaults/${vault.id}/${name}`] = bytes;
+      else {
+        try { files[`aux/vaults/${vault.id}/${name}`] = Buffer.from(JSON.stringify({ ...JSON.parse(bytes.toString('utf8')), history: [] })); }
+        catch { files[`aux/vaults/${vault.id}/${name}`] = bytes; } // Preserve a recoverable malformed preference file.
+      }
+    }
     if (selection.includeHistories) {
       for (const name of VAULT_HISTORY_FILES) await addFileIfPresent(files, `aux/vaults/${vault.id}/${name}`, path.join(dir, name));
     }
@@ -350,6 +363,7 @@ export async function createBackupArchiveFile(options: {
     const payloadZip = new StreamingZipWriter(payloadPath, 6);
     let reusedVaults = 0;
     let processedVaultBytes = 0;
+    await withDocumentarySnapshotBarrier(async () => {
     for (const vault of vaults) {
       const vaultStartedAt = process.hrtime.bigint();
       const dbFile = `vaults/${vault.id}/database.sqlite`;
@@ -374,6 +388,16 @@ export async function createBackupArchiveFile(options: {
         processedVaultBytes,
       });
     }
+    const documentaryPath = path.join(app.getPath('userData'), 'documentary', 'store.sqlite');
+    if (fs.existsSync(documentaryPath)) {
+      const snapshotPath = path.join(tempRoot, 'documentary.sqlite');
+      await snapshotVaultInUtility({ sourcePath: documentaryPath, targetPath: snapshotPath, cacheDir, vaultId: 'documentary' });
+      const archivePath = 'aux/documentary/store.sqlite';
+      fileDigests[archivePath] = await sha256File(snapshotPath);
+      await payloadZip.addFile(archivePath, snapshotPath);
+      await fs.promises.rm(snapshotPath, { force: true });
+    }
+    });
     phaseStartedAt = logBackupPerf('snapshot-all-vaults:complete', phaseStartedAt, { vaults: vaults.length, processedVaultBytes, reusedVaults });
     files['registry.json'] = Buffer.from(JSON.stringify({ activeVaultId, vaults: vaultEntries }, null, 2));
     await addAuxiliaryFiles(files, vaults, selection);
@@ -508,6 +532,8 @@ export async function restoreBackupArchiveFileSafely(
     await createBackupArchiveFile({ password: safetyPassword, appVersion }, stagedSafety);
     await fs.promises.rename(stagedSafety, safetyPath);
     emitRestoreProgress(onProgress, 'preparing', 1, 1);
+    await (await import('../ai/embeddingIndexes')).pauseAllEmbeddingIndexPreparations();
+    await closeDocumentaryPreparation();
     pausedVaultIds = await pauseAllDocumentIndexingAndDrain();
     const result = await restoreBackupArchiveFile(archivePath, password, onProgress);
     if (!result.ok) {
@@ -544,6 +570,7 @@ export async function restoreBackupArchiveFileSafely(
     }
   } finally {
     if (pausedVaultIds) await resumeAllDocumentIndexingAfterMaintenance(pausedVaultIds);
+    if (pausedVaultIds) await initializeDocumentaryPreparation();
   }
 }
 
@@ -599,6 +626,8 @@ export async function restoreBackupArchiveSafely(
     safetyPath = path.join(safetyDir, `pre-restore-${Date.now()}.nodus`);
     writeAtomicFile(safetyPath, safetyArchive);
 
+    await (await import('../ai/embeddingIndexes')).pauseAllEmbeddingIndexPreparations();
+    await closeDocumentaryPreparation();
     pausedVaultIds = await pauseAllDocumentIndexingAndDrain();
     // Its open connections would keep the replaced vault's write-ahead log alive (vectorScanHost.ts).
     await stopVectorScanWorker();
@@ -635,6 +664,7 @@ export async function restoreBackupArchiveSafely(
     }
   } finally {
     if (pausedVaultIds) await resumeAllDocumentIndexingAfterMaintenance(pausedVaultIds);
+    if (pausedVaultIds) await initializeDocumentaryPreparation();
   }
 }
 
@@ -949,6 +979,7 @@ function plannedRestoreEntries(
   }
 
   const selection = normalizeBackupSelection(payloadManifest.selection as Partial<BackupSelection> | undefined, false);
+  add('aux/documentary/store.sqlite');
   if (selection.includeHistories) add('aux/global/focus.sqlite');
   if (selection.includePreferences) {
     for (const name of GLOBAL_AUXILIARY_FILES) add(`aux/global/${name}`);
@@ -956,6 +987,7 @@ function plannedRestoreEntries(
     for (const entry of payload.entries) if (!entry.isDirectory && entry.name.startsWith(prefix)) names.add(entry.name);
   }
   for (const vault of streamedVaultEntries(payloadManifest) ?? []) {
+    for (const name of VAULT_INDEX_PREFERENCES) add(`aux/vaults/${vault.id}/${name}`);
     if (selection.includeHistories) {
       for (const name of VAULT_HISTORY_FILES) add(`aux/vaults/${vault.id}/${name}`);
     }
@@ -1101,6 +1133,13 @@ async function restoreAuxiliaryFilesFromFile(
   payloadManifest: StreamedInnerManifest,
   tracker?: RestoreByteTracker,
 ): Promise<void> {
+  const documentary = payload.entry('aux/documentary/store.sqlite');
+  if (documentary) {
+    await closeDocumentaryPreparation();
+    const staged = path.join(app.getPath('userData'), 'documentary-restore.sqlite');
+    try { await extractAtomicEntry(payload, documentary, staged, tracker); restoreDocumentaryBackupFile(staged); }
+    finally { fs.rmSync(staged, { force: true }); }
+  }
   const selection = normalizeBackupSelection(payloadManifest.selection as Partial<BackupSelection> | undefined, false);
   const focus = selection.includeHistories ? payload.entry('aux/global/focus.sqlite') : undefined;
   if (focus) {
@@ -1137,6 +1176,10 @@ async function restoreAuxiliaryFilesFromFile(
     const vault = restoredVaults.get(vaultEntry.id);
     if (!vault) continue;
     const targetDir = path.dirname(vault.path);
+    for (const name of VAULT_INDEX_PREFERENCES) {
+      const entry = payload.entry(`aux/vaults/${vault.id}/${name}`);
+      if (entry) await extractAtomicEntry(payload, entry, path.join(targetDir, name), tracker);
+    }
     if (selection.includeHistories) {
       for (const name of VAULT_HISTORY_FILES) {
         const entry = payload.entry(`aux/vaults/${vault.id}/${name}`);
@@ -1496,6 +1539,12 @@ function archiveTargetInside(root: string, relative: string): string | null {
 }
 
 function restoreAuxiliaryFiles(payload: AdmZip, payloadManifest: PayloadManifest): void {
+  const documentary = payload.getEntry('aux/documentary/store.sqlite');
+  if (documentary) {
+    const staged = path.join(app.getPath('userData'), 'documentary-restore.sqlite');
+    try { writeAtomicFile(staged, documentary.getData()); restoreDocumentaryBackupFile(staged); }
+    finally { fs.rmSync(staged, { force: true }); }
+  }
   const selection = normalizeBackupSelection(payloadManifest.selection, false);
   const focus = selection.includeHistories ? payload.getEntry('aux/global/focus.sqlite') : null;
   if (focus) {
@@ -1530,6 +1579,10 @@ function restoreAuxiliaryFiles(payload: AdmZip, payloadManifest: PayloadManifest
     const vault = restoredVaults.get(vaultEntry.id);
     if (!vault) continue;
     const targetDir = path.dirname(vault.path);
+    for (const name of VAULT_INDEX_PREFERENCES) {
+      const entry = payload.getEntry(`aux/vaults/${vault.id}/${name}`);
+      if (entry) writeAtomicFile(path.join(targetDir, name), entry.getData());
+    }
     if (selection.includeHistories) {
       for (const name of VAULT_HISTORY_FILES) {
         const entry = payload.getEntry(`aux/vaults/${vault.id}/${name}`);
@@ -1621,6 +1674,7 @@ function databaseInventory(
         workSummaries: embeddingInventory(db, 'work_summaries'),
         passages: embeddingInventory(db, 'passages'),
         documents: embeddingInventory(db, 'document_vectors'),
+        indexes: embeddingInventory(db, 'embedding_index_values'),
       },
       modelSettings: modelSettings(settings),
       apiKeyProviders: Object.keys(apiKeys).sort() as AiProvider[],
@@ -1655,6 +1709,7 @@ function databaseMatchesInventory(databasePath: string, expected: BackupInventor
     if (actual.tableRows[table] !== expectedRows) return false;
   }
   return (
+    (!expected.embeddings.indexes || (actual.embeddings.indexes?.records === expected.embeddings.indexes.records && actual.embeddings.indexes?.bytes === expected.embeddings.indexes.bytes)) &&
     actual.embeddings.ideas.records === expected.embeddings.ideas.records &&
     actual.embeddings.ideas.bytes === expected.embeddings.ideas.bytes &&
     actual.embeddings.workSummaries.records === expected.embeddings.workSummaries.records &&

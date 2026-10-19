@@ -83,8 +83,8 @@ export function listStudyNoteLinks(filter: StudyNoteLinkFilter = {}): StudyNoteL
     SELECT l.*, n.title AS note_title, n.kind AS note_kind, n.content AS note_content,
            n.tags_json AS note_tags, n.updated_at AS note_updated_at, m.title AS material_title
       FROM study_note_links l
-      JOIN notes n ON n.id = l.note_id AND n.trashed_at IS NULL
-      LEFT JOIN study_materials m ON m.id = l.material_id
+      JOIN embedding_read_notes n ON n.id = l.note_id AND n.trashed_at IS NULL
+      LEFT JOIN embedding_read_study_materials m ON m.id = l.material_id
      WHERE (l.material_id IS NULL OR (m.id IS NOT NULL AND ${live('m.')}))
        AND ${alive('course_id', 'study_courses')}
        AND ${alive('subject_id', 'study_subjects')}

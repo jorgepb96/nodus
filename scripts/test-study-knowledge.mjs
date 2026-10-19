@@ -29,6 +29,7 @@ try {
     assert.ok(getDb().prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table), `${table} exists`);
   }
 
+  require(path.join(repoRoot, 'electron/db/settingsRepo.ts')).updateSettings({ embeddingProvider: 'openai', embeddingModel: 'test' });
   const course = org.createStudyCourse({ name: 'Curso' });
   const subjectA = org.createStudySubject({ courseId: course.id, name: 'Historia' });
   const subjectB = org.createStudySubject({ courseId: course.id, name: 'Filosofía' });
@@ -43,20 +44,20 @@ try {
     relations: [],
   };
   for (const subject of [subjectA, subjectB]) knowledge.replaceStudySourceKnowledge({ subjectId: subject.id, sourceKind: 'material', sourceId: imported.material.id,
-    sourceTitle: 'Tema', sourceHash: 'hash-1', ideas: extraction.ideas, relations: extraction.relations, embeddings: [[1, 0, 0]], embeddingProvider: 'test', embeddingModel: 'test' });
+    sourceTitle: 'Tema', sourceHash: 'hash-1', ideas: extraction.ideas, relations: extraction.relations, embeddings: [[1, 0, 0]], embeddingProvider: 'openai', embeddingModel: 'test' });
   const ideasA = knowledge.listStudyIdeas(subjectA.id); const ideasB = knowledge.listStudyIdeas(subjectB.id);
   assert.equal(ideasA.length, 1); assert.equal(ideasB.length, 1);
   assert.notEqual(ideasA[0].id, ideasB[0].id, 'the same concept is independently canonicalised in each subject');
   assert.equal(knowledge.getStudyIdeaDetail(ideasA[0].id).evidence[0].quote, extraction.ideas[0].evidence[0].quote);
   knowledge.replaceStudySourceKnowledge({ subjectId: subjectA.id, sourceKind: 'material', sourceId: imported.material.id,
-    sourceTitle: 'Tema', sourceHash: 'hash-1b', ideas: extraction.ideas, relations: extraction.relations, embeddings: [null], embeddingProvider: 'test', embeddingModel: 'test' });
+    sourceTitle: 'Tema', sourceHash: 'hash-1b', ideas: extraction.ideas, relations: extraction.relations, embeddings: [null], embeddingProvider: 'openai', embeddingModel: 'test' });
   assert.ok(knowledge.listStudyIdeaVectors(subjectA.id)[0].embedding, 'reanalyzing an existing idea without a new vector preserves its embedding');
 
   const sourcePath2 = path.join(root, 'tema-2.txt'); fs.writeFileSync(sourcePath2, 'La limitación del poder protege el equilibrio institucional.');
   const second = await materials.importStudyMaterialFile(sourcePath2, { courseId: course.id, subjectId: subjectA.id });
   knowledge.replaceStudySourceKnowledge({ subjectId: subjectA.id, sourceKind: 'material', sourceId: second.material.id, sourceTitle: 'Tema 2', sourceHash: 'hash-2',
     ideas: [{ key: 'balance', type: 'concept', label: 'Equilibrio institucional', statement: 'El equilibrio institucional limita el poder.', role: 'principal', confidence: 0.9,
-      evidence: [{ quote: 'La limitación del poder protege el equilibrio institucional.', location: '' }] }], relations: [], embeddings: [[0.99, 0.01, 0]], embeddingProvider: 'test', embeddingModel: 'test' });
+      evidence: [{ quote: 'La limitación del poder protege el equilibrio institucional.', location: '' }] }], relations: [], embeddings: [[0.99, 0.01, 0]], embeddingProvider: 'openai', embeddingModel: 'test' });
   knowledge.connectStudySourceIdeasSemantically(subjectA.id, 'material', second.material.id);
   assert.ok(knowledge.getStudyKnowledgeGraph(subjectA.id).edges.length >= 1, 'semantic neighbours inside one subject are connected');
   assert.equal(knowledge.getStudyKnowledgeGraph(subjectB.id).edges.length, 0, 'relations never cross subjects');
@@ -122,7 +123,7 @@ try {
   const movedNote = org.createStudyDocument({ title: 'Apunte con ideas', contentMarkdown: 'Idea conservada', placement: { subjectId: subjectB.id } });
   knowledge.replaceStudySourceKnowledge({ subjectId: subjectB.id, sourceKind: 'document', sourceId: movedNote.id,
     sourceTitle: movedNote.title, sourceHash: 'note-hash', ideas: [{ ...extraction.ideas[0], label: 'Idea del apunte', statement: 'Una idea propia del apunte.' }],
-    relations: [], embeddings: [[0, 1, 0]], embeddingProvider: 'test', embeddingModel: 'test' });
+    relations: [], embeddings: [[0, 1, 0]], embeddingProvider: 'openai', embeddingModel: 'test' });
   const noteIdea = knowledge.listStudyIdeas(subjectB.id).find((idea) => idea.label === 'Idea del apunte');
   const noteEvidence = knowledge.getStudyIdeaDetail(noteIdea.id);
   const notePlacement = org.getStudyWorkspace().placements.find((p) => p.documentId === movedNote.id);
@@ -139,7 +140,7 @@ try {
   const sourcePath3 = path.join(root, 'tema-3.txt'); fs.writeFileSync(sourcePath3, 'La separación de poderes limita la concentración política.');
   const third = await materials.importStudyMaterialFile(sourcePath3, { courseId: course.id, subjectId: subjectA.id });
   knowledge.replaceStudySourceKnowledge({ subjectId: subjectA.id, sourceKind: 'material', sourceId: third.material.id,
-    sourceTitle: 'Tema 3', sourceHash: 'hash-3', ideas: extraction.ideas, relations: [], embeddings: [[1, 0, 0]], embeddingProvider: 'test', embeddingModel: 'test' });
+    sourceTitle: 'Tema 3', sourceHash: 'hash-3', ideas: extraction.ideas, relations: [], embeddings: [[1, 0, 0]], embeddingProvider: 'openai', embeddingModel: 'test' });
   const sharedIdeaId = knowledge.listStudyIdeas(subjectA.id).find((idea) => idea.label === 'Separación de poderes').id;
   knowledge.purgeStudyKnowledgeSource('material', imported.material.id);
   assert.ok(knowledge.getStudyIdeaDetail(sharedIdeaId), 'purging one source preserves an idea that is still supported by another source');

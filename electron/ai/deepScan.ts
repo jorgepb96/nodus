@@ -36,6 +36,7 @@ import {
   recordLocalAnalysisProvenance,
 } from '../db/libraryAnalysisProvenance';
 import { getDb } from '../db/database';
+import { activeEmbeddingIndex, profileFingerprint } from '../db/embeddingIndexesRepo';
 import { mapOrderedPool } from './orderedPool';
 import { OrderedPublicationBarrier } from './orderedPublicationBarrier';
 
@@ -534,9 +535,12 @@ export async function runDeepScan(
       chunkPlan,
       localTokenPolicy: 1,
     });
+    const embeddingContext = activeEmbeddingIndex(getDb());
+    const fusionCheckpointHash = analysisFingerprint({ source: checkpointHash,
+      index: embeddingContext ? [embeddingContext.indexId, embeddingContext.generation, profileFingerprint(embeddingContext.profile)] : null });
     if (options.force) {
       clearCheckpoints(work.nodus_id, checkpointHash, 'deep_chunk');
-      clearCheckpoints(work.nodus_id, checkpointHash, 'deep_fusion');
+      clearCheckpoints(work.nodus_id, fusionCheckpointHash, 'deep_fusion');
     }
     perfLog('chunking', 0, perf, {
       mode: chunkPlan.mode,
@@ -794,7 +798,7 @@ export async function runDeepScan(
         // (invalid JSON or a provider hang) therefore costs a retry of only the
         // ideas that failed, not the whole work — the caller throws a retriable
         // error and the queue resumes from these checkpoints later.
-        const fusionCheckpoints = loadCheckpoints(work.nodus_id, checkpointHash, 'deep_fusion');
+        const fusionCheckpoints = loadCheckpoints(work.nodus_id, fusionCheckpointHash, 'deep_fusion');
         const failedFusion: number[] = [];
         // Same contract as the fragment phase: ideas are resolved in parallel, so the
         // line is written once per completion instead of once per worker, and the
@@ -824,7 +828,7 @@ export async function runDeepScan(
               embeddingText,
               themes: ideaThemeLabels,
             }, (fusionCheckpoints.get(i) as FusionDecision | undefined) ?? null);
-            if (outcome.decision) saveCheckpoint(work.nodus_id, checkpointHash, 'deep_fusion', i, outcome.decision);
+            if (outcome.decision) saveCheckpoint(work.nodus_id, fusionCheckpointHash, 'deep_fusion', i, outcome.decision);
             return outcome.plan;
           } catch (error) {
             // A misconfiguration (missing model / bad key) is not a hiccup: it would
@@ -940,7 +944,7 @@ export async function runDeepScan(
           });
           recomputeAuthorRelations();
           clearCheckpoints(work.nodus_id, checkpointHash, 'deep_chunk');
-          clearCheckpoints(work.nodus_id, checkpointHash, 'deep_fusion');
+          clearCheckpoints(work.nodus_id, fusionCheckpointHash, 'deep_fusion');
           assertDeepDataIntegrity(work.nodus_id);
         })();
       });

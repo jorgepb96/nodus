@@ -16,6 +16,8 @@ export interface DocumentaryRetrievalInput {
   settings: RetrievalSettings;
   threshold: number;
   read?: ResearchDocumentRead;
+  includeRerankCandidates?: boolean;
+  rerankOrder?: Array<{ id: string; text: string; index_key: string }>;
 }
 
 const evidenceKey = (passage: Passage) => JSON.stringify([passage.document_id, passage.text, passage.locator_json]);
@@ -66,7 +68,16 @@ export function runDocumentaryRetrieval(store: Store, input: DocumentaryRetrieva
       semanticIds: [...(prior?.semanticIds ?? []), ...(laneIndex === 1 ? [passage.id] : [])] });
   });
   budget.candidates = fused.size;
-  const ranked = [...fused.values()].sort((a, b) => b.score - a.score);
+  let ranked = [...fused.values()].sort((a, b) => b.score - a.score);
+  const requested = input.rerankOrder;
+  const byId = new Map(ranked.map(entry => [entry.passage.id, entry.passage]));
+  const rerankingApplied = !!requested?.length && requested.every(item => byId.get(item.id)?.text === item.text && byId.get(item.id)?.index_key === item.index_key)
+    && new Set(requested.map(item => item.id)).size === requested.length;
+  if (rerankingApplied) {
+    const order = new Map(requested!.map((item, index) => [item.id, index]));
+    ranked = ranked.map((entry, index) => ({ entry, rank: order.get(entry.passage.id) ?? requested!.length + index }))
+      .sort((a, b) => a.rank - b.rank).map(({ entry }) => entry);
+  }
   const chosen: Passage[] = [];
   const works = new Set<string>();
   const acceptedContent = new Set<string>();
@@ -110,7 +121,8 @@ export function runDocumentaryRetrieval(store: Store, input: DocumentaryRetrieva
     chosen.push(...next);
     frontier = next;
   }
-  return { passages: chosen, retrievalTrace: {
+  return { passages: chosen, ...(input.includeRerankCandidates ? { rerankCandidates: ranked.slice(0, 30).map(entry => entry.passage) } : {}),
+    ...(requested ? { rerankingApplied } : {}), retrievalTrace: {
     semantic: semantic.map(target), lexical: lexical.map(target),
     lexicalQueries: lexicalLists.map(({ query, passages }) => ({ query, candidates: passages.map(target) })),
     selected: chosen.map(passage => ({ ...target(passage),

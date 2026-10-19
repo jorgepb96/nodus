@@ -4,11 +4,19 @@ import { literalRelevance, mergeHybridResults } from '@shared/hybridSearch';
 import { cosineStudySearch } from '@shared/studySearch';
 import { getDb } from '../db/database';
 import { currentEmbeddingConfig } from '../db/ideasRepo';
+import { activeEmbeddingIndex, embeddingGenerationRevision, embeddingIndexHead, profileFingerprint } from '../db/embeddingIndexesRepo';
 import { embedQuery, embedMany } from './aiClient';
 
 // Derived, in-memory cache scoped to the DB connection, provider, model and content.
 // Deleted/restricted entities are never read from the cache: only current candidates enter retrieval.
 const caches = new WeakMap<ReturnType<typeof getDb>, Map<string, Promise<number[] | null>>>();
+function cacheIdentity(): string {
+  const db = getDb();
+  const context = activeEmbeddingIndex(db);
+  return JSON.stringify([db.name, currentEmbeddingConfig(), context?.indexId, context?.generation, embeddingIndexHead(db)?.corpus_revision,
+    context ? profileFingerprint(context.profile) : null,
+    context ? embeddingGenerationRevision(db, context.indexId, context.generation) : 0]);
+}
 export async function searchHybridCorpus<T extends SearchableHit>(query: string, candidates: T[], kinds?: ReadonlySet<string>, limit = 250, queryVector?: number[]) {
   const filtered = candidates.filter((hit) => !kinds || kinds.has(hit.kind));
   const semanticCandidates = filtered.filter((hit) => hit.semanticAllowed !== false);
@@ -17,7 +25,9 @@ export async function searchHybridCorpus<T extends SearchableHit>(query: string,
   if (query.trim().length < 2 || !filtered.length) return { results: [], semanticAvailable: true };
   if (!semanticCandidates.length) return { ...fallback, semanticAvailable: true };
   const db = getDb();
-  const config = JSON.stringify(currentEmbeddingConfig());
+  const config = cacheIdentity();
+  const stale = { results: [] as T[], semanticAvailable: false };
+  const current = () => db.open && getDb() === db && cacheIdentity() === config;
   const cache = caches.get(db) ?? new Map<string, Promise<number[] | null>>();
   caches.set(db, cache);
   try {
@@ -32,7 +42,7 @@ export async function searchHybridCorpus<T extends SearchableHit>(query: string,
       });
     });
     for (let offset = 0; offset < chunks.length; offset += 32) {
-      if (!db.open || getDb() !== db || JSON.stringify(currentEmbeddingConfig()) !== config) return fallback;
+      if (!current()) return stale;
       const missing = [...new Map(chunks.slice(offset, offset + 32).filter((chunk) => !cache.has(chunk.key)).map((chunk) => [chunk.key, chunk])).values()];
       if (missing.length) {
         const batch = embedMany(missing.map((chunk) => chunk.content));
@@ -54,8 +64,8 @@ export async function searchHybridCorpus<T extends SearchableHit>(query: string,
     }
     // Bound cache memory without affecting this request's results.
     while (cache.size > 12000) cache.delete(cache.keys().next().value!);
-    return { results: mergeHybridResults(query, literal, semantic, kinds, limit), semanticAvailable: available };
+    return current() ? { results: mergeHybridResults(query, literal, semantic, kinds, limit), semanticAvailable: available } : stale;
   } catch {
-    return fallback;
+    return current() ? fallback : stale;
   }
 }

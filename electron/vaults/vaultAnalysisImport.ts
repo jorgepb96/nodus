@@ -11,6 +11,8 @@ import { sleepIdeasWithoutWorks, wakeIdeasWithWorks } from '../db/ideaDormancy';
 import { pruneOrphanThemesIn } from '../db/graphIntegrity';
 import { getActiveVault, getVault, listVaults } from './vaultRegistry';
 import { getSettings } from '../db/settingsRepo';
+import { activeEmbeddingIndex, embeddingIndexHead, indexRow, profileFingerprint, registerEmbeddingIndexFunctions } from '../db/embeddingIndexesRepo';
+import { EMBEDDING_FAMILIES } from '../db/embeddingIndexSchema';
 import { ANALYSIS_PIPELINES, analysisModelFingerprint } from '../db/libraryAnalysisProvenance';
 
 type WorkRow = Work & {
@@ -61,6 +63,31 @@ export interface VaultAnalysisReuseOptions {
 }
 
 const SOURCE_ALIAS = 'reuse_source';
+function pinSourceDatabase(db: Database.Database): void {
+  const head = embeddingIndexHead(db);
+  const row = head?.active_id ? indexRow(db, head.active_id) : null;
+  registerEmbeddingIndexFunctions(db, row && head?.enabled ? { indexId: row.id, generation: row.generation } : null);
+}
+/** Attached views would resolve the TARGET connection's context. Project source vectors
+ * explicitly and only when the complete source profile matches the active target. */
+function sourceEmbeddingTable(db: Database.Database, table: string): string {
+  const family = EMBEDDING_FAMILIES.find(family => family.table === table);
+  if (!family) throw new Error('Unknown embedding source family');
+  const columns = (db.pragma(`${SOURCE_ALIAS}.table_info("${table}")`) as Array<{ name: string }>).map(column => column.name);
+  const excluded = new Set(['embedding', 'embedding_provider', 'embedding_model', 'embedding_dim', 'embedding_text_hash']);
+  const projected = columns.filter(column => !excluded.has(column)).map(column => `s."${column}"`);
+  projected.push('v.embedding AS embedding');
+  for (const [column, expression] of [['embedding_provider', "json_extract(i.profile_json,'$.provider')"], ['embedding_model', "json_extract(i.profile_json,'$.model')"], ['embedding_dim', 'length(v.embedding)/4'], ['embedding_text_hash', 'v.text_hash']]) {
+    if (columns.includes(column)) projected.push(`${expression} AS ${column}`);
+  }
+  const active = activeEmbeddingIndex(db);
+  const fingerprint = active ? profileFingerprint(active.profile) : '';
+  return `(SELECT ${projected.join(',')} FROM ${SOURCE_ALIAS}."${table}" s
+    LEFT JOIN ${SOURCE_ALIAS}.embedding_indexes i ON i.id=(SELECT active_id FROM ${SOURCE_ALIAS}.embedding_index_state WHERE enabled=1)
+      AND i.legacy=0 AND i.fingerprint='${fingerprint}'
+      ${active?.dimensions ? `AND i.dimensions=${active.dimensions}` : ''}
+    LEFT JOIN ${SOURCE_ALIAS}.embedding_index_values v ON v.index_id=i.id AND v.generation=i.generation AND v.family='${table}' AND v.entity_id=s."${family.id}" AND v.recipe_version=1)`;
+}
 
 function placeholders(values: unknown[]): string {
   return values.map(() => '?').join(',');
@@ -82,6 +109,7 @@ function tableChange(db: Database.Database, tableRows: Record<string, number>, t
 function openSourceDb(file: string): Database.Database | null {
   if (!fs.existsSync(file)) return null;
   const probe = new Database(file, { readonly: true, fileMustExist: true });
+  pinSourceDatabase(probe);
   try {
     if (Number(probe.pragma('user_version', { simple: true })) >= SCHEMA_VERSION) return probe;
   } catch (error) {
@@ -92,6 +120,7 @@ function openSourceDb(file: string): Database.Database | null {
   let db = new Database(file);
   try {
     db = migrateDatabaseSafely(db, file, SCHEMA_VERSION, runMigrations);
+    pinSourceDatabase(db);
     scheduleMigrationRecoveryRetention(file);
     return db;
   } catch (error) {
@@ -109,11 +138,11 @@ function sourceCounts(db: Database.Database, nodusId: string): AnalysisCounts {
           (SELECT COUNT(*) FROM idea_occurrences WHERE nodus_id = @id) AS ideas,
           (
             SELECT COUNT(*)
-              FROM idea_occurrences io JOIN ideas i ON i.global_id = io.global_id
+              FROM idea_occurrences io JOIN embedding_read_ideas i ON i.global_id = io.global_id
              WHERE io.nodus_id = @id AND i.embedding IS NOT NULL
-          ) + (SELECT COUNT(*) FROM passages WHERE nodus_id = @id AND embedding IS NOT NULL) AS ideaEmbeddings,
-          (SELECT COUNT(*) FROM work_summaries WHERE nodus_id = @id) AS summary,
-          (SELECT COUNT(*) FROM passages WHERE nodus_id = @id) AS passages,
+          ) + (SELECT COUNT(*) FROM embedding_read_passages AS passages WHERE nodus_id = @id AND embedding IS NOT NULL) AS ideaEmbeddings,
+          (SELECT COUNT(*) FROM embedding_read_work_summaries AS work_summaries WHERE nodus_id = @id) AS summary,
+          (SELECT COUNT(*) FROM embedding_read_passages AS passages WHERE nodus_id = @id) AS passages,
           (SELECT COUNT(*) FROM edges WHERE source_work = @id) AS relations,
           (SELECT COUNT(*) FROM work_authors WHERE nodus_id = @id) AS authors,
           (SELECT COUNT(*) FROM work_idea_synthesis WHERE nodus_id = @id) AS synthesis
@@ -121,6 +150,11 @@ function sourceCounts(db: Database.Database, nodusId: string): AnalysisCounts {
       `
     )
     .get({ id: nodusId }) as AnalysisCounts;
+  const target = activeEmbeddingIndex(getDb());
+  const sourceHead = embeddingIndexHead(db);
+  const sourceIndex = sourceHead?.active_id ? indexRow(db, sourceHead.active_id) : null;
+  if (!target || !sourceIndex || sourceIndex.fingerprint !== profileFingerprint(target.profile)
+    || (target.dimensions !== null && target.dimensions !== sourceIndex.dimensions)) row.ideaEmbeddings = 0;
   return row;
 }
 
@@ -250,8 +284,8 @@ function decideCompatibility(
   const targetHasLocalOutput = (kind: VaultAnalysisReuseKind): boolean => {
     if (kind === 'themes') return target.light_status === 'done' || targetCount('work_themes') > 0;
     if (kind === 'ideas') return target.deep_status === 'done' || targetCount('idea_occurrences') > 0;
-    if (kind === 'ideaEmbeddings') return targetCount('idea_occurrences io JOIN ideas i ON i.global_id=io.global_id', 'io.nodus_id=? AND i.embedding IS NOT NULL') > 0
-      || targetCount('passages', 'nodus_id=? AND embedding IS NOT NULL') > 0;
+    if (kind === 'ideaEmbeddings') return targetCount('idea_occurrences io JOIN embedding_read_ideas i ON i.global_id=io.global_id', 'io.nodus_id=? AND i.embedding IS NOT NULL') > 0
+      || targetCount('embedding_read_passages', 'nodus_id=? AND embedding IS NOT NULL') > 0;
     if (kind === 'summary') return target.summary_status === 'done' || targetCount('work_summaries') > 0;
     if (kind === 'passages') return targetCount('passages') > 0;
     if (kind === 'documentProfile') return targetCount('document_profile_state', "nodus_id=? AND status='current'") > 0;
@@ -375,7 +409,7 @@ function copyDeepAnalysis(
              CASE WHEN @includeEmbeddings THEN embedding_model ELSE NULL END,
              CASE WHEN @includeEmbeddings THEN embedding_dim ELSE NULL END,
              CASE WHEN @includeEmbeddings THEN embedding_text_hash ELSE NULL END
-        FROM ${SOURCE_ALIAS}.ideas
+        FROM ${sourceEmbeddingTable(db, 'ideas')}
        WHERE global_id IN (
          SELECT global_id FROM ${SOURCE_ALIAS}.idea_occurrences WHERE nodus_id = @sourceId
        )
@@ -425,19 +459,23 @@ function copyDeepAnalysis(
   ).run({ sourceId, targetId });
   tableChange(db, tableRows, 'external_refs');
 
+  if (includeEmbeddings) copyIdeaEmbeddings(db, sourceId, targetId, tableRows);
+
 }
 
 function copyIdeaEmbeddings(db: Database.Database, sourceId: string, targetId: string, tableRows: Record<string, number>): void {
   db.prepare(`
     UPDATE ideas
-       SET embedding = (SELECT source.embedding FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id),
-           embedding_provider = (SELECT source.embedding_provider FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id),
-           embedding_model = (SELECT source.embedding_model FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id),
-           embedding_dim = (SELECT source.embedding_dim FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id),
-           embedding_text_hash = (SELECT source.embedding_text_hash FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id)
+       SET embedding = (SELECT source.embedding FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id),
+           embedding_provider = (SELECT source.embedding_provider FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id),
+           embedding_model = (SELECT source.embedding_model FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id),
+           embedding_dim = (SELECT source.embedding_dim FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id),
+           embedding_text_hash = (SELECT source.embedding_text_hash FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id)
      WHERE global_id IN (SELECT global_id FROM ${SOURCE_ALIAS}.idea_occurrences WHERE nodus_id=@sourceId)
        AND global_id IN (SELECT global_id FROM idea_occurrences WHERE nodus_id=@targetId)
-       AND EXISTS (SELECT 1 FROM ${SOURCE_ALIAS}.ideas source WHERE source.global_id=ideas.global_id AND source.embedding IS NOT NULL)
+       AND EXISTS (SELECT 1 FROM ${sourceEmbeddingTable(db, 'ideas')} source WHERE source.global_id=ideas.global_id AND source.embedding IS NOT NULL
+         AND source.embedding_text_hash=idea_embedding_text_hash(ideas.type,ideas.label,ideas.statement,
+           COALESCE((SELECT GROUP_CONCAT(DISTINCT t.label) FROM idea_theme_links it JOIN themes t ON t.theme_id=it.theme_id WHERE it.global_id=ideas.global_id),'')))
   `).run({ sourceId, targetId });
   tableChange(db, tableRows, 'ideas');
 }
@@ -451,7 +489,7 @@ function copySummary(db: Database.Database, sourceId: string, targetId: string, 
       )
       SELECT @targetId, summary, source_level, model_json, content_hash, embedding,
              embedding_provider, embedding_model, embedding_dim, embedding_text_hash, created_at, updated_at
-        FROM ${SOURCE_ALIAS}.work_summaries
+        FROM ${sourceEmbeddingTable(db, 'work_summaries')}
        WHERE nodus_id = @sourceId
     `
   ).run({ sourceId, targetId });
@@ -479,7 +517,7 @@ function copyPassages(
              CASE WHEN @includeEmbeddings THEN embedding_model ELSE NULL END,
              CASE WHEN @includeEmbeddings THEN embedding_dim ELSE NULL END,
              CASE WHEN @includeEmbeddings THEN embedding_text_hash ELSE NULL END, created_at
-        FROM ${SOURCE_ALIAS}.passages
+        FROM ${sourceEmbeddingTable(db, 'passages')}
        WHERE nodus_id = @sourceId
     `
   ).run({ sourceId, targetId, includeEmbeddings: includeEmbeddings ? 1 : 0 });
@@ -556,7 +594,7 @@ function copyDocumentProfile(
       CASE WHEN kind='section' THEN @targetId||':section:'||source_id
            WHEN kind='overview' THEN source_id ELSE @targetId||':field:'||source_id END,
       text,text_hash,weight,embedding,embedding_provider,embedding_model,embedding_dim,created_at
-      FROM ${SOURCE_ALIAS}.document_vectors WHERE version_id=@sourceVersion
+      FROM ${sourceEmbeddingTable(db, 'document_vectors')} WHERE version_id=@sourceVersion
   `).run({ targetId, versionId, sourceVersion });
   tableChange(db, tableRows, 'document_vectors');
   db.prepare(`

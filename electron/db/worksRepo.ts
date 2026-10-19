@@ -237,9 +237,9 @@ function queryWorks(filter: WorkFilter, request?: WorkPageRequest): WorkPage {
           params.passModel = config.model;
           clauses.push(
             `(
-              EXISTS (SELECT 1 FROM passages p WHERE p.nodus_id = w.nodus_id)
+              EXISTS (SELECT 1 FROM embedding_read_passages p WHERE p.nodus_id = w.nodus_id)
               AND NOT EXISTS (
-                SELECT 1 FROM passages p
+                SELECT 1 FROM embedding_read_passages p
                  WHERE p.nodus_id = w.nodus_id
                    AND NOT (p.embedding IS NOT NULL
                             AND p.embedding_provider = @passProv
@@ -258,9 +258,9 @@ function queryWorks(filter: WorkFilter, request?: WorkPageRequest): WorkPage {
           params.passNegModel = config.model;
           clauses.push(
             `NOT (
-              EXISTS (SELECT 1 FROM passages p WHERE p.nodus_id = w.nodus_id)
+              EXISTS (SELECT 1 FROM embedding_read_passages p WHERE p.nodus_id = w.nodus_id)
               AND NOT EXISTS (
-                SELECT 1 FROM passages p
+                SELECT 1 FROM embedding_read_passages p
                  WHERE p.nodus_id = w.nodus_id
                    AND NOT (p.embedding IS NOT NULL
                             AND p.embedding_provider = @passNegProv
@@ -432,14 +432,14 @@ function workOrderBy(
       const config = currentEmbeddingConfig();
       params.sortEmbeddingProvider = config.provider;
       params.sortEmbeddingModel = config.model;
-      expression = `(SELECT COUNT(*) FROM idea_occurrences io JOIN ideas i ON i.global_id = io.global_id WHERE io.nodus_id = w.nodus_id AND i.embedding IS NOT NULL AND i.embedding_provider = @sortEmbeddingProvider AND i.embedding_model = @sortEmbeddingModel)`;
+      expression = `(SELECT COUNT(*) FROM idea_occurrences io JOIN embedding_read_ideas i ON i.global_id = io.global_id WHERE io.nodus_id = w.nodus_id AND i.embedding IS NOT NULL AND i.embedding_provider = @sortEmbeddingProvider AND i.embedding_model = @sortEmbeddingModel)`;
       break;
     }
     case 'passages': {
       const config = currentEmbeddingConfig();
       params.sortPassageProvider = config.provider;
       params.sortPassageModel = config.model;
-      expression = `(SELECT COUNT(*) FROM passages p WHERE p.nodus_id = w.nodus_id
+      expression = `(SELECT COUNT(*) FROM embedding_read_passages p WHERE p.nodus_id = w.nodus_id
         AND p.embedding IS NOT NULL AND p.embedding_provider = @sortPassageProvider AND p.embedding_model = @sortPassageModel
         AND ((w.resolved_text_hash IS NOT NULL AND p.content_hash = w.resolved_text_hash)
           OR (w.resolved_text_hash IS NULL AND (w.deep_hash IS NULL OR p.content_hash = w.deep_hash))))`;

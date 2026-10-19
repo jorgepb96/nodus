@@ -5,12 +5,13 @@ const state = { db: { open: true }, provider: 'test', model: 'v1', inputs: [], f
 globalThis.__hybridSearchFixture = state;
 const bundle = await build({ entryPoints: ['electron/ai/hybridCorpusSearch.ts'], bundle: true, platform: 'node', format: 'esm', write: false,
   plugins: [{ name: 'isolated-provider', setup(build) {
-    build.onResolve({ filter: /^(\.\/aiClient|\.\.\/db\/(database|ideasRepo))$/ }, (args) => ({ path: args.path, namespace: 'fixture' }));
+    build.onResolve({ filter: /^(\.\/aiClient|\.\.\/db\/(database|ideasRepo|embeddingIndexesRepo))$/ }, (args) => ({ path: args.path, namespace: 'fixture' }));
     build.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: path.endsWith('database')
       ? 'export function getDb() { return globalThis.__hybridSearchFixture.db; }'
+      : path.endsWith('embeddingIndexesRepo') ? 'export function activeEmbeddingIndex(){return globalThis.__hybridSearchFixture.context ?? null} export function embeddingGenerationRevision(){return globalThis.__hybridSearchFixture.valueRevision ?? 0} export function embeddingIndexHead(){return {corpus_revision:globalThis.__hybridSearchFixture.corpusRevision ?? 0}} export function profileFingerprint(profile){return JSON.stringify(profile)}'
       : path.endsWith('ideasRepo') ? 'export function currentEmbeddingConfig() { const s=globalThis.__hybridSearchFixture; return {provider:s.provider,model:s.model}; }'
       : `export async function embedQuery() { if(globalThis.__hybridSearchFixture.fail) throw new Error('offline'); return [1,0]; }
-         export async function embedMany(texts) { const s=globalThis.__hybridSearchFixture; s.inputs.push(...texts); return texts.map(text=>text.includes('orchard')?[1,0]:[0,1]); }`, loader: 'js' }));
+         export async function embedMany(texts) { const s=globalThis.__hybridSearchFixture; s.inputs.push(...texts); if(s.duringEmbedding) s.duringEmbedding(); return texts.map(text=>text.includes('orchard')?[1,0]:[0,1]); }`, loader: 'js' }));
   } }],
 });
 const { searchHybridCorpus } = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString('base64')}`);
@@ -57,4 +58,23 @@ test('local literal visibility never authorizes embedding sensitive content', as
   const response = await searchHybridCorpus('private', [{ kind: 'source', id: 's', title: 'private orchard', semanticAllowed: false }]);
   assert.equal(response.results[0].id, 's');
   assert.equal(state.inputs.length, before);
+});
+
+test('the same model name never reuses a different saved index or rebuild generation', async () => {
+  state.fail = false;
+  state.context = { indexId: 'index-a', generation: 1, profile: { endpoint: 'http://local-a' } };
+  await searchHybridCorpus('fruit', [apple]);
+  const before = state.inputs.length;
+  state.context = { ...state.context, indexId: 'index-b', profile: { endpoint: 'http://local-b' } };
+  await searchHybridCorpus('fruit', [apple]);
+  assert.equal(state.inputs.length, before + 1);
+  state.context = { ...state.context, generation: 2 };
+  await searchHybridCorpus('fruit', [apple]);
+  assert.equal(state.inputs.length, before + 2);
+});
+test('an in-flight response cannot reintroduce a source invalidated during embedding', async () => {
+  state.duringEmbedding = () => { state.corpusRevision = (state.corpusRevision || 0) + 1; };
+  const result = await searchHybridCorpus('fruit', [{ ...apple, snippet: 'Uncached orchard' }]);
+  state.duringEmbedding = null;
+  assert.deepEqual(result.results, []);
 });

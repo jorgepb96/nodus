@@ -1,3 +1,4 @@
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
@@ -97,6 +98,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
 
 /** Simplified Chinese UI table. Keys are the Spanish source strings (see i18n.ts). */
 export const ZH_CN: Record<string, string> = {
+  ...EMBEDDING_INDEX_TRANSLATIONS["zh-CN"],
   ...BACKUPS_TRANSLATIONS['zh-CN'],
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS['zh-CN'],

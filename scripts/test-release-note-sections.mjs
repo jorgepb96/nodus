@@ -29,16 +29,15 @@ test('the modal covers every language available in the interface', async () => {
 test('the current release covers the final changes in twelve languages and three sections', () => {
   assert.equal(current.version, pkg.version);
   assert.equal(current.date, pkg.releaseMetadata.dateReleased);
-  assert.equal(current.version, '5.14.0');
-  assert.equal(current.highlights.length, 11);
-  assert.deepEqual(current.highlights.map(h => h.category), ['new','new','new','enhancement','enhancement','enhancement','fix','fix','fix','fix','fix']);
-  assert.deepEqual(current.highlights.map(h => h.scope), Array(11).fill('ai'));
-  const outcomes = [/several embedding indexes/, /Compare A\/B retrieval/, /request queue/, /optional local model/, /format each model expects/, /icon buttons with tooltips/, /no longer freezes Nodus/, /keeps its earlier messages/, /current and older indexed versions/, /full width of the row/, /decimal numbers/];
-  outcomes.forEach((outcome, index) => assert.match(current.highlights[index].en, outcome));
-  assert.equal(current.highlights.filter(h => /request queue/.test(h.en)).length, 1, 'the queue is described once with its final behavior');
-  assert.match(current.highlights[0].en, /without generating the embeddings again/);
-  assert.match(current.highlights[1].en, /only when you enter the complete list of relevant results/);
-  assert.match(current.highlights[3].en, /separate download/);
+  assert.equal(current.version, '5.14.1');
+  assert.equal(current.highlights.length, 2);
+  assert.deepEqual(current.highlights.map(h => h.category), ['fix','fix']);
+  assert.deepEqual(current.highlights.map(h => h.scope), ['ai','ai']);
+  assert.match(current.highlights[0].en, /^Vaults that were already indexed keep their semantic search after updating to 5\.14/);
+  assert.match(current.highlights[0].en, /no new requests to the provider/);
+  assert.match(current.highlights[1].en, /^Settings no longer freezes Nodus while it shows the embedding indexes/);
+  // 5.14.0 introduced saved embedding indexes. Its note stays as published.
+  assert.match(RELEASE_NOTES.find(note => note.version === '5.14.0').highlights[0].en, /^Each vault can keep several embedding indexes/);
   // 5.13.0 introduced Nodus Research Harness. Its note stays as published.
   assert.match(RELEASE_NOTES.find(note => note.version === '5.13.0').highlights[0].en, /^Nodus Research Harness is the new shared engine/);
   assert.match(RELEASE_NOTES.find(note => note.version === '5.12.1').highlights[0].en, /^In Research Chat, Indexed texts no longer switches off/);
@@ -93,9 +92,9 @@ test('scope ordering stays inside each section, with stable ties', () => {
 });
 
 test('the generated description is exactly the English modal text in displayed order and rejects drift', async () => {
-  // Independently authored section boundaries: three features, three enhancements and five fixes.
+  // Independently authored section boundaries: 5.14.1 has only fixes, so the other two sections state that.
   const expected = `# Nodus ${pkg.version}\n\n` + ['New features','Enhancements','Fixes'].map((title, i) => {
-    const entries = current.highlights.slice([0,3,6][i], [3,6,11][i]);
+    const entries = current.highlights.slice([0,0,0][i], [0,0,2][i]);
     return `## ${title}\n\n` + (entries.length ? entries.map(h => `- ${h.en}`).join('\n\n') : RELEASE_EMPTY_SECTION.en);
   }).join('\n\n') + '\n';
   assert.equal(await generateReleaseNotes(`v${pkg.version}`), expected);

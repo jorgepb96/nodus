@@ -233,10 +233,13 @@ export function ResearchAssistantModal({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [queueVaultId, setQueueVaultId] = useState<string | null>(null);
   useEffect(() => {
+    if (adapter) { setQueueVaultId(null); return; }
     let current = true;
-    void window.nodus.getActiveVault().then(vault => { if (current) setQueueVaultId(vault.id); });
+    void window.nodus.getActiveVault()
+      .then(vault => { if (current) setQueueVaultId(vault?.id ?? null); })
+      .catch(() => { if (current) setQueueVaultId(null); });
     return () => { current = false; };
-  }, [learning.vaultId]);
+  }, [adapter?.id, learning.vaultId]);
   const queueKeyFor = (id: string) => !adapter && queueVaultId ? `${queueVaultId}:research:${id}` : null;
   const queueKey = activeId ? queueKeyFor(activeId) : null;
   const queue = useSyncExternalStore(researchChatQueue.subscribe, () => researchChatQueue.get(queueKey));

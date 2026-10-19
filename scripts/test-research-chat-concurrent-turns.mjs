@@ -246,3 +246,29 @@ test('a view mounted while a chat answers locks only that chat', async () => {
   assert.ok(view.send() && !view.stop(), 'the chat unlocks when its turn ends');
   await act(async () => { rootNode.unmount(); });
 });
+
+test('native queue stays disabled when its vault is unavailable or fails to load', async () => {
+  const { ResearchAssistantModal } = await bundle;
+  const React = require('react'), { act } = React;
+  const { createRoot } = require('react-dom/client');
+  const container = document.getElementById('root');
+  const original = overrides.getActiveVault;
+  try {
+    for (const lookup of [async () => null, async () => { throw new Error('Vault unavailable'); }]) {
+      overrides.getActiveVault = lookup;
+      const rootNode = createRoot(container);
+      try {
+        // Genealogy uses the native queue without starting the notebook's separate vault lookup.
+        await act(async () => { rootNode.render(React.createElement(ResearchAssistantModal, { settings, embedded: true, isGenealogy: true })); await sleep(20); });
+        const textarea = container.querySelector('textarea');
+        const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, 'value').set;
+        await act(async () => { setValue.call(textarea, 'Pending question'); textarea.dispatchEvent(new dom.window.Event('input', { bubbles: true })); });
+        assert.equal(container.querySelector('[data-testid="research-enqueue"]').disabled, true);
+        assert.equal(textarea.value, 'Pending question', 'the composer remains usable without a queue scope');
+      } finally { await act(async () => rootNode.unmount()); }
+    }
+  } finally {
+    if (original === undefined) delete overrides.getActiveVault;
+    else overrides.getActiveVault = original;
+  }
+});

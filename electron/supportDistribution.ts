@@ -1,4 +1,5 @@
 import {app,dialog,shell} from 'electron';
+import {showImportOpenDialog as chooseDownloadDirectory} from './privacy';
 import path from 'node:path';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
@@ -114,7 +115,7 @@ export async function saveSupportInstaller(language:AppLanguage):Promise<Support
   try {
     const confirm=await dialog.showMessageBox({type:'info',message:supportText(language,'saveSupportInstaller'),detail:supportText(language,'supportSystemInstallerHelp')+(process.platform==='win32'&&artifact.platformSignature==='none'?'\n\n'+supportText(language,'manifestVerified'):''),buttons:[supportText(language,'cancel'),supportText(language,'confirm')],defaultId:0,cancelId:0,noLink:true});
     if(confirm.response!==1)return {...state};
-    destination=await dialog.showOpenDialog({title:supportText(language,'saveSupportInstaller'),properties:['openDirectory','createDirectory']});
+    destination=await chooseDownloadDirectory({title:supportText(language,'saveSupportInstaller'),properties:['openDirectory','createDirectory']});
     if(destination.canceled||!destination.filePaths[0])return {...state};
   }finally{promptPending=false;}
   controller=new AbortController();state={...state,phase:'downloading',error:undefined,bytes:artifact.bytes,completed:0};

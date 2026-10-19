@@ -10,7 +10,7 @@ function replaceOnce(source,needle,replacement) {
   return source.replace(needle,replacement);
 }
 function templatesPath(){return path.join(path.dirname(require.resolve('app-builder-lib/package.json')),'templates/nsis');}
-function atomic(file,value){const prepared=file+'.'+randomUUID();fs.writeFileSync(prepared,value);fs.renameSync(prepared,file);}
+function atomic(file,value){if(fs.existsSync(file)&&fs.readFileSync(file).equals(Buffer.from(value)))return;const prepared=file+'.'+randomUUID();fs.writeFileSync(prepared,value);fs.renameSync(prepared,file);}
 function pristineTemplates() {
   const templates=templatesPath(),backup=path.join(templates,'.nodus-support-original.json'),version=require('app-builder-lib/package.json').version;
   if(fs.existsSync(backup)) {
@@ -20,7 +20,7 @@ function pristineTemplates() {
   }
   const installer=fs.readFileSync(path.join(templates,'installer.nsi'),'utf8').replaceAll('\r\n','\n');
   const section=fs.readFileSync(path.join(templates,'installSection.nsh'),'utf8').replaceAll('\r\n','\n');
-  if(installer.startsWith('; '+protocol)||section.startsWith('; '+protocol))throw new Error('Missing pristine NSIS template backup');
+  if(installer.startsWith('; '+protocol)||section.startsWith('; '+protocol)){if(fs.existsSync(backup))return pristineTemplates();throw new Error('Missing pristine NSIS template backup');}
   atomic(backup,JSON.stringify({version,protocol,files:{installer,section}}));return {templates,installer,section};
 }
 exports.generateSupportNsisScript=function(root=path.resolve(__dirname,'..'),output=path.join(root,'.ci/support-nsis')) {

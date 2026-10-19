@@ -26,8 +26,12 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
       process.env.SUPPORT_SAVE_PATH=original;
       await assert.rejects(dialog.showSaveDialog({}),/SUPPORT_WRITE_DENIED/);
       assert.throws(()=>dialog.showSaveDialogSync({}),/SUPPORT_WRITE_DENIED/);
+      await assert.rejects(dialog.showOpenDialog({}),/SUPPORT_WRITE_DENIED/);
+      assert.throws(()=>dialog.showOpenDialogSync({}),/SUPPORT_WRITE_DENIED/);
       process.env.SUPPORT_SAVE_PATH=path.join(root,'new-export.pdf');
       assert.equal((await dialog.showSaveDialog({})).filePath,process.env.SUPPORT_SAVE_PATH);
+      assert.deepEqual((await dialog.showOpenDialog({})).filePaths,[process.env.SUPPORT_SAVE_PATH]);
+      assert.deepEqual(dialog.showOpenDialogSync({}),[process.env.SUPPORT_SAVE_PATH]);
       process.env.NODUS_SUPPORT_ORIGINAL_APP_DATA=path.join(root,'system-config');process.env.NODUS_SUPPORT_ORIGINAL_PROFILE=path.join(root,'selected-profile');
       await openNodusSupport('en');
       assert.equal(globalThis.supportLaunch.executable,helper);assert.ok(globalThis.supportLaunch.args.includes('--support-state='+path.join(root,'system-config/Nodus Support')));
@@ -51,7 +55,7 @@ test('trial windows cannot mutate OS calendars, restart the app or pass original
         export const safeStorage={decryptString(){},encryptString(){}};
         export const shell={async openExternal(){},async openPath(){},async trashItem(){}};
         export const systemPreferences={setUserDefault(){},removeUserDefault(){}};
-        export const dialog={async showMessageBox(){return {response:1}},async showSaveDialog(){return {canceled:false,filePath:process.env.SUPPORT_SAVE_PATH}},showSaveDialogSync(){return process.env.SUPPORT_SAVE_PATH}};
+        export const dialog={async showMessageBox(){return {response:1}},async showSaveDialog(){return {canceled:false,filePath:process.env.SUPPORT_SAVE_PATH}},showSaveDialogSync(){return process.env.SUPPORT_SAVE_PATH},async showOpenDialog(){return {canceled:false,filePaths:[process.env.SUPPORT_SAVE_PATH]}},showOpenDialogSync(){return [process.env.SUPPORT_SAVE_PATH]}};
         export const session={defaultSession:{webRequest:{onBeforeRequest(){}},setPermissionRequestHandler(){},on(){}}};
       `,loader:'js'}));
     }}]});

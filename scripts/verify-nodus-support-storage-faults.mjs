@@ -13,6 +13,7 @@ const repo=path.resolve(import.meta.dirname,'..'),sourceSha256=supportSourceDige
 const profile=path.join(root,'original');fs.mkdirSync(profile);fs.writeFileSync(path.join(profile,'note.txt'),Buffer.alloc(1024**2,42));
 const initial=await inventory(profile),make=(storage,progress=()=>{})=>new SupportService({profile,storage,isRunning:async()=>false,progress});
 const volume=createFaultVolume(root);
+let testFailure,detachFailure;
 try {
   // Preflight must stop before copying into a volume that is already full.
   const preflight=make(path.join(volume.mount,'preflight'));let session=await preflight.create({symptom:'data',mode:'guided'});
@@ -82,4 +83,6 @@ try {
   const output=path.join(repo,'.ci/support-native');fs.mkdirSync(output,{recursive:true});
   await writeNew(path.join(output,`${process.platform}-${process.arch}-storage-${Date.now()}.json`),{format:'nodus.support-storage-evidence/1',sourceSha256,platform:process.platform,arch:process.arch,originalsUnchanged:true,nativeVolume:true,checked});
   console.log(`Native storage failure recovery passed: ${checked.join(', ')}.`);
-}finally{volume.disconnect();/* Preserve the image, source fixtures, journals and every copy for inspection. */}
+}catch(error){testFailure=error;throw error;}
+finally{try{volume.disconnect();}catch(error){detachFailure=error;console.error('Fixture detach:',error.message);}/* Preserve all images, fixtures, journals and copies. */}
+if(detachFailure&&!testFailure)throw detachFailure;

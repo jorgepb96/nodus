@@ -13,11 +13,20 @@ export function createFaultVolume(root) {
   const image=path.join(root,process.platform==='win32'?'fixture.vhd':process.platform==='darwin'?'fixture.dmg':'fixture.ext4');
   if(process.platform!=='win32')fs.mkdirSync(mount);
   const run=(file,args)=>execFileSync(file,args,{stdio:'pipe',timeout:60000,windowsHide:true});
+  let diskpartFinished=0;
+  const invokeDiskpart=file=>{
+    // Microsoft requires 15 seconds between scripts for DiskPart to finish shutting down.
+    // https://learn.microsoft.com/windows-server/administration/windows-commands/diskpart-scripts-and-examples
+    const delay=15000-(Date.now()-diskpartFinished);if(delay>0)Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,delay);
+    try{return run('diskpart.exe',['/s',file]);}
+    catch(error){throw new Error(`Disposable VHD operation failed: ${error.stdout?.toString()??''} ${error.stderr?.toString()??''}`,{cause:error});}
+    finally{diskpartFinished=Date.now();}
+  };
   const diskpart=lines=>{
     assert.equal(process.env.CI,'true','Virtual disk administration is restricted to disposable CI hosts');
     assert.ok(!image.includes('"')&&!mount.includes('"'));
     const file=path.join(root,`diskpart-${Date.now()}.txt`);fs.writeFileSync(file,[`select vdisk file="${image}"`,...lines,'exit'].join('\r\n'));
-    return run('diskpart.exe',['/s',file]);
+    return invokeDiskpart(file);
   };
   if(process.platform==='darwin')run('/usr/bin/hdiutil',['create','-size','96m','-fs','HFS+','-volname','NodusSupportQA',image]);
   else if(process.platform==='linux') {
@@ -29,7 +38,7 @@ export function createFaultVolume(root) {
     const drives=run('powershell.exe',['-NoProfile','-NonInteractive','-Command',"[Environment]::GetLogicalDrives() -join ','"]).toString();
     letter=[...'ZYXWVUTSRQPONMLKJIHGFE'].find(value=>!drives.includes(`${value}:`)&&!fs.existsSync(`${value}:\\`));assert.ok(letter,'No unused fixture drive letter');mount=`${letter}:\\`;
     const file=path.join(root,'diskpart-create.txt');fs.writeFileSync(file,[`create vdisk file="${image}" maximum=112 type=expandable`,`select vdisk file="${image}"`,'attach vdisk','create partition primary','format fs=ntfs quick label=NodusSupportQA',`assign letter=${letter}`,'exit'].join('\r\n'));
-    run('diskpart.exe',['/s',file]);mounted=true;
+    invokeDiskpart(file);mounted=true;
   }
   const check=()=>{
     const stat=fs.statfsSync(mount,{bigint:true});

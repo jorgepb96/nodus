@@ -93,6 +93,11 @@ SHAPES
       input: 0.75, output: 3.75, intelligence: 41, speed: 150, speedApprox: true, taskCost: 1.24,
       source: 'https://artificialanalysis.ai/models/releases/gemini-3-8-flash',
     },
+    'gemini-flash-lite': {
+      name: 'Gemini 3.5 Flash-Lite', provider: 'google',
+      input: 0.30, output: 2.50, intelligence: 22, speed: 410, taskCost: 0.19,
+      source: 'https://artificialanalysis.ai/models/gemini-3-5-flash-lite',
+    },
     'sonnet-max': {
       name: 'Claude Sonnet 5.5', reasoning: 'Max', provider: 'anthropic',
       input: 2.00, output: 10.00, intelligence: 56, speed: 140, speedApprox: true, taskCost: 5.46,
@@ -392,9 +397,10 @@ SHAPES
             { key: 'pricing', label: 'Rates', type: 'link' },
           ],
           rows: [
+            { name: 'BGE-M3 via OpenRouter', pick: 'Recommended API', sub: '`baai/bge-m3` · 8K context', modality: 'text', price: 0.01, multimodal: 'no', use: '**Recommended API option**: lowest price; same model as local BGE-M3', pricing: { label: 'OpenRouter', url: 'https://openrouter.ai/baai/bge-m3' } },
             { name: 'Voyage 4 Lite', modality: 'text', price: 0.02, multimodal: 'no', use: '**Cheap indexing**; queries against Voyage 4 indexes', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
             { name: 'OpenAI text-embedding-3-small', modality: 'text', price: 0.02, multimodal: 'no', use: 'Low-cost API, widely integrated', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
-            { name: 'Voyage 4', pick: 'Recommended API', modality: 'text', price: 0.06, multimodal: 'no', use: '**Recommended API option**', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
+            { name: 'Voyage 4', modality: 'text', price: 0.06, multimodal: 'no', use: 'Balanced option in the Voyage 4 family', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
             { name: 'Voyage 4 Large', modality: 'text', price: 0.12, multimodal: 'no', use: 'Higher retrieval quality', pricing: { label: 'Voyage', url: 'https://docs.voyageai.com/docs/pricing' } },
             { name: 'OpenAI text-embedding-3-large', modality: 'text', price: 0.13, multimodal: 'no', use: 'Established alternative', pricing: { label: 'OpenAI', url: 'https://platform.openai.com/docs/pricing' } },
             { name: 'Gemini Embedding 001', modality: 'text', price: 0.15, multimodal: 'no', use: 'Multilingual', pricing: { label: 'Google', url: 'https://ai.google.dev/gemini-api/docs/pricing' } },
@@ -528,6 +534,7 @@ SHAPES
             { ref: 'mimo-pro', test: 'Hard cases and implicit ideas' },
             { ref: 'glm-flash', test: 'Verbosity and actual token cost' },
             { ref: 'haiku-max', test: 'Improvement over High' },
+            { ref: 'gemini-flash-lite', test: 'Throughput, output cost and omissions at volume' },
           ],
           footnote: 'Simplified estimate: every document has the same input and billable output tokens (reasoning included). Excludes caching, batch pricing, off-peak discounts, retries, format errors and tools, and does not measure the actual reasoning length of each model. Adjust the three values above to match your corpus.',
           callout: {
@@ -606,7 +613,7 @@ SHAPES
           rows: [
             { name: 'Research Chat', href: '#chat', local: 'yes', localSetup: 'Qwen3.5 9B Q4 (16 GB); Qwen3.8 27B (48 GB)', api: 'DeepSeek Flash-1017; Haiku High', measure: 'Grounded answers and total latency' },
             { name: 'Dictionary', href: '#chat', local: 'yes', localSetup: 'Gemma E2B / E4B; Qwen3.5 9B', api: 'Haiku High; Luna High', measure: 'Terminological accuracy and concision' },
-            { name: 'Text embeddings', href: '#embeddings', local: 'yes', localSetup: 'Harrier 270M (light) / **Harrier 0.6B** (balanced); BGE-M3 (hybrid)', api: '**Voyage 4** / 4 Lite', measure: 'Recall@10, MRR / nDCG, indexing cost' },
+            { name: 'Text embeddings', href: '#embeddings', local: 'yes', localSetup: 'Harrier 270M (light) / **Harrier 0.6B** (balanced); BGE-M3 (hybrid)', api: '**BGE-M3 via OpenRouter**; Voyage 4 / 4 Lite', measure: 'Recall@10, MRR / nDCG, indexing cost' },
             { name: 'Multimodal embeddings', href: '#embeddings', local: 'yes', localSetup: '**EmbeddingGemma 2**', api: 'Gemini Embedding 2', measure: 'Cross-modal text–image retrieval' },
             { name: 'Retrieving existing ideas', href: '#local', local: 'yes', localSetup: 'BGE-M3 / Harrier + Qwen3 0.6B reranker; Qwen 9B to explain results', api: 'Voyage 4 + an API LLM (optional)', measure: 'Source accuracy, latency, top-k' },
             { name: 'Idea Extraction (new ideas)', href: '#extraction', local: 'no', localSetup: '**None**', api: '**See the API comparison; no default**', measure: 'Supported ideas, misses, time and cost per idea' },
@@ -642,6 +649,7 @@ SHAPES
         { label: 'Artificial Analysis · GPT-6 Luna Max', url: 'https://artificialanalysis.ai/models/gpt-6-luna' },
         { label: 'Artificial Analysis · GLM-5.3 Flash', url: 'https://artificialanalysis.ai/models/glm-5-3-flash' },
         { label: 'Artificial Analysis · Gemini 3.8 Flash', url: 'https://artificialanalysis.ai/models/releases/gemini-3-8-flash' },
+        { label: 'Artificial Analysis · Gemini 3.5 Flash-Lite', url: 'https://artificialanalysis.ai/models/gemini-3-5-flash-lite' },
         { label: 'Artificial Analysis · Claude Sonnet 5.5', url: 'https://artificialanalysis.ai/models/claude-sonnet-5-5' },
         { label: 'Artificial Analysis · GPT-6.1 Sol', url: 'https://artificialanalysis.ai/models/gpt-6-1-sol' },
         { label: 'Qwen3.8 27B', url: 'https://huggingface.co/Qwen/Qwen3.8-27B' },
@@ -661,12 +669,14 @@ SHAPES
         { label: 'Voyage pricing', url: 'https://docs.voyageai.com/docs/pricing' },
         { label: 'Google API pricing', url: 'https://ai.google.dev/gemini-api/docs/pricing' },
         { label: 'OpenAI API pricing', url: 'https://platform.openai.com/docs/pricing' },
+        { label: 'OpenRouter · BGE-M3 embeddings', url: 'https://openrouter.ai/baai/bge-m3' },
       ],
     },
   ];
 
   /* Newest first. One line per review. */
   const changelog = [
+    { date: '2026-10-19', text: 'Added BGE-M3 via OpenRouter as the recommended API embedding model, and Gemini 3.5 Flash-Lite to the Idea Extraction candidates.' },
     { date: '2026-10-19', text: 'First edition: local models, embeddings and rerankers, Research Chat + Dictionary, Idea Extraction, Deep Research + Immersion, and the decision guide.' },
   ];
 

@@ -317,35 +317,44 @@ The URL carries the state, so a filtered view can be shared:
     return `<article class="mg-block" id="mg-${table.id}"><header class="mg-block-head">${heading}</header>${body}</article>`;
   }
 
-  function bubbles(tab, facet, options) {
+  // How a chosen option reads on its closed button: "Mac 16 GB", "Budget".
+  const shortLabel = (option) => (option.kind === 'mac' ? `Mac ${option.label}`
+    : option.kind === 'gpu' ? `GPU ${option.label}` : option.label);
+
+  function options(tab, facet, list) {
     const universe = tabRows(tab);
-    return options
+    return list
       // an option no row of this tab could ever match is left out entirely
       .filter((option) => universe.some((row) => applies(facet, row) && matches(facet, option, row)))
-      .map((option) => `<button class="mg-bubble" type="button" aria-pressed="false" data-facet="${facet.id}" data-option="${option.id}">`
-        + `<span class="mg-tick" aria-hidden="true">${icon('check', 'mg-tick-ic')}</span>`
-        + `<span class="mg-bubble-label">${escapeHtml(option.label)}</span>`
-        + `${option.hint ? `<span class="mg-hint">${escapeHtml(option.hint)}</span>` : ''}`
+      .map((option) => `<button class="mg-opt" type="button" aria-pressed="false" data-facet="${facet.id}" data-option="${option.id}">`
+        + `<span class="mg-check" aria-hidden="true">${icon('check', 'mg-check-ic')}</span>`
+        + `<span class="mg-opt-label">${escapeHtml(option.label)}${option.hint ? ` <i>${escapeHtml(option.hint)}</i>` : ''}</span>`
         + `<span class="mg-count" aria-hidden="true"></span></button>`)
       .join('');
   }
 
+  // One button per filter; it opens a popover with the options, any number of
+  // which can be ticked.
   function filterBox(tab) {
     if (!tab.filters.length) return '';
-    const rows = tab.filters.map((facet) => {
-      const labelId = `mg-facet-${tab.id}-${facet.id}`;
+    const pops = tab.filters.map((facet) => {
+      const panelId = `mg-pop-${tab.id}-${facet.id}`;
       const body = facet.groups
         ? facet.groups.map((group) => {
-          const items = bubbles(tab, facet, group.options);
+          const items = options(tab, facet, group.options);
           return items
-            ? `<div class="mg-group"><span class="mg-group-label">${escapeHtml(group.label)}${group.hint ? ` <i>${escapeHtml(group.hint)}</i>` : ''}</span><div class="mg-bubbles">${items}</div></div>`
+            ? `<div class="mg-pop-col"><p class="mg-pop-group">${escapeHtml(group.label)}${group.hint ? ` <i>${escapeHtml(group.hint)}</i>` : ''}</p>${items}</div>`
             : '';
         }).join('')
-        : `<div class="mg-bubbles">${bubbles(tab, facet, facet.options)}</div>`;
-      return `<div class="mg-facet" role="group" aria-labelledby="${labelId}"><span class="mg-facet-label" id="${labelId}">${escapeHtml(facet.label)}</span><div class="mg-facet-body">${body}</div></div>`;
+        : options(tab, facet, facet.options);
+      return `<div class="mg-pop" data-pop="${facet.id}">`
+        + `<button class="mg-pop-btn" type="button" aria-expanded="false" aria-controls="${panelId}">`
+        + `<span class="mg-pop-label">${escapeHtml(facet.label)}</span><span class="mg-pop-value" data-value="${facet.id}">All</span>`
+        + `${icon('chevron', 'mg-pop-chev')}</button>`
+        + `<div class="mg-pop-panel${facet.groups ? ' mg-pop-panel--cols' : ''}" id="${panelId}" role="group" aria-label="${escapeHtml(facet.label)}" hidden>${body}</div></div>`;
     }).join('');
-    return `<div class="mg-filters">${rows}<div class="mg-filters-foot"><p class="mg-meta" data-meta role="status" aria-live="polite"></p>`
-      + `<button class="mg-clear" type="button" data-clear>${icon('cross', 'mg-ic')}Clear filters</button></div></div>`;
+    return `<div class="mg-filters">${pops}<button class="mg-clear" type="button" data-clear>${icon('cross', 'mg-ic')}Clear</button>`
+      + `<p class="mg-meta" data-meta role="status" aria-live="polite"></p></div>`;
   }
 
   function panelMarkup(tab) {
@@ -395,8 +404,15 @@ The URL carries the state, so a filtered view can be shared:
     const universe = tabRows(tab);
     for (const facet of tab.filters) {
       const chosen = selected.get(facet.id) || new Set();
+      const value = panel.querySelector(`[data-value="${facet.id}"]`);
+      const picked = optionsOf(facet).filter((option) => chosen.has(option.id));
+      if (value) {
+        value.textContent = picked.length === 0 ? 'All'
+          : picked.length === 1 ? shortLabel(picked[0]) : `${shortLabel(picked[0])} +${picked.length - 1}`;
+        value.closest('.mg-pop-btn').classList.toggle('is-active', picked.length > 0);
+      }
       for (const option of optionsOf(facet)) {
-        const button = panel.querySelector(`.mg-bubble[data-facet="${facet.id}"][data-option="${option.id}"]`);
+        const button = panel.querySelector(`.mg-opt[data-facet="${facet.id}"][data-option="${option.id}"]`);
         if (!button) continue;
         const count = universe.filter((row) => applies(facet, row) && passes(row, tab.filters, facet.id) && matches(facet, option, row)).length;
         const on = chosen.has(option.id);
@@ -411,8 +427,8 @@ The URL carries the state, so a filtered view can be shared:
     const meta = panel.querySelector('[data-meta]');
     if (meta) {
       meta.innerHTML = active
-        ? `Showing <b>${shown}</b> of ${total} entries · ${active} ${active === 1 ? 'filter' : 'filters'} active`
-        : `Showing all <b>${total}</b> entries. Select one or more options to filter the tables.`;
+        ? `<b>${shown}</b> of ${total} entries`
+        : `<b>${total}</b> entries`;
     }
     const clear = panel.querySelector('.mg-clear');
     if (clear) clear.disabled = active === 0;
@@ -450,6 +466,7 @@ The URL carries the state, so a filtered view can be shared:
 
   function selectTab(id, { focus = false, scroll = false, sync = true } = {}) {
     const tab = tabsById.get(id) || tabs[0];
+    closePops();
     activeTab = tab.id;
     for (const button of tabBar.querySelectorAll('.mg-tab')) {
       const on = button.dataset.tab === tab.id;
@@ -496,9 +513,36 @@ The URL carries the state, so a filtered view can be shared:
     selectTab(tabs[next].id, { focus: true });
   });
 
+  function setPop(pop, open) {
+    pop.querySelector('.mg-pop-btn').setAttribute('aria-expanded', String(open));
+    pop.querySelector('.mg-pop-panel').hidden = !open;
+  }
+  function closePops(except) {
+    for (const pop of panelsHost.querySelectorAll('.mg-pop')) if (pop !== except) setPop(pop, false);
+  }
+  // A press outside any open list closes it; Escape closes it and returns focus.
+  document.addEventListener('pointerdown', (event) => {
+    if (!event.target.closest('.mg-pop')) closePops();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const open = panelsHost.querySelector('.mg-pop-btn[aria-expanded="true"]');
+    if (!open) return;
+    closePops();
+    open.focus();
+  });
+
   panelsHost.addEventListener('click', (event) => {
     const tab = tabsById.get(activeTab);
-    const bubble = event.target.closest('.mg-bubble');
+    const toggle = event.target.closest('.mg-pop-btn');
+    if (toggle) {
+      const pop = toggle.closest('.mg-pop');
+      const open = toggle.getAttribute('aria-expanded') !== 'true';
+      closePops(pop);
+      setPop(pop, open);
+      return;
+    }
+    const bubble = event.target.closest('.mg-opt');
     if (bubble) {
       const chosen = selected.get(bubble.dataset.facet) || new Set();
       if (chosen.has(bubble.dataset.option)) chosen.delete(bubble.dataset.option);
@@ -509,6 +553,7 @@ The URL carries the state, so a filtered view can be shared:
       return;
     }
     if (event.target.closest('[data-clear]')) {
+      closePops();
       for (const facet of tab.filters) selected.delete(facet.id);
       refresh(tab);
       syncUrl();

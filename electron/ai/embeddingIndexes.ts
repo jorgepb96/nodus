@@ -4,7 +4,7 @@ import { BrowserWindow } from 'electron';
 import type { EmbeddingProvider } from '@shared/types';
 import type { EmbeddingIndexContext, EmbeddingIndexCoverage, EmbeddingIndexPreview, EmbeddingIndexProfile, EmbeddingIndexProgress, EmbeddingIndexSummary } from '@shared/embeddingIndexes';
 import { EMBEDDING_TEXT_RECIPE_VERSIONS } from '@shared/embeddingIndexes';
-import { getDb, onBeforeDatabaseClose, withDatabaseContext, withVaultDatabase, withoutDatabaseContext } from '../db/database';
+import { getDb, onBeforeDatabaseClose, withVaultDatabase, withoutDatabaseContext } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
 import { getVaultByPath } from '../vaults/vaultRegistry';
 import { commitEmbeddingIndex, contractForProfile, createIndex, deleteIndex, embeddingIndexHead, embeddingProfile,
@@ -101,7 +101,7 @@ function listingInventory(profile: EmbeddingIndexProfile): Promise<ListingInput[
   const stamp = inventoryStamp(db);
   const cached = listingInventories.get(key);
   if (cached?.stamp === stamp) return cached.inputs;
-  const inputs = withDatabaseContext(db, () => collectEmbeddingIndexInputsAsync(profile, { lean: true }));
+  const inputs = collectEmbeddingIndexInputsAsync(profile, { lean: true });
   listingInventories.set(key, { stamp, inputs });
   inputs.catch(() => { if (listingInventories.get(key)?.inputs === inputs) listingInventories.delete(key); });
   return inputs;
@@ -316,7 +316,7 @@ async function runPreparation(context: EmbeddingIndexContext, signal: AbortSigna
     // still pending are embedded in the next pass; no source extraction is performed.
     for (;;) {
       signal.throwIfAborted();
-      const inputs = await withDatabaseContext(db, () => collectEmbeddingIndexInputsAsync(context.profile));
+      const inputs = await collectEmbeddingIndexInputsAsync(context.profile);
       signal.throwIfAborted();
       const existing = valuesByEntity(db, context);
       db.transaction(() => { for (const input of inputs) recordEmbeddingRunItem(db, runId, input.family, input.entityId, input.textHash,

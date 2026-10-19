@@ -127,12 +127,14 @@ export function collectEmbeddingIndexInputs(profile: EmbeddingIndexProfile, opti
 
 const INVENTORY_PAGE = 1000;
 const yieldToEventLoop = () => new Promise<void>(resolve => setImmediate(resolve));
-/** The same inventory, read in rowid pages with the event loop released between pages.
+/** The same inventory, read in rowid pages with the event loop released between pages. Each
+ * page is synchronous, and the connection is re-checked after every pause, so a vault switch
+ * fails the read instead of mixing two vaults.
  * A 60,000-passage corpus holds ~80 MB of text: hashing it in one synchronous pass froze the
  * main process (and with it every window) for seconds each time Settings listed its indexes. */
 export async function collectEmbeddingIndexInputsAsync(profile: EmbeddingIndexProfile, options: EmbeddingInventoryOptions = {}): Promise<EmbeddingIndexInput[]> {
   const db = getDb();
-  const live = () => { if (!db.open || getDb() !== db) throw new Error('La bóveda cambió durante la lectura del índice.'); };
+  const live = () => { if (!db.open || getDb() !== db) throw new Error('La bóveda cambió. Vuelve a abrir la gestión de índices.'); };
   const scope = inventoryScope(db, profile, options);
   const inputs: EmbeddingIndexInput[] = [];
   for (const family of EMBEDDING_FAMILIES) {

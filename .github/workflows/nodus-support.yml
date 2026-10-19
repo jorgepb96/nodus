@@ -50,6 +50,10 @@ jobs:
         env:
           NODUS_SUPPORT_LARGE_FILES: '1'
       - run: npm run support:build
+      - name: Kill transaction processes and recover their durable journals
+        run: node scripts/verify-nodus-support-crashes.mjs
+      - name: Native full disk, permission and disconnected volume recovery
+        run: node scripts/verify-nodus-support-storage-faults.mjs
       - name: Build the application bootstrap for the isolated native protocol
         run: npx vite build
       - name: Native support application, twelve languages, both themes

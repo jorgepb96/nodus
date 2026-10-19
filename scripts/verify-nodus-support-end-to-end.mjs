@@ -41,7 +41,7 @@ fs.writeFileSync(path.join(entry,'entry.mjs'),`
    const poll=setInterval(()=>{if(fs.existsSync(path.join(root,'qualification-quit')))app.quit();},200);poll.unref();
    app.once('will-quit',()=>fs.writeFileSync(path.join(root,'qualification-closed'),'cooperative quit'));
  }
- await import(${JSON.stringify(pathToFileURL(path.join(repo,'dist-electron/bootstrap.js')).href)});
+ await import(${JSON.stringify(pathToFileURL(path.join(repo,JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).main)).href)});
  }
 `);
 await createPackage(entry,path.join(resources,'app.asar'));

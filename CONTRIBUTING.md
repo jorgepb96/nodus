@@ -93,6 +93,10 @@ for the inventory reports, cache behavior, and performance validation procedure.
 
 ## Publishing releases
 
+Every release, hotfixes included, follows the [release policy](docs/release-policy.md):
+how to choose the version, which identifiers to update, how to write the What's New
+modal and the notes, and when to merge and publish.
+
 Stable and Beta are separate GitHub Actions entry points backed by the shared
 `release-build.yml` implementation:
 

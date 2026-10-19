@@ -38,8 +38,10 @@ test('downloads verify actual bytes, retain failures and never overwrite another
 });
 test('platform installers never invoke a shell or an uninstall operation', () => {
   for (const [platform,format,file] of [['win32','nsis','C:\\installer & data.exe'],['linux','deb','/tmp/package.deb'],['linux','rpm','/tmp/package.rpm']]) {
-    const command = installerCommand(platform,format,file,'target'); assert.ok(!command.args.some(arg => /uninstall|remove|purge/.test(arg)));
+    const command = installerCommand(platform,format,file,'target',{repairProtocol:1}); assert.ok(!command.args.some(arg => /uninstall|remove|purge/.test(arg)));
   }
+  assert.throws(()=>installerCommand('win32','nsis','old-installer.exe','target'),/INSTALLER_NOT_SUPPORTED/);
+  assert.deepEqual(installerCommand('win32','nsis','installer.exe','target',{repairProtocol:1}).args,['/S','--nodus-support-repair','/D=target']);
   assert.equal(installerCommand('linux','AppImage','/tmp/new.AppImage','/home/user/Nodus.AppImage').command, null);
   assert.throws(() => installerCommand('linux','exe','file','target'), /INSTALLER_NOT_SUPPORTED/);
 });

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { SupportService } from '../apps/nodus-support/core/service.mjs';
 import { SolutionManager } from '../apps/nodus-support/core/solutions.mjs';
 import { readPolicy,resolvePolicy } from '../apps/nodus-support/core/policies.mjs';
+import { rememberSelection,selectCurrentProfile } from '../apps/nodus-support/core/selection.mjs';
 import { inventory } from '../apps/nodus-support/core/files.mjs';
 import { createSupportKey } from './support-keygen.mjs';
 
@@ -20,6 +21,41 @@ async function fixture(name) {
   session=await service.event(session.id,{trialOpened:session.recoveredProfiles[0]});session=await service.answer(session.id,true);
   return {folder,profile,policies,service,session,manager:new SolutionManager(service,policies)};
 }
+test('new support sessions select the latest workspace, including after viewing old history and undoing a solution',async()=>{
+  const f=await fixture('selection-context');rememberSelection(f.service);
+  let first=await f.manager.apply(f.session.id,0);
+  fs.writeFileSync(path.join(first.policyActiveRoot,'profile/latest.txt'),'recent work in active workspace');
+  selectCurrentProfile(f.service,f.policies);
+  assert.equal(f.service.selectedProfile,f.profile);assert.equal(f.service.profile,path.join(first.policyActiveRoot,'profile'));
+  let second=await f.service.create({symptom:'startup',mode:'guided'});second=await f.service.protect(second.id);second=await f.service.test(second.id,'copy-profile');
+  second=await f.service.event(second.id,{trialOpened:second.recoveredProfiles[0]});second=await f.service.answer(second.id,true);
+  second=await f.manager.apply(second.id,0);
+  // Viewing an older session changes its context, never the saved choice.
+  f.service.profile=f.profile;f.service.executable='/historical-installation';
+  selectCurrentProfile(f.service,f.policies);
+  assert.equal(f.service.executable,f.service.selectedExecutable);
+  assert.equal(f.service.profile,path.join(second.policyActiveRoot,'profile'));
+  const latest=await f.service.create({symptom:'data',mode:'guided'});assert.equal(latest.inspection.profile,f.service.profile);
+  assert.equal(fs.readFileSync(path.join(latest.inspection.profile,'latest.txt'),'utf8'),'recent work in active workspace');
+  f.service.profile=second.inspection.profile;await f.manager.undo(second.id);
+  selectCurrentProfile(f.service,f.policies);assert.equal(f.service.profile,path.join(first.policyActiveRoot,'profile'));
+  f.service.profile=f.profile;first=await f.manager.undo(first.id,'use-previous');assert.equal(first.status,'reverted');
+  selectCurrentProfile(f.service,f.policies);assert.equal(f.service.profile,f.profile);
+});
+test('changes to an original after activation block silent selection and require an explicit retained undo',async()=>{
+  const f=await fixture('original-changed');rememberSelection(f.service);
+  let session=await f.manager.apply(f.session.id,0);
+  fs.writeFileSync(path.join(f.profile,'note.txt'),'newer work in the original');
+  assert.throws(()=>resolvePolicy(f.policies,f.profile),/RECOVERY_SELECTION_CONFLICT/);
+  selectCurrentProfile(f.service,f.policies);assert.equal(f.service.selectionError,true);
+  // Explicitly resume the recorded source, as the native confirmation requires.
+  f.service.profile=f.profile;f.service.selectionError=false;
+  session=await f.manager.undo(session.id);assert.equal(session.status,'conflict');
+  session=await f.manager.undo(session.id,'use-previous');assert.equal(session.status,'reverted');
+  assert.equal(fs.readFileSync(path.join(f.profile,'note.txt'),'utf8'),'newer work in the original');
+  assert.equal(fs.readFileSync(path.join(session.divergenceVerified,'profile/note.txt'),'utf8'),'original work');
+  selectCurrentProfile(f.service,f.policies);assert.equal(f.service.selectionError,false);assert.equal(f.service.profile,f.profile);
+});
 test('undo asks before switching away from new work and verifies a separate recovery copy',async()=>{
   const f=await fixture('divergence'),before=await inventory(f.profile);
   let state=await f.manager.apply(f.session.id,0);const recovered=state.policyActiveRoot;

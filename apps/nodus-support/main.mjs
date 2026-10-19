@@ -10,10 +10,10 @@ import { randomUUID } from 'node:crypto';
 import archiver from 'archiver';
 import { open as openZip } from 'yauzl';
 import { SupportService } from './core/service.mjs';
-import { assert, copyInventory, destination, hashFile, inventory, noLinks, readJson, separate, sufficientSpace as sufficientSpaceForArchive, verifyInventory, writeNew } from './core/files.mjs';
+import { assert, canonical, copyInventory, destination, hashFile, inside, inventory, noLinks, readJson, separate, sufficientSpace as sufficientSpaceForArchive, verifyInventory, writeNew,writeRecord } from './core/files.mjs';
 import { runProbe } from './core/probe.mjs';
 import { SolutionManager } from './core/solutions.mjs';
-import { resolvePolicy } from './core/policies.mjs';
+import { rememberSelection,selectCurrentProfile } from './core/selection.mjs';
 import { activateInstallation, recoverInstallation } from './core/install-transaction.mjs';
 import { acceptPlatformSignature, downloadArtifact, extractRuntime, installerCommand, preserveInstallation, resolveRelease, runInstaller } from './core/releases.mjs';
 import { issueDraft } from '../../shared/support/report.mjs';
@@ -24,6 +24,7 @@ import { requireQualified } from './core/qualification.mjs';
 import { guideUrl } from '../../shared/support/guides.mjs';
 import { retainSupportRuntime } from './core/self-runtime.mjs';
 import { verifyActivatedInstallation } from './core/installation.mjs';
+import { protectInstallationRollback } from './core/rollback-protection.mjs';
 import { SUPPORT_ACTIONS } from '../../shared/support/catalog.mjs';
 
 const exec = promisify(execFile);
@@ -32,7 +33,7 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'nodus-support', privileges: { s
 const argument = name => process.argv.find(value => value.startsWith(`--${name}=`))?.slice(name.length + 3);
 const stateRoot = argument('support-state') ?? path.join(app.getPath('appData'), 'Nodus Support');
 app.setPath('userData', path.join(stateRoot, 'interface'));
-let win; let service; let quitRequested = false;
+let win; let service; let quitRequested = false;let rememberTail=Promise.resolve();
 const text = key => supportText(service?.locale ?? 'en', key);
 const privateDirectory = async folder => {
   const directory = (await fsp.stat(folder)).isDirectory();
@@ -56,33 +57,42 @@ const isRunning = async () => {
   return stdout.split('\n').some(line=>{const name=path.basename(line.trim()).toLowerCase();return names.has(name)||name.length===15&&[...names].some(expected=>expected.startsWith(name));});
 };
 async function loadState() {
-  let config = {};
+  let config = {},choicesError=false;
   const folder = path.join(stateRoot, 'choices');
   if (fs.existsSync(folder)) {
     const files = fs.readdirSync(folder).filter(file => /^\d+-[a-f0-9-]+\.json$/.test(file)).sort();
-    try { if (files.length) config = readJson(path.join(folder, files.at(-1))); } catch { /* Choices can always be selected again. */ }
+    try {
+      if (files.length) {
+        const value=readJson(path.join(folder,files.at(-1)));
+        assert(value&&typeof value==='object'&&!Array.isArray(value),'INVALID_REQUEST');
+        for(const key of ['profile','storage','executable'])assert(value[key]===undefined||value[key]===null||typeof value[key]==='string'&&path.isAbsolute(value[key]),'INVALID_PATH');
+        config=value;
+      }
+    } catch { choicesError=true; }
   }
   const defaultProfile = ['Nodus','nodus'].map(name => path.join(app.getPath('appData'), name)).find(folder => fs.existsSync(folder)) ?? path.join(app.getPath('appData'), 'Nodus');
   service = new SupportService({ storage: config.storage ?? path.join(stateRoot, 'retained'), profile: argument('nodus-profile') ?? config.profile ?? defaultProfile, executable: argument('nodus-executable') ?? config.executable ?? detectExecutable(), versionHint:argument('nodus-version')??config.versionHint, osVersion:process.getSystemVersion?.()??os.release().split('-')[0], locale: app.getLocale(), isRunning, probe: runProbe, privateDirectory, onIdle: () => { if (quitRequested) queueMicrotask(() => app.quit()); },
     progress: progress => { if (win && !win.isDestroyed()) win.webContents.send('support:progress', progress); } });
-  try {
-    const active=resolvePolicy(path.join(stateRoot,'launch-policies'),service.profile);
-    if(active?.recoveredRoot) {service.originProfile=service.profile;service.profile=path.join(active.recoveredRoot,'profile');}
-  }catch{service.selectionError=true;}
-  service.locale = config.language ?? (await service.inspect()).inspection.language;
+  service.choicesError=choicesError;rememberSelection(service);selectCurrentProfile(service,path.join(stateRoot,'launch-policies'));
+  service.locale = SUPPORT_LANGUAGES.includes(config.language)?config.language:(await service.inspect()).inspection.language;
 }
 async function remember() {
-  await writeNew(path.join(stateRoot, 'choices', `${Date.now()}-${randomUUID()}.json`), { storage: service.storage, profile: service.originProfile??service.profile, executable: service.executable, versionHint:service.versionHint, language: service.locale });
+  assert(!service.choicesError,'RECOVERY_SELECTION_CONFLICT');
+  const value={storage:service.storage,profile:service.selectedProfile,executable:service.selectedExecutable,versionHint:service.selectedVersionHint,language:service.locale};
+  const task=rememberTail.then(async()=>{
+    const folder=path.join(stateRoot,'choices'),latest=fs.existsSync(folder)?Math.max(0,...fs.readdirSync(folder).filter(name=>/^\d+-[a-f0-9-]+\.json$/.test(name)).map(name=>Number(name.split('-')[0]))):0;
+    await writeRecord(path.join(folder,`${Math.max(Date.now(),latest+1)}-${randomUUID()}.json`),value);
+  });rememberTail=task.catch(()=>{});await task;
 }
 async function choose(kind) {
   assert(!service.busy, 'OPERATION_RUNNING');
   const result = await dialog.showOpenDialog(win, { properties: kind === 'executable' ? ['openFile', ...(process.platform === 'darwin' ? ['openDirectory'] : [])] : ['openDirectory','createDirectory'] });
   if (result.canceled) return null;
   const chosen = result.filePaths[0]; noLinks(chosen);
-  if (kind === 'profile') { separate(chosen, service.storage); service.profile = chosen; service.originProfile=null;service.selectionError=false; }
+  if (kind === 'profile') { assert(!inside(canonical(chosen),canonical(service.storage)),'OVERLAPPING_STORAGE'); service.selectedProfile=chosen;service.choicesError=false;selectCurrentProfile(service,path.join(stateRoot,'launch-policies')); }
   else if (kind === 'storage') { separate(chosen, service.profile); service.storage = path.join(chosen, 'Nodus-Support-retained'); }
-  else if (process.platform === 'darwin' && chosen.endsWith('.app')) {service.executable = path.join(chosen, 'Contents/MacOS/Nodus');service.versionHint=null;}
-  else {service.executable = chosen;service.versionHint=null;}
+  else if (process.platform === 'darwin' && chosen.endsWith('.app')) {service.executable = service.selectedExecutable = path.join(chosen, 'Contents/MacOS/Nodus');service.versionHint=service.selectedVersionHint=null;}
+  else {service.executable = service.selectedExecutable = chosen;service.versionHint=service.selectedVersionHint=null;}
   await remember(); return service.inspect();
 }
 const confirmation = async (message, detail) => (await dialog.showMessageBox(win, { type: 'question', message, detail, buttons: [text('cancel'), text('confirm')], defaultId: 0, cancelId: 0, noLink: true })).response === 1;
@@ -143,6 +153,7 @@ async function reinstall(id,update=false) {
       else if (service.executable.endsWith('.AppImage')) format = 'AppImage';
       else { try { await exec('/usr/bin/dpkg-query', ['-S', service.executable]); format = 'deb'; } catch { await exec('/usr/bin/rpm', ['-qf', service.executable]); format = 'rpm'; } }
       const artifact = manifest.installers.find(entry => entry.format === format); assert(artifact, 'INSTALLER_NOT_SUPPORTED');
+      if(format==='nsis')assert(artifact.repairProtocol===1,'INSTALLER_NOT_SUPPORTED');
       const installer = await downloadArtifact(artifact, folder, { fetch: net.fetch.bind(net), signal:service.controller.signal, progress: service.progress });
       if (process.platform === 'win32') await verifyPlatformSignature(installer,artifact.platformSignature);
       let rollbackInstaller=installer,rollbackArtifact=artifact;
@@ -154,12 +165,17 @@ async function reinstall(id,update=false) {
       }
       const original = process.platform === 'darwin' ? path.resolve(service.executable, '../../..') : format === 'AppImage' ? service.executable : path.dirname(service.executable);
       for (const root of session.inspection.roots) separate(original, root);
-      const old = await preserveInstallation(original, folder);
+      const diagnosticRuntime={folder,candidate,executable,version:manifest.version,inventory:await inventory(candidate,service.controller.signal,service.progress,{links:true})};
+      const old = await preserveInstallation(original, folder,{signal:service.controller.signal,progress:service.progress});
       await service.event(id, { installationOriginal: original, installationPrevious: old, installerVerified: artifact.name, installerFormat:format, installationPreviousInstaller:rollbackInstaller, installationPreviousArtifact:rollbackArtifact, installationVersion:manifest.version });
       assert(!await isRunning(), 'CLOSE_NODUS_FIRST');
       if(process.platform==='win32'&&artifact.platformSignature==='none')assert(await confirmation(text('reinstall'),text('manifestVerified')),'TEST_CANCELLED');
       for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory,service.controller.signal);
       service.controller.signal.throwIfAborted();
+      // A system installer/atomic rename cannot safely be killed halfway. A
+      // close request waits for its verification and durable journal instead.
+      service.controller=null;
+      service.progress({phase:'installing',completed:0,total:0});
       if (process.platform === 'darwin' || format === 'AppImage') {
         const retained = `${original}.support-retained-${randomUUID()}`;
         const staged = `${original}.support-candidate-${randomUUID()}`;
@@ -171,15 +187,13 @@ async function reinstall(id,update=false) {
         await activateInstallation(transaction,installationTransaction=>service.event(id,{installationTransaction}));
       } else {
         await service.event(id,{installationSystemPending:true});
-        const command=installerCommand(process.platform,format,installer,original);
+        const command=installerCommand(process.platform,format,installer,original,{repairProtocol:artifact.repairProtocol});
         await runInstaller(command.command,command.args);
         await service.event(id,{installationSystemPending:false});
       }
-      service.controller.signal.throwIfAborted();
-      await verifyActivatedInstallation({format,original,artifact,version:manifest.version,installation:()=>service.installation(),signal:service.controller.signal});
-      for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory,service.controller.signal);
+      await verifyActivatedInstallation({format,original,artifact,version:manifest.version,installation:()=>service.installation()});
+      for(const source of await service.protectedSources(session))await verifyInventory(source.original,source.inventory);
       await writeNew(path.join(working.root,'result.json'),{...check,appVersion:manifest.version,action:'reinstall',diagnostic:false,at:new Date().toISOString()});
-      const diagnosticRuntime={folder,candidate,executable,version:manifest.version,inventory:await inventory(candidate,service.controller.signal,service.progress,{links:true})};
       return service.event(id, { status: 'awaiting-user',diagnosticRuntime,diagnosticVersion:manifest.version,trialOpened:null,recoveredProfiles:[...session.recoveredProfiles,working.root], actions: [...session.actions, { id: randomUUID(), action: 'reinstall', status: 'passed', at: new Date().toISOString() }] });
     } catch (error) { return service.blocked(id, error); }
     finally { service.activeId = null; service.controller = null; }
@@ -234,15 +248,18 @@ async function rollbackInstallation(id) {
   const protection = readJson(path.join(path.dirname(session.installationPrevious),'installation-protection.json'));
   assert(protection.source === original && protection.copy === session.installationPrevious,'INVALID_SESSION');
   await verifyInventory(protection.copy,protection.inventory);
+  service.progress({phase:'installing',completed:0,total:0});
+  await protectInstallationRollback(service,session);
   if(['nsis','deb','rpm'].includes(session.installerFormat)) {
     assert(session.installationPreviousInstaller,'INSTALLATION_RECOVERY_REQUIRED');
     const artifact=session.installationPreviousArtifact;assert(artifact,'INSTALLATION_RECOVERY_REQUIRED');
     assert(fs.statSync(session.installationPreviousInstaller).size===artifact.bytes&&await hashFile(session.installationPreviousInstaller)===artifact.sha256,'DOWNLOAD_HASH_MISMATCH');
     if(process.platform==='win32')await verifyPlatformSignature(session.installationPreviousInstaller,artifact.platformSignature);
     if(!await confirmation(text('undoSolution'),text('reinstall')))return session;
-    const command=installerCommand(process.platform,session.installerFormat,session.installationPreviousInstaller,original,{rollback:true});
+    const command=installerCommand(process.platform,session.installerFormat,session.installationPreviousInstaller,original,{rollback:true,repairProtocol:artifact.repairProtocol});
     await service.event(id,{installationSystemRollbackPending:true});
     await runInstaller(command.command,command.args);
+    const restored=await service.installation();assert(restored?.version===session.inspection.version,'INSTALLATION_INTEGRITY_FAILED');
     await service.event(id,{installationSystemRollbackPending:false});
   } else {
     const staged=`${original}.support-rollback-${randomUUID()}`,retained=`${original}.support-attempt-${randomUUID()}`;
@@ -256,12 +273,15 @@ async function handlers() {
   const handle = (name, fn) => ipcMain.handle(`support:${name}`, async (event, ...args) => {
     assert(event.sender === win.webContents && event.senderFrame === win.webContents.mainFrame, 'INVALID_SENDER');
     try { return { ok: true, value: await fn(...args) }; }
-    catch (error) { return { ok: false, code: /^[A-Z][A-Z0-9_]*$/.test(error.code ?? '') ? error.code : 'OPERATION_FAILED' }; }
+    catch (error) {
+      if(['applySolution','undoSolution','launchRecovered','reinstall','restore','resume'].includes(name)&&/^[0-9a-f-]{36}$/.test(args[0]??'')&&!service.busy)try{await service.blocked(args[0],error);}catch{/* Preserve an unreadable journal without attempting to rewrite it. */}
+      return { ok: false, code: /^[A-Z][A-Z0-9_]*$/.test(error.code ?? '') ? error.code : 'OPERATION_FAILED' };
+    }
   });
   handle('setLanguage', async language => { assert(SUPPORT_LANGUAGES.includes(language),'INVALID_REQUEST'); service.locale = language; await remember(); });
   handle('openGuide',async id=>{assert(typeof id==='string','INVALID_REQUEST');await shell.openExternal(guideUrl(id,process.platform));});
   handle('inspect', async () => ({...await service.inspect(),qualifiedRepairs:qualifiedRepairs.platforms[`${process.platform}-${process.arch}`] ?? []})); handle('chooseProfile', () => choose('profile')); handle('chooseExecutable', () => choose('executable')); handle('chooseStorage', () => choose('storage'));
-  handle('create', input => service.create(input)); handle('protect', id => service.protect(id)); handle('test', async(id,action)=>{assert(SUPPORT_ACTIONS.includes(action),'INVALID_ACTION');await ensureDiagnosticRuntime(id);return service.test(id,action);});
+  handle('create', input => {assert(!service.busy,'OPERATION_RUNNING');selectCurrentProfile(service,path.join(stateRoot,'launch-policies'));return service.create(input);}); handle('protect', id => service.protect(id)); handle('test', async(id,action)=>{assert(SUPPORT_ACTIONS.includes(action),'INVALID_ACTION');await ensureDiagnosticRuntime(id);return service.test(id,action);});
   handle('answer', async (id, works) => {
     const session = await service.session(id);
     if (works === true) assert(session.trialOpened || session.installationPrevious,'USER_TRIAL_REQUIRED');
@@ -271,9 +291,9 @@ async function handlers() {
   handle('cancel', id => service.cancel(id));
   handle('resume', async id => {
     const session=await service.session(id);
-    if(session.inspection.profile!==service.profile||session.inspection.executable!==service.executable) {
+    if(service.selectionError||session.inspection.profile!==service.profile||session.inspection.executable!==service.executable) {
       assert(await confirmation(text('resume'),`${text('profile')}: ${session.inspection.profile}\n${text('retained')}`),'TEST_CANCELLED');
-      service.profile=session.inspection.profile;service.originProfile=null;service.executable=session.inspection.executable;await remember();
+      service.profile=session.inspection.profile;service.originProfile=null;service.executable=session.inspection.executable;service.selectionError=false;
     }
     for(const key of ['installationTransaction','installationRollbackTransaction'])if(session[key]) {
       await service.guardSource(session);await service.protectedSources(session);
@@ -307,10 +327,10 @@ async function handlers() {
     const session = await service.session(id);
     if (!await confirmation(text('raw'), text('rawWarning'))) return null;
     const output = await chooseExport(); if (!output) return null;
-    const folder = path.join(output, `nodus-private-logs-${randomUUID()}`); separate(service.profile, folder);
+    const folder = path.join(output, `nodus-private-logs-${randomUUID()}`);for(const source of new Set([session.inspection.profile,...session.inspection.roots]))separate(source,folder);
     await fsp.mkdir(folder, { mode: 0o700 }); await privateDirectory(folder);
     let i = 0;
-    for (const source of [...service.logFiles(),...service.privateProbeLogs(session)]) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
+    for (const source of [...service.logFiles(session.inspection.profile),...service.privateProbeLogs(session)]) { const manifest = await inventory(source); await copyInventory(source, path.join(folder, `log-${i++}${path.extname(source)}`), manifest); }
     await writeNew(path.join(folder, 'PRIVATE.txt'), text('rawWarning'));
     await service.event(session.id, { lastPrivateExport: folder }); return saveZip(folder);
   });

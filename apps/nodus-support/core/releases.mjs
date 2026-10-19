@@ -104,17 +104,20 @@ export async function extractRuntime(archive, folder, openZip) {
     })().catch(error => { zip.close(); reject(error); }); }); zip.readEntry();
   });
 }
-export function installerCommand(platform, format, file, target, {rollback=false}={}) {
-  if (platform === 'win32' && format === 'nsis') return { command: file, args: [`/D=${target}`], elevation: 'installer' };
+export function installerCommand(platform, format, file, target, {rollback=false,repairProtocol}={}) {
+  if (platform === 'win32' && format === 'nsis') {
+    assert(repairProtocol===1,'INSTALLER_NOT_SUPPORTED');
+    return { command: file, args: ['/S','--nodus-support-repair',`/D=${target}`], elevation: 'installer' };
+  }
   if (platform === 'linux' && format === 'deb') return { command: '/usr/bin/pkexec', args: ['/usr/bin/dpkg', '--install', file], elevation: 'system' };
   if (platform === 'linux' && format === 'rpm') return { command: '/usr/bin/pkexec', args: ['/usr/bin/rpm', '-U', '--replacepkgs', ...(rollback?['--oldpackage']:[]), file], elevation: 'system' };
   if (platform === 'linux' && format === 'AppImage') return { command: null, args: [], target, elevation: 'none' };
   assert(platform === 'darwin' && format === 'zip', 'INSTALLER_NOT_SUPPORTED');
   return { command: null, args: [], target, elevation: 'filesystem' };
 }
-export async function preserveInstallation(source, folder) {
-  const manifest = await inventory(source, undefined, undefined, { links: true }); await sufficientSpace(folder, manifest.bytes);
-  const copy = path.join(folder, 'previous-installation'); await copyInventory(source, copy, manifest);
+export async function preserveInstallation(source, folder, {signal,progress}={}) {
+  const manifest = await inventory(source, signal, progress, { links: true }); await sufficientSpace(folder, manifest.bytes);
+  const copy = path.join(folder, 'previous-installation'); await copyInventory(source, copy, manifest,signal,progress);
   await writeNew(path.join(folder, 'installation-protection.json'), { source, copy, inventory: manifest }); return copy;
 }
 export function runInstaller(command, args) {

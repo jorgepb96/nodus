@@ -52,7 +52,10 @@ if (process.argv.includes('--publish')) {
   if (!keys.some(key => key.keyId === keyId && key.publicKeyPem.trim() === derived.trim())) throw new Error('The support release key is not pinned in the application');
   fs.copyFileSync(preparedRuntime, path.join(release,runtimeName));
   const names = platform === 'darwin' ? [[`Nodus-mac-${arch}.zip`,'zip']] : platform === 'win32' ? [['Nodus-win-x64.exe','nsis']] : [['Nodus-x86_64.AppImage','AppImage'],['Nodus-linux-amd64.deb','deb'],['Nodus-linux-x86_64.rpm','rpm']];
-  const artifact = async (name,format) => ({name,format,platformSignature:platformSignature(name===runtimeName?path.join(app,platform==='win32'?'Nodus.exe':'nodus'):path.join(release,name)),url:`https://github.com/jorgepb96/nodus/releases/download/v${pkg.version}/${name}`,bytes:fs.statSync(path.join(release,name)).size,sha256:await hashFile(path.join(release,name))});
+  const artifact = async (name,format) => {
+    if(format==='nsis'&&JSON.parse(fs.readFileSync(path.join(app,'resources/nodus-support-protocol.json'),'utf8')).windowsRepairProtocol!==1)throw new Error('Windows recovery requires the verified non-destructive NSIS repair protocol');
+    return {name,format,...(format==='nsis'?{repairProtocol:1}:{}),platformSignature:platformSignature(name===runtimeName?path.join(app,platform==='win32'?'Nodus.exe':'nodus'):path.join(release,name)),url:`https://github.com/jorgepb96/nodus/releases/download/v${pkg.version}/${name}`,bytes:fs.statSync(path.join(release,name)).size,sha256:await hashFile(path.join(release,name))};
+  };
   const manifest = {format:'nodus.support-release/1',protocol:1,version:pkg.version,platform,arch,executable:platform === 'darwin' ? 'Nodus.app/Contents/MacOS/Nodus' : platform === 'win32' ? 'Nodus.exe' : 'nodus',runtime:await artifact(runtimeName,'zip'),installers:await Promise.all(names.map(([name,format])=>artifact(name,format)))};
   const payload = Buffer.from(JSON.stringify(manifest)); const envelope = {keyId,payload:payload.toString('base64'),signature:sign(null,payload,privateKey).toString('base64')};
   verifyRelease(envelope,keys,platform,arch);

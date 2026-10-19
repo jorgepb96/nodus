@@ -64,6 +64,8 @@ try{
  await button('Keep the current profile').click();await button('Return to the previous state, keeping all copies').click();await button('Use the previous profile and retain this one too').click();
  assert.deepEqual((await events()).filter(e=>e.action==='undo').map(e=>e.args[0]),['check','keep-current','check','use-previous']);
  await button('Get help').click();await page.locator('textarea').waitFor();assert.equal(await button('Open issue on GitHub').isDisabled(),true);
+ await page.locator('.log-filters select').selectOption('20');await page.waitForFunction(()=>document.querySelector('.review-ack input')?.disabled);assert.equal(await page.locator('.review-ack input').isDisabled(),true);
+ await page.locator('.report').getByRole('button',{name:'Check',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('.review-ack input')?.disabled);
  await page.locator('.review-ack input').check();await button('Copy report').click();
  await page.locator('textarea').fill('# Nodus support report\nEdited and reviewed findings.');assert.equal(await button('Open issue on GitHub').isDisabled(),true);await page.locator('.review-ack input').check();await button('Open issue on GitHub').click();await button('Save report').click();
  assert.equal((await events()).find(e=>e.action==='issue').args[0],'# Nodus support report\nEdited and reviewed findings.');await accessible('reviewed-report');

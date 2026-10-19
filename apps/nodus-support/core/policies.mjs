@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { assert, canonical, noLinks, readJson, separate, writeRecord } from './files.mjs';
+import { assertSourceState,captureSourceState } from './source-state.mjs';
 
 export function readPolicy(folder, profile) {
   if (!fs.existsSync(folder)) return null;
@@ -13,7 +14,7 @@ export function readPolicy(folder, profile) {
   }
   return null;
 }
-export function resolvePolicy(folder,profile) {
+export function resolvePolicy(folder,profile,{verifySources=true}={}) {
   let source=canonical(profile),selected=null,last=null,softwareGraphics=false;
   const visited=new Set();
   for(let depth=0;depth<32;depth++) {
@@ -22,6 +23,7 @@ export function resolvePolicy(folder,profile) {
     if(!policy)return last?{...last,recoveredRoot:selected,softwareGraphics}:null;
     last=policy;softwareGraphics||=policy.softwareGraphics===true;
     if(!policy.recoveredRoot)return {...policy,recoveredRoot:selected,softwareGraphics};
+    if(verifySources)assertSourceState(policy.sourceState);
     const marker=readJson(path.join(policy.recoveredRoot,'support-session.json'));
     assert(marker.protocol===1&&marker.root===canonical(policy.recoveredRoot)&&marker.network===false,'INVALID_SESSION');
     noLinks(policy.recoveredRoot);selected=policy.recoveredRoot;source=path.join(selected,'profile');
@@ -38,7 +40,9 @@ export async function writePolicy(folder, profile, changes, previousId, id = ran
     const manifest = readJson(path.join(changes.recoveredRoot,'support-session.json'));
     assert(manifest.protocol === 1 && manifest.root === canonical(changes.recoveredRoot),'INVALID_SESSION');
   }
-  const value = {format:'nodus.support-launch-policy/1',id,source:canonical(profile),at:new Date().toISOString(),softwareGraphics:changes.softwareGraphics,recoveredRoot:changes.recoveredRoot};
+  const sourceState=changes.recoveredRoot?(changes.sourceState??captureSourceState([profile])):null;
+  if(sourceState)assertSourceState(sourceState);
+  const value = {format:'nodus.support-launch-policy/1',id,source:canonical(profile),at:new Date().toISOString(),softwareGraphics:changes.softwareGraphics,recoveredRoot:changes.recoveredRoot,sourceState};
   const latest = fs.existsSync(folder) ? Math.max(0,...fs.readdirSync(folder).filter(name=>/^\d+-[a-f0-9-]+\.json$/.test(name)).map(name=>Number(name.split('-')[0]))) : 0;
   await writeRecord(path.join(folder,`${Math.max(Date.now(),latest+1)}-${value.id}.json`),value); return value;
 }

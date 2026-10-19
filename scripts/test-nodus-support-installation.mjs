@@ -59,6 +59,7 @@ test('legacy package version is read directly from an actual ASAR without launch
   fs.writeFileSync(path.join(resources,'nodus-support-protocol.json'),JSON.stringify({protocol:1,version:'5.9.1',platform:'linux',arch:'x64',archiveSha256:await hashFile(path.join(resources,'app.asar'))}));
   assert.equal((await service.installation()).protocol,1);
   fs.appendFileSync(path.join(resources,'app.asar'),'changed package');await assert.rejects(service.installation(),/INSTALLATION_INTEGRITY_FAILED/);
+  const inspection=(await service.inspect()).inspection;assert.equal(inspection.version,'5.9.1');assert.equal(inspection.protocol,null);assert.ok(inspection.findings.some(finding=>finding.code==='INSTALLATION_UNAVAILABLE'));
   const malformed=path.join(scratch,'malformed');fs.mkdirSync(malformed);const header=Buffer.alloc(16);header.writeUInt32LE(0xffffffff,4);fs.writeFileSync(path.join(malformed,'app.asar'),header);
   assert.throws(()=>readInstalledPackage(malformed),/INSTALLATION_UNAVAILABLE/);
 });
@@ -71,4 +72,15 @@ test('the independent runtime reuses only verified copies and retains changed or
 test('architecture checks read file headers without executing binaries',()=>{
   const elf=Buffer.alloc(64);Buffer.from([0x7f,0x45,0x4c,0x46,2,1]).copy(elf);elf.writeUInt16LE(62,18);const file=path.join(scratch,'elf');fs.writeFileSync(file,elf);assert.deepEqual(executableArchitectures(file),['x64']);
   const mac=Buffer.alloc(64);mac.writeUInt32LE(0xfeedfacf);mac.writeUInt32LE(0x100000c,4);fs.writeFileSync(file,mac);assert.deepEqual(executableArchitectures(file),['arm64']);
+});
+
+test('rollback protects current installation additions and rejects data changed by newer code',async()=>{
+  const {protectInstallationRollback}=await import('../apps/nodus-support/core/rollback-protection.mjs');
+  const folder=path.join(scratch,'rollback-protection'),profile=path.join(folder,'profile'),original=path.join(folder,'program');fs.mkdirSync(profile,{recursive:true});fs.mkdirSync(original);
+  fs.writeFileSync(path.join(profile,'notes'),'recent protected notes');fs.writeFileSync(path.join(original,'Nodus'),'attempted new installation');fs.writeFileSync(path.join(original,'new-file'),'only current copy');
+  const service=new SupportService({profile,storage:path.join(folder,'support'),isRunning:async()=>false});
+  let session=await service.create({symptom:'update',mode:'guided'});session=await service.protect(session.id);session=await service.event(session.id,{installationOriginal:original});
+  const retained=await protectInstallationRollback(service,session);assert.equal(fs.readFileSync(path.join(retained,'new-file'),'utf8'),'only current copy');assert.equal(fs.readFileSync(path.join(original,'new-file'),'utf8'),'only current copy');
+  fs.writeFileSync(path.join(profile,'notes'),'new work after installation');const before=await inventory(original);
+  await assert.rejects(protectInstallationRollback(service,session),/COPY_NOT_VERIFIED/);assert.deepEqual(await inventory(original),before);assert.equal(fs.readFileSync(path.join(profile,'notes'),'utf8'),'new work after installation');
 });

@@ -11,7 +11,7 @@ module.exports = {
   mac: { target: ['dmg','zip'], icon: path.join(__dirname, 'assets/icon.icns'), category: 'public.app-category.utilities', hardenedRuntime: true, forceCodeSigning: release, ...(release ? { notarize: true, entitlements: path.join(root, 'build/entitlements.mac.plist'), entitlementsInherit: path.join(root, 'build/entitlements.mac.inherit.plist') } : { identity: null }) },
   win: { target: ['nsis', { target: 'portable', arch: ['x64'] }], icon: path.join(__dirname, 'assets/icon.ico') },
   portable: { artifactName: 'Nodus-Support-win-${arch}-portable.exe' },
-  nsis: { oneClick: false, allowToChangeInstallationDirectory: true, deleteAppDataOnUninstall: false },
+  nsis: { oneClick: false, allowToChangeInstallationDirectory: true, deleteAppDataOnUninstall: false,script:require('../../build/supportNsis.cjs').generateSupportNsisScript() },
   linux: { target: ['AppImage','deb','rpm'], category: 'Utility', maintainer: 'Jorge Pérez Burgueño <jorgepb96@users.noreply.github.com>' },
   appImage: { artifactName: 'Nodus-Support-${arch}.${ext}' },
 };

@@ -8,6 +8,9 @@ import { resolvePolicy } from '../apps/nodus-support/core/policies.mjs';
 import { isolateSupportApplication } from './support/isolation';
 import { supportText, SUPPORT_LANGUAGES } from '../shared/support/messages';
 import type { AppLanguage } from '../shared/types';
+import { prepareSupportLauncher } from './supportLauncher';
+
+prepareSupportLauncher();
 
 if (!process.env.NODUS_ISOLATED_ROOT && !process.env.NODUS_USERDATA && !process.env.NODUS_SUPPORT_PROBE) {
   try {
@@ -63,6 +66,8 @@ if (process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS !== undefined && !requestedRoot
 if (requestedRoot) {
   const root = validateIsolatedRoot(requestedRoot);
   if (process.env.NODUS_SUPPORT_INTERACTIVE === '1') {
+    process.env.NODUS_SUPPORT_ORIGINAL_APP_DATA=app.getPath('appData');
+    process.env.NODUS_SUPPORT_ORIGINAL_TEMP=app.getPath('temp');
     const support = JSON.parse(fs.readFileSync(path.join(root, 'support-session.json'), 'utf8'));
     if (support.protocol !== 1 || support.root !== root || support.network !== false) throw new Error('Invalid interactive support profile');
     const resultFile = path.join(root, 'result.json');

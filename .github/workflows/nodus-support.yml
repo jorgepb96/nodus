@@ -60,6 +60,9 @@ jobs:
         run: xvfb-run -a sh -c 'node scripts/verify-nodus-support-data.mjs && node scripts/verify-nodus-support-ui.mjs && node scripts/verify-nodus-support-flow.mjs && node scripts/verify-nodus-support-protocol.mjs'
       - name: Package every native support format
         run: npm run support:dist
+      - name: Verify non-destructive native Windows installer repairs
+        if: runner.os == 'Windows'
+        run: node scripts/verify-nodus-support-nsis.mjs
       - name: Verify the independent packaged runtime
         if: runner.os != 'Linux'
         run: node scripts/verify-nodus-support-runtime.mjs

@@ -34,6 +34,29 @@ function fixture(overrides = {}) {
 }
 const create = service => service.create({ symptom: 'startup', mode: 'guided' });
 
+test('a report stays attached to its session source when another profile has been selected',async()=>{
+  const f=fixture(),other=fixture();put(path.join(f.profile,'nodus-logs.json'),{entries:[{level:'error',code:'SQLITE_CORRUPT'}]});put(path.join(other.profile,'nodus-logs.json'),{entries:[{level:'error',code:'ENOSPC'}]});
+  const session=await create(f.service);f.service.profile=other.profile;
+  const report=await f.service.report(session.id,{limit:50});assert.match(report.markdown,/SQLITE_CORRUPT/);assert.ok(!report.markdown.includes('ENOSPC'));
+  await assert.rejects(f.service.saveReport(session.id,{limit:50},report.markdown,f.profile),/OVERLAPPING_STORAGE/);
+  await assert.rejects(f.service.saveReport(session.id,{limit:50},report.markdown,f.library),/OVERLAPPING_STORAGE/);
+});
+
+test('registered sources cannot conceal a directory link or Windows junction through canonicalization',async()=>{
+  const f=fixture(),alias=path.join(f.base,'vault-alias');fs.symlinkSync(path.dirname(f.vault),alias,'junction');
+  put(path.join(f.profile,'vaults.json'),{vaults:[{id:'external',path:path.join(alias,'vault.sqlite')}]});
+  assert.throws(()=>detectSources(f.profile),/LINK_NOT_SUPPORTED/);
+  const session=await f.service.protect((await create(f.service)).id);assert.equal(session.status,'blocked');assert.equal(session.lastError,'LINK_NOT_SUPPORTED');
+  const libraryFixture=fixture(),libraryAlias=path.join(libraryFixture.base,'library-alias');fs.symlinkSync(path.dirname(libraryFixture.library),libraryAlias,'junction');
+  put(path.join(libraryFixture.profile,'app-prefs.json'),{autoBackupFolder:libraryAlias,libraryGlobalEnabled:true});
+  assert.throws(()=>detectSources(libraryFixture.profile),/LINK_NOT_SUPPORTED/);
+});
+test('a destination inside an external library is rejected before session files are written',async()=>{
+  const f=fixture();f.service.storage=path.join(f.library,'do-not-create');
+  const before=await inventory(f.library);await assert.rejects(create(f.service),/OVERLAPPING_STORAGE/);
+  assert.equal(fs.existsSync(f.service.storage),false);assert.deepEqual(await inventory(f.library),before);
+});
+
 test('an unreadable previous journal stays visible as a finding and all its files are retained',async()=>{
   const f=fixture(),session=await create(f.service),file=path.join(session.folder,'journal/00000001.json');
   put(file,'{ interrupted or damaged journal');const before=await inventory(session.folder);

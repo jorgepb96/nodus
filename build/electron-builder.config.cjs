@@ -7,5 +7,6 @@ const { packagedNodeModuleExclusions } = require('./packagedNodeModules.cjs');
 // it. See build/packagedNodeModules.cjs for what is left out and why.
 module.exports = {
   ...pkg.build,
+  nsis: {...pkg.build.nsis,script:require('./supportNsis.cjs').generateSupportNsisScript()},
   files: [...pkg.build.files, ...packagedNodeModuleExclusions()],
 };

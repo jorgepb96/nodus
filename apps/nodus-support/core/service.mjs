@@ -3,7 +3,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { assert, canonical, copyInventory, destination, hashFile, inventory, noLinks, readJson, separate, sufficientSpace, verifyInventory, writeNew, writeRecord } from './files.mjs';
+import { assert, canonical, copyInventory, destination, hashFile, inside, inventory, noLinks, readJson, separate, sufficientSpace, verifyInventory, writeNew, writeRecord } from './files.mjs';
 import { executableArchitectures, readInstalledPackage } from './installation.mjs';
 import { issueDraft, publicReport, reportMarkdown, safeError } from '../../../shared/support/report.mjs';
 import { technicalLogEntry } from '../../../shared/support/logs.mjs';
@@ -28,11 +28,11 @@ export function detectSources(profile) {
   for (const vault of registry?.vaults ?? []) {
     if (typeof vault.path !== 'string' || !path.isAbsolute(vault.path)) { missing.push('INVALID_VAULT_PATH'); continue; }
     if (!fs.existsSync(vault.path)) { missing.push('VAULT_UNAVAILABLE'); continue; }
-    for (const file of [vault.path, `${vault.path}-wal`, `${vault.path}-shm`]) if (fs.existsSync(file)) roots.push(canonical(file));
+    for (const file of [vault.path, `${vault.path}-wal`, `${vault.path}-shm`]) if (fs.existsSync(file)) {noLinks(file);roots.push(canonical(file));}
   }
   if (typeof prefs?.autoBackupFolder === 'string' && prefs.autoBackupFolder.trim()) {
     const library = path.join(prefs.autoBackupFolder, 'nodus-library');
-    if (fs.existsSync(library)) roots.push(canonical(library));
+    if (fs.existsSync(library)) {noLinks(library);roots.push(canonical(library));}
     else if (prefs.libraryGlobalEnabled) missing.push('LIBRARY_UNAVAILABLE');
   }
   const unique = [...new Set(roots)].filter((root, index, all) => !all.some((other, i) => i !== index && canonical(other) !== canonical(root) && path.relative(other, root) && !path.relative(other, root).startsWith('..') && !path.isAbsolute(path.relative(other, root))));
@@ -59,7 +59,14 @@ export class SupportService {
     if (fs.existsSync(path.join(this.profile, 'app-prefs.json')) && !optionalJson(path.join(this.profile, 'app-prefs.json'))) findings.push({ code: 'PREFERENCES_UNREADABLE', component: 'profile', level: 'error' });
     let metadata = null;
     try { metadata = this.executable ? await this.installation() : null; }
-    catch { findings.push({ code: 'INSTALLATION_UNAVAILABLE', component: 'installation', level: 'warning' }); }
+    catch {
+      findings.push({ code: 'INSTALLATION_UNAVAILABLE', component: 'installation', level: 'warning' });
+      // A damaged executable/archive must never run, but readable version
+      // metadata is still useful to select a verified same-version installer.
+      let version=this.versionHint;
+      try{const folder=this.platform==='darwin'?path.resolve(this.executable,'../../Resources'):path.join(path.dirname(this.executable),'resources');const pkg=readInstalledPackage(folder);if(pkg.name==='nodus'&&/^\d+\.\d+\.\d+(?:-[a-z0-9.-]+)?$/i.test(pkg.version))version=pkg.version;}catch{/* Keep the explicit bundled version hint, if present. */}
+      metadata={version,protocol:null};
+    }
     if (!metadata) findings.push({ code: 'INSTALLATION_NOT_SELECTED', component: 'installation', level: 'warning' });
     if (metadata && metadata.protocol !== 1) findings.push({ code: 'LEGACY_READ_ONLY', component: 'installation', level: 'warning' });
     try { if (await this.isRunning()) findings.push({ code: 'CLOSE_NODUS_FIRST', component: 'app', level: 'warning' }); }
@@ -123,11 +130,17 @@ export class SupportService {
   }
   async create(input) {
     assert(SYMPTOMS.has(input?.symptom) && ['guided', 'automatic'].includes(input?.mode), 'INVALID_REQUEST');
-    noLinks(this.storage); separate(this.storage, this.profile);
-    await fsp.mkdir(this.storage, { recursive: true, mode: 0o700 }); await this.privateDirectory(this.storage);
+    noLinks(this.storage);
     const id = randomUUID(); const folder = this.sessionFolder(id);
-    await fsp.mkdir(path.join(folder, 'journal'), { recursive: true, mode: 0o700 });
     const inspection = (await this.inspect()).inspection;
+    // An active recovery profile can live in an older session below storage.
+    // Its new protection must be a sibling session, never inside that profile.
+    for(const source of new Set([this.profile,...inspection.roots])) {
+      assert(!inside(canonical(source),canonical(this.storage)),'OVERLAPPING_STORAGE');separate(source,folder);
+    }
+    assert(!fs.existsSync(folder),'DESTINATION_EXISTS');
+    await fsp.mkdir(this.storage, { recursive: true, mode: 0o700 }); await this.privateDirectory(this.storage);
+    await fsp.mkdir(path.join(folder, 'journal'), { recursive: true, mode: 0o700 });
     const session = { format: 'nodus.support-session/1', id, at: now(), symptom: input.symptom, mode: input.mode, status: 'created', actions: [], files: 0, bytes: 0, folder, recoveredProfiles: [], inspection };
     await writeRecord(path.join(folder, 'session.json'), session); return this.session(id);
   }
@@ -137,7 +150,7 @@ export class SupportService {
     assert(!await this.isRunning(), 'CLOSE_NODUS_FIRST');
     const { roots, missing } = detectSources(this.profile);
     assert(!missing.length, missing[0]);
-    for (const root of roots) { noLinks(root); separate(root, this.storage); }
+    for (const root of roots) { noLinks(root);assert(!inside(canonical(root),canonical(this.storage)),'OVERLAPPING_STORAGE');separate(root,session.folder); }
     return roots;
   }
   async protect(id) {
@@ -274,9 +287,9 @@ export class SupportService {
     const session = await this.session(id); const code = /^[A-Z][A-Z0-9_]*$/.test(error.code ?? '') ? error.code : 'OPERATION_FAILED';
     return this.event(id, { status: 'blocked', lastError: code, actions: [...session.actions, { id: randomUUID(), action: 'safety-check', status: 'blocked', code, at: now() }] });
   }
-  logFiles() {
-    const candidates = ['nodus-logs.json', 'electron_debug.log', 'nodus-startup.log'].map(name => path.join(this.profile, name));
-    const startup = path.join(this.profile, 'support-startup');
+  logFiles(profile=this.profile) {
+    const candidates = ['nodus-logs.json', 'electron_debug.log', 'nodus-startup.log'].map(name => path.join(profile, name));
+    const startup = path.join(profile, 'support-startup');
     if (fs.existsSync(startup)) for (const entry of fs.readdirSync(startup)) if (/^[a-zA-Z0-9.-]+\.jsonl$/.test(entry)) candidates.push(path.join(startup, entry));
     return candidates.filter(file => { try { noLinks(file); return fs.statSync(file).isFile(); } catch { return false; } });
   }
@@ -291,11 +304,11 @@ export class SupportService {
     }
     return files;
   }
-  async errors(selection = { limit: 50 }) {
+  async errors(selection = { limit: 50 },profile=this.profile) {
     assert([20,50,100,'all'].includes(selection.limit), 'INVALID_REQUEST');
     for (const date of [selection.since, selection.until]) assert(date === undefined || Number.isFinite(Date.parse(date)), 'INVALID_REQUEST');
     const entries = [];
-    for (const file of this.logFiles()) {
+    for (const file of this.logFiles(profile)) {
       const input = fs.createReadStream(file, { highWaterMark: 64 * 1024 });
       let text = ''; let bytes = 0;
       // Application JSON is bounded by its retention; enormous files remain available
@@ -322,14 +335,15 @@ export class SupportService {
     return selection.limit === 'all' ? entries : entries.slice(0, selection.limit);
   }
   async report(id, selection) {
-    const session = await this.session(id); const errors = await this.errors(selection);
+    const session = await this.session(id); const errors = await this.errors(selection,session.inspection.profile);
     const report = publicReport(session.inspection, session, [...session.inspection.findings,...(session.findings??[])], errors);
     const markdown = reportMarkdown(report); return { markdown, ...issueDraft(report, markdown), errors: report.errors.map(e => e.code), report };
   }
   async saveReport(id, selection, reviewed, output) {
     assert(typeof reviewed === 'string' && reviewed.length <= 200000, 'INVALID_REQUEST');
-    const { report } = await this.report(id, selection); const folder = path.join(output, `nodus-support-${randomUUID()}`);
-    separate(this.profile, folder); await fsp.mkdir(folder, { mode: 0o700 }); await this.privateDirectory(folder);
+    const { report } = await this.report(id, selection); const session=await this.session(id);const folder = path.join(output, `nodus-support-${randomUUID()}`);
+    for(const source of new Set([session.inspection.profile,...session.inspection.roots]))separate(source,folder);
+    await fsp.mkdir(folder, { mode: 0o700 }); await this.privateDirectory(folder);
     await writeNew(path.join(folder, 'report.md'), reviewed);
     await writeNew(path.join(folder, 'diagnostics.json'), report);
     await writeNew(path.join(folder, 'errors.txt'), report.errors.map(e => `${e.component}: ${e.code}`).join('\n'));

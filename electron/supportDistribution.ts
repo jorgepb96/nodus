@@ -101,7 +101,7 @@ export async function installSupportDownload(language:AppLanguage):Promise<Suppo
   promptPending=true;let confirm;
   try{confirm=await dialog.showMessageBox({type:'info',message:supportText(language,'installSupport'),detail:supportText(language,'supportInstallHelp'),buttons:[supportText(language,'cancel'),supportText(language,'confirm')],defaultId:0,cancelId:0,noLink:true});}finally{promptPending=false;}
   if(confirm.response!==1)return {...state};if(controller)return {...state};
-  controller=new AbortController();state={...state,phase:'downloading',completed:0,error:undefined};
+  controller=new AbortController();state={...state,phase:'downloading',bytes:release.manifest.runtime.bytes,completed:0,error:undefined};
   try {
     const installed=await manager().install(release.envelope,{signal:controller.signal,progress:value=>{state={...state,phase:value.phase==='installing'?'installing':'downloading',completed:value.completed??state.completed};}});
     state={...state,phase:'installed',installedVersion:installed.manifest.version};

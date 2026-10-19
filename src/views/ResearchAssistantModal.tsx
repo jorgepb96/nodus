@@ -1,4 +1,6 @@
 import { composerDraftStore, rememberComposerDraft } from '../researchComposerDrafts';
+import { researchChatQueue, type ResearchTurnSettings, type QueuedResearchTurn } from '../researchChatQueue';
+import { ResearchChatQueue } from '../components/ResearchChatQueue';
 import { useAcademicLearning } from '../learning/AcademicLearningContext';
 import { takeLearningPrompt } from '../learning/learningPrompt';
 import { learningAnswerReferences } from '../learning/learningEvidence';
@@ -229,11 +231,25 @@ export function ResearchAssistantModal({
   };
   const [conversations, setConversations] = useState<ChatConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [queueVaultId, setQueueVaultId] = useState<string | null>(null);
+  useEffect(() => {
+    let current = true;
+    void window.nodus.getActiveVault().then(vault => { if (current) setQueueVaultId(vault.id); });
+    return () => { current = false; };
+  }, [learning.vaultId]);
+  const queueKeyFor = (id: string) => !adapter && queueVaultId ? `${queueVaultId}:research:${id}` : null;
+  const queueKey = activeId ? queueKeyFor(activeId) : null;
+  const queue = useSyncExternalStore(researchChatQueue.subscribe, () => researchChatQueue.get(queueKey));
+  const editingQueuedTurn = queue.items.find(item => item.id === queue.editingId);
+  const deletingQueuedTurn = queue.items.find(item => item.id === queue.deletingId);
+  const beforeQueueEdit = useRef<{ input: string; attachments: ResearchAttachment[]; skills: InvokedSkill[] } | null>(null);
+  const creatingConversationRef = useRef(false);
   const activityRun = activeId ? activityRuns[activeId] ?? null : null;
   const draftRestoring = useRef(Boolean(draftScope && draftSeed.current.lastId && !initialTarget && !initialConversationTarget));
   useEffect(() => {
-    if(!draftRestoring.current)rememberComposerDraft(draftScope,activeId,{input,attachments,selection});
-  },[draftScope,activeId,input,attachments,selection]);
+    const preserved = editingQueuedTurn ? beforeQueueEdit.current : null;
+    if(!draftRestoring.current)rememberComposerDraft(draftScope,activeId,{input:preserved?.input ?? input,attachments:preserved?.attachments ?? attachments,selection});
+  },[draftScope,activeId,input,attachments,selection,editingQueuedTurn]);
   const promptConversationKey = activeId ? `${adapter?.id ?? 'research'}:${activeId}` : null;
   const systemPrompts = useResearchSystemPrompts(promptConversationKey);
   const [showArchived, setShowArchived] = useState(false);
@@ -331,6 +347,8 @@ export function ResearchAssistantModal({
   }, [viewId]);
   // Stops one chat's turn; the surface's other chats keep answering.
   const stopTurn = (conversationId: string) => {
+    const queueKey = queueKeyFor(conversationId);
+    if (queueKey) researchChatQueue.change(queueKey, { paused: true });
     const key = liveResearchTurnKey(liveScope, conversationId);
     if (!liveResearchTurns.get(key)) return;
     liveResearchTurns.requestStop(key);
@@ -445,6 +463,8 @@ export function ResearchAssistantModal({
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
+    if (queueKey) researchChatQueue.change(queueKey, { editingId: null, deletingId: null });
+    beforeQueueEdit.current = null;
     loadSequenceRef.current++;
     setAttachments([]);
     setAttachmentError('');
@@ -483,6 +503,8 @@ export function ResearchAssistantModal({
 
   const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null, restoringDraft = false): Promise<boolean> => {
     if (attachmentBusyRef.current) return false;
+    if (queueKey) researchChatQueue.change(queueKey, { editingId: null, deletingId: null });
+    beforeQueueEdit.current = null;
     const sequence = ++loadSequenceRef.current;
     const conversation = await api.getConversation(id);
     if (sequence !== loadSequenceRef.current) return false;
@@ -494,6 +516,7 @@ export function ResearchAssistantModal({
     const storedAttachments = await window.nodus.listResearchAttachments({ surface: attachmentSurface, conversationId: id });
     if (sequence !== loadSequenceRef.current) return false;
     const referenced = new Set(conversation.messages.flatMap(message => message.attachments?.map(file => file.id) ?? []));
+    for (const item of researchChatQueue.get(queueKeyFor(id)).items) for (const file of item.attachments) referenced.add(file.id);
     setAttachments((storedAttachments ?? []).filter(file => !referenced.has(file.id)));
     setAttachmentError('');
     setActiveId(conversation.id);
@@ -653,6 +676,8 @@ export function ResearchAssistantModal({
     setPendingBulkDelete(null);
     for (const conversation of deleting) {
       stopTurn(conversation.id);
+      const key = queueKeyFor(conversation.id);
+      if (key) researchChatQueue.clear(key);
       await api.deleteConversation(conversation.id);
       await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${conversation.id}`, null);
     }
@@ -667,6 +692,8 @@ export function ResearchAssistantModal({
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     stopTurn(pendingDelete.id);
+    const key = queueKeyFor(pendingDelete.id);
+    if (key) researchChatQueue.clear(key);
     await api.deleteConversation(pendingDelete.id);
     await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${pendingDelete.id}`, null);
     if (pendingDelete.id === activeId) startNewConversation();
@@ -675,12 +702,13 @@ export function ResearchAssistantModal({
   };
 
   const persist = useCallback(
-    async (conversationId: string, finalMessages: UiMessage[], shouldTitle: boolean) => {
+    async (conversationId: string, finalMessages: UiMessage[], shouldTitle: boolean, turn?: ResearchTurnSettings) => {
       const records: UiMessage[] = finalMessages.map((m) => ({
         concilium: m.concilium,
         interrupted: m.interrupted,
         study: m.study,
         attachments: m.attachments,
+        skills: m.skills,
         id: m.id,
         role: m.role,
         content: m.content,
@@ -688,9 +716,9 @@ export function ResearchAssistantModal({
         stats: m.stats ?? null,
         error: m.error ?? false,
       }));
-      await api.saveConversationMessages(conversationId, records, { model: selectedModel, selection, ...(!adapter && draftScope ? {vaultId:draftScope} : {}) });
+      await api.saveConversationMessages(conversationId, records, { model: turn?.model ?? selectedModel, selection: turn?.selection ?? selection, ...(!adapter && draftScope ? {vaultId:draftScope} : {}) });
       if (shouldTitle && (!draftScope || (await window.nodus.getActiveVault()).id === draftScope)) {
-        await api.generateConversationTitle?.(conversationId, selectedModel)?.catch(() => '');
+        await api.generateConversationTitle?.(conversationId, turn?.model ?? selectedModel)?.catch(() => '');
       }
       await refreshConversations();
     },
@@ -700,8 +728,13 @@ export function ResearchAssistantModal({
   // Runs one assistant turn against `priorMessages` + a fresh user turn. Shared by
   // the composer (send) and the regenerate action, which only differ in how they
   // pick the prior history and the user prompt.
-  const generate = async (conversationId: string, priorMessages: UiMessage[], content: string, files: ResearchAttachment[] = [], skills: InvokedSkill[] = []) => {
-    if (!selectedModel) return;
+  const snapshotTurn = (): ResearchTurnSettings => structuredClone({ model: selectedModel, selection, thinkingEffort,
+    webSearch: turnWebSearch, harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration,
+    systemPromptId: systemPrompts.selectedId, systemPromptSnapshot: systemPrompts.selected, answerVerification, concilium: concilium ?? undefined });
+  const generate = async (conversationId: string, priorMessages: UiMessage[], content: string, files: ResearchAttachment[] = [], skills: InvokedSkill[] = [], turn = snapshotTurn()): Promise<'completed' | 'cancelled' | 'failed'> => {
+    const { model: selectedModel, selection, thinkingEffort, webSearch: turnWebSearch, concilium } = turn;
+    if (!selectedModel) return 'failed';
+    const persistTurn = (id: string, messages: UiMessage[], title: boolean) => persist(id, messages, title, turn);
     const selectionKey = adapter?.contextKey ?? serializeSelection(selection);
     const isFirstExchange = priorMessages.length === 0;
     const userMessage: UiMessage = { id: crypto.randomUUID(), role: 'user', content, selectionKey, attachments: files, ...(skills.length ? { skills } : {}) };
@@ -751,9 +784,9 @@ export function ResearchAssistantModal({
       paintTimer = null;
     };
     try {
-      await persist(conversationId, [...priorMessages, userMessage], false);
+      await persistTurn(conversationId, [...priorMessages, userMessage], false);
       const response = await api.researchChatStream(
-        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch, harnessVersion: harnessOptions.version, explorationMode: harnessOptions.exploration } : {}), systemPromptId: systemPrompts.selectedId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
+        { attachmentIds: [...new Set([...priorMessages, userMessage].flatMap(message => message.attachments?.map(file => file.id) ?? []))], messages: requestMessages, selection, model: selectedModel, conversationId, thinkingEffort, ...(!adapter ? { webSearch: turnWebSearch, harnessVersion: turn.harnessVersion, explorationMode: turn.explorationMode, answerVerification: turn.answerVerification, systemPromptSnapshot: turn.systemPromptSnapshot } : {}), systemPromptId: turn.systemPromptId, concilium: !adapter ? concilium ?? undefined : undefined, ...(skillsEnabled && skills.length ? { skillIds: skills.map(skill => skill.id) } : {}) },
         {
           // A terminal event may arrive after the turn settled (it travels on another IPC pipe
           // than the reply); it then replaces the placeholder the settlement wrote.
@@ -814,7 +847,7 @@ export function ResearchAssistantModal({
         if (aborted && answer) setStoppedMessageId(assistantId);
         window.setTimeout(updateJumpIndicator, 0);
       }
-      await persist(conversationId, finalMessages, isFirstExchange);
+      await persistTurn(conversationId, finalMessages, isFirstExchange);
       if (!adapter && learning.session && ['first-answer','research-question'].includes(learning.session.lessonId)) {
         if (aborted) learning.emit({ kind: 'recovery', recovery: 'cancelled' });
         else {
@@ -843,7 +876,7 @@ export function ResearchAssistantModal({
           if (partial) setStoppedMessageId(assistantId);
           window.setTimeout(updateJumpIndicator, 0);
         }
-        await persist(conversationId, finalMessages, false);
+        await persistTurn(conversationId, finalMessages, false);
       } else {
         const errorMessage: UiMessage = {
           id: assistantId,
@@ -861,13 +894,79 @@ export function ResearchAssistantModal({
           setMessages(finalMessages);
           window.setTimeout(updateJumpIndicator, 0);
         }
-        await persist(conversationId, finalMessages, false);
+        await persistTurn(conversationId, finalMessages, false);
       }
     } finally {
       dropUnpainted();
       // Saved by now: the chat unlocks, and shows the settled conversation if it is on screen.
       liveResearchTurns.finish(liveKey, settled, outcome);
+      if (outcome !== 'completed') {
+        const key = queueKeyFor(conversationId);
+        if (key) researchChatQueue.change(key, { paused: true });
+      }
+      void drainQueue(conversationId);
     }
+    return outcome === 'completed' ? 'completed' : outcome === 'cancelled' ? 'cancelled' : 'failed';
+  };
+
+  const drainQueue = async (conversationId: string) => {
+    const key = queueKeyFor(conversationId);
+    if (!key || liveResearchTurns.get(liveResearchTurnKey(liveScope, conversationId))) return;
+    await researchChatQueue.run(key, async item => {
+      // A different vault must never receive a pending request from this one.
+      if ((await window.nodus.getActiveVault()).id !== queueVaultId) throw new Error(t('Abre el vault original para reanudar esta cola.'));
+      const conversation = await api.getConversation(conversationId);
+      if (!conversation) throw new Error(t('La conversación original ya no está disponible.'));
+      return generate(conversationId, conversation.messages, item.content, item.attachments, item.skills, item.settings);
+    });
+  };
+  useEffect(() => {
+    if (activeId && !sending && !notebookBlocked) void drainQueue(activeId);
+  }, [activeId, sending, queue, queueVaultId, notebookBlocked]);
+
+  const finishQueueEdit = () => {
+    if (queueKey) researchChatQueue.change(queueKey, { editingId: null });
+    const previous = beforeQueueEdit.current;
+    setInput(previous?.input ?? '');
+    setAttachments(previous?.attachments ?? []);
+    setInvokedSkills(previous?.skills ?? []);
+    beforeQueueEdit.current = null;
+    setMention(null);
+  };
+  const editQueuedTurn = (item: QueuedResearchTurn) => {
+    if (!queueKey) return;
+    if (!beforeQueueEdit.current) beforeQueueEdit.current = { input, attachments, skills: invokedSkills };
+    researchChatQueue.edit(queueKey, item.id);
+    setInput(item.content);
+    setAttachments([]);
+    setInvokedSkills([]);
+    setMention(null);
+    inputRef.current?.focus();
+  };
+  const enqueue = async () => {
+    if (editingQueuedTurn && queueKey) {
+      if (!input.trim()) return;
+      researchChatQueue.save(queueKey, editingQueuedTurn.id, input.trim());
+      finishQueueEdit();
+      return;
+    }
+    const content = input.trim() || (attachments.length ? t('Analiza los archivos adjuntos.') : '');
+    if (adapter || !queueVaultId || creatingConversationRef.current || !content || notebookBlocked || attachmentBusyRef.current || attachments.some(file => file.kind === 'unsupported') || !selectedModel || !systemPrompts.ready) return;
+    const item: QueuedResearchTurn = { id: crypto.randomUUID(), content, attachments: [...attachments], skills: [...invokedSkills], settings: snapshotTurn() };
+    creatingConversationRef.current = true;
+    try {
+      let id = activeIdRef.current;
+      if (!id) {
+        const created = await api.createConversation({ model: item.settings.model, selection: item.settings.selection, title: content.slice(0, 80), ...projectPlacement });
+        id = created.id;
+        await window.nodus.selectResearchSystemPrompt(`research:${id}`, item.settings.systemPromptId ?? null);
+        activeIdRef.current = id; setActiveId(id);
+      }
+      researchChatQueue.add(queueKeyFor(id)!, item);
+      setInput(''); setAttachments([]); setInvokedSkills([]); setMention(null);
+      void drainQueue(id);
+    } catch (error) { setAttachmentError(error instanceof Error ? error.message : String(error)); }
+    finally { creatingConversationRef.current = false; }
   };
 
   // The chat on screen follows its turn from the store when this view did not send it (the
@@ -938,17 +1037,23 @@ export function ResearchAssistantModal({
   };
 
   const send = async (explicit?: string) => {
+    if (!explicit && (editingQueuedTurn || (!adapter && (queue.items.length || researchChatQueue.isRunning(queueKey))))) { await enqueue(); return; }
     const content = (explicit ?? input).trim() || (attachments.length ? t('Analiza los archivos adjuntos.') : '');
-    if (!content || sending || notebookBlocked || attachmentBusyRef.current || attachments.some(file => file.kind === 'unsupported') || !selectedModel || !systemPrompts.ready || (adapter?.canSend === false && !canUseAttachments)) return;
+    if (!content || sending || researchChatQueue.isRunning(queueKey) || creatingConversationRef.current || notebookBlocked || attachmentBusyRef.current || attachments.some(file => file.kind === 'unsupported') || !selectedModel || !systemPrompts.ready || (adapter?.canSend === false && !canUseAttachments)) return;
+    const turn = snapshotTurn();
 
     // Lazily create the conversation on the first message so empty chats never clutter history.
     let conversationId = activeId;
     if (!conversationId) {
-      const created = await api.createConversation({ model: selectedModel, selection, title: content.slice(0, 80), ...projectPlacement, ...(adapterNotebook ? { notebookId: adapterNotebook.id } : {}) });
-      conversationId = created.id;
-      await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${created.id}`, systemPrompts.selectedId);
-      activeIdRef.current = created.id;
-      setActiveId(created.id);
+      creatingConversationRef.current = true;
+      try {
+        const created = await api.createConversation({ model: selectedModel, selection, title: content.slice(0, 80), ...projectPlacement, ...(adapterNotebook ? { notebookId: adapterNotebook.id } : {}) });
+        conversationId = created.id;
+        await window.nodus.selectResearchSystemPrompt(`${adapter?.id ?? 'research'}:${created.id}`, systemPrompts.selectedId);
+        activeIdRef.current = created.id;
+        setActiveId(created.id);
+      } catch (error) { setAttachmentError(error instanceof Error ? error.message : String(error)); return; }
+      finally { creatingConversationRef.current = false; }
     }
     // Only the composer's own text is cleared on send; an explicit prompt (a
     // suggestion chip) must not wipe a draft the user may have typed.
@@ -957,7 +1062,7 @@ export function ResearchAssistantModal({
     if (!explicit) setAttachments([]);
     const turnSkills = explicit ? [] : invokedSkills;
     if (!explicit) { setInvokedSkills([]); setMention(null); }
-    await generate(conversationId, messagesRef.current, content, files, turnSkills);
+    await generate(conversationId, messagesRef.current, content, files, turnSkills, turn);
   };
 
   // One click on a route-fix prompt sends the checker's correction request as the user's
@@ -973,7 +1078,7 @@ export function ResearchAssistantModal({
 
   // Re-answer the most recent user turn (dropping the answer it produced). Uses the
   // current model + context selection, so it doubles as "try again with this context".
-  const regenerateLast = async () => {    if (sending || !selectedModel || !systemPrompts.ready) return;
+  const regenerateLast = async () => {    if (sending || researchChatQueue.isRunning(queueKey) || !selectedModel || !systemPrompts.ready) return;
     const current = messagesRef.current;
     let lastUserIdx = -1;
     for (let i = current.length - 1; i >= 0; i--) {
@@ -988,7 +1093,7 @@ export function ResearchAssistantModal({
   };
 
   const addAttachments = async (filePaths?: string[]) => {
-    if (sending || attachmentBusyRef.current) return;
+    if ((sending && !!adapter) || attachmentBusyRef.current || creatingConversationRef.current || editingQueuedTurn) return;
     attachmentBusyRef.current = true; setAttaching(true); setAttachmentError('');
     try {
       let id = activeIdRef.current;
@@ -1013,9 +1118,9 @@ export function ResearchAssistantModal({
     if (!event.dataTransfer.types.includes('Files')) return;
     event.preventDefault();
     event.stopPropagation();
-    event.dataTransfer.dropEffect = sending || attachmentBusyRef.current ? 'none' : 'copy';
+    event.dataTransfer.dropEffect = (sending && !!adapter) || attachmentBusyRef.current || editingQueuedTurn ? 'none' : 'copy';
     if (event.type === 'dragenter') dragDepthRef.current += 1;
-    if (!sending && !attachmentBusyRef.current) setDraggingFiles(true);
+    if (!(sending && !!adapter) && !attachmentBusyRef.current && !editingQueuedTurn) setDraggingFiles(true);
   };
   const handleFileDrop = (event: DragEvent<HTMLDivElement>) => {
     dragDepthRef.current = 0;
@@ -1023,7 +1128,7 @@ export function ResearchAssistantModal({
     if (!event.dataTransfer.types.includes('Files')) return;
     event.preventDefault();
     event.stopPropagation();
-    if (sending || attachmentBusyRef.current) return;
+    if ((sending && !!adapter) || attachmentBusyRef.current || editingQueuedTurn) return;
     try {
       // Resolve native paths before the drop event's FileList becomes unavailable.
       const paths = Array.from(event.dataTransfer.files, file => window.nodus.getPathForDroppedFile(file));
@@ -1074,7 +1179,7 @@ export function ResearchAssistantModal({
   // The same searchable picker as the rest of the app, over this chat's own list.
   const chatModelControl = (<div className="max-w-xs min-w-[11rem]" data-testid="research-chat-model">
     <ModelPicker settings={settings} value={selectedModel} models={availableModels} onChange={setSelectedModel}
-      compact menu triggerModelOnly allowEmpty={!selectedModel} disabled={sending || !!concilium}
+      compact menu triggerModelOnly allowEmpty={!selectedModel} disabled={(sending && !!adapter) || !!concilium}
       ariaLabel={concilium ? t('Chairman') : t('Modelo del chat')} />
   </div>);
   return (
@@ -1103,8 +1208,8 @@ export function ResearchAssistantModal({
           </div>
           {!simpleInterface && chatModelControl}
           <div className="research-assistant-actions">
-          {!adapter && !isGenealogy && harnessOptions.version === 'v1' && <ResearchExplorationControl value={harnessOptions.exploration} onChange={harnessOptions.onExploration} disabled={sending} />}
-          {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
+          {!adapter && !isGenealogy && harnessOptions.version === 'v1' && <ResearchExplorationControl value={harnessOptions.exploration} onChange={harnessOptions.onExploration} disabled={sending && !!adapter} />}
+          {adapter ? <button className="btn btn-ghost border border-neutral-700 gap-1.5 text-xs py-1 research-accent-soft research-accent-text" disabled={sending && !!adapter} data-testid="research-context-toggle" aria-expanded={contextOpen} onClick={toggleContext}><Icon name="layers" size={15} />{t('Contexto')}</button> : isGenealogy ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-md border research-accent-soft px-2 py-1 text-xs research-accent-text"
               title={t('El asistente usa el contexto familiar: personas, parentescos, eventos, documentos y evidencia.')}
@@ -1130,13 +1235,13 @@ export function ResearchAssistantModal({
           )}
           <AcademicSecondary compact={simpleInterface} label="Opciones">
             {simpleInterface && chatModelControl}
-          <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={sending || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
-          <ChatSkillsControl surface="assistant" disabled={sending} />
-          {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending} onChange={next => {
+          <ResearchSystemPromptControl prompts={systemPrompts.prompts} selectedId={systemPrompts.selectedId} disabled={(sending && !!adapter) || !systemPrompts.ready} onSelect={systemPrompts.select} refresh={systemPrompts.refresh} />
+          <ChatSkillsControl surface="assistant" disabled={sending && !!adapter} />
+          {!adapter && <ResearchConciliumControl value={concilium} models={availableModels} selectedModel={selectedModel} disabled={sending && !!adapter} onChange={next => {
             setConcilium(next);
             if (next) setSelectedModel(next.models[next.chairman]);
           }} />}
-            {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
+            {simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending && !!adapter} />}
           </AcademicSecondary>
           {simpleInterface && <span className="research-simple-context text-xs text-neutral-500" title={authorizedSourcesSummary}>{[...CONTEXT_LAYERS.flatMap(layer => contextLayers[layer.id] ? [t(layer.label)] : []), ...(turnWebSearch !== 'off' ? [t('Búsqueda web')] : [])].join(' · ')}</span>}
 
@@ -1276,7 +1381,7 @@ export function ResearchAssistantModal({
                               className="rounded p-1 text-neutral-500 opacity-70 transition hover:bg-neutral-800 research-accent-hover hover:opacity-100 disabled:opacity-40"
                               title={t('Regenerar respuesta')}
                               onClick={() => void regenerateLast()}
-                              disabled={sending}
+                              disabled={sending && !!adapter}
                             >
                               <Icon name="refresh" size={13} />
                             </button>
@@ -1379,18 +1484,21 @@ export function ResearchAssistantModal({
             </div>
 
             <footer className="research-composer-footer">
+              {queueKey && <ResearchChatQueue queueKey={queueKey} items={queue.items} paused={queue.paused} editingId={queue.editingId} error={queue.error} onEdit={editQueuedTurn} />}
               {systemPrompts.error && <p className="text-xs text-red-500 mb-2" role="alert">{systemPrompts.error}</p>}
               {attachmentError && <p className="research-attachment-error" role="alert">{attachmentError}</p>}
               {attachments.some(file => file.warning) && <p className="research-attachment-error" role="status">{attachments.filter(file => file.warning).map(file => `${file.name}: ${file.warning}`).join(' · ')}</p>}
               {attaching && <p className="research-attachment-status" role="status">{t('Preparando archivos…')}</p>}
               {activeNotebook && <NotebookIndexingBanner preparation={notebookPreparation} />}
               <div className="research-composer-shell">
+              {editingQueuedTurn && <div className="research-queue-editing" role="status"><span>{t('Editando petición · conserva su posición y configuración')}</span><button type="button" onClick={finishQueueEdit}>{t('Cancelar')}</button></div>}
+              {editingQueuedTurn?.attachments.length ? renderAttachments(editingQueuedTurn.attachments) : null}
               {mention && skillsEnabled && <SkillMentionMenu options={mentionOptions} activeIndex={mentionIndex}
                 onHover={setMentionIndex} onPick={pickSkill} />}
               {attachments.length > 0 && renderAttachments(attachments, true)}
               <InvokedSkillPills skills={invokedSkills} onRemove={id => setInvokedSkills(current => current.filter(skill => skill.id !== id))} />
               <div className="research-composer">
-                <button className="research-composer-attach" aria-label={t('Añadir archivos')} title={t('Añadir archivos')} disabled={sending || attaching} onClick={() => void addAttachments()}><Icon name="plus" size={23} /></button>
+                <button className="research-composer-attach" aria-label={t('Añadir archivos')} title={t('Añadir archivos')} disabled={(sending && !!adapter) || attaching || !!editingQueuedTurn} onClick={() => void addAttachments()}><Icon name="plus" size={23} /></button>
                 <textarea
                   ref={inputRef}
                   className="research-composer-input"
@@ -1403,10 +1511,13 @@ export function ResearchAssistantModal({
                   aria-activedescendant={mention && mentionOptions.length ? `research-skill-option-${mentionIndex}` : undefined}
                   onChange={(e) => {
                     setInput(e.target.value);
-                    if (skillsEnabled) { setMention(findSkillMention(e.target.value, e.target.selectionStart ?? e.target.value.length)); setMentionIndex(0); }
+                    if (skillsEnabled && !editingQueuedTurn) { setMention(findSkillMention(e.target.value, e.target.selectionStart ?? e.target.value.length)); setMentionIndex(0); }
                   }}
                   onBlur={() => setMention(null)}
                   onKeyDown={(e) => {
+                    if (!adapter && e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.nativeEvent.isComposing) {
+                      e.preventDefault(); void enqueue(); return;
+                    }
                     if (mention && !e.nativeEvent.isComposing) {
                       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setMention(null); return; }
                       if (mentionOptions.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
@@ -1426,9 +1537,12 @@ export function ResearchAssistantModal({
                     }
                   }}
                 />
-                {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending} />}
-                {!adapter && !isGenealogy && <ResearchVerificationControl value={answerVerification} onChange={setAnswerVerification} disabled={sending} />}
-                {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending} />}
+                {!adapter && !isGenealogy && <ResearchWebSearchControl value={turnWebSearch} onChange={setWebSearch} disabled={sending && !!adapter} />}
+                {!adapter && !isGenealogy && <ResearchVerificationControl value={answerVerification} onChange={setAnswerVerification} disabled={sending && !!adapter} />}
+                {!simpleInterface && <ResearchEffortControl model={selectedModel} value={thinkingEffort} onChange={setThinkingEffort} disabled={sending && !!adapter} />}
+                {!adapter && (!editingQueuedTurn || sending) && <button type="button" className="research-composer-queue" data-testid="research-enqueue" aria-label={t(editingQueuedTurn ? 'Guardar en cola' : 'Añadir a la cola')} title={`${t(editingQueuedTurn ? 'Guardar en cola' : 'Añadir a la cola')} (⌘/Ctrl + Enter)`}
+                  disabled={attaching || notebookBlocked || !input.trim() && !attachments.length || !queueVaultId || !selectedModel || !systemPrompts.ready || attachments.some(file => file.kind === 'unsupported')}
+                  onClick={() => void enqueue()}><Icon name={editingQueuedTurn ? 'check' : 'list'} size={19} /></button>}
                 {sending ? (
                   <button
                     className="research-composer-send research-composer-stop"
@@ -1441,8 +1555,8 @@ export function ResearchAssistantModal({
                 ) : (
                   <button
                     className="research-composer-send"
-                    aria-label={t('Enviar')}
-                    title={t('Enviar')}
+                    aria-label={t(editingQueuedTurn ? 'Guardar en cola' : 'Enviar')}
+                    title={t(editingQueuedTurn ? 'Guardar en cola' : 'Enviar')}
                     onClick={() => void send()}
                     disabled={attaching || notebookBlocked || (!input.trim() && !attachments.length) || attachments.some(file => file.kind === 'unsupported') || !selectedModel || !systemPrompts.ready || (adapter?.canSend === false && !canUseAttachments)}
                   >
@@ -1451,7 +1565,7 @@ export function ResearchAssistantModal({
                 )}
               </div>
               </div>
-              <div className="mt-1.5 flex items-center gap-1 px-1 text-[11px] text-neutral-400">
+              <div className="research-composer-shortcuts mt-1.5 flex flex-wrap items-center gap-1 px-1 text-[11px] text-neutral-400">
                 <kbd className="composer-kbd">Enter</kbd>
                 <span>{t('para enviar')}</span>
                 <span className="text-neutral-700">·</span>
@@ -1459,6 +1573,7 @@ export function ResearchAssistantModal({
                 <span>+</span>
                 <kbd className="composer-kbd">Enter</kbd>
                 <span>{t('salto de línea')}</span>
+                {!adapter && <><span className="text-neutral-700">·</span><kbd className="composer-kbd">⌘/Ctrl</kbd><span>+</span><kbd className="composer-kbd">Enter</kbd><span>{t('para añadir a la cola')}</span></>}
                 {skillsEnabled && <>
                   <span className="text-neutral-700">·</span>
                   <kbd className="composer-kbd">@</kbd>
@@ -1469,7 +1584,7 @@ export function ResearchAssistantModal({
           </section>
           {embedded && adapter && contextOpen && <aside className={`research-chat-context ${adapter?.id === 'study' ? 'w-96 min-w-[280px] max-w-[45vw]' : 'w-72'} shrink-0 overflow-y-auto border-l border-neutral-800 p-4`} data-testid="research-context-sidebar">
             <div className="mb-4 flex items-center gap-2"><h2 className="text-xs font-semibold">{t('Ámbito y fuentes')}</h2><button className="btn btn-ghost ml-auto" title={t('Ocultar ámbito y fuentes')} onClick={toggleContext}><Icon name="x" size={14} /></button></div>
-            <fieldset disabled={sending} className="min-w-0 space-y-3">{adapter.contextPanel}</fieldset>
+            <fieldset disabled={sending && !!adapter} className="min-w-0 space-y-3">{adapter.contextPanel}</fieldset>
           </aside>}
         </div>
       </div>
@@ -1503,9 +1618,9 @@ export function ResearchAssistantModal({
             <p className="research-context-intro">{t('Elige qué consulta el asistente antes de responder.')}</p>
             <div className="research-context-layers" data-testid="research-context-layers">
               {CONTEXT_LAYERS.map(layer => <ContextLayerSwitch key={layer.id} testId={`research-context-layer-${layer.id}`} icon={layer.icon} label={t(layer.label)}
-                description={t(layer.description)} checked={contextLayers[layer.id]} disabled={sending} onChange={on => setContextLayer(layer.id, on)} />)}
+                description={t(layer.description)} checked={contextLayers[layer.id]} disabled={sending && !!adapter} onChange={on => setContextLayer(layer.id, on)} />)}
               <ContextLayerSwitch testId="research-context-layer-web" icon="globe" label={t('Búsqueda web')}
-                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={turnWebSearch !== 'off'} disabled={sending}
+                description={t('Páginas públicas de Internet, cuando la biblioteca no basta o se lo pides.')} checked={turnWebSearch !== 'off'} disabled={sending && !!adapter}
                 onChange={on => setWebSearch(on ? 'auto' : 'off')} />
             </div>
             {selection.notebookId ? <div className="research-context-sources" data-testid="research-context-sources">
@@ -1534,6 +1649,9 @@ export function ResearchAssistantModal({
       {editingProjectInstructions && <ProjectInstructionsDialog project={editingProjectInstructions}
         onClose={() => setEditingProjectInstructions(null)}
         onSave={instructions => updateProject(editingProjectInstructions, { instructions })} />}
+      {queueKey && deletingQueuedTurn && <ConfirmModal title={t('Borrar petición de la cola')} message={<><p>{t('Se eliminará esta petición de la cola.')}</p><p className="mt-2 line-clamp-3">«{deletingQueuedTurn.content}»</p></>} confirmLabel={t('Borrar')} danger autoFocusConfirm={false}
+        onCancel={() => researchChatQueue.change(queueKey, { deletingId: null })}
+        onConfirm={() => { if (queue.editingId === deletingQueuedTurn.id) finishQueueEdit(); researchChatQueue.remove(queueKey, deletingQueuedTurn.id); }} />}
       {pendingDelete && (
         <ConfirmModal
           title={t('Eliminar conversación')}

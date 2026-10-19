@@ -6027,6 +6027,9 @@ export interface ResearchChatMessage {
 }
 
 export interface ResearchChatRequest {
+  /** Queued turns retain their verification and custom prompt preferences. */
+  answerVerification?: 'off' | 'legacy' | 'structured';
+  systemPromptSnapshot?: import('./researchSystemPrompts').ResearchSystemPrompt | null;
   runId?: string;
   harnessVersion?: import('./researchHarness').ResearchHarnessVersion;
   explorationMode?: import('./researchExploration').ResearchExplorationMode;

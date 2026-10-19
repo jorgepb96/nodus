@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -8694,3 +8695,5 @@ export const TR: Record<string, string> = {
 };
 
 Object.assign(TR, SIGN_TRANSLATIONS['tr']);
+
+Object.assign(TR, RESEARCH_QUEUE_TRANSLATIONS['tr']);

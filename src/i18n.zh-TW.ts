@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -7950,3 +7951,5 @@ export const ZH_TW: Record<string, string> = {
 };
 
 Object.assign(ZH_TW, SIGN_TRANSLATIONS['zh-TW']);
+
+Object.assign(ZH_TW, RESEARCH_QUEUE_TRANSLATIONS['zh-TW']);

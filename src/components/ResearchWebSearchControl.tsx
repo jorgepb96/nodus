@@ -11,6 +11,5 @@ export function ResearchWebSearchControl({ value, onChange, disabled }: { value:
   return <button type="button" className={`research-web-toggle ${on ? 'is-on' : ''}`} aria-pressed={on} aria-label={t('Búsqueda web')} title={label}
     data-testid="research-web-toggle" disabled={disabled} onClick={() => onChange(on ? 'off' : 'auto')}>
     <Icon name="globe" size={18} />
-    <span>{t('Web')}</span>
   </button>;
 }

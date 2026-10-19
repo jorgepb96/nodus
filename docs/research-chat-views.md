@@ -8,6 +8,42 @@ The database, study/teaching and world views provide `ResearchChatAdapter` imple
 
 The academic source filter remains opt-in. Native source panels keep their existing context rules. All Research chat transports pass the explicit effort through `researchGenerationOptions`; non-chat Study Assistant requests retain their existing settings. Nodi is unchanged.
 
+## Pending requests in Research Chat
+
+In the native Research Chat, **Cmd+Enter** on macOS or **Ctrl+Enter** adds the
+composer's request to its conversation's queue. The queue shows four rows at a
+time and scrolls through additional requests. Drag a row by its handle to change
+the execution order; a focused handle also supports the Up and Down arrow keys.
+Editing a request keeps its position and original configuration, and restores
+the composer's previous draft when saved or cancelled. Deleting a pending request
+requires confirmation. Pausing or stopping generation holds the remaining queue
+until it is resumed.
+
+Each entry copies the model and provider, reasoning effort, Fast/Expanded mode,
+selected custom system prompt and its instructions, Concilium membership and
+chairman, source selection, web search and answer verification settings. It also
+retains its attachments and explicitly invoked skills. Later composer changes do
+not change pending entries. Completed answers are included in the next request's
+conversation history. The Web and Verify Sources controls use icons with tooltips
+and accessible labels.
+
+Pending entries are stored locally in browser storage under keys containing the
+vault and conversation IDs. Stored entries contain request text and preferences;
+they are not synchronized or exported by this feature. Reloaded queues start
+paused. A worker checks that the original vault is active before sending another
+request. No database migration or new network service is introduced; processing
+uses the selected existing chat provider and web-search settings.
+
+Validation: `node --test scripts/test-research-chat-queue.mjs scripts/test-i18n-coverage.mjs`
+checks queue snapshots, ordering, editing, cancellation, restoration, vault
+isolation and translations. `node scripts/verify-research-chat-queue.mjs` operates
+the production view against the renderer-only harness on localhost:5198, with
+controlled responses and synthetic content. It covers both shortcuts, scrolling,
+editing, deletion, mouse and keyboard reordering, per-request settings, sequential
+history, stop/resume and compact/light/dark layouts without paid model calls.
+
+![Research Chat request queue](screenshots/research-chat-queue/queue-light.png)
+
 ## Zotero MCP access in academic research
 
 Academic Research Chat and Deep Research consult the authorized Nodus indexes first.

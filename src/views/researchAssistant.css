@@ -621,7 +621,7 @@ p.research-notebook-banner { flex-direction: row; align-items: center; }
 .research-assistant-actions > .research-context-trigger { font-size: 12px; }
 .research-context-trigger.is-filtered { border-color: color-mix(in srgb, var(--vault-accent, #6366f1) 60%, transparent); }
 .research-source-filter-panel .research-source-filter-body { padding: 0; }
-.research-web-toggle { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; height: 36px; padding: 0 10px; border: 0; border-radius: 18px; background: transparent; color: #a1a1aa; font-size: 13px; cursor: pointer; }
+.research-web-toggle { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 18px; background: transparent; color: #a1a1aa; font-size: 13px; cursor: pointer; }
 .research-web-toggle:hover:not(:disabled) { background: #88888812; }
 .research-web-toggle.is-on { color: var(--vault-accent); background: color-mix(in srgb, var(--vault-accent) 12%, transparent); }
 .research-web-toggle:disabled { opacity: .5; cursor: default; }
@@ -659,3 +659,28 @@ p.research-notebook-banner { flex-direction: row; align-items: center; }
 .light .research-chat-selection-hint { color: #71717a; }
 .light .research-history-check { border-color: #a1a1aa; }
 .light .research-history-check.is-checked, .light .research-history-check.is-mixed { border-color: var(--vault-accent, #6366f1); }
+
+
+.research-prompt-queue { margin: 0 12px -12px; padding: 8px 8px 20px; border: 1px solid #8883; border-radius: 18px 18px 0 0; background: #88888808; }
+.research-prompt-queue-heading { display: flex; align-items: center; justify-content: space-between; padding: 2px 10px 6px; color: #a1a1aa; font-size: 11px; }
+.research-prompt-queue-heading > span, .research-prompt-queue-heading button { display: inline-flex; align-items: center; gap: 6px; }
+.research-prompt-queue-heading button:hover { color: var(--vault-accent); }
+.research-prompt-queue-list { margin: 0; padding: 0; list-style: none; max-height: 224px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.research-prompt-queue-list li { display: flex; align-items: center; gap: 10px; height: 56px; padding: 6px 10px; border-radius: 9px; }
+.research-prompt-queue-list li:hover { background: #8888880d; }
+.research-prompt-queue-list li.is-editing { background: color-mix(in srgb, var(--vault-accent) 10%, transparent); }
+.research-prompt-queue-number { color: #a1a1aa; font-size: 11px; width: 15px; flex-shrink: 0; }
+.research-prompt-queue-copy { flex: 1; min-width: 0; }
+.research-prompt-queue-copy p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.research-prompt-queue-copy > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: #93939e; margin-top: 3px; }
+.research-prompt-queue-list button, .research-composer-queue { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; color: #93939e; flex-shrink: 0; }
+.research-prompt-queue-list button:hover, .research-composer-queue:hover:not(:disabled) { color: var(--vault-accent); background: #8882; }
+.research-prompt-queue button:focus-visible, .research-queue-editing button:focus-visible { outline: 2px solid var(--vault-accent); outline-offset: 2px; }
+.research-composer-queue { width: 36px; height: 36px; }
+.research-composer-queue:disabled { opacity: .35; cursor: default; }
+.research-queue-editing { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px 0; font-size: 11px; color: var(--vault-accent); }
+.research-queue-editing button { flex-shrink: 0; text-decoration: underline; }
+.light .research-prompt-queue-copy p { color: #27272a; }
+.research-prompt-queue-list .research-prompt-queue-drag { width: 18px; cursor: grab; border-radius: 4px; font-size: 18px; }
+.research-prompt-queue-list .research-prompt-queue-drag:active { cursor: grabbing; }
+.research-prompt-queue-list li.is-drop-target { box-shadow: inset 0 2px var(--vault-accent); background: color-mix(in srgb, var(--vault-accent) 8%, transparent); }

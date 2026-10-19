@@ -1,3 +1,4 @@
+import { RESEARCH_QUEUE_TRANSLATIONS } from './i18n.researchQueue';
 import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
@@ -8305,3 +8306,5 @@ export const KO: Record<string, string> = {
 };
 
 Object.assign(KO, SIGN_TRANSLATIONS['ko']);
+
+Object.assign(KO, RESEARCH_QUEUE_TRANSLATIONS['ko']);

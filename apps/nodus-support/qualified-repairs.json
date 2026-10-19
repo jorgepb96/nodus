@@ -1,0 +1,10 @@
+{
+  "format": "nodus.support-qualified-repairs/1",
+  "protocol": 1,
+  "platforms": {
+    "win32-x64": [],
+    "darwin-arm64": [],
+    "darwin-x64": [],
+    "linux-x64": []
+  }
+}

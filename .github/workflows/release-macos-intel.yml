@@ -229,6 +229,17 @@ jobs:
       - name: Verify signed and notarized Intel artifacts
         run: node scripts/verify-macos-release.cjs release x64
 
+      - name: Build and publish independent Intel support and signed recovery artifacts
+        env:
+          NODUS_SUPPORT_RELEASE: '1'
+          NODUS_SUPPORT_RELEASE_PRIVATE_KEY: ${{ secrets.NODUS_SUPPORT_RELEASE_PRIVATE_KEY }}
+          NODUS_SUPPORT_RELEASE_KEY_ID: ${{ secrets.NODUS_SUPPORT_RELEASE_KEY_ID }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          npm run support:dist
+          node scripts/support-release.mjs --runtime --publish
+
       - name: Remove temporary macOS credentials
         if: always()
         shell: bash

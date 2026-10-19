@@ -118,23 +118,18 @@ export function ensureWorkspaceDevice(database: Database.Database): void {
 }
 
 function openDatabase(file: string): Database.Database {
+  auditQaDatabaseOpen(file, 'read-write');
   let next = new Database(file);
   protectReplicaImportWait(next);
-  try {
-    auditQaDatabaseOpen(file, 'read-write');
-  } catch (error) {
-    next.close();
-    throw error;
-  }
   const migrationPending = Number(next.pragma('user_version', { simple: true })) < SCHEMA_VERSION;
   next = migrateDatabaseSafely(next, file, SCHEMA_VERSION, runMigrations);
-  if (migrationPending) scheduleMigrationRecoveryRetention(file);
+  if (migrationPending && process.env.NODUS_SUPPORT_INTERACTIVE !== '1') scheduleMigrationRecoveryRetention(file);
   ensureWorkspaceDevice(next);
   // Deletion tombstones are written by triggers, which are regenerated here rather than
   // created by a migration: the set of synced tables is decided in code, so a migration
   // could only ever capture the shape it had on the day it was written.
   ensureTombstoneTriggers(next);
-  pruneTombstones(next);
+  if (process.env.NODUS_SUPPORT_INTERACTIVE !== '1') pruneTombstones(next);
   // Same reasoning for the outgoing queue of a connected vault — and this is the gate that
   // stops a reader from queueing anything: without triggers, nothing can write to
   // server_outbox no matter what the rest of the app believes.

@@ -67,6 +67,7 @@ import type {
 } from '../types';
 
 export interface PlatformApi {
+  openNodusSupport(): Promise<void>;
   getMcpStatus(): Promise<McpServerStatus>;
   regenerateMcpToken(): Promise<string>;
   getMcpTunnelStatus(): Promise<McpTunnelStatus>;

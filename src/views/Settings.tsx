@@ -1,5 +1,6 @@
 import { AcademicLearningCatalog } from '../learning/AcademicLearningSurface';
 import { openAcademicLearning } from '../learning/AcademicLearningContext';
+import { supportText } from '../../shared/support/messages';
 import { ACADEMIC_ALWAYS_VISIBLE, academicCustomizationPatch, academicSidebarEditorState, academicToolkitPages } from '../academicInterfaceProfiles';
 import { openResearchPreparation } from '../components/ResearchPreparationWelcome';
 // SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
@@ -1607,6 +1608,12 @@ export function Settings({
 
       {visibleSettingsSection('system', 'Ayuda', 'tutorial uso avanzado') && (
           <Section title={t('Ayuda')}>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-neutral-500">{supportText(settings.uiLanguage, 'safety')}</p>
+              <button className="btn btn-primary" onClick={() => void window.nodus.openNodusSupport()}>
+                <Icon name="settings" /> {supportText(settings.uiLanguage, 'title')}
+              </button>
+            </div>
             {activeVault?.type === 'academic' && <AcademicLearningCatalog settings={settings} onPatch={patch}/>}
             {/* The videos come first: for most people they are the fastest way in. Their
                 copy comes from shared/tutorialVideos.ts rather than t() because that

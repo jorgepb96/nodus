@@ -140,5 +140,7 @@ electron/assets/drift/audio/*
 !electron/assets/drift/audio/README.md
 
 # Compiled native presenter bridge
+build/support-app/
+release-support/
 build/presenter-native/arm64/
 build/presenter-native/x64/

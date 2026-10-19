@@ -5,6 +5,7 @@ import { ipcRenderer } from 'electron';
 import type { PlatformApi } from '@shared/api/platform';
 
 export const platformApi: PlatformApi = {
+  openNodusSupport: () => ipcRenderer.invoke('support:open'),
   getMcpStatus: () => ipcRenderer.invoke('mcp:status'),
   regenerateMcpToken: () => ipcRenderer.invoke('mcp:regenerateToken'),
   getMcpTunnelStatus: () => ipcRenderer.invoke('mcp:tunnel:status'),

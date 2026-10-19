@@ -1,0 +1,10 @@
+{
+  "name": "nodus-support",
+  "version": "5.13.0",
+  "private": true,
+  "description": "Guided, local Nodus diagnostics and recoverable repairs",
+  "author": "Jorge Pérez Burgueño and Nodus Contributors",
+  "license": "AGPL-3.0-only",
+  "main": "main.mjs",
+  "dependencies": {}
+}

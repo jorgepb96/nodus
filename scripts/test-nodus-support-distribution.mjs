@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import os from 'node:os';
+import {execFileSync} from 'node:child_process';
+import {build} from 'esbuild';
 import {classifyInstallerAsset,classifyReleaseAsset,sumReleaseDownloads} from './github-release-downloads.mjs';
 
 test('Support and diagnostic runtime downloads do not count as main Nodus installations',()=>{
@@ -36,8 +39,17 @@ test('Support is dispatched after publication and never bundled or required by t
  assert.match(support.jobs.validate.steps[1].run,/isDraft/,'Support cannot be published into a draft');
 });
 
-test('moving Support after publication retains its full public safety gate',()=>{
- const publisher=fs.readFileSync(path.resolve(import.meta.dirname,'support-app-release.mjs'),'utf8');
- for(const action of ['interactive-copy','apply-solution','restore-copy','reinstall'])assert.ok(publisher.includes("'"+action+"'"));
- assert.ok(publisher.indexOf('requireQualified(qualified,platform,arch,repair)')<publisher.indexOf("execFileSync('gh'"),'Qualification precedes any release operation');
+test('every missing public qualification stops the actual publisher before any release operation',async()=>{
+ const folder=fs.mkdtempSync(path.join(os.tmpdir(),'support-publisher-gate-')),script=path.join(folder,'publisher.mjs');
+ try {
+  await build({entryPoints:[path.resolve(import.meta.dirname,'support-app-release.mjs')],outfile:script,bundle:true,platform:'node',format:'esm',define:{'import.meta.dirname':JSON.stringify(import.meta.dirname)},banner:{js:'import{createRequire as __testRequire}from"node:module";const require=__testRequire(import.meta.url);'},plugins:[{name:'no-release-operations',setup(builder){
+    builder.onResolve({filter:/^node:child_process$/},()=>({path:'process',namespace:'publication-test'}));
+    builder.onLoad({filter:/.*/,namespace:'publication-test'},()=>({contents:'export function execFileSync(){throw new Error("UNEXPECTED_RELEASE_OPERATION")}export function spawn(){throw new Error("UNEXPECTED_RELEASE_OPERATION")}',loader:'js'}));
+    builder.onResolve({filter:/^node:fs$/},()=>({path:'fs',namespace:'publication-fs-test'}));
+    builder.onLoad({filter:/.*/,namespace:'publication-fs-test'},()=>({contents:`import fs from 'fs';const allowed=['interactive-copy','apply-solution','restore-copy','reinstall'].filter(action=>action!==process.env.NODUS_SUPPORT_TEST_MISSING_ACTION);export default new Proxy(fs,{get(target,key){if(key==='readFileSync')return(file,...args)=>String(file).endsWith('qualified-repairs.json')?JSON.stringify({format:'nodus.support-qualified-repairs/1',protocol:1,platforms:{[process.platform+'-'+process.arch]:allowed}}):fs.readFileSync(file,...args);return target[key];}});`,loader:'js'}));
+  }}]});
+  for(const action of ['interactive-copy','apply-solution','restore-copy','reinstall']) {
+    assert.throws(()=>execFileSync(process.execPath,[script],{env:{...process.env,NODUS_SUPPORT_TEST_MISSING_ACTION:action},stdio:'pipe'}),error=>/REPAIR_NOT_QUALIFIED/.test(String(error.stderr))&&!/UNEXPECTED_RELEASE_OPERATION/.test(String(error.stderr)),action);
+  }
+ }finally{fs.rmSync(folder,{recursive:true,force:true});}
 });

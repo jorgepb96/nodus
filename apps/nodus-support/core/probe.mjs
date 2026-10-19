@@ -19,7 +19,7 @@ export function runProbe({ executable, args = [], root, action, signal, password
     let pending='',stderr='',result;let settled = false;
     const finish = (error, result) => { if (settled) return; settled = true; clearTimeout(timer); signal?.removeEventListener('abort', cancel); if (error) reject(error); else resolve(result); };
     const cancel = () => { child.kill('SIGTERM'); finish(new SupportError('TEST_CANCELLED')); };
-    const timer = setTimeout(() => { child.kill('SIGTERM'); finish(new SupportError('TEST_TIMEOUT')); }, action === 'restore-archive' ? 30 * 60 * 1000 : 60000);
+    const timer = setTimeout(() => { child.kill('SIGTERM'); finish(new SupportError('TEST_TIMEOUT')); }, ['restore-archive','recover-database','database-check','library-check','copy-profile','disable-plugins','rebuild-library','archive-roundtrip'].includes(action) ? 30 * 60 * 1000 : 60000);
     const consume=line=>{
       try {
         if(line.startsWith('@@NODUS_SUPPORT@@'))result=JSON.parse(line.slice(17));

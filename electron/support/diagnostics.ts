@@ -92,14 +92,26 @@ export function recoverReadableTables(profile:string):{rows:number;tables:number
       source=openSupportDatabase(profile,file,true);source.defaultSafeIntegers(true);
       target=new Constructor(path.join(recovery,`${index}-${randomUUID()}.sqlite`));
       const names=source.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as {name:string}[];
-      for(const {name}of names)try {
-        const columns=source.prepare(`PRAGMA table_info(${quote(name)})`).all() as {name:string;type:string}[];
-        if(!columns.length)continue;
-        target.exec(`CREATE TABLE ${quote(name)}(${columns.map(c=>`${quote(c.name)} ${/^(INTEGER|REAL|TEXT|BLOB|NUMERIC)$/i.test(c.type)?c.type:'BLOB'}`).join(',')})`);
-        const insert=target.prepare(`INSERT INTO ${quote(name)} VALUES(${columns.map(()=>'?').join(',')})`);
-        for(const row of source.prepare(`SELECT ${columns.map(c=>quote(c.name)).join(',')} FROM ${quote(name)}`).raw().iterate() as Iterable<unknown[]>) {insert.run(...row);rows++;}
-        tables++;
-      }catch{/* Preserve any rows already recovered; partial recovery never replaces the vault. */}
+      for(const {name}of names) {
+        let pending=0,complete=false;
+        const commit=()=>{if(target?.inTransaction){target.exec('COMMIT');rows+=pending;pending=0;}};
+        try {
+          const columns=source.prepare(`PRAGMA table_info(${quote(name)})`).all() as {name:string;type:string}[];
+          if(!columns.length)continue;
+          target.exec(`CREATE TABLE ${quote(name)}(${columns.map(c=>`${quote(c.name)} ${/^(INTEGER|REAL|TEXT|BLOB|NUMERIC)$/i.test(c.type)?c.type:'BLOB'}`).join(',')})`);
+          const insert=target.prepare(`INSERT INTO ${quote(name)} VALUES(${columns.map(()=>'?').join(',')})`);
+          target.exec('BEGIN IMMEDIATE');
+          for(const row of source.prepare(`SELECT ${columns.map(c=>quote(c.name)).join(',')} FROM ${quote(name)}`).raw().iterate() as Iterable<unknown[]>) {
+            insert.run(...row);pending++;
+            if(pending===500){commit();target.exec('BEGIN IMMEDIATE');}
+          }
+          complete=true;
+        }catch{/* A failed source page must not roll back the readable prefix. */}
+        finally {
+          try{commit();if(complete)tables++;}
+          catch{if(target.inTransaction)target.exec('ROLLBACK');}
+        }
+      }
       if(target.pragma('integrity_check',{simple:true})!=='ok')throw new Error('SQLITE_CORRUPT');
     }catch{/* A damaged source is preserved while other sources can still be recovered. */}
     finally{source?.close();target?.close();}

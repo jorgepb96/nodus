@@ -35,7 +35,7 @@ jobs:
       - run: node node_modules/electron/install.js
       - name: Linux GUI dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 rpm clang-15
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb libgtk-3-0 libnss3 libasound2 rpm clang-15 policykit-1
       - name: Build the native database and calendar dependencies
         if: runner.os != 'Linux'
         run: npx --no-install electron-rebuild -f -w better-sqlite3 && node scripts/build-apple-calendar.cjs

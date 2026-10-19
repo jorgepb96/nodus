@@ -17,8 +17,9 @@ import {waitForTrial} from '../apps/nodus-support/core/trial-ready.mjs';
 import {randomUUID} from 'node:crypto';
 import {supportSourceDigest} from './lib/supportEvidence.mjs';
 const repo=path.resolve(import.meta.dirname,'..'),sourceSha256=supportSourceDigest(repo),require=createRequire(import.meta.url),electron=require('electron'),version=JSON.parse(fs.readFileSync(path.join(repo,'package.json'),'utf8')).version;
-const fixtureOnly=process.argv.includes('--verify-fixture-only');
-if(!fixtureOnly)assert.equal(process.env.CI,'true','This full process-discovery test requires a disposable native CI host, with no personal Nodus session');
+const fixtureOnly=process.argv.includes('--verify-fixture-only'),interfaceOnly=process.argv.includes('--verify-interface-only');
+if(interfaceOnly)assert.equal(process.platform,'darwin','Development interface verification is supported only on macOS');
+if(!fixtureOnly&&!interfaceOnly)assert.equal(process.env.CI,'true','This full process-discovery test requires a disposable native CI host, with no personal Nodus session');
 const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'nodus-support-e2e-'))),runtime=path.join(root,process.platform==='darwin'?'NodusSupportQA.app':'runtime');
 const source=process.platform==='darwin'?path.resolve(electron,'../../..'):path.dirname(electron);
 fs.cpSync(source,runtime,{recursive:true,verbatimSymlinks:true});
@@ -68,12 +69,22 @@ if(fixtureOnly) {
 }
 const helper=path.join(root,'helper');fs.cpSync(path.join(repo,'build/support-app'),helper,{recursive:true});
 await build({entryPoints:[path.join(repo,'apps/nodus-support/main.mjs')],outfile:path.join(helper,'main.mjs'),define:{__NODUS_SUPPORT_SOURCE_SHA256__:JSON.stringify(sourceSha256)},bundle:true,platform:'node',format:'esm',target:'node22',external:['electron'],banner:{js:'import{createRequire as __fixtureRequire}from"node:module";const require=__fixtureRequire(import.meta.url);const __dirname=__fixtureRequire(import.meta.url)("node:path").dirname(__fixtureRequire(import.meta.url)("node:url").fileURLToPath(import.meta.url));'},plugins:[{name:'test-only-qualification-and-dialogs',setup(builder){
+ if(interfaceOnly){
+ builder.onResolve({filter:/^node:child_process$/},()=>({path:'child_process',namespace:'local-process-discovery'}));
+ builder.onLoad({filter:/.*/,namespace:'local-process-discovery'},()=>({loader:'js',contents:`
+ import{createRequire}from'node:module';import{promisify}from'node:util';const cp=createRequire(import.meta.url)('child_process');
+ export const {spawn,spawnSync,execFileSync,execSync,fork}=cp;
+ export const execFile=(...args)=>cp.execFile(...args);
+ execFile[promisify.custom]=async(command,...args)=>{const result=await promisify(cp.execFile)(command,...args);if(command==='/bin/ps')result.stdout=result.stdout.split('\\n').filter(line=>line.includes(${JSON.stringify(root)})).join('\\n');return result;};
+ export default {...cp,execFile};
+ `}));
+ }
  builder.onLoad({filter:/qualified-repairs\.json$/},()=>({contents:JSON.stringify({format:'nodus.support-qualified-repairs/2',sourceSha256,protocol:1,platforms:{[`${process.platform}-${process.arch}`]:['interactive-copy','apply-solution']}}),loader:'json'}));
  builder.onResolve({filter:/^electron$/},()=>({path:'electron',namespace:'qualification-electron'}));
  builder.onLoad({filter:/.*/,namespace:'qualification-electron'},()=>({loader:'js',contents:`
  import{createRequire}from'node:module';const e=createRequire(import.meta.url)('electron');
  export const {app,BrowserWindow,clipboard,ipcMain,net,protocol,shell}=e;
- export const dialog={...e.dialog,async showMessageBox(_window,options){if(!options.message||!options.buttons?.length)throw new Error('Unexpected approval');return{response:0,checkboxChecked:true};},async showOpenDialog(){throw new Error('Unexpected file selection');},async showSaveDialog(){throw new Error('Unexpected export');}};
+ export const dialog={...e.dialog,async showMessageBox(_window,options){if(!options.message||!options.buttons?.length)throw new Error('Unexpected approval');return{response:1,checkboxChecked:true};},async showOpenDialog(){throw new Error('Unexpected file selection');},async showSaveDialog(){throw new Error('Unexpected export');}};
  `}));
 }}]});
 const state=path.join(root,'support-state'),env={...process.env};delete env.ELECTRON_RUN_AS_NODE;
@@ -109,6 +120,6 @@ try {
  assert.equal(await button('Open issue on GitHub').isDisabled(),true);
  assert.deepEqual(await Promise.all([profile,external,library].map(file=>inventory(file))),before);
  assert.equal(supportSourceDigest(repo),sourceSha256);
- fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-end-to-end.json`),JSON.stringify({format:'nodus.support-e2e-evidence/1',sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,reviewedReport:true,originalsUnchanged:true},null,2));
+ fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-${interfaceOnly?'development-interface':'end-to-end'}.json`),JSON.stringify({format:interfaceOnly?'nodus.support-development-interface-evidence/1':'nodus.support-e2e-evidence/1',processDiscoveryControlled:interfaceOnly,sourceSha256,platform:process.platform,arch:process.arch,productionMain:true,productionPreload:true,productionRenderer:true,realNodusRuntime:true,testOnlyCatalog:true,guided:true,automatic:true,trialReadiness:true,actualNoteSaved:true,policyApplied:true,divergentWorkPreserved:true,rollback:true,assistantRestart:true,negativeAnswer:true,reviewedReport:true,originalsUnchanged:true},null,2));
  console.log('Actual Support main/preload/UI + actual Nodus: guided and automatic trial, saved note, policy, divergent work, undo, restart and report passed.');
 }catch(error){try{const failure=await session();fs.writeFileSync(path.join(output,`${process.platform}-${process.arch}-e2e-session.json`),JSON.stringify(failure,null,2));for(const test of fs.readdirSync(path.join(failure.folder,'tests'))){const folder=path.join(failure.folder,'tests',test);for(const name of fs.readdirSync(folder))if(/^probe-private-.*\.log$/.test(name))fs.copyFileSync(path.join(folder,name),path.join(output,`${process.platform}-${process.arch}-e2e-${name}`));}}catch{/* Preserve the primary failure. */}await page?.screenshot({path:path.join(output,`${process.platform}-${process.arch}-e2e-failure.png`),fullPage:true}).catch(()=>{});throw error;}finally{await app?.close();}

@@ -10,6 +10,9 @@ on:
         required: true
 permissions:
   contents: read
+concurrency:
+  group: nodus-support-safety-${{ inputs.ref || github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   verify:
     strategy:

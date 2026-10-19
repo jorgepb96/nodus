@@ -251,7 +251,9 @@ export class SupportService {
   }
   async cancel(id) {
     if (this.activeId === id && this.controller) { this.controller.abort(); return this.session(id); }
-    return this.exclusive(async () => { const session = await this.session(id); return this.event(id, { status: session.protection ? 'reverted' : 'created' }); });
+    // Completion can race a click on Stop. Never relabel an already applied
+    // recovery selection as reverted when there is no running work to cancel.
+    return this.session(id);
   }
   async resume(id) {
     return this.exclusive(async () => {

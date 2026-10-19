@@ -23,6 +23,7 @@ async function fixture(name) {
 test('undo asks before switching away from new work and verifies a separate recovery copy',async()=>{
   const f=await fixture('divergence'),before=await inventory(f.profile);
   let state=await f.manager.apply(f.session.id,0);const recovered=state.policyActiveRoot;
+  assert.equal((await f.service.cancel(state.id)).status,'confirmed');
   fs.writeFileSync(path.join(recovered,'profile/note.txt'),'recent unsaved-to-original work');
   state=await f.manager.undo(state.id);assert.equal(state.status,'conflict');assert.equal(readPolicy(f.policies,f.profile).recoveredRoot,recovered);
   state=await f.manager.undo(state.id,'keep-current');assert.equal(state.status,'confirmed');

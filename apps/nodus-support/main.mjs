@@ -211,7 +211,9 @@ async function launchRecovered(id, index) {
   assert(root.startsWith(`${session.folder}${path.sep}`), 'INVALID_REQUEST');
   const {executable,installation}=await service.runtimeFor(session);assert(installation?.protocol===1,'LEGACY_READ_ONLY');
   // Interactive copies use the normal application only with the validated isolated bootstrap.
-  const child = spawn(executable, [], { detached: true, stdio: 'ignore', env: { ...process.env, ELECTRON_RUN_AS_NODE: '', NODUS_USERDATA: '', NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') } });
+  const env={ ...process.env, NODUS_ISOLATED_ROOT: root, NODUS_SUPPORT_INTERACTIVE: '1', NODUS_SUPPORT_LANGUAGE:service.locale, NODUS_QA_DEFER_CREDENTIAL_STATUS: '1', NODUS_STELLAR_PREVIEW: '1', NODUS_DISABLE_AUTO_UPDATE: '1', NODUS_HARNESS_KEYS_FILE: path.join(root, 'no-provider-keys.json') };
+  delete env.ELECTRON_RUN_AS_NODE;delete env.NODUS_USERDATA;delete env.NODUS_SUPPORT_PROBE;
+  const child = spawn(executable, [], { detached: true, stdio: 'ignore', env });
   await new Promise((resolve,reject) => { child.once('spawn',resolve); child.once('error',reject); }); child.unref();
   return service.event(id,{trialOpened:root});
 }

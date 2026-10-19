@@ -34,11 +34,12 @@ if (!process.env.NODUS_ISOLATED_ROOT && !process.env.NODUS_USERDATA && !process.
 }
 
 // Register failure reporting before importing the application graph. Startup logs stay local.
-const startupFolder = path.join(app.getPath('userData'), 'support-startup');
-const startupFile = path.join(startupFolder, `${Date.now()}-${process.pid}.jsonl`);
+let startupFile: string | undefined;
 const startupLog = (code: string, causeCode?: string) => {
   if (process.env.NODUS_ISOLATED_ROOT || process.env.NODUS_USERDATA || process.env.NODUS_SUPPORT_PROBE) return;
   try {
+    const startupFolder = path.join(app.getPath('userData'), 'support-startup');
+    startupFile ??= path.join(startupFolder, `${Date.now()}-${process.pid}.jsonl`);
     fs.mkdirSync(startupFolder, { recursive: true, mode: 0o700 });
     fs.appendFileSync(startupFile, JSON.stringify({ at: new Date().toISOString(), code, causeCode, version: app.getVersion(), platform: process.platform, arch: process.arch }) + '\n', { mode: 0o600 });
   } catch { /* Logging must never prevent startup. */ }
@@ -47,8 +48,10 @@ startupLog('STARTUP_BEGIN');
 
 if (process.env.NODUS_SUPPORT_PROBE === '1') {
   const probeUrl = new URL('./supportProbe.js', import.meta.url).href;
-  void import(/* @vite-ignore */ probeUrl).then(module => module.runSupportProbe()).catch(() => {
-    console.error('[support] isolated probe failed'); app.exit(1);
+  void import(/* @vite-ignore */ probeUrl).then(module => module.runSupportProbe()).catch(error => {
+    // Local stderr is useful to diagnose bootstrap failures. It is never used
+    // as a public report field or included in a prepared issue.
+    console.error('[support] isolated probe failed', error); app.exit(1);
   });
 } else {
 
@@ -103,6 +106,7 @@ if (requestedRoot) {
       const prefs=fs.existsSync(prefsFile)?JSON.parse(fs.readFileSync(prefsFile,'utf8')):{};
       const locale=SUPPORT_LANGUAGES.includes(prefs.uiLanguage)?prefs.uiLanguage:(SUPPORT_LANGUAGES.includes(app.getLocale() as AppLanguage)?app.getLocale():'en');
       const marker=JSON.parse(fs.readFileSync(path.join(root,'support-session.json'),'utf8'));
+      process.env.NODUS_SUPPORT_LANGUAGE=locale;
       const date=marker.at?new Date(marker.at).toLocaleString(locale):'';
       label=`Nodus Support · ${supportText(locale,'recoveryWorkspace')} · ${supportText(locale,'sourceRetained')} ${date}`;
     }

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
+import { GRANULAR_MODEL_KEYS } from '../../shared/modelSettings';
 
 type Finding={code:string;component:string;level:'error'|'warning'|'info';count?:number};
 export function supportDatabaseFiles(profile:string):string[] {
@@ -36,7 +37,7 @@ export function configurationFindings(profile:string):Finding[] {
     }}finally{db.close();}
   }
   const prefs={...settings,...readPrefs(profile)},findings:Finding[]=[];
-  if(!prefs.defaultModel)findings.push({code:'MODEL_NOT_SELECTED',component:'models',level:'warning'});
+  if(!['synthesisModel',...GRANULAR_MODEL_KEYS].some(key=>prefs[key]))findings.push({code:'MODEL_NOT_SELECTED',component:'models',level:'warning'});
   if(prefs.autoBackupEnabled&&!prefs.autoBackupFolder)findings.push({code:'BACKUP_LOCATION_MISSING',component:'backup',level:'warning'});
   if(prefs.autoBackupFolder&&(!path.isAbsolute(String(prefs.autoBackupFolder))||!fs.existsSync(String(prefs.autoBackupFolder))))findings.push({code:'BACKUP_LOCATION_UNAVAILABLE',component:'backup',level:'error'});
   const locals=prefs.localProviders as Record<string,{baseUrl?:unknown}>|undefined;

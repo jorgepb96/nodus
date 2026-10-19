@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { assertIsolatedProductionSeparation, isolatedPath, validateIsolatedRoot } from '../qa/isolatedProfile';
 import { SUPPORT_ACTIONS, DIAGNOSTIC_ACTIONS } from '../../shared/support/catalog.mjs';
 import { isolateSupportApplication } from './isolation';
+import { writeProbeResult } from './probeResult';
 import { configurationFindings, openSupportDatabase, pauseCopiedSync, rebuildCopiedLibrary, recoverReadableTables, repairLocalEndpoints, supportDatabaseFiles } from './diagnostics';
 
 export async function runSupportProbe():Promise<void> {
@@ -20,7 +21,7 @@ export async function runSupportProbe():Promise<void> {
   process.env.NODUS_HARNESS_KEYS_FILE=path.join(root,'no-provider-keys.json');process.env.NODUS_QA_DEFER_CREDENTIAL_STATUS='1';process.env.NODUS_BACKUP_UTILITY_INLINE='1';
   isolateSupportApplication(root);
   if(action==='software-graphics')app.disableHardwareAcceleration();
-  const result=(ok:boolean,code:string,extra:Record<string,unknown>={})=>process.stdout.write(`\n@@NODUS_SUPPORT@@${JSON.stringify({protocol:1,root,appVersion:app.getVersion(),ok,code,diagnostic:DIAGNOSTIC_ACTIONS.includes(action),...extra})}\n`);
+  const result=(ok:boolean,code:string,extra:Record<string,unknown>={})=>writeProbeResult(root,{appVersion:app.getVersion(),ok,code,diagnostic:DIAGNOSTIC_ACTIONS.includes(action),...extra});
   await app.whenReady();
   try {
     if(action==='restore-archive'||action==='archive-roundtrip') {

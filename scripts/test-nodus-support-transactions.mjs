@@ -77,7 +77,7 @@ test('application framework symlinks copy privately without traversing the links
   assert.equal(fs.readlinkSync(path.join(copy,'Framework/Versions/Current')),'A');
   assert.equal(fs.readFileSync(path.join(copy,'Framework/binary'),'utf8'),'executable');
 });
-test('streamed protection handles files larger than four GiB', {skip:process.env.NODUS_SUPPORT_LARGE_FILES !== '1'}, async () => {
+test('streamed protection handles files larger than four GiB', {skip:process.env.NODUS_SUPPORT_LARGE_FILES !== '1' ? 'Runs in the mandatory four-platform Nodus Support native matrix' : false}, async () => {
   const source=path.join(scratch,'large-source'),target=path.join(scratch,'large-copy');
   const fd=fs.openSync(source,'wx'); fs.ftruncateSync(fd,4*1024**3+17); fs.writeSync(fd,Buffer.from('end'),0,3,4*1024**3+14); fs.closeSync(fd);
   const manifest=await inventory(source); await copyInventory(source,target,manifest); await verifyInventory(target,manifest);

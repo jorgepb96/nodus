@@ -12,6 +12,7 @@ import { pipeline } from 'node:stream/promises';
 export const shardCount = 6;
 export const fileConcurrency = 2;
 const allowedSkips = new Map([
+  ['streamed protection handles files larger than four GiB', 'Runs in the mandatory four-platform Nodus Support native matrix'],
   ['CompassStore persists pagination, selections, saved/dismissed records and bounded cache state', 'better-sqlite3 native addon requires the Electron ABI'],
   ['every published skill has an icon the application can draw', 'no marketplace checkout beside this one; set NODUS_MARKETPLACE_DIR'],
   // The route-program contract is checked against the chemistry package's own parser and manifest,

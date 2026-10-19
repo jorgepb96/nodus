@@ -174,6 +174,7 @@ async function analyzeSource(source: SourceData, force: boolean, externalConsent
     }
     const merged = mergeStudyKnowledgeExtractions(parts); const embeddingTexts = merged.ideas.map((idea) => `${idea.type}\n${idea.label}\n${idea.statement}`);
     const vectors = await embedMany(embeddingTexts); const config = currentEmbeddingConfig();
+    if (sourceData(source.kind, source.id)?.hash !== source.hash) throw new Error('embedding_source_changed');
     for (const subjectId of pendingSubjects) {
       // The source can be deleted while an external model is still answering.
       // Re-check scope immediately before writing so a late response can never

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { configureEmbeddingIndex } from '../configureEmbeddingIndex';
 import type { AppSettings, ModelRef } from '@shared/types';
 import { ACADEMIC_LESSONS, learningModelPatch, learningProgress, learningInvitationPreference } from '@shared/academicLearning';
 import { learningText, type LearningCopyKey } from '@shared/academicLearningCopy';
@@ -109,6 +110,7 @@ function LearningModels({ purpose, settings, onClose, onSaved }: { purpose:'chat
     if(definitions.some(d=>d?.runtime==='llama_cpp')&&!status.runtime.ready){setDownload(copy('prepare'));await window.nodus.installNodusLocalRuntime(()=>{});}
     for(const d of definitions)if(d&&!status.models.some(m=>m.id===d.id&&m.downloaded)){setDownload(d.label);await window.nodus.downloadNodusLocalModel(d.id,()=>{});}
    }
+   if(needsEmbeddings&&embedding&&!await configureEmbeddingIndex(embedding))return;
    const fresh=await window.nodus.getSettings();
    const next=await window.nodus.updateSettings({...learningModelPatch(fresh,purpose,model,needsEmbeddings?embedding:null),favorites:fresh.favorites.some(m=>m.model===model.model&&m.provider===model.provider)?fresh.favorites:[...fresh.favorites,model]});
    onSaved(next);

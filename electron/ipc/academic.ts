@@ -4,6 +4,7 @@ import { onDocumentaryPreparationChanged } from '../ai/documentaryPreparationEve
 import { manualIndexStatus, scheduleManualIndex } from '../ai/manualIdeaIndex';
 import { embedQuery as embedResearchQuery } from '../ai/aiClient';
 import { assertAcademicAutomation } from '../ai/academicMode';
+import * as embeddingIndexes from '../ai/embeddingIndexes';
 import { registerResearchAttachmentIpc } from './researchAttachments';
 import { registerResearchHarnessIpc } from './researchHarness';
 import { dialogTitle } from '../dialogTitles';
@@ -2105,8 +2106,32 @@ export function registerAcademicIpc(context: IpcContext): void {
     exportProjectChapter(request)
   );
 
+  // Comparisons belong to their invoking renderer; cancellation cannot target
+  // another window's query. They never change the active index.
+  const embeddingComparisons = new Map<string, AbortController>();
+  h('embeddingIndexes:compare', async (event, input: import('@shared/embeddingComparison').EmbeddingComparisonRequest) => {
+    if (!input || typeof input.requestId !== 'string' || !/^[a-z0-9-]{8,80}$/i.test(input.requestId)) throw new Error('Identificador de comparación no válido.');
+    const owner = `${event.sender.id}:`;
+    if ([...embeddingComparisons.keys()].some(key => key.startsWith(owner))) throw new Error('Ya hay una comparación en curso.');
+    const key = owner + input.requestId, controller = new AbortController();
+    embeddingComparisons.set(key, controller);
+    const destroyed = () => controller.abort();
+    event.sender.once('destroyed', destroyed);
+    try { return await (await import('../ai/embeddingComparison')).compareEmbeddingIndexes(input, controller.signal); }
+    finally { embeddingComparisons.delete(key); event.sender.removeListener('destroyed', destroyed); }
+  });
+  h('embeddingIndexes:cancelComparison', async (event, id: string) => { embeddingComparisons.get(`${event.sender.id}:${id}`)?.abort(); });
+  h('embeddingIndexes:runs', async (_e, id?: string, vaultId?: string) => embeddingIndexes.listEmbeddingIndexRuns(id, vaultId));
+  h('embeddingIndexes:rerankerStatus', async () => (await import('../ai/localReranker')).localRerankerStatus());
+  h('embeddingIndexes:rerankerPrepare', async (_e, action: 'download' | 'cancel') => (await import('../ai/localReranker')).prepareLocalReranker(action));
   // embedding pipeline
   h('embeddings:start', async (_e, nodusIds?: string[]) => startEmbedding(nodusIds));
+  h('embeddingIndexes:list', async (_e, vaultId?: string) => embeddingIndexes.listEmbeddingIndexes(vaultId));
+  h('embeddingIndexes:preview', async (_e, input) => embeddingIndexes.previewEmbeddingIndex(input));
+  h('embeddingIndexes:prepare', async (_e, input) => embeddingIndexes.prepareEmbeddingIndex(input));
+  h('embeddingIndexes:activate', async (_e, id: string, vaultId?: string) => embeddingIndexes.activateEmbeddingIndex(id, vaultId));
+  h('embeddingIndexes:control', async (_e, id: string, action: 'pause' | 'resume' | 'cancel', vaultId?: string) => embeddingIndexes.controlEmbeddingIndex(id, action, vaultId));
+  h('embeddingIndexes:delete', async (_e, id: string, vaultId?: string) => embeddingIndexes.deleteEmbeddingIndex(id, vaultId));
   h('embeddings:reindexAll', async () => reindexAll());
   h('embeddings:pause', async () => pauseEmbedding());
   h('embeddings:resume', async () => resumeEmbedding());

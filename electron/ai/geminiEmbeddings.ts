@@ -2,6 +2,7 @@ export interface GeminiBatchEmbeddingRequest {
   requests: Array<{
     model: string;
     content: { parts: Array<{ text: string }> };
+    taskType?: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT';
   }>;
 }
 
@@ -10,13 +11,14 @@ export interface GeminiBatchEmbeddingRequest {
  * Gemini's asynchronous Batch API: every response belongs to this request and
  * preserves request order, which makes it suitable for the strict indexer.
  */
-export function geminiBatchEmbeddingRequest(modelId: string, texts: string[]): GeminiBatchEmbeddingRequest {
+export function geminiBatchEmbeddingRequest(modelId: string, texts: string[], taskType?: 'RETRIEVAL_QUERY' | 'RETRIEVAL_DOCUMENT'): GeminiBatchEmbeddingRequest {
   const normalizedModel = modelId.trim().replace(/^models\//, '');
   if (!normalizedModel) throw new Error('El modelo de embeddings Gemini está vacío.');
   return {
     requests: texts.map((text) => ({
       model: `models/${normalizedModel}`,
       content: { parts: [{ text }] },
+      ...(taskType ? { taskType } : {}),
     })),
   };
 }

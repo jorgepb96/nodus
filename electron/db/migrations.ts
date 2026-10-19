@@ -8,6 +8,9 @@ import { databaseCellStorage } from '@shared/databaseCellStorage';
 import { columnTypeDef } from '@shared/databases';
 import { normalizeDatabaseViewConfig } from '@shared/databaseViewConfig';
 import { bibliographicPlainText } from '@shared/bibliographicText';
+import { EMBEDDING_INDEX_SQL, migrateEmbeddingIndexes } from './embeddingIndexSchema';
+import { registerEmbeddingIndexFunctions } from './embeddingIndexesRepo';
+import { EMBEDDING_RUNS_SQL } from './embeddingRunsRepo';
 
 export interface Migration {
   version: number;
@@ -160,7 +163,7 @@ function ensureZoteroTitleMarkupColumn(db: Database.Database): void {
 
 // Versioned, append-only migrations. Never edit an existing migration's SQL once
 // shipped — add a new one. The current schema version is the highest applied.
-export const SCHEMA_VERSION = 202;
+export const SCHEMA_VERSION = 204;
 
 // What this build stamps on what it SENDS to another machine is SYNC_SCHEMA_VERSION
 // (./syncSchemaVersion.ts): raise it too when a migration changes a table's columns.
@@ -9635,6 +9638,8 @@ export const migrations: Migration[] = [
     );
     CREATE INDEX IF NOT EXISTS research_harness_runs_conversation ON research_harness_runs(conversation_id,updated_at);
   ` },
+  { version: 203, up: EMBEDDING_INDEX_SQL, after: migrateEmbeddingIndexes },
+  { version: 204, up: EMBEDDING_RUNS_SQL },
 ];
 
 /**
@@ -9835,6 +9840,9 @@ function backfillMissingCreateOnly(db: Database.Database, current: number): void
 }
 
 export function runMigrations(db: Database.Database): void {
+  // A recovered schema can already contain write-through triggers even when its
+  // version marker is behind. Register their pure functions before any repair SQL.
+  registerEmbeddingIndexFunctions(db);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   const current = db.pragma('user_version', { simple: true }) as number;
@@ -9864,4 +9872,5 @@ export function runMigrations(db: Database.Database): void {
       tx();
     }
   }
+  registerEmbeddingIndexFunctions(db);
 }

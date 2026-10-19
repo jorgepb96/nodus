@@ -1,3 +1,4 @@
+import type { EmbeddingRunCounters, EmbeddingRunReason } from './embeddingRuns';
 /** Documentary retrieval contracts. No credentials or model-generated permissions. */
 export interface ResearchSourceReference {
   kind: 'work' | 'library-item' | 'library-collection' | 'zotero-collection' | 'note' | 'conversation-attachment';
@@ -15,6 +16,7 @@ export interface RetrievalSettings {
   evidenceTokens: number;
   rounds: number;
   autoExpand: boolean;
+  reranking?: 'off' | 'local';
   threshold: { mode: 'automatic' } | { mode: 'manual'; value: number; embeddingSpace: string; metric: 'cosine' };
 }
 export const RETRIEVAL_PRESETS: Readonly<Record<Exclude<RetrievalPreset, 'custom'>, RetrievalSettings>> = {
@@ -43,6 +45,7 @@ export const RESEARCH_AGENT_DECISION_BYTES = 256_000;
 export const RESEARCH_CHAT_AGENT_DECISION_BYTES = 128_000;
 
 export function validateRetrievalSettings(input: RetrievalSettings): RetrievalSettings {
+  if (input?.reranking !== undefined && !['off', 'local'].includes(input.reranking)) throw new Error('Invalid reranking preference');
   if (!input || !['fast', 'balanced', 'deep', 'custom'].includes(input.preset)) throw new Error('Invalid retrieval preset');
   const bounds: Array<[keyof RetrievalSettings, number, number]> = [
     ['candidates', 1, 500], ['passagesPerRound', 1, 100], ['evidenceTokens', 256, 64000], ['rounds', 1, 16],
@@ -160,6 +163,8 @@ export function notebookPreparationStatus(documentIds: readonly string[], docume
 
 /** Every parameter affecting vector comparability belongs in this identity. */
 export interface DocumentaryIndexIdentity {
+  /** A forced rebuild publishes another immutable vector revision of the same source. */
+  buildGeneration?: string;
   coverage?: 'fulltext' | 'abstract' | 'metadata';
   documentId: string;
   attachmentId: string | null;
@@ -465,6 +470,7 @@ export interface ResearchPreparationCampaign {
   state: 'active' | 'paused' | 'cancelled';
   embedding: ResearchPreparationPreview['embedding'];
   jobs: ResearchPreparationJob[];
+  audit?: EmbeddingRunCounters & { reason: EmbeddingRunReason; lastReason: EmbeddingRunReason };
 }
 export interface ResearchPreparationProgress {
   paused: boolean;

@@ -288,6 +288,8 @@ export class Store {
   }
 
   snapshotPath(spaceId) {
+    const publication = this.state.spaces.find(space => space.id === spaceId)?.embeddingPublication;
+    if (publication && /^[a-f0-9]{64}$/.test(publication)) return path.join(this.spaceDir(spaceId), 'embedding-publications', publication, 'snapshot.json.gz');
     const dir = path.join(this.spacesDir, this.safePathId(spaceId, 'space id'));
     fs.mkdirSync(dir, { recursive: true });
     return path.join(dir, 'snapshot.json.gz');
@@ -410,6 +412,8 @@ export class Store {
   vectorsPath(spaceId, kind) {
     const safeKind = String(kind ?? '');
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(safeKind)) throw new Error('Invalid vector kind');
+    const publication = this.state.spaces.find(space => space.id === spaceId)?.embeddingPublication;
+    if (publication && /^[a-f0-9]{64}$/.test(publication)) return path.join(this.spaceDir(spaceId), 'embedding-publications', publication, `vectors-${safeKind}.bin`);
     return path.join(this.spacesDir, this.safePathId(spaceId, 'space id'), `vectors-${safeKind}.bin`);
   }
 }

@@ -1176,7 +1176,7 @@ function buildExtractiveProfileFallback(
 
 function alignIdeas(nodusId: string, vectors: Array<{ sourceId: string; kind: string; embedding: number[] | null }>): DocumentIdeaLink[] {
   const ideas = getDb().prepare(
-    `SELECT i.global_id,i.embedding FROM ideas i JOIN idea_occurrences io ON io.global_id=i.global_id
+    `SELECT i.global_id,i.embedding FROM embedding_read_ideas i JOIN idea_occurrences io ON io.global_id=i.global_id
       WHERE io.nodus_id=? AND i.embedding IS NOT NULL`
   ).all(nodusId) as { global_id: string; embedding: Buffer }[];
   const links: DocumentIdeaLink[] = [];

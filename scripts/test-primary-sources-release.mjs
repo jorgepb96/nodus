@@ -80,16 +80,12 @@ if (!process.argv.includes('--electron-primary-sources-release-test')) {
   assert.match(sources.settings, /getPrimarySourceGovernanceWorkspace/);
   assert.match(sources.settings, /updatePrimarySourcePolicySettings/);
   assert.match(sources.settings, /Política de IA de Fuentes primarias/);
-  assert.match(
-    sources.settings,
-    /activeVault\?\.type === 'primary_sources'[\s\S]{0,5000}window\.nodus\.indexArchive\(\)/,
-    'Primary Sources indexes its reviewed archive corpus instead of the academic library',
-  );
-  assert.match(
-    sources.settings,
-    /if \(activeVault\?\.type === 'primary_sources'\)[\s\S]{0,500}window\.nodus\.indexArchive\(\)[\s\S]{0,500}else \{[\s\S]{0,200}window\.nodus\.startEmbedding\(\)/,
-    'the academic embedding pipeline is confined to the non-Primary-Sources branch',
-  );
+  assert.match(sources.settings, /EmbeddingIndexesManager/,
+    'Primary Sources uses the same staged index coordinator as every vault');
+  const inventory = readSource('electron/ai/embeddingIndexInventory.ts');
+  assert.match(inventory, /case 'archive_items'/);
+  assert.match(inventory, /archiveEmbeddingAllowed/,
+    'archive inputs are governed by destination-provider policies');
   assert.match(sources.app, /!settings\.primarySourcesTourComplete/);
   assert.match(sources.tourEngine, /AcademicLearningSpotlight as GuidedPopover/);
   assert.doesNotMatch(sources.tourEngine, /aria-modal="true"/);

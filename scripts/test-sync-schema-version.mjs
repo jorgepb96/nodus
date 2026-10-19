@@ -38,7 +38,7 @@ function shape(db) {
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all();
   // V202 adds only a machine-bound execution checkpoint. The test below verifies
   // every transport boundary; its columns cannot affect a receiver's wire shape.
-  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs').map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
+  return JSON.stringify(tables.filter(({ name }) => name !== 'research_harness_runs' && !name.startsWith('embedding_index')).map(({ name }) => [name, db.pragma(`table_info("${name.replace(/"/g, '""')}")`)]));
 }
 
 test('research execution checkpoints remain local across every sync transport', () => {
@@ -56,6 +56,20 @@ test('research execution checkpoints remain local across every sync transport', 
   assert.deepEqual(triggers, [], 'Checkpoints must never create outgoing mutations');
   db.prepare("DELETE FROM research_harness_runs WHERE id='local-fixture'").run();
   assert.equal(db.prepare("SELECT COUNT(*) n FROM server_outbox WHERE table_name='research_harness_runs'").get().n, 0, 'Saving and deleting a checkpoint do not enqueue a mutation');
+});
+
+test('saved embedding indexes are local while their active projection may be published', () => {
+  const db = getDb();
+  const names = ['embedding_indexes', 'embedding_index_state', 'embedding_index_values', 'embedding_index_documentary_refs', 'embedding_index_generations'];
+  const sync = syncedTableNames(db);
+  const excluded = describeSyncCoverage().excluded;
+  for (const name of names) { assert.equal(sync.includes(name), false); assert.ok(excluded.includes(name)); }
+  ensureOutboxTriggers(db, true);
+  const snapshot = JSON.parse(buildServerSnapshot({ id: 'v', name: 'Vault', type: 'academic' }, { nodusServerIncludeUserContent: true }, db).buffer.toString());
+  for (const name of names) {
+    assert.equal(Object.hasOwn(snapshot.tables, name), false);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='trigger' AND tbl_name=? AND instr(sql,'server_outbox')>0").get(name).n, 0);
+  }
 });
 
 function lastShapeChange() {

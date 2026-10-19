@@ -118,7 +118,7 @@ export function getResearchPreparationProgress(): ResearchPreparationProgress {
         stage: ResearchPreparationCampaign['jobs'][number]['stage']; completed_passages: number; total_passages: number | null; unknown_requests: number; current_page: number | null; total_pages: number | null; error: string | null;
       }>;
     return { id: campaign.id, vaultId: campaign.vault_id, vaultName: getVault(campaign.vault_id)?.name ?? campaign.vault_name,
-      createdAt: campaign.created_at, updatedAt: campaign.updated_at, state: campaign.state,
+      createdAt: campaign.created_at, updatedAt: campaign.updated_at, state: campaign.state, audit: repo.audit(campaign.id),
       embedding: configuration.embedding ? { provider: configuration.embedding.provider, model: configuration.embedding.modelId, external: externalEmbedding(configuration.embedding) } : null,
       jobs: rows.map(row => ({ id: row.job_id, documentId: row.document_id, title: row.title,
         state: row.state !== 'active' ? row.state as ResearchPreparationCampaign['jobs'][number]['state'] : campaign.state !== 'active' ? campaign.state : row.request_state,

@@ -32,6 +32,7 @@ installRuntimeHooks(root);
 const { runMigrations } = require(path.join(repoRoot, 'electron/db/migrations.ts'));
 const { buildVectorSet, describeVectorSet, vectorRevision } = require(path.join(repoRoot, 'electron/serverSync/serverVectors.ts'));
 const Database = require('better-sqlite3');
+const indexes = require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'));
 
 /** Deterministic vectors: a failure has to be reproducible. */
 function pseudoVector(seed, dim) {
@@ -51,6 +52,14 @@ const cosine = (a, b) => {
 };
 
 function seed(db, dim, count, provider = 'openrouter', model = 'baai/bge-m3', prefix = 'i') {
+  const profile = indexes.embeddingProfile({ embeddingProvider: provider, embeddingModel: model, localProviders: {} });
+  const saved = db.prepare('SELECT * FROM embedding_indexes WHERE fingerprint=?').get(indexes.profileFingerprint(profile)) ?? indexes.createIndex(db, profile);
+  const context = indexes.indexContext(db, saved);
+  if (!indexes.activeEmbeddingIndex(db)) {
+    db.prepare('UPDATE embedding_index_state SET pending_id=?').run(saved.id);
+    indexes.commitEmbeddingIndex(db, context);
+  }
+  const active = indexes.activeEmbeddingIndex(db).indexId === context.indexId;
   const insert = db.prepare(
     `INSERT INTO ideas (global_id, type, label, statement, created_at, embedding, embedding_provider, embedding_model, embedding_dim)
      VALUES (?, 'claim', ?, ?, '2026-01-01T00:00:00.000Z', ?, ?, ?, ?)`
@@ -61,7 +70,8 @@ function seed(db, dim, count, provider = 'openrouter', model = 'baai/bge-m3', pr
       const id = `${prefix}-${String(index).padStart(4, '0')}`;
       const vector = pseudoVector(index + 1, dim);
       vectors.set(id, vector);
-      insert.run(id, `Idea ${index}`, `Enunciado ${index}`, encode(vector), provider, model, dim);
+      insert.run(id, `Idea ${index}`, `Enunciado ${index}`, active ? encode(vector) : null, provider, model, dim);
+      if (!active) indexes.storeIndexValue(db, context, { family: 'ideas', entityId: id, textHash: '', vector: Array.from(vector), contract: indexes.contractForProfile(profile, dim) });
     }
   })();
   return vectors;
@@ -132,15 +142,13 @@ test('what the desktop encodes is exactly what the server decodes', { timeout: 1
   }
 });
 
-test('one matrix carries one embedding model, and a corrupt row is skipped', { timeout: 120_000 }, async () => {
+test('publication follows the active index even when a saved index is larger, and corrupt writes are rejected', { timeout: 120_000 }, async () => {
   const db = new Database(path.join(root, 'mixed.sqlite'));
   try {
     runMigrations(db);
     seed(db, 64, 50, 'openrouter', 'baai/bge-m3');
-    // A vault re-indexed with another model keeps older rows until they are refreshed.
-    // Mixing them in one matrix would compare incomparable vectors and return confident
-    // nonsense, so only the dominant group is published.
-    seed(db, 64, 10, 'openai', 'text-embedding-3-small', 'other');
+    // A saved model may have more vectors. The explicit active head is authoritative.
+    seed(db, 64, 75, 'openai', 'text-embedding-3-small', 'other');
     const built = buildVectorSet(db, 'ideas');
     const set = decodeVectorSet(built.buffer);
     assert.equal(set.header.model, 'baai/bge-m3');
@@ -150,10 +158,10 @@ test('one matrix carries one embedding model, and a corrupt row is skipped', { t
     // A blob whose length disagrees with the declared dimension is corrupt. Skipping it
     // matters: writing it anyway would shift every vector after it by a few bytes and
     // silently scramble the whole matrix.
-    db.prepare(
+    assert.throws(() => db.prepare(
       `INSERT INTO ideas (global_id, type, label, statement, created_at, embedding, embedding_provider, embedding_model, embedding_dim)
        VALUES ('i-broken', 'claim', 'Rota', '', '2026-01-01T00:00:00.000Z', ?, 'openrouter', 'baai/bge-m3', 64)`
-    ).run(Buffer.alloc(17));
+    ).run(Buffer.alloc(17)), /dimension_mismatch|vector_invalid/);
     const after = decodeVectorSet(buildVectorSet(db, 'ideas').buffer);
     assert.equal(after.count, 50, 'a corrupt row entered the matrix');
     assert.ok(!after.ids.includes('i-broken'));

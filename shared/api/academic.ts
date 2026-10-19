@@ -1,4 +1,5 @@
 import type { StellarPageRequest, StellarPage, StellarSession, StellarTheme } from '../stellarGraph';
+import type { EmbeddingIndexesApi } from '../embeddingIndexes';
 // The academic and study slice of the window.nodus contract. NodusApi extends it,
 // so the renderer surface stays flat and every call site is unchanged.
 import type { StudyAnnotation, StudyAnnotationInput, StudyDocEditorData, StudyDocUpdateInput } from '../studyEditor';
@@ -238,7 +239,7 @@ export interface AcademicApi extends Pick<import('../researchCorpus').ResearchCo
   'getResearchCorpusSources' | 'listResearchNotebooks' | 'saveResearchNotebook' | 'deleteResearchNotebook' | 'resolveResearchNotebook' | 'updateResearchNotebookAppearance' | 'getResearchNotebookPreparation' | 'searchResearchNotebook' | 'readResearchDocument'
   | 'getResearchPreparationPolicy' | 'setResearchPreparationPolicy' | 'previewResearchPreparation' | 'startResearchPreparationCampaign' | 'getResearchPreparationProgress' | 'onResearchPreparationProgress' | 'controlResearchPreparationCampaign' | 'controlAllResearchPreparation'
   | 'getResearchPreparationInventory' | 'prepareResearchDocuments' | 'indexResearchWorks' | 'cancelResearchDocuments' | 'setResearchPreparationEnabled' | 'setResearchPreparationPaused'
-  | 'setResearchZoteroAutomatic' | 'getZoteroMcpStatus' | 'connectResearchZotero' | 'disconnectResearchZotero' | 'readResearchZotero'> {
+  | 'setResearchZoteroAutomatic' | 'getZoteroMcpStatus' | 'connectResearchZotero' | 'disconnectResearchZotero' | 'readResearchZotero'>, EmbeddingIndexesApi {
   exportAcademicDocument(input: {documentId:string;kind:'note'|'study';expectedRevision?:number;format:import('../academicDocument').AcademicExportFormat;acceptWarnings?:boolean}): Promise<{base64:string;mime:string;fileName:string;html:string}>;
   // Dictionary: persistent evidence-backed concept syntheses
   listDictionaryEntries(request: DictionaryListRequest): Promise<DictionaryEntryPage>;

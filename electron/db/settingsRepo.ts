@@ -1,4 +1,5 @@
 import { getDb } from './database';
+import { activeEmbeddingIndex, embeddingIndexHead, embeddingProfile, ensureInitialEmbeddingIndex } from './embeddingIndexesRepo';
 import { normalizeImageFavorites } from '@shared/editorAiReview';
 import { sanitizeLearningProgress, sanitizePracticeSession } from '@shared/academicLearning';
 import { sanitizeHeaderActionVisibility } from '@shared/headerActions';
@@ -92,6 +93,7 @@ const DEFAULTS: Omit<AppSettings, 'providerKeys' | 'lockedProviderKeys'> = {
   libraryScopeOnboardingVersion: 0,
   embeddingProvider: 'openai',
   embeddingModel: DEFAULT_EMBEDDING_MODELS.openai,
+  researchReranking: 'off',
   localProviders: DEFAULT_LOCAL_PROVIDERS,
   customProvider: DEFAULT_CUSTOM_PROVIDER,
   favorites: [],
@@ -453,6 +455,7 @@ export function getSettings(): AppSettings {
     }
   }
   merged.embeddingProvider = normalizeEmbeddingProvider((parsed as Partial<AppSettings>).embeddingProvider);
+  merged.researchReranking = merged.researchReranking === 'local' ? 'local' : 'off';
   if (!merged.embeddingModel?.trim()) merged.embeddingModel = DEFAULT_EMBEDDING_MODELS[merged.embeddingProvider];
   Object.assign(merged, recoverV23VaultEmbeddingSelection(merged as AppSettings));
   // v1.4.0 and older exposed one global header selector. Preserve that user's
@@ -628,6 +631,13 @@ export function getSettings(): AppSettings {
     writeRaw('app', JSON.stringify(persisted));
   }
   if (Object.keys(seed).length) writeGlobalPrefs(seed);
+  const indexHead = embeddingIndexHead(getDb());
+  if (indexHead && !indexHead.active_id && indexHead.enabled) ensureInitialEmbeddingIndex(getDb(), embeddingProfile(merged as AppSettings));
+  const activeIndex = activeEmbeddingIndex(getDb());
+  if (activeIndex) {
+    merged.embeddingProvider = activeIndex.profile.provider;
+    merged.embeddingModel = activeIndex.profile.model;
+  }
   return { ...merged, providerKeys: providerKeyMap(), lockedProviderKeys: lockedApiKeyProviders() };
 }
 
@@ -637,6 +647,10 @@ export function updateSettings(patch: Partial<AppSettings>): AppSettings {
   if (patch.headerActionVisibility !== undefined) patch = { ...patch, headerActionVisibility: sanitizeHeaderActionVisibility(patch.headerActionVisibility) };
   if (patch.academicInterfaceProfile !== undefined && !['simple', 'intermediate', 'advanced', 'custom'].includes(patch.academicInterfaceProfile)) throw new Error('Invalid academic interface profile.');
   const previous = getSettings();
+  if (patch.embeddingProvider !== undefined || patch.embeddingModel !== undefined) {
+    const next = { ...previous, ...patch };
+    ensureInitialEmbeddingIndex(getDb(), embeddingProfile(next));
+  }
   if(patch.academicLearningProgress) {
     const progress=patch.academicLearningProgress;
     progress.lessons={...previous.academicLearningProgress?.lessons,...progress.lessons};

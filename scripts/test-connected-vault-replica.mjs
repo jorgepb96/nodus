@@ -82,6 +82,7 @@ function seedOwnerCorpus(db) {
 
 function publishSnapshot(origin, token, spaceId, dbFile, vault) {
   const db = new Database(dbFile, { readonly: true, fileMustExist: true });
+  require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(db);
   try {
     const built = buildServerSnapshot(vault, { nodusServerIncludeUserContent: true, nodusServerIncludePassages: true }, db);
     return { built, gzipped: require('node:zlib').gzipSync(built.buffer) };
@@ -100,6 +101,7 @@ test('a corpus travels to two replicas, a writer sends work back, and a reader n
 
     const ownerFile = path.join(userData, 'owner.sqlite');
     const ownerDb = new Database(ownerFile);
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(ownerDb);
     runMigrations(ownerDb);
     ownerDb.transaction(seedOwnerCorpus)(ownerDb);
     ownerDb.close();
@@ -145,6 +147,7 @@ test('a corpus travels to two replicas, a writer sends work back, and a reader n
     }
 
     const readerDb = new Database(readerVault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(readerDb);
     assert.equal(readerDb.prepare('SELECT COUNT(*) AS n FROM works').get().n, 1);
     assert.equal(readerDb.prepare('SELECT COUNT(*) AS n FROM ideas').get().n, 1);
     assert.equal(readerDb.prepare("SELECT title FROM notes WHERE id = 'n-owner'").get(), undefined, 'the owner note remains private');
@@ -172,6 +175,7 @@ test('a corpus travels to two replicas, a writer sends work back, and a reader n
     assert.equal(writerVault.remote.role, 'writer');
 
     const writerDb = new Database(writerVault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(writerDb);
     const writerDevice = writerDb.prepare('SELECT id FROM workspace_devices').get().id;
     assert.match(writerDevice, /^device-[0-9a-f-]{36}$/);
     assert.notEqual(writerDevice, readerDevice, 'each replica has a stable independent device identity');
@@ -200,6 +204,7 @@ test('a corpus travels to two replicas, a writer sends work back, and a reader n
 
     await replica.drainOutbox(writerVault.id);
     const drainedDb = new Database(writerVault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(drainedDb);
     assert.equal(countOutbox(drainedDb).pending, 0, 'the queue empties once the server accepts it');
     drainedDb.close();
 
@@ -213,11 +218,13 @@ test('a corpus travels to two replicas, a writer sends work back, and a reader n
     const ownerLedger = await (await server.api(owner.deviceToken, 'GET', `/api/v1/spaces/${spaceId}/mutations?since=0`)).json();
     assert.equal(ownerLedger.mutations.length, 0, 'the owner cannot observe another user private note or its compatibility page');
     const ownerInspect = new Database(ownerFile, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(ownerInspect);
     assert.equal(ownerInspect.prepare("SELECT 1 FROM notes WHERE id = 'n-writer'").get(), undefined);
     ownerInspect.close();
 
     await replica.pullReplica(readerVault.id);
     const readerAfter = new Database(readerVault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(readerAfter);
     assert.equal(readerAfter.prepare("SELECT 1 FROM notes WHERE id = 'n-writer'").get(), undefined, "another reader never sees the collaborator's private note");
     // The reader's OWN note survives every corpus pull.
     assert.equal(readerAfter.prepare("SELECT title FROM notes WHERE id = 'n-reader'").get().title, 'Nota privada del lector');
@@ -253,6 +260,7 @@ test('an incoming mutation never blanks a column it does not carry', { timeout: 
     const Database = require('better-sqlite3');
     const file = path.join(root, 'owner.sqlite');
     const db = new Database(file);
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(db);
     runMigrations(db);
     const image = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
     db.prepare(
@@ -289,6 +297,7 @@ test('storing downloaded illustrations does not queue them straight back', { tim
     const { ensureOutboxTriggers } = require(path.join(repoRoot, 'electron/serverSync/outboxTriggers.ts'));
     const Database = require('better-sqlite3');
     const db = new Database(path.join(root, 'writer.sqlite'));
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(db);
     runMigrations(db);
     ensureOutboxTriggers(db, true);
     db.prepare(
@@ -326,6 +335,7 @@ test('a revoked replica stops syncing and keeps every byte', { timeout: 180_000 
     const ownerFile = path.join(userData, 'revocation.sqlite');
     fs.rmSync(ownerFile, { force: true });
     const ownerDb = new Database(ownerFile);
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(ownerDb);
     runMigrations(ownerDb);
     ownerDb.transaction(seedOwnerCorpus)(ownerDb);
     ownerDb.close();
@@ -345,6 +355,7 @@ test('a revoked replica stops syncing and keeps every byte', { timeout: 180_000 
     });
 
     const before = new Database(vault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(before);
     const worksBefore = before.prepare('SELECT COUNT(*) AS n FROM works').get().n;
     before.prepare('INSERT INTO notes (id, folder_id, title, kind, content, source_json, order_idx, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, NULL, 0, ?, ?)')
       .run('n-mine', 'Mi trabajo', 'markdown', 'Escrito aquí.', '2026-05-05T00:00:00.000Z', '2026-05-05T00:00:00.000Z');
@@ -365,6 +376,7 @@ test('a revoked replica stops syncing and keeps every byte', { timeout: 180_000 
     // The publisher's answer to a 401 is to drop its token and re-pair. For a replica that
     // would be data loss, so nothing local is touched.
     const after = new Database(vault.path, { fileMustExist: true });
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(after);
     assert.equal(after.prepare('SELECT COUNT(*) AS n FROM works').get().n, worksBefore, 'the corpus is still readable offline');
     assert.equal(after.prepare("SELECT title FROM notes WHERE id = 'n-mine'").get().title, 'Mi trabajo', 'the user keeps their own work');
     after.close();
@@ -380,6 +392,7 @@ test('two offline writers converge Yjs text through binary updates while the own
     const ownerFile = path.join(userData, 'yjs-owner.sqlite');
     fs.rmSync(ownerFile, { force: true });
     const ownerDb = new Database(ownerFile);
+    require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(ownerDb);
     runMigrations(ownerDb);
     let attachmentFixture;
     const original = databaseRuntime.withDatabaseContext(ownerDb, () => {
@@ -504,6 +517,7 @@ test('the desktop and the server agree on which tables travel and how a row is k
   const probe = path.join(userData, 'identity-probe.sqlite');
   fs.rmSync(probe, { force: true });
   const db = new Database(probe);
+  require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(db);
   try {
     runMigrations(db);
     for (const [table, definition] of Object.entries(SERVER_MUTABLE)) {

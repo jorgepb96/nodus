@@ -1741,6 +1741,8 @@ export interface ModelRef {
 /** One model as returned by a provider's model-list endpoint. */
 export interface ModelInfo {
   id: string;
+  /** Immutable content digest advertised by the provider, when available. */
+  revision?: string;
   /** Exact native reasoning choices advertised by the provider, in display order. */
   researchReasoningLevels?: import('./researchReasoning').NativeResearchEffort[];
   name?: string;
@@ -2000,6 +2002,8 @@ export interface AppSettings {
   libraryScopeOnboardingVersion: number;
   embeddingProvider: EmbeddingProvider;
   embeddingModel: string;
+  /** Query-time preference; never changes stored embeddings. */
+  researchReranking?: 'off' | 'local';
   // Per-provider key presence (the keys themselves never cross IPC).
   providerKeys: Record<AiProvider, boolean>;
   /** Encrypted key files exist but the current OS secure-storage identity cannot

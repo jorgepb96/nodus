@@ -336,7 +336,7 @@ export async function reprocessConnections(
   // The labels each idea is embedded with, before and after this pass: an idea whose
   // string changes (content or order) now has a stale vector.
   const embeddedThemeLabels = () => new Map((db
-    .prepare(`SELECT i.global_id, ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS labels FROM ideas i
+    .prepare(`SELECT i.global_id, ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS labels FROM embedding_read_ideas i
       WHERE i.global_id IN (SELECT value FROM json_each(?))`)
     .all(JSON.stringify(activeIdeas.map((idea) => idea.global_id))) as Array<{ global_id: string; labels: string }>)
     .map((row) => [row.global_id, row.labels]));

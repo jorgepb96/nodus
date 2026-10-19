@@ -6,6 +6,7 @@
 // corpus.mjs; this file owns everything that writes or that decides who may.
 
 import { digest, token } from '../store.mjs';
+import { EmbeddingPublications } from '../embeddingPublications.mjs';
 import { can } from '../roles.mjs';
 import { REPLICA_TOKEN_DAYS } from '../auth.mjs';
 import * as ledger from '../ledger.mjs';
@@ -173,6 +174,7 @@ export function createApiRoutes(ctx) {
   } = ctx;
 
   const vectorCache = new Map();
+  const embeddingPublications = new EmbeddingPublications(store);
   const mutationListeners = new Map();
   const presenceBySpace = new Map();
 
@@ -291,6 +293,7 @@ export function createApiRoutes(ctx) {
       documentUpdates: 'content-addressed-binary',
       sharedBlobs: { transport: 'resumable-chunks', chunkBytes: SHARED_BLOB_CHUNK_BYTES, maxBytes: limits.maxLibraryPackageBytes },
       vectors: true,
+      atomicEmbeddingPublication: true,
       resources: resourceMap(),
       maxAssetBytes: limits.maxAssetBytes,
       maxSpaceAssetBytes: limits.maxSpaceAssetBytes,
@@ -954,6 +957,7 @@ export function createApiRoutes(ctx) {
   }
 
   async function uploadVectors(req, res, space) {
+    if (space.embeddingPublication) { json(res, 409, { error: 'atomic_publication_required' }); return true; }
     const kind = String(new URL(req.url, publicUrl()).searchParams.get('kind') || 'ideas');
     let bytes = await body(req, limits.maxVectorBytes);
     // The matrix is highly compressible and the desktop sends it gzipped, exactly like a
@@ -986,6 +990,7 @@ export function createApiRoutes(ctx) {
       return true;
     }
     const contracts = space.embeddingContracts && typeof space.embeddingContracts === 'object' ? space.embeddingContracts : {};
+    if (space.embeddingPublication) { json(res, 409, { error: 'atomic_publication_required' }); return true; }
     const existing = contracts[kind]?.contract;
     if (existing && !embeddingContractsCompatible(existing, contract)) {
       json(res, 409, {
@@ -1572,6 +1577,7 @@ export function createApiRoutes(ctx) {
   // ── Snapshot channel ──────────────────────────────────────────────────────
 
   async function putSnapshot(req, res, space, device) {
+    if (space.embeddingPublication) { json(res, 409, { error: 'atomic_publication_required' }); return true; }
     if (!rateLimit(req, res, 'snapshot-publish', 60, 5 * 60_000)) return true;
     if (req.headers['content-encoding'] !== 'gzip') {
       json(res, 415, { error: 'The publication must be gzip-compressed.' });
@@ -1623,6 +1629,7 @@ export function createApiRoutes(ctx) {
     // Persist exactly what was validated and sanitised. Keeping the original gzip here would
     // reintroduce the private tables when a later reader downloaded the snapshot.
     const publicationBytes = (ctx.gzip || gzipSync)(Buffer.from(JSON.stringify(snapshot)));
+    if (space.embeddingPublication) { json(res, 409, { error: 'atomic_publication_required' }); return true; }
     store.writeSnapshot(space.id, publicationBytes);
     invalidateSnapshot(space.id);
     space.updatedAt = publishedAt;
@@ -2103,6 +2110,41 @@ export function createApiRoutes(ctx) {
       return true;
     }
 
+    if (head === 'embedding-publications') {
+      try {
+        const owner = String(auth.user?.id || auth.device?.userId || '');
+        if (req.method === 'POST' && !rest[1]) {
+          const manifest = await jsonBody(req, AUTH_BODY_BYTES);
+          if (manifest.vectors?.length && !policyFor(space).allowVectors) { json(res, 403, { error: 'vector_publication_disabled' }); return true; }
+          json(res, 200, embeddingPublications.begin(space, manifest, owner));
+        } else if (req.method === 'PUT' && rest[2] === 'snapshot') {
+          embeddingPublications.stageSnapshot(space, rest[1], owner, await body(req, limits.maxSnapshotBytes));
+          json(res, 200, { ok: true });
+        } else if (req.method === 'PUT' && rest[2] === 'vectors' && rest[3]) {
+          if (!policyFor(space).allowVectors) { json(res, 403, { error: 'vector_publication_disabled' }); return true; }
+          embeddingPublications.stageVectors(space, rest[1], owner, rest[3], await body(req, limits.maxVectorBytes), bytes => ctx.gunzip(bytes, limits.maxVectorBytes));
+          json(res, 200, { ok: true });
+        } else if (req.method === 'POST' && rest[2] === 'commit') {
+          if (embeddingPublications.manifest(space, rest[1], owner).vectors.length && !policyFor(space).allowVectors) { json(res, 403, { error: 'vector_publication_disabled' }); return true; }
+          const result = embeddingPublications.commit(space, rest[1], owner, bytes => {
+            const expanded = expandSnapshot(bytes);
+            if (expanded.reason) throw Object.assign(new Error('invalid_snapshot'), { status: expanded.reason === 'too-large' ? 413 : 400 });
+            const snapshot = sanitizePublishedSnapshot(expanded.value, space);
+            if (snapshot?.format !== 'nodus.server-snapshot' || !capabilities().snapshotVersions.includes(Number(snapshot.formatVersion))) throw Object.assign(new Error('unsupported_snapshot'), { status: 400 });
+            const problem = validatePublishedLibrary(space.id, snapshot.library);
+            if (problem) throw Object.assign(new Error(problem.error), { status: problem.status });
+            snapshot.provenance = { schemaVersion: 4, vaultId: space.id, publishedByUserId: auth.device?.userId ?? auth.user?.id ?? null,
+              originInstanceId: store.state.settings.instanceId, originDeviceId: auth.device?.hash ?? null,
+              acceptedRevision: embeddingPublications.manifest(space, rest[1], owner).revision, publishedAt: new Date().toISOString() };
+            return snapshot;
+          }, ctx.gzip || gzipSync);
+          invalidateSnapshot(space.id);
+          for (const kind of ['ideas', 'documents', 'passages']) vectorCache.delete(`${space.id}:${kind}`);
+          json(res, 200, result);
+        } else json(res, 405, { error: 'method_not_allowed' });
+      } catch (error) { json(res, Number(error.status) || 400, { error: error.message || 'invalid_publication' }); }
+      return true;
+    }
     if (head === 'vectors' && req.method === 'PUT') {
       if (!policyFor(space).allowVectors) { json(res, 403, { error: 'vector_publication_disabled' }); return true; }
       return uploadVectors(req, res, space);
@@ -2166,7 +2208,7 @@ export function createApiRoutes(ctx) {
       if (rest[2] === 'cancel') return 'read';
       return method === 'POST' ? 'write' : 'read';
     }
-    if (head === 'vectors') return 'own';
+    if (head === 'vectors' || head === 'embedding-publications') return 'own';
     if (head === 'assets') return method === 'POST' || method === 'PUT' ? 'write' : 'read';
     if (head === 'document-updates') return method === 'PUT' ? 'write' : 'read';
     if (head === 'blobs') return method === 'PUT' || method === 'POST' ? 'write' : 'read';

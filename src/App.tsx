@@ -955,6 +955,7 @@ export function App() {
   // Settings may also change outside this React tree (notably from the floating
   // Nodi window). Keep visibility, theme and every settings-backed control in sync.
   useEffect(() => window.nodus?.onSettingsChanged(() => { void reloadSettings(); }), [reloadSettings]);
+  useEffect(() => window.nodus?.onActiveEmbeddingIndexChanged(() => { void reloadSettings(); }), [reloadSettings]);
   // A vault switch changes which settings apply, and the palette is per vault by
   // default. The switcher reloads them itself, but it is not the only caller — the
   // Server inbox and vault creation both switch directly — so re-read here as well

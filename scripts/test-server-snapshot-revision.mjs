@@ -36,6 +36,7 @@ test('streaming revision matches the former whole-object JSON digest', () => {
     const payload = JSON.parse(built.buffer.toString('utf8'));
     const expected = createHash('sha256').update(JSON.stringify({
       vault: payload.vault,
+      embeddingIndex: payload.embeddingIndex,
       schemaVersion: payload.schemaVersion,
       assets: payload.assets,
       library: null,

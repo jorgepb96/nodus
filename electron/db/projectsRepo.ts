@@ -733,7 +733,7 @@ function chunkMarkdown(chapterId: string, markdown: string): ProjectChapterChunk
 
 export function listChapterChunks(chapterId: string): ProjectChapterChunk[] {
   return (getDb()
-    .prepare('SELECT * FROM project_chapter_chunks WHERE chapter_id = ? ORDER BY order_idx ASC')
+    .prepare('SELECT * FROM embedding_read_project_chapter_chunks AS project_chapter_chunks WHERE chapter_id = ? ORDER BY order_idx ASC')
     .all(chapterId) as ChunkRow[]).map(toChunk);
 }
 

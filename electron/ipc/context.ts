@@ -13,7 +13,8 @@
 import { ipcMain, type BrowserWindow } from 'electron';
 import { localizeIpcPayload, localizeRuntimeError } from '@shared/uiLanguage';
 import { getSettings } from '../db/settingsRepo';
-import { withoutDatabaseContext } from '../db/database';
+import { getDb, withDatabaseContext, withoutDatabaseContext } from '../db/database';
+import { activeEmbeddingIndex, withEmbeddingIndexContext } from '../db/embeddingIndexesRepo';
 import { assertNotBrowserIpcSender } from './trust';
 import { isAiModelRequiredError } from '@shared/aiModelRequired';
 
@@ -60,7 +61,15 @@ export function createIpcContext(getWindow: () => BrowserWindow | null): IpcCont
       // that somehow gains ipcRenderer still cannot reach vaults, files, AI,
       // settings, databases or any other handler registered through `h`.
       assertNotBrowserIpcSender(event);
-      const result = await listener(event, ...args);
+      // Pin the vault connection as well as its embedding space across every await.
+      // A closed originating vault must fail rather than read from the newly opened one.
+      // Management and whole-vault restores deliberately resolve the live connection.
+      let result: unknown;
+      if (/^embeddingIndexes:|^vaults:|^settings:|^data:import$|^recovery:restore$/.test(channel)) result = await listener(event, ...args);
+      else {
+        const database = getDb();
+        result = await withDatabaseContext(database, () => withEmbeddingIndexContext(activeEmbeddingIndex(database), () => listener(event, ...args)));
+      }
       return localizeIpcPayload(result, getSettings().uiLanguage);
     } catch (error) {
       if (isAiModelRequiredError(error)) {

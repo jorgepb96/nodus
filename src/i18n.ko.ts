@@ -1,3 +1,4 @@
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
@@ -96,6 +97,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * translator's review debt and should be treated as a first pass.
  */
 export const KO: Record<string, string> = {
+  ...EMBEDDING_INDEX_TRANSLATIONS["ko"],
   ...BACKUPS_TRANSLATIONS.ko,
   // First, so every entry below wins: the server's English-only keys.
   ...SERVER_ENGLISH_FALLBACKS.ko,

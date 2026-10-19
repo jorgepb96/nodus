@@ -16,3 +16,5 @@ export class BrowserWindow {}
 export const shell = { openExternal: async () => undefined };
 export const utilityProcess = { fork: () => { throw new Error('utilityProcess is unavailable in headless tests'); } };
 export default { app, safeStorage, dialog, ipcMain, BrowserWindow, shell, utilityProcess };
+
+export const nativeImage = { createFromPath: () => ({ isEmpty: () => true }) };

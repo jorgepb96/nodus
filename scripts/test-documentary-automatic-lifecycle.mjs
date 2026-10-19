@@ -40,6 +40,7 @@ try {
   preparation.notifyResearchCorpusChanged();
   await poll(() => repo.list().length === 1);
   const queued = experience.getResearchPreparationProgress().campaigns[0];
+  assert.equal(queued.audit.reason, 'new_content');
   assert.deepEqual(queued.jobs.map(job => job.title).sort(), ['new-one', 'new-two']);
   assert.equal(queued.vaultId, vault.id);
   assert.ok(queued.jobs.every(job => job.state === 'queued'));
@@ -86,4 +87,4 @@ try {
   await poll(() => repo.list().length === beforeReimport + 1);
   assert.ok(experience.getResearchPreparationProgress().campaigns.some(campaign => campaign.jobs.some(job => job.title === 'shared-reimport')), 're-import after deletion is a new addition');
   console.log('Automatic academic-only discovery, opt-out, shared deletion and citation revocation passed.');
-} finally { preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true }); }
+} finally { await preparation.closeDocumentaryPreparation(); database.closeDb(); fs.rmSync(root, { recursive: true, force: true }); }

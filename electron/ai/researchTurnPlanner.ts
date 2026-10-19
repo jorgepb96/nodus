@@ -4,7 +4,7 @@ import { researchActivityStep } from './researchActivity';
 import { currentResearchHarness, researchHarnessStage } from './researchHarnessRuntime';
 import type { ResearchQuestionIntent } from '@shared/researchHarness';
 import { validResearchQuestionIntent } from '@shared/researchActions';
-import { RESEARCH_TURN_INTENT_POLICY, explicitResearchLibraryRequest, researchDirectTurnKind, researchLookupFollowUp, type ResearchDirectKind } from '@shared/researchTurnIntent';
+import { RESEARCH_TURN_INTENT_POLICY, explicitResearchLibraryRequest, researchDirectTurnKind, researchLookupFollowUp, researchReviewFollowUp, type ResearchDirectKind } from '@shared/researchTurnIntent';
 
 export interface ResearchSearchBranch extends ResearchQuestionIntent { question: string; query: string; priority: number }
 
@@ -53,9 +53,11 @@ function literalKind(message: string): ResearchTurnKind {
 /** The literal message, when there is nothing to plan with or the model could not plan. */
 export function literalResearchTurnPlan(message: string, messages: readonly ResearchChatMessage[] = []): ResearchTurnPlan {
   const text = message.trim().slice(0, 1000);
-  const directKind = researchDirectTurnKind(message);
-  const previous = researchLookupFollowUp(message) ? [...messages.slice(0, -1)].reverse().find(turn => turn.role === 'user'
-    && !researchLookupFollowUp(turn.content) && !['transform', 'conversation'].includes(researchDirectTurnKind(turn.content) ?? ''))?.content.trim().slice(0, 800) : undefined;
+  const review = researchReviewFollowUp(message);
+  const previous = researchLookupFollowUp(message) || review ? [...messages.slice(0, -1)].reverse().find(turn => turn.role === 'user'
+    && !researchLookupFollowUp(turn.content) && !researchReviewFollowUp(turn.content)
+    && !['transform', 'conversation'].includes(researchDirectTurnKind(turn.content) ?? ''))?.content.trim().slice(0, 800) : undefined;
+  const directKind = researchDirectTurnKind(message) ?? (review && !previous ? 'conversation' : null);
   const goal = previous ? `${previous}\n${text}` : text;
   return { goal, queries: directKind ? [] : [previous ?? text], authors: [], titles: [], explicitLibrary: explicitLibraryRequest(message), kind: literalKind(goal), needsSources: !directKind, planned: false,
     ...(directKind ? { directKind } : {}) };

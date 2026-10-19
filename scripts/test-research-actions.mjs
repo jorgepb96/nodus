@@ -100,7 +100,7 @@ try {
   assert.equal(budget.partial, true);
   console.log('Structured actions, invalid decisions, independent source search, separate evidence and decision allowances, explicit reads and scope rejection passed.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

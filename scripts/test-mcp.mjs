@@ -1380,13 +1380,17 @@ try {
 
     // Coverage is model-scoped: re-embedding under a different model must resurface the
     // warning, because the stored vectors can no longer match the configured model.
-    const stale = getDb().prepare('UPDATE passages SET embedding_model = ?');
-    stale.run('some-other-model');
+    const indexes = require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'));
+    const originalIndex = indexes.activeEmbeddingIndex(getDb());
+    const otherIndex = indexes.createIndex(getDb(), { ...originalIndex.profile, model: 'some-other-model' });
+    getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(otherIndex.id);
+    indexes.commitEmbeddingIndex(getDb(), indexes.indexContext(getDb(), otherIndex));
     const afterModelChange = await callTool(server, 'nodus_search_passages', { query: 'turismo visual', limit: 10, minSimilarity: 0.18 });
     assert.equal(afterModelChange.passages.length, 0, 'vectors from another model cannot match');
     assert.equal(afterModelChange.indexed, 0, 'so coverage drops to zero');
     assert.ok(afterModelChange.warning, 'and the empty result is flagged rather than read as absence');
-    stale.run(embedConfig.model);
+    getDb().prepare('UPDATE embedding_index_state SET pending_id=?').run(originalIndex.indexId);
+    indexes.commitEmbeddingIndex(getDb(), originalIndex);
   } finally {
     aiClient.embedQuery = originalEmbed;
   }

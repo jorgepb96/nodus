@@ -59,7 +59,7 @@ export function getCorpusHealth(): CorpusHealth {
                  AND i.embedding_model = ?
                 THEN i.global_id END) AS embedded
          FROM idea_occurrences io
-         JOIN ideas i ON i.global_id = io.global_id
+         JOIN embedding_read_ideas i ON i.global_id = io.global_id
          JOIN works w ON w.nodus_id = io.nodus_id AND w.archived = 0
         GROUP BY io.nodus_id`
     )

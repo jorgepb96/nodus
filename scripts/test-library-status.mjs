@@ -206,7 +206,7 @@ test('the SQL presets stay in step with the JS readiness derivation', async () =
   assert.doesNotMatch(sql, /HAVING COUNT\(\*\)/);
   assert.doesNotMatch(repo, /HAVING COUNT\(\*\)/);
   for (const source of [sql, repo]) {
-    assert.match(source, /NOT EXISTS \(\s*SELECT 1 FROM passages p/);
+    assert.match(source, /NOT EXISTS \(\s*SELECT 1 FROM (?:embedding_read_)?passages p/);
   }
 });
 

@@ -14,8 +14,15 @@ await build({ entryPoints: [path.join(root, 'electron/ai/localReranker.ts')], ou
   plugins: [{ name: 'isolated-reranker-process', setup(api) {
     const stubs = {
       electron: `export const app = { getPath: () => '/isolated', on() {} };`,
-      'node:fs': `export default { statSync: () => ({size: 635676416}) };`,
-      './nodusLocalAi': `export const llamaServerPath = async () => '/isolated/llama-server'; export const freePort = async () => 12345;`,
+      'node:fs': `export default { statSync: () => ({size: globalThis.__rerankerTest.available === false ? 0 : 635676416}) };`,
+      './nodusLocalAi': `export const llamaServerPath = async () => '/isolated/llama-server'; export const freePort = async () => 12345;
+        export const installNodusLocalRuntime = async () => { globalThis.__rerankerTest.installs = (globalThis.__rerankerTest.installs ?? 0) + 1; };
+        export const downloadVerifiedNodusAsset = async (url,path,bytes,sha256,progress,signal) => new Promise((resolve,reject) => {
+          const state = globalThis.__rerankerTest; state.downloads = (state.downloads ?? 0) + 1;
+          state.asset = {url,path,bytes,sha256}; state.progress = progress;
+          state.complete = () => { state.available = true; resolve(); };
+          signal.addEventListener('abort', () => reject(signal.reason), {once:true});
+        });`,
       'node:child_process': `import { EventEmitter } from 'node:events'; export function spawn() {
         const child = new EventEmitter(); child.exitCode = null; child.kills = [];
         child.kill = signal => { child.kills.push(signal); child.exitCode = 0; child.emit('exit'); };
@@ -26,7 +33,7 @@ await build({ entryPoints: [path.join(root, 'electron/ai/localReranker.ts')], ou
     api.onLoad({ filter: /.*/, namespace: 'stub' }, args => ({ contents: stubs[args.path] }));
   } }],
 });
-const { rerank, stopReranker } = await import(pathToFileURL(outfile));
+const { rerank, stopReranker, prepareLocalReranker, localRerankerStatus, RERANKER_MODEL } = await import(pathToFileURL(outfile));
 const originalFetch = globalThis.fetch;
 globalThis.fetch = async (url, options) => {
   if (url.endsWith('/health')) return new Promise((resolve, reject) => {
@@ -78,4 +85,26 @@ test('an already cancelled request never spawns a process', async () => {
   const controller = new AbortController(); controller.abort();
   await assert.rejects(rerank('query', ['document'], controller.signal), { name: 'AbortError' });
   assert.equal(globalThis.__rerankerTest.children.length, count);
+});
+
+test('downloads require an explicit action, share one verified asset request, and can be cancelled or retried', async () => {
+  const state = globalThis.__rerankerTest;
+  state.available = false;
+  assert.equal(await rerank('query', ['document']), null);
+  assert.equal(state.downloads, undefined, 'a search never downloads a model');
+  const first = prepareLocalReranker('download');
+  const second = prepareLocalReranker('download');
+  const rejectedFirst = assert.rejects(first, { name: 'AbortError' }), rejectedSecond = assert.rejects(second, { name: 'AbortError' });
+  await tick();
+  assert.equal(state.installs, 1); assert.equal(state.downloads, 1);
+  assert.equal(state.asset.bytes, RERANKER_MODEL.bytes); assert.equal(state.asset.sha256, RERANKER_MODEL.sha256);
+  assert.equal(state.asset.url, RERANKER_MODEL.url);
+  state.progress(RERANKER_MODEL.bytes / 2);
+  assert.equal(localRerankerStatus().progress, 0.5);
+  await prepareLocalReranker('cancel'); await Promise.all([rejectedFirst, rejectedSecond]);
+  assert.equal(localRerankerStatus().downloading, false); assert.equal(localRerankerStatus().available, false);
+  const retry = prepareLocalReranker('download'); await tick(); state.complete();
+  assert.equal((await retry).available, true);
+  assert.equal(state.downloads, 2);
+  await prepareLocalReranker('download'); assert.equal(state.downloads, 2, 'installed assets are reused');
 });

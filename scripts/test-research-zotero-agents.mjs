@@ -99,7 +99,7 @@ try {
   console.log('Research Chat, Deep Research and Immersion: managed Zotero original access, observable calls, resolvable citations, retrieval-only preview and truthful failure logs passed (simulated transport).');
 } finally {
   await load('electron/mcp/researchZotero.ts').closeResearchZotero();
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

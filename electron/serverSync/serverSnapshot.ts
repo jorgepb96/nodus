@@ -1,4 +1,5 @@
 import { createHash, type Hash } from 'node:crypto';
+import { embeddingGenerationRevision, embeddingIndexHead, indexRow } from '../db/embeddingIndexesRepo';
 import type Database from 'better-sqlite3';
 import type { VaultSummary } from '@shared/types';
 import type { PublishedLibraryManifest } from './serverLibrary';
@@ -473,6 +474,7 @@ function buildProsopographyPublicProjection(db: Database.Database, present: Set<
 }
 
 export interface ServerSnapshotSettings {
+  nodusServerIncludeVectors?: boolean;
   nodusServerIncludeUserContent: boolean;
   nodusServerIncludePassages: boolean;
   nodusServerIncludePrimarySources?: boolean;
@@ -609,6 +611,7 @@ export interface BuiltSnapshot {
   counts: Record<string, number>;
   assets: SnapshotAsset[];
   schemaVersion: number;
+  embeddingIndex: { id: string; generation: number; valueRevision: number } | null;
 }
 
 export function buildServerSnapshot(
@@ -699,10 +702,14 @@ export function buildServerSnapshot(
   const schemaVersion = Math.min(db.pragma('user_version', { simple: true }) as number, SYNC_SCHEMA_VERSION);
 
   const generatedAt = new Date().toISOString();
+  const indexHead = embeddingIndexHead(db);
+  const activeIndex = settings.nodusServerIncludeVectors !== false && indexHead?.enabled && indexHead.active_id ? indexRow(db, indexHead.active_id) : null;
+  const embeddingIndex = activeIndex && !activeIndex.legacy ? { id: activeIndex.id, generation: activeIndex.generation, valueRevision: embeddingGenerationRevision(db, activeIndex.id, activeIndex.generation) } : null;
   const payload = {
     format: SERVER_SNAPSHOT_FORMAT,
     formatVersion: SERVER_SNAPSHOT_VERSION,
     generatedAt,
+    embeddingIndex,
     schemaVersion,
     vault: { id: vault.id, name: vault.name, type: vault.type },
     capabilities: {
@@ -724,6 +731,7 @@ export function buildServerSnapshot(
   const revisionHash = createHash('sha256');
   updateJsonHash(revisionHash, {
     vault: payload.vault,
+    embeddingIndex,
     schemaVersion,
     assets: assetRefs,
     // Like the snapshot timestamp, the library projection's generatedAt describes the
@@ -740,5 +748,6 @@ export function buildServerSnapshot(
     counts: Object.fromEntries(Object.entries(tables).map(([table, rows]) => [table, rows.length])),
     assets,
     schemaVersion,
+    embeddingIndex,
   };
 }

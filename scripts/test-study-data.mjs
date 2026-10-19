@@ -32,7 +32,9 @@ try {
   const course = org.createStudyCourse({ name: 'Historia' });
   const kept = org.createStudyDocument({ title: 'Tema conservado', contentMarkdown: '# Texto', placement: { courseId: course.id } });
   const trashed = org.createStudyDocument({ title: 'Borrador eliminado', contentMarkdown: 'Temporal', placement: { courseId: course.id } });
-  getDb().prepare('UPDATE study_docs SET embedding = ? WHERE id = ?').run(Buffer.from('VECTOR'), kept.id);
+  const selected = require(path.join(repoRoot, 'electron/db/settingsRepo.ts')).getSettings();
+  const fixtureVector = Buffer.from(new Float32Array([1, 0]).buffer);
+  getDb().prepare('UPDATE study_docs SET embedding=?,embedding_provider=?,embedding_model=?,embedding_dim=2 WHERE id=?').run(fixtureVector, selected.embeddingProvider, selected.embeddingModel, kept.id);
   org.setStudyLifecycle('document', trashed.id, 'trash');
 
   const materialPath = path.join(root, 'fuente.txt');
@@ -47,7 +49,7 @@ try {
   assert.ok(overview.studyRows >= 7, 'study rows are counted across tables');
   assert.ok(overview.materialBytes > 0, 'material blob bytes are measured');
   assert.ok(overview.recordingBytes > 0, 'recording blob bytes are measured');
-  assert.equal(overview.embeddingBytes, Buffer.byteLength('VECTOR'));
+  assert.equal(overview.embeddingBytes, fixtureVector.byteLength);
   assert.equal(overview.trashRows, 1);
 
   const cleared = admin.clearStudyEmbeddingCache();

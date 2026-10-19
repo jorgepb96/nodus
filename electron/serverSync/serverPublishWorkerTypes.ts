@@ -47,6 +47,7 @@ export type ServerPublishWorkerResponse = {
   counts: Record<string, number>;
   assets: SnapshotAsset[];
   schemaVersion: number;
+  embeddingIndex: { id: string; generation: number; valueRevision: number } | null;
   personal: ServerPersonalImportEnvelope | null;
   vectors: PreparedServerVectorWire[];
 } | {

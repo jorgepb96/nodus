@@ -116,9 +116,13 @@ try {
   assert.match(ipc, /if \(!event\.sender\.isDestroyed\(\)\) event\.sender\.send\('ai:nodusLocal:progress'/, 'progress cannot abort a download after its renderer is destroyed');
   assert.match(preload, /ai:nodusLocal:progress/, 'preload forwards download progress safely');
   assert.match(preload, /cancelNodusLocalDownloads: \(\) => ipcRenderer\.invoke\('ai:nodusLocal:cancelDownloads'\)/, 'the renderer can request cancellation');
-  assert.match(settings, /Cambiar modelo de embeddings/, 'embedding changes require an explicit compatibility confirmation');
+  assert.match(settings, /<EmbeddingIndexesManager settings=/, 'embedding changes use the saved-index manager');
+  const indexManager = readSource('src/components/EmbeddingIndexesManager.tsx');
+  assert.match(indexManager, /previewEmbeddingIndex/, 'embedding changes preview compatibility before preparation');
+  assert.match(indexManager, /<ConfirmModal[\s\S]*Preparar y activar[\s\S]*prepareEmbeddingIndex/, 'preparation requires explicit confirmation');
   assert.match(ui, /ConfirmModal/, 'deleting a local model uses the styled confirmation modal');
-  assert.match(ui, /no son compatibles y deberán regenerarse/, 'the permanent embedding compatibility reminder is visible');
+  assert.match(ui, /Selecciona otro modelo para preparar un índice independiente/, 'the download catalog explains independent indexes');
+  assert.match(indexManager, /Se conservarán los índices anteriores/, 'the compatibility confirmation explains saved-index preservation');
   assert.match(ui, /nodus-local-embedding-list/, 'embedding models use the shared settings list pattern');
   assert.match(ui, /nodus-local-chat-list/, 'chat models use the shared settings list pattern');
   assert.match(ui, /Preparando motor…/, 'the UI explains the automatic dependency stage');

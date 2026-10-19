@@ -13,6 +13,9 @@
 //   · Retirar el consentimiento borra sus vectores, sin tocar la transcripción.
 
 import { getDb } from './database';
+import { encodeEmbedding } from './ideasRepo';
+import { clearActiveEmbeddingFamilies } from './embeddingIndexesRepo';
+import { embeddingProvenance } from '../ai/embeddingProvenance';
 import { getSettings } from './settingsRepo';
 import { accessContextFor } from './testimonyRepo';
 import { evaluateAccess } from '@shared/testimonyAccess';
@@ -84,6 +87,14 @@ export function storeEmbeddings(
 ): number {
   const db = getDb();
   const stamp = new Date().toISOString();
+  const access = accessContextFor(interviewId);
+  const options = { now: new Date(), policy: policy() };
+  const decision = evaluateAccess(access, 'embeddingIndex', options);
+  const external = !['nodus', 'ollama', 'lmstudio'].includes(model.split('/')[0]);
+  const externalDecision = external ? evaluateAccess(access, 'externalAi', options) : decision;
+  if (!decision.allowed || decision.requiresPseudonymization || !externalDecision.allowed || externalDecision.requiresPseudonymization) return 0;
+  const current = new Map(segmentsToIndex(interviewId).map(segment => [segment.id, segment]));
+  let stored = 0;
   const insert = db.prepare(
     `INSERT INTO testimony_segment_embeddings (segment_id, transcript_id, interview_id, model, dim, embedding, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -93,20 +104,24 @@ export function storeEmbeddings(
   );
   const run = db.transaction(() => {
     for (const entry of entries) {
-      const floats = new Float32Array(entry.vector);
+      const segment = current.get(entry.segmentId);
+      const origin = embeddingProvenance(entry.vector);
+      if (!segment || segment.transcriptId !== entry.transcriptId || (origin?.inputText !== undefined && origin.inputText !== segment.text)) continue;
+      const blob = encodeEmbedding(entry.vector);
       insert.run(
         entry.segmentId,
         entry.transcriptId,
         interviewId,
         model,
-        floats.length,
-        Buffer.from(floats.buffer, floats.byteOffset, floats.byteLength),
+        entry.vector.length,
+        blob,
         stamp,
       );
+      stored++;
     }
   });
   run();
-  return entries.length;
+  return stored;
 }
 
 /** Borrar el índice de una entrevista: lo que hace falta cuando el acuerdo cambia. */
@@ -115,14 +130,14 @@ export function dropInterviewEmbeddings(interviewId: string): number {
 }
 
 export function dropAllEmbeddings(): number {
-  return getDb().prepare('DELETE FROM testimony_segment_embeddings').run().changes;
+  return clearActiveEmbeddingFamilies(getDb(), ['testimony_segment_embeddings']);
 }
 
 export function indexStatus(now = new Date()): TestimonyIndexStatus {
   const db = getDb();
   const allowed = new Set(indexableInterviews(now));
   const rows = db
-    .prepare('SELECT interview_id AS interviewId, COUNT(*) AS n, MAX(model) AS model FROM testimony_segment_embeddings GROUP BY interview_id')
+    .prepare('SELECT interview_id AS interviewId, COUNT(*) AS n, MAX(model) AS model FROM embedding_read_testimony_segment_embeddings AS testimony_segment_embeddings WHERE embedding IS NOT NULL GROUP BY interview_id')
     .all() as { interviewId: string; n: number; model: string }[];
   return {
     indexable: allowed.size,
@@ -151,10 +166,10 @@ export function semanticSearch(vector: number[], limit = 20, now = new Date()): 
               seg.text AS text, seg.t_start AS tStart,
               seg.speaker_label AS speakerLabel, seg.speaker_person_id AS speakerPersonId,
               i.title AS interviewTitle, i.short_id AS shortId
-         FROM testimony_segment_embeddings e
+         FROM embedding_read_testimony_segment_embeddings e
          JOIN testimony_transcript_segments seg ON seg.id = e.segment_id
          JOIN testimony_interviews i ON i.id = e.interview_id
-        WHERE i.deleted_at IS NULL
+        WHERE i.deleted_at IS NULL AND e.embedding IS NOT NULL
         ORDER BY similarity DESC
         LIMIT ?`
     )

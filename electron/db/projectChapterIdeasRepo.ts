@@ -68,7 +68,7 @@ export function chapterIdeasSourceHash(chapterId: string): string | null {
 
 export function listChapterIdeas(chapterId: string): ProjectChapterIdea[] {
   return (getDb()
-    .prepare('SELECT * FROM project_chapter_ideas WHERE chapter_id = ? ORDER BY order_idx ASC')
+    .prepare('SELECT * FROM embedding_read_project_chapter_ideas AS project_chapter_ideas WHERE chapter_id = ? ORDER BY order_idx ASC')
     .all(chapterId) as ChapterIdeaRow[]).map(toChapterIdea);
 }
 
@@ -80,7 +80,7 @@ export function chapterIdeaEmbeddings(
   const rows = getDb()
     .prepare(
       `SELECT id, type, label, statement, embedding
-         FROM project_chapter_ideas
+         FROM embedding_read_project_chapter_ideas AS project_chapter_ideas
         WHERE chapter_id = ?
           AND embedding IS NOT NULL
           AND embedding_provider = ?

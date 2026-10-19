@@ -527,6 +527,7 @@ function throwIfDownloadCancelled(signal?: AbortSignal): void {
   if (signal?.aborted) throw downloadCancelledError();
 }
 
+export { downloadFile as downloadVerifiedNodusAsset };
 async function downloadFile(
   url: string,
   target: string,

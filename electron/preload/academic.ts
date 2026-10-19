@@ -19,6 +19,32 @@ const studyAssistantStreams = chatStreamRegistry();
 let activeStudySttRequestId: string | null = null;
 
 export const academicApi: AcademicApi = {
+  listEmbeddingIndexes: vaultId => ipcRenderer.invoke('embeddingIndexes:list', vaultId),
+  listEmbeddingIndexRuns: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:runs', id, vaultId),
+  compareEmbeddingIndexes: input => ipcRenderer.invoke('embeddingIndexes:compare', input),
+  cancelEmbeddingComparison: id => ipcRenderer.invoke('embeddingIndexes:cancelComparison', id),
+  getLocalRerankerStatus: () => ipcRenderer.invoke('embeddingIndexes:rerankerStatus'),
+  prepareLocalReranker: action => ipcRenderer.invoke('embeddingIndexes:rerankerPrepare', action),
+  previewEmbeddingIndex: input => ipcRenderer.invoke('embeddingIndexes:preview', input),
+  prepareEmbeddingIndex: input => ipcRenderer.invoke('embeddingIndexes:prepare', input),
+  activateEmbeddingIndex: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:activate', id, vaultId),
+  controlEmbeddingIndex: (id, action, vaultId) => ipcRenderer.invoke('embeddingIndexes:control', id, action, vaultId),
+  deleteEmbeddingIndex: (id, vaultId) => ipcRenderer.invoke('embeddingIndexes:delete', id, vaultId),
+  onActiveEmbeddingIndexChanged: callback => {
+    const listener = () => callback();
+    ipcRenderer.on('embeddingIndexes:activeChanged', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:activeChanged', listener);
+  },
+  onEmbeddingIndexesChanged: callback => {
+    const listener = () => callback();
+    ipcRenderer.on('embeddingIndexes:changed', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:changed', listener);
+  },
+  onEmbeddingIndexProgress: callback => {
+    const listener = (_event: unknown, progress: import('@shared/embeddingIndexes').EmbeddingIndexProgress) => callback(progress);
+    ipcRenderer.on('embeddingIndexes:progress', listener);
+    return () => ipcRenderer.removeListener('embeddingIndexes:progress', listener);
+  },
   listResearchRuns: (conversationId, entryId) => ipcRenderer.invoke('research:run:list', conversationId, entryId),
   getResearchRun: id => ipcRenderer.invoke('research:run:get', id),
   pauseResearchRun: id => ipcRenderer.invoke('research:run:pause', id),

@@ -53,10 +53,15 @@ try {
   assert.equal(calls, 1, 'compatible published vectors are reused');
   assert.deepEqual(reused.vectors, [[1, 0, 0]]);
   const preferences = load('electron/db/settingsRepo.ts');
-  const savedModel = preferences.getSettings().embeddingModel;
-  preferences.updateSettings({ embeddingModel: 'incompatible-fixture-space' });
+  const indexes = load('electron/db/embeddingIndexesRepo.ts');
+  const savedIndex = indexes.activeEmbeddingIndex(db);
+  assert.throws(() => preferences.updateSettings({ embeddingModel: 'incompatible-fixture-space' }), /Prepara y activa/);
+  const other = indexes.createIndex(db, indexes.embeddingProfile(preferences.getSettings(), { provider: preferences.getSettings().embeddingProvider, model: 'incompatible-fixture-space' }));
+  db.prepare('UPDATE embedding_index_state SET pending_id=?').run(other.id);
+  indexes.commitEmbeddingIndex(db, indexes.indexContext(db, other));
   assert.equal(preparation.getResearchPreparationInventory().documents.find(item => item.id === doc.id).preparation.embeddings, 'stale', 'another configured vector space is not reported as compatible');
-  preferences.updateSettings({ embeddingModel: savedModel });
+  db.prepare('UPDATE embedding_index_state SET pending_id=?').run(savedIndex.indexId);
+  indexes.commitEmbeddingIndex(db, savedIndex);
   const inventory = preparation.getResearchPreparationInventory();
   assert.equal(inventory.embeddingSpaces.length, 1);
   assert.match(inventory.embeddingSpaces[0].id, /^[a-f0-9]{64}$/);
@@ -155,7 +160,7 @@ try {
   assert.equal(preparation.documentaryStore().revision(resumed.indexKey).embedding_ready, 1);
   console.log('Legacy fencing, lexical-first preparation, frozen model dispatch, durable batches and compatible vector reuse passed.');
 } finally {
-  load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
+  await load('electron/ai/documentaryPreparation.ts').closeDocumentaryPreparation();
   load('electron/db/database.ts').closeDb();
   fs.rmSync(root, { recursive: true, force: true });
 }

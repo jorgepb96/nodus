@@ -317,7 +317,15 @@ export class ResearchCorpusRun {
     const priorityIds = new Set(named.map(document => document.id));
     const searchScope = priorityIds.size ? { ...this.scope, documents: this.scope.documents.filter(document => priorityIds.has(document.id)) } : this.scope;
     const stableWorks = this.pinRevisions ? this.scope.documents.filter(document => (!document.indexedSource || document.indexedSource.revision === document.revision) && current.get(document.id)?.revision === document.revision).flatMap(document => document.workId ? [document.workId] : []) : searchScope.documents.flatMap(document => document.workId ? [document.workId] : []);
-    const stableIdeas = stableWorks.length === this.workIds.length ? this.ideaIds : [];
+    // Passage search may include older indexed revisions; graph ideas may not.
+    // Intersect with the graph's current works instead of requiring both lanes
+    // to have identical sizes. A narrowed search still needs strict provenance:
+    // a synthesized idea mentioning an excluded work cannot cross that boundary.
+    const stableWorkIds = new Set(stableWorks);
+    const ideaWorkIds = this.workIds.filter(id => stableWorkIds.has(id));
+    const narrowedIdeas = readIdeas && ideaWorkIds.length !== this.workIds.length
+      ? resolveResearchSourceScope({ enabled: true, authorIds: [], workIds: ideaWorkIds }, true)!.ideaIds : null;
+    const stableIdeas = !readIdeas ? [] : narrowedIdeas ? this.ideaIds.filter(id => narrowedIdeas.has(id)) : this.ideaIds;
     // Without full documents no profiles route the search, so the document lanes (support and
     // routed passages) stay empty too.
     const hierarchy = await retrieveHierarchical(query, { embedding: vector, nodusIds: stableWorks, ideaIds: stableIdeas,

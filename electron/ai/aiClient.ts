@@ -1,11 +1,16 @@
 import { RESEARCH_SOURCE_PRESENTATION_INSTRUCTION } from '@shared/researchSourceNotices';
 import { currentResearchRequestBudget, researchPromptUpperBound } from './researchRequestBudget';
 import { isEmbeddingGemma2 } from '@shared/embeddingGemma2';
+import { embeddingInputText } from '@shared/embeddingInputProfiles';
 import { documentedContextWindow } from '@shared/providerContextWindows';
 import { withJobThinking } from './thinkingEffort';
 import { researchReasoningBody, researchReasoningProfile, researchOmitsTemperature, type ResearchEffort } from '@shared/researchReasoning';
 import { getSettings, embeddingSettingsRevision } from '../db/settingsRepo';
 import { getDb } from '../db/database';
+import { beginEmbeddingOperation } from './embeddingOperations';
+import { markEmbeddingProvenance } from './embeddingProvenance';
+import { researchTestProviderBase } from '../qa/researchProviderProxy';
+import { activeEmbeddingIndex, assertEmbeddingProfileRevision, embeddingIndexHead, indexRow, profileFingerprint } from '../db/embeddingIndexesRepo';
 import { documentVisualPlanningPrompt } from './documentVisualContext';
 import { jobOutputLanguage } from './jobOutputLanguage';
 import { recordProviderUsage } from './usageMeter';
@@ -2416,20 +2421,54 @@ export interface EmbeddingExecutionConfig {
   scope?: string;
   revision?: number;
   session?: string;
+  indexId?: string;
+  generation?: number;
+  /** An explicitly authorized preparation may target an inactive index. */
+  preparing?: boolean;
+  profileFingerprint?: string;
+  force?: boolean;
+  expectedDimensions?: number;
+  inputProfile?: import('@shared/embeddingInputProfiles').EmbeddingInputProfile;
 }
 const embeddingExecutionSession = randomUUID();
 
 /** Capture before dispatch; never persist credentials in a job. */
 export function effectiveEmbeddingConfig(): EmbeddingExecutionConfig {
   const config = embeddingConfig();
+  const head = embeddingIndexHead(getDb());
+  const active = activeEmbeddingIndex(getDb());
+  if (head && !active) throw new AiError('Esta bóveda no tiene un índice semántico activo. Prepara y activa uno desde Ajustes.', false, true);
   const endpoint = config.provider === 'nodus' ? 'nodus-local-runtime'
     : config.provider === 'gemini' ? geminiBatchEmbeddingEndpoint(config.modelId) : openAiCompatBase(config.provider);
   if (!endpoint) throw new AiError('Falta el endpoint del proveedor de embeddings.', false, true);
-  return { ...config, endpoint, scope: getDb().name, revision: embeddingSettingsRevision(), session: embeddingExecutionSession };
+  const pinnedEndpoint = active?.profile.endpoint;
+  const effectiveEndpoint = researchTestProviderBase(config.provider)
+    ?? (pinnedEndpoint && active.profile.provider !== 'gemini' ? pinnedEndpoint : endpoint);
+  return { ...config, endpoint: effectiveEndpoint, scope: getDb().name, revision: embeddingSettingsRevision(), session: embeddingExecutionSession,
+    indexId: active?.indexId, generation: active?.generation, expectedDimensions: active?.dimensions ?? undefined, profileFingerprint: active ? profileFingerprint(active.profile) : undefined, inputProfile: active?.profile.input };
 }
 
-function assertEmbeddingExecution(config: EmbeddingExecutionConfig, signal?: AbortSignal): void {
+function assertEmbeddingExecution(config: EmbeddingExecutionConfig, signal?: AbortSignal, query = false): void {
   signal?.throwIfAborted();
+  if (config.indexId) {
+    if (config.scope !== getDb().name) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
+    const row = indexRow(getDb(), config.indexId);
+    if (config.scope !== getDb().name || (row.generation !== config.generation && row.staging_generation !== config.generation
+      && !getDb().prepare('SELECT 1 FROM embedding_index_values WHERE index_id=? AND generation=? LIMIT 1').get(row.id, config.generation ?? -1))) throw new AiError('El índice de embeddings cambió durante la solicitud.', false);
+    if (config.preparing && row.preparation !== 'running') throw new AiError('La preparación del índice se ha detenido.', false);
+    if (!config.preparing) {
+      const head = embeddingIndexHead(getDb());
+      if (!head?.enabled || head.active_id !== config.indexId || row.generation !== config.generation) {
+        const captured = activeEmbeddingIndex(getDb());
+        if (!query || captured?.indexId !== config.indexId || captured.generation !== config.generation) throw new AiError('La configuración de embeddings cambió durante la solicitud. No se publicará el resultado.', false);
+      }
+    }
+    const profile = JSON.parse(row.profile_json);
+    assertEmbeddingProfileRevision(profile);
+    if (profile.provider !== config.provider || profile.model !== config.modelId
+      || (config.profileFingerprint && config.profileFingerprint !== profileFingerprint(profile))) throw new AiError('embedding_contract_mismatch', false);
+    return;
+  }
   const current = effectiveEmbeddingConfig();
   if (current.provider !== config.provider || current.modelId !== config.modelId || current.endpoint !== config.endpoint
     || (config.scope !== undefined && current.scope !== config.scope)
@@ -2453,9 +2492,17 @@ async function requestEmbeddings(
   signal?: AbortSignal,
   options: EmbeddingRequestOptions = {},
 ): Promise<number[][]> {
+  const inputProfile = options.config?.inputProfile;
+  if (!(provider === 'nodus' && isEmbeddingGemma2(modelId))) input = Array.isArray(input)
+    ? input.map(text => embeddingInputText(text, options.role === 'query' ? 'query' : 'document', inputProfile))
+    : embeddingInputText(input, options.role === 'query' ? 'query' : 'document', inputProfile);
   const expected = Array.isArray(input) ? input.length : 1;
   const validate = (vectors: number[][]): number[][] => {
-    try { return validateEmbeddingVectors(vectors, expected, modelId); }
+    try {
+      const validated = validateEmbeddingVectors(vectors, expected, modelId);
+      if (options.config?.expectedDimensions && validated.some(vector => vector.length !== options.config!.expectedDimensions)) throw new Error('embedding_contract_dimension_mismatch');
+      return validated;
+    }
     catch (error) { throw new AiError(error instanceof Error ? error.message : String(error), false); }
   };
   signal?.throwIfAborted();
@@ -2516,7 +2563,7 @@ async function requestEmbeddings(
               'Content-Type': 'application/json',
               'x-goog-api-key': key,
             },
-            body: JSON.stringify(geminiBatchEmbeddingRequest(modelId, texts)),
+            body: JSON.stringify(geminiBatchEmbeddingRequest(modelId, texts, inputProfile?.kind === 'gemini' ? options.role === 'query' ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT' : undefined)),
             signal: timeoutController.signal,
           });
           aiRequestScheduler.observeQuota(descriptor, response.headers);
@@ -2561,7 +2608,10 @@ async function requestEmbeddings(
   });
   try {
     const res = await withProviderRetries(freeTier, () => runEmbeddingRequest(async () => {
-      const result = await client.embeddings.create({ model: modelId, input }, { signal }).withResponse();
+      // Compatible endpoints commonly return float arrays even when the SDK's
+      // implicit default requests base64. Explicit float avoids decoding an array
+      // as base64 and silently producing empty vectors.
+      const result = await client.embeddings.create({ model: modelId, input, encoding_format: 'float' }, { signal }).withResponse();
       aiRequestScheduler.observeQuota(descriptor, result.response.headers);
       return result.data;
     }), signal);
@@ -2582,16 +2632,23 @@ async function requestEmbeddings(
  */
 export async function embed(text: string, signal?: AbortSignal, options: EmbeddingRequestOptions = {}): Promise<number[] | null> {
   signal?.throwIfAborted();
+  if (!options.config && embeddingIndexHead(getDb()) && !activeEmbeddingIndex(getDb())) return null;
   const config = options.config ?? effectiveEmbeddingConfig();
-  const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
-  options = { ...options, config };
-  const { provider, modelId } = config;
-  const key = resolveProviderKey(provider);
-  if (!key) return null;
-  const vectors = await requestEmbeddings(provider, key, modelId, provider === 'nodus' && isEmbeddingGemma2(modelId) ? text : text.slice(0, 8000), signal, options);
-  assertEmbeddingExecution(config, signal);
-  if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
-  return vectors[0] ?? null;
+  const operation = beginEmbeddingOperation(config, signal);
+  signal = operation.signal;
+  try {
+    if (config.indexId) assertEmbeddingExecution(config, signal, options.role === 'query');
+    const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
+    options = { ...options, config };
+    const { provider, modelId } = config;
+    const key = resolveProviderKey(provider);
+    if (!key) return null;
+    const vectors = await requestEmbeddings(provider, key, modelId, provider === 'nodus' && isEmbeddingGemma2(modelId) ? text : text.slice(0, 8000), signal, options);
+    assertEmbeddingExecution(config, signal, options.role === 'query');
+    if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
+    if (config.indexId && config.generation && config.scope) markEmbeddingProvenance(vectors, { indexId: config.indexId, generation: config.generation, databasePath: config.scope }, [text]);
+    return vectors[0] ?? null;
+  } finally { operation.release(); }
 }
 
 function embeddingBatchSize(provider: EmbeddingProvider, modelId: string): number {
@@ -2622,43 +2679,50 @@ export async function embedManyStrict(texts: string[], signal?: AbortSignal, opt
   signal?.throwIfAborted();
   if (texts.length === 0) return [];
   const config = options.config ?? effectiveEmbeddingConfig();
-  const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
-  const clipped = config.provider === 'nodus' && isEmbeddingGemma2(config.modelId) ? texts : texts.map((t) => t.slice(0, 8000));
-  if (options.titles && options.titles.length !== texts.length) throw new AiError('Los títulos de embeddings no coinciden con las entradas.', false);
-  options = { ...options, config };
-  const { provider, modelId } = config;
-  const key = resolveProviderKey(provider);
-  if (!key) throw new AiError(`Falta la clave de IA para embeddings (${provider}). Configúrala en Ajustes o usa el modo léxico.`, false, true);
+  const operation = beginEmbeddingOperation(config, signal);
+  signal = operation.signal;
+  try {
+    if (config.indexId) assertEmbeddingExecution(config, signal, options.role === 'query');
+    const queryVaultRevision = options.role === 'query' ? activeVaultRevision() : null;
+    const clipped = config.provider === 'nodus' && isEmbeddingGemma2(config.modelId) ? texts : texts.map((t) => t.slice(0, 8000));
+    if (options.titles && options.titles.length !== texts.length) throw new AiError('Los títulos de embeddings no coinciden con las entradas.', false);
+    options = { ...options, config };
+    const { provider, modelId } = config;
+    const key = resolveProviderKey(provider);
+    if (!key) throw new AiError(`Falta la clave de IA para embeddings (${provider}). Configúrala en Ajustes o usa el modo léxico.`, false, true);
 
-  const size = embeddingBatchSize(provider, modelId);
-  const batches: string[][] = [];
-  for (let index = 0; index < clipped.length; index += size) batches.push(clipped.slice(index, index + size));
-  const vectors = (await Promise.all(batches.map((batch, index) => embedBatchBisect(
-    provider,
-    key,
-    modelId,
-    batch,
-    signal,
-    { ...options, titles: options.titles?.slice(index * size, (index + 1) * size), jobId: options.jobId ? `${options.jobId}:batch:${index}` : undefined },
-  )))).flat();
-  if (vectors.length !== texts.length) {
-    // One missing vector publishes a broken index, so this aborts the work — and it is the
-    // kind of provider misbehaviour that is impossible to diagnose without the counts.
-    logPipelineFailure({
-      subject: 'subjectEmbeddings',
-      code: 'embedding_count_mismatch',
-      detail: `expected ${texts.length} vectors, received ${vectors.length}`,
-    });
-    throw new AiError(`La indexación produjo ${vectors.length} embeddings para ${texts.length} entradas; no se publicará un índice incompleto.`, false);
-  }
-  assertEmbeddingExecution(config, signal);
-  if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
-  return vectors;
+    const size = embeddingBatchSize(provider, modelId);
+    const batches: string[][] = [];
+    for (let index = 0; index < clipped.length; index += size) batches.push(clipped.slice(index, index + size));
+    const vectors = (await Promise.all(batches.map((batch, index) => embedBatchBisect(
+      provider,
+      key,
+      modelId,
+      batch,
+      signal,
+      { ...options, titles: options.titles?.slice(index * size, (index + 1) * size), jobId: options.jobId ? `${options.jobId}:batch:${index}` : undefined },
+    )))).flat();
+    if (vectors.length !== texts.length) {
+      // One missing vector publishes a broken index, so this aborts the work — and it is the
+      // kind of provider misbehaviour that is impossible to diagnose without the counts.
+      logPipelineFailure({
+        subject: 'subjectEmbeddings',
+        code: 'embedding_count_mismatch',
+        detail: `expected ${texts.length} vectors, received ${vectors.length}`,
+      });
+      throw new AiError(`La indexación produjo ${vectors.length} embeddings para ${texts.length} entradas; no se publicará un índice incompleto.`, false);
+    }
+    assertEmbeddingExecution(config, signal, options.role === 'query');
+    if (queryVaultRevision !== null && queryVaultRevision !== activeVaultRevision()) throw new AiError('La bóveda cambió durante la consulta. No se publicará el resultado.', false);
+    if (config.indexId && config.generation && config.scope) markEmbeddingProvenance(vectors, { indexId: config.indexId, generation: config.generation, databasePath: config.scope }, texts);
+    return vectors;
+  } finally { operation.release(); }
 }
 
 export async function embedMany(texts: string[], signal?: AbortSignal, options: EmbeddingRequestOptions = {}): Promise<(number[] | null)[]> {
   signal?.throwIfAborted();
   if (texts.length === 0) return [];
+  if (!options.config && embeddingIndexHead(getDb()) && !activeEmbeddingIndex(getDb())) return texts.map(() => null);
   const { provider } = options.config ?? effectiveEmbeddingConfig();
   if (!resolveProviderKey(provider)) return texts.map(() => null);
   return embedManyStrict(texts, signal, options);

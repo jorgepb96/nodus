@@ -83,7 +83,7 @@ const toLink = (row: Row): StudyDocLink => ({
 });
 
 function docRow(documentId: string): Row {
-  const row = getDb().prepare('SELECT * FROM study_docs WHERE id = ?').get(documentId) as Row | undefined;
+  const row = getDb().prepare('SELECT * FROM embedding_read_study_docs AS study_docs WHERE id = ?').get(documentId) as Row | undefined;
   if (!row) throw new Error('Documento de estudio no encontrado.');
   return row;
 }

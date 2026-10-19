@@ -18,6 +18,7 @@ if (!process.argv.includes('--electron-model-prefs-test')) {
     await writeFile(entry, [
       `export * as registry from ${JSON.stringify(path.join(repoRoot, 'electron/vaults/vaultRegistry.ts'))};`,
       `export * as database from ${JSON.stringify(path.join(repoRoot, 'electron/db/database.ts'))};`,
+      `export * as indexes from ${JSON.stringify(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts'))};`,
       `export * as settingsRepo from ${JSON.stringify(path.join(repoRoot, 'electron/db/settingsRepo.ts'))};`,
     ].join('\n'));
     execFileSync(path.join(repoRoot, 'node_modules/.bin/esbuild'), [
@@ -51,7 +52,7 @@ const [, , , bundle, userData] = process.argv;
 process.env.NODE_PATH = [path.join(repoRoot, 'node_modules'), process.env.NODE_PATH].filter(Boolean).join(path.delimiter);
 Module._initPaths();
 const require = createRequire(import.meta.url);
-const { registry, database, settingsRepo } = require(bundle);
+const { registry, database, settingsRepo, indexes } = require(bundle);
 
 const integrated = { provider: 'nodus', model: 'qwen3.5-0.8b-q4' };
 const gemini = { provider: 'gemini', model: 'gemini-3.1-flash-lite' };
@@ -75,11 +76,16 @@ const broken = {
   ...Object.fromEntries(granularKeys.map((key) => [key, integrated])),
 };
 db.prepare("INSERT INTO settings (key, value) VALUES ('app', ?)").run(JSON.stringify(broken));
-db.prepare(`INSERT INTO ideas (
-  global_id, type, label, statement, embedding, created_at,
-  embedding_provider, embedding_model, embedding_dim, embedding_text_hash
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-  .run('bge-idea', 'claim', 'BGE', 'Indexed with BGE', Buffer.from([1, 2, 3, 4]), new Date().toISOString(), bge.provider, bge.model, 1024, 'hash');
+// The registry is authoritative even if restored legacy preferences name another model.
+const bgeProfile = indexes.embeddingProfile({ ...broken, localProviders: {} }, bge);
+const bgeIndex = indexes.createIndex(db, bgeProfile);
+const bgeContext = indexes.indexContext(db, bgeIndex);
+indexes.storeIndexValue(db, bgeContext, { family: 'ideas', entityId: 'bge-idea', textHash: 'hash', vector: [1, 2, 3, 4], contract: indexes.contractForProfile(bgeProfile, 4) });
+db.prepare('UPDATE embedding_index_state SET pending_id=?').run(bgeIndex.id);
+indexes.commitEmbeddingIndex(db, bgeContext);
+// Simulate a stale preference restored independently of the registry.
+db.prepare("UPDATE settings SET value=? WHERE key='app'").run(JSON.stringify(broken));
+
 
 const secondary = registry.createVault('Recovery evidence');
 const SecondaryDatabase = require('better-sqlite3');
@@ -107,11 +113,14 @@ assert.deepEqual(recovered.favorites, [gemini, { provider: 'openrouter', model: 
 assert.equal(recovered.modelSettingsMode, 'advanced', 'ignored legacy task choices restore advanced mode');
 assert.deepEqual(recovered.chatModel, gemini);
 assert.deepEqual(recovered.deepResearchModel, gemini);
-assert.equal(db.prepare("SELECT COUNT(*) AS count FROM ideas WHERE embedding_provider = ? AND embedding_model = ?").get(bge.provider, bge.model).count, 1, 'recovery never changes embeddings');
+assert.equal(db.prepare("SELECT COUNT(*) AS count FROM embedding_index_values WHERE index_id=?").get(bgeIndex.id).count, 1, 'recovery never changes embeddings');
 
 const prefs = JSON.parse(readFileSync(path.join(userData, 'app-prefs.json'), 'utf8'));
 assert.equal(prefs.v23ModelPrefsRecoveryVersion, 1, 'the repair is marked as one-shot');
-settingsRepo.updateSettings({ embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small' });
+assert.throws(() => settingsRepo.updateSettings({ embeddingProvider: 'openai', embeddingModel: 'text-embedding-3-small' }), /Prepara y activa/);
+const selected = indexes.createIndex(db, indexes.embeddingProfile(settingsRepo.getSettings(), { provider: 'openai', model: 'text-embedding-3-small' }));
+db.prepare('UPDATE embedding_index_state SET pending_id=?').run(selected.id);
+indexes.commitEmbeddingIndex(db, indexes.indexContext(db, selected));
 assert.equal(settingsRepo.getSettings().embeddingProvider, 'openai', 'a later intentional change is not reverted');
 settingsRepo.updateSettings({ codexReasoningEfforts: { 'gpt-test': 'xhigh', 'stale-model': '../turbo' } });
 settingsRepo.updateSettings({ studyImproveLastStyleId: 'builtin:formal', imageFavorites: [{ provider: 'codex', model: 'image-a' }] });
@@ -124,11 +133,12 @@ assert.deepEqual(
 database.closeDb();
 registry.setActiveVault(secondary.id);
 db = database.getDb();
+settingsRepo.getSettings();
 db.prepare(`INSERT INTO ideas (
   global_id, type, label, statement, embedding, created_at,
   embedding_provider, embedding_model, embedding_dim, embedding_text_hash
 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-  .run('openai-idea', 'claim', 'OpenAI', 'Indexed with OpenAI', Buffer.from([5, 6, 7, 8]), new Date().toISOString(), 'openai', 'text-embedding-3-small', 1536, 'hash-2');
+  .run('openai-idea', 'claim', 'OpenAI', 'Indexed with OpenAI', Buffer.from(new Float32Array([5, 6, 7, 8]).buffer), new Date().toISOString(), 'openai', 'text-embedding-3-small', 4, 'hash-2');
 const secondarySettings = settingsRepo.getSettings();
 assert.equal(secondarySettings.studyImproveLastStyleId, 'builtin:clear', 'each vault starts with its own last writing style');
 assert.deepEqual(secondarySettings.imageFavorites, [{ provider: 'codex', model: 'image-a' }], 'image favorites are shared separately from text favorites');

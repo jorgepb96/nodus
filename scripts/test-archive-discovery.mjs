@@ -98,7 +98,8 @@ try {
 
   // A vector from another provider/model is stale data, not a partial-coordinate
   // neighbour. It must disappear from both ranking and the coverage counter.
-  archive.setItemEmbedding(cartaRosa.itemId, [1, 0], 'openai', 'test-model', 'h2-old-provider');
+  assert.throws(() => archive.setItemEmbedding(cartaRosa.itemId, [1, 0], 'openai', 'test-model', 'h2-old-provider'), /embedding_index_configuration_changed/);
+  archive.updateItem(cartaRosa.itemId, { extractedText: 'Changed letter awaiting a compatible vector.' });
   assert.equal((await archive.findArchiveItemsSimilar([1, 0, 0], { limit: 5, minSimilarity: 0 })).length, 1);
   assert.equal(archive.archiveEmbeddingCount().indexed, 1);
 

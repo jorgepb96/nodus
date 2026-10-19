@@ -1,4 +1,5 @@
 import { stageObject } from './objectLifecycle.mjs';
+import { embeddingContractsCompatible } from './generated/embeddingContract.mjs';
 import { lexicalSearch } from './corpus.mjs';
 import {
   HttpError,
@@ -16,6 +17,15 @@ import {
 const VECTOR_KINDS = new Set(['ideas', 'documents', 'passages']);
 const VECTOR_FORMAT = 'nodus.vectors';
 const VECTOR_MAX_DIRECT_BYTES = 32 * 1024 * 1024;
+
+function assertPublishedEmbedding(publication, kind, input) {
+  const manifest = safeJsonParse(publication.manifest_json, {});
+  if (manifest.embeddingIndex === undefined) return;
+  const expected = manifest.vectors?.find(vector => vector.kind === kind);
+  if (!expected || input.indexId !== manifest.embeddingIndex?.id || input.generation !== manifest.embeddingIndex?.generation
+    || input.provider !== expected.provider || input.model !== expected.model || Number(input.dimensions ?? input.dim) !== expected.dimensions
+    || !embeddingContractsCompatible(input.embeddingContract, expected.embeddingContract)) throw new HttpError(409, 'embedding_index_mismatch', 'The vector payload does not match the active index declared for this publication.');
+}
 
 function bindingForDimensions(dimensions) {
   return `VECTORS_${dimensions}`;
@@ -52,6 +62,7 @@ export async function uploadExactVectorSet(env, auth, request, publicationId, ki
   if (!publication) throw new HttpError(404, 'publication_not_found', 'The staging publication does not exist.');
   const bytes = await readBody(request, VECTOR_MAX_DIRECT_BYTES);
   const decoded = decodeHeader(bytes);
+  assertPublishedEmbedding(publication, kind, decoded.header);
   if (String(decoded.header.kind) !== kind) throw new HttpError(400, 'kind_mismatch', 'The vector header and route name different kinds.');
   const hash = await sha256Hex(bytes);
   const key = await stageObject(env, `spaces/${auth.space_id}/vectors/${hash}.bin`);
@@ -84,6 +95,7 @@ export async function upsertVectorChunk(env, auth, request, publicationId, kindV
   const publication = await first(env.DB, `SELECT * FROM publications WHERE id = ?1 AND space_id = ?2 AND status = 'staging'`, publicationId, auth.space_id);
   if (!publication) throw new HttpError(404, 'publication_not_found', 'The staging publication does not exist.');
   const input = await readJson(request, 8 * 1024 * 1024);
+  assertPublishedEmbedding(publication, kind, input);
   const chunkId = String(input.chunkId || '');
   if (!/^[0-9a-f]{64}$/.test(chunkId)) throw new HttpError(400, 'bad_chunk_id', 'Every Vectorize chunk needs its SHA-256 identifier.');
   const dimensions = Number(input.dimensions);
@@ -176,8 +188,12 @@ export async function semanticSearch(env, auth, input) {
   const set = await first(env.DB, 'SELECT * FROM vector_sets WHERE space_id = ?1 AND generation = ?2 AND kind = ?3', auth.space_id, space.active_generation, kind);
   const requested = { provider: String(input.provider || ''), model: String(input.model || ''), dim: Number(input.dim || 0) };
   if (!set) return { results: await lexicalSearch(env, space, input.query, input.limit), indexed: false, reason: 'no_vectors', fallback: 'lexical', warning: 'This vault has not published semantic vectors. These are literal text results.' };
-  if (set.provider !== requested.provider || set.model !== requested.model || Number(set.dimensions) !== requested.dim) {
-    return { results: await lexicalSearch(env, space, input.query, input.limit), indexed: false, reason: 'provider_mismatch', expected: { provider: set.provider, model: set.model, dim: Number(set.dimensions) }, received: requested, fallback: 'lexical', warning: 'The query embedding does not match the published index. These are literal text results.' };
+  const publication = await first(env.DB, 'SELECT manifest_json FROM publications WHERE space_id=?1 AND generation=?2', auth.space_id, space.active_generation);
+  const manifest = safeJsonParse(publication?.manifest_json, {});
+  const expected = manifest.vectors?.find(vector => vector.kind === kind);
+  if (set.provider !== requested.provider || set.model !== requested.model || Number(set.dimensions) !== requested.dim
+    || (manifest.embeddingIndex !== undefined && (!expected || !embeddingContractsCompatible(input.embeddingContract, expected.embeddingContract)))) {
+    return { results: await lexicalSearch(env, space, input.query, input.limit), indexed: false, reason: 'provider_mismatch', expected: { provider: set.provider, model: set.model, dim: Number(set.dimensions), contract: expected?.embeddingContract }, received: requested, fallback: 'lexical', warning: 'The query embedding does not match the published index. These are literal text results.' };
   }
   const vector = Array.isArray(input.vector) ? input.vector.map(Number) : [];
   if (vector.length !== Number(set.dimensions) || vector.some((value) => !Number.isFinite(value))) throw new HttpError(400, 'bad_vector', `The query needs ${set.dimensions} numeric dimensions.`);

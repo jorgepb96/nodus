@@ -258,6 +258,8 @@ const NOT_SYNCED_TABLES = new Set([
   // Checkpoints pin THIS profile's grants, receipts, completed stages and usage.
   // Saved reports/sessions can travel; a resumable local execution cannot.
   'research_harness_runs',
+  'embedding_indexes', 'embedding_index_state', 'embedding_index_values', 'embedding_index_documentary_refs', 'embedding_index_generations',
+  'embedding_index_runs', 'embedding_index_run_items', 'embedding_index_run_events',
   // Web receipts are what THIS machine read; another device verifies its own.
   'research_web_passages',
   // Complete study guide working state and evidence sidecars: run checkpoints and the

@@ -34,7 +34,7 @@ const groups: Array<[BackupCategory, RegExp]> = [
   ],
 ];
 export function classifyBackupTable(name: string, kind = 'table'): BackupCategory | 'technical' | null {
-  if (kind !== 'table' || name.startsWith('sqlite_') || technical.has(name) || /_v\d+$/.test(name))
+  if (kind !== 'table' || name.startsWith('sqlite_') || name.startsWith('embedding_index') || technical.has(name) || /_v\d+$/.test(name))
     return 'technical';
   return groups.find(([, match]) => match.test(name))?.[0] ?? null;
 }

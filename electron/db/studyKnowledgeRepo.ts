@@ -35,7 +35,7 @@ const SUMMARY_SQL = `SELECT i.*,
   COUNT(DISTINCT ev.id) AS evidence_count,
   COUNT(DISTINCT o.source_kind || ':' || o.source_id) AS source_count,
   (SELECT COUNT(*) FROM study_idea_edges e WHERE e.from_id=i.id OR e.to_id=i.id) AS connection_count
-  FROM study_ideas i
+  FROM embedding_read_study_ideas i
   LEFT JOIN study_idea_occurrences o ON o.idea_id=i.id
   LEFT JOIN study_idea_evidence ev ON ev.occurrence_id=o.id`;
 
@@ -58,7 +58,7 @@ export function getStudyIdeaDetail(id: string): StudyIdeaDetail | null {
   const connections = (getDb().prepare(`SELECT e.*,
       CASE WHEN e.from_id=? THEN e.to_id ELSE e.from_id END AS other_id,
       CASE WHEN e.from_id=? THEN target.label ELSE source.label END AS other_label
-    FROM study_idea_edges e JOIN study_ideas source ON source.id=e.from_id JOIN study_ideas target ON target.id=e.to_id
+    FROM study_idea_edges e JOIN embedding_read_study_ideas source ON source.id=e.from_id JOIN embedding_read_study_ideas target ON target.id=e.to_id
     WHERE e.from_id=? OR e.to_id=? ORDER BY e.confidence DESC`).all(id, id, id, id) as Row[]).map(connection);
   return { ...summary(row), evidence, connections };
 }
@@ -282,7 +282,7 @@ function cosine(a: number[], b: number[]): number {
  * growth while still linking concepts that occur in different materials. */
 export function connectStudySourceIdeasSemantically(subjectId: string, sourceKind: StudyKnowledgeSourceKind, sourceId: string): void {
   const db = getDb(); const timestamp = now();
-  const all = (db.prepare(`SELECT id,label,embedding FROM study_ideas WHERE subject_id=? AND embedding IS NOT NULL`).all(subjectId) as Row[])
+  const all = (db.prepare(`SELECT id,label,embedding FROM embedding_read_study_ideas AS study_ideas WHERE subject_id=? AND embedding IS NOT NULL`).all(subjectId) as Row[])
     .map((row) => ({ id: String(row.id), label: String(row.label), embedding: decodeEmbedding(row.embedding as Buffer) }));
   const freshIds = new Set((db.prepare(`SELECT o.idea_id id FROM study_idea_occurrences o JOIN study_ideas i ON i.id=o.idea_id
     WHERE i.subject_id=? AND o.source_kind=? AND o.source_id=?`).all(subjectId, sourceKind, sourceId) as Row[]).map((row) => String(row.id)));

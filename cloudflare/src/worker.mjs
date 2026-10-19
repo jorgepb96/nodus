@@ -92,7 +92,7 @@ async function capabilityDocument(env, request) {
     resources: { api: `${new URL(request.url).origin}/api/v1`, mcp: `${new URL(request.url).origin}/mcp` },
     publication: { generations: true, resumable: true, tableChunkRows: TABLE_CHUNK_ROWS, tableChunkBytes: TABLE_CHUNK_BYTES, objectPartBytes: OBJECT_PART_BYTES, maxMutationBytes: MAX_MUTATION_BYTES, maxMutationBatch: MAX_MUTATION_BATCH },
     storage: { structured: 'd1', objects: 'r2', vectorSearch: vectorizeDimensions.length ? ['vectorize', 'r2-exact', 'lexical'] : ['r2-exact', 'lexical'], vectorizeDimensions },
-    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, mutations: true, spaceActions: true, desktopBridgeRelay: false, binarySync: true, mutationRelay: true, syncBudget: true, durableObjectCleanup: true, nodiNotes: true, oauth: true, mcp: true, recovery: true },
+    features: { snapshots: true, assets: true, library: true, librarySync: true, vectors: true, embeddingIndexIdentity: true, mutations: true, spaceActions: true, desktopBridgeRelay: false, binarySync: true, mutationRelay: true, syncBudget: true, durableObjectCleanup: true, nodiNotes: true, oauth: true, mcp: true, recovery: true },
     syncBudget: { scope: 'installation', windows: 'UTC-day-and-month', defaults: DEFAULT_SYNC_BUDGET },
     maxSharedBlobBytes: MAX_SHARED_BLOB_BYTES, maxDocumentUpdateBytes: MAX_DOCUMENT_UPDATE_BYTES,
     maxAssetBytes: 8 * 1024 * 1024, maxSpaceAssetBytes: 1024 * 1024 * 1024,

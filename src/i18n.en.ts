@@ -1,3 +1,4 @@
+import { EMBEDDING_INDEX_TRANSLATIONS } from './i18n.embeddingIndexes';
 import { RESEARCH_HARNESS_TRANSLATIONS } from './i18n.researchHarness';
 import { EMBEDDING_GEMMA2_TRANSLATIONS } from './i18n.embeddingGemma2';
 import { SIGN_TRANSLATIONS } from './i18n.sign';
@@ -95,6 +96,7 @@ import { ACADEMIC_TOUR_TRANSLATIONS } from './i18n.academicTour';
  * every non-Spanish interface language.
  */
 export const EN: Record<string, string> = {
+  ...EMBEDDING_INDEX_TRANSLATIONS["en"],
   ...BACKUPS_TRANSLATIONS.en,
   ...CALENDAR_SYNC_TRANSLATIONS["en"],
   ...AGENT_RUNTIME_TRANSLATIONS["en"],

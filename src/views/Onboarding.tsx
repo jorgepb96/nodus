@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { configureEmbeddingIndex } from '../configureEmbeddingIndex';
 import './onboarding.css';
 import { motion } from 'framer-motion';
 import type { AiProvider, AppSettings, AcademicMode, ZoteroCollection, ModelRef, VaultSummary, ZoteroPingResult } from '@shared/types';
@@ -228,6 +229,7 @@ export function Onboarding({
     downloadCancellationRequested.current = false;
     try {
       await downloadLocalModels([aiModel, embeddingModel]);
+      if (!await configureEmbeddingIndex(embeddingModel)) return;
       const favorites = settings.favorites.some((model) => model.provider === aiModel.provider && model.model === aiModel.model)
         ? settings.favorites
         : [...settings.favorites, aiModel];

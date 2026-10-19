@@ -47,6 +47,7 @@ test('an edit made during the POST stays queued and reaches the server on the ne
   setNodusServerTokenFor(vault.id, 'device-token');
 
   const db = new Database(vault.path, { fileMustExist: true });
+  require(path.join(repoRoot, 'electron/db/embeddingIndexesRepo.ts')).registerEmbeddingIndexFunctions(db);
   ensureOutboxTriggers(db, true);
   db.prepare('INSERT INTO notes (id, folder_id, title, kind, content, source_json, order_idx, created_at, updated_at) VALUES (?, NULL, ?, ?, ?, NULL, 0, ?, ?)')
     .run('n-1', 'Nota', 'markdown', 'primera versión', '2026-10-01T10:00:00.000Z', '2026-10-01T10:00:00.000Z');

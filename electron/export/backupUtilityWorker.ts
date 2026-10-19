@@ -84,7 +84,13 @@ async function snapshot(request: Extract<BackupUtilityRequest, { kind: 'snapshot
   }
   const check = new Database(request.targetPath, { fileMustExist: true });
   try {
-    const row = check.prepare("SELECT value FROM settings WHERE key = 'app'").get() as { value: string } | undefined;
+    if (check.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='embedding_indexes'").get()) {
+      check.prepare("UPDATE embedding_indexes SET preparation='paused' WHERE preparation='running'").run();
+      if (check.prepare("SELECT 1 FROM sqlite_master WHERE name='embedding_index_runs'").get())
+        check.prepare("UPDATE embedding_index_runs SET state='paused',last_reason='restart' WHERE state='running'").run();
+    }
+    const hasSettings = check.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'").get();
+    const row = hasSettings ? check.prepare("SELECT value FROM settings WHERE key = 'app'").get() as { value: string } | undefined : undefined;
     if (row) {
       let settings: Record<string, unknown> = {};
       try { settings = JSON.parse(row.value) as Record<string, unknown>; } catch { /* replace malformed settings below */ }

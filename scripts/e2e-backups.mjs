@@ -31,6 +31,12 @@ await mkdir(artifacts, { recursive: true });
 const output = path.join(artifacts, 'exports');
 await mkdir(output, { recursive: true });
 const bundle = path.join(temp, 'backups.cjs');
+const embeddingBundle = path.join(temp, 'embedding-functions.cjs');
+buildSync({
+  stdin: { contents: `export * from ${JSON.stringify(path.join(repo, 'electron/db/embeddingIndexesRepo.ts'))}; export * from ${JSON.stringify(path.join(repo, 'electron/db/ideaEmbeddingText.ts'))};`, resolveDir: repo, loader: 'ts' },
+  outfile: embeddingBundle, bundle: true, format: 'cjs', platform: 'node', alias: { '@shared': path.join(repo, 'shared') },
+});
+const { registerEmbeddingIndexFunctions, activeEmbeddingIndex, embeddingTextForIdea, embeddingTextHash } = require(embeddingBundle);
 buildSync({
   entryPoints: [path.join(repo, 'shared/backups.ts')],
   bundle: true,
@@ -250,6 +256,8 @@ try {
     });
   }, version);
   const vaults = [];
+  const savedVectors = new Map();
+  const vectorRows = db => db.prepare(`SELECT index_id,generation,family,entity_id,text_hash,contract_json,recipe_version,hex(embedding) AS vector FROM embedding_index_values ORDER BY index_id,generation,family,entity_id`).all();
   for (const type of types) {
     console.log('Seeding', type);
     const created = await page.evaluate(async (type) => {
@@ -280,7 +288,12 @@ try {
     }, type);
     vaults.push(created);
     const db = new Database(created.path);
+    registerEmbeddingIndexFunctions(db);
     db.pragma('foreign_keys=ON');
+    const index = activeEmbeddingIndex(db);
+    assert.ok(index, 'new vault has an explicitly selected embedding index');
+    const vector = new Float32Array(index.dimensions ?? 3);
+    vector[0] = 1;
     const insert = (table, values) => {
       const info = db.pragma(`table_info("${table}")`);
       const columns = new Set(info.map((c) => c.name));
@@ -339,7 +352,11 @@ try {
       type: 'claim',
       label: 'Recuperación activa',
       statement: 'IDEA_SENTINEL_A · ' + body,
-      embedding: Buffer.from('unused-vector'),
+      embedding: Buffer.from(vector.buffer),
+      embedding_provider: index.profile.provider,
+      embedding_model: index.profile.model,
+      embedding_dim: vector.length,
+      embedding_text_hash: embeddingTextHash(embeddingTextForIdea({ type: 'claim', label: 'Recuperación activa', statement: 'IDEA_SENTINEL_A · ' + body })),
       created_at: stamp,
     });
     insert('ideas', {
@@ -602,6 +619,11 @@ try {
       });
     }
     insert('settings', { key: 'BACKUPS_SECRET_SENTINEL', value: 'BACKUPS_SECRET_SENTINEL' });
+    const values = vectorRows(db);
+    assert.equal(values.length, 1);
+    assert.equal(values[0].vector, Buffer.from(vector.buffer).toString('hex').toUpperCase());
+    assert.equal(db.prepare("SELECT embedding FROM ideas WHERE global_id='idea-a'").get().embedding, null, 'fixture uses the common vector repository');
+    savedVectors.set(created.id, { indexId: index.indexId, values });
     db.close();
   }
   await page.evaluate((id) => window.nodus.switchVault(id), vaults[0].id);
@@ -931,6 +953,7 @@ try {
   }
   // Cancellation crosses the real IPC channel while the worker streams a large original.
   const largeDb = new Database(vaults[0].path);
+  registerEmbeddingIndexFunctions(largeDb);
   const libraryOnly = {
     ...defaultOpenBackupOptions(vaults[0].id),
     vaultIds: [],
@@ -1100,7 +1123,11 @@ try {
       const recoveredVault = recovered.find((v) => v.id === vault.id);
       assert.ok(recoveredVault);
       const db = new Database(recoveredVault.path, { readonly: true });
+      registerEmbeddingIndexFunctions(db);
       try {
+        const original = savedVectors.get(vault.id);
+        assert.equal(activeEmbeddingIndex(db)?.indexId, original.indexId, 'restore retains the active index');
+        assert.deepEqual(vectorRows(db), original.values, 'restore retains vector bytes, contracts and generation identities');
         assert.equal(
           db.prepare('SELECT summary FROM work_summaries WHERE nodus_id=?').get('work-a').summary,
           'SUMMARY_SENTINEL_A · ' + body,

@@ -5,16 +5,13 @@ import { getDb } from '../db/database';
 import { IDEA_EMBEDDING_THEME_LABELS_SQL } from '../db/ideaEmbeddingText';
 import { getSettings } from '../db/settingsRepo';
 import {
-  clearAllEmbeddings,
   currentEmbeddingConfig,
   embeddingTextForIdea,
   embeddingTextHash,
   ideaNeedsEmbedding,
   updateIdeaEmbedding,
 } from '../db/ideasRepo';
-import { allWorkSummaryRows, clearAllWorkSummaryEmbeddings, summaryNeedsEmbedding, updateWorkSummaryEmbedding } from '../db/workSummariesRepo';
 import { embedManyStrict } from './aiClient';
-import { clearAllPassages } from '../db/passagesRepo';
 import { addNotification } from '../notifications';
 import { nodiText } from '@shared/nodiNotifications';
 import { coalesce } from '../util/coalesce';
@@ -212,7 +209,7 @@ export async function startEmbedding(nodusIds?: string[], options: { ideaIds?: r
              i.embedding_dim,
              i.embedding_text_hash,
              ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS theme_labels
-           FROM ideas i
+           FROM embedding_read_ideas i
            JOIN idea_occurrences io ON io.global_id = i.global_id
            WHERE io.nodus_id = ?`
         )
@@ -348,6 +345,8 @@ export async function startEmbedding(nodusIds?: string[], options: { ideaIds?: r
 
 /** True when an embedding provider and its credential are configured for indexing. */
 export function embeddingIndexConfigured(): boolean {
+  if (getDb().prepare('SELECT enabled FROM embedding_index_state WHERE singleton=1').get() &&
+    (getDb().prepare('SELECT enabled FROM embedding_index_state WHERE singleton=1').get() as { enabled: number }).enabled === 0) return false;
   const settings = getSettings();
   return settings.embeddingProvider === 'nodus'
     || settings.embeddingProvider === 'ollama'
@@ -367,26 +366,14 @@ export async function refreshRethemedIdeaEmbeddings(ideaIds: readonly string[]):
 }
 
 /**
- * Clear all existing embeddings and re-embed every idea from scratch.
- * Useful after changing the embedding model.
+ * Prepare a complete replacement generation, keeping the active index searchable.
  */
 export async function reindexAll(): Promise<void> {
-  clearAllEmbeddings();
-  clearAllWorkSummaryEmbeddings();
-  clearAllPassages();
-  await startEmbedding();
-  await reembedAllSummaries();
-}
-
-/** Rebuild orientation-summary vectors without coupling them to the idea-progress UI. */
-async function reembedAllSummaries(): Promise<void> {
-  const rows = allWorkSummaryRows().filter((row) => summaryNeedsEmbedding(row, row.summary));
-  if (!rows.length) return;
-  const titles = rows.map(row => (getDb().prepare('SELECT title FROM works WHERE nodus_id=?').get(row.nodus_id) as { title: string } | undefined)?.title);
-  const embeddings = await embedManyStrict(rows.map((row) => row.summary), undefined, { role: 'document', titles });
-  getDb().transaction(() => {
-    rows.forEach((row, index) => updateWorkSummaryEmbedding(row.nodus_id, row.summary, embeddings[index], titles[index]));
-  })();
+  const { activeEmbeddingIndex } = await import('../db/embeddingIndexesRepo');
+  const context = activeEmbeddingIndex(getDb());
+  if (!context) throw new Error('No hay un índice de embeddings activo.');
+  const { prepareEmbeddingIndex } = await import('./embeddingIndexes');
+  await prepareEmbeddingIndex({ ...context.profile, indexId: context.indexId, rebuild: true });
 }
 
 /** Get per-work embedding status for the library table. */
@@ -426,7 +413,7 @@ export function getWorkEmbeddingStatuses(
                 i.embedding_text_hash,
                 ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS theme_labels
          FROM idea_occurrences io
-         JOIN ideas i ON i.global_id = io.global_id
+         JOIN embedding_read_ideas i ON i.global_id = io.global_id
          WHERE io.nodus_id IN (${placeholders})`
       )
       .all(...nodusIds) as typeof rows;
@@ -446,7 +433,7 @@ export function getWorkEmbeddingStatuses(
                 i.embedding_text_hash,
                 ${IDEA_EMBEDDING_THEME_LABELS_SQL} AS theme_labels
          FROM idea_occurrences io
-         JOIN ideas i ON i.global_id = io.global_id`
+         JOIN embedding_read_ideas i ON i.global_id = io.global_id`
       )
       .all() as typeof rows;
   }

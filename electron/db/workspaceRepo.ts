@@ -58,7 +58,7 @@ function parseJson<T>(value: unknown, fallback: T): T {
 }
 
 function noteRow(noteId: string): Row {
-  const row = getDb().prepare('SELECT * FROM notes WHERE id = ?').get(noteId) as Row | undefined;
+  const row = getDb().prepare('SELECT * FROM embedding_read_notes AS notes WHERE id = ?').get(noteId) as Row | undefined;
   if (!row) throw new Error('La nota no existe.');
   return row;
 }

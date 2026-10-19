@@ -79,7 +79,7 @@ try {
     const result = await withResearchHarness({ request, scope, context: researchHarnessContext('chat', request, scope), validate: () => service.validateNotebookRequest(request) }, async () => {
       const prepared = await research.testBuildPrompt(request, []);
       return { payload: JSON.parse(prepared.user), system: prepared.system, direct: currentResearchHarness().record.checkpoint.direct,
-        noCorpusRun: !currentResearchHarness().corpus, citationRequired: prepared.citationRequired };
+        noCorpusRun: !currentResearchHarness().corpus, citationRequired: prepared.citationRequired, stats: prepared.stats };
     });
     assert.equal(runIds.has(result.researchRun.id), false, 'A new user task never replays the preceding direct turn');
     runIds.add(result.researchRun.id);
@@ -120,6 +120,7 @@ try {
     assert.equal(forced.direct, false, 'A stubborn model no-search verdict cannot veto the current lookup request');
     assert.equal(retrieves, before + 1);
     assert.ok(forced.payload.contexto_modular_seleccionado.pasajes_relevantes?.length > 0, 'The looked-up source must reach the writer');
+    assert.deepEqual(forced.stats.sections, ['Pasajes de texto completo'], 'an enabled ideas layer with zero retrieved ideas is not reported as evidence');
     assert.match(inspected.conversation[0].text, /mirada turística/u, 'The topic survives multiple editing turns beyond the recent history slice');
     assert.equal(inspected.sourceRequestIsExplicit, true);
     assert.doesNotMatch(JSON.stringify(forced.payload.contexto_modular_seleccionado), /must not leak/u);

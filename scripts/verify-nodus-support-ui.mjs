@@ -13,6 +13,7 @@ const scratch = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'nodus-supp
 const profile = path.join(scratch,'synthetic-profile'); fs.mkdirSync(profile);
 fs.writeFileSync(path.join(profile,'app-prefs.json'),JSON.stringify({uiLanguage:'en'}));
 fs.writeFileSync(path.join(profile,'vaults.json'),JSON.stringify({vaults:[]}));
+fs.writeFileSync(path.join(profile,'nodus-logs.json'),JSON.stringify({entries:[{level:'error',at:'2026-10-19T12:00:00.000Z',category:'connection',code:'connection',httpStatus:503,detail:'Synthetic connection diagnostic.'}]}));
 const messages = path.join(scratch,'messages.mjs');
 await build({entryPoints:[path.join(root,'shared/support/messages.ts')],outfile:messages,bundle:true,format:'esm'});
 const { SUPPORT_LANGUAGES, supportText } = await import(new URL(`file://${messages}`));
@@ -57,11 +58,16 @@ try {
   await page.getByRole('button',{name:'Create verified copy',exact:true}).waitFor();
   await page.getByRole('button',{name:'Create verified copy',exact:true}).click();
   await page.waitForFunction(()=>!document.querySelector('button.primary:disabled'));
+  await page.locator('.test-list .test-row').first().waitFor();
+  await page.screenshot({path:path.join(output,'protected-en.png'),fullPage:true});
   assert.equal(fs.readFileSync(path.join(profile,'app-prefs.json'),'utf8'),JSON.stringify({uiLanguage:'en'}));
   await page.getByRole('button',{name:'Get help',exact:true}).click();
   await page.locator('textarea').waitFor();
   assert.match(await page.locator('textarea').inputValue(),/Nodus support report/);
+  assert.match(await page.locator('textarea').inputValue(),/PIPELINE_CONNECTION/);
   assert.equal(await page.getByRole('button',{name:'Open issue on GitHub',exact:true}).isDisabled(),true);
+  await page.locator('.review-ack input').check();
+  await page.locator('.report').screenshot({path:path.join(output,'reviewed-report-en.png')});
   assert.equal(errors.length,0,errors.join('\n'));
   fs.writeFileSync(path.join(output,'verification.json'),JSON.stringify({languages:SUPPORT_LANGUAGES,themes:['light','dark'],screenshots:24,wcagAxeChecks:24,keyboard:true,reducedMotion:true,scaling200:true,originalsUnchanged:true,errors},null,2));
   console.log('Nodus Support: real native UI, 12 languages, 2 themes, protected originals and issue review passed.');

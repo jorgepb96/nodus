@@ -58,9 +58,9 @@ test('Nodus Apps is documented as a real, bounded product feature', () => {
   assert.equal(software.isPartOf.name, 'Nodus');
 });
 
-test('the shared navigation and high-authority pages point at the new entity pages', () => {
+test('the shared navigation leaves About to the footer and the high-authority pages still point at the entity pages', () => {
   const header = read('site-header.js');
-  assert.match(header, /id: 'about', label: 'About'/);
+  assert.doesNotMatch(header, /id: 'about'/, 'About is a footer destination, not a header tab');
   for (const [page, hrefs] of [
     ['index.html', ['about/', 'apps/']],
     ['app/index.html', ['../about/', '../apps/']],

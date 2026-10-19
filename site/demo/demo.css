@@ -22,7 +22,7 @@
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; background: var(--bg); }
+html, body { min-height: 100%; margin: 0; background: var(--bg); }
 html { color-scheme: dark; scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.45) transparent; }
 body {
   background: var(--bg); color: var(--text); font-family: var(--sans);
@@ -32,7 +32,7 @@ body {
 /* framed demo page: nav on top, app inside a macOS-style window */
 body.demo-page {
   overflow-y: auto; overflow-x: hidden;
-  display: grid; grid-template-rows: auto 1fr; min-height: 100vh;
+  display: grid; grid-template-rows: auto auto auto; align-content: start; min-height: 100vh;
   background:
     radial-gradient(900px 500px at 50% -10%, rgba(124,58,237,0.14), transparent),
     var(--bg);
@@ -55,7 +55,7 @@ body.demo-page {
 .site-gh .stars { display: inline-flex; align-items: center; gap: 4px; padding-left: 9px; border-left: 1px solid var(--border-soft); color: var(--amber); }
 .site-gh .stars svg { width: 12px; height: 12px; fill: var(--amber); }
 .demo-frame {
-  width: min(1500px, calc(100% - 40px)); justify-self: center; align-self: center;
+  width: min(1500px, calc(100% - 40px)); justify-self: center; align-self: start;
   margin: 12px 0; border: 1px solid var(--border-soft);
   border-radius: 14px; overflow: hidden; background: var(--bg);
   box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(139,92,246,0.06);

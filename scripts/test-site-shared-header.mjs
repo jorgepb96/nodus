@@ -98,10 +98,10 @@ test('the shared component owns every control visible in the header', () => {
       'blog:Blog',
       'atlas:Atlas',
       'faq:FAQ',
-      'about:About',
-      'contribute:Support Nodus',
+      'models:Models',
+      'contribute:Support',
     ],
-    'the header reads Home, Wiki, Blog, Atlas, FAQ, About, Support Nodus',
+    'the header reads Home, Wiki, Blog, Atlas, FAQ, Models, Support',
   );
 });
 

@@ -2,11 +2,12 @@
 SPDX-FileCopyrightText: 2026 Jorge Pérez Burgueño and Nodus contributors
 SPDX-License-Identifier: AGPL-3.0-only
 
-Self-contained styling for the shared header, for the only pages that do not load
-the site design system: the live demos. It is deliberately a copy of the nav rules
-in assets/css/nodus.css rather than an import, so a demo pulls exactly one
-stylesheet for its chrome and nothing else of the marketing site leaks in.
-Keep the two in step when the header changes; a test checks that they agree.
+Self-contained styling for the shared header and footer, for the only pages that
+do not load the site design system: the live demos. It is deliberately a copy of
+the nav and footer rules in assets/css/nodus.css rather than an import, so a demo
+pulls exactly one stylesheet for its chrome and nothing else of the marketing
+site leaks in. Keep the two in step when the chrome changes; a test checks that
+they agree.
 */
 /* ============================================================ typefaces */
 /* Self-hosted rather than pulled from Google Fonts: the same two latin
@@ -255,4 +256,83 @@ Keep the two in step when the header changes; a test checks that they agree.
   .nav .links .btn,
   .nav .links .gh-badge,
   .nav .links .release-downloads { margin-top: 8px; justify-content: center; }
+}
+
+/* ============================================================ footer */
+/* Mirrors footer.site-foot and its columns in assets/css/nodus.css. The demos
+   render it below the app frame, so About still lives at the bottom of the page
+   even though the header no longer carries it. */
+.site-foot {
+  position: relative;
+  padding: clamp(52px, 6vw, 78px) 0 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  background: linear-gradient(180deg, transparent, rgba(10, 8, 19, 0.85));
+  color: #f6f4fd;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.site-foot .wrap {
+  width: min(100% - 40px, 1500px);
+  margin-inline: auto;
+}
+.site-foot .foot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: 40px 32px;
+}
+.site-foot .foot-brand { display: flex; flex-direction: column; gap: 14px; }
+.site-foot .foot-brand .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #f6f4fd;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.site-foot .foot-brand .logo img { width: 28px; height: 28px; }
+.site-foot .foot-brand p {
+  max-width: 40ch;
+  margin: 0;
+  color: #6f6a86;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.site-foot .foot-col h3 {
+  margin: 0 0 14px;
+  color: #6f6a86;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.site-foot .foot-col a {
+  display: block;
+  padding: 5px 0;
+  color: #a9a3c2;
+  font-size: 14px;
+  transition: color 0.2s, transform 0.2s;
+}
+.site-foot .foot-col a:hover { color: #f6f4fd; transform: translateX(3px); }
+.site-foot .foot-base {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+  align-items: center;
+  margin-top: 46px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: #6f6a86;
+  font-size: 13px;
+}
+.site-foot .foot-base a { color: #6f6a86; }
+.site-foot .foot-base a:hover { color: #a9a3c2; }
+
+@media (max-width: 860px) {
+  .site-foot .foot-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .site-foot .foot-brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+  .site-foot { padding-bottom: 96px; }
+  .site-foot .wrap { width: calc(100% - 20px); }
 }

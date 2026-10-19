@@ -4,12 +4,13 @@ import { BrowserWindow } from 'electron';
 import type { EmbeddingProvider } from '@shared/types';
 import type { EmbeddingIndexContext, EmbeddingIndexCoverage, EmbeddingIndexPreview, EmbeddingIndexProfile, EmbeddingIndexProgress, EmbeddingIndexSummary } from '@shared/embeddingIndexes';
 import { EMBEDDING_TEXT_RECIPE_VERSIONS } from '@shared/embeddingIndexes';
-import { getDb, onBeforeDatabaseClose, withVaultDatabase, withoutDatabaseContext } from '../db/database';
+import { getDb, onBeforeDatabaseClose, withDatabaseContext, withVaultDatabase, withoutDatabaseContext } from '../db/database';
 import { getSettings } from '../db/settingsRepo';
 import { getVaultByPath } from '../vaults/vaultRegistry';
 import { commitEmbeddingIndex, contractForProfile, createIndex, deleteIndex, embeddingIndexHead, embeddingProfile,
   indexContext, indexRow, profileFingerprint, refreshedEmbeddingProfile, assertEmbeddingProfileRevision, storeIndexValue, withEmbeddingIndexContext, withoutEmbeddingIndexContext, type IndexRow } from '../db/embeddingIndexesRepo';
-import { collectEmbeddingIndexInputs, embeddingInputStillCurrent, externalEmbeddingProfile, type EmbeddingIndexInput } from './embeddingIndexInventory';
+import { collectEmbeddingIndexInputs, collectEmbeddingIndexInputsAsync, embeddingInputStillCurrent, externalEmbeddingProfile, type EmbeddingIndexInput } from './embeddingIndexInventory';
+import { isEmbeddingGemma2 } from '@shared/embeddingGemma2';
 import { embedManyStrict, type EmbeddingExecutionConfig } from './aiClient';
 import { geminiBatchEmbeddingEndpoint } from './geminiEmbeddings';
 import { documentaryStore, embeddingIdentityParameters, prepareDocumentaryEmbeddings, withDocumentaryWrites } from './documentaryPreparation';
@@ -50,12 +51,14 @@ function sharedSourceRevision(): number {
   return vault?.type === 'academic' ? (documentaryStore().db.prepare('SELECT revision FROM documentary_embedding_source_versions WHERE vault_id=?').get(vault.id) as { revision: number } | undefined)?.revision ?? 0 : 0;
 }
 export function onEmbeddingIndexesChanged(listener: () => void): () => void { listeners.add(listener); return () => { listeners.delete(listener); }; }
-function announce(progress?: EmbeddingIndexProgress, activeChanged = false): void {
+/** `changed` makes every open Settings view list the indexes again. A preparation reports each
+ * 32-input batch as progress only: the progress event already carries counts and the run. */
+function announce(progress?: EmbeddingIndexProgress, activeChanged = false, changed = true): void {
   if (progress) progress = { ...progress, vaultId: getVaultByPath(getDb().name)?.id, run: listEmbeddingRuns(getDb(), progress.indexId, 1)[0] };
   withoutDatabaseContext(() => withoutEmbeddingIndexContext(() => {
-    for (const listener of listeners) listener();
+    if (changed) for (const listener of listeners) listener();
     for (const window of BrowserWindow.getAllWindows()) if (!window.isDestroyed()) {
-      window.webContents.send('embeddingIndexes:changed');
+      if (changed) window.webContents.send('embeddingIndexes:changed');
       if (activeChanged) window.webContents.send('embeddingIndexes:activeChanged');
       if (progress) window.webContents.send('embeddingIndexes:progress', progress);
     }
@@ -70,6 +73,7 @@ function initialize(db: Database.Database): void {
 onBeforeDatabaseClose(() => {
   const db = getDb();
   initialized.delete(db.name);
+  for (const key of listingInventories.keys()) if (key.startsWith(`${db.name}\0`)) listingInventories.delete(key);
   const job = running.get(db.name);
   if (job) {
     db.prepare("UPDATE embedding_indexes SET preparation='paused' WHERE id=? AND preparation='running'").run(job.id);
@@ -78,12 +82,36 @@ onBeforeDatabaseClose(() => {
   }
 });
 
+type ListingInput = Pick<EmbeddingIndexInput, 'family' | 'entityId' | 'textHash' | 'excluded'>;
+/** Listing and preview only need hashes. They are cached per vault and inventory variant until the
+ * corpus revision (bumped by every source trigger) or an input policy changes. Preparation never
+ * reads this cache: it collects a fresh inventory and re-checks it before activating. */
+const listingInventories = new Map<string, { stamp: string; inputs: Promise<ListingInput[]> }>();
+function inventoryVariant(db: Database.Database, profile: EmbeddingIndexProfile): string {
+  return `${db.name}\0${JSON.stringify([profile.provider, profile.provider === 'nodus' && isEmbeddingGemma2(profile.model)])}`;
+}
+function inventoryStamp(db: Database.Database): string {
+  // Embargoes and testimony agreements can expire without a write, so the stamp also ages out.
+  return JSON.stringify([embeddingIndexHead(db)?.corpus_revision ?? 0, getSettings().testimonyAllowExternalProviders ?? null,
+    studySearchExcludedSourceIds(), Math.floor(Date.now() / 600_000)]);
+}
+function listingInventory(profile: EmbeddingIndexProfile): Promise<ListingInput[]> {
+  const db = getDb();
+  const key = inventoryVariant(db, profile);
+  const stamp = inventoryStamp(db);
+  const cached = listingInventories.get(key);
+  if (cached?.stamp === stamp) return cached.inputs;
+  const inputs = withDatabaseContext(db, () => collectEmbeddingIndexInputsAsync(profile, { lean: true }));
+  listingInventories.set(key, { stamp, inputs });
+  inputs.catch(() => { if (listingInventories.get(key)?.inputs === inputs) listingInventories.delete(key); });
+  return inputs;
+}
 function valuesByEntity(db: Database.Database, context: EmbeddingIndexContext): Map<string, string> {
   return new Map((db.prepare('SELECT family,entity_id,text_hash,recipe_version FROM embedding_index_values WHERE index_id=? AND generation=?')
     .all(context.indexId, context.generation) as Array<{ family: string; entity_id: string; text_hash: string; recipe_version: number }>)
     .filter(row => row.recipe_version === EMBEDDING_TEXT_RECIPE_VERSIONS[row.family]).map(row => [`${row.family}\0${row.entity_id}`, row.text_hash]));
 }
-function coverageOf(inputs: EmbeddingIndexInput[], existing: Map<string, string>): EmbeddingIndexCoverage[] {
+function coverageOf(inputs: ListingInput[], existing: Map<string, string>): EmbeddingIndexCoverage[] {
   const result = new Map<string, EmbeddingIndexCoverage>();
   for (const input of inputs) {
     const row = result.get(input.family) ?? { family: input.family, total: 0, indexed: 0, excluded: 0 };
@@ -95,16 +123,17 @@ function coverageOf(inputs: EmbeddingIndexInput[], existing: Map<string, string>
   return [...result.values()];
 }
 interface SharedRevision { index_key: string; document_id: string; chunks_json: string; identity_json: string }
-function sharedDocuments() {
+type SharedDocument = ReturnType<typeof researchCorpusInventory>['documents'][number];
+function sharedDocuments(): SharedDocument[] {
   const vault = getVaultByPath(getDb().name);
   if (vault?.type !== 'academic') return [];
   const owners = new Set((documentaryStore().db.prepare('SELECT document_id FROM documentary_source_owners WHERE vault_id=?').all(vault.id) as Array<{ document_id: string }>).map(row => row.document_id));
   return researchCorpusInventory().documents.filter(document => document.workId || owners.has(document.id));
 }
-function sharedRevisions(withChunks = false): SharedRevision[] {
+function sharedRevisions(withChunks = false, documents = sharedDocuments()): SharedRevision[] {
   const vault = getVaultByPath(getDb().name);
   if (vault?.type !== 'academic') return [];
-  const current = new Map(sharedDocuments().map(document => [document.id, document.revision]));
+  const current = new Map(documents.map(document => [document.id, document.revision]));
   return (documentaryStore().db.prepare(`SELECT DISTINCT r.index_key,r.document_id,${withChunks ? 'r.chunks_json' : "'' AS chunks_json"},r.identity_json FROM documentary_revisions r
     JOIN documentary_source_owners o ON o.document_id=r.document_id WHERE o.vault_id=? AND r.lexical_ready=1 AND
     (r.index_key IN (SELECT current_key FROM documentary_attachment_heads WHERE document_id=r.document_id)
@@ -117,10 +146,15 @@ function baseRevisionKey(json: string): string {
   return JSON.stringify([value.documentId, value.attachmentId, value.attachmentRevision ?? null, value.revision, value.textFingerprint,
     value.chunkerVersion, value.processingVersion, value.coverage ?? null, value.layout ?? null]);
 }
-function sharedCoverage(profile: EmbeddingIndexProfile, row?: IndexRow, reusable = false): EmbeddingIndexCoverage {
-  const revisions = sharedRevisions();
+/** The research corpus inventory walks the global library; a listing reads it once for all indexes. */
+function sharedSnapshot(): { documents: SharedDocument[]; revisions: SharedRevision[] } {
+  const documents = sharedDocuments();
+  return { documents, revisions: sharedRevisions(false, documents) };
+}
+function sharedCoverage(profile: EmbeddingIndexProfile, row?: IndexRow, reusable = false, shared = sharedSnapshot()): EmbeddingIndexCoverage {
+  const { revisions } = shared;
   const available = new Set(revisions.map(revision => revision.document_id));
-  const missing = sharedDocuments().filter(document => !available.has(document.id)).length;
+  const missing = shared.documents.filter(document => !available.has(document.id)).length;
   const coverage = { family: 'documentary', total: revisions.length + missing, indexed: 0, excluded: missing };
   if (!revisions.length) return coverage;
   const ownKeys = new Set(row ? (getDb().prepare('SELECT index_key FROM embedding_index_documentary_refs WHERE index_id=? AND generation=?')
@@ -161,10 +195,13 @@ function verifiedIndex(db: Database.Database, row: IndexRow): boolean {
     && row.recipe_stamp === JSON.stringify(EMBEDDING_TEXT_RECIPE_VERSIONS)
     && row.verified_revision === embeddingIndexHead(db)?.corpus_revision && row.documentary_revision === sharedSourceRevision();
 }
-export function previewEmbeddingIndex(input: Selection): EmbeddingIndexPreview {
+export async function previewEmbeddingIndex(input: Selection): Promise<EmbeddingIndexPreview> {
+  const db = getDb();
+  const { profile } = withoutEmbeddingIndexContext(() => resolveSelection(input));
+  const inputs = await listingInventory(profile);
+  if (getDb() !== db) throw new Error('La bóveda cambió. Vuelve a abrir la gestión de índices.');
   return withoutEmbeddingIndexContext(() => {
-    const { profile, row } = resolveSelection(input);
-    const inputs = collectEmbeddingIndexInputs(profile);
+    const { row } = resolveSelection(input);
     const existing = row && !input.rebuild ? valuesByEntity(getDb(), indexContext(getDb(), row)) : new Map<string, string>();
     const coverage = coverageOf(inputs, existing);
     const shared = input.rebuild ? { ...sharedCoverage(profile, row), indexed: 0 } : sharedCoverage(profile, row, true);
@@ -180,16 +217,26 @@ export function previewEmbeddingIndex(input: Selection): EmbeddingIndexPreview {
       exclusions: [...exclusions].map(([reason, count]) => ({ reason, count })) };
   });
 }
-export function listEmbeddingIndexes(vaultId?: string): EmbeddingIndexSummary[] {
+export async function listEmbeddingIndexes(vaultId?: string): Promise<EmbeddingIndexSummary[]> {
   assertVault(vaultId);
+  const db = getDb(); initialize(db);
+  const listed = (db.prepare('SELECT * FROM embedding_indexes ORDER BY updated_at DESC,id').all() as IndexRow[])
+    .map(row => ({ row, profile: JSON.parse(row.profile_json) as EmbeddingIndexProfile }));
+  const inventories = new Map<string, ListingInput[]>();
+  for (const { profile } of listed) {
+    const variant = inventoryVariant(db, profile);
+    if (!inventories.has(variant)) inventories.set(variant, await listingInventory(profile));
+  }
+  if (getDb() !== db) throw new Error('La bóveda cambió. Vuelve a abrir la gestión de índices.');
   return withoutEmbeddingIndexContext(() => {
-    const db = getDb(); initialize(db);
     const active = embeddingIndexHead(db)?.active_id;
-    const rows = db.prepare('SELECT * FROM embedding_indexes ORDER BY updated_at DESC,id').all() as IndexRow[];
-    return rows.map(row => {
-      const profile = JSON.parse(row.profile_json) as EmbeddingIndexProfile;
-      const coverage = coverageOf(collectEmbeddingIndexInputs(profile), valuesByEntity(db, indexContext(db, row)));
-      const documentaryCoverage = sharedCoverage(profile, row);
+    const documentary = sharedSnapshot();
+    const rows = db.prepare('SELECT id FROM embedding_indexes').all() as Array<{ id: string }>;
+    const present = new Set(rows.map(row => row.id));
+    return listed.filter(({ row }) => present.has(row.id)).map(({ row: listedRow, profile }) => {
+      const row = indexRow(db, listedRow.id);
+      const coverage = coverageOf(inventories.get(inventoryVariant(db, profile))!, valuesByEntity(db, indexContext(db, row)));
+      const documentaryCoverage = sharedCoverage(profile, row, false, documentary);
       if (documentaryCoverage.total) coverage.push(documentaryCoverage);
       const stored = db.prepare('SELECT COUNT(*) n,COALESCE(SUM(length(embedding)),0) bytes FROM embedding_index_values WHERE index_id=?').get(row.id) as { n: number; bytes: number };
       const vault = getVaultByPath(db.name);
@@ -209,7 +256,7 @@ function executionFor(context: EmbeddingIndexContext): EmbeddingExecutionConfig 
 }
 function updateProgress(db: Database.Database, id: string, completed: number, total: number, family: string | null): void {
   db.prepare('UPDATE embedding_indexes SET completed=?,total=?,updated_at=? WHERE id=?').run(completed, total, timestamp(), id);
-  announce({ indexId: id, preparation: 'running', completed, total, family, error: null });
+  announce({ indexId: id, preparation: 'running', completed, total, family, error: null }, false, false);
 }
 function prepareTestimonyCarrier(db: Database.Database, input: EmbeddingIndexInput, context: EmbeddingIndexContext): void {
   if (input.family !== 'testimony_segment_embeddings') return;
@@ -269,7 +316,8 @@ async function runPreparation(context: EmbeddingIndexContext, signal: AbortSigna
     // still pending are embedded in the next pass; no source extraction is performed.
     for (;;) {
       signal.throwIfAborted();
-      const inputs = collectEmbeddingIndexInputs(context.profile);
+      const inputs = await withDatabaseContext(db, () => collectEmbeddingIndexInputsAsync(context.profile));
+      signal.throwIfAborted();
       const existing = valuesByEntity(db, context);
       db.transaction(() => { for (const input of inputs) recordEmbeddingRunItem(db, runId, input.family, input.entityId, input.textHash,
         input.excluded ? 'excluded' : existing.get(`${input.family}\0${input.entityId}`) === input.textHash ? 'reused' : 'pending', input.excluded); })();
@@ -388,7 +436,7 @@ async function activateEmbeddingIndexNow(id: string, vaultId?: string): Promise<
     return;
   }
   const profile = JSON.parse(row.profile_json) as EmbeddingIndexProfile;
-  const preview = previewEmbeddingIndex({ ...profile, indexId: id });
+  const preview = await previewEmbeddingIndex({ ...profile, indexId: id });
   if (preview.pending) throw new Error('Actualiza los pendientes antes de activar este índice.');
   await launch(id);
 }

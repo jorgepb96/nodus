@@ -133,6 +133,10 @@ export function ensureInitialEmbeddingIndex(db: Database.Database, profile: Embe
       UNION ALL SELECT 1 FROM study_materials UNION ALL SELECT 1 FROM testimony_transcript_segments LIMIT 1`).get();
     if (count || content) throw new Error('Prepara y activa el nuevo índice antes de cambiar el modelo de embeddings.');
   }
+  if (!head.active_id) {
+    const adopted = adoptLegacyEmbeddingIndex(db, profile);
+    if (adopted) return adopted;
+  }
   const hasLegacy = db.prepare('SELECT 1 FROM embedding_indexes WHERE legacy=1 LIMIT 1').get();
   if (hasLegacy && !head.active_id) return null;
   const existing = db.prepare('SELECT * FROM embedding_indexes WHERE fingerprint=? AND legacy=0 LIMIT 1').get(profileFingerprint(profile)) as IndexRow | undefined;
@@ -140,6 +144,67 @@ export function ensureInitialEmbeddingIndex(db: Database.Database, profile: Embe
   db.prepare('UPDATE embedding_index_state SET active_id=?,epoch=epoch+1 WHERE singleton=1').run(row.id);
   refreshConnectionHeads(db);
   return indexContext(db, row);
+}
+
+/** The v203 migration moved every stored vector into a legacy set and left the vault with no
+ * active index, so a vault that was fully indexed asked for a complete rebuild. A legacy set
+ * produced by the provider and model the vault still selects IS the index it was searching with:
+ * before saved indexes, embeddings were sent without prefixes or Gemini task types (EmbeddingGemma 2
+ * kept its native template), clipped to the same 8,000 characters. Adopt it as the active index
+ * instead. Rows whose text changed since stay searchable, exactly as before the update, and count
+ * as pending until the next update recomputes only them. Sets from any other model stay legacy. */
+export function adoptLegacyEmbeddingIndex(db: Database.Database, selected: EmbeddingIndexProfile): EmbeddingIndexContext | null {
+  try {
+    const head = embeddingIndexHead(db);
+    if (!head?.enabled || head.active_id) return null;
+    const candidates = (db.prepare('SELECT * FROM embedding_indexes WHERE legacy=1 AND dimensions IS NOT NULL').all() as IndexRow[]).filter(row => {
+      const legacy = JSON.parse(row.profile_json) as { provider?: string; model?: string };
+      return legacy.provider === selected.provider && typeof legacy.model === 'string'
+        && normalizeEmbeddingModel(selected.provider, legacy.model) === selected.model;
+    });
+    if (!candidates.length) return null;
+    const count = db.prepare('SELECT COUNT(*) n FROM embedding_index_values WHERE index_id=?');
+    const legacy = candidates.map(row => ({ row, n: (count.get(row.id) as { n: number }).n })).sort((a, b) => b.n - a.n)[0].row;
+    const dim = legacy.dimensions!;
+    const native = selected.provider === 'nodus' && isEmbeddingGemma2(selected.model);
+    const input = native ? defaultEmbeddingInputProfile(selected.provider, selected.model) : { version: 1 as const, kind: 'plain' as const, queryPrefix: '', documentPrefix: '' };
+    const profile: EmbeddingIndexProfile = { ...selected, input: validateEmbeddingInputProfile(input, selected.provider, selected.model) };
+    const contract = canonicalizeEmbeddingContract(contractForProfile(profile, dim));
+    const fingerprint = profileFingerprint(profile);
+    const recipes = Object.entries(EMBEDDING_TEXT_RECIPE_VERSIONS);
+    const recipe = `CASE family ${recipes.map(([family, version]) => `WHEN '${family}' THEN ${version}`).join(' ')} END`;
+    const stamp = new Date().toISOString();
+    const adopted = db.transaction(() => {
+      const existing = db.prepare('SELECT * FROM embedding_indexes WHERE fingerprint=? AND legacy=0 ORDER BY updated_at DESC LIMIT 1').get(fingerprint) as IndexRow | undefined;
+      if (existing && (existing.preparation === 'running' || (existing.dimensions !== null && existing.dimensions !== dim))) return null;
+      const target = existing ?? createIndex(db, profile);
+      // A rebuild staged before this adoption never finished; its generation is superseded.
+      db.prepare('DELETE FROM embedding_index_values WHERE index_id=? AND generation<>?').run(target.id, target.generation);
+      const moved = db.prepare(`UPDATE OR IGNORE embedding_index_values SET index_id=?,generation=?,contract_json=?,recipe_version=${recipe}
+        WHERE index_id=? AND length(embedding)=? AND family IN (SELECT value FROM json_each(?))`)
+        .run(target.id, target.generation, contract, legacy.id, dim * 4, JSON.stringify(recipes.map(([family]) => family))).changes;
+      if (!moved) throw new Error('embedding_legacy_adoption_empty');
+      db.prepare('DELETE FROM embedding_indexes WHERE id=? AND NOT EXISTS(SELECT 1 FROM embedding_index_values WHERE index_id=?)').run(legacy.id, legacy.id);
+      db.prepare(`UPDATE embedding_indexes SET dimensions=?,staging_generation=NULL,staging_dimensions=NULL,preparation='idle',error=NULL,
+        completed=0,total=0,verified_revision=-1,documentary_revision=-1,recipe_stamp=?,updated_at=? WHERE id=?`)
+        .run(dim, JSON.stringify(EMBEDDING_TEXT_RECIPE_VERSIONS), stamp, target.id);
+      db.prepare('UPDATE embedding_index_state SET active_id=?,enabled=1,pending_id=CASE WHEN pending_id IN (?,?) THEN NULL ELSE pending_id END,epoch=epoch+1 WHERE singleton=1')
+        .run(target.id, target.id, legacy.id);
+      if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='embedding_index_runs'").get()) {
+        const run = randomUUID();
+        db.prepare(`INSERT INTO embedding_index_runs(id,index_id,generation,reason,last_reason,state,reviewed,reused,started_at,updated_at)
+          VALUES(?,?,?,'activation','activation','complete',?,?,?,?)`).run(run, target.id, target.generation, moved, moved, stamp, stamp);
+        db.prepare("INSERT INTO embedding_index_run_events(run_id,reason,state,created_at) VALUES(?,'activation','complete',?)").run(run, stamp);
+      }
+      return target.id;
+    }).immediate();
+    if (!adopted) return null;
+    refreshConnectionHeads(db);
+    return indexContext(db, indexRow(db, adopted));
+  } catch (error) {
+    if (!(error instanceof Error && error.message === 'embedding_legacy_adoption_empty')) console.warn('[embeddings] legacy index adoption skipped:', error);
+    return null;
+  }
 }
 
 /** Register on every connection that reads compatibility views or writes carrier rows.

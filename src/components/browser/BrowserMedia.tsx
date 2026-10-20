@@ -209,7 +209,6 @@ export function BrowserMediaPopover({
           >
             {tabs.map((id) => {
               const meta = tabMeta[id];
-              const selected = tab === id;
               return (
                 <button
                   key={id}
@@ -217,14 +216,14 @@ export function BrowserMediaPopover({
                   role="tab"
                   id={`media-source-tab-${id}`}
                   data-testid={`media-source-tab-${id}`}
-                  aria-selected={selected}
+                  aria-selected={tab === id}
                   aria-label={meta.label}
                   title={meta.label}
                   aria-controls="media-source-panel"
-                  tabIndex={selected ? 0 : -1}
+                  tabIndex={tab === id ? 0 : -1}
                   onClick={() => chooseTab(id)}
                   className={`inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 ${
-                    selected ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'
+                    tab === id ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
                   <Icon name={meta.icon} size={14} />

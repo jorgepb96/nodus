@@ -39,7 +39,7 @@ try {
   // ── Platform filtering: MLX only on Apple Silicon ───────────────────────────
   const mac = tts.ttsModelsForPlatform('darwin', 'arm64').map((m) => m.id);
   assert.ok(mac.includes('ming3-0.5b-mlx-8bit'));
-  assert.ok(!mac.includes('ming3-0.5b-mlx-4bit'), 'unpublished models are never offered');
+  assert.ok(mac.includes('ming3-0.5b-mlx-4bit'), 'the published 4-bit MLX checkpoint is offered');
   for (const [platform, arch] of [['win32', 'x64'], ['linux', 'x64'], ['darwin', 'x64']]) {
     assert.deepEqual([...new Set(tts.ttsModelsForPlatform(platform, arch).map((m) => m.backend))], ['torch', 'phonon']);
     assert.equal(tts.ttsBackendForPlatform(platform, arch), 'torch');
@@ -55,6 +55,8 @@ try {
   }
   assert.deepEqual(tts.TTS_MODELS.find((m) => m.id === 'phonon-31m-en').languages, ['en']);
   assert.ok(tts.TTS_MODELS.find((m) => m.id === 'phonon-40m-es').languages.includes('es'));
+  assert.deepEqual([...tts.PHONON_LANGUAGES], ['es', 'en', 'fr', 'de', 'pt'], 'Phonon can carry an es-ES catalogue voice');
+  assert.ok(!tts.PHONON_LANGUAGES.includes('zh'), 'Phonon does not accept Ming-only languages');
 
   // ── Language detection and resolution ───────────────────────────────────────
   assert.equal(tts.detectTtsLanguage('Los resultados sugieren que la concentración de zinc influye en la eficacia del proceso.'), 'es');

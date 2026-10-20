@@ -37,7 +37,7 @@ NarrationMiniPlayer (header)              lower priority, kill)                 
 
 | Platform | Backend | Checkpoint |
 |---|---|---|
-| macOS arm64 | MLX (`mlx-audio==0.6.0`) on the GPU | `mlx-community/Ming-3.0-tts-0.5B-8bit` (1.6 GB); a 4-bit build is listed as unpublished until Nodus publishes it |
+| macOS arm64 | MLX (`mlx-audio==0.6.0`) on the GPU | `mlx-community/Ming-3.0-tts-0.5B-8bit` (1.6 GB) or the 4-bit `jorgepb96/Ming-3.0-tts-0.5B-4bit` (0.84 GB); the 4-bit is lighter and a little less faithful |
 | Windows, Linux, macOS x64 | PyTorch: CUDA when an NVIDIA GPU answers, otherwise CPU (dynamic int8 on Linear layers) | `inclusionAI/Ming-3.0-tts-0.5B` (3.0 GB) |
 
 `electron/tts/install.ts` builds a private CPython 3.12 environment under
@@ -72,6 +72,11 @@ SHA-256) into `userData/local-tts/models/<id>/`; `ready.json` marks a verified d
   `electron/assets/tts/voices/`.
 - `ming:<name>` — Ming's built-in voices (`shared/mingBuiltinVoices.ts`), without the
   upstream entries that imitate film, series and cartoon characters.
+- `phonon:<id>` — the 102-voice Gradium catalogue (`shared/phononVoices.ts`), downloaded on
+  first use. The catalogue carries `es-es` voices; Nodus keeps their language when the text
+  is Spanish and passes `es` to the Phonon runtime. On the English 31M checkpoint the voice
+  and normalisation work, but the accent is approximate: the 40M Spanish/multilingual
+  checkpoints are the quality path and stay gated and non-commercial.
 
 ## Retention
 

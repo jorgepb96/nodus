@@ -205,6 +205,7 @@ What the host downloads (and verifies) before `load`:
 | Backend | Repository and revision | Files |
 | --- | --- | --- |
 | `mlx` | `mlx-community/Ming-3.0-tts-0.5B-8bit` @ `c807b99d2ea77d896fcffc917f0330d36470bb29` | `config.json`, `model.safetensors` (1,573,366,591 B, sha256 `e88a4b53…8971fc`), `model.safetensors.index.json`, `tokenizer.json`, `tokenizer_config.json`, `vocab.json`, `merges.txt`, `added_tokens.json`, `special_tokens_map.json`, `configuration.json`. `campplus.safetensors` is not needed. |
+| `mlx` (4-bit) | `jorgepb96/Ming-3.0-tts-0.5B-4bit` @ `d06229cac0b9059337ffdc3d5440300bb304e181` | the same tokenizer/config set plus `model.safetensors` (834,246,537 B, sha256 `7b6054b4…1652d8`, affine 4-bit group 64); published by the Nodus author, MIT, with an ASR-checked Spanish sample and one dropped group in eight runs |
 | `torch` | `inclusionAI/Ming-3.0-tts-0.5B` @ `e5bd8da31ecf1b9276cdbdda821fa891068f1368` | the same tokenizer/config files plus `model.safetensors` (2,959,055,504 B, sha256 `45c4d78d…d674c`, bf16) and `campplus.onnx` |
 | speaker encoder (both) | `inclusionAI/Ming-3.0-tts-0.5B` @ the revision above | `campplus.onnx` (28,303,423 B, sha256 `a6ac6a63997761ae2997373e2ee1c47040854b4b759ea41ec48e4e42df0f4d73`) |
 

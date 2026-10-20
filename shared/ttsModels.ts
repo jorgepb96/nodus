@@ -44,6 +44,7 @@ export interface TtsModelDefinition {
 
 const HF_REVISIONS: Record<string, string> = {
   'mlx-community/Ming-3.0-tts-0.5B-8bit': 'c807b99d2ea77d896fcffc917f0330d36470bb29',
+  'jorgepb96/Ming-3.0-tts-0.5B-4bit': 'd06229cac0b9059337ffdc3d5440300bb304e181',
   'inclusionAI/Ming-3.0-tts-0.5B': 'e5bd8da31ecf1b9276cdbdda821fa891068f1368',
   'gradium/phonon-31m-en': '52433c46975bfa13144c56204c9f4ee1c5b148aa',
   'gradium/phonon-40m-es': 'eceb8758b5ed899bd661febecffdc6be61d8e1e6',
@@ -106,11 +107,20 @@ export const TTS_MODELS: readonly TtsModelDefinition[] = [
     languages: MING_LANGUAGES,
     cloning: true,
     description: 'Más ligero y rápido en Mac con Apple Silicon, con algo menos de calidad.',
-    sourceUrl: 'https://github.com/inclusionAI/Ming-3.0-tts',
+    sourceUrl: 'https://huggingface.co/jorgepb96/Ming-3.0-tts-0.5B-4bit',
     ...MING_LICENSE,
-    // Quantized and published by Nodus; the pinned repo, sizes and hashes land with the release.
-    unpublished: true,
-    assets: [],
+    assets: assets('jorgepb96/Ming-3.0-tts-0.5B-4bit', [
+      ['LICENSE', 1067, '2872f1918dfc04fdeb7f5d66d8d1b773594c9375e7c8f7bda39780bb97ad4fba'],
+      ['campplus.safetensors', 27699096, 'a479586bd8f8f96cdb414eaa2fa07c6cd54d6d1636562e2d75a0211cb3b0a6fd'],
+      ['config.json', 6087, 'efbf26b62d5218c344ced9f69b59e88a8aaed35d2567bef3a7ac219816e3072b'],
+      ['model.safetensors', 834246537, '7b6054b4099250eee87fd4b620ae837f32425169725e9407816e2986d51652d8'],
+      ['model.safetensors.index.json', 201849, 'f3780f1ad7df33a5516584b253e8e5156d984182b76fd8a5a44277c51b1c43ca'],
+      ...TOKENIZER,
+    ]).concat(
+      // Voice cloning still uses the official CAM++ ONNX graph (the MLX repo only carries
+      // its fused safetensors weights), exactly as the 8-bit checkpoint does.
+      assets('inclusionAI/Ming-3.0-tts-0.5B', [['campplus.onnx', 28303423, 'a6ac6a63997761ae2997373e2ee1c47040854b4b759ea41ec48e4e42df0f4d73']]),
+    ),
   },
   {
     id: 'ming3-0.5b-torch',
@@ -231,6 +241,14 @@ export const TTS_LANGUAGES: ReadonlyArray<{ code: TtsLanguage; label: string; re
   { code: 'pt', label: 'Português', requiresLanguageLine: false },
 ];
 export type TtsLanguageSetting = TtsLanguage | 'auto';
+
+/**
+ * Languages the Phonon runtime can spell and normalise. A catalogue voice carries its own
+ * language, so the Spanish (Spain) voices stay usable even with the compact English
+ * checkpoint; the checkpoint label still says which languages it was trained for.
+ */
+export const PHONON_LANGUAGES = ['es', 'en', 'fr', 'de', 'pt'] as const;
+export type PhononLanguage = (typeof PHONON_LANGUAGES)[number];
 
 export function isTtsLanguage(value: unknown): value is TtsLanguage {
   return TTS_LANGUAGES.some((language) => language.code === value);

@@ -9,6 +9,11 @@ The Research chat header carries an **Escuchar** action for the latest finished 
 opens the same Listen balloon and starts the saved clip or generation on the first click;
 the per-answer icon still opens the balloon without starting.
 
+The balloon's voice selector is a styled list, not a native select: it has a search box and
+model/language filters. It lists the voices of every platform-supported checkpoint and
+selecting one carries the checkpoint that speaks its language (Phonon's per-language model
+first, otherwise its multilingual one), so choosing a Phonon voice can switch the model.
+
 ## Architecture
 
 ```

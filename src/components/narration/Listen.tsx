@@ -7,6 +7,7 @@ import { ConfirmModal } from '../ConfirmModal';
 import { Icon } from '../ui';
 import { useAudioPlayer, useOptionalAudioPlayer, type PlayerTrack } from '../AudioPlayer';
 import { ProgressTrack, formatClock } from './ProgressTrack';
+import { VoicePicker, type VoicePickerOption } from './VoicePicker';
 import {
   audioGenerationJobKey, cancelAudioGeneration, startAudioGeneration, subscribeBackgroundJob,
   type AudioGenerationProgress, type AudioGenerationRequest, type AudioGenerationResult,
@@ -142,6 +143,7 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
   const model = TTS_MODELS.find((entry) => entry.id === modelId);
   const phononModel = model?.engine === 'phonon';
   const downloadedModels = TTS_MODELS.filter((entry) => status?.models.some((m) => m.id === entry.id && m.downloaded));
+  const platformModels = TTS_MODELS.filter((entry) => !status || status.models.some((m) => m.id === entry.id));
   const modelStatus = status?.models.find((entry) => entry.id === modelId);
   const ready = ttsReady(status, modelId);
   const runtimeInstalled = phononModel ? status?.phononRuntime.installed : status?.runtime.installed;
@@ -195,13 +197,6 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     narrate();
   }, [autoStart, clipsLoaded, settings, status, progress, player.source?.key, ready, playable, source, player, narrate]);
 
-  const setVoice = (voiceId: string) => {
-    if (!settings) return;
-    const patch = voiceId.startsWith('phonon:') ? { ttsPhononVoiceId: voiceId } : { ttsVoiceId: voiceId };
-    setSettings({ ...settings, ...patch });
-    void window.nodus.updateSettings(patch);
-  };
-
   const removeClip = async (clip: AudioClip) => {
     if (player.currentTrackId === clip.id) player.stop();
     await window.nodus.deleteAudioClip(clip.id);
@@ -217,10 +212,30 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
     await refreshClips();
   };
 
-  const own = voices.filter((voice) => voice.origin === 'recorded' || voice.origin === 'uploaded');
-  const bundled = voices.filter((voice) => voice.origin === 'bundled');
-  const builtin = voices.filter((voice) => voice.origin === 'builtin');
-  const phonon = voices.filter((voice) => voice.origin === 'phonon');
+  // One picker for every installed engine. Each voice carries the downloaded checkpoint
+  // that can speak its language, so choosing a Phonon voice can switch the model too.
+  const voiceOptions = voices.flatMap((voice): VoicePickerOption[] => {
+    const voiceEngine = voice.origin === 'phonon' ? 'phonon' : 'ming';
+    const candidates = platformModels.filter((entry) => entry.engine === voiceEngine && entry.languages.includes(voice.language));
+    if (!candidates.length) return [];
+    // Phonon has a checkpoint per language where one exists; otherwise its multilingual
+    // checkpoint. The model may still need downloading: choosing the voice keeps that
+    // visible in the engine card instead of hiding voices whose model is not local yet.
+    const model = voiceEngine === 'phonon'
+      ? candidates.find((entry) => entry.languages.length === 1) ?? candidates.find((entry) => entry.id === modelId) ?? candidates[0]
+      : candidates.find((entry) => entry.id === modelId) ?? candidates.find((entry) => downloadedModels.some((downloaded) => downloaded.id === entry.id)) ?? candidates[0];
+    return [{ voice, engine: voiceEngine, modelId: model.id, modelLabel: model.label }];
+  });
+  const selectedVoiceId = phononModel ? settings?.ttsPhononVoiceId ?? '' : settings?.ttsVoiceId ?? '';
+  const selectedVoiceName = voices.find((voice) => voice.id === selectedVoiceId)?.name;
+  const chooseVoice = (option: VoicePickerOption) => {
+    if (!settings) return;
+    const patch = option.engine === 'phonon'
+      ? { ttsPhononVoiceId: option.voice.id, ttsModelId: option.modelId }
+      : { ttsVoiceId: option.voice.id, ttsModelId: option.modelId };
+    setSettings({ ...settings, ...patch });
+    void window.nodus.updateSettings(patch);
+  };
   const retentionDays = settings ? retentionFor(settings, target.kind) : null;
   const generating = progress != null;
   const totalDuration = clips.reduce((sum, clip) => sum + clip.durationSec, 0);
@@ -256,22 +271,12 @@ export function ListenBalloon({ target, anchor, onClose, autoStart = false }: { 
         </div>
 
         {/* Model, voice and language */}
-        {downloadedModels.length > 1 && <select className="input h-8 py-0 text-xs" aria-label={t('Modelo')} value={modelId} data-testid="listen-model"
+        {downloadedModels.length > 1 && downloadedModels.some((entry) => entry.id === modelId) && <select className="input h-8 py-0 text-xs" aria-label={t('Modelo')} value={modelId} data-testid="listen-model"
           onChange={(event) => { const next = event.target.value; setSettings(settings ? { ...settings, ttsModelId: next } : settings); void window.nodus.updateSettings({ ttsModelId: next }); }}>
           {downloadedModels.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
         </select>}
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
-          {phononModel
-            ? <select className="input h-8 w-full min-w-0 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsPhononVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
-              {TTS_LANGUAGES.filter((entry) => (PHONON_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <optgroup key={entry.code} label={entry.label}>
-                {phonon.filter((voice) => voice.language === entry.code).map((voice) => <option key={voice.id} value={voice.id}>{voice.name}{voice.locale ? ` · ${voice.locale}` : ''}</option>)}
-              </optgroup>)}
-            </select>
-            : <select className="input h-8 w-full min-w-0 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
-              {own.length > 0 && <optgroup label={t('Mis voces')}>{own.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>}
-              <optgroup label={t('Castellano (dominio público)')}>{bundled.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
-              <optgroup label={t('Integradas de Ming')}>{builtin.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
-            </select>}
+          <VoicePicker options={voiceOptions} value={selectedVoiceId} selectedName={selectedVoiceName} onSelect={chooseVoice} disabled={!settings || !voiceOptions.length} />
           <select className="input h-8 min-w-0 py-0 text-xs" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
             <option value="auto">{t('Auto')}</option>
             {TTS_LANGUAGES.filter((entry) => phononModel

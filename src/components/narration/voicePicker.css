@@ -1,0 +1,92 @@
+/* The listen balloon's voice selector: a compact trigger and a top-layer list with search
+   and model/language filters. The popover escapes the balloon's scrolling body. */
+.voice-picker { min-width: 0; }
+.voice-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  background: #111217;
+  color: #e4e4e7;
+  text-align: left;
+  cursor: pointer;
+}
+.voice-picker-trigger:hover:not(:disabled) { border-color: color-mix(in srgb, var(--vault-accent) 55%, #3f3f46); }
+.voice-picker-trigger:focus-visible { outline: 2px solid color-mix(in srgb, var(--vault-accent) 65%, transparent); outline-offset: 1px; }
+.voice-picker-trigger:disabled { opacity: .5; cursor: default; }
+.voice-picker-trigger > svg:first-child { flex-shrink: 0; color: var(--vault-accent); }
+.voice-picker-trigger > svg:last-child { flex-shrink: 0; color: #71717a; margin-left: auto; }
+.voice-picker-trigger-text { display: flex; min-width: 0; flex: 1; flex-direction: column; justify-content: center; gap: 0; }
+.voice-picker-trigger-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.25; }
+.voice-picker-trigger-text > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8b8b94; font-size: 9.5px; line-height: 1.2; }
+
+.voice-picker-popover {
+  position: fixed;
+  inset: auto;
+  z-index: 10060;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #3f3f46;
+  border-radius: 13px;
+  background: #18191f;
+  color: #e4e4e7;
+  box-shadow: 0 18px 60px #000a;
+  font-size: 12px;
+  text-align: left;
+}
+.voice-picker-popover:not(:popover-open) { display: none; }
+.voice-picker-search { margin: 10px 10px 8px; flex-shrink: 0; }
+.voice-picker-search > input { height: 32px; font-size: 12px; }
+.voice-picker-filters { display: flex; align-items: flex-end; gap: 6px; padding: 0 10px 8px; flex-shrink: 0; }
+.voice-picker-filter { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; color: #8b8b94; font-size: 9.5px; text-transform: uppercase; letter-spacing: .03em; }
+.voice-picker-filter select {
+  width: 100%;
+  min-width: 0;
+  height: 27px;
+  padding: 0 22px 0 7px;
+  border: 1px solid #34343c;
+  border-radius: 7px;
+  background: #111217;
+  color: #e4e4e7;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.voice-picker-clear { display: grid; place-items: center; flex-shrink: 0; width: 27px; height: 27px; border-radius: 7px; color: #8b8b94; }
+.voice-picker-clear:hover { background: #27272a; color: #f4f4f5; }
+
+.voice-picker-list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 7px; border-top: 1px solid #27272a; }
+.voice-picker-group + .voice-picker-group { margin-top: 4px; }
+.voice-picker-group-label { padding: 7px 7px 3px; color: #71717a; font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.voice-picker-option { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 7px; border-radius: 8px; text-align: left; }
+.voice-picker-option:hover { background: #ffffff0d; }
+.voice-picker-option.is-selected { background: color-mix(in srgb, var(--vault-accent) 14%, transparent); color: var(--vault-accent); }
+.voice-picker-option > svg { flex-shrink: 0; }
+.voice-picker-option-text { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
+.voice-picker-option-text > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f4f4f5; font-size: 12.5px; font-weight: 500; }
+.voice-picker-option.is-selected .voice-picker-option-text > strong { color: var(--vault-accent); }
+.voice-picker-option-text > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8b8b94; font-size: 10px; }
+.voice-picker-empty { padding: 16px 10px; color: #a1a1aa; text-align: center; }
+
+.light .voice-picker-trigger { background: #fff; border-color: #d4d4d8; color: #27272a; }
+.light .voice-picker-trigger-text > small { color: #71717a; }
+.light .voice-picker-popover { background: #fff; border-color: #d4d4d8; color: #27272a; box-shadow: 0 18px 60px #27272a26; }
+.light .voice-picker-filter { color: #71717a; }
+.light .voice-picker-filter select { background: #fff; border-color: #e4e4e7; color: #27272a; }
+.light .voice-picker-clear { color: #71717a; }
+.light .voice-picker-clear:hover { background: #f4f4f5; color: #18181b; }
+.light .voice-picker-list { border-top-color: #ececef; }
+.light .voice-picker-group-label { color: #71717a; }
+.light .voice-picker-option:hover { background: #f4f4f5; }
+.light .voice-picker-option-text > strong { color: #18181b; }
+.light .voice-picker-option.is-selected .voice-picker-option-text > strong { color: var(--vault-accent); }
+.light .voice-picker-option-text > small { color: #71717a; }
+.light .voice-picker-empty { color: #52525b; }

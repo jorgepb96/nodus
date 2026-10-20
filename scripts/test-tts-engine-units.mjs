@@ -31,10 +31,47 @@ try {
     `export { sweepNarrationClips, SURFACE_KINDS } from ${JSON.stringify(path.join(repoRoot, 'electron/tts/retention.ts'))};`,
     `export { readWavInfo } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsVoices.ts'))};`,
     `export { sanitizeTtsRetention } from ${JSON.stringify(path.join(repoRoot, 'shared/ttsModels.ts'))};`,
+    `export { liveStartThreshold } from ${JSON.stringify(path.join(repoRoot, 'src/components/AudioPlayer.tsx'))};`,
+    `export { mergeTtsModelStatus } from ${JSON.stringify(path.join(repoRoot, 'src/lib/narration/ttsClient.ts'))};`,
   ].join('\n'));
   const outfile = path.join(tmp, 'units.mjs');
-  await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent', alias: { '@shared': path.join(repoRoot, 'shared') } });
+  await build({ entryPoints: [entry], outfile, bundle: true, format: 'esm', platform: 'node', logLevel: 'silent', jsx: 'automatic', alias: { '@shared': path.join(repoRoot, 'shared') } });
   const u = await import(pathToFileURL(outfile).href);
+
+  // ── Live playback threshold ──────────────────────────────────────────────────
+  // The player waits until the buffered audio covers what generation is still behind:
+  // total × (1 − 1/rtf). At or below real time it starts immediately; without a measured
+  // RTF it waits for `finish()` (the queue is complete).
+  assert.equal(u.liveStartThreshold(null, 120), Infinity);
+  assert.equal(u.liveStartThreshold(0.5, 120), 0);
+  assert.equal(u.liveStartThreshold(0.9, 120), 0, 'real-time generation starts at the first fragment');
+  assert.equal(u.liveStartThreshold(0.95, 120), 0, 'a ratio just above real time still needs no backlog');
+  const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≈ ${expected}`);
+  close(u.liveStartThreshold(1.2, 120), 20);
+  close(u.liveStartThreshold(2, 120), 60);
+  assert.equal(u.liveStartThreshold(1.5, 0), 0, 'an empty estimate has nothing to wait for');
+
+  // ── Download progress in the cached status ──────────────────────────────────
+  // The main process sends `model` events while a 1.5 GB checkpoint downloads. Folding
+  // each one into the cached status keeps every progress bar moving without a status IPC
+  // round trip four times a second.
+  const before = {
+    platformSupported: true,
+    runtime: { engine: 'ming', backend: 'mlx', installed: true, installing: false },
+    phononRuntime: { engine: 'phonon', backend: 'phonon', installed: false, installing: false },
+    engine: { state: 'unloaded', modelId: null, idleUnloadAt: null },
+    models: [
+      { id: 'ming3-0.5b-mlx-8bit', downloaded: false, downloading: false, downloadedBytes: 0, totalBytes: 100, progress: 0 },
+      { id: 'phonon-31m-en', downloaded: true, downloading: false, downloadedBytes: 50, totalBytes: 50, progress: 1 },
+    ],
+  };
+  const progress = { id: 'ming3-0.5b-mlx-8bit', downloaded: false, downloading: true, downloadedBytes: 40, totalBytes: 100, progress: 0.4 };
+  const merged = u.mergeTtsModelStatus(before, progress);
+  assert.deepEqual(merged.models.map((model) => model.id), ['ming3-0.5b-mlx-8bit', 'phonon-31m-en'], 'model order is stable');
+  assert.equal(merged.models[0], progress, 'the downloading model is replaced');
+  assert.equal(merged.models[1], before.models[1], 'other models are untouched');
+  assert.equal(merged.runtime, before.runtime, 'engine status is preserved');
+  assert.equal(u.mergeTtsModelStatus(null, progress), null, 'no cached status yet, nothing to update');
 
   // ── nodus-audio:// mapping ───────────────────────────────────────────────────
   const live = path.join(tmp, 'live');

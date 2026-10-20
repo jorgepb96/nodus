@@ -9,7 +9,7 @@ import { Icon } from './ui';
 import { useDismissableLayer } from '../hooks';
 import { t, tx } from '../i18n';
 import { FloatingMenu, MenuItem, RenameField } from './ResearchChatHistoryMenu';
-import { FolderTreeRowView, chatDragProps, historyError, outsideDropProps, useFolderTreeUi, type ChatFolderActions, type ChatFolderTreeState, type FolderTreeRow } from './ResearchChatFolderTree';
+import { FolderTreeRowView, chatDragProps, historyError, outsideDropProps, useFolderTreeUi, useHistoryDropHint, type ChatFolderActions, type ChatFolderTreeState, type FolderTreeRow } from './ResearchChatFolderTree';
 import { MarqueeText } from './MarqueeText';
 import { conversationsInSelection, folderOutline, projectFolderHistoryRows, UNFILED_FOLDER } from '@shared/researchChatFolders';
 
@@ -107,6 +107,7 @@ export interface ResearchChatSidebarProps {
 export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
   const { conversations, projects, notebooks, supportsProjects, notebooksOn, activeId, activeProjectId, activeNotebookId, runningIds } = props;
   const [query, setQuery] = useState('');
+  const [dropProjectId, setDropProjectId] = useHistoryDropHint<string>();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [renaming, setRenaming] = useState<string | null>(null);
   // A chat's menu remembers which of its rows opened it: a pinned chat inside an open
@@ -327,8 +328,8 @@ export function ResearchChatSidebar(props: ResearchChatSidebarProps) {
             const { project } = row;
             const key = `project:${project.id}`;
             return (
-              <div className={`research-history-row group ${activeProjectId === project.id && !activeId ? 'is-active' : ''} ${menu?.kind === 'project' && menu.project.id === project.id ? 'is-menu-open' : ''}`}
-                data-testid={`research-project-${project.id}`} data-marquee-host {...outsideDropProps(folderActions, run, project.id)}>
+              <div className={`research-history-row group ${activeProjectId === project.id && !activeId ? 'is-active' : ''} ${menu?.kind === 'project' && menu.project.id === project.id ? 'is-menu-open' : ''} ${dropProjectId === project.id ? 'is-drop-inside' : ''}`}
+                data-testid={`research-project-${project.id}`} data-marquee-host {...outsideDropProps(folderActions, run, project.id, active => setDropProjectId(current => active ? project.id : current === project.id ? null : current))}>
                 {renaming === key
                   ? <><span className="shrink-0" style={{ color: project.color ?? undefined }}><Icon name={project.icon ?? 'folder'} size={15} /></span>
                     <RenameField value={project.name} onDone={name => { setRenaming(null); if (name && name !== project.name) run(() => props.onUpdateProject(project, { name })); }} /></>

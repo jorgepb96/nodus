@@ -8,6 +8,20 @@ The database, study/teaching and world views provide `ResearchChatAdapter` imple
 
 The academic source filter remains opt-in. Native source panels keep their existing context rules. All Research chat transports pass the explicit effort through `researchGenerationOptions`; non-chat Study Assistant requests retain their existing settings. Nodi is unchanged.
 
+The context balloon's **Focus** tab includes a **Select all** switch above indexed
+texts, ideas, full documents and web search. It is on only when all four layers are
+enabled. Turning it off clears all four; turning it on from an empty or partial
+selection enables all four. The web choice stays synchronized with the composer
+and its saved setting. Library filters and notebook scope are preserved. The
+header count continues to show only the four actual layers.
+
+Validation: `node scripts/verify-research-context-layers.mjs` covers bulk and
+individual switches, keyboard use, request payloads, preservation of selected
+authors and works, and light/dark layouts using synthetic harness data.
+
+![Select-all context switch in the light theme](screenshots/research-context/select-all-light.png)
+![Select-all context switch in the dark theme](screenshots/research-context/select-all-dark.png)
+
 ## Pending requests in Research Chat
 
 In the native Research Chat, **Cmd+Enter** on macOS or **Ctrl+Enter** adds the

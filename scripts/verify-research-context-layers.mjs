@@ -27,7 +27,7 @@ try {
     // Layers replace the modes and the per-section checkboxes.
     for (const gone of ['Síntesis', 'Huecos', 'Ideas generadas', 'Grafo de autores', 'Todo', 'Nada']) assert.equal(await panel.getByText(gone, { exact: true }).count(), 0, `${gone} is no longer offered`);
     assert.equal(await panel.locator('input[type=checkbox]').count(), 0);
-    assert.deepEqual(await panel.getByRole('switch').evaluateAll(items => items.map(item => [item.textContent.split(/(?=[A-ZÁÉÍÓÚ][a-záéíóú]+ )/)[0].trim(), item.getAttribute('aria-checked')])).then(rows => rows.map(([, on]) => on)), ['true', 'true', 'true', 'true']);
+    assert.deepEqual(await panel.getByRole('switch').evaluateAll(items => items.map(item => item.getAttribute('aria-checked'))), ['true', 'true', 'true', 'true', 'true']);
     assert.match(await layer('indexed').innerText(), /^Textos indexados\n/);
     assert.ok(await layer('indexed').evaluate((element, ideas) => element.compareDocumentPosition(ideas) & Node.DOCUMENT_POSITION_FOLLOWING, await layer('ideas').elementHandle()), 'indexed texts sits above Ideas');
     assert.match(await layer('ideas').innerText(), /^Ideas\n/);
@@ -135,12 +135,67 @@ try {
     assert.equal(await count(), '3');
     assert.deepEqual(await page.evaluate(() => window.updates.at(-1)), { researchWebSearch: 'auto' });
 
+    // A partial selection enables everything; a full selection clears everything. The
+    // master follows individual switches and shares the composer's persisted web choice.
+    await trigger.click();
+    const all = panel.getByTestId('research-context-select-all');
+    assert.equal(await all.getAttribute('aria-checked'), 'false');
+    await all.focus();
+    await page.keyboard.press('Space');
+    assert.equal(await all.getAttribute('aria-checked'), 'true');
+    assert.equal(await count(), '4', 'the master is not counted as a fifth context layer');
+    await layer('web').click();
+    assert.equal(await all.getAttribute('aria-checked'), 'false');
+    await layer('web').click();
+    assert.equal(await all.getAttribute('aria-checked'), 'true');
+    await all.click();
+    for (const id of ['indexed', 'ideas', 'documents', 'web']) assert.equal(await layer(id).getAttribute('aria-checked'), 'false');
+    assert.equal(await count(), '0');
+    assert.ok(await panel.getByTestId('research-context-empty').isVisible());
+    assert.equal(await page.getByTestId('research-web-toggle').getAttribute('aria-pressed'), 'false');
+    assert.deepEqual(await page.evaluate(() => window.updates.at(-1)), { researchWebSearch: 'off' });
+    await panel.getByRole('button', { name: 'Listo', exact: true }).click();
+    await input.fill(`Bulk off ${theme}`);
+    await input.press('Enter');
+    await page.waitForFunction(text => window.requests.at(-1)?.messages.at(-1)?.content === text, `Bulk off ${theme}`);
+    const bulkOff = await page.evaluate(() => window.requests.at(-1));
+    assert.deepEqual(bulkOff.selection.layers, { ideas: false, documents: false, indexed: false, web: false });
+    assert.equal(bulkOff.webSearch, 'off');
+    await page.locator('.research-composer-stop').waitFor({ state: 'hidden' });
+    await trigger.click();
+    await all.click();
+    for (const id of ['indexed', 'ideas', 'documents', 'web']) assert.equal(await layer(id).getAttribute('aria-checked'), 'true');
+    assert.equal(await panel.getByTestId('research-context-empty').count(), 0);
+    assert.deepEqual(await page.evaluate(() => window.updates.at(-1)), { researchWebSearch: 'auto' });
+    await page.screenshot({ path: `${output}/context-select-all-${theme}.png` });
+    await panel.getByRole('button', { name: 'Listo', exact: true }).click();
+    await input.fill(`Bulk on ${theme}`);
+    await input.press('Enter');
+    await page.waitForFunction(text => window.requests.at(-1)?.messages.at(-1)?.content === text, `Bulk on ${theme}`);
+    const bulkOn = await page.evaluate(() => window.requests.at(-1));
+    assert.deepEqual(bulkOn.selection.layers, { ideas: true, documents: true, indexed: true, web: true });
+    assert.equal(bulkOn.webSearch, 'auto');
+    await page.locator('.research-composer-stop').waitFor({ state: 'hidden' });
+
     // The authorized sources row opens the Library tab.
     await trigger.click();
     await panel.getByTestId('research-context-sources').click();
     assert.equal(await page.getByTestId('research-context-tab-library').getAttribute('aria-selected'), 'true');
     await page.getByTestId('research-source-filter-panel').waitFor();
-    await page.keyboard.press('Escape');
+    await panel.getByRole('checkbox', { name: 'Limitar el contexto a las fuentes seleccionadas' }).check();
+    await panel.getByRole('checkbox', { name: 'Hannah Arendt 2 obras' }).check();
+    await panel.getByRole('checkbox', { name: /La condición humana/ }).check();
+    await panel.getByRole('button', { name: 'Aplicar', exact: true }).click();
+    await trigger.click();
+    await page.getByTestId('research-context-tab-focus').click();
+    await all.click();
+    await all.click();
+    await panel.getByRole('button', { name: 'Listo', exact: true }).click();
+    await input.fill(`Bulk with filter ${theme}`);
+    await input.press('Enter');
+    await page.waitForFunction(text => window.requests.at(-1)?.messages.at(-1)?.content === text, `Bulk with filter ${theme}`);
+    assert.deepEqual(await page.evaluate(() => window.requests.at(-1).selection.sourceFilter), { enabled: true, authorIds: ['arendt'], workIds: ['human'] }, 'bulk toggling preserves the authorized authors and works');
+    await page.locator('.research-composer-stop').waitFor({ state: 'hidden' });
   }
 
   // The Simple interface never extracts ideas: a new chat there reads the indexed texts alone, with
@@ -180,5 +235,5 @@ try {
     await panel.getByRole('button', { name: 'Listo', exact: true }).click();
   }
   assert.deepEqual(errors, []);
-  console.log('Context layers: four independent switches (indexed texts, ideas, full documents that bring the indexed texts, web) in place of modes and sections, a new Simple chat that reads the indexed texts alone with the web off, keyboard toggling, the request carries the chosen layers, the web switch shares the composer setting, the no-sources note, the authorized-sources row and a compact activity balloon that marks switched-off layers, in light and dark. No paid calls.');
+  console.log('Context layers: select-all switch, partial/all/none states, keyboard toggling, bulk request payloads, composer web synchronization, four individual layers, Simple profile, authorized sources and compact activity in light and dark. No paid calls.');
 } finally { await browser.close(); }

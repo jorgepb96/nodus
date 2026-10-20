@@ -490,7 +490,9 @@
 .research-folder-toggle.is-open > svg { transform: rotate(90deg); }
 .research-folder-actions-spacer { flex-shrink: 0; width: 26px; }
 .research-folder-count { flex-shrink: 0; min-width: 14px; font-size: 11px; color: #737373; text-align: right; font-variant-numeric: tabular-nums; }
-.research-folder-row.is-drop-inside { background: color-mix(in srgb, var(--vault-accent, #6366f1) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vault-accent, #6366f1) 65%, transparent); }
+.research-history-row.is-drop-inside,
+.light .research-history-row.is-drop-inside { background: color-mix(in srgb, var(--vault-accent, #6366f1) 24%, transparent); box-shadow: inset 0 0 0 2px var(--vault-accent, #6366f1); }
+.research-history-row.is-drop-inside .research-history-main { font-weight: 600; }
 .research-folder-row.is-drop-before { box-shadow: inset 0 2px 0 var(--vault-accent, #6366f1); }
 .research-folder-row.is-drop-after { box-shadow: inset 0 -2px 0 var(--vault-accent, #6366f1); }
 .light .research-folder-toggle { color: #a1a1aa; }

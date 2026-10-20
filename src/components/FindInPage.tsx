@@ -98,7 +98,7 @@ function textNodeIndex(root: HTMLElement): { text: string; nodes: TextNodeEntry[
   let text = '';
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      if (!node.nodeValue || node.parentElement?.closest('[data-reader-ignore]')) return NodeFilter.FILTER_REJECT;
+      if (!node.nodeValue || node.parentElement?.closest('[data-reader-ignore], [hidden], [aria-hidden="true"]')) return NodeFilter.FILTER_REJECT;
       const tag = node.parentElement?.tagName;
       if (tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
@@ -156,10 +156,20 @@ export function FindInPage({
   const [wholeWord, setWholeWord] = useState(false);
   const [busy, setBusy] = useState(false);
   const [emptySource, setEmptySource] = useState(false);
+  const [domRevision, setDomRevision] = useState(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const requestRef = useRef(0);
   const api = useRef(highlightApi());
   const segmented = segments !== undefined || loadSegments !== undefined;
+
+  // Source panels can finish loading or change tabs while the find bar is open.
+  useEffect(() => {
+    const root = targetRef.current;
+    if (!open || segmented || !root) return;
+    const observer = new MutationObserver(() => setDomRevision((value) => value + 1));
+    observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
+    return () => observer.disconnect();
+  }, [open, segmented, targetRef]);
 
   const clearHighlights = useCallback(() => {
     api.current?.registry.delete(HIGHLIGHT_ALL);
@@ -235,7 +245,7 @@ export function FindInPage({
       })();
     }, 90);
     return () => window.clearTimeout(handle);
-  }, [caseSensitive, clearHighlights, loadSegments, open, query, segmented, segments, targetRef, unavailableMessage, wholeWord]);
+  }, [caseSensitive, clearHighlights, domRevision, loadSegments, open, query, segmented, segments, targetRef, unavailableMessage, wholeWord]);
 
   // Paint only the currently rendered page/chapter. The full result count comes
   // from the segment index; activating a result renders its segment and this
@@ -278,22 +288,35 @@ export function FindInPage({
   // and F3 follow platform conventions for moving through matches.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      const root = targetRef.current;
+      if (!root || root.closest('[hidden]')) return;
+      const dialogs = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"]'))
+        .filter((dialog) => dialog.getClientRects().length > 0);
+      const topDialog = dialogs[dialogs.length - 1];
+      if (topDialog && !topDialog.contains(root)) {
+        if (open) close();
+        return;
+      }
       const command = event.metaKey || event.ctrlKey;
       if (command && !event.altKey && event.key.toLowerCase() === 'f') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         setOpen(true);
         requestAnimationFrame(() => { inputRef.current?.focus(); inputRef.current?.select(); });
       } else if (open && ((command && !event.altKey && event.key.toLowerCase() === 'g') || event.key === 'F3')) {
         event.preventDefault();
+        event.stopImmediatePropagation();
         move(event.shiftKey ? -1 : 1);
       } else if (open && event.key === 'Escape') {
         event.preventDefault();
+        event.stopImmediatePropagation();
         close();
       }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close, move, open]);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [close, move, open, targetRef]);
 
   useEffect(() => clearHighlights, [clearHighlights]);
 

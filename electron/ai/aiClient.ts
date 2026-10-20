@@ -211,6 +211,26 @@ function observeProviderQuota(
   aiRequestScheduler.observeQuota(providerRequestDescriptor(model, opts, key, endpoint), headers);
 }
 
+/** Capture the application caller before transport awaits, queueing and retries.
+ * Explicit labels also work for anonymous callers and builds that rename functions. */
+function withAiCallTrace(opts: CallOpts, boundary: (...args: any[]) => unknown): CallOpts {
+  if (process.env.NODUS_AI_CALL_TRACE !== '1' || opts.callSite) return opts;
+  try {
+    const trace: { stack?: string } = {};
+    // Omit this helper and the public completion entry point itself. Capturing in
+    // the scheduler instead would report rawCompleteTransport/withProviderRetries.
+    Error.captureStackTrace(trace, boundary);
+    const frames = (trace.stack ?? '').split('\n').slice(1);
+    for (const frame of frames) {
+      const name = /^\s*at (?:async )?([A-Za-z_$][A-Za-z0-9_$.<>]*)(?:\s+\(|$)/.exec(frame)?.[1];
+      if (name) return { ...opts, callSite: name };
+    }
+  } catch {
+    // Diagnostics must never prevent a model request.
+  }
+  return opts;
+}
+
 function scheduleProviderRequest<T>(
   model: ModelRef,
   opts: CallOpts,
@@ -220,6 +240,7 @@ function scheduleProviderRequest<T>(
 ): Promise<T> {
   const queuedAt = process.hrtime.bigint();
   const requestHash = providerRequestHash(model, opts);
+  const callSite = process.env.NODUS_AI_CALL_TRACE === '1' ? opts.callSite : null;
   return aiRequestScheduler.run(providerRequestDescriptor(model, opts, key, endpoint), async () => {
     currentResearchHarness()?.reserveModelCall();
     const startedAt = process.hrtime.bigint();
@@ -229,6 +250,7 @@ function scheduleProviderRequest<T>(
       class: opts.requestClass ?? 'interactive',
       jobId: opts.jobId ?? null,
       requestHash,
+      ...(callSite ? { callSite } : {}),
     };
     perfLogNs('AI queue wait', startedAt - queuedAt, opts.perf, meta);
     try {
@@ -581,6 +603,8 @@ export interface CallOpts {
   requestClass?: AiRequestClass;
   /** Stable, content-free identifier used only for diagnostics/checkpoints. */
   jobId?: string;
+  /** Content-free operation label for NODUS_AI_CALL_TRACE=1; otherwise inferred at entry. */
+  callSite?: string;
   /**
    * Ask a provider with a native seed contract to make a best effort at producing
    * the same structured result for the same frozen request. Extraction uses this;
@@ -1879,6 +1903,7 @@ export async function completeJson<T>(
   guard: (v: unknown) => v is T,
   model?: ModelRef | null
 ): Promise<T> {
+  opts = withAiCallTrace(opts, completeJson);
   const resolved = resolveModel(model);
   const langOpts = withPromptContext(opts);
   // JSON/structured calls (scans, extraction) default to reasoning off for speed.
@@ -1965,6 +1990,7 @@ function logJsonFailure(error: unknown): void {
 
 /** Plain-text completion for conversational assistant responses. */
 export async function completeText(opts: CallOpts, model?: ModelRef | null): Promise<string> {
+  opts = withAiCallTrace(opts, completeText);
   const resolved = resolveModel(model);
   const reasoning = opts.reasoning ?? getSettings().chatReasoning ?? 'off';
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
@@ -1979,6 +2005,7 @@ export async function completeText(opts: CallOpts, model?: ModelRef | null): Pro
  * where forcing English/Spanish would defeat the purpose.
  */
 export async function completeTextNeutral(opts: CallOpts, model?: ModelRef | null): Promise<string> {
+  opts = withAiCallTrace(opts, completeTextNeutral);
   const resolved = resolveModel(model);
   const reasoning = opts.reasoning ?? 'off';
   return deanonymizeResult(await rawComplete(resolved, opts, false, reasoning));
@@ -1991,6 +2018,7 @@ export async function completeTextStream(
   model?: ModelRef | null,
   signal?: AbortSignal
 ): Promise<string> {
+  opts = withAiCallTrace(opts, completeTextStream);
   const resolved = resolveModel(model);
   const reasoning = opts.reasoning ?? getSettings().chatReasoning ?? 'off';
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning
@@ -2010,6 +2038,7 @@ export async function completeTextStreamNeutral(
   model?: ModelRef | null,
   signal?: AbortSignal
 ): Promise<string> {
+  opts = withAiCallTrace(opts, completeTextStreamNeutral);
   const resolved = resolveModel(model);
   const reasoning = opts.reasoning ?? getSettings().chatReasoning ?? 'off';
   const codexReasoning = opts.reasoning === undefined || opts.useConfiguredCodexReasoning

@@ -183,6 +183,47 @@ test('research chat history: sections, search, pins, menu and projects', { timeo
       assert.equal(await home.getByTestId('research-project-tree').count(), 0);
     });
 
+    await t.test('valid destinations stand out in both themes and clear after leaving or cancelling', async () => {
+      const source = home.getByTestId('home-chat-c2');
+      const target = sidebar.getByTestId('research-folder-f-3');
+      const currentFolder = sidebar.getByTestId('research-folder-f-2');
+      const project = sidebar.getByTestId('research-project-p-a');
+      const unfiled = sidebar.getByTestId('research-folder-unfiled-p-a');
+      const transfer = await page.evaluateHandle(() => new DataTransfer());
+      const highlighted = async row => page.waitForFunction(element => element.classList.contains('is-drop-inside'), await row.elementHandle());
+      const cleared = async () => page.waitForFunction(() => !document.querySelector('.is-drop-inside'));
+      for (const theme of ['dark', 'light']) {
+        await page.evaluate(theme => document.documentElement.className = theme, theme);
+        await source.dispatchEvent('dragstart', { dataTransfer: transfer });
+        await target.hover();
+        const resting = await target.evaluate(element => getComputedStyle(element).backgroundColor);
+        await target.dispatchEvent('dragenter', { dataTransfer: transfer });
+        await highlighted(target);
+        await page.waitForFunction(element => getComputedStyle(element).boxShadow.includes('2px'), await target.elementHandle());
+        const feedback = await target.evaluate(element => ({ background: getComputedStyle(element).backgroundColor, border: getComputedStyle(element).boxShadow, weight: getComputedStyle(element.querySelector('.research-history-main')).fontWeight }));
+        assert.notEqual(feedback.background, resting, `${theme}: drag feedback takes precedence over hover`);
+        assert.match(feedback.border, /2px.*inset|inset.*2px/, `${theme}: destination has a visible outline`);
+        assert.equal(feedback.weight, '600');
+        await sidebar.screenshot({ path: path.join(os.tmpdir(), `nodus-research-drop-${theme}.png`) });
+        await target.evaluate(element => element.dispatchEvent(new DragEvent('dragleave', { bubbles: true, relatedTarget: element.querySelector('button') })));
+        await highlighted(target);
+        await target.dispatchEvent('dragleave', { dataTransfer: transfer });
+        await cleared();
+        await currentFolder.dispatchEvent('dragover', { dataTransfer: transfer });
+        assert.equal(await currentFolder.evaluate(element => element.classList.contains('is-drop-inside')), false, 'the current folder rejects the chat');
+        for (const destination of [target, project, unfiled]) {
+          await destination.dispatchEvent('dragover', { dataTransfer: transfer });
+          await highlighted(destination);
+          await source.dispatchEvent('dragend', { dataTransfer: transfer });
+          await cleared();
+          await source.dispatchEvent('dragstart', { dataTransfer: transfer });
+        }
+        await source.dispatchEvent('dragend', { dataTransfer: transfer });
+      }
+      await page.evaluate(() => document.documentElement.className = 'dark');
+      await transfer.dispose();
+    });
+
     await t.test('a chat dropped on a folder is filed there; dropped outside every folder it leaves it, in both places', async () => {
       await sidebar.getByTestId('research-conversation-c3').dragTo(sidebar.getByTestId('research-folder-f-3'));
       await action('file', 'c3', 'f-3');

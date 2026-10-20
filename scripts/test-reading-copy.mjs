@@ -43,6 +43,20 @@ try {
     );
   }
 
+  // ── Research Chat's author-comma-year references and compound surnames ────
+  {
+    assert.equal(
+      toReadingCopy('La recurrencia existe ([Lleó Cañal, 1984, p. 7](nodus://passage/source-1)).\n\nVega de la Rosa lo explica (Vega de la Rosa, 2011, p. 57).'),
+      'La recurrencia existe.\n\nVega de la Rosa lo explica.'
+    );
+    assert.equal(
+      toReadingCopy('Una interpretación [Vega de la Rosa, 2011](nodus://idea/source-2) que sigue vigente.'),
+      'Una interpretación que sigue vigente.',
+      'author-comma-year Nodus references are removed even inside a sentence'
+    );
+    assert.equal(toReadingCopy('El cambio (de la ciudad en 2011) fue notable.'), 'El cambio (de la ciudad en 2011) fue notable.');
+  }
+
   // ── Bare nodus urls ───────────────────────────────────────────────────────
   {
     const out = toReadingCopy('Ver nodus://idea/g-12 para el detalle.');

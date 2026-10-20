@@ -446,7 +446,7 @@ function CitationLink({
         data-citation-id={citation.id}
         data-web-source={citation.kind === 'passage' && citation.id.startsWith('web:') ? 'true' : undefined}
         data-verified={unverified ? 'false' : undefined}
-        title={
+        aria-description={
           unverified
             ? t('Fuente no encontrada: esta cita no se pudo verificar en el corpus.')
             : citation.kind === 'passage' && citation.id.startsWith('web:') ? t('Abrir la fuente web en una pestaña nueva del navegador de Nodus')

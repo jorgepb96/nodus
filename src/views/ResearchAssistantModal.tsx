@@ -41,6 +41,7 @@ import { ResearchEffortControl } from '../components/ResearchEffortControl';
 import { ModelPicker } from '../components/ModelPicker';
 import { liveResearchTurnKey, liveResearchTurns, type LiveResearchTurn } from '../researchLiveTurns';
 import { researchChatPresentation } from '@shared/researchSourceNotices';
+import { toReadingCopy } from '@shared/readingCopy';
 import { ResearchSourceNotice } from '../components/ResearchSourceNotice';
 import { ChatMarkdown } from '../components/ChatMarkdown';
 import { ChatAbortedNotice } from '../components/ChatAbortedNotice';
@@ -64,6 +65,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { ChatTypingIndicator } from '../components/ChatTypingIndicator';
 import { SaveToNotesModal, type StudyNoteDestination } from '../components/SaveToNotesModal';
 import { SourceCitationModal, type CitationTarget } from '../components/SourceCitationModal';
+import { FindInPage } from '../components/FindInPage';
 import type { AssistantNavigationTarget } from '../navigation';
 import { t, tx } from '../i18n';
 import { useFeatureModel } from '../hooks/useFeatureModel';
@@ -300,7 +302,7 @@ export function ResearchAssistantModal({
   const [conversationNotice, setConversationNotice] = useState<string | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showJumpToBottom, setShowJumpToBottom] = useState(false);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [copiedMessage, setCopiedMessage] = useState<{ id: string; format: 'markdown' | 'reading' } | null>(null);
   const [showContext, setShowContext] = useState(false);
   // The context balloon's two tabs: how the assistant approaches the corpus, and which of it.
   const [contextTab, setContextTab] = useState<'focus' | 'library'>('focus');
@@ -431,13 +433,15 @@ export function ResearchAssistantModal({
     setShowJumpToBottom(false);
   }, []);
 
-  const copyMessageMarkdown = useCallback(async (message: UiMessage) => {
-    const text = (!adapter && message.role === 'assistant' ? researchChatPresentation(message).content : message.content).trim();
+  const copyMessage = useCallback(async (message: UiMessage, format: 'markdown' | 'reading') => {
+    const content = (!adapter && message.role === 'assistant' ? researchChatPresentation(message).content : message.content).trim();
+    const text = format === 'reading' ? toReadingCopy(content) : content;
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    setCopiedMessageId(message.id);
+    const copied = { id: message.id, format };
+    setCopiedMessage(copied);
     window.setTimeout(() => {
-      setCopiedMessageId((current) => (current === message.id ? null : current));
+      setCopiedMessage((current) => (current === copied ? null : current));
     }, 1400);
   }, [adapter]);
 
@@ -464,6 +468,10 @@ export function ResearchAssistantModal({
 
   const setContextLayer = (layer: (typeof CONTEXT_LAYERS)[number]['id'], on: boolean) =>
     setSelection(current => withResearchContextLayers(current, toggleResearchContextLayer(researchContextLayers(current, isAcademic), layer, on)));
+  const setAllContextLayers = (on: boolean) => {
+    setWebSearch(on ? 'auto' : 'off');
+    setSelection(current => withResearchContextLayers(current, { ideas: on, documents: on, indexed: on, web: on }));
+  };
 
   const startNewConversation = () => {
     if (attachmentBusyRef.current) return;
@@ -485,7 +493,7 @@ export function ResearchAssistantModal({
     setStoppedMessageId(null);
     setContextTitle(null);
     setShowJumpToBottom(false);
-    setCopiedMessageId(null);
+    setCopiedMessage(null);
   };
 
   useEffect(() => {
@@ -502,7 +510,7 @@ export function ResearchAssistantModal({
     setSelection(current => cloneSelection(initialTarget.selection ?? { ...current, sourceFilter: undefined }));
     if (initialTarget.prompt) setInput(initialTarget.prompt);
     setShowJumpToBottom(false);
-    setCopiedMessageId(null);
+    setCopiedMessage(null);
   }, [initialTarget]);
 
   const loadConversation = async (id: string, messageId?: string | null, messageIndex?: number | null, restoringDraft = false): Promise<boolean> => {
@@ -1317,6 +1325,7 @@ export function ResearchAssistantModal({
             </header>}
             {!adapter && !isGenealogy && <ResearchHarnessPanel mode="chat" conversationId={activeId} onResumed={() => { if (activeId) void loadConversation(activeId); }} />}
             <div className="relative flex-1 min-h-0">
+              <FindInPage key={activeId ?? 'new-chat'} targetRef={scrollRef} placement="surface" />
               {!adapter && !isGenealogy && activityRun?.conversationId === activeId && <ResearchActivityPanel key={activityRun.turnId} activities={activityRun.activities} outcome={activityRun.outcome} webDisabled={turnWebSearch === 'off'} disabledLayers={[...(contextLayers.ideas ? [] : ['ideas', 'graph'] as const), ...(contextLayers.indexed ? [] : ['nodus'] as const), ...(contextLayers.documents ? [] : ['profiles', 'zotero', 'context'] as const)]} />}
               <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-3">
                 {conversationNotice && (
@@ -1367,7 +1376,7 @@ export function ResearchAssistantModal({
                     className={`msg-in flex rounded-lg transition-shadow duration-500 ${highlightedMessageId === message.id ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-950' : ''} ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? (adapter ? 'pr-24' : 'pr-32') : 'pr-16'} ${
+                      className={`research-message group relative max-w-[78%] rounded-lg border px-3 py-2 text-sm ${message.role === 'assistant' ? (adapter ? 'pr-28' : 'pr-32') : 'pr-16'} ${
                         message.role === 'user'
                           ? 'research-accent-solid text-white whitespace-pre-wrap'
                           : message.error
@@ -1429,17 +1438,29 @@ export function ResearchAssistantModal({
                             }}
                           />
                         )}
+                        {message.role === 'assistant' && message.content.trim() && (
+                          <button
+                            type="button"
+                            className="rounded p-1 text-neutral-500 opacity-70 transition hover:bg-neutral-800 research-accent-hover hover:opacity-100"
+                            title={copiedMessage?.id === message.id && copiedMessage.format === 'reading' ? t('Copiado') : t('Copiar sin referencias')}
+                            aria-label={t('Copiar sin referencias')}
+                            data-testid={`research-copy-reading-${message.id}`}
+                            onClick={() => void copyMessage(message, 'reading')}
+                          >
+                            <Icon name={copiedMessage?.id === message.id && copiedMessage.format === 'reading' ? 'check' : 'copyText'} size={13} />
+                          </button>
+                        )}
                         <button
                           className={`rounded p-1 opacity-70 transition hover:opacity-100 ${
                             message.role === 'user'
                               ? 'text-white hover:bg-white/10'
                               : 'text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200'
                           }`}
-                          title={copiedMessageId === message.id ? t('Copiado') : t('Copiar en Markdown')}
-                          onClick={() => void copyMessageMarkdown(message)}
+                          title={copiedMessage?.id === message.id && copiedMessage.format === 'markdown' ? t('Copiado') : t('Copiar en Markdown')}
+                          onClick={() => void copyMessage(message, 'markdown')}
                           disabled={!message.content.trim()}
                         >
-                          <Icon name={copiedMessageId === message.id ? 'check' : 'copy'} size={13} />
+                          <Icon name={copiedMessage?.id === message.id && copiedMessage.format === 'markdown' ? 'check' : 'copy'} size={13} />
                         </button>
                       </div>
                       {message.attachments?.length ? renderAttachments(message.attachments) : null}
@@ -1634,6 +1655,8 @@ export function ResearchAssistantModal({
           <div className="context-tab-scroll">
             <p className="research-context-intro">{t('Elige qué consulta el asistente antes de responder.')}</p>
             <div className="research-context-layers" data-testid="research-context-layers">
+              <ContextLayerSwitch testId="research-context-select-all" icon="layers" label={t('Seleccionar todo')}
+                checked={CONTEXT_LAYERS.every(layer => contextLayers[layer.id]) && turnWebSearch !== 'off'} disabled={sending && !!adapter} onChange={setAllContextLayers} />
               {CONTEXT_LAYERS.map(layer => <ContextLayerSwitch key={layer.id} testId={`research-context-layer-${layer.id}`} icon={layer.icon} label={t(layer.label)}
                 description={t(layer.description)} checked={contextLayers[layer.id]} disabled={sending && !!adapter} onChange={on => setContextLayer(layer.id, on)} />)}
               <ContextLayerSwitch testId="research-context-layer-web" icon="globe" label={t('Búsqueda web')}
@@ -1743,12 +1766,12 @@ function ProjectChatList({ conversations, onOpen, empty, draggable = false }: { 
 
 /** One layer of the context balloon: what it reads, and a switch. */
 function ContextLayerSwitch({ testId, icon, label, description, checked, disabled, onChange }: {
-  testId: string; icon: string; label: string; description: string; checked: boolean; disabled?: boolean; onChange: (value: boolean) => void;
+  testId: string; icon: string; label: string; description?: string; checked: boolean; disabled?: boolean; onChange: (value: boolean) => void;
 }) {
   return <button type="button" role="switch" aria-checked={checked} disabled={disabled} className="research-context-layer" data-testid={testId}
     onClick={() => onChange(!checked)}>
     <Icon name={icon} size={16} />
-    <span><strong>{label}</strong><small>{description}</small></span>
+    <span><strong>{label}</strong>{description && <small>{description}</small>}</span>
     <span className="research-context-switch" aria-hidden="true"><span /></span>
   </button>;
 }

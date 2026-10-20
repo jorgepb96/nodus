@@ -9,7 +9,7 @@ and only its path is reported. The process exits as soon as stdin reaches EOF
 outlive Nodus. stdout carries the protocol and nothing else; logs, warnings
 and anything a library prints go to stderr.
 
-    python -I -B serve.py --backend mlx|torch|fake --models-dir <dir> [--device auto|cuda|cpu]
+    python -I -B serve.py --backend mlx|torch|fake [--models-dir <dir>] [--device auto|cuda|cpu]
 
 The protocol is documented in README.md next to this file.
 """
@@ -116,7 +116,7 @@ def write_wav(path: pathlib.Path, audio, sample_rate: int) -> float:
 
 
 class Server:
-    def __init__(self, models_dir: pathlib.Path):
+    def __init__(self, models_dir: "pathlib.Path | None"):
         self.backend = None  # set once the backend has imported
         self.models_dir = models_dir
         self.model_id = None
@@ -223,7 +223,7 @@ class Server:
         self.model_path, self.model_id = model_path.resolve(), model_id
         campplus = msg.get("campplus_path")
         candidates = [pathlib.Path(campplus)] if isinstance(campplus, str) and campplus else [
-            model_path / "campplus.onnx", self.models_dir / "campplus.onnx"]
+            model_path / "campplus.onnx", *([self.models_dir / "campplus.onnx"] if self.models_dir else [])]
         self.campplus_path = next((str(p) for p in candidates if p.is_file()), None)
         emit({"type": "loaded", "id": msg.get("id"), "load_s": round(time.perf_counter() - started, 3),
               "sample_rate": self.backend.sample_rate, "speaker_encoder": self.campplus_path is not None})
@@ -481,8 +481,6 @@ def main() -> None:
                         help="torch on the CPU: plain fp32 (default) or int8 dynamic quantization of nn.Linear")
     parser.add_argument("--self-check", action="store_true", help="import the stack, print one JSON line, exit")
     args = parser.parse_args()
-    if not args.self_check and not args.models_dir:
-        parser.error("--models-dir is required")
 
     # Never reach the network and never write into the user's own caches:
     # every file the sidecar reads was downloaded and verified by Nodus.
@@ -498,8 +496,12 @@ def main() -> None:
         sys.stderr.flush()
         os._exit(self_check(args.backend, args.device))
 
-    models_dir = pathlib.Path(args.models_dir).resolve()
-    os.environ["HF_HOME"] = str(models_dir / ".hf")
+    # Optional: Nodus' host passes each model's own directory on load instead.
+    # Without it, Hugging Face's cache home is a private temporary directory.
+    import tempfile
+
+    models_dir = pathlib.Path(args.models_dir).resolve() if args.models_dir else None
+    os.environ["HF_HOME"] = str(models_dir / ".hf") if models_dir else os.path.join(tempfile.gettempdir(), "nodus-ming-tts-hf")
 
     # Watch stdin before the slow imports, so EOF while the model stack loads
     # still exits at once. Commands that arrive meanwhile wait in the queue.
@@ -522,7 +524,7 @@ def main() -> None:
         os._exit(3)
 
     emit({"type": "ready", "protocol": PROTOCOL_VERSION, "backend": server.backend.name,
-          "device": server.backend.device, "pid": os.getpid()})
+          "device": server.backend.device, "device_name": server.backend.device_name, "pid": os.getpid()})
     server.serve()
 
 

@@ -30,7 +30,8 @@ fs.mkdirSync(modelDir, { recursive: true });
 fs.writeFileSync(path.join(modelDir, 'config.json'), '{}');
 
 function start() {
-  const child = spawn(interpreter, ['-I', '-B', path.join(runtime, 'serve.py'), '--backend', 'fake', '--models-dir', scratch], {
+  // Started exactly as electron/tts/host.ts starts it: no --models-dir, scrubbed environment.
+  const child = spawn(interpreter, ['-I', '-B', path.join(runtime, 'serve.py'), '--backend', 'fake'], {
     stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH ?? '' },
   });
   const events = [];
@@ -72,7 +73,7 @@ test('the Ming sidecar protocol', { skip: interpreter ? false : 'no Python inter
     assert.equal(sidecar.events[0], ready);
     assert.equal(ready.backend, 'fake');
     assert.equal(ready.protocol, 1);
-    assert.equal(typeof ready.device, 'string');
+    assert.ok(['metal', 'cuda', 'cpu'].includes(ready.device), ready.device);
   });
 
   await t.test('refuses to synthesize before a model is loaded', async () => {

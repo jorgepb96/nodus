@@ -31,7 +31,7 @@ generated.
 ## Starting it
 
 ```
-<venv>/python -I -B serve.py --backend mlx|torch --models-dir <dir> [--device auto|cuda|cpu] [--cpu-quant none|int8]
+<venv>/python -I -B serve.py --backend mlx|torch [--models-dir <dir>] [--device auto|cuda|cpu] [--cpu-quant none|int8]
 <venv>/python -I serve.py --self-check --backend mlx|torch [--device ...]
 ```
 
@@ -43,8 +43,11 @@ status 1. It needs no `--models-dir`. The host runs it after building an environ
 - `-I` keeps the user's Python environment out (and leaves the script's directory off
   `sys.path`; `serve.py` adds its own directory). `-B` writes no `.pyc` next to the code.
 - The environment can be scrubbed down to `PATH` (and `TMPDIR`/`TEMP`). The sidecar sets
-  `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` and `HF_HOME=<models-dir>/.hf` for itself:
-  it never reaches the network and never writes into the user's own caches.
+  `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` and `HF_HOME` (`<models-dir>/.hf`, or a
+  `nodus-ming-tts-hf` directory under the system temp directory without `--models-dir`)
+  for itself: it never reaches the network and never writes into the user's own caches.
+- `--models-dir` is optional: every `load` names its model directory. It is only a
+  fallback location for `campplus.onnx`.
 - `--device` only matters for `torch`: `auto` takes CUDA when torch sees a GPU,
   `cpu` forces the CPU, `cuda` fails at start-up without a GPU.
 - The CPU backend sizes its thread pool to physical cores − 2 (at least 1).
@@ -76,7 +79,7 @@ immediately even while a job is running.
 
 | Event | When |
 | --- | --- |
-| `{"type":"ready","protocol":1,"backend":"mlx","device":"Device(gpu, 0) (Apple M2)","pid":123}` | Once, first, after the backend has imported. Commands sent earlier are queued, not lost. |
+| `{"type":"ready","protocol":1,"backend":"mlx","device":"metal","device_name":"Apple M2","pid":123}` | Once, first, after the backend has imported. Commands sent earlier are queued, not lost. `device` is exactly `metal`, `cuda` or `cpu`; `device_name` is for display (GPU model and dtype, or CPU threads and precision). |
 | `{"type":"fatal","message":"..."}` | Instead of `ready` when the backend cannot start (e.g. a missing package); the process then exits with status 3. |
 
 ### Commands
@@ -98,7 +101,7 @@ after an error; only `fatal` ends it.
   and `-`. Use a different id for each set of weights (e.g. `ming3-0.5b-mlx-8bit`,
   `ming3-0.5b-bf16`): prompt latents from one model are not valid for another.
 - `campplus_path` locates `campplus.onnx` (the CAM++ speaker encoder). Without it the
-  sidecar looks for `campplus.onnx` in `model_path`, then in `--models-dir`.
+  sidecar looks for `campplus.onnx` in `model_path`, then in `--models-dir` if given.
   `speaker_encoder` in `loaded` says whether one was found. It is only needed for
   `use_spk_emb`.
 - `model_path` is a directory with `config.json` and the weights (layout below).
@@ -224,6 +227,16 @@ python -m pip install --require-hashes --no-deps --only-binary=:all: -r requirem
 | `requirements-torch-cpu.lock` | win32-x64, linux-x64, darwin-x64 | torch/torchaudio 2.6.0+cpu from `download.pytorch.org/whl/cpu` on Windows and Linux (206 MB / 179 MB wheels). PyTorch publishes nothing for Intel Macs after 2.2.2, so darwin gets torch 2.2.2 (151 MB) through markers; NumPy is held at 1.26.4 everywhere because 2.2.2 needs NumPy 1. |
 | `requirements-torch-cuda.lock` | win32-x64, linux-x64 | torch/torchaudio 2.6.0+cu124. The Windows torch wheel is 2.53 GB on its own; on Linux torch is 768 MB plus the `nvidia-*` CUDA 12.4 wheels (cuDNN alone 665 MB). Needs an NVIDIA driver recent enough for CUDA 12 (CUDA 12.4 itself ships with 550 on Linux and 551 on Windows). |
 
+**Why the MLX lock pins the PyPI mlx-audio and not mlx-audio's GitHub main.** The
+Ming-3.0 support the sidecar needs (dense prompt layout, speaker slot, 512-position
+budget, fragment splitting, `Target language:` line) exists only on mlx-audio main; the
+0.6.0 wheel's `bailingmm` produces a fraction of a second of audio for a paragraph. A
+VCS requirement cannot be installed with `--require-hashes --only-binary=:all:`, and a
+self-built wheel would need hosting and its own provenance. Only that one module
+differs from main, so it is vendored in `mlx_ming3/` (commit and comparison in its
+`NODUS_VENDOR.md`) and swapped in for the packaged module before loading. Everything
+else installs from PyPI by hash.
+
 The torch locks carry their `--extra-index-url` lines, so pip finds the PyTorch wheels.
 Wheels above 256 MB exceed the per-wheel ceiling of the capability runtime installer
 (`electron/capabilities/pythonRuntime.ts`), so the TTS host cannot reuse that validator
@@ -247,6 +260,7 @@ units. Reference clips: `es_castellano` (9.1 s, 7.8 s after trimming) and `es_mi
 
 | Job | Fragment audio / generation (s) | Total audio | Total gen | RTF |
 | --- | --- | --- | --- | --- |
+| `es_dave` (the host's bundled voice), no spk_emb, started as the host starts it | 12.16 / 9.61 · 9.20 / 7.28 · 4.20 / 3.34 | 25.6 | 20.2 | 0.79 |
 | `es_castellano`, no spk_emb | 12.56 / 10.36 · 9.20 / 7.94 · 4.16 / 3.47 | 25.9 | 21.8 | 0.84 |
 | `es_castellano`, no spk_emb (A/B run) | 12.48 / 11.43 · 8.90 / 8.90 · 4.16 / 4.27 | 25.5 | 24.6 | 0.96 |
 | `es_castellano`, spk_emb | 12.16 / 12.14 · 9.04 / 9.39 · 4.16 / 4.53 | 25.4 | 26.1 | 1.03 |
@@ -255,7 +269,7 @@ units. Reference clips: `es_castellano` (9.1 s, 7.8 s after trimming) and `es_mi
 
 On this base M2, generation runs at about real time, so streaming playback starts after
 the first fragment (~10–13 s) and can then stall briefly between fragments. Cancelling
-mid-job ended it 0.15 s after the `cancel` was sent, with one fragment written.
+mid-job ended it 0.14–0.15 s after the `cancel` was sent, with one fragment written.
 
 **torch on the CPU** (`requirements-torch-cpu.lock`, darwin branch: torch 2.2.2; same
 numbers with torch 2.6.0), official bf16 weights run in fp32, 6 threads: load 6.9 s,

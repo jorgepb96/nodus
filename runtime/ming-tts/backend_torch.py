@@ -78,11 +78,13 @@ class TorchBackend:
         if device != "cpu" and cuda:
             self.dev = torch.device("cuda:0")
             self.dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            self.device = f"cuda:0 ({torch.cuda.get_device_name(0)}, {str(self.dtype).replace('torch.', '')})"
+            self.device = "cuda"
+            self.device_name = f"{torch.cuda.get_device_name(0)}, {str(self.dtype).replace('torch.', '')}"
         else:
             self.dev = torch.device("cpu")
             self.dtype = torch.float32
-            self.device = f"cpu ({THREADS} threads, {'int8 dynamic' if cpu_quant == 'int8' else 'fp32'})"
+            self.device = "cpu"
+            self.device_name = f"{THREADS} threads, {'int8 dynamic' if cpu_quant == 'int8' else 'fp32'}"
         self.cpu_quant = cpu_quant
         if str(OFFICIAL) not in sys.path:
             sys.path.insert(0, str(OFFICIAL))

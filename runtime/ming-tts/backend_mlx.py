@@ -44,7 +44,8 @@ class MlxBackend:
             info = mx.device_info()
         except AttributeError:  # older MLX
             info = mx.metal.device_info()
-        self.device = f"{mx.default_device()} ({info.get('device_name', 'Apple GPU')})"
+        self.device = "metal" if mx.metal.is_available() else "cpu"
+        self.device_name = str(info.get("device_name", "Apple GPU"))
         self.model = None
 
     @property

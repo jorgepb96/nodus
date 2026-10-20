@@ -12,6 +12,7 @@ import time
 class FakeBackend:
     name = "fake"
     device = "cpu"
+    device_name = "fake"
     sample_rate = 16000
     STEP_S = 0.002
 

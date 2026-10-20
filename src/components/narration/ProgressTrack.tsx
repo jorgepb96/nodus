@@ -34,9 +34,9 @@ export function ProgressTrack({ playedS, generatedS, totalS, etaS, onSeekFractio
         <div className="absolute inset-y-0 left-0 bg-indigo-300/60 transition-[width] dark:bg-indigo-500/35" style={{ width: `${generated * 100}%` }} />
         <div className="absolute inset-y-0 left-0 bg-indigo-500 transition-[width]" style={{ width: `${played * 100}%` }} />
       </div>
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-neutral-500">
-        <span>{formatClock(playedS)}</span>
-        <span>
+      <div className="mt-1 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 font-mono text-[10px] text-neutral-500">
+        <span className="shrink-0">{formatClock(playedS)}</span>
+        <span className="min-w-0 text-right [overflow-wrap:anywhere]">
           {generatedS < total - 0.5 ? tx('generado {generated} de ~{total}', { generated: formatClock(generatedS), total: formatClock(total) }) : formatClock(total)}
           {etaS != null && etaS > 1 ? ` · ${tx('quedan ~{eta}', { eta: formatClock(etaS) })}` : ''}
         </span>

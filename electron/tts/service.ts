@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
   TTS_MODELS, defaultTtsModelId, ttsBackendForModel, ttsBackendForPlatform, ttsModelsForPlatform,
+  PHONON_LANGUAGES,
   type TtsBackend, type TtsEngine, type TtsFragmentEvent, type TtsJobProgress, type TtsRuntimeStatus, type TtsStatus,
 } from '@shared/ttsModels';
 import { PHONON_VOICES, phononVoiceUrl } from '@shared/phononVoices';
@@ -18,6 +19,7 @@ import { audioClipBytesByKind, listExpiredAudioClips, setAudioClipPinned } from 
 import { TtsInstaller, type TtsInstalledRuntime } from './install';
 import { TtsModelStore } from './models';
 import { TtsEngineHost, type TtsVoiceRef } from './host';
+import { measurePerf } from '../perf';
 import { TtsVoiceLibrary } from './voices';
 import { concatWavFiles } from './wavConcat';
 import { liveFragmentUrl } from './audioUrls';
@@ -123,7 +125,7 @@ export class TtsService {
     try {
       const runtime = await installer.install((progress) => {
         this.install = { ...progress, engine: engineName };
-        this.emit({ kind: 'install', phase: progress.phase, fraction: progress.fraction });
+        this.emit({ kind: 'install', engine: engineName, phase: progress.phase, fraction: progress.fraction });
       });
       if (engineName === 'phonon') this.phononRuntime = runtime; else this.runtime = runtime;
     } catch (error) {
@@ -200,8 +202,11 @@ export class TtsService {
     if (phonon !== voiceId.startsWith('phonon:')) throw new Error('TTS_VOICE_ENGINE_MISMATCH');
     const { ref, language: voiceLanguage } = phonon ? await this.phononVoice(voiceId) : await this.voices.resolve(voiceId);
     const detected = resolveTtsLanguage(request.language ?? settings.ttsLanguage, text, voiceLanguage);
-    // A checkpoint only speaks its own languages: a single-language model always uses its one.
-    const language = model.languages.includes(detected) ? detected : model.languages[0];
+    // Phonon selects the voice's language even on a compact checkpoint (the catalogue voice
+    // carries the accent); Ming only speaks the languages in its checkpoint.
+    const language = model.engine === 'phonon'
+      ? ((PHONON_LANGUAGES as readonly string[]).includes(detected) ? detected : model.languages[0])
+      : (model.languages.includes(detected) ? detected : model.languages[0]);
     const started = Date.now();
     const { jobId, done } = this.host.synth(modelId, { text, voice: ref, language, priority: request.priority ?? 0 }, {
       onStart: (id) => this.progress(id, { state: 'generating' }),
@@ -223,11 +228,12 @@ export class TtsService {
       if (result.cancelled) { this.progress(jobId, { state: 'cancelled' }); return; }
       let clip;
       if (request.save && result.fragments.length) {
-        const bytes = await concatWavFiles(result.fragments.sort((a, b) => a.index - b.index).map((fragment) => fragment.path));
-        clip = await saveClipAsync(request.save.kind, request.save.id, {
-          segmentIndex: request.save.segmentIndex, segmentLabel: request.save.segmentLabel,
-          provider: 'ming', voice: voiceId, language, bytes,
-        });
+        const paths = result.fragments.sort((a, b) => a.index - b.index).map((fragment) => fragment.path);
+        const bytes = await measurePerf('tts-concat', { nodusId: request.save.id }, () => concatWavFiles(paths), { fragments: paths.length });
+        clip = await measurePerf('tts-save-clip', { nodusId: request.save.id }, () => saveClipAsync(request.save!.kind, request.save!.id, {
+          segmentIndex: request.save!.segmentIndex, segmentLabel: request.save!.segmentLabel,
+          provider: 'ming', voice: voiceId, language, modelId, bytes,
+        }), { bytes: bytes.length });
       }
       this.progress(jobId, { state: 'done', etaS: 0 }, clip);
     }, (error) => {

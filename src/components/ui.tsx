@@ -166,6 +166,8 @@ const ICON_PATHS: Record<string, string> = {
   play: '<polygon points="6 4 20 12 6 20 6 4"/>',
   stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
   microphone: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/><path d="M8 22h8"/>',
+  headphones: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2" y="14" width="4" height="7" rx="1.6"/><rect x="18" y="14" width="4" height="7" rx="1.6"/>',
+  userVoice: '<circle cx="9" cy="6" r="3"/><path d="M2 21v-1a7 7 0 0 1 14 0v1"/><path d="M17 8c1.2 1.2 1.2 3.8 0 5"/><path d="M20 5c2.5 2.5 2.5 8.5 0 11"/>',
   audio: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
   video: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/>',
   mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { AudioClip } from '@shared/types';
 import type { TtsEvent, TtsSpeakRequest, TtsSpeakStarted } from '@shared/api/tts';
-import { TTS_MODELS, type TtsFragmentEvent, type TtsJobProgress, type TtsStatus } from '@shared/ttsModels';
+import { TTS_MODELS, type TtsFragmentEvent, type TtsJobProgress, type TtsModelStatus, type TtsStatus } from '@shared/ttsModels';
 
 /**
  * The renderer's single subscription to narration events. Jobs, downloads and the engine
@@ -27,6 +27,12 @@ const eventListeners = new Set<EventListener>();
 let lastStatus: TtsStatus | null = null;
 let subscribed = false;
 
+/** Fold a download-progress event into the cached engine status. */
+export function mergeTtsModelStatus(status: TtsStatus | null, model: TtsModelStatus): TtsStatus | null {
+  if (!status) return null;
+  return { ...status, models: status.models.map((entry) => (entry.id === model.id ? model : entry)) };
+}
+
 function ensureSubscribed(): void {
   if (subscribed || typeof window === 'undefined' || !window.nodus?.onTtsEvent) return;
   subscribed = true;
@@ -35,6 +41,16 @@ function ensureSubscribed(): void {
     if (event.kind === 'status') {
       lastStatus = event.status;
       for (const listener of statusListeners) listener(event.status);
+      return;
+    }
+    if (event.kind === 'model') {
+      // Downloads report progress every ~250 ms. Folding it into the cached status keeps
+      // Settings and the listen balloon live without asking the main process each time.
+      const next = mergeTtsModelStatus(lastStatus, event.status);
+      if (next) {
+        lastStatus = next;
+        for (const listener of statusListeners) listener(next);
+      }
       return;
     }
     const jobId = event.kind === 'fragment' ? event.fragment.jobId : event.kind === 'job' ? event.progress.jobId : null;

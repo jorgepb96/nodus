@@ -21,7 +21,7 @@ export interface TtsSpeakStarted { jobId: string; language: TtsLanguage; voiceId
 
 export type TtsEvent =
   | { kind: 'status'; status: TtsStatus }
-  | { kind: 'install'; phase: string; fraction: number }
+  | { kind: 'install'; engine: TtsEngine; phase: string; fraction: number }
   | { kind: 'model'; status: TtsModelStatus }
   | { kind: 'fragment'; fragment: TtsFragmentEvent }
   | { kind: 'job'; progress: TtsJobProgress; clip?: AudioClip };

@@ -40,7 +40,7 @@ export function NarrationMiniPlayer() {
   };
 
   return (
-    <div data-testid="narration-mini-player" className="grid gap-2 p-1 text-xs text-neutral-200">
+    <div data-testid="narration-mini-player" className="grid min-w-0 gap-2 p-1 text-xs text-neutral-200">
       <div className="flex items-start gap-2">
         <Icon name="volume" size={14} className="mt-0.5 shrink-0 text-indigo-300" />
         <div className="min-w-0 flex-1">
@@ -85,12 +85,12 @@ export function NarrationMiniPlayer() {
       {generation?.slow && generating && <p className="text-[10px] text-amber-400">{t('Este equipo genera más despacio de lo que se escucha: puede haber pausas.')}</p>}
       {generation?.state === 'error' && <p className="text-[10px] text-red-300">{t('No se pudo generar el resto del audio.')}</p>}
 
-      <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-[10px] text-neutral-500">
-        <span className="flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${engineActive ? 'bg-emerald-500' : 'bg-neutral-600'}`} />
-          {engineActive ? t('Modelo de voz en memoria') : t('Modelo de voz descargado de la memoria')}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-800 pt-2 text-[10px] text-neutral-500">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${engineActive ? 'bg-emerald-500' : 'bg-neutral-600'}`} />
+          <span className="min-w-0">{engineActive ? t('Modelo de voz en memoria') : t('Modelo de voz descargado de la memoria')}</span>
         </span>
-        {engineActive && !generating && <button className="rounded px-1.5 py-0.5 hover:bg-neutral-800 hover:text-neutral-200" onClick={() => void window.nodus.ttsUnload()}>{t('Liberar memoria')}</button>}
+        {engineActive && !generating && <button className="shrink-0 rounded px-1.5 py-0.5 hover:bg-neutral-800 hover:text-neutral-200" onClick={() => void window.nodus.ttsUnload()}>{t('Liberar memoria')}</button>}
       </div>
     </div>
   );

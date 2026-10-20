@@ -45,7 +45,7 @@ export function getEntitySegments(kind: AudioEntityKind, id: string, request: Au
   if (kind === 'chat_message' || kind === 'dictionary_entry') {
     // A chat answer or a dictionary entry is narrated from the text the reader is looking at,
     // which the renderer sends (a chat message may not be persisted yet while it streams).
-    if (request.markdown == null || !request.markdown.trim()) throw new Error('No hay texto que narrar.');
+    if (request.markdown == null || !request.markdown.trim()) throw new Error('TTS_EMPTY_TEXT');
     return deepResearchSegments({ title: request.title ?? '', draftMarkdown: relabelCitations(request.markdown) });
   }
   if (kind === 'deep_research') {
@@ -145,6 +145,8 @@ export interface SaveClipInput {
   provider: AudioProvider;
   voice: string;
   language: string;
+  /** Checkpoint that produced this clip, e.g. `ming3-0.5b-mlx-8bit`; empty for legacy clips. */
+  modelId?: string;
   /** WAV bytes produced by the renderer. */
   bytes: Uint8Array;
 }
@@ -181,6 +183,7 @@ function recordClip(kind: AudioEntityKind, id: string, input: Omit<SaveClipInput
     provider: input.provider,
     voice: input.voice,
     language: input.language,
+    modelId: input.modelId ?? '',
     fileName,
     bytes: buffer.length,
     durationSec: meta.durationSec,

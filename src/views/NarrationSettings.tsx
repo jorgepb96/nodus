@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppSettings } from '@shared/types';
 import {
-  TTS_LANGUAGES, TTS_MODELS, TTS_SURFACES, sanitizeTtsRetention, ttsModelBytes,
-  type TtsLanguage, type TtsLanguageSetting, type TtsModelDefinition, type TtsRetentionRule, type TtsStatus, type TtsSurface,
+  TTS_LANGUAGES, TTS_MODELS, TTS_SURFACES, PHONON_LANGUAGES, sanitizeTtsRetention, ttsModelBytes,
+  type TtsEngine, type TtsLanguage, type TtsLanguageSetting, type TtsModelDefinition, type TtsRetentionRule, type TtsStatus, type TtsSurface,
 } from '@shared/ttsModels';
 import {
   TTS_SAMPLE_PARAGRAPHS, TTS_VOICE_RECOMMENDED_MAX_S, TTS_VOICE_RECOMMENDED_MIN_S, TTS_VOICE_MIN_S, TTS_VOICE_MAX_S,
@@ -49,7 +49,7 @@ const INSTALL_PHASES: Record<string, string> = {
 
 export function NarrationSettings({ settings, patch }: { settings: AppSettings; patch: (value: Partial<AppSettings>) => Promise<void> }) {
   const [status, setStatus] = useState<TtsStatus | null>(null);
-  const [install, setInstall] = useState<{ phase: string; fraction: number } | null>(null);
+  const [install, setInstall] = useState<{ engine: TtsEngine; phase: string; fraction: number } | null>(null);
   const [voices, setVoices] = useState<TtsVoice[]>([]);
   const [error, setError] = useState('');
   const [confirm, setConfirm] = useState<null | { kind: 'model'; model: TtsModelDefinition } | { kind: 'runtime' } | { kind: 'voice'; voice: TtsVoice } | { kind: 'sweep' }>(null);
@@ -73,7 +73,7 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   useEffect(() => {
     const offStatus = subscribeTtsStatus(setStatus);
     const offEvents = subscribeTtsEvents((event) => {
-      if (event.kind === 'install') setInstall(event.phase === 'ready' ? null : { phase: event.phase, fraction: event.fraction });
+      if (event.kind === 'install') setInstall(event.phase === 'ready' ? null : { engine: event.engine, phase: event.phase, fraction: event.fraction });
     });
     void refreshVoices().catch(() => {});
     void refreshUsage();
@@ -87,6 +87,12 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
   };
 
   const runtime = status?.runtime;
+  const mingInstalling = install?.engine === 'ming' || Boolean(runtime?.installing);
+  const phononInstalling = install?.engine === 'phonon' || Boolean(status?.phononRuntime.installing);
+  const mingPhase = install?.engine === 'ming' ? install.phase : runtime?.phase;
+  const phononPhase = install?.engine === 'phonon' ? install.phase : undefined;
+  const mingFraction = install?.engine === 'ming' ? install.fraction : runtime?.progress ?? 0;
+  const phononFraction = install?.engine === 'phonon' ? install.fraction : 0;
   const deviceLabel = runtime?.device === 'metal' ? t('GPU de Apple (MLX)') : runtime?.device === 'cuda' ? t('GPU NVIDIA (CUDA)') : runtime?.device === 'cpu' ? t('Procesador (CPU)') : '';
 
   return <div className="mt-5 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950/35" data-testid="narration-settings">
@@ -107,16 +113,16 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
         {' '}{t('Se instala en un entorno privado de Python; no modifica el Python del sistema.')}
       </p>
       {runtime?.fallbackReason && <p className="mt-1 text-amber-700 dark:text-amber-400">{t('No se pudo usar la GPU NVIDIA; la narración funcionará en el procesador, más despacio.')}</p>}
-      {(install || runtime?.installing) && <div className="mt-2">
-        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[install?.phase ?? runtime?.phase ?? 'checking'] ?? 'Instalando…')}</p>
-        <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((install?.fraction ?? 0) * 100)}>
-          <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, (install?.fraction ?? runtime?.progress ?? 0) * 100)}%` }} />
+      {mingInstalling && <div className="mt-2">
+        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[mingPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(mingFraction * 100)}>
+          <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, mingFraction * 100)}%` }} />
         </div>
       </div>}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {!runtime?.installed && !runtime?.installing && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime())}><Icon name="download" size={11} />{t('Instalar motor de voz')}</button>}
-        {runtime?.installing && <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>}
-        {runtime?.installed && !runtime.installing && <>
+        {!runtime?.installed && !mingInstalling && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime())}><Icon name="download" size={11} />{t('Instalar motor de voz')}</button>}
+        {mingInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>}
+        {runtime?.installed && !mingInstalling && <>
           <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void run(() => window.nodus.ttsInstallRuntime())}><Icon name="refresh" size={10} />{t('Reparar')}</button>
           <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => setConfirm({ kind: 'runtime' })}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>
           {usage && <span className="text-[10px] text-neutral-500">{formatBytes(usage.runtime)}</span>}
@@ -131,10 +137,16 @@ export function NarrationSettings({ settings, patch }: { settings: AppSettings; 
         {status?.phononRuntime.installed && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('Instalado')} · {t('Procesador (CPU)')}</span>}
       </div>
       <p className="mt-1 text-neutral-600 dark:text-neutral-400">{t('Phonon (Gradium) es muy ligero y genera mucho más rápido que el tiempo real en el procesador, también en Windows y Linux. Usa su catálogo de voces; no clona grabaciones propias.')}</p>
+      {phononInstalling && <div className="mt-2">
+        <p className="text-neutral-600 dark:text-neutral-400">{t(INSTALL_PHASES[phononPhase ?? 'checking'] ?? 'Instalando…')}</p>
+        <div className="mt-1 h-1.5 overflow-hidden rounded bg-neutral-200 dark:bg-neutral-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(phononFraction * 100)}>
+          <div className="h-full bg-indigo-500 transition-all" style={{ width: `${Math.max(3, phononFraction * 100)}%` }} />
+        </div>
+      </div>}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {!status?.phononRuntime.installed && !status?.phononRuntime.installing && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime('phonon'))}><Icon name="download" size={11} />{t('Instalar motor Phonon')}</button>}
-        {status?.phononRuntime.installing && <span className="text-neutral-500">{t(INSTALL_PHASES[install?.phase ?? 'checking'] ?? 'Instalando…')}</span>}
-        {status?.phononRuntime.installed && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('phonon'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
+        {!status?.phononRuntime.installed && !phononInstalling && <button className="btn btn-primary h-7 px-3 text-[11px]" disabled={!status?.platformSupported} onClick={() => void run(() => window.nodus.ttsInstallRuntime('phonon'))}><Icon name="download" size={11} />{t('Instalar motor Phonon')}</button>}
+        {phononInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px]" onClick={() => void window.nodus.ttsCancelInstall()}>{t('Cancelar')}</button>}
+        {status?.phononRuntime.installed && !phononInstalling && <button className="btn btn-ghost h-7 px-2 text-[10px] text-red-400" onClick={() => void run(() => window.nodus.ttsRemoveRuntime('phonon'))}><Icon name="trash" size={10} />{t('Eliminar motor')}</button>}
       </div>
       <div className="mt-3 border-t border-neutral-200 pt-2 dark:border-neutral-800" data-testid="narration-hf-token">
         <p className="text-neutral-600 dark:text-neutral-400">{t('Los modelos Phonon de 40M están restringidos: acepta sus términos en su página de Hugging Face y pega aquí un token de lectura de tu cuenta. Se guarda cifrado en este equipo y solo se envía a Hugging Face al descargar.')}</p>
@@ -448,10 +460,10 @@ function VoiceLibrary({ voices, selectedVoiceId, phononVoiceId, onSelect, onChan
       <h6 className="mt-4 text-[11px] font-medium text-neutral-500">{t('Mis voces')}</h6>
       <SettingsModelList className="mt-1">{own.map(row)}</SettingsModelList>
     </>}
-    <div className="mt-4 flex items-center gap-2">
+    <div className="mt-4 flex flex-wrap items-center gap-2">
       <h6 className="text-[11px] font-medium text-neutral-500">{t('Voces de Phonon')}</h6>
-      <select className="input h-6 py-0 text-[11px]" value={phononLanguage} onChange={(event) => setPhononLanguage(event.target.value)} aria-label={t('Idioma')}>
-        {TTS_LANGUAGES.filter((entry) => ['es', 'en', 'fr', 'de', 'pt'].includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+      <select className="input h-7 min-w-0 py-0 text-[11px]" value={phononLanguage} onChange={(event) => setPhononLanguage(event.target.value)} aria-label={t('Idioma')}>
+        {TTS_LANGUAGES.filter((entry) => (PHONON_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
       </select>
     </div>
     <p className="mt-1 text-[10px] text-neutral-500">{t('Se usan con los modelos Phonon; tus voces grabadas funcionan con Ming. Cada voz se descarga la primera vez que la usas.')}</p>

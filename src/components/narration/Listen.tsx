@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AppSettings, AudioClip, AudioEntityKind, AudioSegmentRequest } from '@shared/types';
-import { TTS_LANGUAGES, TTS_MODELS, sanitizeTtsRetention, ttsModelBytes, ttsRetentionDays, type TtsLanguageSetting, type TtsStatus } from '@shared/ttsModels';
+import { TTS_LANGUAGES, TTS_MODELS, PHONON_LANGUAGES, sanitizeTtsRetention, ttsModelBytes, ttsRetentionDays, type TtsLanguageSetting, type TtsStatus } from '@shared/ttsModels';
 import type { TtsVoice } from '@shared/ttsVoices';
 import { HeaderBalloon } from '../HeaderBalloon';
 import { ConfirmModal } from '../ConfirmModal';
@@ -234,21 +234,23 @@ export function ListenBalloon({ target, anchor, onClose }: { target: ListenTarge
           onChange={(event) => { const next = event.target.value; setSettings(settings ? { ...settings, ttsModelId: next } : settings); void window.nodus.updateSettings({ ttsModelId: next }); }}>
           {downloadedModels.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
         </select>}
-        <div className="grid grid-cols-[1fr_auto] gap-2">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2">
           {phononModel
-            ? <select className="input h-8 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsPhononVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
-              {TTS_LANGUAGES.filter((entry) => model?.languages.includes(entry.code)).map((entry) => <optgroup key={entry.code} label={entry.label}>
+            ? <select className="input h-8 w-full min-w-0 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsPhononVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
+              {TTS_LANGUAGES.filter((entry) => (PHONON_LANGUAGES as readonly string[]).includes(entry.code)).map((entry) => <optgroup key={entry.code} label={entry.label}>
                 {phonon.filter((voice) => voice.language === entry.code).map((voice) => <option key={voice.id} value={voice.id}>{voice.name}{voice.locale ? ` · ${voice.locale}` : ''}</option>)}
               </optgroup>)}
             </select>
-            : <select className="input h-8 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
+            : <select className="input h-8 w-full min-w-0 py-0 text-xs" aria-label={t('Voz')} value={settings?.ttsVoiceId ?? ''} onChange={(event) => setVoice(event.target.value)} data-testid="listen-voice">
               {own.length > 0 && <optgroup label={t('Mis voces')}>{own.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>}
               <optgroup label={t('Castellano (dominio público)')}>{bundled.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
               <optgroup label={t('Integradas de Ming')}>{builtin.map((voice) => <option key={voice.id} value={voice.id}>{voice.name}</option>)}</optgroup>
             </select>}
-          <select className="input h-8 py-0 text-xs" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
+          <select className="input h-8 min-w-0 py-0 text-xs" aria-label={t('Idioma')} value={language} onChange={(event) => setLanguage(event.target.value as TtsLanguageSetting)} data-testid="listen-language">
             <option value="auto">{t('Auto')}</option>
-            {TTS_LANGUAGES.filter((entry) => !model || model.languages.includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
+            {TTS_LANGUAGES.filter((entry) => phononModel
+              ? (PHONON_LANGUAGES as readonly string[]).includes(entry.code)
+              : !model || model.languages.includes(entry.code)).map((entry) => <option key={entry.code} value={entry.code}>{entry.label}</option>)}
           </select>
         </div>
         <button className="justify-self-start text-[11px] text-indigo-600 hover:underline dark:text-indigo-300" onClick={() => { onClose(); window.dispatchEvent(new Event('nodus:open-narration-settings')); }}>

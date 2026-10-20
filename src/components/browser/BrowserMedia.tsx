@@ -160,6 +160,11 @@ export function BrowserMediaPopover({
   const rect = anchorEl.getBoundingClientRect();
   // Browser and Drift keep their pair of tabs; narration joins first while it is active.
   const tabs: MediaSourceTab[] = [...(hasNarration ? ['narration' as const] : []), ...(drift ? ['browser' as const, 'drift' as const] : hasNarration && hasBrowser ? ['browser' as const] : [])];
+  const tabMeta: Record<MediaSourceTab, { icon: string; label: string }> = {
+    browser: { icon: 'globe', label: t('Navegador') },
+    drift: { icon: 'headphones', label: t('Drift') },
+    narration: { icon: 'userVoice', label: t('Narración') },
+  };
   // The very first frame of an opening has no choice yet: it reads the same rule the effect applies.
   const fallback = defaultMediaTab(hasBrowser, hasDrift, drift?.lastTab ?? null, hasNarration);
   const tab: MediaSourceTab = tabs.length ? (chosen && tabs.includes(chosen) ? chosen : fallback) : 'browser';
@@ -183,7 +188,7 @@ export function BrowserMediaPopover({
       <div className="fixed inset-0 z-[130]" onClick={onClose} />
       <div
         data-testid="browser-media-popover"
-        className="fixed z-[131] w-80 rounded-xl border border-neutral-700 bg-neutral-900 p-2 shadow-xl"
+        className="fixed z-[131] w-[28rem] max-w-[calc(100vw-16px)] overflow-x-hidden rounded-xl border border-neutral-700 bg-neutral-900 p-2 shadow-xl"
         style={{ top: rect.bottom + 8, right: Math.max(8, window.innerWidth - rect.right) }}
       >
         {tabs.length > 1 && (
@@ -191,7 +196,7 @@ export function BrowserMediaPopover({
             role="tablist"
             aria-label={t('Fuente de medios')}
             data-testid="media-source-tabs"
-            className={`mb-2 grid ${tabs.length === 3 ? 'grid-cols-3' : 'grid-cols-2'} gap-1 rounded-lg bg-neutral-800/70 p-1`}
+            className="mb-2 flex items-center gap-1 rounded-lg bg-neutral-800/70 p-1"
             onKeyDown={(event) => {
               if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
               event.preventDefault();
@@ -202,24 +207,31 @@ export function BrowserMediaPopover({
               document.getElementById(`media-source-tab-${next}`)?.focus();
             }}
           >
-            {tabs.map((id) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                id={`media-source-tab-${id}`}
-                data-testid={`media-source-tab-${id}`}
-                aria-selected={tab === id}
-                aria-controls="media-source-panel"
-                tabIndex={tab === id ? 0 : -1}
-                onClick={() => chooseTab(id)}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 ${
-                  tab === id ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'
-                }`}
-              >
-                {id === 'browser' ? 'Browser' : id === 'drift' ? 'Drift' : t('Narración')}
-              </button>
-            ))}
+            {tabs.map((id) => {
+              const meta = tabMeta[id];
+              const selected = tab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  id={`media-source-tab-${id}`}
+                  data-testid={`media-source-tab-${id}`}
+                  aria-selected={selected}
+                  aria-label={meta.label}
+                  title={meta.label}
+                  aria-controls="media-source-panel"
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => chooseTab(id)}
+                  className={`inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 ${
+                    selected ? 'bg-neutral-700 text-neutral-100' : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <Icon name={meta.icon} size={14} />
+                  <span className="truncate">{meta.label}</span>
+                </button>
+              );
+            })}
           </div>
         )}
         <div
